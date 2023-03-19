@@ -1,10 +1,10 @@
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
-import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
+import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
-import { ChangeEvent, useCallback, useMemo, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import QRCode from "react-qr-code";
 import sb from "satoshi-bitcoin";
@@ -19,15 +19,6 @@ const Label = styled.label`
   display: flex;
   flex-direction: column;
 `;
-
-type WalletProps = {
-  onKeysGenerated: ({ payPk, ordPk }: { payPk: string; ordPk: string }) => void;
-  onInputTxidChange: (inputTxid: string) => void;
-  onUtxoChange: (utxo: Utxo) => void;
-  payPk: string | undefined;
-  ordPk: string | undefined;
-  initialized: boolean;
-};
 
 type OutPoint = {
   txid: string;
@@ -77,17 +68,25 @@ type TxDetails = {
   blockheight: number;
 };
 
+type WalletProps = {
+  onKeysGenerated: ({ payPk, ordPk }: { payPk: string; ordPk: string }) => void;
+  onInputTxidChange: (inputTxid: string) => void;
+  onUtxoChange: (utxo: Utxo) => void;
+  payPk: string | undefined;
+  ordPk: string | undefined;
+};
+
 const Wallet: React.FC<WalletProps> = ({
   onKeysGenerated,
   payPk,
   ordPk,
   onInputTxidChange,
   onUtxoChange,
-  initialized,
 }) => {
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
 
   const [file, setFile] = useState<File>();
+  const [initialized, setInitialized] = useState<boolean>(false);
 
   // const [fundingUtxo, setFundingUtxo] = useState<Utxo>();
 
@@ -136,6 +135,17 @@ const Wallet: React.FC<WalletProps> = ({
       } as Utxo;
     });
   };
+
+  useEffect(() => {
+    const fire = async () => {
+      await init();
+      console.log("initialized", PrivateKey.from_random());
+      setInitialized(true);
+    };
+    if (!initialized) {
+      fire();
+    }
+  }, [initialized, setInitialized]);
 
   const receiverAddress = useMemo(() => {
     console.log({ initialized });

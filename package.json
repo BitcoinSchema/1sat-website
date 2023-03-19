@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "export": "next export",
+  "resolve": {
+    "bsv-wasm": "bsv-wasm-web"
+  },
   "dependencies": {
     "@types/lodash": "^4.14.191",
     "@types/node": "18.15.3",

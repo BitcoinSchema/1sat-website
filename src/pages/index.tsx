@@ -5,7 +5,6 @@ import { addressFromWif } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
 import init, { PrivateKey } from "bsv-wasm-web";
 import { Utxo } from "js-1sat-ord";
-import { Inter } from "next/font/google";
 import Head from "next/head";
 import Image from "next/image";
 import router from "next/router";
@@ -15,8 +14,6 @@ import toast, { Toaster } from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RxReset } from "react-icons/rx";
 import { TbBroadcast } from "react-icons/tb";
-
-const inter = Inter({ subsets: ["latin"] });
 
 const Home = () => {
   const [showInscribe, setShowInscribe] = useLocalStorage<boolean>(
@@ -132,7 +129,6 @@ const Home = () => {
               {showWallet && !fundingUtxo && (
                 <div className="flex flex-col">
                   <Wallet
-                    initialized={initialized}
                     onKeysGenerated={({ payPk, ordPk }) => {
                       setPayPk(payPk);
                       setOrdPk(ordPk);
@@ -156,15 +152,19 @@ const Home = () => {
                   />
                 </div>
               )}
-              {receiverAddress && payPk && showInscribe && fundingUtxo && (
-                <Inscribe
-                  fundingUtxo={fundingUtxo}
-                  callback={(hex) => setRawTx(hex)}
-                  payPk={payPk}
-                  receiverAddress={receiverAddress}
-                  initialized={initialized}
-                />
-              )}
+              {initialized &&
+                receiverAddress &&
+                payPk &&
+                showInscribe &&
+                fundingUtxo && (
+                  <Inscribe
+                    fundingUtxo={fundingUtxo}
+                    callback={(hex) => setRawTx(hex)}
+                    payPk={payPk}
+                    receiverAddress={receiverAddress}
+                    initialized={initialized}
+                  />
+                )}
             </div>
           ) : (
             <div>
