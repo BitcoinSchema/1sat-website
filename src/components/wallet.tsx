@@ -308,17 +308,14 @@ const Wallet: React.FC<WalletProps> = ({
           <button
             className="ml-2 cursor-pointer p-2 bg-[#222] rounded my-4"
             onClick={async () => {
-              if (currentTxId) {
-                const utxos = await getUTXOs(changeAddress);
+              const utxos = await getUTXOs(changeAddress);
+              const utxo = head(utxos);
 
-                const utxo = head(utxos);
-
-                if (utxo) {
-                  onUtxoChange(utxo);
-                  toast(`Found ${utxos.length} UTXOs`);
-                } else {
-                  toast(`Found ${0} UTXOs`);
-                }
+              if (utxo) {
+                onUtxoChange(utxo);
+                toast(`Found ${utxos.length} UTXOs`);
+              } else {
+                toast(`Found ${0} UTXOs`);
               }
             }}
           >
