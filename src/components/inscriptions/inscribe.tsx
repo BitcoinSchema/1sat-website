@@ -1,6 +1,6 @@
-import { useLocalStorage } from "@/utils/storage";
-import { PrivateKey } from "bsv-wasm";
-import { useState } from "react";
+import { addressFromWif } from "@/utils/address";
+import { Utxo } from "js-1sat-ord";
+import { useMemo, useState } from "react";
 import styled from "styled-components";
 
 const Input = styled.input`
@@ -16,29 +16,28 @@ const Label = styled.label`
 
 type InscribeProps = {
   callback: (rawTxString: string) => void;
+  fundingUtxo: Utxo;
+  payPk: string;
+  receiverAddress: string;
+  initialized: boolean;
 };
 
-const Inscribe: React.FC<InscribeProps> = ({ callback }) => {
+const Inscribe: React.FC<InscribeProps> = ({
+  callback,
+  fundingUtxo,
+  payPk,
+  receiverAddress,
+  initialized,
+}) => {
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 
-  const [paymentPKInput, setPaymentPKInput] = useLocalStorage(
-    "1satfk",
-    PrivateKey.from_random().to_wif()
-  );
-  const [receiverAddress, setReceiverAddress] = useLocalStorage(
-    "1satdsta",
-    "152AJEcn4mXAh84L5BBBrufDsQv37mSAdH"
-  );
-  const [changeAddress, setChangeAddress] = useLocalStorage(
-    "1satcga",
-    "1MF2wWoVGMqdpik614JdHscEPDLd4N5VHT"
-  );
-  const [inputTxid, setInputTxid] = useLocalStorage(
-    "1satutxoid",
-    "42ca4a6de42e8b0746b4b8408ba2597d40554bb7d95f17e282b31472cdc13382"
-  );
+  const changeAddress = useMemo(() => {
+    if (initialized && payPk) {
+      return addressFromWif(payPk);
+    }
+  }, [initialized, payPk]);
 
   function readFileAsBase64(file: any) {
     return new Promise((resolve, reject) => {
@@ -65,46 +64,9 @@ const Inscribe: React.FC<InscribeProps> = ({ callback }) => {
       setPreview(null);
     }
   };
-  const handleInputTxChange = (event: any) => {
-    setInputTxid(event.target.value);
-  };
-  const handlePaymentPKChange = (event: any) => {
-    setPaymentPKInput(event.target.value);
-  };
-  const handleReceiverAddressChange = (event: any) => {
-    setReceiverAddress(event.target.value);
-  };
-  const handleChangeAddressChange = (event: any) => {
-    setChangeAddress(event.target.value);
-  };
 
   const handleInscribing = async () => {
-    // //bsv.PrivateKey
-    // const paymentPk = PrivateKey.from_wif(paymentPKInput);
     const fileAsBase64 = await readFileAsBase64(selectedFile);
-    // console.log(fileAsBase64);
-    // const ordinal = {
-    //     satoshis: 1,
-    //     txid: inscriptionInputTxid,
-    //     script:
-    //       'OP_DUP OP_HASH160 b87db78cba867b9f5def9f48d00ec732493ee543 OP_EQUALVERIFY OP_CHECKSIG',
-    //     vout: 0,
-    //   };
-
-    //   const utxo = {
-    //     satoshis: 269114,
-    //     txid: inscriptionInputTxid,
-    //     script:
-    //       'OP_DUP OP_HASH160 df936f6867bf13de0feef81b3fd14804c35e8cc6 OP_EQUALVERIFY OP_CHECKSIG',
-    //     vout: 1,
-    //   };
-
-    //   // inscription
-    //   const inscription = { data: fileAsBase64, contentType: 'model/gltf-binary' };
-
-    //   // returns Promise<Transaction>
-    //   const tx =
-    //     createOrdinal(utxo, receiverAddress, paymentPk, changeAddress, inscription);
 
     const apiEndpoint = "/api/inscribe";
     const response = await fetch(apiEndpoint, {
@@ -113,55 +75,56 @@ const Inscribe: React.FC<InscribeProps> = ({ callback }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        paymentPKInput,
+        payPk,
         fileAsBase64,
-        inputTxid,
         receiverAddress,
         changeAddress,
+        fundingUtxo,
       }),
     });
     const data = await response.json();
     console.log("Completion Data @ Client: ", data);
 
-    callback(data.result.completion);
+    callback(data.result);
   };
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto">
+      <h1 className="text-white text-4xl my-4">Inscribe an Ordinal</h1>
       <div className="w-full">
-        <Label>
-          Choose a transaction ID to fund mint
-          <Input onChange={handleInputTxChange} value={inputTxid} />
-        </Label>
-
-        <Label>
+        {/* <Label>
           Payment PK Input
           <Input
             type="div"
             onChange={handlePaymentPKChange}
             value={paymentPKInput}
           />
-        </Label>
-        <Label>
+        </Label> */}
+        {/* <Label>
           Receiver Address
           <Input
             type="div"
             onChange={handleReceiverAddressChange}
             value={receiverAddress}
           />
-        </Label>
+        </Label> */}
 
-        <Label>
+        {/* <Label>
           Change Address
           <Input
             type="div"
             onChange={handleChangeAddressChange}
             value={changeAddress}
           />
+        </Label> */}
+        <Label>
+          Choose a file to inscribe
           <Input type="file" onChange={handleFileChange} />
         </Label>
 
-        {preview && <img src={preview as string} alt="Preview" />}
+        {preview && (
+          <img src={preview as string} alt="Preview" className="w-full" />
+        )}
 
         <button
           type="submit"
