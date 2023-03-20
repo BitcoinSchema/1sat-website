@@ -19,18 +19,22 @@ export default async (req: any, res: any) => {
       fundingUtxo
     );
 
-    const satsIn = tx.satoshis_in();
-    const satsOut = tx.satoshis_out();
+    const satsIn = fundingUtxo.satoshis;
+    const satsOut = Number(tx.satoshis_out());
     if (satsIn && satsOut) {
-      const fee = -tx.satoshis_out();
+      const fee = satsIn - satsOut;
 
       const result = {
-        rawTx: tx.get_size(),
+        rawTx: tx.to_hex(),
+        size: tx.get_size(),
         fee,
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
       };
       res.status(200).json({ result });
+    } else {
+      console.log({ satsIn, satsOut });
+      res.status(400).send();
     }
   }
 };

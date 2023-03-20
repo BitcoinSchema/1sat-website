@@ -2,8 +2,8 @@ import { PrivateKey, Script } from "bsv-wasm";
 import corsModule from "cors";
 import * as functions from "firebase-functions";
 import { createOrdinal } from "js-1sat-ord";
-import { StandardToExtended } from './bitcoin-ef/standard-to-extended';
-import { ArcClient } from './js-arc-client';
+import { StandardToExtended } from "./bitcoin-ef/standard-to-extended";
+import { ArcClient } from "./js-arc-client";
 
 const allowedOrigins = ["http://localhost:80"];
 const options = {
@@ -11,7 +11,7 @@ const options = {
 };
 const cors = corsModule(options);
 
-const ARC = 'https://arc.gorillapool.io';
+const ARC = "https://arc.gorillapool.io";
 const arcClient = new ArcClient(ARC, {});
 
 export const inscribe = functions.https.onRequest((req, res) => {
@@ -38,13 +38,15 @@ export const inscribe = functions.https.onRequest((req, res) => {
         const fee = -tx.satoshis_out();
 
         const result = {
-          rawTx: tx.get_size(),
+          rawTx: tx.to_hex(),
+          size: tx.get_size(),
           fee,
           numInputs: tx.get_ninputs(),
           numOutputs: tx.get_noutputs(),
         };
         res.status(200).json({ result });
       }
+    } else {
     }
   });
 
@@ -79,7 +81,7 @@ const handleInscribing = async (
 
 interface PreviousOutput {
   lockingScript: string;
-  script: string
+  script: string;
   satoshis: number;
 }
 export const broadcast = functions.https.onRequest(async (req, res) => {
@@ -87,8 +89,8 @@ export const broadcast = functions.https.onRequest(async (req, res) => {
     let parents: PreviousOutput[] = req.body.parents;
     let rawtx: string = req.body.rawtx;
     parents.forEach((s) => {
-      s.lockingScript = Script.from_asm_string(s.script).to_hex()
-    })
+      s.lockingScript = Script.from_asm_string(s.script).to_hex();
+    });
     const ef = StandardToExtended(rawtx, parents);
     const result = await arcClient.postTransaction(ef);
     res.status(200).json({ result });
