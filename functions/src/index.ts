@@ -20,14 +20,26 @@ export const inscribe = functions.https.onRequest((req, res) => {
       changeAddress &&
       fundingUtxo
     ) {
-      const result = await handleInscribing(
+      const tx = await handleInscribing(
         payPk,
         fileAsBase64,
         receiverAddress,
         changeAddress,
         fundingUtxo
       );
-      res.status(200).json({ result });
+      const satsIn = tx.satoshis_in();
+      const satsOut = tx.satoshis_out();
+      if (satsIn && satsOut) {
+        const fee = -tx.satoshis_out();
+
+        const result = {
+          rawTx: tx.get_size(),
+          fee,
+          numInputs: tx.get_ninputs(),
+          numOutputs: tx.get_noutputs(),
+        };
+        res.status(200).json({ result });
+      }
     }
   });
 
@@ -57,5 +69,5 @@ const handleInscribing = async (
     0.1,
     inscription
   );
-  return tx.to_hex();
+  return tx;
 };

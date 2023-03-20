@@ -3,7 +3,7 @@ import Inscribe from "@/components/inscriptions/inscribe";
 import Wallet from "@/components/wallet";
 import { addressFromWif } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
-import init, { PrivateKey } from "bsv-wasm-web";
+import init from "bsv-wasm-web";
 import { Utxo } from "js-1sat-ord";
 import Head from "next/head";
 import Image from "next/image";
@@ -14,6 +14,20 @@ import toast, { Toaster } from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RxReset } from "react-icons/rx";
 import { TbBroadcast } from "react-icons/tb";
+
+export enum FetchStatus {
+  Idle,
+  Loading,
+  Success,
+  Error,
+}
+
+export type CallbackData = {
+  numInputs: number;
+  numOutsput: number;
+  fee: number;
+  rawTx: string;
+};
 
 const Home = () => {
   const [showInscribe, setShowInscribe] = useLocalStorage<boolean>(
@@ -53,7 +67,6 @@ const Home = () => {
   useEffect(() => {
     const fire = async () => {
       await init();
-      console.log("initialized", PrivateKey.from_random());
       setInitialized(true);
     };
     if (!initialized) {
@@ -65,8 +78,6 @@ const Home = () => {
 
   const backupKeys = useCallback(
     (e: any) => {
-      console.log("backup keys");
-
       var dataStr =
         "data:text/json;charset=utf-8," +
         encodeURIComponent(JSON.stringify({ payPk, ordPk }));
@@ -120,7 +131,7 @@ const Home = () => {
                   />
                 </div>
               )}
-              {showWallet && !fundingUtxo && (
+              {showWallet && !showInscribe && (
                 <div className="flex flex-col">
                   <Wallet
                     onKeysGenerated={({ payPk, ordPk }) => {
@@ -135,25 +146,31 @@ const Home = () => {
                     onUtxoChange={(utxo: Utxo) => {
                       console.log({ utxo });
                       setFundingUtxo(utxo);
+                      setShowWallet(true);
                       setShowInscribe(true);
-                      console.log({
-                        receiverAddress,
-                        payPk,
-                        showInscribe,
-                        utxo,
-                      });
                     }}
+                    fundingUtxo={fundingUtxo}
                   />
                 </div>
               )}
+
               {initialized &&
                 receiverAddress &&
                 payPk &&
                 showInscribe &&
                 fundingUtxo && (
                   <Inscribe
+                    reset={() => {
+                      setRawTx(undefined);
+                      setShowInscribe(false);
+                      setShowWallet(true);
+                    }}
                     fundingUtxo={fundingUtxo}
-                    callback={(hex) => setRawTx(hex)}
+                    callback={({ rawTx, fee, numInputs, numOutsput }) => {
+                      // TODO: set more data on preview
+                      console.log({ rawTx, fee, numInputs, numOutsput });
+                      setRawTx(rawTx);
+                    }}
                     payPk={payPk}
                     receiverAddress={receiverAddress}
                     initialized={initialized}
@@ -162,10 +179,16 @@ const Home = () => {
             </div>
           ) : (
             <div>
-              <h1 className="text-center text-2xl">Ordinal Created</h1>
-              <div className="text-center text-[#aaa]">Broadcast Now?</div>
-              <div className="w-[600px] w-full max-w-lg mx-auto p-2 h-[400px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-[#aaa] my-8">
+              <h1 className="text-center text-2xl">Ordinal Generated</h1>
+              <div className="text-center text-[#aaa] my-2">
+                You still need to broadcast this before it goes live.
+              </div>
+              <div className="w-[600px] w-full max-w-lg mx-auto p-2 h-[300px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-teal-700 my-8 relative">
                 {rawTx}
+                <div className="p-4 absolute w-full text-white bg-black bg-opacity-75 bottom-0 left-0 flex justify-between">
+                  <div>Size</div>
+                  <div>{rawTx.length / 2} Bytes</div>
+                </div>
               </div>
               <div>
                 <CopyToClipboard
@@ -194,7 +217,7 @@ const Home = () => {
                     setFundingUtxo(undefined);
                     setRawTx(undefined);
                     setShowInscribe(false);
-                    setShowWallet(false);
+                    // setShowWallet(false);
                   }}
                   className="w-full p-2 text-lg bg-gray-400 rounded my-4 text-black font-semibold"
                 >
