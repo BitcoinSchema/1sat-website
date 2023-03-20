@@ -17,6 +17,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@google-cloud/functions-framework": "^3.1.3",
+    "bn.js": "^5.2.1",
     "bsv-wasm": "^2.0.0",
     "cors": "^2.8.5",
     "firebase-admin": "^10.0.2",
