@@ -1,3 +1,4 @@
+import { FetchStatus } from "@/pages";
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
@@ -74,6 +75,7 @@ type WalletProps = {
   onUtxoChange: (utxo: Utxo) => void;
   payPk: string | undefined;
   ordPk: string | undefined;
+  fundingUtxo: Utxo | undefined;
 };
 
 const Wallet: React.FC<WalletProps> = ({
@@ -82,13 +84,15 @@ const Wallet: React.FC<WalletProps> = ({
   ordPk,
   onInputTxidChange,
   onUtxoChange,
+  fundingUtxo,
 }) => {
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
 
   const [file, setFile] = useState<File>();
   const [initialized, setInitialized] = useState<boolean>(false);
-
-  // const [fundingUtxo, setFundingUtxo] = useState<Utxo>();
+  const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
 
   const getTxById = async (txid: string): Promise<TxDetails> => {
     const r = await fetch(
@@ -119,27 +123,33 @@ const Wallet: React.FC<WalletProps> = ({
   };
 
   const getUTXOs = async (address: string): Promise<Utxo[]> => {
-    const r = await fetch(
-      `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
-    );
-    const utxos = await r.json();
+    setFetchUtxosStatus(FetchStatus.Loading);
+    try {
+      const r = await fetch(
+        `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
+      );
+      const utxos = await r.json();
 
-    return utxos.map((utxo: any) => {
-      return {
-        satoshis: utxo.value,
-        vout: utxo.tx_pos,
-        txid: utxo.tx_hash,
-        script: P2PKHAddress.from_string(address)
-          .get_locking_script()
-          .to_asm_string(),
-      } as Utxo;
-    });
+      setFetchUtxosStatus(FetchStatus.Success);
+      return utxos.map((utxo: any) => {
+        return {
+          satoshis: utxo.value,
+          vout: utxo.tx_pos,
+          txid: utxo.tx_hash,
+          script: P2PKHAddress.from_string(address)
+            .get_locking_script()
+            .to_asm_string(),
+        } as Utxo;
+      });
+    } catch (e) {
+      setFetchUtxosStatus(FetchStatus.Error);
+      throw e;
+    }
   };
 
   useEffect(() => {
     const fire = async () => {
       await init();
-      console.log("initialized", PrivateKey.from_random());
       setInitialized(true);
     };
     if (!initialized) {
@@ -182,9 +192,6 @@ const Wallet: React.FC<WalletProps> = ({
   const done = useCallback(
     async (txid: string) => {
       const txDetails = await getTxById(txid);
-      // TODO: fetch the tx
-      // populate the utxo
-
       let outPoint: OutPoint = {
         txid,
         vout: 0,
@@ -194,7 +201,7 @@ const Wallet: React.FC<WalletProps> = ({
       for (let out of txDetails.vout) {
         if (
           changeAddress &&
-          out.scriptPubKey.addresses.includes(changeAddress)
+          out.scriptPubKey.addresses?.includes(changeAddress)
         ) {
           outPoint.vout = out.n;
           found = true;
@@ -227,6 +234,23 @@ const Wallet: React.FC<WalletProps> = ({
     [onKeysGenerated]
   );
 
+  useEffect(() => {
+    const fire = async (a: string) => {
+      const utxos = await getUTXOs(a);
+      const utxo = head(utxos);
+      if (utxo) {
+        onUtxoChange(utxo);
+        setCurrentTxId(utxo.txid);
+        toast(`Found ${utxos.length} UTXOs`);
+      } else {
+        toast(`Found ${0} UTXOs`);
+      }
+    };
+    if (changeAddress && fetchUtxosStatus === FetchStatus.Idle) {
+      fire(changeAddress);
+    }
+  }, [onUtxoChange, changeAddress]);
+
   const handleUploadClick = useCallback(() => {
     if (!file) {
       const el = document.getElementById("backupFile");
@@ -238,6 +262,10 @@ const Wallet: React.FC<WalletProps> = ({
     // file.size
     console.log({ file });
   }, [file]);
+
+  if (fetchUtxosStatus === FetchStatus.Loading) {
+    return <div className="flex flex-col w-full max-w-4xl mx-auto"></div>;
+  }
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto">
@@ -313,24 +341,18 @@ const Wallet: React.FC<WalletProps> = ({
               }
             }}
           >
-            Done
+            Fetch By TxID
           </button>
-          <button
-            className="ml-2 cursor-pointer p-2 bg-[#222] rounded my-4"
-            onClick={async () => {
-              const utxos = await getUTXOs(changeAddress);
-              const utxo = head(utxos);
-
-              if (utxo) {
-                onUtxoChange(utxo);
-                toast(`Found ${utxos.length} UTXOs`);
-              } else {
-                toast(`Found ${0} UTXOs`);
-              }
-            }}
-          >
-            Fetch Outputs
-          </button>
+          {fundingUtxo && (
+            <button
+              className="p-2 bg-[#222] cursor-pointer rounded my-4"
+              onClick={() => {
+                onUtxoChange(fundingUtxo);
+              }}
+            >
+              Next
+            </button>
+          )}
         </div>
       )}
       <input
