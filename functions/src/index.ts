@@ -1,4 +1,4 @@
-import { PrivateKey, Script } from "bsv-wasm";
+import { PrivateKey } from "bsv-wasm";
 import corsModule from "cors";
 import * as functions from "firebase-functions";
 import { createOrdinal } from "js-1sat-ord";
@@ -27,10 +27,10 @@ export const inscribe = functions.https.onRequest((req, res) => {
         changeAddress,
         fundingUtxo
       );
-      const satsIn = tx.satoshis_in();
-      const satsOut = tx.satoshis_out();
+      const satsIn = fundingUtxo.satoshis;
+      const satsOut = Number(tx.satoshis_out());
       if (satsIn && satsOut) {
-        const fee = -tx.satoshis_out();
+        const fee = satsIn - satsOut;
 
         const result = {
           rawTx: tx.to_hex(),
@@ -40,14 +40,11 @@ export const inscribe = functions.https.onRequest((req, res) => {
           numOutputs: tx.get_noutputs(),
         };
         res.status(200).json({ result });
+        return;
       }
-    } else {
     }
+    res.status(400).send();
   });
-
-  // req, res, async () => {
-
-  // });
 });
 
 const handleInscribing = async (
@@ -73,5 +70,3 @@ const handleInscribing = async (
   );
   return tx;
 };
-
-

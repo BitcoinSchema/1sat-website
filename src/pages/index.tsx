@@ -24,7 +24,7 @@ export enum FetchStatus {
 
 export type CallbackData = {
   numInputs: number;
-  numOutsput: number;
+  numOutputs: number;
   fee: number;
   rawTx: string;
 };
@@ -78,7 +78,7 @@ const Home = () => {
     }
   }, [initialized, setInitialized]);
 
-  const importKeys = useCallback(() => { }, []);
+  const importKeys = useCallback(() => {}, []);
 
   const backupKeys = useCallback(
     (e: any) => {
@@ -104,12 +104,12 @@ const Home = () => {
     }
     const body = Buffer.from(rawTx, "hex");
     const response = await fetch(`https://mapi.gorillapool.io/mapi/tx`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-type': 'application/octet-stream',
+        "Content-type": "application/octet-stream",
       },
       body,
-    })
+    });
 
     const data = await response.json();
     console.log({ data });
@@ -192,9 +192,9 @@ const Home = () => {
                       setShowWallet(true);
                     }}
                     fundingUtxo={fundingUtxo}
-                    callback={({ rawTx, fee, numInputs, numOutsput }) => {
+                    callback={({ rawTx, fee, numInputs, numOutputs }) => {
                       // TODO: set more data on preview
-                      console.log({ rawTx, fee, numInputs, numOutsput });
+                      console.log({ rawTx, fee, numInputs, numOutputs });
                       setRawTx(rawTx);
                     }}
                     payPk={payPk}
