@@ -2,14 +2,23 @@ import { FetchStatus } from "@/pages";
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
-import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
-import { Utxo } from "js-1sat-ord";
+
+import init, {
+  P2PKHAddress,
+  PrivateKey,
+  PublicKey,
+  Transaction,
+} from "bsv-wasm-web";
+import { Inscription, Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import QRCode from "react-qr-code";
 import sb from "satoshi-bitcoin";
 import styled from "styled-components";
+
+export const PROTOCOL_START_HEIGHT = 783968;
+
 const Input = styled.input`
   padding: 0.5rem;
   border-radius: 0.25rem;
@@ -73,6 +82,13 @@ type WalletProps = {
   onKeysGenerated: ({ payPk, ordPk }: { payPk: string; ordPk: string }) => void;
   onInputTxidChange: (inputTxid: string) => void;
   onUtxoChange: (utxo: Utxo) => void;
+  onArtifactsChange: ({
+    artifacts,
+    inscribedUtxos,
+  }: {
+    artifacts: Inscription[];
+    inscribedUtxos: Utxo[];
+  }) => void;
   payPk: string | undefined;
   ordPk: string | undefined;
   fundingUtxo: Utxo | undefined;
@@ -84,13 +100,22 @@ const Wallet: React.FC<WalletProps> = ({
   ordPk,
   onInputTxidChange,
   onUtxoChange,
+  onArtifactsChange,
   fundingUtxo,
 }) => {
+  const [artifacts, setArtifacts] = useState<Inscription[]>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
+  const [inscriptionUtxos, setInscriptionUtxos] =
+    useLocalStorage<Utxo[]>("1satiut");
+  const [inscriptions, setInscriptions] =
+    useLocalStorage<Inscription[]>("1satins");
   const [showKeys, setShowKeys] = useState<boolean>(false);
   const [file, setFile] = useState<File>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
+  const [fetchHistoryStatus, setFetchHistoryStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
 
@@ -103,6 +128,17 @@ const Wallet: React.FC<WalletProps> = ({
     // TODO: How to get script?
 
     return utxo;
+  };
+
+  const getRawTxById = async (txid: string): Promise<string> => {
+    const r = await fetch(
+      `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
+    );
+    const rawTx = await r.text();
+    // let utxo = res.find((u: any) => u.value > 1);
+    // TODO: How to get script?
+
+    return rawTx;
   };
 
   const getInscriptionUTXO = async (scripthash: string) => {
@@ -143,6 +179,89 @@ const Wallet: React.FC<WalletProps> = ({
       });
     } catch (e) {
       setFetchUtxosStatus(FetchStatus.Error);
+      throw e;
+    }
+  };
+  type HistoryItem = {
+    tx_hash: string;
+    height: number;
+  };
+
+  const getArtifacts = async (
+    address: string
+  ): Promise<{ artifacts: Inscription[]; inscribedUtxos: Utxo[] }> => {
+    setFetchHistoryStatus(FetchStatus.Loading);
+    try {
+      const r = await fetch(
+        `https://api.whatsonchain.com/v1/bsv/main/address/${address}/history`
+      );
+      const history: HistoryItem[] = await r.json();
+
+      let iUtxos: Utxo[] = [];
+      let artifacts: Inscription[] = [];
+      for (let item of history.filter(
+        (h) => h.height >= PROTOCOL_START_HEIGHT
+      )) {
+        const rawTx = await getRawTxById(item.tx_hash);
+        await new Promise((r) => setTimeout(r, 250));
+        // loop over outputs, adding any ordinal outputs to a list
+        const tx = Transaction.from_hex(rawTx);
+        for (let x = 0; x < tx.get_noutputs(); x++) {
+          let out = tx.get_output(x);
+          console.log({ tx, out });
+          if (!out) {
+            console.log("last output", x);
+            break;
+          }
+
+          const fixedAsm = out.get_script_pub_key().to_asm_string();
+          const sats = out.get_satoshis();
+          console.log({ fixedAsm });
+          // Find ord prefix
+          // haha I have 10 artifacts with reversed OP order
+          const splitScript = fixedAsm.split(" 0 OP_IF 6f7264 OP_1 ");
+          if (splitScript.length > 0 && Number(sats) === 1) {
+            iUtxos.push({
+              satoshis: 1,
+              vout: x,
+              txid: item.tx_hash,
+              script: fixedAsm,
+            });
+            if (splitScript.length === 1) {
+              console.log("NO SPLIT MATCH", splitScript);
+              continue;
+            }
+            let scr = splitScript[1].split(" ");
+            let contentType = Buffer.from(scr[0], "hex").toString();
+            let dataHex = scr[2];
+            let dataB64 = Buffer.from(dataHex, "hex").toString("base64");
+            const outPoint = `${tx.get_id_hex()}_o${x}}`;
+            artifacts.push({
+              dataB64,
+              contentType,
+              outPoint,
+            });
+            console.log({ tx, fixedAsm, iUtxos });
+          } else {
+            console.log("NO MATCH", fixedAsm);
+          }
+        }
+      }
+      setFetchHistoryStatus(FetchStatus.Success);
+      setInscriptionUtxos(iUtxos);
+      return { artifacts, inscribedUtxos: iUtxos };
+      // return history.map((utxo: any) => {
+      //   return {
+      //     satoshis: utxo.value,
+      //     vout: utxo.tx_pos,
+      //     txid: utxo.tx_hash,
+      //     script: P2PKHAddress.from_string(address)
+      //       .get_locking_script()
+      //       .to_asm_string(),
+      //   } as Utxo;
+      // });
+    } catch (e) {
+      setFetchHistoryStatus(FetchStatus.Error);
       throw e;
     }
   };
@@ -242,9 +361,24 @@ const Wallet: React.FC<WalletProps> = ({
   );
 
   useEffect(() => {
+    const fire2 = async (a: string) => {
+      const { artifacts, inscribedUtxos } = await getArtifacts(a);
+      setArtifacts(artifacts);
+      console.log({ artifacts });
+      toast(`Got ${artifacts.length} artifacts`);
+      onArtifactsChange({ artifacts, inscribedUtxos });
+    };
+    if (changeAddress && fetchHistoryStatus === FetchStatus.Idle) {
+      fire2(changeAddress);
+    }
+  }, [fetchHistoryStatus, setArtifacts, changeAddress]);
+
+  useEffect(() => {
     const fire = async (a: string) => {
       const utxos = await getUTXOs(a);
-      const utxo = head(utxos);
+      const utxo = head(
+        utxos.sort((a, b) => (a.satoshis > b.satoshis ? -1 : 1))
+      );
       if (utxo) {
         onUtxoChange(utxo);
         setCurrentTxId(utxo.txid);
@@ -253,6 +387,7 @@ const Wallet: React.FC<WalletProps> = ({
         toast(`Found ${0} UTXOs`);
       }
     };
+
     if (changeAddress && fetchUtxosStatus === FetchStatus.Idle) {
       fire(changeAddress);
     }
@@ -356,26 +491,28 @@ const Wallet: React.FC<WalletProps> = ({
               />
             </Label>
           </div>
-          <button
-            className="p-2 bg-[#222] cursor-pointer rounded my-4"
-            onClick={() => {
-              if (currentTxId) {
-                done(currentTxId);
-              }
-            }}
-          >
-            Fetch By TxID
-          </button>
-          {fundingUtxo && (
+          <div className="flex items-center justify-between">
             <button
               className="p-2 bg-[#222] cursor-pointer rounded my-4"
               onClick={() => {
-                onUtxoChange(fundingUtxo);
+                if (currentTxId) {
+                  done(currentTxId);
+                }
               }}
             >
-              Next
+              Fetch By TxID
             </button>
-          )}
+            {fundingUtxo && (
+              <button
+                className="p-2 bg-[#222] cursor-pointer rounded m-4"
+                onClick={() => {
+                  onUtxoChange(fundingUtxo);
+                }}
+              >
+                Next
+              </button>
+            )}
+          </div>
         </div>
       )}
       <input

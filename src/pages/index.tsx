@@ -4,7 +4,8 @@ import Wallet from "@/components/wallet";
 import { addressFromWif } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
 import init from "bsv-wasm-web";
-import { Utxo } from "js-1sat-ord";
+import { Inscription, Utxo } from "js-1sat-ord";
+import { head } from "lodash";
 import Head from "next/head";
 import Image from "next/image";
 import router from "next/router";
@@ -58,6 +59,12 @@ const Home = () => {
     "1satuo",
     undefined
   );
+  const [artifacts, setArtifacts] = useState<Inscription[] | undefined>(
+    undefined
+  );
+  const [inscribedUtxos, setInscribedUtxos] = useLocalStorage<
+    Utxo[] | undefined
+  >("1satiux", undefined);
 
   const changeAddress = useMemo(
     () => payPk && initialized && addressFromWif(payPk),
@@ -125,6 +132,8 @@ const Home = () => {
     }
   }, [rawTx, setBroadcastResponse, fundingUtxo]);
 
+  const clickRefresh = useCallback(() => {}, []);
+
   return (
     <>
       <Head>
@@ -166,9 +175,15 @@ const Home = () => {
                   />
                 </div>
               )}
-              {showWallet && !showInscribe && (
-                <div className="flex flex-col">
+              {showWallet && (
+                <div
+                  className={`flex flex-col ${showInscribe ? "hidden" : ""}`}
+                >
                   <Wallet
+                    onArtifactsChange={(props) => {
+                      setArtifacts(props.artifacts);
+                      setInscribedUtxos(props.inscribedUtxos);
+                    }}
                     onKeysGenerated={({ payPk, ordPk }) => {
                       setPayPk(payPk);
                       setOrdPk(ordPk);
@@ -231,6 +246,12 @@ const Home = () => {
                     <div>Fee</div>
                     <div>{fee} Satoshis</div>
                   </div>
+                  {fee && (
+                    <div className="flex justify-between">
+                      <div>Fee Rate</div>
+                      <div>{(fee / (rawTx.length / 2)).toFixed(5)} sat/B</div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div>
@@ -272,6 +293,28 @@ const Home = () => {
               </div>
             </div>
           )}
+          <div>
+            <h1 className="text-center my-4 text-2xl">My Ordinals</h1>
+
+            <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-4xl mx-auto">
+              {artifacts?.map((a) => {
+                return (
+                  <a
+                    key={a.outPoint}
+                    target="_blank"
+                    href={`https://whatsonchain.com/tx/${head(
+                      a.outPoint.split("_")
+                    )}`}
+                  >
+                    <img
+                      className="w-full rounded"
+                      src={`data:${a.contentType};base64,${a.dataB64}`}
+                    />
+                  </a>
+                );
+              })}
+            </div>
+          </div>
           <div
             className="flex items-center font-mono text-yellow-400"
             style={{

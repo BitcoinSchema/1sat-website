@@ -49,7 +49,11 @@ const handleInscribing = async (
   const paymentPk = PrivateKey.from_wif(payPk);
 
   // inscription
-  const inscription = { dataB64: fileAsBase64, contentType: "image/jpeg" };
+  const inscription = {
+    dataB64: fileAsBase64,
+    contentType: "image/jpeg",
+    outPoint: `${fundingUtxo.txid}_${fundingUtxo.vout}`,
+  };
 
   // returns Promise<Transaction>
   const tx = await createOrdinal(

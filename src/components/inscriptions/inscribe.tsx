@@ -113,10 +113,13 @@ const Inscribe: React.FC<InscribeProps> = ({
       <h1 className="text-white text-4xl my-4">Inscribe an Ordinal</h1>
       <div className="w-full">
         <div className="rounded bg-[#222] p-4 mb-4 text-xs flex flex-col">
-          <div>
+          <div className="my-1">
             Using output #{fundingUtxo.vout} ({fundingUtxo.satoshis} Sat )
           </div>
-          <div>{fundingUtxo.txid}</div>
+          <div className="my-1">{fundingUtxo.txid}</div>
+          <div className="my-1">
+            Deposit to {changeAddress} and refresh the page.
+          </div>
         </div>
         {/* <Label>
           Payment PK Input
@@ -166,19 +169,18 @@ const Inscribe: React.FC<InscribeProps> = ({
         >
           Preview
         </button>
-        {selectedFile && (
-          <button
-            onClick={() => {
-              reset();
-            }}
-            className="w-full p-2 text-lg bg-gray-400 rounded my-4 text-black font-semibold"
-          >
-            <div className="mx-auto flex items-center justify-center">
-              <RxReset className="w-10" />
-              <div>Start Over</div>
-            </div>
-          </button>
-        )}
+
+        <button
+          onClick={() => {
+            reset();
+          }}
+          className="w-full p-2 text-lg bg-gray-400 rounded my-4 text-black font-semibold"
+        >
+          <div className="mx-auto flex items-center justify-center">
+            <RxReset className="w-10" />
+            <div>Start Over</div>
+          </div>
+        </button>
       </div>
     </div>
   );
