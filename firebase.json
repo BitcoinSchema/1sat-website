@@ -12,6 +12,10 @@
         "function": "inscribe"
       },
       {
+        "source": "/api/broadcast",
+        "function": "broadcast"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

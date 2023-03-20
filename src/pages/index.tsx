@@ -34,6 +34,10 @@ const Home = () => {
     "1satsi",
     false
   );
+  const [broadcastResponse, setBroadcastResponse] = useLocalStorage(
+    "1satbrs",
+    undefined
+  );
   const [showWallet, setShowWallet] = useLocalStorage<boolean>("1satsw", false);
   const [rawTx, setRawTx] = useLocalStorage<string | undefined>(
     "1satrt",
@@ -89,6 +93,29 @@ const Home = () => {
     },
     [payPk, ordPk]
   );
+
+  const handleClickBroadcast = useCallback(async () => {
+    if (!fundingUtxo) {
+      return;
+    }
+    console.log("click broadcast");
+    const apiEndpoint = "/api/broadcast";
+    const response = await fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        rawtx: rawTx,
+        parents: [
+          { script: fundingUtxo.script, satoshis: fundingUtxo?.satoshis },
+        ],
+      }),
+    });
+    const data = await response.json();
+    console.log({ data });
+    setBroadcastResponse(data);
+  }, [setBroadcastResponse, fundingUtxo]);
 
   return (
     <>
@@ -204,7 +231,7 @@ const Home = () => {
                 </CopyToClipboard>
 
                 <button
-                  onClick={() => alert("soonTm")}
+                  onClick={handleClickBroadcast}
                   className="w-full p-2 text-lg bg-orange-400 rounded my-4 text-black font-semibold"
                 >
                   <div className="mx-auto flex items-center justify-center">
