@@ -39,6 +39,7 @@ const Home = () => {
     undefined
   );
   const [showWallet, setShowWallet] = useLocalStorage<boolean>("1satsw", false);
+  const [fee, setFee] = useLocalStorage<number>("1satfee", 0);
   const [rawTx, setRawTx] = useLocalStorage<string | undefined>(
     "1satrt",
     undefined
@@ -113,7 +114,12 @@ const Home = () => {
 
     const data = await response.json();
     console.log({ data });
-    setBroadcastResponse(data);
+
+    const respData = JSON.parse(data.payload || "{}");
+    if (respData.returnResult === "success") {
+      toast("Broadcasted tx", respData.txid);
+    }
+    setBroadcastResponse(respData);
   }, [rawTx, setBroadcastResponse, fundingUtxo]);
 
   return (
@@ -188,6 +194,7 @@ const Home = () => {
                   <Inscribe
                     reset={() => {
                       setRawTx(undefined);
+                      setFee(undefined);
                       setShowInscribe(false);
                       setShowWallet(true);
                     }}
@@ -196,6 +203,7 @@ const Home = () => {
                       // TODO: set more data on preview
                       console.log({ rawTx, fee, numInputs, numOutputs });
                       setRawTx(rawTx);
+                      setFee(fee);
                     }}
                     payPk={payPk}
                     receiverAddress={receiverAddress}
@@ -211,9 +219,15 @@ const Home = () => {
               </div>
               <div className="w-[600px] w-full max-w-lg mx-auto p-2 h-[300px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-teal-700 my-8 relative">
                 {rawTx}
-                <div className="p-4 absolute w-full text-white bg-black bg-opacity-75 bottom-0 left-0 flex justify-between">
-                  <div>Size</div>
-                  <div>{rawTx.length / 2} Bytes</div>
+                <div className="p-4 absolute w-full text-white bg-black bg-opacity-75 bottom-0 left-0">
+                  <div className="flex justify-between">
+                    <div>Size</div>
+                    <div>{rawTx.length / 2} Bytes</div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div>Fee</div>
+                    <div>{fee} Satoshis</div>
+                  </div>
                 </div>
               </div>
               <div>
@@ -268,7 +282,7 @@ const Home = () => {
             >
               Read the Docs
             </a>
-            {payPk && <div className="mx-4">·</div>}
+            <div className="mx-4">·</div>
             {payPk && (
               <div className="cursor-pointer" onClick={backupKeys}>
                 Backup Keys

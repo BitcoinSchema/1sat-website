@@ -2,6 +2,7 @@ import { CallbackData, FetchStatus } from "@/pages";
 import { addressFromWif } from "@/utils/address";
 import { Utxo } from "js-1sat-ord";
 import { useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
 import { RxReset } from "react-icons/rx";
 import styled from "styled-components";
 
@@ -33,7 +34,7 @@ const Inscribe: React.FC<InscribeProps> = ({
   initialized,
   reset,
 }) => {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -59,7 +60,7 @@ const Inscribe: React.FC<InscribeProps> = ({
   }
 
   const handleFileChange = (event: any) => {
-    const file = event.target.files[0];
+    const file = event.target.files[0] as File;
     setSelectedFile(file);
     if (file) {
       const reader = new FileReader();
@@ -86,17 +87,23 @@ const Inscribe: React.FC<InscribeProps> = ({
         body: JSON.stringify({
           payPk,
           fileAsBase64,
+          contentType: selectedFile?.type,
           receiverAddress,
           changeAddress,
           fundingUtxo,
         }),
       });
       const data = await response.json();
-      setInscribeStatus(FetchStatus.Success);
-      console.log("Completion Data @ Client: ", data);
-
-      callback(data.result);
+      console.log("Completion Data @ Client: ", response, data);
+      if (data.result) {
+        callback(data.result);
+      } else {
+        setInscribeStatus(FetchStatus.Success);
+        toast("Failed to inscribe " + data);
+        throw new Error("Failed to inscribe", data);
+      }
     } catch (e) {
+      toast("Failed to inscribe " + e);
       setInscribeStatus(FetchStatus.Error);
     }
   };
