@@ -20,6 +20,7 @@
     "bn.js": "^5.2.1",
     "bsv-wasm": "^2.0.0",
     "cors": "^2.8.5",
+    "cross-fetch": "^3.1.5",
     "firebase-admin": "^10.0.2",
     "firebase-functions": "^4.2.1",
     "js-1sat-ord": "^0.0.10"
