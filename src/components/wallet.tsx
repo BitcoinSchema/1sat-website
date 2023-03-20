@@ -256,7 +256,7 @@ const Wallet: React.FC<WalletProps> = ({
     if (changeAddress && fetchUtxosStatus === FetchStatus.Idle) {
       fire(changeAddress);
     }
-  }, [onUtxoChange, changeAddress]);
+  }, [fetchUtxosStatus, setCurrentTxId, onUtxoChange, changeAddress]);
 
   const handleUploadClick = useCallback(() => {
     if (!file) {

@@ -25,7 +25,7 @@
     "bsv-wasm-web": "^2.0.0",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
-    "js-1sat-ord": "^0.0.10",
+    "js-1sat-ord": "^0.0.11",
     "lodash": "^4.17.21",
     "next": "13.2.4",
     "postcss": "^8.4.21",

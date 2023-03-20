@@ -98,7 +98,7 @@ const Home = () => {
     if (!fundingUtxo) {
       return;
     }
-    console.log("click broadcast");
+    console.log("click broadcast", rawTx);
     if (!rawTx) {
       return;
     }
@@ -114,7 +114,7 @@ const Home = () => {
     const data = await response.json();
     console.log({ data });
     setBroadcastResponse(data);
-  }, [setBroadcastResponse, fundingUtxo]);
+  }, [rawTx, setBroadcastResponse, fundingUtxo]);
 
   return (
     <>
