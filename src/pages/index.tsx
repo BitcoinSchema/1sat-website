@@ -114,12 +114,15 @@ const Home = () => {
 
     const data = await response.json();
     console.log({ data });
-
-    const respData = JSON.parse(data.payload || "{}");
-    if (respData.returnResult === "success") {
-      toast("Broadcasted tx", respData.txid);
+    if (data && data.payload) {
+      const respData = JSON.parse(data.payload || "{}");
+      if (respData?.returnResult === "success") {
+        toast("Broadcasted tx", respData.txid);
+        setBroadcastResponse(respData);
+      } else {
+        toast("Failed to broadcast", respData);
+      }
     }
-    setBroadcastResponse(respData);
   }, [rawTx, setBroadcastResponse, fundingUtxo]);
 
   return (

@@ -87,7 +87,7 @@ const Inscribe: React.FC<InscribeProps> = ({
         body: JSON.stringify({
           payPk,
           fileAsBase64,
-          contentType: selectedFile?.type,
+          fileContentType: selectedFile?.type,
           receiverAddress,
           changeAddress,
           fundingUtxo,
