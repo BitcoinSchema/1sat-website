@@ -1,4 +1,4 @@
-import { PrivateKey } from "bsv-wasm";
+import { PrivateKey, Script } from "bsv-wasm";
 import corsModule from "cors";
 import * as functions from "firebase-functions";
 import { createOrdinal } from "js-1sat-ord";
@@ -78,14 +78,17 @@ const handleInscribing = async (
 };
 
 interface PreviousOutput {
-  lockingScript: Buffer | String;
+  lockingScript: string;
+  script: string
   satoshis: number;
 }
 export const broadcast = functions.https.onRequest(async (req, res) => {
   cors(req, res, async (err) => {
     let parents: PreviousOutput[] = req.body.parents;
-    let rawtx: string = req.body.rawtx;;
-
+    let rawtx: string = req.body.rawtx;
+    parents.forEach((s) => {
+      s.lockingScript = Script.from_asm_string(s.script).to_hex()
+    })
     const ef = StandardToExtended(rawtx, parents);
     const result = await arcClient.postTransaction(ef);
     res.status(200).json({ result });
