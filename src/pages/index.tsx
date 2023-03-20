@@ -102,13 +102,7 @@ const Home = () => {
             </h1>
           </div>
           {!rawTx ? (
-            <div
-              className="h-full w-full flex flex-col items-center justify-center max-w-[600px]"
-              style={{
-                color: "yellow",
-                fontFamily: "monospace",
-              }}
-            >
+            <div className="h-full w-full flex flex-col items-center justify-center max-w-[600px] text-yellow-400 font-mono">
               {!showWallet && !showInscribe && (
                 <div className="cursor-pointer my-8 w-full">
                   <Image
@@ -213,16 +207,14 @@ const Home = () => {
             </div>
           )}
           <div
-            className="flex items-center"
+            className="flex items-center font-mono text-yellow-400"
             style={{
               height: "4rem",
               textAlign: "center",
-              color: "yellow",
-              fontFamily: "monospace",
             }}
           >
             <a
-              style={{ color: "yellow", fontFamily: "monospace" }}
+              className="font-mono text-yellow-400"
               href="https://docs.1satordinals.com"
             >
               Read the Docs

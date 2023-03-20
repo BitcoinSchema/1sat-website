@@ -129,7 +129,7 @@ const Inscribe: React.FC<InscribeProps> = ({
         <button
           type="submit"
           onClick={handleInscribing}
-          className="w-full bg-yellow-600 text-xl rounded my-4 text-white"
+          className="w-full bg-yellow-600 p-1 text-xl rounded my-4 text-white"
         >
           Inscribe
         </button>

@@ -152,7 +152,7 @@ const Wallet: React.FC<WalletProps> = ({
     if (initialized && ordPk) {
       const wif = PrivateKey.from_wif(ordPk);
       const pk = PublicKey.from_private_key(wif);
-      return wif && pk && payPk && P2PKHAddress.from_pubkey(pk).to_string();
+      return wif && pk && P2PKHAddress.from_pubkey(pk).to_string();
     }
   }, [initialized, ordPk]);
 
@@ -224,7 +224,7 @@ const Wallet: React.FC<WalletProps> = ({
         }
       }
     },
-    []
+    [onKeysGenerated]
   );
 
   const handleUploadClick = useCallback(() => {
@@ -237,7 +237,7 @@ const Wallet: React.FC<WalletProps> = ({
     // file.type
     // file.size
     console.log({ file });
-  }, []);
+  }, [file]);
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto">
@@ -261,7 +261,7 @@ const Wallet: React.FC<WalletProps> = ({
             <button
               type="submit"
               onClick={handleGenerate}
-              className="w-full bg-yellow-600 text-xl rounded my-4 text-white"
+              className="w-full p-1 bg-yellow-600 text-xl rounded my-4 text-white"
             >
               Generate Wallets
             </button>
