@@ -78,7 +78,7 @@ const Home = () => {
     }
   }, [initialized, setInitialized]);
 
-  const importKeys = useCallback(() => {}, []);
+  const importKeys = useCallback(() => { }, []);
 
   const backupKeys = useCallback(
     (e: any) => {
@@ -99,19 +99,18 @@ const Home = () => {
       return;
     }
     console.log("click broadcast");
-    const apiEndpoint = "/api/broadcast";
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
+    if (!rawTx) {
+      return;
+    }
+    const body = Buffer.from(rawTx, "hex");
+    const response = await fetch(`https://mapi.gorillapool.io/mapi/tx`, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-type': 'application/octet-stream',
       },
-      body: JSON.stringify({
-        rawtx: rawTx,
-        parents: [
-          { script: fundingUtxo.script, satoshis: fundingUtxo?.satoshis },
-        ],
-      }),
-    });
+      body,
+    })
+
     const data = await response.json();
     console.log({ data });
     setBroadcastResponse(data);
