@@ -87,7 +87,7 @@ const Wallet: React.FC<WalletProps> = ({
   fundingUtxo,
 }) => {
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
-
+  const [showKeys, setShowKeys] = useState<boolean>(false);
   const [file, setFile] = useState<File>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
@@ -172,9 +172,16 @@ const Wallet: React.FC<WalletProps> = ({
     }
   }, [initialized, payPk]);
 
+  const handleConfirm = async () => {
+    console.log("callback confirm");
+    setShowKeys(false);
+  };
+
   const handleGenerate = async () => {
     console.log("callback");
     onKeysGenerated(randomKeys());
+
+    setShowKeys(true);
   };
 
   const readFileAsBase64 = (file: any) => {
@@ -296,7 +303,23 @@ const Wallet: React.FC<WalletProps> = ({
           </div>
         </>
       )}
-      {changeAddress && receiverAddress && (
+      {showKeys && (
+        <div>
+          <div className="w-full">
+            <p>These are your keys. Keep them safe.</p>
+            <pre>{payPk}</pre>
+            <pre>{ordPk}</pre>
+            <button
+              type="submit"
+              onClick={handleConfirm}
+              className="w-full p-1 bg-yellow-600 text-xl cursor-pointer rounded my-4 text-white"
+            >
+              I Backed Them Up
+            </button>
+          </div>
+        </div>
+      )}
+      {!showKeys && changeAddress && receiverAddress && (
         <div className="w-full max-w-md">
           <div className="text-center">
             <h1 className="text-2xl text-white">Funding Wallet</h1>
