@@ -450,7 +450,7 @@ const Wallet: React.FC<WalletProps> = ({
           <div className="bg-[#222] rounded p-2 w-full mt-4">
             {!fundingUtxo
               ? `Please make a deposit to the funding address. You can refund your`
-              : `Your largest UTXO in this address has ${fundingUtxo.satoshis} satoshis in it.`}
+              : `Your largest unspent output in this address has ${fundingUtxo.satoshis} satoshis in it.`}
             balance when you are done.
           </div>
           <div className="flex items-center justify-center my-8">
