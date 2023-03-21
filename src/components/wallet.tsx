@@ -448,7 +448,9 @@ const Wallet: React.FC<WalletProps> = ({
             <h1 className="text-2xl text-white">Funding Wallet</h1>
           </div>
           <div className="bg-[#222] rounded p-2 w-full mt-4">
-            Please make a deposit to the funding address. You can refund your
+            {!fundingUtxo
+              ? `Please make a deposit to the funding address. You can refund your`
+              : `Your largest UTXO in this address has ${fundingUtxo.satoshis} satoshis in it.`}
             balance when you are done.
           </div>
           <div className="flex items-center justify-center my-8">
