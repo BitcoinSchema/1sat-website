@@ -11,7 +11,7 @@ import init, {
 } from "bsv-wasm-web";
 import { Inscription, Utxo } from "js-1sat-ord";
 import { head } from "lodash";
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import QRCode from "react-qr-code";
 import sb from "satoshi-bitcoin";
@@ -82,6 +82,7 @@ type WalletProps = {
   onKeysGenerated: ({ payPk, ordPk }: { payPk: string; ordPk: string }) => void;
   onInputTxidChange: (inputTxid: string) => void;
   onUtxoChange: (utxo: Utxo) => void;
+  onFileChange: (utxo: Utxo) => void;
   onArtifactsChange: ({
     artifacts,
     inscribedUtxos,
@@ -92,6 +93,7 @@ type WalletProps = {
   payPk: string | undefined;
   ordPk: string | undefined;
   fundingUtxo: Utxo | undefined;
+  file: File | undefined;
 };
 
 const Wallet: React.FC<WalletProps> = ({
@@ -102,6 +104,8 @@ const Wallet: React.FC<WalletProps> = ({
   onUtxoChange,
   onArtifactsChange,
   fundingUtxo,
+  file,
+  onFileChange,
 }) => {
   const [artifacts, setArtifacts] = useState<Inscription[]>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
@@ -110,11 +114,12 @@ const Wallet: React.FC<WalletProps> = ({
   const [inscriptions, setInscriptions] =
     useLocalStorage<Inscription[]>("1satins");
   const [showKeys, setShowKeys] = useState<boolean>(false);
-  const [file, setFile] = useState<File>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+  const [fetchOrdinalUtxosStatus, setFetchOrdinalUtxosStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
   const [fetchHistoryStatus, setFetchHistoryStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -141,21 +146,20 @@ const Wallet: React.FC<WalletProps> = ({
     return rawTx;
   };
 
-  const getInscriptionUTXO = async (scripthash: string) => {
-    const r = await fetch(
-      `https://api.whatsonchain.com/v1/bsv/main/scripthash/${scripthash}/unspent`
-    );
-    const u = await r.json();
+  // TODO: Get Ordinals UTXOs
+  const getOrdinalUTXOs = async (address: string): Promise<Utxo[]> => {
+    // address or custom locking script hash
+    setFetchOrdinalUtxosStatus(FetchStatus.Loading);
+    try {
+      const r = await fetch(
+        `https://ordinals.gorillapool.io/v1/utxo/${address}`
+      );
 
-    // TODO: How to get script?
-    return {
-      satoshis: u.value,
-      vout: u.tx_pos,
-      txid: u.tx_hash,
-      // script: Script.from_string(address)
-      //   .get_locking_script()
-      //   .to_asm_string(),
-    };
+      return [];
+    } catch (e) {
+      setFetchUtxosStatus(FetchStatus.Error);
+      throw e;
+    }
   };
 
   const getUTXOs = async (address: string): Promise<Utxo[]> => {
@@ -346,23 +350,10 @@ const Wallet: React.FC<WalletProps> = ({
     [onUtxoChange, changeAddress]
   );
 
-  const handleFileChange = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files) {
-        const jsonString = await e.target.files[0].text();
-        console.log({ jsonString });
-        if (jsonString) {
-          onKeysGenerated(JSON.parse(jsonString));
-          setFile(e.target.files[0]);
-        }
-      }
-    },
-    [onKeysGenerated]
-  );
-
   useEffect(() => {
     const fire2 = async (a: string) => {
       const { artifacts, inscribedUtxos } = await getArtifacts(a);
+      // const ordinalUtxos = await getOrdinalUTXOs(a);
       setArtifacts(artifacts);
       console.log({ artifacts });
       toast(`Got ${artifacts.length} artifacts`);
@@ -399,9 +390,6 @@ const Wallet: React.FC<WalletProps> = ({
       el?.click();
       return;
     }
-
-    // file.type
-    // file.size
     console.log({ file });
   }, [file]);
 
@@ -418,7 +406,7 @@ const Wallet: React.FC<WalletProps> = ({
             <button
               type="submit"
               onClick={handleUploadClick}
-              className="w-full bg-teal-600 text-xl rounded my-4 text-white"
+              className="w-full cursor-pointer p-2 bg-teal-600 text-xl rounded my-4 text-white"
             >
               Import Wallets
             </button>
@@ -431,7 +419,7 @@ const Wallet: React.FC<WalletProps> = ({
             <button
               type="submit"
               onClick={handleGenerate}
-              className="w-full p-1 bg-yellow-600 text-xl rounded my-4 text-white"
+              className="w-full cursor-pointer p-2 bg-yellow-600 text-xl rounded my-4 text-white"
             >
               Generate Wallets
             </button>
@@ -515,13 +503,6 @@ const Wallet: React.FC<WalletProps> = ({
           </div>
         </div>
       )}
-      <input
-        accept=".json"
-        className="hidden"
-        id="backupFile"
-        onChange={handleFileChange}
-        type="file"
-      />
     </div>
   );
 };

@@ -66,3 +66,12 @@ const handleInscribing = async (
   );
   return tx;
 };
+
+// register domain to ordinal
+// cname to subdomain oridinal.gorillapool.io
+// gorillapool delivers whatever ordinal at that subdomain
+// put website on an ordinal
+// 1sat.shruggr.com
+// cname for origin.ordinals.gorillapool.io
+// gp looks up latest inscription for the origin
+// o://

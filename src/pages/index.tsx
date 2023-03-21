@@ -9,7 +9,7 @@ import { head } from "lodash";
 import Head from "next/head";
 import Image from "next/image";
 import router from "next/router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import toast, { Toaster } from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
@@ -39,6 +39,9 @@ const Home = () => {
     "1satbrs",
     undefined
   );
+  const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
   const [showWallet, setShowWallet] = useLocalStorage<boolean>("1satsw", false);
   const [fee, setFee] = useLocalStorage<number>("1satfee", 0);
   const [rawTx, setRawTx] = useLocalStorage<string | undefined>(
@@ -59,6 +62,8 @@ const Home = () => {
     "1satuo",
     undefined
   );
+  const [file, setFile] = useState<File>();
+
   const [artifacts, setArtifacts] = useState<Inscription[] | undefined>(
     undefined
   );
@@ -86,7 +91,35 @@ const Home = () => {
     }
   }, [initialized, setInitialized]);
 
-  const importKeys = useCallback(() => {}, []);
+  const importKeys = useCallback(() => {
+    if (!file) {
+      const el = document.getElementById("backupFile");
+      el?.click();
+      return;
+    }
+
+    // file.type
+    // file.size
+    console.log({ file });
+  }, [file]);
+
+  const deleteKeys = useCallback(() => {
+    const c = confirm(
+      "Are you sure you want to clear your keys from the browser? This cannot be undone!"
+    );
+
+    if (c) {
+      setPayPk(undefined);
+      setOrdPk(undefined);
+      setShowWallet(false);
+      setShowInscribe(false);
+      setFundingUtxo(undefined);
+      setArtifacts(undefined);
+      setInscribedUtxos(undefined);
+
+      toast("Keys Cleared");
+    }
+  }, []);
 
   const backupKeys = useCallback(
     (e: any) => {
@@ -110,6 +143,7 @@ const Home = () => {
     if (!rawTx) {
       return;
     }
+    setBroadcastStatus(FetchStatus.Loading);
     const body = Buffer.from(rawTx, "hex");
     const response = await fetch(`https://mapi.gorillapool.io/mapi/tx`, {
       method: "POST",
@@ -125,14 +159,34 @@ const Home = () => {
       const respData = JSON.parse(data.payload || "{}");
       if (respData?.returnResult === "success") {
         toast("Broadcasted tx", respData.txid);
+        setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponse(respData);
+        return;
       } else {
         toast("Failed to broadcast", respData);
       }
+      setBroadcastStatus(FetchStatus.Error);
     }
   }, [rawTx, setBroadcastResponse, fundingUtxo]);
 
-  const clickRefresh = useCallback(() => {}, []);
+  const handleFileChange = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+        const jsonString = await e.target.files[0].text();
+        console.log({ jsonString });
+        if (jsonString) {
+          const json = JSON.parse(jsonString);
+          const pPk = json.payPk;
+          const oPk = json.ordPk;
+          setPayPk(pPk);
+          setOrdPk(oPk);
+          setFile(e.target.files[0]);
+          setShowWallet(true);
+        }
+      }
+    },
+    [setPayPk, setOrdPk, setShowWallet]
+  );
 
   return (
     <>
@@ -150,7 +204,7 @@ const Home = () => {
         <div className="flex flex-col items-center justify-between w-full h-full">
           <div className="h-10">
             <h1
-              className="text-2xl my-4 cursor-pointer"
+              className="text-2xl py-4 cursor-pointer"
               onClick={() => router.push("/")}
             >
               1Sat Ordinals
@@ -200,6 +254,10 @@ const Home = () => {
                       setShowInscribe(true);
                     }}
                     fundingUtxo={fundingUtxo}
+                    onFileChange={function (utxo: Utxo): void {
+                      throw new Error("Function not implemented.");
+                    }}
+                    file={file}
                   />
                 </div>
               )}
@@ -269,7 +327,8 @@ const Home = () => {
 
                 <button
                   onClick={handleClickBroadcast}
-                  className="w-full p-2 text-lg bg-orange-400 rounded my-4 text-black font-semibold"
+                  className="w-full p-2 text-lg disabled:bg-[#333] text-[#aaa] bg-orange-400 rounded my-4 text-black font-semibold"
+                  disabled={broadcastStatus === FetchStatus.Loading}
                 >
                   <div className="mx-auto flex items-center justify-center">
                     <TbBroadcast className="w-10" />
@@ -293,30 +352,35 @@ const Home = () => {
               </div>
             </div>
           )}
-          <div>
-            <h1 className="text-center my-4 text-2xl">My Ordinals</h1>
+          {(artifacts?.length || 0) > 0 && (
+            <div>
+              <h1 className="text-center my-4 text-2xl">My Ordinals</h1>
 
-            <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-4xl mx-auto">
-              {artifacts?.map((a) => {
-                return (
-                  <a
-                    key={a.outPoint}
-                    target="_blank"
-                    href={`https://whatsonchain.com/tx/${head(
-                      a.outPoint.split("_")
-                    )}`}
-                  >
-                    <img
-                      className="w-full rounded"
-                      src={`data:${a.contentType};base64,${a.dataB64}`}
-                    />
-                  </a>
-                );
-              })}
+              <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-4xl mx-auto">
+                {artifacts?.map((a) => {
+                  return (
+                    <a
+                      key={a.outPoint}
+                      target="_blank"
+                      href={`https://whatsonchain.com/tx/${head(
+                        a.outPoint.split("_")
+                      )}`}
+                    >
+                      <img
+                        className="w-full rounded"
+                        // src={`https://ordinals.gorillapool.io/api/origin/${
+                        //   a.outPoint.split("_")[0]
+                        // }/${a.outPoint.split("_")[1]}`}
+                        src={`data:${a.contentType};base64,${a.dataB64}`}
+                      />
+                    </a>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
           <div
-            className="flex items-center font-mono text-yellow-400"
+            className="flex items-center font-mono text-yellow-400 py-8"
             style={{
               height: "4rem",
               textAlign: "center",
@@ -339,10 +403,27 @@ const Home = () => {
                 Import Keys
               </div>
             )}
+            {payPk && <div className="mx-4">·</div>}
+
+            {payPk && (
+              <div
+                className="cursor-pointer text-orange-600"
+                onClick={deleteKeys}
+              >
+                Delete Keys
+              </div>
+            )}
           </div>
         </div>
         <div>
           <Toaster />
+          <input
+            accept=".json"
+            className="hidden"
+            id="backupFile"
+            onChange={handleFileChange}
+            type="file"
+          />
         </div>
       </main>
     </>
