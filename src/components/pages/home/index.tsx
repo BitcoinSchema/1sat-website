@@ -5,13 +5,6 @@ import Head from "next/head";
 import Image from "next/image";
 import Router from "next/router";
 
-export enum FetchStatus {
-  Idle,
-  Loading,
-  Success,
-  Error,
-}
-
 export type CallbackData = {
   numInputs: number;
   numOutputs: number;

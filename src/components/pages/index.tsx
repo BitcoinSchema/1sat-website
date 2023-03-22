@@ -1,16 +1,40 @@
 import { useWallet } from "@/context/wallet";
-import { WithRouterProps } from "next/dist/client/with-router";
 import Router from "next/router";
-import { ChangeEvent, ReactNode, useCallback } from "react";
+import { ChangeEvent, ReactNode, useCallback, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
-interface Props extends WithRouterProps {
+export enum FetchStatus {
+  Idle,
+  Loading,
+  Success,
+  Error,
+}
+
+interface Props {
   children?: ReactNode;
 }
 
-const Layout: React.FC<Props> = ({ router, children }) => {
-  const { setBackupFile, backupFile, deleteKeys, payPk, backupKeys } =
-    useWallet();
+const Layout: React.FC<Props> = ({ children }) => {
+  const {
+    fetchUtxosStatus,
+    getUTXOs,
+    setBackupFile,
+    backupFile,
+    deleteKeys,
+    payPk,
+    backupKeys,
+    changeAddress,
+  } = useWallet();
+
+  useEffect(() => {
+    const fire = async (a: string) => {
+      await getUTXOs(a);
+    };
+
+    if (changeAddress && fetchUtxosStatus === FetchStatus.Idle) {
+      fire(changeAddress);
+    }
+  }, [getUTXOs, fetchUtxosStatus, changeAddress]);
 
   const importKeys = useCallback(() => {
     if (!backupFile) {

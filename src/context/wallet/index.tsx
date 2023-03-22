@@ -1,4 +1,4 @@
-import { FetchStatus } from "@/components/pages/home";
+import { FetchStatus } from "@/components/pages";
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
@@ -15,6 +15,8 @@ import { Inscription, Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import Router from "next/router";
 import React, {
+  createContext,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -107,7 +109,7 @@ type ContextValue = {
   setCurrentTxId: (txid: string) => void;
   refund: () => void;
   backupKeys: (e?: any) => void;
-  fetchUtxosStatus: FetchStatus | undefined;
+  fetchUtxosStatus: FetchStatus;
   setPendingInscription: (pendingInscription: PendingInscription) => void;
   pendingInscription: PendingInscription | undefined;
   reset: () => void;
@@ -117,38 +119,35 @@ type ContextValue = {
   balance: number;
 };
 
-const WalletContext = React.createContext<ContextValue | undefined>(undefined);
+const WalletContext = createContext<ContextValue | undefined>(undefined);
 
-interface Props {}
+interface Props {
+  children?: ReactNode;
+}
 
 const WalletProvider: React.FC<Props> = (props) => {
   const [backupFile, setBackupFile] = useState<File>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
 
-  const [rawTx, setRawTx] = useLocalStorage<string | undefined>(
-    "1satrt",
-    undefined
-  );
-
   const [pendingInscription, setPendingInscription] = useLocalStorage<
     PendingInscription | undefined
   >("1satpin", undefined);
 
-  const [inscribedUtxos, setInscribedUtxos] = useLocalStorage<
-    Utxo[] | undefined
-  >("1satiux", undefined);
+  const [inscribedUtxos, setInscribedUtxos] = useState<Utxo[] | undefined>(
+    undefined
+  );
   const [initialized, setInitialized] = useState<boolean>(false);
   const [artifacts, setArtifacts] = useLocalStorage<Inscription2[] | undefined>(
     "1satart",
     undefined
   );
-  const [fundingUtxos, setFundingUtxos] = useLocalStorage<Utxo[] | undefined>(
-    "1satuo",
+  const [fundingUtxos, setFundingUtxos] = useState<Utxo[] | undefined>(
     undefined
   );
 
   const [fetchArtifactsStatus, setFetchArtifactsStatus] =
     useLocalStorage<FetchStatus>("1satafs", FetchStatus.Idle);
+
   const [fetchOrdinalUtxosStatus, setFetchOrdinalUtxosStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
@@ -161,8 +160,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     undefined
   );
 
-  const [fetchUtxosStatus, setFetchUtxosStatus] = useLocalStorage<FetchStatus>(
-    "1satfus",
+  const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
 
@@ -241,42 +239,43 @@ const WalletProvider: React.FC<Props> = (props) => {
     }
   };
 
-  const getUTXOs = async (address: string): Promise<Utxo[]> => {
-    setFetchUtxosStatus(FetchStatus.Loading);
-    try {
-      const r = await fetch(
-        `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
-      );
-      const utxos = await r.json();
+  const getUTXOs = useCallback(
+    async (address: string): Promise<Utxo[]> => {
+      setFetchUtxosStatus(FetchStatus.Loading);
+      try {
+        const r = await fetch(
+          `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
+        );
+        const utxos = await r.json();
 
-      setFetchUtxosStatus(FetchStatus.Success);
-      const u = utxos
-        .map((utxo: any) => {
-          return {
-            satoshis: utxo.value,
-            vout: utxo.tx_pos,
-            txid: utxo.tx_hash,
-            script: P2PKHAddress.from_string(address)
-              .get_locking_script()
-              .to_asm_string(),
-          } as Utxo;
-        })
-        .sort((a: Utxo, b: Utxo) => (a.satoshis > b.satoshis ? -1 : 1));
-      setFundingUtxos(u);
-      return u;
-    } catch (e) {
-      setFetchUtxosStatus(FetchStatus.Error);
-      throw e;
-    }
-  };
+        setFetchUtxosStatus(FetchStatus.Success);
+        const u = utxos
+          .map((utxo: any) => {
+            return {
+              satoshis: utxo.value,
+              vout: utxo.tx_pos,
+              txid: utxo.tx_hash,
+              script: P2PKHAddress.from_string(address)
+                .get_locking_script()
+                .to_asm_string(),
+            } as Utxo;
+          })
+          .sort((a: Utxo, b: Utxo) => (a.satoshis > b.satoshis ? -1 : 1));
+        setFundingUtxos(u);
+        return u;
+      } catch (e) {
+        setFetchUtxosStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchUtxosStatus, setFundingUtxos]
+  );
 
   useEffect(() => {
-    const fire = async (a: string) => {
-      const utxos = await getUTXOs(a);
-
-      if (utxos) {
-        setCurrentTxId(head(utxos)?.txid);
-        toast.success(`Found ${utxos.length} UTXOs`, {
+    if (fundingUtxos && !currentTxId) {
+      if (fundingUtxos) {
+        setCurrentTxId(head(fundingUtxos)?.txid);
+        toast.success(`Found ${fundingUtxos.length} UTXOs`, {
           style: {
             background: "#333",
             color: "#fff",
@@ -285,19 +284,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       } else {
         console.info("No UTXOs. Please make a depot and refresh the page.");
       }
-    };
-
-    if (changeAddress && fetchUtxosStatus === FetchStatus.Idle) {
-      fire(changeAddress);
     }
-  }, [
-    getUTXOs,
-    fundingUtxos,
-    fetchUtxosStatus,
-    setCurrentTxId,
-    setFundingUtxos,
-    changeAddress,
-  ]);
+  }, [setCurrentTxId, currentTxId, fundingUtxos]);
 
   const getUtxoByTxId = useCallback(
     async (txid: string) => {
@@ -333,78 +321,81 @@ const WalletProvider: React.FC<Props> = (props) => {
     [setFundingUtxos, fundingUtxos, changeAddress]
   );
 
-  const getArtifacts = async (address: string): Promise<void> => {
-    setFetchArtifactsStatus(FetchStatus.Loading);
-    try {
-      const r = await fetch(
-        `https://api.whatsonchain.com/v1/bsv/main/address/${address}/history`
-      );
-      const history: HistoryItem[] = await r.json();
+  const getArtifacts = useCallback(
+    async (address: string): Promise<void> => {
+      setFetchArtifactsStatus(FetchStatus.Loading);
+      try {
+        const r = await fetch(
+          `https://api.whatsonchain.com/v1/bsv/main/address/${address}/history`
+        );
+        const history: HistoryItem[] = await r.json();
 
-      let iUtxos: Utxo[] = [];
-      let artifacts: Inscription2[] = [];
-      for (let item of history.filter(
-        (h) => h.height >= PROTOCOL_START_HEIGHT
-      )) {
-        const rawTx = await getRawTxById(item.tx_hash);
-        await new Promise((r) => setTimeout(r, 250));
-        // loop over outputs, adding any ordinal outputs to a list
-        const tx = Transaction.from_hex(rawTx);
-        for (let x = 0; x < tx.get_noutputs(); x++) {
-          let out = tx.get_output(x);
-          console.log({ tx, out });
-          if (!out) {
-            console.log("last output", x);
-            break;
-          }
-
-          const fixedAsm = out.get_script_pub_key().to_asm_string();
-          const sats = out.get_satoshis();
-          console.log({ fixedAsm });
-          // Find ord prefix
-          // haha I have 10 artifacts with reversed OP order
-          const splitScript = fixedAsm.split(" 0 OP_IF 6f7264 OP_1 ");
-          if (splitScript.length > 0 && Number(sats) === 1) {
-            iUtxos.push({
-              satoshis: 1,
-              vout: x,
-              txid: item.tx_hash,
-              script: fixedAsm,
-            });
-            if (splitScript.length === 1) {
-              console.log("NO SPLIT MATCH", splitScript);
-              continue;
+        let iUtxos: Utxo[] = [];
+        let artifacts: Inscription2[] = [];
+        for (let item of history.filter(
+          (h) => h.height >= PROTOCOL_START_HEIGHT
+        )) {
+          const rawTx = await getRawTxById(item.tx_hash);
+          await new Promise((r) => setTimeout(r, 250));
+          // loop over outputs, adding any ordinal outputs to a list
+          const tx = Transaction.from_hex(rawTx);
+          for (let x = 0; x < tx.get_noutputs(); x++) {
+            let out = tx.get_output(x);
+            console.log({ tx, out });
+            if (!out) {
+              console.log("last output", x);
+              break;
             }
-            let scr = splitScript[1].split(" ");
-            let contentType = Buffer.from(scr[0], "hex").toString();
-            let dataHex = scr[2];
-            let dataB64 = Buffer.from(dataHex, "hex").toString("base64");
-            const outPoint = `${tx.get_id_hex()}_o${x}}`;
-            artifacts.push({
-              dataB64,
-              contentType,
-              outPoint,
-            });
-            console.log({ tx, fixedAsm, iUtxos });
-          } else {
-            console.log("NO MATCH", fixedAsm);
+
+            const fixedAsm = out.get_script_pub_key().to_asm_string();
+            const sats = out.get_satoshis();
+            console.log({ fixedAsm });
+            // Find ord prefix
+            // haha I have 10 artifacts with reversed OP order
+            const splitScript = fixedAsm.split(" 0 OP_IF 6f7264 OP_1 ");
+            if (splitScript.length > 0 && Number(sats) === 1) {
+              iUtxos.push({
+                satoshis: 1,
+                vout: x,
+                txid: item.tx_hash,
+                script: fixedAsm,
+              });
+              if (splitScript.length === 1) {
+                console.log("NO SPLIT MATCH", splitScript);
+                continue;
+              }
+              let scr = splitScript[1].split(" ");
+              let contentType = Buffer.from(scr[0], "hex").toString();
+              let dataHex = scr[2];
+              let dataB64 = Buffer.from(dataHex, "hex").toString("base64");
+              const outPoint = `${tx.get_id_hex()}_o${x}}`;
+              artifacts.push({
+                dataB64,
+                contentType,
+                outPoint,
+              });
+              console.log({ tx, fixedAsm, iUtxos });
+            } else {
+              console.log("NO MATCH", fixedAsm);
+            }
           }
         }
+        setFetchArtifactsStatus(FetchStatus.Success);
+        setInscribedUtxos(iUtxos);
+        setArtifacts(artifacts);
+        toast.success(`Got ${artifacts.length} artifacts`, {
+          style: {
+            background: "#333",
+            color: "#fff",
+          },
+        });
+      } catch (e) {
+        setFetchArtifactsStatus(FetchStatus.Error);
+        throw e;
       }
-      setFetchArtifactsStatus(FetchStatus.Success);
-      setInscribedUtxos(iUtxos);
-      setArtifacts(artifacts);
-      toast.success(`Got ${artifacts.length} artifacts`, {
-        style: {
-          background: "#333",
-          color: "#fff",
-        },
-      });
-    } catch (e) {
-      setFetchArtifactsStatus(FetchStatus.Error);
-      throw e;
-    }
-  };
+    },
+    [setFetchArtifactsStatus, setInscribedUtxos, setArtifacts]
+  );
 
   // refund balance to an address
   const refund = useCallback(() => {
@@ -503,6 +494,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       setFundingUtxos(undefined);
       setArtifacts(undefined);
       setInscribedUtxos(undefined);
+      setBackupFile(undefined);
 
       toast.success("Keys Cleared", {
         style: {
@@ -522,12 +514,12 @@ const WalletProvider: React.FC<Props> = (props) => {
     return b;
   }, [fundingUtxos]);
 
-  const generateKeys = async () => {
+  const generateKeys = useCallback(async () => {
     console.log("callback");
     const { payPk, ordPk } = randomKeys();
     setPayPk(payPk);
     setOrdPk(ordPk);
-  };
+  }, [payPk, ordPk]);
 
   const backupKeys = useCallback(
     (e?: any) => {
@@ -542,10 +534,12 @@ const WalletProvider: React.FC<Props> = (props) => {
     },
     [payPk, ordPk]
   );
-  const reset = () => {
+
+  const reset = useCallback(() => {
+    console.log("reset");
     setFundingUtxos(undefined);
     setPendingInscription(undefined);
-  };
+  }, [setFundingUtxos, setPendingInscription]);
 
   const value = useMemo(
     () => ({

@@ -4,13 +4,13 @@ import { useLocalStorage } from "@/utils/storage";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router from "next/router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RxReset } from "react-icons/rx";
 import { TbBroadcast } from "react-icons/tb";
-import { FetchStatus } from "../home";
+import { FetchStatus } from "../../pages";
 
 type BroadcastResponse = {
   encoding: string;
@@ -35,12 +35,23 @@ type BroadcastResponsePayload = {
 interface PageProps extends WithRouterProps {}
 
 const PreviewPage: React.FC<PageProps> = ({ router }) => {
-  const { pendingInscription, fundingUtxos } = useWallet();
+  const { pendingInscription, fundingUtxos, getUTXOs, changeAddress } =
+    useWallet();
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
     useLocalStorage<BroadcastResponsePayload>("1satbrs", undefined);
   const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+
+  useEffect(() => {
+    const fire = async (a: string) => {
+      await getUTXOs(a);
+    };
+
+    if (changeAddress && broadcastStatus === FetchStatus.Success) {
+      setTimeout(() => fire(changeAddress), 3000);
+    }
+  }, [getUTXOs, broadcastStatus, changeAddress]);
 
   const handleClickBroadcast = useCallback(async () => {
     if (!fundingUtxos) {

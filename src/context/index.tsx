@@ -1,16 +1,12 @@
-import Layout from "@/components/pages";
-import { WithRouterProps } from "next/dist/client/with-router";
 import React, { ReactNode } from "react";
 import { WalletProvider } from "./wallet";
 
-interface Props extends WithRouterProps {
+interface Props {
   children: ReactNode;
 }
 
-const AppContext: React.FC<Props> = ({ router, children }) => (
-  <WalletProvider>
-    <Layout router={router}>{children}</Layout>
-  </WalletProvider>
+const AppContext: React.FC<Props> = ({ children }) => (
+  <WalletProvider>{children}</WalletProvider>
 );
 
 export default AppContext;

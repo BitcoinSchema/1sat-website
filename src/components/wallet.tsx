@@ -1,12 +1,11 @@
 import { useWallet } from "@/context/wallet";
 
 import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
-import { Inscription } from "js-1sat-ord";
-import { head } from "lodash";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { LoaderIcon } from "react-hot-toast";
 import sb from "satoshi-bitcoin";
 import styled from "styled-components";
-import { FetchStatus } from "./pages/home";
+import { FetchStatus } from "./pages";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -19,58 +18,21 @@ const Label = styled.label`
   flex-direction: column;
 `;
 
-type WalletProps = {
-  // onKeysGenerated: ({ payPk, ordPk }: { payPk: string; ordPk: string }) => void;
-  // onInputTxidChange: (inputTxid: string) => void;
-  // onUtxosChange: (utxos: Utxo[]) => void;
-  // onFileChange: (file: File) => void;
-  // onArtifactsChange: ({
-  //   artifacts,
-  //   inscribedUtxos,
-  // }: {
-  //   artifacts: Inscription[];
-  //   inscribedUtxos: Utxo[];
-  // }) => void;
-  // callback: (callbackData: CallbackData) => void;
-  // payPk: string | undefined;
-  // ordPk: string | undefined;
-  // utxos: Utxo[] | undefined;
-  // file: File | undefined;
-};
+type WalletProps = {};
 
-const Wallet: React.FC<WalletProps> = (
-  {
-    // onKeysGenerated,
-    // payPk,
-    // ordPk,
-    // onInputTxidChange,
-    // onUtxosChange,
-    // onArtifactsChange,
-    // utxos,
-    // file,
-    // callback,
-    // onFileChange,
-  }
-) => {
+const Wallet: React.FC<WalletProps> = ({}) => {
   const {
     generateKeys,
     ordPk,
     payPk,
     fundingUtxos,
-    getUtxoByTxId,
-    currentTxId,
     changeAddress,
     backupFile,
-    setCurrentTxId,
-    refund,
     getUTXOs,
     fetchUtxosStatus,
     balance,
   } = useWallet();
-  const [artifacts, setArtifacts] = useState<Inscription[]>();
 
-  // const [inscriptions, setInscriptions] =
-  //   useLocalStorage<Inscription[]>("1satins");
   const [showKeys, setShowKeys] = useState<boolean>(false);
   const [initialized, setInitialized] = useState<boolean>(false);
 
@@ -85,7 +47,6 @@ const Wallet: React.FC<WalletProps> = (
   }, [initialized, setInitialized]);
 
   const receiverAddress = useMemo(() => {
-    console.log({ initialized });
     if (initialized && ordPk) {
       const wif = PrivateKey.from_wif(ordPk);
       const pk = PublicKey.from_private_key(wif);
@@ -98,19 +59,6 @@ const Wallet: React.FC<WalletProps> = (
     setShowKeys(false);
   };
 
-  const readFileAsBase64 = (file: any) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = (reader?.result as string).split(",")[1];
-        resolve(result);
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const utxo = head(fundingUtxos);
   const handleUploadClick = useCallback(() => {
     if (!backupFile) {
       const el = document.getElementById("backupFile");
@@ -121,7 +69,11 @@ const Wallet: React.FC<WalletProps> = (
   }, [backupFile]);
 
   if (fetchUtxosStatus === FetchStatus.Loading) {
-    return <div className="flex flex-col w-full max-w-4xl mx-auto"></div>;
+    return (
+      <div className="flex flex-col w-full max-w-4xl mx-auto">
+        <LoaderIcon className="mx-auto" />
+      </div>
+    );
   }
 
   return (
@@ -172,6 +124,7 @@ const Wallet: React.FC<WalletProps> = (
           </div>
         </div>
       )}
+
       {!showKeys && changeAddress && receiverAddress && (
         <div className="w-full max-w-lg mx-auto">
           <h1

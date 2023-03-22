@@ -1,10 +1,11 @@
 import { PendingInscription, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
+import { formatBytes } from "@/utils/bytes";
 import { head } from "lodash";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import styled from "styled-components";
-import { FetchStatus } from "../pages/home";
+import { FetchStatus } from "../pages";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -68,7 +69,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       setPreview(null);
     }
   };
-  const utxo = head(fundingUtxos);
+  const utxo = useMemo(() => head(fundingUtxos), [fundingUtxos]);
 
   const handleInscribing = async () => {
     setInscribeStatus(FetchStatus.Loading);
@@ -126,9 +127,14 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   return (
     <div className="flex flex-col w-full max-w-xl mx-auto">
       <div className="w-full">
-        <Label className="min-h-[300px] rounded border flex items-center justify-center">
+        <Label className="min-h-[300px] rounded border border-[#333] flex items-center justify-center">
           Choose a file to inscribe
           <Input type="file" onChange={handleFileChange} />
+          {selectedFile && (
+            <div className="text-sm text-center w-full">
+              {formatBytes(selectedFile.size)} Bytes
+            </div>
+          )}
         </Label>
 
         <hr className="my-2 h-2 border-0 bg-[#222]" />
@@ -153,6 +159,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             ) : (
               <img src={preview as string} alt="Preview" className="w-full" />
             )}
+
             <hr className="my-2 h-2 border-0 bg-[#222]" />
           </>
         )}

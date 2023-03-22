@@ -6,7 +6,7 @@ import Head from "next/head";
 import Router from "next/router";
 import { useEffect } from "react";
 import { LoaderIcon } from "react-hot-toast";
-import { FetchStatus } from "../home";
+import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
 
@@ -88,13 +88,22 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
                   a.outPoint.split("_")
                 )}`}
               >
-                <img
-                  className="w-full rounded"
-                  // src={`https://ordinals.gorillapool.io/api/origin/${
-                  //   a.outPoint.split("_")[0]
-                  // }/${a.outPoint.split("_")[1]}`}
-                  src={`data:${a.contentType};base64,${a.dataB64}`}
-                />
+                {a.contentType.startsWith("video") ? (
+                  <video
+                    src={`data:${a.contentType};base64,${a.dataB64}`}
+                    controls={true}
+                  />
+                ) : a.contentType.startsWith("audio") ? (
+                  <audio src={`data:${a.contentType};base64,${a.dataB64}`} />
+                ) : (
+                  <img
+                    className="w-full rounded"
+                    // src={`https://ordinals.gorillapool.io/api/origin/${
+                    //   a.outPoint.split("_")[0]
+                    // }/${a.outPoint.split("_")[1]}`}
+                    src={`data:${a.contentType};base64,${a.dataB64}`}
+                  />
+                )}
               </a>
             );
           })}
