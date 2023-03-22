@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/api/send",
+        "function": "send"
+      },
+      {
         "source": "/api/inscribe",
         "function": "inscribe"
       },

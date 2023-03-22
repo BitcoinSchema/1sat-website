@@ -2,15 +2,7 @@ import { FetchStatus } from "@/components/pages";
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
-import init, {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
-} from "bsv-wasm-web";
+import init, { P2PKHAddress, Transaction } from "bsv-wasm-web";
 import { Inscription, Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import Router from "next/router";
@@ -83,7 +75,7 @@ type HistoryItem = {
   height: number;
 };
 
-export type PendingInscription = {
+export type PendingTransaction = {
   rawTx: string;
   size: number;
   fee: number;
@@ -91,14 +83,19 @@ export type PendingInscription = {
   numOutputs: number;
 };
 
+export interface OrdUtxo extends Utxo {
+  type?: string;
+}
+
 type ContextValue = {
   fundingUtxos: Utxo[] | undefined;
+  ordUtxos: OrdUtxo[] | undefined;
   payPk: string | undefined;
   ordPk: string | undefined;
   setBackupFile: (backupFile: File) => void;
   initialized: boolean;
   deleteKeys: (e?: any) => void;
-  receiverAddress: string | undefined;
+  ordAddress: string | undefined;
   changeAddress: string | undefined;
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
@@ -107,15 +104,16 @@ type ContextValue = {
   getUTXOs: (address: string) => Promise<Utxo[]>;
   currentTxId: string | undefined;
   setCurrentTxId: (txid: string) => void;
-  refund: () => void;
+  setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
+  send: () => void;
   backupKeys: (e?: any) => void;
   fetchUtxosStatus: FetchStatus;
-  setPendingInscription: (pendingInscription: PendingInscription) => void;
-  pendingInscription: PendingInscription | undefined;
+  setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
+  pendingTransaction: PendingTransaction | undefined;
   reset: () => void;
-  getArtifacts: (address: string) => Promise<void>;
-  fetchArtifactsStatus: FetchStatus | undefined;
-  setFetchArtifactsStatus: (status: FetchStatus) => void;
+  getOrdinalUTXOs: (address: string) => Promise<void>;
+  fetchOrdinalUtxosStatus: FetchStatus | undefined;
+  setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
   balance: number;
 };
 
@@ -129,8 +127,8 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [backupFile, setBackupFile] = useState<File>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
 
-  const [pendingInscription, setPendingInscription] = useLocalStorage<
-    PendingInscription | undefined
+  const [pendingTransaction, setPendingTransaction] = useLocalStorage<
+    PendingTransaction | undefined
   >("1satpin", undefined);
 
   const [inscribedUtxos, setInscribedUtxos] = useState<Utxo[] | undefined>(
@@ -144,9 +142,7 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [fundingUtxos, setFundingUtxos] = useState<Utxo[] | undefined>(
     undefined
   );
-
-  const [fetchArtifactsStatus, setFetchArtifactsStatus] =
-    useLocalStorage<FetchStatus>("1satafs", FetchStatus.Idle);
+  const [ordUtxos, setOrdUtxos] = useState<Utxo[] | undefined>(undefined);
 
   const [fetchOrdinalUtxosStatus, setFetchOrdinalUtxosStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
@@ -179,7 +175,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     [initialized, payPk]
   );
 
-  const receiverAddress = useMemo(
+  const ordAddress = useMemo(
     () => (ordPk && initialized ? addressFromWif(ordPk) : undefined),
     [initialized, ordPk]
   );
@@ -223,21 +219,53 @@ const WalletProvider: React.FC<Props> = (props) => {
     return rawTx;
   };
 
-  // TODO: Get Ordinals UTXOs
-  const getOrdinalUTXOs = async (address: string): Promise<Utxo[]> => {
-    // address or custom locking script hash
-    setFetchOrdinalUtxosStatus(FetchStatus.Loading);
-    try {
-      const r = await fetch(
-        `https://ordinals.gorillapool.io/v1/utxo/${address}`
-      );
+  const getOrdinalUTXOs = useCallback(
+    async (address: string): Promise<void> => {
+      // address or custom locking script hash
+      setFetchOrdinalUtxosStatus(FetchStatus.Loading);
+      try {
+        const r = await fetch(
+          `https://ordinals.gorillapool.io/api/utxos/address/${address}`
+        );
+        const utxos = (await r.json()) as GPUtxo[];
+        setFetchOrdinalUtxosStatus(FetchStatus.Success);
+        const u = utxos.sort((a: GPUtxo, b: GPUtxo) =>
+          a.satoshis > b.satoshis ? -1 : 1
+        );
+        //
+        let filledOrdUtxos: OrdUtxo[] = [];
+        for (let a of u) {
+          const newA = await fillContentType({
+            satoshis: a.satoshis,
+            txid: a.txid,
+            vout: a.vout,
+          } as OrdUtxo);
+          filledOrdUtxos.push(newA);
+        }
+        setOrdUtxos(filledOrdUtxos);
+        return;
+      } catch (e) {
+        setFetchOrdinalUtxosStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchOrdinalUtxosStatus, setOrdUtxos]
+  );
 
-      return [];
-    } catch (e) {
-      setFetchUtxosStatus(FetchStatus.Error);
-      throw e;
-    }
-  };
+  const fillContentType = useCallback(
+    async (artifact: OrdUtxo): Promise<OrdUtxo> => {
+      console.log("Filling!", artifact);
+
+      const url = `https://ordinals.gorillapool.io/api/files/inscriptions/${artifact.txid}_${artifact.vout}`;
+      const response = await fetch(url);
+      const blob = await response.blob();
+
+      artifact.type = blob.type;
+
+      return artifact;
+    },
+    []
+  );
 
   const getUTXOs = useCallback(
     async (address: string): Promise<Utxo[]> => {
@@ -321,9 +349,19 @@ const WalletProvider: React.FC<Props> = (props) => {
     [setFundingUtxos, fundingUtxos, changeAddress]
   );
 
-  const getArtifacts = useCallback(
+  type GPUtxo = {
+    txid: string;
+    vout: Number;
+    satoshis: Number;
+    acc_sats: Number;
+    lock: string;
+    origin: string;
+    ordinal: number;
+  };
+
+  const getHistory = useCallback(
     async (address: string): Promise<void> => {
-      setFetchArtifactsStatus(FetchStatus.Loading);
+      setFetchOrdinalUtxosStatus(FetchStatus.Loading);
       try {
         const r = await fetch(
           `https://api.whatsonchain.com/v1/bsv/main/address/${address}/history`
@@ -368,7 +406,7 @@ const WalletProvider: React.FC<Props> = (props) => {
               let contentType = Buffer.from(scr[0], "hex").toString();
               let dataHex = scr[2];
               let dataB64 = Buffer.from(dataHex, "hex").toString("base64");
-              const outPoint = `${tx.get_id_hex()}_o${x}}`;
+              const outPoint = `${tx.get_id_hex()}_${x}}`;
               artifacts.push({
                 dataB64,
                 contentType,
@@ -380,7 +418,7 @@ const WalletProvider: React.FC<Props> = (props) => {
             }
           }
         }
-        setFetchArtifactsStatus(FetchStatus.Success);
+        setFetchOrdinalUtxosStatus(FetchStatus.Success);
         setInscribedUtxos(iUtxos);
         setArtifacts(artifacts);
         toast.success(`Got ${artifacts.length} artifacts`, {
@@ -390,89 +428,49 @@ const WalletProvider: React.FC<Props> = (props) => {
           },
         });
       } catch (e) {
-        setFetchArtifactsStatus(FetchStatus.Error);
+        setFetchOrdinalUtxosStatus(FetchStatus.Error);
         throw e;
       }
     },
-    [setFetchArtifactsStatus, setInscribedUtxos, setArtifacts]
+    [setFetchOrdinalUtxosStatus, setInscribedUtxos, setArtifacts]
   );
 
-  // refund balance to an address
-  const refund = useCallback(() => {
+  // send balance to an address
+  const send = useCallback(async () => {
     if (!initialized || !payPk) {
       return;
     }
-    const refundToAddress = prompt(
+    const address = prompt(
       "Wher should we send your funds? Must be a normal Bitcoin SV address starting with a 1"
     );
-    if (!refundToAddress?.startsWith("1")) {
-      alert("inivalid refund address");
+    if (!address?.startsWith("1")) {
+      alert("inivalid receive address");
       return;
     }
-    toast(`Refunding to ${refundToAddress}`, {
+    toast(`Sending to ${address}`, {
       style: {
         background: "#333",
         color: "#fff",
       },
     });
 
-    const address = P2PKHAddress.from_string(refundToAddress);
-    const tx = new Transaction(1, 0);
-
-    // Outputs
-    let inputValue = 0;
-    for (let u of fundingUtxos || []) {
-      inputValue += u.satoshis;
-    }
-    const satsIn = inputValue;
-    const feeSats = 20;
-    const satsOut = satsIn - feeSats;
-    console.log({ feeSats, satsIn, satsOut });
-    tx.add_output(new TxOut(BigInt(satsOut), address.get_locking_script()));
-
-    // build txins from our UTXOs
-    let idx = 0;
-    for (let u of fundingUtxos || []) {
-      console.log({ u });
-      const inx = new TxIn(
-        Buffer.from(u.txid, "hex"),
-        u.vout,
-        Script.from_asm_string("")
-      );
-      console.log({ inx });
-
-      tx.add_input(inx);
-
-      const paymentPk = PrivateKey.from_wif(payPk);
-
-      const sig = tx.sign(
-        paymentPk,
-        SigHash.ALL | SigHash.FORKID,
-        idx,
-        Script.from_asm_string(u.script),
-        BigInt(u.satoshis)
-      );
-
-      // const s = Script.from_asm_string(u.script);
-      inx.set_unlocking_script(
-        P2PKHAddress.from_string(changeAddress || "").get_unlocking_script(
-          paymentPk.to_public_key(),
-          sig
-        )
-      );
-      // inx.set_unlocking_script(
-      //   Script.from_asm_string(
-      //     `${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`
-      //   )
-      // );
-
-      tx.set_input(idx, inx);
-      idx++;
-    }
-
+    // TODO: api request to send utxos
+    const response = await fetch(`/api/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fundingUtxos,
+        payPk,
+        address,
+        feeSats: 20,
+      }),
+    });
+    const { tx, feeSats } = await response.json();
     // TODO: Sign the inputs
     console.log("Refund Tx", tx.to_hex());
-    setPendingInscription({
+    setPendingTransaction({
       rawTx: tx.to_hex(),
       size: tx.get_size(),
       fee: feeSats,
@@ -481,7 +479,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     });
 
     Router.push("/preview");
-  }, [setPendingInscription, changeAddress, initialized, payPk, fundingUtxos]);
+  }, [payPk, setPendingTransaction, initialized, payPk, fundingUtxos]);
 
   const deleteKeys = useCallback(() => {
     const c = confirm(
@@ -519,7 +517,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     const { payPk, ordPk } = randomKeys();
     setPayPk(payPk);
     setOrdPk(ordPk);
-  }, [payPk, ordPk]);
+  }, [payPk, ordPk, setOrdPk, setPayPk]);
 
   const backupKeys = useCallback(
     (e?: any) => {
@@ -538,13 +536,13 @@ const WalletProvider: React.FC<Props> = (props) => {
   const reset = useCallback(() => {
     console.log("reset");
     setFundingUtxos(undefined);
-    setPendingInscription(undefined);
-  }, [setFundingUtxos, setPendingInscription]);
+    setPendingTransaction(undefined);
+  }, [setFundingUtxos, setPendingTransaction]);
 
   const value = useMemo(
     () => ({
       changeAddress,
-      receiverAddress,
+      ordAddress,
       artifacts,
       ordPk,
       payPk,
@@ -553,26 +551,29 @@ const WalletProvider: React.FC<Props> = (props) => {
       deleteKeys,
       backupFile,
       generateKeys,
-      refund,
-      pendingInscription,
-      setPendingInscription,
+      send,
+      pendingTransaction,
+      setPendingTransaction,
       reset,
       setBackupFile,
       initialized,
       getUtxoByTxId,
       currentTxId,
       setCurrentTxId,
-      getArtifacts,
+      getOrdinalUTXOs,
       fetchUtxosStatus,
-      fetchArtifactsStatus,
-      setFetchArtifactsStatus,
+      fetchOrdinalUtxosStatus,
+      setFetchOrdinalUtxosStatus,
       balance,
       getUTXOs,
+      ordUtxos,
+      setOrdUtxos,
     }),
     [
       backupFile,
       changeAddress,
-      receiverAddress,
+      ordUtxos,
+      ordAddress,
       artifacts,
       ordPk,
       payPk,
@@ -580,20 +581,21 @@ const WalletProvider: React.FC<Props> = (props) => {
       deleteKeys,
       backupKeys,
       generateKeys,
-      refund,
-      setPendingInscription,
-      pendingInscription,
+      send,
+      setPendingTransaction,
+      pendingTransaction,
       reset,
-      getArtifacts,
+      getOrdinalUTXOs,
       setBackupFile,
       initialized,
       getUtxoByTxId,
       currentTxId,
       setCurrentTxId,
       fetchUtxosStatus,
-      fetchArtifactsStatus,
-      setFetchArtifactsStatus,
+      fetchOrdinalUtxosStatus,
+      setFetchOrdinalUtxosStatus,
       balance,
+      setOrdUtxos,
       getUTXOs,
     ]
   );

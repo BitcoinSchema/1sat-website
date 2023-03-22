@@ -1,4 +1,4 @@
-import { PendingInscription, useWallet } from "@/context/wallet";
+import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { head } from "lodash";
@@ -19,14 +19,14 @@ const Label = styled.label`
 `;
 
 type InscribeProps = {
-  inscribedCallback: (inscription: PendingInscription) => void;
+  inscribedCallback: (inscription: PendingTransaction) => void;
 };
 
 const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   const {
-    setPendingInscription,
+    setPendingTransaction,
     fundingUtxos,
-    receiverAddress,
+    ordAddress,
     payPk,
     initialized,
   } = useWallet();
@@ -85,17 +85,17 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           payPk,
           fileAsBase64,
           fileContentType: selectedFile?.type,
-          receiverAddress,
+          ordAddress,
           changeAddress,
           fundingUtxo: utxo,
         }),
       });
       console.log({ status: response.status, response });
       if (response.status === 200) {
-        const data = (await response.json()) as PendingInscription;
+        const data = (await response.json()) as PendingTransaction;
         console.log("Completion Data @ Client: ", response, data);
 
-        setPendingInscription(data);
+        setPendingTransaction(data);
         inscribedCallback(data);
         setInscribeStatus(FetchStatus.Success);
       } else if (response.status === 402) {
@@ -121,7 +121,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   };
 
   useEffect(() => {
-    console.log({ type: selectedFile?.type });
+    console.log({ preview });
   }, [selectedFile]);
 
   return (

@@ -1,10 +1,10 @@
+import Artifact, { ArtifactType } from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
 import { useWallet } from "@/context/wallet";
-import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router from "next/router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FetchStatus } from "..";
 
@@ -12,24 +12,56 @@ interface PageProps extends WithRouterProps {}
 
 const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
   const {
-    changeAddress,
-    artifacts,
-    getArtifacts,
-    fetchArtifactsStatus,
-    setFetchArtifactsStatus,
+    ordAddress,
+    fetchOrdinalUtxosStatus,
+    setFetchOrdinalUtxosStatus,
     payPk,
     ordPk,
+    ordUtxos,
+    getOrdinalUTXOs,
   } = useWallet();
 
   useEffect(() => {
     const fire = async (a: string) => {
-      await getArtifacts(a);
-      // const ordinalUtxos = await getOrdinalUTXOs(a);
+      await getOrdinalUTXOs(a);
     };
-    if (changeAddress && fetchArtifactsStatus === FetchStatus.Idle) {
-      fire(changeAddress);
+    if (ordAddress && fetchOrdinalUtxosStatus === FetchStatus.Idle) {
+      fire(ordAddress);
     }
-  }, [getArtifacts, fetchArtifactsStatus, changeAddress]);
+  }, [getOrdinalUTXOs, ordAddress, fetchOrdinalUtxosStatus]);
+
+  const artifacts = useMemo(() => {
+    {
+      return (
+        ordUtxos?.every((a) => !!a.type) &&
+        ordUtxos?.map((a) => {
+          let artifactType = ArtifactType.Image;
+          if (a.type?.startsWith("audio")) {
+            artifactType = ArtifactType.Audio;
+          } else if (a.type?.startsWith("video")) {
+            artifactType = ArtifactType.Video;
+          } else if (a.type?.startsWith("model")) {
+            artifactType = ArtifactType.Model;
+          } else if (a.type === "application/pdf") {
+            artifactType = ArtifactType.Model;
+          } else if (a.type === "application/javascript") {
+            artifactType = ArtifactType.Javascript;
+          } else if (a.type === "text/markdown") {
+            artifactType = ArtifactType.MarkDown;
+          } else if (a.type === "text/html") {
+            artifactType = ArtifactType.HTML;
+          }
+          return (
+            <Artifact
+              key={`${a.txid}_${a.vout}`}
+              outPoint={`${a.txid}_${a.vout}`}
+              type={artifactType}
+            />
+          );
+        })
+      );
+    }
+  }, [ordUtxos]);
 
   return (
     <>
@@ -46,31 +78,32 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
       <Tabs currentTab={Tab.Ordinals} />
 
       <div>
-        {fetchArtifactsStatus !== FetchStatus.Loading && (
+        {fetchOrdinalUtxosStatus !== FetchStatus.Loading && (
           <div
             className="text-sm text-center mx-auto cursor-pointer text-blue-500 hover:text-blue-400"
-            onClick={() => setFetchArtifactsStatus(FetchStatus.Idle)}
+            onClick={() => setFetchOrdinalUtxosStatus(FetchStatus.Idle)}
           >
             Refresh
           </div>
         )}
 
-        {fetchArtifactsStatus === FetchStatus.Loading && (
+        {fetchOrdinalUtxosStatus === FetchStatus.Loading && (
           <div className="w-full my-12 max-w-4xl mx-auto text-center">
             <LoaderIcon className="mx-auto" />
           </div>
         )}
 
-        {fetchArtifactsStatus !== FetchStatus.Loading && (!payPk || !ordPk) && (
-          <div
-            className="max-w-md rounded my-8 bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-8"
-            onClick={() => Router.push("./wallet")}
-          >
-            You need a wallet first.
-          </div>
-        )}
-        {fetchArtifactsStatus === FetchStatus.Success &&
-          artifacts?.length === 0 &&
+        {fetchOrdinalUtxosStatus !== FetchStatus.Loading &&
+          (!payPk || !ordPk) && (
+            <div
+              className="max-w-md rounded my-8 bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-8"
+              onClick={() => Router.push("./wallet")}
+            >
+              You need a wallet first.
+            </div>
+          )}
+        {fetchOrdinalUtxosStatus === FetchStatus.Success &&
+          ordUtxos?.length === 0 &&
           payPk &&
           ordPk && (
             <div className="max-w-md rounded bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-8 my-8">
@@ -79,34 +112,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
           )}
 
         <div className="w-full my-12 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-4xl mx-auto">
-          {artifacts?.map((a) => {
-            return (
-              <a
-                key={a.outPoint}
-                target="_blank"
-                href={`https://whatsonchain.com/tx/${head(
-                  a.outPoint.split("_")
-                )}`}
-              >
-                {a.contentType.startsWith("video") ? (
-                  <video
-                    src={`data:${a.contentType};base64,${a.dataB64}`}
-                    controls={true}
-                  />
-                ) : a.contentType.startsWith("audio") ? (
-                  <audio src={`data:${a.contentType};base64,${a.dataB64}`} />
-                ) : (
-                  <img
-                    className="w-full rounded"
-                    // src={`https://ordinals.gorillapool.io/api/origin/${
-                    //   a.outPoint.split("_")[0]
-                    // }/${a.outPoint.split("_")[1]}`}
-                    src={`data:${a.contentType};base64,${a.dataB64}`}
-                  />
-                )}
-              </a>
-            );
-          })}
+          {artifacts}
         </div>
       </div>
     </>

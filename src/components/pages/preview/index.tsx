@@ -35,7 +35,7 @@ type BroadcastResponsePayload = {
 interface PageProps extends WithRouterProps {}
 
 const PreviewPage: React.FC<PageProps> = ({ router }) => {
-  const { pendingInscription, fundingUtxos, getUTXOs, changeAddress } =
+  const { pendingTransaction, fundingUtxos, getUTXOs, changeAddress } =
     useWallet();
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
     useLocalStorage<BroadcastResponsePayload>("1satbrs", undefined);
@@ -57,12 +57,12 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
     if (!fundingUtxos) {
       return;
     }
-    console.log("click broadcast", pendingInscription?.rawTx);
-    if (!pendingInscription?.rawTx) {
+    console.log("click broadcast", pendingTransaction?.rawTx);
+    if (!pendingTransaction?.rawTx) {
       return;
     }
     setBroadcastStatus(FetchStatus.Loading);
-    const body = Buffer.from(pendingInscription.rawTx, "hex");
+    const body = Buffer.from(pendingTransaction.rawTx, "hex");
     const response = await fetch(`https://mapi.gorillapool.io/mapi/tx`, {
       method: "POST",
       headers: {
@@ -98,7 +98,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
       }
       setBroadcastStatus(FetchStatus.Error);
     }
-  }, [pendingInscription, setBroadcastResponsePayload, fundingUtxos]);
+  }, [pendingTransaction, setBroadcastResponsePayload, fundingUtxos]);
 
   return (
     <>
@@ -114,37 +114,37 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
       </Head>
       <Tabs currentTab={Tab.Ordinals} />
 
-      {pendingInscription && (
+      {pendingTransaction && (
         <div>
           <h1 className="text-center text-2xl">
-            {`${pendingInscription.numOutputs === 1 ? "Refund" : "Ordinal"}
+            {`${pendingTransaction.numOutputs === 1 ? "Refund" : "Ordinal"}
             Generated`}
           </h1>
           <div className="text-center text-[#aaa] my-2">
             You still need to broadcast this before it goes live.
           </div>
           <div className="w-[600px] w-full max-w-lg mx-auto p-2 h-[300px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-teal-700 my-8 relative">
-            {pendingInscription.rawTx}
+            {pendingTransaction.rawTx}
             <div className="p-4 absolute w-full text-white bg-black bg-opacity-75 bottom-0 left-0">
               <div className="flex justify-between border-b pb-2 mb-2 border-[#222]">
-                <div>{pendingInscription.numInputs} Inputs</div>
-                <div>{pendingInscription.numOutputs} Outputs</div>
+                <div>{pendingTransaction.numInputs} Inputs</div>
+                <div>{pendingTransaction.numOutputs} Outputs</div>
               </div>
               <div className="flex justify-between">
                 <div>Size</div>
-                <div>{pendingInscription.rawTx?.length / 2} Bytes</div>
+                <div>{pendingTransaction.rawTx?.length / 2} Bytes</div>
               </div>
               <div className="flex justify-between">
                 <div>Fee</div>
-                <div>{pendingInscription.fee} Satoshis</div>
+                <div>{pendingTransaction.fee} Satoshis</div>
               </div>
-              {pendingInscription.fee && (
+              {pendingTransaction.fee && (
                 <div className="flex justify-between">
                   <div>Fee Rate</div>
                   <div>
                     {(
-                      pendingInscription.fee /
-                      (pendingInscription.rawTx?.length / 2)
+                      pendingTransaction.fee /
+                      (pendingTransaction.rawTx?.length / 2)
                     ).toFixed(5)}{" "}
                     sat/B
                   </div>
@@ -154,7 +154,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
           </div>
           <div className="max-w-md mx-auto">
             <CopyToClipboard
-              text={pendingInscription?.rawTx}
+              text={pendingTransaction?.rawTx}
               onCopy={() =>
                 toast.success("Copied Raw Tx", {
                   style: {

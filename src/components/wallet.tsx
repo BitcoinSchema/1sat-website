@@ -31,7 +31,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     getUTXOs,
     fetchUtxosStatus,
     balance,
-    refund,
+    send,
   } = useWallet();
 
   const [showKeys, setShowKeys] = useState<boolean>(false);
@@ -47,7 +47,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     }
   }, [initialized, setInitialized]);
 
-  const receiverAddress = useMemo(() => {
+  const ordAddress = useMemo(() => {
     if (initialized && ordPk) {
       const wif = PrivateKey.from_wif(ordPk);
       const pk = PublicKey.from_private_key(wif);
@@ -126,7 +126,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
         </div>
       )}
 
-      {!showKeys && changeAddress && receiverAddress && (
+      {!showKeys && changeAddress && ordAddress && (
         <div className="w-full max-w-lg mx-auto">
           <h1
             className="flex text-2xl items-center justify-center mt-8 hover:text-yellow-300 transition cursor-pointer"
@@ -148,7 +148,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
 
             <div className="flex justify-between text-orange-600">
               <div>Ordinal Address:</div>
-              <div>{receiverAddress}</div>
+              <div>{ordAddress}</div>
             </div>
           </div>
 
@@ -182,7 +182,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
               <button
                 className="p-2 bg-[#222] cursor-pointer rounded my-4"
                 onClick={() => {
-                  refund();
+                  send();
                 }}
               >
                 Send Balance

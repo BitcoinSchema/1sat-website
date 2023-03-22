@@ -2,19 +2,13 @@ import { PrivateKey } from "bsv-wasm";
 import { createOrdinal, Utxo } from "js-1sat-ord";
 
 export default async (req: any, res: any) => {
-  const { payPk, fileAsBase64, receiverAddress, changeAddress, fundingUtxo } =
+  const { payPk, fileAsBase64, ordAddress, changeAddress, fundingUtxo } =
     req.body;
-  if (
-    payPk &&
-    fileAsBase64 &&
-    receiverAddress &&
-    changeAddress &&
-    fundingUtxo
-  ) {
+  if (payPk && fileAsBase64 && ordAddress && changeAddress && fundingUtxo) {
     const tx = await handleInscribing(
       payPk,
       fileAsBase64,
-      receiverAddress,
+      ordAddress,
       changeAddress,
       fundingUtxo
     );
@@ -42,7 +36,7 @@ export default async (req: any, res: any) => {
 const handleInscribing = async (
   payPk: string,
   fileAsBase64: string,
-  receiverAddress: string,
+  ordAddress: string,
   changeAddress: string,
   fundingUtxo: Utxo
 ) => {
@@ -58,7 +52,7 @@ const handleInscribing = async (
   // returns Promise<Transaction>
   const tx = await createOrdinal(
     fundingUtxo,
-    receiverAddress,
+    ordAddress,
     paymentPk,
     changeAddress,
     0.1,

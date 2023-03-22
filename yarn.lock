@@ -1117,11 +1117,6 @@ bs58@^5.0.0:
   dependencies:
     base-x "^4.0.0"
 
-bsv-wasm-bundler@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/bsv-wasm-bundler/-/bsv-wasm-bundler-2.0.0.tgz"
-  integrity sha512-lIeD/oLIHlSthysRKQtxNP50/LtwdJcCjNrYKtUOez4eW8SCCwd283zJbnEy9YPaytmXOlT+aHUGtwKWb7/Mhg==
-
 bsv-wasm-web@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/bsv-wasm-web/-/bsv-wasm-web-2.0.0.tgz"
@@ -2621,10 +2616,10 @@ isomorphic-fetch@2.2.1:
     node-fetch "^1.0.1"
     whatwg-fetch ">=0.10.0"
 
-js-1sat-ord@^0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/js-1sat-ord/-/js-1sat-ord-0.0.11.tgz#3f8a3172ec6554fe8bb46e0b3ff9c8da82fa3bf0"
-  integrity sha512-YrrrHTUwVeP9bgoX0QKxw5KiYv7HbJcptuTJwWh4n9l/9BFzsWAHeZ5jHco7dKmqYMrSOkQmcRFeMs21p2xVjA==
+js-1sat-ord@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/js-1sat-ord/-/js-1sat-ord-0.0.12.tgz#9a80e5b9e784ad0cb3207f929810bc6e94fdc130"
+  integrity sha512-47va+bKrbfRh/+U+Brmm7eccX+njmztsExmvcNJqXweNhwjX0O60oP7gzEWkgo6vEMir2zYsuU9TzghVj/Ljrw==
   dependencies:
     bmapjs "^0.4.0-beta.21"
     bsv-wasm "^2.0.0"
