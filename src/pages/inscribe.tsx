@@ -1,15 +1,15 @@
-import HomePage from "@/components/pages/home";
+import InscribePage from "@/components/pages/inscribe";
 import AppContext from "@/context";
 import { WithRouterProps } from "next/dist/client/with-router";
 
 interface PageProps extends WithRouterProps {}
 
-const App: React.FC<PageProps> = (props) => {
+const Page: React.FC<PageProps> = (props) => {
   return (
     <AppContext {...props}>
-      <HomePage {...props} />
+      <InscribePage {...props} />
     </AppContext>
   );
 };
 
-export default App;
+export default Page;

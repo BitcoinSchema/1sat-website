@@ -9,6 +9,14 @@ const options = {
 };
 const cors = corsModule(options);
 
+type PendingInscription = {
+  rawTx: string;
+  size: number;
+  fee: number;
+  numInputs: number;
+  numOutputs: number;
+};
+
 export const inscribe = functions.https.onRequest((req, res) => {
   cors(req, res, async (err) => {
     const {
@@ -60,17 +68,17 @@ export const inscribe = functions.https.onRequest((req, res) => {
             fee,
             numInputs: tx.get_ninputs(),
             numOutputs: tx.get_noutputs(),
-          };
+          } as PendingInscription;
           res.status(200).json({ result });
           return;
         }
       } catch (e) {
         console.error(e);
-        res.status(500).send(e);
+        res.status(500).send(e.toString());
         return;
       }
     }
-    res.status(400).send();
+    res.status(400).send("");
   });
 });
 

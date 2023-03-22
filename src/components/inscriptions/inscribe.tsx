@@ -1,10 +1,10 @@
-import { CallbackData, FetchStatus } from "@/pages";
+import { PendingInscription, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
-import { Utxo } from "js-1sat-ord";
-import { useMemo, useState } from "react";
-import { toast } from "react-hot-toast";
-import { RxReset } from "react-icons/rx";
+import { head } from "lodash";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import styled from "styled-components";
+import { FetchStatus } from "../pages/home";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -18,22 +18,18 @@ const Label = styled.label`
 `;
 
 type InscribeProps = {
-  callback: (callbackData: CallbackData) => void;
-  fundingUtxo: Utxo;
-  payPk: string;
-  receiverAddress: string;
-  initialized: boolean;
-  reset: () => void;
+  inscribedCallback: (inscription: PendingInscription) => void;
 };
 
-const Inscribe: React.FC<InscribeProps> = ({
-  callback,
-  fundingUtxo,
-  payPk,
-  receiverAddress,
-  initialized,
-  reset,
-}) => {
+const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
+  const {
+    setPendingInscription,
+    fundingUtxos,
+    receiverAddress,
+    payPk,
+    initialized,
+  } = useWallet();
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -72,10 +68,10 @@ const Inscribe: React.FC<InscribeProps> = ({
       setPreview(null);
     }
   };
+  const utxo = head(fundingUtxos);
 
   const handleInscribing = async () => {
     setInscribeStatus(FetchStatus.Loading);
-
     try {
       const fileAsBase64 = await readFileAsBase64(selectedFile);
       const apiEndpoint = "/api/inscribe";
@@ -90,64 +86,59 @@ const Inscribe: React.FC<InscribeProps> = ({
           fileContentType: selectedFile?.type,
           receiverAddress,
           changeAddress,
-          fundingUtxo,
+          utxo,
         }),
       });
-      const data = await response.json();
-      console.log("Completion Data @ Client: ", response, data);
-      if (data.result) {
-        callback(data.result);
-      } else {
+      console.log({ status: response.status, response });
+      if (response.status === 200) {
+        const data = (await response.json()) as PendingInscription;
+        console.log("Completion Data @ Client: ", response, data);
+
+        setPendingInscription(data);
+        inscribedCallback(data);
         setInscribeStatus(FetchStatus.Success);
-        toast("Failed to inscribe " + data);
-        throw new Error("Failed to inscribe", data);
+      } else if (response.status === 402) {
+        // payment required
+        setInscribeStatus(FetchStatus.Error);
+        const { error } = await response.json();
+        throw new Error(error);
+      } else {
+        setInscribeStatus(FetchStatus.Error);
+        const body = await response.text();
+        throw new Error(body);
       }
     } catch (e) {
-      toast("Failed to inscribe " + e);
       setInscribeStatus(FetchStatus.Error);
+      toast.error("Failed to inscribe " + e, {
+        style: {
+          background: "#333",
+          color: "#fff",
+        },
+      });
+      console.error(e);
     }
   };
 
+  useEffect(() => {
+    console.log({ type: selectedFile?.type });
+  }, [selectedFile]);
+
   return (
-    <div className="flex flex-col w-full max-w-4xl mx-auto">
+    <div className="flex flex-col w-full max-w-xl mx-auto">
       <h1 className="text-white text-4xl my-4">Inscribe an Ordinal</h1>
       <div className="w-full">
         <div className="rounded bg-[#222] p-4 mb-4 text-xs flex flex-col">
           <div className="my-1">
-            Using output #{fundingUtxo.vout} ({fundingUtxo.satoshis} Sat )
+            Using output #{utxo?.vout} ({utxo?.satoshis} Sat )
           </div>
-          <div className="my-1">{fundingUtxo.txid}</div>
+          <div className="my-1">{utxo?.txid}</div>
           <div className="my-1">
             Deposit to {changeAddress} and refresh the page.
           </div>
         </div>
-        {/* <Label>
-          Payment PK Input
-          <Input
-            type="div"
-            onChange={handlePaymentPKChange}
-            value={paymentPKInput}
-          />
-        </Label> */}
-        {/* <Label>
-          Receiver Address
-          <Input
-            type="div"
-            onChange={handleReceiverAddressChange}
-            value={receiverAddress}
-          />
-        </Label> */}
 
-        {/* <Label>
-          Change Address
-          <Input
-            type="div"
-            onChange={handleChangeAddressChange}
-            value={changeAddress}
-          />
-        </Label> */}
         <hr className="my-2 h-2 border-0 bg-[#222]" />
-        <Label>
+        <Label className="min-h-[200px] rounded border flex items-center justify-center">
           Choose a file to inscribe
           <Input type="file" onChange={handleFileChange} />
         </Label>
@@ -156,7 +147,18 @@ const Inscribe: React.FC<InscribeProps> = ({
 
         {preview && (
           <>
-            <img src={preview as string} alt="Preview" className="w-full" />
+            {selectedFile?.type.startsWith("video") ? (
+              <video src={preview as string} autoPlay className="w-full" />
+            ) : selectedFile?.type.startsWith("audio") ? (
+              <audio
+                src={preview as string}
+                autoPlay
+                controls
+                className="w-full"
+              />
+            ) : (
+              <img src={preview as string} alt="Preview" className="w-full" />
+            )}
             <hr className="my-2 h-2 border-0 bg-[#222]" />
           </>
         )}
@@ -168,18 +170,6 @@ const Inscribe: React.FC<InscribeProps> = ({
           className="w-full disabled:bg-gray-600 hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
         >
           Preview
-        </button>
-
-        <button
-          onClick={() => {
-            reset();
-          }}
-          className="w-full p-2 text-lg bg-gray-400 rounded my-4 text-black font-semibold"
-        >
-          <div className="mx-auto flex items-center justify-center">
-            <RxReset className="w-10" />
-            <div>Start Over</div>
-          </div>
         </button>
       </div>
     </div>
