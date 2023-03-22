@@ -14,7 +14,7 @@ export enum Tab {
 
 const Tabs: React.FC<Props> = ({ currentTab, showIndicator }) => {
   return (
-    <S.Tabs className="max-w-7xl mx-auto">
+    <S.Tabs className="max-w-7xl mx-auto my-8">
       {/* <S.Tab
         partiallyactive={currentTab === Tab.Overview ? "true" : "false"}
         href={`/`}

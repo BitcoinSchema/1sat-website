@@ -37,14 +37,6 @@ const HomePage: React.FC<PageProps> = ({}) => {
 
       <main className="flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center justify-between w-full h-full">
-          <div className="h-10">
-            <h1
-              className="text-2xl py-4 cursor-pointer"
-              onClick={() => Router.push("/")}
-            >
-              1Sat Ordinals
-            </h1>
-          </div>
           <div className="h-full w-full flex flex-col items-center justify-center ">
             <div className="max-w-[600px] text-yellow-400 font-mono">
               <div className="cursor-pointer my-8 w-full">

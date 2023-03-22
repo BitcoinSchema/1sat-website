@@ -63,6 +63,7 @@ const Wallet: React.FC<WalletProps> = (
     backupFile,
     setCurrentTxId,
     refund,
+    getUTXOs,
     fetchUtxosStatus,
     balance,
   } = useWallet();
@@ -124,7 +125,7 @@ const Wallet: React.FC<WalletProps> = (
   }
 
   return (
-    <div className="flex flex-col w-full max-w-4xl mx-auto">
+    <div className="flex flex-col w-full max-w-xl mx-auto">
       {(!ordPk || !payPk) && (
         <>
           <div className="w-full">
@@ -172,12 +173,13 @@ const Wallet: React.FC<WalletProps> = (
         </div>
       )}
       {!showKeys && changeAddress && receiverAddress && (
-        <div className="w-full max-w-xl mx-auto">
-          <div className="text-center">
-            <h1 className="text-4xl my-4 text-white">Wallet</h1>
-          </div>
-
-          <h1 className="flex text-2xl items-center justify-center mt-8">
+        <div className="w-full max-w-lg mx-auto">
+          <h1
+            className="flex text-2xl items-center justify-center mt-8 hover:text-yellow-300 transition cursor-pointer"
+            onClick={async () => {
+              await getUTXOs(changeAddress);
+            }}
+          >
             {/* <QRCode value={changeAddress || ""} size={420} />
              */}
             {sb.toBitcoin(balance)} BSV

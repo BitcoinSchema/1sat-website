@@ -125,7 +125,6 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
   return (
     <div className="flex flex-col w-full max-w-xl mx-auto">
-      <h1 className="text-white text-4xl my-4">Inscribe an Ordinal</h1>
       <div className="w-full">
         <Label className="min-h-[300px] rounded border flex items-center justify-center">
           Choose a file to inscribe

@@ -33,10 +33,17 @@ const Layout: React.FC<Props> = ({ router, children }) => {
 
   return (
     <div className="w-screen h-screen flex flex-col justify-between text-yellow-400 font-mono">
-      {children}
-
+      <div className="h-10 mx-auto">
+        <h1
+          className="text-2xl py-4 text-white cursor-pointer"
+          onClick={() => Router.push("/")}
+        >
+          1Sat Ordinals
+        </h1>
+      </div>
+      <div className="h-full flex flex-col items-center">{children}</div>
       <div
-        className="max-w-7xl mx-auto flex items-center justify-center font-mono text-yellow-400 py-8"
+        className="max-w-7xl mx-auto  h-10 flex items-center justify-center font-mono text-yellow-400 py-8"
         style={{
           height: "4rem",
           textAlign: "center",
@@ -66,16 +73,16 @@ const Layout: React.FC<Props> = ({ router, children }) => {
             Delete Keys
           </div>
         )}
-      </div>
-      <div>
-        <Toaster />
-        <input
-          accept=".json"
-          className="hidden"
-          id="backupFile"
-          onChange={handleFileChange}
-          type="file"
-        />
+        <div>
+          <Toaster />
+          <input
+            accept=".json"
+            className="hidden"
+            id="backupFile"
+            onChange={handleFileChange}
+            type="file"
+          />
+        </div>
       </div>
     </div>
   );

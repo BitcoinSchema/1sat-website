@@ -102,6 +102,7 @@ type ContextValue = {
   backupFile: File | undefined;
   generateKeys: () => void;
   getUtxoByTxId: (txid: string) => Promise<void>;
+  getUTXOs: (address: string) => Promise<Utxo[]>;
   currentTxId: string | undefined;
   setCurrentTxId: (txid: string) => void;
   refund: () => void;
@@ -249,16 +250,20 @@ const WalletProvider: React.FC<Props> = (props) => {
       const utxos = await r.json();
 
       setFetchUtxosStatus(FetchStatus.Success);
-      return utxos.map((utxo: any) => {
-        return {
-          satoshis: utxo.value,
-          vout: utxo.tx_pos,
-          txid: utxo.tx_hash,
-          script: P2PKHAddress.from_string(address)
-            .get_locking_script()
-            .to_asm_string(),
-        } as Utxo;
-      });
+      const u = utxos
+        .map((utxo: any) => {
+          return {
+            satoshis: utxo.value,
+            vout: utxo.tx_pos,
+            txid: utxo.tx_hash,
+            script: P2PKHAddress.from_string(address)
+              .get_locking_script()
+              .to_asm_string(),
+          } as Utxo;
+        })
+        .sort((a: Utxo, b: Utxo) => (a.satoshis > b.satoshis ? -1 : 1));
+      setFundingUtxos(u);
+      return u;
     } catch (e) {
       setFetchUtxosStatus(FetchStatus.Error);
       throw e;
@@ -268,10 +273,8 @@ const WalletProvider: React.FC<Props> = (props) => {
   useEffect(() => {
     const fire = async (a: string) => {
       const utxos = await getUTXOs(a);
-      utxos.sort((a, b) => (a.satoshis > b.satoshis ? -1 : 1));
 
       if (utxos) {
-        setFundingUtxos(utxos);
         setCurrentTxId(head(utxos)?.txid);
         toast.success(`Found ${utxos.length} UTXOs`, {
           style: {
@@ -507,6 +510,7 @@ const WalletProvider: React.FC<Props> = (props) => {
           color: "#fff",
         },
       });
+      Router.push("/");
     }
   }, [setPayPk, setOrdPk, setFundingUtxos, setArtifacts, setInscribedUtxos]);
 
@@ -569,6 +573,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       fetchArtifactsStatus,
       setFetchArtifactsStatus,
       balance,
+      getUTXOs,
     }),
     [
       backupFile,
@@ -595,6 +600,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       fetchArtifactsStatus,
       setFetchArtifactsStatus,
       balance,
+      getUTXOs,
     ]
   );
 

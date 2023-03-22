@@ -46,8 +46,6 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
       <Tabs currentTab={Tab.Ordinals} />
 
       <div>
-        <h1 className="text-center my-4 text-4xl my-4">My Ordies</h1>
-
         {fetchArtifactsStatus !== FetchStatus.Loading && (
           <div
             className="text-sm text-center mx-auto cursor-pointer text-blue-500 hover:text-blue-400"
