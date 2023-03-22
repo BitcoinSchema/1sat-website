@@ -69,7 +69,7 @@ export const inscribe = functions.https.onRequest((req, res) => {
             numInputs: tx.get_ninputs(),
             numOutputs: tx.get_noutputs(),
           } as PendingInscription;
-          res.status(200).json({ result });
+          res.status(200).json(result);
           return;
         }
       } catch (e) {

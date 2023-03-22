@@ -67,7 +67,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
         data.payload || "{}"
       ) as BroadcastResponsePayload;
       if (respData?.returnResult === "success") {
-        toast.success("Broadcasted tx " + respData.txid, {
+        toast.success("Broadcasted", {
           style: {
             background: "#333",
             color: "#fff",
@@ -75,6 +75,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
         });
         setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponsePayload(respData);
+        Router.push("/ordinals");
         return;
       } else {
         toast.error("Failed to broadcast " + respData.resultDescription, {
@@ -120,7 +121,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
               </div>
               <div className="flex justify-between">
                 <div>Size</div>
-                <div>{pendingInscription.rawTx.length / 2} Bytes</div>
+                <div>{pendingInscription.rawTx?.length / 2} Bytes</div>
               </div>
               <div className="flex justify-between">
                 <div>Fee</div>
@@ -132,7 +133,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
                   <div>
                     {(
                       pendingInscription.fee /
-                      (pendingInscription.rawTx.length / 2)
+                      (pendingInscription.rawTx?.length / 2)
                     ).toFixed(5)}{" "}
                     sat/B
                   </div>

@@ -29,7 +29,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
     if (changeAddress && fetchArtifactsStatus === FetchStatus.Idle) {
       fire(changeAddress);
     }
-  }, [fetchArtifactsStatus, changeAddress]);
+  }, [getArtifacts, fetchArtifactsStatus, changeAddress]);
 
   return (
     <>

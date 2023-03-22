@@ -4,7 +4,7 @@ import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { Inscription } from "js-1sat-ord";
 import { head } from "lodash";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import QRCode from "react-qr-code";
+import sb from "satoshi-bitcoin";
 import styled from "styled-components";
 import { FetchStatus } from "./pages/home";
 
@@ -64,6 +64,7 @@ const Wallet: React.FC<WalletProps> = (
     setCurrentTxId,
     refund,
     fetchUtxosStatus,
+    balance,
   } = useWallet();
   const [artifacts, setArtifacts] = useState<Inscription[]>();
 
@@ -173,28 +174,29 @@ const Wallet: React.FC<WalletProps> = (
       {!showKeys && changeAddress && receiverAddress && (
         <div className="w-full max-w-xl mx-auto">
           <div className="text-center">
-            <h1 className="text-4xl my-4 text-white">Funding Wallet</h1>
+            <h1 className="text-4xl my-4 text-white">Wallet</h1>
           </div>
-          <div className="bg-[#222] rounded p-2 w-full mt-4">
-            {!utxo
-              ? `Please make a deposit to the funding address. You can refund your balance when you are done.`
-              : `Your largest unspent output in this address has ${utxo.satoshis} satoshis in it.`}
-          </div>
-          <div className="flex items-center justify-center my-8">
-            <QRCode value={changeAddress || ""} size={420} />
-          </div>
+
+          <h1 className="flex text-2xl items-center justify-center mt-8">
+            {/* <QRCode value={changeAddress || ""} size={420} />
+             */}
+            {sb.toBitcoin(balance)} BSV
+          </h1>
+          <div className="flex items-center justify-center mb-8">Balance</div>
+
           <div className="my-4">
-            <div className="flex justify-between">
+            <div className="flex justify-between text-teal-600">
               <div>Funding Address:</div>
               <div>{changeAddress}</div>
             </div>
-            <div className="flex justify-between">
+
+            <div className="flex justify-between text-orange-600">
               <div>Ordinal Address:</div>
               <div>{receiverAddress}</div>
             </div>
           </div>
 
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <Label>
               Deposit TxID
               <Input
@@ -206,9 +208,9 @@ const Wallet: React.FC<WalletProps> = (
                 }}
               />
             </Label>
-          </div>
+          </div> */}
           <div className="flex items-center justify-between">
-            <button
+            {/* <button
               className="p-2 bg-[#222] cursor-pointer rounded my-4"
               onClick={() => {
                 if (currentTxId) {
@@ -217,27 +219,19 @@ const Wallet: React.FC<WalletProps> = (
               }}
             >
               Fetch By TxID
-            </button>
-            {fundingUtxos && (
+            </button> */}
+            <div></div>
+            <div></div>
+            {/* {fundingUtxos && (
               <button
                 className="p-2 bg-[#222] cursor-pointer rounded my-4"
                 onClick={() => {
                   refund();
                 }}
               >
-                Refund Balance
+                Send Balance
               </button>
-            )}
-            {fundingUtxos && (
-              <button
-                className="p-2 bg-[#222] cursor-pointer rounded m-4"
-                onClick={() => {
-                  console.log("next - todo");
-                }}
-              >
-                Next
-              </button>
-            )}
+            )} */}
           </div>
         </div>
       )}

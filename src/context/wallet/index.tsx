@@ -113,6 +113,7 @@ type ContextValue = {
   getArtifacts: (address: string) => Promise<void>;
   fetchArtifactsStatus: FetchStatus | undefined;
   setFetchArtifactsStatus: (status: FetchStatus) => void;
+  balance: number;
 };
 
 const WalletContext = React.createContext<ContextValue | undefined>(undefined);
@@ -199,7 +200,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     if (backupFile) {
       fire(backupFile);
     }
-  }, [backupFile]);
+  }, [setOrdPk, setPayPk, backupFile]);
 
   const getTxById = async (txid: string): Promise<TxDetails> => {
     const r = await fetch(
@@ -287,6 +288,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       fire(changeAddress);
     }
   }, [
+    getUTXOs,
     fundingUtxos,
     fetchUtxosStatus,
     setCurrentTxId,
@@ -325,7 +327,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         },
       ]);
     },
-    [fundingUtxos, changeAddress]
+    [setFundingUtxos, fundingUtxos, changeAddress]
   );
 
   const getArtifacts = async (address: string): Promise<void> => {
@@ -506,7 +508,15 @@ const WalletProvider: React.FC<Props> = (props) => {
         },
       });
     }
-  }, []);
+  }, [setPayPk, setOrdPk, setFundingUtxos, setArtifacts, setInscribedUtxos]);
+
+  const balance = useMemo(() => {
+    let b = 0;
+    for (let fu of fundingUtxos || []) {
+      b += fu.satoshis;
+    }
+    return b;
+  }, [fundingUtxos]);
 
   const generateKeys = async () => {
     console.log("callback");
@@ -558,6 +568,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       fetchUtxosStatus,
       fetchArtifactsStatus,
       setFetchArtifactsStatus,
+      balance,
     }),
     [
       backupFile,
@@ -583,6 +594,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       fetchUtxosStatus,
       fetchArtifactsStatus,
       setFetchArtifactsStatus,
+      balance,
     ]
   );
 

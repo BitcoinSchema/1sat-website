@@ -1,5 +1,6 @@
 import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
+import Router from "next/router";
 import { ChangeEvent, ReactNode, useCallback } from "react";
 import { Toaster } from "react-hot-toast";
 
@@ -24,14 +25,14 @@ const Layout: React.FC<Props> = ({ router, children }) => {
     async (e: ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
         setBackupFile(e.target.files[0]);
-        router?.push("/wallet");
+        Router?.push("/wallet");
       }
     },
     [setBackupFile]
   );
 
   return (
-    <div className="w-screen h-screen flex flex-col justify-between">
+    <div className="w-screen h-screen flex flex-col justify-between text-yellow-400 font-mono">
       {children}
 
       <div

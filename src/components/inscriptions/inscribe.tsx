@@ -86,7 +86,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           fileContentType: selectedFile?.type,
           receiverAddress,
           changeAddress,
-          utxo,
+          fundingUtxo: utxo,
         }),
       });
       console.log({ status: response.status, response });
@@ -127,18 +127,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     <div className="flex flex-col w-full max-w-xl mx-auto">
       <h1 className="text-white text-4xl my-4">Inscribe an Ordinal</h1>
       <div className="w-full">
-        <div className="rounded bg-[#222] p-4 mb-4 text-xs flex flex-col">
-          <div className="my-1">
-            Using output #{utxo?.vout} ({utxo?.satoshis} Sat )
-          </div>
-          <div className="my-1">{utxo?.txid}</div>
-          <div className="my-1">
-            Deposit to {changeAddress} and refresh the page.
-          </div>
-        </div>
-
-        <hr className="my-2 h-2 border-0 bg-[#222]" />
-        <Label className="min-h-[200px] rounded border flex items-center justify-center">
+        <Label className="min-h-[300px] rounded border flex items-center justify-center">
           Choose a file to inscribe
           <Input type="file" onChange={handleFileChange} />
         </Label>
@@ -148,7 +137,13 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         {preview && (
           <>
             {selectedFile?.type.startsWith("video") ? (
-              <video src={preview as string} autoPlay className="w-full" />
+              <video
+                src={preview as string}
+                autoPlay={true}
+                controls={true}
+                loop={true}
+                className="w-full"
+              />
             ) : selectedFile?.type.startsWith("audio") ? (
               <audio
                 src={preview as string}

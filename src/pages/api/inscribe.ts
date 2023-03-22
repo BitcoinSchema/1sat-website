@@ -31,7 +31,7 @@ export default async (req: any, res: any) => {
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
       };
-      res.status(200).json({ result });
+      res.status(200).json(result);
     } else {
       console.log({ satsIn, satsOut });
       res.status(400).send();
