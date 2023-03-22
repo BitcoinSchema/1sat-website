@@ -453,7 +453,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         BigInt(u.satoshis)
       );
 
-      const s = Script.from_asm_string(u.script);
+      // const s = Script.from_asm_string(u.script);
       inx.set_unlocking_script(
         P2PKHAddress.from_string(changeAddress || "").get_unlocking_script(
           paymentPk.to_public_key(),
