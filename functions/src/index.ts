@@ -121,7 +121,7 @@ export const send = functions.https.onRequest((req, res) => {
       }
     }
 
-    res.status(400).send("");
+    res.status(409).send("");
   });
 });
 

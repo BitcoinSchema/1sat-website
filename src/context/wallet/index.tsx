@@ -1,5 +1,6 @@
 import { FetchStatus } from "@/components/pages";
 import { addressFromWif } from "@/utils/address";
+import { fillContentType } from "@/utils/artifact";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
 import init, { P2PKHAddress, Transaction } from "bsv-wasm-web";
@@ -101,6 +102,7 @@ type ContextValue = {
   backupFile: File | undefined;
   generateKeys: () => void;
   getUtxoByTxId: (txid: string) => Promise<void>;
+  getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getUTXOs: (address: string) => Promise<Utxo[]>;
   currentTxId: string | undefined;
   setCurrentTxId: (txid: string) => void;
@@ -208,6 +210,25 @@ const WalletProvider: React.FC<Props> = (props) => {
     return utxo;
   };
 
+  const getInscriptionsById = async (
+    txid: string,
+    vout?: number
+  ): Promise<GPInscription[]> => {
+    let suffix = txid;
+    if (vout !== undefined) {
+      suffix += `_${vout}`;
+    }
+
+    const r = await fetch(
+      `https://ordinals.gorillapool.io/api/inscriptions/${suffix}`
+    );
+    const utxo = (await r.json()) as GPInscription[];
+    // let utxo = res.find((u: any) => u.value > 1);
+    // TODO: How to get script?
+
+    return utxo;
+  };
+
   const getRawTxById = async (txid: string): Promise<string> => {
     const r = await fetch(
       `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
@@ -228,7 +249,6 @@ const WalletProvider: React.FC<Props> = (props) => {
           `https://ordinals.gorillapool.io/api/utxos/address/${address}`
         );
         const utxos = (await r.json()) as GPUtxo[];
-        setFetchOrdinalUtxosStatus(FetchStatus.Success);
         const u = utxos.sort((a: GPUtxo, b: GPUtxo) =>
           a.satoshis > b.satoshis ? -1 : 1
         );
@@ -243,6 +263,7 @@ const WalletProvider: React.FC<Props> = (props) => {
           filledOrdUtxos.push(newA);
         }
         setOrdUtxos(filledOrdUtxos);
+        setFetchOrdinalUtxosStatus(FetchStatus.Success);
         return;
       } catch (e) {
         setFetchOrdinalUtxosStatus(FetchStatus.Error);
@@ -250,21 +271,6 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
     },
     [setFetchOrdinalUtxosStatus, setOrdUtxos]
-  );
-
-  const fillContentType = useCallback(
-    async (artifact: OrdUtxo): Promise<OrdUtxo> => {
-      console.log("Filling!", artifact);
-
-      const url = `https://ordinals.gorillapool.io/api/files/inscriptions/${artifact.txid}_${artifact.vout}`;
-      const response = await fetch(url);
-      const blob = await response.blob();
-
-      artifact.type = blob.type;
-
-      return artifact;
-    },
-    []
   );
 
   const getUTXOs = useCallback(
@@ -349,6 +355,25 @@ const WalletProvider: React.FC<Props> = (props) => {
     [setFundingUtxos, fundingUtxos, changeAddress]
   );
 
+  const getArtifactsByTxId = useCallback(
+    async (txid: string): Promise<OrdUtxo[]> => {
+      const gpInscriptions = await getInscriptionsById(txid, 0);
+
+      if (!gpInscriptions) {
+        alert("No artifacts match this txid");
+      }
+      return gpInscriptions.map((i) => {
+        return {
+          vout: i.vout,
+          satoshis: 1,
+          txid: i.txid,
+          type: i.file.type,
+        } as OrdUtxo;
+      });
+    },
+    [getInscriptionsById]
+  );
+
   type GPUtxo = {
     txid: string;
     vout: Number;
@@ -357,6 +382,43 @@ const WalletProvider: React.FC<Props> = (props) => {
     lock: string;
     origin: string;
     ordinal: number;
+  };
+
+  // [
+  //   {
+  //     id: 165,
+  //     txid: "e17d7856c375640427943395d2341b6ed75f73afc8b22bb3681987278978a584",
+  //     vout: 1,
+  //     file: {
+  //       hash: "3dbe16ec7625e0d8a02ceaa5b2b03bc412c06186d03fbd69090c162469cf0292",
+  //       size: 2592,
+  //       type: "image/png",
+  //     },
+  //     origin:
+  //       "e17d7856c375640427943395d2341b6ed75f73afc8b22bb3681987278978a584_1",
+  //     ordinal: 0,
+  //     height: 783968,
+  //     idx: 756,
+  //     lock: "95EA9JV8O+RWtoU7zrUdcsIRyF2RhhHON/CxiBEpw3Y=",
+  //   },
+  // ];
+
+  type GPFile = {
+    hash: string;
+    size: number;
+    type: string;
+  };
+
+  type GPInscription = {
+    id: number;
+    txid: string;
+    vout: number;
+    file: GPFile;
+    origin: string;
+    ordinal: number;
+    height: number;
+    idx: number;
+    lock: string;
   };
 
   const getHistory = useCallback(
@@ -479,7 +541,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     });
 
     Router.push("/preview");
-  }, [payPk, setPendingTransaction, initialized, payPk, fundingUtxos]);
+  }, [setPendingTransaction, initialized, payPk, fundingUtxos]);
 
   const deleteKeys = useCallback(() => {
     const c = confirm(
@@ -517,7 +579,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     const { payPk, ordPk } = randomKeys();
     setPayPk(payPk);
     setOrdPk(ordPk);
-  }, [payPk, ordPk, setOrdPk, setPayPk]);
+  }, [setOrdPk, setPayPk]);
 
   const backupKeys = useCallback(
     (e?: any) => {
@@ -568,6 +630,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       getUTXOs,
       ordUtxos,
       setOrdUtxos,
+      getArtifactsByTxId,
     }),
     [
       backupFile,
@@ -597,6 +660,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       balance,
       setOrdUtxos,
       getUTXOs,
+      getArtifactsByTxId,
     ]
   );
 

@@ -1,11 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  api: {
-    responseLimit: false,
-    bodyParser: {
-      sizeLimit: false,
-    },
-  },
   reactStrictMode: true,
   images: { unoptimized: true },
   webpack: (config, { isServer }) => {
