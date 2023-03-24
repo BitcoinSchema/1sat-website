@@ -1,10 +1,11 @@
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
-import { useWallet } from "@/context/wallet";
+import { OrdUtxo, useWallet } from "@/context/wallet";
+import { fillContentType } from "@/utils/artifact";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router from "next/router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FetchStatus } from "..";
 
@@ -19,6 +20,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
     ordPk,
     ordUtxos,
     getOrdinalUTXOs,
+    getArtifactsByTxId,
   } = useWallet();
 
   useEffect(() => {
@@ -30,11 +32,52 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
     }
   }, [getOrdinalUTXOs, ordAddress, fetchOrdinalUtxosStatus]);
 
+  // const ordinals = useMemo(() => {
+  //   return ordUtxos?.filter((a) => !a.type);
+  // }, [ordUtxos]);
+  const [ordinals, setOrdinals] = useState<OrdUtxo[] | undefined>();
+
+  useEffect(() => {
+    const fire = async (ords: OrdUtxo[]) => {
+      for (let o of ords) {
+        if (o.origin) {
+          const art = await getArtifactsByTxId(o.origin);
+          let ords: OrdUtxo[] = [];
+          for (let u of art) {
+            let filledU = await fillContentType(u);
+            if (filledU.type) {
+              ords.push(filledU);
+            }
+          }
+          console.log({ ords });
+          setOrdinals(ords);
+        }
+      }
+    };
+
+    const typeLess = ordUtxos?.filter((a) => !a.type);
+    if (typeLess && typeLess?.length > 0) {
+      // look them up
+      fire(typeLess);
+    }
+  }, [ordUtxos, setOrdinals, getArtifactsByTxId]);
+
   const artifacts = useMemo(() => {
     {
-      return (
-        ordUtxos?.every((a) => !!a.type) &&
-        ordUtxos?.map((a) => {
+      const ordinalArtifacts =
+        ordinals?.map((a) => {
+          return (
+            <Artifact
+              key={`${a.txid}_${a.vout}`}
+              outPoint={`${a.txid}_${a.vout}`}
+              contentType={a.type}
+            />
+          );
+        }) || [];
+
+      return ordUtxos
+        ?.filter((a) => !!a.type)
+        .map((a) => {
           return (
             <Artifact
               key={`${a.txid}_${a.vout}`}
@@ -43,9 +86,9 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
             />
           );
         })
-      );
+        .concat(ordinalArtifacts);
     }
-  }, [ordUtxos]);
+  }, [ordinals, ordUtxos]);
 
   return (
     <>
@@ -98,7 +141,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
             </div>
           )}
 
-        <div className="w-full my-12 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-4xl mx-auto">
+        <div className="w-full my-12 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-6xl mx-auto">
           {artifacts}
         </div>
       </div>

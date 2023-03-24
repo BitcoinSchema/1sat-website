@@ -20,6 +20,10 @@
         "function": "broadcast"
       },
       {
+        "source": "/tx/**",
+        "destination": "/tx/[outpoint].html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

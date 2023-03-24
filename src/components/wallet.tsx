@@ -178,7 +178,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
             </button> */}
             <div></div>
             <div></div>
-            {fundingUtxos && (
+            {/* {fundingUtxos && (
               <button
                 className="p-2 bg-[#222] cursor-pointer rounded my-4"
                 onClick={() => {
@@ -187,7 +187,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
               >
                 Send Balance
               </button>
-            )}
+            )} */}
           </div>
         </div>
       )}

@@ -86,6 +86,8 @@ export type PendingTransaction = {
 
 export interface OrdUtxo extends Utxo {
   type?: string;
+  origin?: string;
+  id?: number;
 }
 
 type ContextValue = {
@@ -103,6 +105,8 @@ type ContextValue = {
   generateKeys: () => void;
   getUtxoByTxId: (txid: string) => Promise<void>;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
+  getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
+  getArtifactsByInscriptionId: (inscriptionId: number) => Promise<OrdUtxo[]>;
   getUTXOs: (address: string) => Promise<Utxo[]>;
   currentTxId: string | undefined;
   setCurrentTxId: (txid: string) => void;
@@ -110,6 +114,7 @@ type ContextValue = {
   send: () => void;
   backupKeys: (e?: any) => void;
   fetchUtxosStatus: FetchStatus;
+  fetchInscriptionsStatus: FetchStatus;
   setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
   pendingTransaction: PendingTransaction | undefined;
   reset: () => void;
@@ -161,6 +166,8 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+  const [fetchInscriptionsStatus, setFetchInscriptionsStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
 
   useEffect(() => {
     const fire = async () => {
@@ -210,24 +217,53 @@ const WalletProvider: React.FC<Props> = (props) => {
     return utxo;
   };
 
-  const getInscriptionsById = async (
-    txid: string,
-    vout?: number
-  ): Promise<GPInscription[]> => {
-    let suffix = txid;
-    if (vout !== undefined) {
-      suffix += `_${vout}`;
-    }
+  const getInscriptionsById = useCallback(
+    async (txidOrOrigin: string): Promise<GPInscription[]> => {
+      let [txid, vout] = txidOrOrigin.split("_");
+      let suffix = "";
+      if (vout) {
+        suffix += `origin/${txid}_${vout}`;
+      } else {
+        suffix += `txid/${txid}`;
+      }
 
-    const r = await fetch(
-      `https://ordinals.gorillapool.io/api/inscriptions/${suffix}`
-    );
-    const utxo = (await r.json()) as GPInscription[];
-    // let utxo = res.find((u: any) => u.value > 1);
-    // TODO: How to get script?
+      setFetchInscriptionsStatus(FetchStatus.Loading);
+      try {
+        const r = await fetch(
+          `https://ordinals.gorillapool.io/api/inscriptions/${suffix}`
+        );
+        const inscriptions = (await r.json()) as GPInscription[];
+        setFetchInscriptionsStatus(FetchStatus.Success);
+        // let utxo = res.find((u: any) => u.value > 1);
+        // TODO: How to get script?
 
-    return utxo;
-  };
+        return inscriptions;
+      } catch (e) {
+        setFetchInscriptionsStatus(FetchStatus.Error);
+
+        throw e;
+      }
+    },
+    []
+  );
+
+  const getInscriptionsByInscriptionId = useCallback(
+    async (inscriptionId: number): Promise<GPInscription[]> => {
+      setFetchInscriptionsStatus(FetchStatus.Loading);
+      try {
+        const r = await fetch(
+          `https://ordinals.gorillapool.io/api/inscriptions/${inscriptionId}`
+        );
+        const inscriptions = (await r.json()) as GPInscription[];
+        setFetchInscriptionsStatus(FetchStatus.Success);
+        return inscriptions;
+      } catch (e) {
+        setFetchInscriptionsStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    []
+  );
 
   const getRawTxById = async (txid: string): Promise<string> => {
     const r = await fetch(
@@ -244,6 +280,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     async (address: string): Promise<void> => {
       // address or custom locking script hash
       setFetchOrdinalUtxosStatus(FetchStatus.Loading);
+
       try {
         const r = await fetch(
           `https://ordinals.gorillapool.io/api/utxos/address/${address}`
@@ -255,13 +292,35 @@ const WalletProvider: React.FC<Props> = (props) => {
         //
         let filledOrdUtxos: OrdUtxo[] = [];
         for (let a of u) {
-          const newA = await fillContentType({
-            satoshis: a.satoshis,
-            txid: a.txid,
-            vout: a.vout,
-          } as OrdUtxo);
-          filledOrdUtxos.push(newA);
+          if (a.origin.split("_")[0] === a.txid) {
+            const newA = await fillContentType({
+              satoshis: a.satoshis,
+              txid: a.txid,
+              vout: a.vout,
+            } as OrdUtxo);
+            filledOrdUtxos.push(newA);
+          }
         }
+
+        // Get P2PKH Utxos
+        // const rp2pkh = await fetch(
+        //   `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
+        // );
+        // const utxosP2pkh = await rp2pkh.json();
+
+        // const p2pkhUtxos = utxosP2pkh
+        //   .map((utxo: any) => {
+        //     return {
+        //       satoshis: utxo.value,
+        //       vout: utxo.tx_pos,
+        //       txid: utxo.tx_hash,
+        //       script: P2PKHAddress.from_string(address)
+        //         .get_locking_script()
+        //         .to_asm_string(),
+        //     } as Utxo;
+        //   })
+        //   .sort((a: Utxo, b: Utxo) => (a.satoshis > b.satoshis ? -1 : 1));
+        console.log("success", filledOrdUtxos);
         setOrdUtxos(filledOrdUtxos);
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         return;
@@ -356,11 +415,11 @@ const WalletProvider: React.FC<Props> = (props) => {
   );
 
   const getArtifactsByTxId = useCallback(
-    async (txid: string): Promise<OrdUtxo[]> => {
-      const gpInscriptions = await getInscriptionsById(txid, 0);
+    async (txidOrOrigin: string): Promise<OrdUtxo[]> => {
+      const gpInscriptions = await getInscriptionsById(txidOrOrigin);
 
       if (!gpInscriptions) {
-        alert("No artifacts match this txid");
+        return [];
       }
       return gpInscriptions.map((i) => {
         return {
@@ -368,6 +427,31 @@ const WalletProvider: React.FC<Props> = (props) => {
           satoshis: 1,
           txid: i.txid,
           type: i.file.type,
+          origin: i.origin,
+          id: i.id,
+        } as OrdUtxo;
+      });
+    },
+    [getInscriptionsById]
+  );
+
+  const getArtifactsByInscriptionId = useCallback(
+    async (inscriptionId: number): Promise<OrdUtxo[]> => {
+      const gpInscriptions = await getInscriptionsByInscriptionId(
+        inscriptionId
+      );
+
+      if (!gpInscriptions) {
+        return [];
+      }
+      return gpInscriptions.map((i) => {
+        return {
+          vout: i.vout,
+          satoshis: 1,
+          txid: i.txid,
+          type: i.file.type,
+          origin: i.origin,
+          id: i.id,
         } as OrdUtxo;
       });
     },
@@ -630,7 +714,10 @@ const WalletProvider: React.FC<Props> = (props) => {
       getUTXOs,
       ordUtxos,
       setOrdUtxos,
+      fetchInscriptionsStatus,
       getArtifactsByTxId,
+      getArtifactsByInscriptionId,
+      getArtifactsByOrigin: getArtifactsByTxId,
     }),
     [
       backupFile,
@@ -661,6 +748,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       setOrdUtxos,
       getUTXOs,
       getArtifactsByTxId,
+      fetchInscriptionsStatus,
+      getArtifactsByInscriptionId,
     ]
   );
 

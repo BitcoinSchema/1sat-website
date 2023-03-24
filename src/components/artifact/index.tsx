@@ -15,13 +15,17 @@ export enum ArtifactType {
 type ArtifactProps = {
   outPoint: string;
   contentType: string | undefined;
+  id?: number;
   className?: string;
+  to?: string | undefined;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
   outPoint,
   contentType,
   className,
+  id,
+  to,
 }) => {
   const type = useMemo(() => {
     let artifactType = undefined;
@@ -48,10 +52,11 @@ const Artifact: React.FC<ArtifactProps> = ({
   return (
     <a
       key={outPoint}
-      className={`cursor-pointer block transition ${
+      className={`min-h-24 min-w-24 relative cursor-pointer block transition ${
         className ? className : ""
       }`}
-      href={`/tx/${head(outPoint.split("_"))}`}
+      target={to ? "_blank" : "_self"}
+      href={to || `/tx/${head(outPoint.split("_"))}`}
     >
       {type === ArtifactType.Video ? (
         <video
@@ -72,12 +77,13 @@ const Artifact: React.FC<ArtifactProps> = ({
           className=""
           src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
           id={`${outPoint}_audio`}
+          controls
           onLoad={() => {
             // TODO: FadeIn not working yet
             const el = document.getElementById(`${outPoint}_audio`);
             if (el) {
-              el.classList.remove("opacity-0");
-              el.classList.add("opacity-100");
+              // el.classList.remove("opacity-0");
+              // el.classList.add("opacity-100");
             }
           }}
         />
@@ -94,6 +100,15 @@ const Artifact: React.FC<ArtifactProps> = ({
             }
           }}
         />
+      )}
+
+      {/* TODO: Show indicator when more than one isncription */}
+      {id && (
+        <div className="absolute bottom-0 right-0 mb-2 mr-2 rounded bg-[#222] p-2">
+          Inscription #{id}
+          <br />
+          Type {contentType}
+        </div>
       )}
     </a>
   );
