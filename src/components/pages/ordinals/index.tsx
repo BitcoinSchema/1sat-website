@@ -71,6 +71,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
               key={`${a.txid}_${a.vout}`}
               outPoint={`${a.txid}_${a.vout}`}
               contentType={a.type}
+              classNames={{ wrapper: "max-w-72 max-h-72 overflow-hidden" }}
             />
           );
         }) || [];
@@ -83,6 +84,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
               key={`${a.txid}_${a.vout}`}
               outPoint={`${a.txid}_${a.vout}`}
               contentType={a.type}
+              classNames={{ wrapper: "max-w-72 max-h-72 overflow-hidden" }}
             />
           );
         })
@@ -105,18 +107,17 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
           rel="stylesheet"
         />
       </Head>
-      <Tabs currentTab={Tab.Ordinals} />
+      <Tabs
+        currentTab={Tab.Ordinals}
+        onClickSelected={() =>
+          fetchOrdinalUtxosStatus === FetchStatus.Loading
+            ? () => {}
+            : setFetchOrdinalUtxosStatus(FetchStatus.Idle)
+        }
+        showIndicator={fetchOrdinalUtxosStatus !== FetchStatus.Loading}
+      />
 
       <div>
-        {fetchOrdinalUtxosStatus !== FetchStatus.Loading && (
-          <div
-            className="text-sm text-center mx-auto cursor-pointer text-blue-500 hover:text-blue-400"
-            onClick={() => setFetchOrdinalUtxosStatus(FetchStatus.Idle)}
-          >
-            Refresh
-          </div>
-        )}
-
         {fetchOrdinalUtxosStatus === FetchStatus.Loading && (
           <div className="w-full my-12 max-w-4xl mx-auto text-center">
             <LoaderIcon className="mx-auto" />
@@ -141,7 +142,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
             </div>
           )}
 
-        <div className="w-full my-12 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-6xl mx-auto">
+        <div className="p-2 w-full my-12 grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
           {artifacts}
         </div>
       </div>

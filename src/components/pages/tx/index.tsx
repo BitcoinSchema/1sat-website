@@ -34,7 +34,6 @@ const TxPage: React.FC<PageProps> = ({}) => {
       const art = await getArtifactsByTxId(t);
       let arts = [];
       for (let a of art) {
-        console.log("filline", a);
         if (a.origin?.split("_")[0] === a.txid) {
           const art2 = await fillContentType(a);
           arts.push(art2);
@@ -72,7 +71,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
           return (
             <Artifact
               key={artifact.txid}
-              className="max-w-2xl"
+              classNames={{ wrapper: `max-w-2xl` }}
               contentType={artifact.type}
               outPoint={artifact.origin || ""}
               id={artifact.id}

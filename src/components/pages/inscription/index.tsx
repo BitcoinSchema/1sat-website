@@ -23,7 +23,6 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       const art = await getArtifactsByInscriptionId(iid);
       let arts = [];
       for (let a of art) {
-        console.log("filline", a);
         const art2 = await fillContentType(a);
         arts.push(art2);
       }
@@ -60,7 +59,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           return (
             <Artifact
               key={artifact.txid}
-              className="max-w-2xl"
+              classNames={{ wrapper: "max-w-2xl" }}
               contentType={artifact.type}
               outPoint={artifact.origin || ""}
               id={artifact.id}

@@ -300,7 +300,6 @@ const WalletProvider: React.FC<Props> = (props) => {
           filledOrdUtxos.push(newA);
         }
 
-        console.log("success", filledOrdUtxos);
         setOrdUtxos(filledOrdUtxos);
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         return;
