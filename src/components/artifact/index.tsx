@@ -161,6 +161,7 @@ const Artifact: React.FC<ArtifactProps> = ({
               resolutionX={32}
               resolutionY={32}
               punch={1}
+              className="rounded"
             />
           )}
           {!bh && generatedImage}
