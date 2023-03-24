@@ -1,7 +1,7 @@
 import { encode } from "blurhash";
 import { toSvg } from "jdenticon";
 import { head } from "lodash";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Blurhash } from "react-blurhash";
 
 export enum ArtifactType {
@@ -32,7 +32,6 @@ const Artifact: React.FC<ArtifactProps> = ({
 }) => {
   const [componentX, setComponentX] = useState(4);
   const [componentY, setComponentY] = useState(4);
-  const [file, setFile] = useState<File>();
 
   const [data, setData] = useState<
     { file: File; imageUrl: string; imageData: ImageData } | undefined
@@ -67,7 +66,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       const svg = new Blob([svgStr], { type: "image/svg+xml" });
       const imageUrl = URL.createObjectURL(svg);
       var file = new File([svg], "name");
-      setFile(file);
+
       const el = <img src={imageUrl} />;
       let el2 = document.createElement("img");
       el2.src = imageUrl;
@@ -82,38 +81,7 @@ const Artifact: React.FC<ArtifactProps> = ({
     }
   }, [setData, outPoint]);
 
-  // useEffect(() => {
-  //   var DOMURL = window?.URL || window?.webkitURL || (window as any);
-
-  //   // generatedImage
-  //   if (generatedImage) {
-  //     var svg = new Blob(
-  //       [toSvg(outPoint, 300).slice(1).slice(0, -1).replaceAll('"', "'")],
-  //       {
-  //         type: "image/svg+xml",
-  //       }
-  //     );
-  //     var file = new File([svg], "name");
-
-  //     const imageUrl = DOMURL.createObjectURL(file);
-
-  //     const img = document.createElement("img");
-  //     console.log({ img });
-  //     img.addEventListener("load", () => {
-  //       console.log({ imageUrl, img });
-  //       const imageData = getImageData(img, 400, 400);
-  //       console.log("setting data", imageData);
-  //       if (file && imageUrl && imageData) {
-  //         console.log("setting data", imageData);
-  //         setData({ file, imageUrl, imageData });
-  //       }
-  //     });
-  //     img.src = imageUrl;
-  //   }
-  // }, [outPoint, setData]);
-
   const bh = useMemo(() => {
-    console.log({ data });
     return data
       ? encode(
           data.imageData.data,
@@ -125,9 +93,6 @@ const Artifact: React.FC<ArtifactProps> = ({
       : undefined;
   }, [data, componentX, componentY]);
 
-  useEffect(() => {
-    console.log({ bh, data });
-  }, [bh, data]);
   return (
     <a
       key={outPoint}

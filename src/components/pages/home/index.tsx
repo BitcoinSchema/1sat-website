@@ -4,6 +4,8 @@ import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Image from "next/image";
 import Router from "next/router";
+import { useEffect, useState } from "react";
+import { FetchStatus } from "..";
 
 export type CallbackData = {
   numInputs: number;
@@ -15,6 +17,33 @@ export type CallbackData = {
 interface PageProps extends WithRouterProps {}
 
 const HomePage: React.FC<PageProps> = ({}) => {
+  const [numMinted, setNumMinted] = useState<number>(0);
+  const [fetchCountStatus, setFetchCountStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
+
+  useEffect(() => {
+    const fire = async () => {
+      try {
+        setFetchCountStatus(FetchStatus.Loading);
+        const resp = await fetch(
+          `https://ordinals.gorillapool.io/api/inscriptions/count`
+        );
+
+        const { count } = await resp.json();
+        setNumMinted(count);
+        setFetchCountStatus(FetchStatus.Success);
+      } catch (e) {
+        console.error({ e });
+        setFetchCountStatus(FetchStatus.Error);
+      }
+    };
+
+    if (!numMinted && fetchCountStatus === FetchStatus.Idle) {
+      fire();
+    }
+  }, [numMinted, fetchCountStatus]);
+
   return (
     <>
       <Head>
@@ -54,6 +83,9 @@ const HomePage: React.FC<PageProps> = ({}) => {
             <nav>
               <Tabs currentTab={Tab.Overview} />
             </nav>
+            <h1>
+              {numMinted ? `${numMinted.toLocaleString()} Inscribeds Made` : ""}
+            </h1>
           </div>
         </div>
       </main>
