@@ -286,40 +286,20 @@ const WalletProvider: React.FC<Props> = (props) => {
           `https://ordinals.gorillapool.io/api/utxos/address/${address}`
         );
         const utxos = (await r.json()) as GPUtxo[];
-        const u = utxos.sort((a: GPUtxo, b: GPUtxo) =>
-          a.satoshis > b.satoshis ? -1 : 1
-        );
+
         //
         let filledOrdUtxos: OrdUtxo[] = [];
-        for (let a of u) {
-          if (a.origin.split("_")[0] === a.txid) {
-            const newA = await fillContentType({
-              satoshis: a.satoshis,
-              txid: a.txid,
-              vout: a.vout,
-            } as OrdUtxo);
-            filledOrdUtxos.push(newA);
-          }
+        for (let a of utxos) {
+          const parts = a.origin.split("_");
+          const newA = await fillContentType({
+            satoshis: a.satoshis,
+            txid: parts[0],
+            vout: parseInt(parts[1]),
+          } as OrdUtxo);
+
+          filledOrdUtxos.push(newA);
         }
 
-        // Get P2PKH Utxos
-        // const rp2pkh = await fetch(
-        //   `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
-        // );
-        // const utxosP2pkh = await rp2pkh.json();
-
-        // const p2pkhUtxos = utxosP2pkh
-        //   .map((utxo: any) => {
-        //     return {
-        //       satoshis: utxo.value,
-        //       vout: utxo.tx_pos,
-        //       txid: utxo.tx_hash,
-        //       script: P2PKHAddress.from_string(address)
-        //         .get_locking_script()
-        //         .to_asm_string(),
-        //     } as Utxo;
-        //   })
-        //   .sort((a: Utxo, b: Utxo) => (a.satoshis > b.satoshis ? -1 : 1));
         console.log("success", filledOrdUtxos);
         setOrdUtxos(filledOrdUtxos);
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
