@@ -2,7 +2,7 @@ import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { head } from "lodash";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import styled from "styled-components";
 import { FetchStatus } from "../pages";
@@ -119,10 +119,6 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       console.error(e);
     }
   };
-
-  useEffect(() => {
-    console.log({ preview });
-  }, [selectedFile]);
 
   return (
     <div className="flex flex-col w-full max-w-xl mx-auto">

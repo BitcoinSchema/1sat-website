@@ -1,8 +1,8 @@
-import { encode } from "blurhash";
-import { toSvg } from "jdenticon";
 import { head } from "lodash";
-import React, { useMemo, useState } from "react";
-import { Blurhash } from "react-blurhash";
+import React, { useMemo } from "react";
+import Model from "../model";
+import AudioArtifact from "./audio";
+import VideoArtifact from "./video";
 
 export enum ArtifactType {
   Audio,
@@ -13,11 +13,13 @@ export enum ArtifactType {
   Javascript,
   HTML,
   MarkDown,
+  Text,
+  JSON,
 }
 
 type ArtifactProps = {
   outPoint: string;
-  contentType: string | undefined;
+  contentType?: string | undefined;
   id?: number;
   classNames?: { wrapper?: string; media?: string };
   to?: string | undefined;
@@ -30,13 +32,6 @@ const Artifact: React.FC<ArtifactProps> = ({
   id,
   to,
 }) => {
-  const [componentX, setComponentX] = useState(4);
-  const [componentY, setComponentY] = useState(4);
-
-  const [data, setData] = useState<
-    { file: File; imageUrl: string; imageData: ImageData } | undefined
-  >();
-
   const type = useMemo(() => {
     let artifactType = undefined;
     if (contentType?.startsWith("audio")) {
@@ -49,6 +44,10 @@ const Artifact: React.FC<ArtifactProps> = ({
       artifactType = ArtifactType.Model;
     } else if (contentType === "application/javascript") {
       artifactType = ArtifactType.Javascript;
+    } else if (contentType === "application/json") {
+      artifactType = ArtifactType.JSON;
+    } else if (contentType === "text/plain") {
+      artifactType = ArtifactType.Text;
     } else if (contentType === "text/markdown") {
       artifactType = ArtifactType.MarkDown;
     } else if (contentType === "text/html") {
@@ -59,144 +58,99 @@ const Artifact: React.FC<ArtifactProps> = ({
     return artifactType;
   }, [contentType]);
 
-  const generatedImage = useMemo(() => {
-    // (new XMLSerializer).serializeToString(svg)
-    if (outPoint) {
-      const svgStr = toSvg(outPoint, 300);
-      const svg = new Blob([svgStr], { type: "image/svg+xml" });
-      const imageUrl = URL.createObjectURL(svg);
-      var file = new File([svg], "name");
-
-      const el = <img src={imageUrl} />;
-      let el2 = document.createElement("img");
-      el2.src = imageUrl;
-      el2.onload = () => {
-        const imageData = getImageData(el2, 4, 4);
-        if (imageData) {
-          setData({ file, imageUrl, imageData });
-        }
-      };
-
-      return el;
-    }
-  }, [setData, outPoint]);
-
-  const bh = useMemo(() => {
-    return data
-      ? encode(
-          data.imageData.data,
-          data.imageData.width,
-          data.imageData.height,
-          componentX,
-          componentY
-        )
-      : undefined;
-  }, [data, componentX, componentY]);
-
   return (
     <a
       key={outPoint}
-      className={`w-full relative flex items-start rounded cursor-pointer block transition ${
+      className={`flex flex-col items-center justify-center min-h-48 min-w-48 bg-[#111] w-full h-full relative rounded cursor-pointer block transition mx-auto ${
         classNames?.wrapper ? classNames.wrapper : ""
       }`}
       target={to ? "_blank" : "_self"}
-      href={to || `/tx/${head(outPoint.split("_"))}`}
+      href={
+        to
+          ? to
+          : id !== undefined
+          ? `/inscription/${id}`
+          : `/tx/${head(outPoint.split("_"))}`
+      }
     >
       {type === ArtifactType.Video ? (
-        <video
-          className={`transition  ${classNames?.media ? classNames.media : ""}`}
-          src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
-          controls={true}
-          id={`${outPoint}_video`}
-          onLoad={() => {
-            const el = document.getElementById(`${outPoint}_video`);
-            if (el) {
-              el.classList.remove("opacity-0");
-              el.classList.add("opacity-100");
-            }
-          }}
+        <VideoArtifact
+          outPoint={outPoint}
+          className={`h-full ${classNames?.media ? classNames.media : ""}`}
         />
       ) : type === ArtifactType.Audio ? (
-        <div className="relative h-full w-full">
-          {bh && (
-            <Blurhash
-              hash={bh}
-              width={400}
-              height={400}
-              resolutionX={32}
-              resolutionY={32}
-              punch={1}
-              className="rounded"
-            />
-          )}
-          {!bh && generatedImage}
-          {/* && (
-            <img
-              src={generatedImage}
-              width={300}
-              height={300}
-              onLoad={(e) => {
-                var svg = new Blob([generatedImage], { type: "image/svg+xml" });
-                var file = new File([svg], "name");
-                var DOMURL =
-                  window?.URL || window?.webkitURL || (window as any);
-
-                const imageUrl = DOMURL.createObjectURL(file);
-
-                console.log({ imageUrl, target: e.currentTarget });
-                const imageData = getImageData(e.currentTarget, 300, 300);
-                console.log("setting data", imageData);
-                if (file && imageUrl && imageData) {
-                  console.log("setting data", imageData);
-                  setData({ file, imageUrl, imageData });
-                }
-              }}
-            />
-          )} */}
-          <audio
-            className={`p-1 absolute bottom-0 left-0 w-full ${
+        <AudioArtifact
+          outPoint={outPoint}
+          className={`p-1 absolute bottom-0 left-0 w-full ${
+            classNames?.media ? classNames.media : ""
+          }`}
+        />
+      ) : type === ArtifactType.JSON ? (
+        <div
+          className={`p-4 ${classNames?.wrapper || ""} ${
+            classNames?.media || ""
+          }`}
+        >
+          JSON Inscriptions not yet supported.
+        </div>
+      ) : type === ArtifactType.Text ? (
+        <div
+          className={`p-4 ${classNames?.wrapper || ""} ${
+            classNames?.media || ""
+          }`}
+        >
+          {/* {generatedImage} */}
+          Text inscriptions not yet supported.
+        </div>
+      ) : type === ArtifactType.Model ? (
+        <div
+          className={`w-full h-full ${classNames?.wrapper || ""} ${
+            classNames?.media || ""
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onAuxClick={(e) => {
+            console.log("middle click");
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <Model
+            src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
+          />
+        </div>
+      ) : type === ArtifactType.MarkDown ? (
+        <div
+          className={`${classNames?.wrapper || ""} ${classNames?.media || ""}`}
+        >
+          MarkDown Inscriptions not yet supported.
+        </div>
+      ) : type === ArtifactType.PDF ? (
+        <div
+          className={`${classNames?.wrapper || ""} ${classNames?.media || ""}`}
+        >
+          PDF Inscriptions not yet supported.
+        </div>
+      ) : (
+        <div className="flex items-center justify-center w-full h-full bg-[#111] rounded">
+          <img
+            className={`h-auto rounded ${
               classNames?.media ? classNames.media : ""
             }`}
             src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
-            id={`${outPoint}_audio`}
-            controls
-            onLoad={() => {
-              // TODO: FadeIn not working yet
-              const el = document.getElementById(`${outPoint}_audio`);
-              if (el) {
-                // el.classList.remove("opacity-0");
-                // el.classList.add("opacity-100");
-              }
-            }}
+            id={`${outPoint}_image`}
           />
         </div>
-      ) : (
-        <img
-          className={`w-full rounded opacity-0  ${
-            classNames?.media ? classNames.media : ""
-          }`}
-          src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
-          id={`${outPoint}_image`}
-          onLoad={(e) => {
-            const el = document.getElementById(`${outPoint}_image`);
-            if (el) {
-              el.classList.remove("opacity-0");
-              el.classList.add("opacity-100");
-            }
-          }}
-        />
       )}
 
       {/* TODO: Show indicator when more than one isncription */}
-      {id && (
-        <div
-          className={`absolute ${
-            type === ArtifactType.Video ? "bottom-0 mb-2" : "top-0 mt-2"
-          } right-0  mr-2 rounded bg-[#222] p-2`}
-        >
-          Inscription #{id}
-          <br />
-          Type {contentType}
+      {id !== undefined && (
+        <div className="flex items-center justify-between w-full p-4 h-18">
+          <div className={`rounded bg-[#222] p-2`}>Inscription #{id}</div>
+          <div className={``}>&nbsp;</div>
+          <div className={`rounded bg-[#222] p-2`}>{contentType}</div>
         </div>
       )}
     </a>
@@ -204,16 +158,3 @@ const Artifact: React.FC<ArtifactProps> = ({
 };
 
 export default Artifact;
-
-const getImageData = (
-  image: HTMLImageElement,
-  resolutionX: number,
-  resolutionY: number
-) => {
-  const canvas = document.createElement("canvas");
-  canvas.width = resolutionX;
-  canvas.height = resolutionY;
-  const context = canvas.getContext("2d");
-  context?.drawImage(image, 0, 0, resolutionX, resolutionY);
-  return context?.getImageData(0, 0, resolutionX, resolutionY);
-};

@@ -15,19 +15,17 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   const [artifacts, setArtifacts] = useState<OrdUtxo[]>([]);
   const { inscriptionId } = router.query;
 
-  const { getArtifactsByInscriptionId, fetchInscriptionsStatus } = useWallet();
+  const { getArtifactByInscriptionId, fetchInscriptionsStatus } = useWallet();
 
   useEffect(() => {
     console.log({ inscriptionId });
     const fire = async (iid: number) => {
-      const art = await getArtifactsByInscriptionId(iid);
-      let arts = [];
-      for (let a of art) {
-        const art2 = await fillContentType(a);
-        arts.push(art2);
+      const art = await getArtifactByInscriptionId(iid);
+      if (art) {
+        const art2 = await fillContentType(art);
+        console.log("setting", art2);
+        setArtifacts([art2]);
       }
-      console.log("setting", arts);
-      setArtifacts(arts);
     };
     if (inscriptionId && typeof inscriptionId === "string") {
       const id = parseInt(inscriptionId);
@@ -35,7 +33,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
         fire(id);
       }
     }
-  }, [inscriptionId, getArtifactsByInscriptionId]);
+  }, [inscriptionId, getArtifactByInscriptionId]);
 
   return (
     <>
@@ -53,13 +51,73 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
         />
       </Head>
       <Tabs currentTab={undefined} />
-
-      <div className="text-center">
-        {artifacts.map((artifact) => {
+      <div className="flex items-center justify-between">
+        <div className="">
+          {parseInt(inscriptionId as string) > 100 && (
+            <button
+              className="bg-[#222] rounded mb-8 text-sm p-4 my-4 mr-4"
+              onClick={() =>
+                router.push(`${parseInt(inscriptionId as string) - 100}`)
+              }
+            >
+              -100
+            </button>
+          )}
+        </div>
+        <div className="">
+          {parseInt(inscriptionId as string) > 0 && (
+            <button
+              className="bg-[#222] rounded mb-8 text-sm p-4 my-4"
+              onClick={() =>
+                router.push(`${parseInt(inscriptionId as string) - 1}`)
+              }
+            >
+              Prev
+            </button>
+          )}
+        </div>
+        <div className="bg-[#222] rounded mb-8 max-w-2xl text-sm p-4 m-4">
+          Inscription #{inscriptionId}
+          {fetchInscriptionsStatus === FetchStatus.Success &&
+            artifacts.length === 0 && <div>No artifacts matching that ID</div>}
+        </div>
+        <div className="">
+          <button
+            className="bg-[#222] rounded mb-8 text-sm p-4 my-4"
+            onClick={() =>
+              router.push(`${parseInt(inscriptionId as string) + 1}`)
+            }
+          >
+            Next
+          </button>
+        </div>
+        <div className="">
+          <button
+            className="bg-[#222] rounded mb-8 text-sm p-4 my-4 ml-4"
+            onClick={() =>
+              router.push(`${parseInt(inscriptionId as string) + 100}`)
+            }
+          >
+            +100
+          </button>
+        </div>
+      </div>
+      <div className="text-center w-full h-full flex items-center justify-center">
+        {artifacts?.map((artifact) => {
+          if (!artifact.type) {
+            return (
+              <div
+                key={artifact.txid}
+                className="bg-[#111] rounded p-2 w-72 h-73 flex items-center justify-center font-mono"
+              >
+                {`This inscription is malformed and can't be rendered. Sad :(`}
+              </div>
+            );
+          }
           return (
             <Artifact
               key={artifact.txid}
-              classNames={{ wrapper: "max-w-2xl" }}
+              classNames={{ wrapper: "max-w-4xl w-full h-full" }}
               contentType={artifact.type}
               outPoint={artifact.origin || ""}
               id={artifact.id}
@@ -67,11 +125,6 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
             />
           );
         })}
-      </div>
-      <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl text-sm p-4 my-4">
-        Inscription #{inscriptionId}
-        {fetchInscriptionsStatus === FetchStatus.Success &&
-          artifacts.length === 0 && <div>No artifacts matching that ID</div>}
       </div>
     </>
   );

@@ -178,16 +178,21 @@ const Wallet: React.FC<WalletProps> = ({}) => {
             </button> */}
             <div></div>
             <div></div>
-            {/* {fundingUtxos && (
+            {fundingUtxos && (
               <button
                 className="p-2 bg-[#222] cursor-pointer rounded my-4"
                 onClick={() => {
-                  send();
+                  const address = prompt(
+                    "Where should we send your funds? Must be a normal Bitcoin SV address starting with a 1"
+                  );
+                  if (address) {
+                    send(address);
+                  }
                 }}
               >
                 Send Balance
               </button>
-            )} */}
+            )}
           </div>
         </div>
       )}

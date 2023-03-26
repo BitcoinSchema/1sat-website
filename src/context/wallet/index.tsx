@@ -3,7 +3,32 @@ import { addressFromWif } from "@/utils/address";
 import { fillContentType } from "@/utils/artifact";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
-import init, { P2PKHAddress, Transaction } from "bsv-wasm-web";
+import {
+  Address,
+  Bn,
+  Br,
+  Hash,
+  KeyPair,
+  PrivKey,
+  PubKey,
+  Script,
+  Sig,
+  Tx,
+  TxBuilder,
+  TxIn,
+  TxOut,
+  VarInt,
+} from "@ts-bitcoin/core";
+
+import init, {
+  P2PKHAddress,
+  PrivateKey,
+  Script as WasmScript,
+  SigHash,
+  Transaction,
+  TxIn as WasmTxIn,
+  TxOut as WasmTxOut,
+} from "bsv-wasm-web";
 import { Inscription, Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import Router from "next/router";
@@ -76,6 +101,24 @@ type HistoryItem = {
   height: number;
 };
 
+type GPFile = {
+  hash: string;
+  size: number;
+  type: string;
+};
+
+type GPInscription = {
+  id: number;
+  txid: string;
+  vout: number;
+  file: GPFile;
+  origin: string;
+  ordinal: number;
+  height: number;
+  idx: number;
+  lock: string;
+};
+
 export type PendingTransaction = {
   rawTx: string;
   size: number;
@@ -106,12 +149,15 @@ type ContextValue = {
   getUtxoByTxId: (txid: string) => Promise<void>;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
-  getArtifactsByInscriptionId: (inscriptionId: number) => Promise<OrdUtxo[]>;
+  getArtifactByInscriptionId: (
+    inscriptionId: number
+  ) => Promise<OrdUtxo | undefined>;
   getUTXOs: (address: string) => Promise<Utxo[]>;
   currentTxId: string | undefined;
   setCurrentTxId: (txid: string) => void;
   setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
-  send: () => void;
+  send: (address: string) => Promise<void>;
+  transfer: (ordUtxo: OrdUtxo, toAddress: string) => Promise<void>;
   backupKeys: (e?: any) => void;
   fetchUtxosStatus: FetchStatus;
   fetchInscriptionsStatus: FetchStatus;
@@ -121,6 +167,7 @@ type ContextValue = {
   getOrdinalUTXOs: (address: string) => Promise<void>;
   fetchOrdinalUtxosStatus: FetchStatus | undefined;
   setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
+  setFetchInscriptionsStatus: (status: FetchStatus) => void;
   balance: number;
 };
 
@@ -206,6 +253,50 @@ const WalletProvider: React.FC<Props> = (props) => {
     }
   }, [setOrdPk, setPayPk, backupFile]);
 
+  const getOrdinalUTXOs = useCallback(
+    async (address: string): Promise<void> => {
+      // address or custom locking script hash
+      setFetchOrdinalUtxosStatus(FetchStatus.Loading);
+
+      try {
+        const r = await fetch(
+          `https://ordinals.gorillapool.io/api/utxos/address/${address}`
+        );
+        const utxos = (await r.json()) as GPUtxo[];
+
+        //
+        let filledOrdUtxos: OrdUtxo[] = [];
+        for (let a of utxos) {
+          const parts = a.origin.split("_");
+          const newA = await fillContentType({
+            satoshis: a.satoshis,
+            txid: parts[0],
+            vout: parseInt(parts[1]),
+          } as OrdUtxo);
+
+          filledOrdUtxos.push(newA);
+        }
+
+        setOrdUtxos(filledOrdUtxos);
+        setFetchOrdinalUtxosStatus(FetchStatus.Success);
+        return;
+      } catch (e) {
+        setFetchOrdinalUtxosStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchOrdinalUtxosStatus, setOrdUtxos]
+  );
+
+  useEffect(() => {
+    const fire = async (a: string) => {
+      await getOrdinalUTXOs(a);
+    };
+    if (ordAddress && fetchOrdinalUtxosStatus === FetchStatus.Idle) {
+      fire(ordAddress);
+    }
+  }, [getOrdinalUTXOs, ordAddress, fetchOrdinalUtxosStatus]);
+
   const getTxById = async (txid: string): Promise<TxDetails> => {
     const r = await fetch(
       `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}`
@@ -247,69 +338,30 @@ const WalletProvider: React.FC<Props> = (props) => {
     []
   );
 
-  const getInscriptionsByInscriptionId = useCallback(
-    async (inscriptionId: number): Promise<GPInscription[]> => {
+  const getInscriptionByInscriptionId = useCallback(
+    async (inscriptionId: number): Promise<GPInscription> => {
       setFetchInscriptionsStatus(FetchStatus.Loading);
       try {
         const r = await fetch(
           `https://ordinals.gorillapool.io/api/inscriptions/${inscriptionId}`
         );
-        const inscriptions = (await r.json()) as GPInscription[];
+        const inscription = (await r.json()) as GPInscription;
         setFetchInscriptionsStatus(FetchStatus.Success);
-        return inscriptions;
+        return inscription;
       } catch (e) {
         setFetchInscriptionsStatus(FetchStatus.Error);
         throw e;
       }
     },
-    []
+    [setFetchInscriptionsStatus]
   );
 
   const getRawTxById = async (txid: string): Promise<string> => {
     const r = await fetch(
       `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
     );
-    const rawTx = await r.text();
-    // let utxo = res.find((u: any) => u.value > 1);
-    // TODO: How to get script?
-
-    return rawTx;
+    return await r.text();
   };
-
-  const getOrdinalUTXOs = useCallback(
-    async (address: string): Promise<void> => {
-      // address or custom locking script hash
-      setFetchOrdinalUtxosStatus(FetchStatus.Loading);
-
-      try {
-        const r = await fetch(
-          `https://ordinals.gorillapool.io/api/utxos/address/${address}`
-        );
-        const utxos = (await r.json()) as GPUtxo[];
-
-        //
-        let filledOrdUtxos: OrdUtxo[] = [];
-        for (let a of utxos) {
-          const parts = a.origin.split("_");
-          const newA = await fillContentType({
-            satoshis: a.satoshis,
-            txid: parts[0],
-            vout: parseInt(parts[1]),
-          } as OrdUtxo);
-
-          filledOrdUtxos.push(newA);
-        }
-
-        setOrdUtxos(filledOrdUtxos);
-        setFetchOrdinalUtxosStatus(FetchStatus.Success);
-        return;
-      } catch (e) {
-        setFetchOrdinalUtxosStatus(FetchStatus.Error);
-        throw e;
-      }
-    },
-    [setFetchOrdinalUtxosStatus, setOrdUtxos]
-  );
 
   const getUTXOs = useCallback(
     async (address: string): Promise<Utxo[]> => {
@@ -414,27 +466,23 @@ const WalletProvider: React.FC<Props> = (props) => {
     [getInscriptionsById]
   );
 
-  const getArtifactsByInscriptionId = useCallback(
-    async (inscriptionId: number): Promise<OrdUtxo[]> => {
-      const gpInscriptions = await getInscriptionsByInscriptionId(
-        inscriptionId
-      );
+  const getArtifactByInscriptionId = useCallback(
+    async (inscriptionId: number): Promise<OrdUtxo | undefined> => {
+      const gpInscription = await getInscriptionByInscriptionId(inscriptionId);
 
-      if (!gpInscriptions) {
-        return [];
+      if (!gpInscription) {
+        return;
       }
-      return gpInscriptions.map((i) => {
-        return {
-          vout: i.vout,
-          satoshis: 1,
-          txid: i.txid,
-          type: i.file.type,
-          origin: i.origin,
-          id: i.id,
-        } as OrdUtxo;
-      });
+      return {
+        vout: gpInscription.vout,
+        satoshis: 1,
+        txid: gpInscription.txid,
+        type: gpInscription.file.type,
+        origin: gpInscription.origin,
+        id: gpInscription.id,
+      } as OrdUtxo;
     },
-    [getInscriptionsById]
+    [getInscriptionByInscriptionId]
   );
 
   type GPUtxo = {
@@ -465,24 +513,6 @@ const WalletProvider: React.FC<Props> = (props) => {
   //     lock: "95EA9JV8O+RWtoU7zrUdcsIRyF2RhhHON/CxiBEpw3Y=",
   //   },
   // ];
-
-  type GPFile = {
-    hash: string;
-    size: number;
-    type: string;
-  };
-
-  type GPInscription = {
-    id: number;
-    txid: string;
-    vout: number;
-    file: GPFile;
-    origin: string;
-    ordinal: number;
-    height: number;
-    idx: number;
-    lock: string;
-  };
 
   const getHistory = useCallback(
     async (address: string): Promise<void> => {
@@ -561,12 +591,86 @@ const WalletProvider: React.FC<Props> = (props) => {
   );
 
   // send balance to an address
-  const send = useCallback(async () => {
-    if (!initialized || !payPk) {
+  const transfer = useCallback(
+    async (ordUtxo: OrdUtxo, toOrdAddress: string) => {
+      if (!payPk || !ordPk || !ordUtxo || !toOrdAddress || !fundingUtxos) {
+        console.log(
+          "missing thing",
+          payPk,
+          ordPk,
+          toOrdAddress,
+          ordUtxo,
+          fundingUtxos
+        );
+        return;
+      }
+
+      if (!toOrdAddress?.startsWith("1")) {
+        alert("inivalid receive address");
+        return;
+      }
+      toast(`Transferring to ${toOrdAddress}`, {
+        style: {
+          background: "#333",
+          color: "#fff",
+        },
+      });
+
+      if (!ordUtxo.script) {
+        const ordRawTx = await getRawTxById(ordUtxo.txid);
+        const tx = Transaction.from_hex(ordRawTx);
+        const out = tx.get_output(ordUtxo.vout);
+        const script = out?.get_script_pub_key();
+        if (script) {
+          ordUtxo.script = script.to_asm_string();
+        }
+      }
+      const fundingUtxo = head(fundingUtxos);
+      if (fundingUtxo && !fundingUtxo.script) {
+        const ordRawTx = await getRawTxById(fundingUtxo.txid);
+        const tx = Transaction.from_hex(ordRawTx);
+        const out = tx.get_output(ordUtxo.vout);
+        const script = out?.get_script_pub_key();
+        if (script) {
+          fundingUtxo.script = script.to_asm_string();
+        }
+      }
+      const response = await fetch(`/api/ordinal/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fundingUtxo,
+          ordUtxo,
+          payPk,
+          ordPk,
+          address: toOrdAddress,
+          feeSats: 20,
+        }),
+      });
+      const { rawTx, fee, size } = await response.json();
+
+      console.log("Transfer Tx", rawTx);
+      setPendingTransaction({
+        rawTx,
+        size,
+        fee,
+        numInputs: 2,
+        numOutputs: 2,
+      });
+
+      Router.push("/preview");
+    },
+    [setPendingTransaction, payPk, ordPk, fundingUtxos]
+  );
+
+  const sendApi = useCallback(async () => {
+    if (!payPk) {
       return;
     }
     const address = prompt(
-      "Wher should we send your funds? Must be a normal Bitcoin SV address starting with a 1"
+      "Where should we send your funds? Must be a normal Bitcoin SV address starting with a 1"
     );
     if (!address?.startsWith("1")) {
       alert("inivalid receive address");
@@ -580,7 +684,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     });
 
     // TODO: api request to send utxos
-    const response = await fetch(`/api/send`, {
+    const response = await fetch(`/api/payment/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -592,19 +696,337 @@ const WalletProvider: React.FC<Props> = (props) => {
         feeSats: 20,
       }),
     });
-    const { tx, feeSats } = await response.json();
+    const resp = await response.json();
+    console.log({ resp });
+    const { rawTx, fee, size, numInputs, numOutputs } = resp;
     // TODO: Sign the inputs
-    console.log("Refund Tx", tx.to_hex());
+    console.log("Refund Tx", rawTx);
     setPendingTransaction({
-      rawTx: tx.to_hex(),
-      size: tx.get_size(),
-      fee: feeSats,
-      numInputs: fundingUtxos?.length || 0,
-      numOutputs: 1,
+      rawTx,
+      size,
+      fee,
+      numInputs,
+      numOutputs,
     });
 
     Router.push("/preview");
-  }, [setPendingTransaction, initialized, payPk, fundingUtxos]);
+  }, [setPendingTransaction, payPk, fundingUtxos]);
+
+  const sendWasm = useCallback(
+    async (address: string) => {
+      if (!payPk) {
+        return;
+      }
+
+      if (!address?.startsWith("1")) {
+        console.error("inivalid receive address");
+        return;
+      }
+      toast(`Sending to ${address}`, {
+        style: {
+          background: "#333",
+          color: "#fff",
+        },
+      });
+
+      const feeSats = 20;
+      const paymentPk = PrivateKey.from_wif(payPk);
+      const tx = new Transaction(1, 0);
+
+      // Outputs
+      let inputValue = 0;
+      for (let u of fundingUtxos || []) {
+        inputValue += u.satoshis;
+      }
+      const satsIn = inputValue;
+      const satsOut = satsIn - feeSats;
+      console.log({ feeSats, satsIn, satsOut });
+      tx.add_output(
+        new WasmTxOut(
+          BigInt(satsOut),
+          P2PKHAddress.from_string(address).get_locking_script()
+        )
+      );
+
+      // build txins from our UTXOs
+      let idx = 0;
+      for (let u of fundingUtxos || []) {
+        console.log({ u });
+        const inx = new WasmTxIn(
+          Buffer.from(u.txid, "hex"),
+          u.vout,
+          WasmScript.from_asm_string("")
+        );
+        console.log({ inx });
+        inx.set_satoshis(BigInt(u.satoshis));
+        tx.add_input(inx);
+
+        const sig = tx.sign(
+          paymentPk,
+          SigHash.InputOutputs,
+          idx,
+          WasmScript.from_asm_string(u.script),
+          BigInt(u.satoshis)
+        );
+
+        console.log({ sig: sig.to_hex() });
+
+        // const s = Script.from_asm_string(u.script);
+        // inx.set_unlocking_script(
+        //   P2PKHAddress.from_string(changeAddress || "").get_unlocking_script(
+        //     paymentPk.to_public_key(),
+        //     sig
+        //   )
+        // );
+
+        inx.set_unlocking_script(
+          WasmScript.from_asm_string(
+            `${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`
+          )
+        );
+
+        tx.set_input(idx, inx);
+        idx++;
+      }
+
+      const rawTx = tx.to_hex();
+      // const { rawTx, fee, size, numInputs, numOutputs } = resp;
+      // TODO: Sign the inputs
+      console.log("Refund Tx", rawTx);
+      setPendingTransaction({
+        rawTx,
+        size: Math.ceil(rawTx.length / 2),
+        fee: 20,
+        numInputs: tx.get_ninputs(),
+        numOutputs: tx.get_noutputs(),
+      });
+
+      Router.push("/preview");
+    },
+    [setPendingTransaction, payPk, fundingUtxos]
+  );
+
+  const sendTxBuilder = useCallback(async () => {
+    if (!payPk) {
+      return;
+    }
+    if (!fundingUtxos || fundingUtxos?.length == 0) {
+      alert("Nothing to send");
+      return;
+    }
+    const address = prompt(
+      "Where should we send your funds? Must be a normal Bitcoin SV address starting with a 1"
+    );
+    if (!address?.startsWith("1")) {
+      alert("inivalid receive address");
+      return;
+    }
+    toast(`Sending to ${address}`, {
+      style: {
+        background: "#333",
+        color: "#fff",
+      },
+    });
+
+    // fundingUtxos,
+    // payPk,
+    // address,
+
+    // Prepare payment constants
+    const paymentPk = new PrivKey().fromWif(payPk);
+    const paymentPubKey = new PubKey().fromPrivKey(paymentPk);
+    const pubKeyBuf = paymentPubKey.toBuffer();
+    const pubKeyHash = Hash.sha256Ripemd160(pubKeyBuf);
+    const paymentScript = new Script().fromPubKeyHash(pubKeyHash);
+    const keyPair = new KeyPair().fromPrivKey(paymentPk);
+
+    // destination constants
+    const destinationAddress = new Address().fromString(address);
+    const destinationScript = destinationAddress.toTxOutScript();
+
+    console.log({ script: paymentScript.toAsmString() });
+
+    let txb = new TxBuilder().setFeePerKbNum(0.0001e8);
+
+    let i = 0;
+
+    for (let u of fundingUtxos) {
+      console.log({ i });
+      const out = TxOut.fromProperties(
+        new Bn(u.satoshis),
+        new Script().fromAsmString(u.script)
+      );
+      const txHashBuf = Buffer.from(u.txid, "hex").reverse();
+
+      txb.inputFromScript(
+        txHashBuf,
+        i,
+        out,
+        new Script().fromAsmString(u.script)
+      );
+      // txb = txb.inputFromPubKeyHash(
+      //   Buffer.from(u.txid).reverse(),
+      //   i,
+      //   out,
+      //   paymentPubKey
+      // );
+      i++;
+    }
+
+    txb = txb.setChangeAddress(destinationAddress);
+    const tx = txb.build();
+
+    console.log("inputs", tx.txIns.length, fundingUtxos.length);
+
+    i = 0;
+    for (let utxo of fundingUtxos) {
+      const keyPair = new KeyPair().fromPrivKey(paymentPk);
+      // const utxoScriptHex = WasmScript.from_asm_string(utxo.script).to_hex();
+      // console.log({ utxoScriptHex });
+      const sig = tx.sign(
+        keyPair,
+        Sig.SIGHASH_ALL,
+        i,
+        paymentScript,
+        new Bn(utxo.satoshis)
+      );
+      const pubKeyHash = Hash.sha256Ripemd160(keyPair.pubKey.toBuffer());
+
+      tx.txIns[i].setScript(
+        new Script().fromAsmString(`${sig} ${pubKeyHash.toString("hex")}`)
+      );
+      i++;
+    }
+    setPendingTransaction({
+      rawTx: tx.toHex(),
+      size: Math.ceil(tx.toHex().length / 2),
+      fee: 20,
+      numInputs: tx.txIns.length,
+      numOutputs: tx.txOuts.length,
+    } as PendingTransaction);
+    // sign
+    Router.push("/preview");
+  }, [setPendingTransaction, payPk, fundingUtxos]);
+
+  const sendTx = useCallback(async () => {
+    if (!payPk) {
+      return;
+    }
+    if (!fundingUtxos || fundingUtxos?.length == 0) {
+      alert("Nothing to send");
+      return;
+    }
+    const address = prompt(
+      "Where should we send your funds? Must be a normal Bitcoin SV address starting with a 1"
+    );
+    if (!address?.startsWith("1")) {
+      alert("inivalid receive address");
+      return;
+    }
+    toast(`Sending to ${address}`, {
+      style: {
+        background: "#333",
+        color: "#fff",
+      },
+    });
+
+    // fundingUtxos,
+    // payPk,
+    // address,
+
+    // Prepare payment constants
+    const paymentPk = new PrivKey().fromWif(payPk);
+    const paymentPubKey = new PubKey().fromPrivKey(paymentPk);
+    const pubKeyBuf = paymentPubKey.toBuffer();
+    const pubKeyHash = Hash.sha256Ripemd160(pubKeyBuf);
+    const paymentScript = new Script().fromPubKeyHash(pubKeyHash);
+    const keyPair = new KeyPair().fromPrivKey(paymentPk);
+
+    // destination constants
+    const destinationAddress = new Address().fromString(address);
+    const destinationScript = destinationAddress.toTxOutScript();
+
+    console.log({ script: paymentScript.toAsmString() });
+
+    let i = 0;
+
+    // add inputs
+    let totalSatsIn = 0;
+    let txIns: TxIn[] = [];
+    for (const u of fundingUtxos) {
+      console.log({ u });
+      const txHashBuf = new Br(Buffer.from(u.txid, "hex")).readReverse();
+      // const txHashBuf = Buffer.from(u.txid);
+      // const utxoIn = new TxIn().fromObject({
+      //   txHashBuf,
+      //   txOutNum: u.vout,
+      //   scriptVi: paymentScriptVi,
+      //   script: paymentScript,
+      //   nSequence: 0,
+      // });
+      const utxoIn = new TxIn().fromProperties(
+        txHashBuf,
+        u.vout,
+        paymentScript,
+        0
+      );
+      console.log({ utxoIn });
+      txIns.push(utxoIn);
+      totalSatsIn += u.vout;
+    }
+
+    // add output
+    const fee = 20;
+    const satsOut = totalSatsIn - fee;
+    const output = new TxOut().fromProperties(
+      new Bn(satsOut),
+      destinationScript
+    );
+
+    const tx = new Tx().fromObject({
+      versionBytesNum: 1,
+      txInsVi: VarInt.fromNumber(txIns.length),
+      txIns,
+      txOutsVi: VarInt.fromNumber(1),
+      txOuts: [output],
+      nLockTime: 0,
+    });
+
+    console.log("inputs", tx.txIns.length, fundingUtxos.length);
+
+    // sign inputs
+    const rawTx = tx.toHex();
+    console.log({ tx, rawTx });
+
+    i = 0;
+    for (let utxo of fundingUtxos) {
+      const keyPair = new KeyPair().fromPrivKey(paymentPk);
+      // const utxoScriptHex = WasmScript.from_asm_string(utxo.script).to_hex();
+      // console.log({ utxoScriptHex });
+      const sig = tx.sign(
+        keyPair,
+        Sig.SIGHASH_ALL,
+        i,
+        paymentScript,
+        new Bn(utxo.satoshis)
+      );
+      const pubKeyHash = Hash.sha256Ripemd160(keyPair.pubKey.toBuffer());
+
+      tx.txIns[i].setScript(
+        new Script().fromAsmString(`${sig} ${pubKeyHash.toString("hex")}`)
+      );
+      i++;
+    }
+    setPendingTransaction({
+      rawTx: tx.toHex(),
+      size: Math.ceil(tx.toHex().length / 2),
+      fee: 20,
+      numInputs: tx.txIns.length,
+      numOutputs: tx.txOuts.length,
+    } as PendingTransaction);
+    // sign
+    Router.push("/preview");
+  }, [setPendingTransaction, payPk, fundingUtxos]);
 
   const deleteKeys = useCallback(() => {
     const c = confirm(
@@ -676,7 +1098,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       deleteKeys,
       backupFile,
       generateKeys,
-      send,
+      send: sendWasm,
       pendingTransaction,
       setPendingTransaction,
       reset,
@@ -695,8 +1117,10 @@ const WalletProvider: React.FC<Props> = (props) => {
       setOrdUtxos,
       fetchInscriptionsStatus,
       getArtifactsByTxId,
-      getArtifactsByInscriptionId,
+      getArtifactByInscriptionId,
+      setFetchInscriptionsStatus,
       getArtifactsByOrigin: getArtifactsByTxId,
+      transfer,
     }),
     [
       backupFile,
@@ -710,7 +1134,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       deleteKeys,
       backupKeys,
       generateKeys,
-      send,
+      sendWasm,
       setPendingTransaction,
       pendingTransaction,
       reset,
@@ -728,7 +1152,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       getUTXOs,
       getArtifactsByTxId,
       fetchInscriptionsStatus,
-      getArtifactsByInscriptionId,
+      getArtifactByInscriptionId,
+      setFetchInscriptionsStatus,
+      transfer,
     ]
   );
 

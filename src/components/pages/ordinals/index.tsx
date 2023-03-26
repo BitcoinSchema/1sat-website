@@ -23,15 +23,6 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
     getArtifactsByTxId,
   } = useWallet();
 
-  useEffect(() => {
-    const fire = async (a: string) => {
-      await getOrdinalUTXOs(a);
-    };
-    if (ordAddress && fetchOrdinalUtxosStatus === FetchStatus.Idle) {
-      fire(ordAddress);
-    }
-  }, [getOrdinalUTXOs, ordAddress, fetchOrdinalUtxosStatus]);
-
   // const ordinals = useMemo(() => {
   //   return ordUtxos?.filter((a) => !a.type);
   // }, [ordUtxos]);
@@ -71,6 +62,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
               key={`${a.txid}_${a.vout}`}
               outPoint={`${a.txid}_${a.vout}`}
               contentType={a.type}
+              id={a.id}
               classNames={{ wrapper: "max-w-72 max-h-72 overflow-hidden" }}
             />
           );
@@ -84,6 +76,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
               key={`${a.txid}_${a.vout}`}
               outPoint={`${a.txid}_${a.vout}`}
               contentType={a.type}
+              id={a.id}
               classNames={{ wrapper: "max-w-72 max-h-72 overflow-hidden" }}
             />
           );

@@ -9,7 +9,7 @@
     "lint": "next lint",
     "deploy": "yarn build && firebase deploy",
     "deploy-hosting": "yarn build && firebase deploy --only hosting",
-    "deployfunctions": "firebase deploy --only functions"
+    "deploy-functions": "firebase deploy --only functions"
   },
   "export": "next export",
   "resolve": {
@@ -21,6 +21,8 @@
     "@emotion/react": "^11.0.0",
     "@emotion/server": "^11.0.0",
     "@emotion/styled": "^11.0.0",
+    "@google/model-viewer": "^3.0.2",
+    "@ts-bitcoin/core": "^2.2.0",
     "@types/jdenticon": "^2.2.0",
     "@types/lodash": "^4.14.191",
     "@types/node": "18.15.3",

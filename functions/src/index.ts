@@ -1,7 +1,7 @@
 import { P2PKHAddress, PrivateKey } from "bsv-wasm";
 import corsModule from "cors";
 import * as functions from "firebase-functions";
-import { createOrdinal, sendUtxos, Utxo } from "js-1sat-ord";
+import { createOrdinal, sendOrdinal, sendUtxos, Utxo } from "js-1sat-ord";
 
 const allowedOrigins = ["http://localhost:80"];
 const options = {
@@ -69,6 +69,7 @@ export const inscribe = functions.https.onRequest((req, res) => {
             numInputs: tx.get_ninputs(),
             numOutputs: tx.get_noutputs(),
           } as PendingTransaction;
+          console.log(Object.keys(result));
           res.status(200).json(result);
           return;
         }
@@ -91,10 +92,78 @@ export const send = functions.https.onRequest((req, res) => {
       fundingUtxos,
       feeSats,
     });
-    if (!!payPk && !!address && !!fundingUtxos && !!feeSats) {
+    res.type("application/json");
+    if (payPk && address && fundingUtxos?.length > 0 && feeSats > 0) {
       try {
         const tx = await handleSending(payPk, address, fundingUtxos, feeSats);
-        const satsIn = fundingUtxos.satoshis;
+
+        let satsIn = 0;
+        for (let u of fundingUtxos) {
+          satsIn += u.satoshis;
+        }
+        const satsOut = Number(tx.satoshis_out());
+        if (satsIn && satsOut) {
+          const fee = satsIn - satsOut;
+
+          if (fee < 0) {
+            res.status(402).send({ error: "Fee inadequate" });
+            return;
+          }
+          const result = {
+            rawTx: tx.to_hex(),
+            size: tx.get_size(),
+            fee,
+            numInputs: tx.get_ninputs(),
+            numOutputs: tx.get_noutputs(),
+          } as PendingTransaction;
+          res.status(200).json(result);
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+        res.status(500).send(e.toString());
+        return;
+      }
+    }
+
+    res.status(409).send({
+      error: "some param not set",
+    });
+  });
+});
+
+export const transfer = functions.https.onRequest((req, res) => {
+  cors(req, res, async (err) => {
+    const { payPk, ordPk, address, ordUtxo, fundingUtxo, satsPerByteFee } =
+      req.body;
+    console.log({
+      payPk,
+      address,
+      fundingUtxo,
+      satsPerByteFee,
+      ordPk,
+      ordUtxo,
+      script: ordUtxo.script,
+    });
+    if (
+      !!payPk &&
+      !!address &&
+      !!fundingUtxo &&
+      !!ordUtxo &&
+      !!ordPk &&
+      !!satsPerByteFee &&
+      !!ordUtxo.script
+    ) {
+      try {
+        const tx = await handleTransferring(
+          payPk,
+          ordPk,
+          address,
+          fundingUtxo,
+          ordUtxo,
+          satsPerByteFee
+        );
+        const satsIn = fundingUtxo.satoshis;
         const satsOut = Number(tx.satoshis_out());
         if (satsIn && satsOut) {
           const fee = satsIn - satsOut;
@@ -116,12 +185,12 @@ export const send = functions.https.onRequest((req, res) => {
         }
       } catch (e) {
         console.error(e);
-        res.status(500).send(e.toString());
+        res.status(500).send({ error: e.toString() });
         return;
       }
     }
 
-    res.status(409).send("");
+    res.status(409).send({ error: "some param not set" });
   });
 });
 
@@ -170,6 +239,45 @@ const handleSending = async (
       paymentPk,
       P2PKHAddress.from_string(address),
       feeSats
+    );
+    return tx;
+  } catch (e) {
+    console.log({ e });
+    throw e;
+  }
+};
+
+const handleTransferring = async (
+  payPk: string,
+  ordPk: string,
+  address: string,
+  fundingUtxo: Utxo,
+  ordinalUtxo: Utxo,
+  satsPerByteFee: number
+) => {
+  const paymentPk = PrivateKey.from_wif(payPk);
+  const ordinalPk = PrivateKey.from_wif(ordPk);
+  const changeAddress = P2PKHAddress.from_pubkey(
+    paymentPk.to_public_key()
+  ).to_string();
+  console.log({
+    fundingUtxo,
+    ordinalUtxo,
+    paymentPk,
+    changeAddress,
+    satsPerByteFee,
+    ordinalPk,
+    address,
+  });
+  try {
+    const tx = await sendOrdinal(
+      fundingUtxo,
+      ordinalUtxo,
+      paymentPk,
+      changeAddress,
+      satsPerByteFee,
+      ordinalPk,
+      address
     );
     return tx;
   } catch (e) {
