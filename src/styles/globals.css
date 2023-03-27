@@ -76,6 +76,30 @@ h1 {
   font-family: "Ubuntu", sans-serif;
 }
 
+@keyframes opulcity {
+  0% {
+    opacity: 25%;
+  }
+
+  70% {
+    opacity: 100%;
+  }
+
+  100% {
+    opacity: 25%;
+  }
+}
+@keyframes animateGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
 @keyframes pulse {
   0% {
     transform: scale(0.95);

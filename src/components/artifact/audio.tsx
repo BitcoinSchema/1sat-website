@@ -1,15 +1,18 @@
+import { API_HOST } from "@/pages/_app";
 import { encode } from "blurhash";
 import { toSvg } from "jdenticon";
 import React, { useEffect, useMemo, useState } from "react";
 import { Blurhash } from "react-blurhash";
 
 type AudioArtifactProps = {
-  outPoint: string;
+  outPoint?: string;
+  src?: string;
   className?: string;
 };
 
 const AudioArtifact: React.FC<AudioArtifactProps> = ({
   outPoint,
+  src,
   className,
 }) => {
   const [componentX, setComponentX] = useState(4);
@@ -78,7 +81,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
   }, [data, generatedImage, outPoint]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h- full w-full">
       {bh && (
         <Blurhash
           hash={bh}
@@ -87,14 +90,14 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
           resolutionX={128}
           resolutionY={128}
           punch={1}
-          className="w-full rounded opacity-50 transition"
+          className="w-full h-full min-w-[300px] min-h-[300px] rounded opacity-50 transition"
         />
       )}
       {!bh && generatedImage}
       <audio
-        className={`w-full h-full transition  ${className ? className : ""}`}
-        src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
-        id={`${outPoint}_audio`}
+        className={`w-full transition ${className ? className : ""}`}
+        src={src ? src : `${API_HOST}/api/files/inscriptions/${outPoint}`}
+        id={`${src ? src : outPoint}_audio`}
         onPlaying={(e) => {
           console.log("playing", e);
         }}

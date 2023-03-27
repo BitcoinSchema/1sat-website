@@ -1,18 +1,21 @@
+import { API_HOST } from "@/pages/_app";
 import React from "react";
 
 type VideoArtifactProps = {
-  outPoint: string;
+  outPoint?: string;
+  src?: string;
   className?: string;
 };
 
 const VideoArtifact: React.FC<VideoArtifactProps> = ({
   outPoint,
+  src,
   className,
 }) => {
   return (
     <video
       className={`transition  ${className ? className : ""}`}
-      src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
+      src={src ? src : `${API_HOST}/api/files/inscriptions/${outPoint}`}
       controls={true}
     />
   );

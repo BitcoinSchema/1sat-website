@@ -2,9 +2,11 @@ import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { head } from "lodash";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
+import Artifact from "../artifact";
 import { FetchStatus } from "../pages";
 
 const Input = styled.input`
@@ -56,19 +58,23 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     });
   }
 
-  const handleFileChange = (event: any) => {
-    const file = event.target.files[0] as File;
-    setSelectedFile(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreview(null);
-    }
-  };
+  const handleFileChange = useCallback(
+    (event: any) => {
+      const file = event.target.files[0] as File;
+      setSelectedFile(file);
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setPreview(null);
+      }
+    },
+    [setPreview]
+  );
+
   const utxo = useMemo(() => head(fundingUtxos), [fundingUtxos]);
 
   const handleInscribing = async () => {
@@ -120,12 +126,32 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     }
   };
 
+  const artifact = useMemo(() => {
+    console.log({ artifactType: selectedFile?.type });
+    return (
+      selectedFile?.type &&
+      preview && (
+        <Artifact
+          classNames={{ media: "w-full h-full" }}
+          contentType={selectedFile.type}
+          src={preview as string}
+        />
+      )
+    );
+  }, [preview, selectedFile?.type]);
+
+  console.log({ preview });
   return (
-    <div className="flex flex-col w-full max-w-xl mx-auto">
+    <div className="flex flex-col w-full max-w-xl mx-auto p-4">
       <div className="w-full">
-        <Label className="min-h-[300px] rounded border border-[#333] flex items-center justify-center">
-          Choose a file to inscribe
-          <Input type="file" onChange={handleFileChange} />
+        <Label
+          className={`${
+            selectedFile ? "" : "min-h-[300px]"
+          } rounded border border-dashed border-[#222] flex items-center justify-center`}
+        >
+          {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
+          {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
+          <Input type="file" className="hidden" onChange={handleFileChange} />
           {selectedFile && (
             <div className="text-sm text-center w-full">
               {formatBytes(selectedFile.size)} Bytes
@@ -133,11 +159,10 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           )}
         </Label>
 
-        <hr className="my-2 h-2 border-0 bg-[#222]" />
+        {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
 
-        {preview && (
-          <>
-            {selectedFile?.type.startsWith("video") ? (
+        {selectedFile && preview && <>{artifact}</>}
+        {/* {selectedFile?.type.startsWith("video") ? (
               <video
                 src={preview as string}
                 autoPlay={true}
@@ -156,15 +181,15 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
               <img src={preview as string} alt="Preview" className="w-full" />
             )}
 
-            <hr className="my-2 h-2 border-0 bg-[#222]" />
-          </>
-        )}
+            </>
+          )} */}
 
+        {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
         <button
           disabled={!selectedFile || inscribeStatus === FetchStatus.Loading}
           type="submit"
           onClick={handleInscribing}
-          className="w-full disabled:bg-gray-600 hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
+          className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
         >
           Preview
         </button>

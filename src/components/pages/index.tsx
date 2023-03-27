@@ -1,8 +1,9 @@
+import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import { useWallet } from "@/context/wallet";
-import Router from "next/router";
+import Image from "next/image";
+import Router, { useRouter } from "next/router";
 import { ChangeEvent, ReactNode, useCallback, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
-
 export enum FetchStatus {
   Idle,
   Loading,
@@ -26,6 +27,7 @@ const Layout: React.FC<Props> = ({ children }) => {
     changeAddress,
   } = useWallet();
 
+  const router = useRouter();
   useEffect(() => {
     const fire = async (a: string) => {
       await getUTXOs(a);
@@ -56,16 +58,28 @@ const Layout: React.FC<Props> = ({ children }) => {
   );
 
   return (
-    <div className="w-screen h-screen flex flex-col justify-between text-yellow-400 font-mono">
-      <div className="h-10 mx-auto">
-        <h1
-          className="text-2xl py-4 text-white cursor-pointer"
+    <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
+      <div className="mx-auto">
+        <div
+          className="text-2xl md:opacity-25 md:hover:opacity-100 duration-700 transition mt-6 text-white cursor-pointer"
           onClick={() => Router.push("/")}
         >
-          1Sat Ordinals
-        </h1>
+          {router.pathname !== "/" && (
+            <Image
+              src={oneSatLogo}
+              // onClick={() => Router?.push("/wallet")}
+              alt={"1Sat Ordinals"}
+              className="w-8 h-8 cursor-pointer mx-auto rounded"
+              style={{
+                animation: "opulcity 8s infinite",
+              }}
+            />
+          )}
+        </div>
       </div>
-      <div className="h-full flex flex-col items-center">{children}</div>
+      <div className="min-h-[calc(100vh-8rem)] h-full flex flex-col items-center">
+        {children}
+      </div>
       <div
         className="max-w-7xl mx-auto  h-10 flex items-center justify-center font-mono text-yellow-400 py-8"
         style={{
@@ -77,7 +91,7 @@ const Layout: React.FC<Props> = ({ children }) => {
           className="font-mono text-yellow-400"
           href="https://docs.1satordinals.com"
         >
-          Read the Docs
+          Protocol
         </a>
         <div className="mx-4">·</div>
         {payPk && (
@@ -93,7 +107,7 @@ const Layout: React.FC<Props> = ({ children }) => {
         {payPk && <div className="mx-4">·</div>}
 
         {payPk && (
-          <div className="cursor-pointer text-orange-600" onClick={deleteKeys}>
+          <div className="cursor-pointer text-red-500" onClick={deleteKeys}>
             Delete Keys
           </div>
         )}

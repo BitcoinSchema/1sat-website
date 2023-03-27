@@ -23,20 +23,20 @@ const TxPage: React.FC<PageProps> = ({}) => {
 
   const {
     ordUtxos,
-    getUTXOs,
-    getOrdinalUTXOs,
-    changeAddress,
     getArtifactsByTxId,
     fetchInscriptionsStatus,
     transfer,
+    fundingUtxos,
   } = useWallet();
 
   const ordinalUtxo = useMemo(() => {
     return (
-      (find(ordUtxos, (ou) => ou.txid && ou.txid === txid) as OrdUtxo) ||
-      undefined
+      (find(
+        ordUtxos,
+        (ou) => ou.origin && ou.origin === outpoint
+      ) as OrdUtxo) || undefined
     );
-  }, [ordUtxos, txid]);
+  }, [ordUtxos, outpoint]);
 
   useEffect(() => {
     console.log({ vout });
@@ -59,29 +59,6 @@ const TxPage: React.FC<PageProps> = ({}) => {
     }
   }, [vout, getArtifactsByTxId, txid]);
 
-  // useEffect(() => {
-  //   console.log({ vout });
-  //   const fire = async (t: string) => {
-  //     const art = await getOrdinalUTXOs(t);
-  //     let arts = [];
-  //     for (let a of art) {
-  //       if (a.origin?.split("_")[0] === a.txid) {
-  //         const art2 = await fillContentType(a);
-  //         arts.push(art2);
-  //       } else {
-  //         console.log("other", a);
-  //       }
-  //     }
-  //     console.log("setting", arts);
-  //     setArtifacts(arts);
-  //   };
-  //   if (txid) {
-  //     fire(txid);
-  //   }
-  // }, [vout, getArtifactsByTxId, txid]);
-
-  // console.log({ artifacts });
-
   return (
     <>
       <Head>
@@ -98,51 +75,62 @@ const TxPage: React.FC<PageProps> = ({}) => {
         />
       </Head>
       <Tabs currentTab={undefined} />
+      <div className="p-4 w-full">
+        <div className="text-center w-full h-full flex items-center justify-center">
+          {artifacts?.map((artifact) => {
+            return (
+              <Artifact
+                key={artifact.txid}
+                classNames={{
+                  wrapper: `max-w-5xl w-full h-full`,
+                  media: `max-h-[calc(100vh-20em)]`,
+                }}
+                contentType={artifact.type}
+                outPoint={artifact.origin || ""}
+                id={artifact.id}
+              />
+            );
+          })}
+        </div>
+        <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4">
+          Transaction ID: {txid}
+          {fetchInscriptionsStatus === FetchStatus.Success &&
+            artifacts.length === 0 && <div>No artifacts matching that ID</div>}
+          {vout !== undefined ? (
+            <>
+              <br />
+              {"Output #" + vout}
+            </>
+          ) : (
+            ""
+          )}
+          {ordUtxos?.some((ou) => ou.origin === outpoint) && (
+            <div
+              className="rounded bg-[#222]"
+              onClick={async () => {
+                console.log("click send");
+                const address = prompt(
+                  "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+                );
 
-      <div className="text-center w-full h-full flex items-center justify-center">
-        {artifacts?.map((artifact) => {
-          return (
-            <Artifact
-              key={artifact.txid}
-              classNames={{ wrapper: `max-w-5xl w-full h-full` }}
-              contentType={artifact.type}
-              outPoint={artifact.origin || ""}
-              id={artifact.id}
-            />
-          );
-        })}
-      </div>
-      <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl text-sm p-4 my-4">
-        Transaction ID: {txid}
-        {fetchInscriptionsStatus === FetchStatus.Success &&
-          artifacts.length === 0 && <div>No artifacts matching that ID</div>}
-        {vout !== undefined ? (
-          <>
-            <br />
-            {"Output #" + vout}
-          </>
-        ) : (
-          ""
-        )}
-        {ordUtxos?.some((ou) => ou.txid === txid) && (
-          <div
-            className="rounded bg-[#222]"
-            onClick={async () => {
-              console.log("click send");
-              const address = prompt(
-                "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
-              );
+                if (address) {
+                  console.log(
+                    "transferring",
+                    { ordinalUtxo },
+                    "to",
+                    { address },
+                    "funded by",
+                    { fundingUtxos }
+                  );
 
-              if (address) {
-                console.log("transferring", { ordinalUtxo }, "to", { address });
-
-                await transfer(ordinalUtxo, address);
-              }
-            }}
-          >
-            Send
-          </div>
-        )}
+                  await transfer(ordinalUtxo, address);
+                }
+              }}
+            >
+              Send
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

@@ -1,13 +1,18 @@
 import { OrdUtxo } from "@/context/wallet";
+import { API_HOST } from "@/pages/_app";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
-  const url = `https://ordinals.gorillapool.io/api/files/inscriptions/${artifact.txid}_${artifact.vout}`;
+  const origin = artifact.origin || `${artifact.txid}_${artifact.vout}`;
+  const url = `${API_HOST}/api/files/inscriptions/${origin}`;
 
   return new Promise(async (resolve, reject) => {
     try {
       const response = await fetch(url);
-      const blob = await response.blob();
-      artifact.type = blob.type;
+      if (response.status !== 404) {
+        const blob = await response.blob();
+
+        artifact.type = blob.type;
+      }
       resolve(artifact);
     } catch (e) {
       console.error(e);

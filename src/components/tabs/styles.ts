@@ -5,7 +5,6 @@ import tw from "twin.macro";
 export const Tabs = tw.nav`
     flex
     flex-wrap
-    border-b   
     items-center
     relative
     border-[#333]
@@ -20,6 +19,7 @@ export const Tab = styled(Link)<{
     my-1
     sm:m-2
     md:ml-4
+    mr-2
     px-3
     py-2    
     font-medium
@@ -42,7 +42,7 @@ export const Tab = styled(Link)<{
     : partiallyactive === "true"
     ? tw`
         text-[#AAA]
-        bg-purple-900
+        bg-[#111]
         focus:bg-[#222]
         hover:text-[#AAA]
         focus:outline-none 
@@ -51,7 +51,7 @@ export const Tab = styled(Link)<{
         `
     : tw`
         text-[#777]
-        hover:text-purple-400
+        hover:text-yellow-400
         focus:text-white
         focus:bg-[#444]
         `,

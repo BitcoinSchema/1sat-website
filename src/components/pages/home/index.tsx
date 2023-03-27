@@ -1,7 +1,8 @@
-import oneSatLogo from "@/assets/images/icon.svg";
+import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
 import { OrdUtxo, useWallet } from "@/context/wallet";
+import { API_HOST } from "@/pages/_app";
 import { fillContentType } from "@/utils/artifact";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -46,9 +47,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     const fire = async () => {
       try {
         setFetchCountStatus(FetchStatus.Loading);
-        const resp = await fetch(
-          `https://ordinals.gorillapool.io/api/inscriptions/count`
-        );
+        const resp = await fetch(`${API_HOST}/api/inscriptions/count`);
 
         const { count } = await resp.json();
         setNumMinted(count);
@@ -108,26 +107,37 @@ const HomePage: React.FC<PageProps> = ({}) => {
         />
       </Head>
 
-      <main className="flex items-center justify-center h-full w-full">
+      <main className="px-4 flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center justify-between w-full h-full">
           <div className="w-full flex flex-col items-center justify-center ">
             <nav>
               <Tabs currentTab={Tab.Overview} />
             </nav>
-            <h1 className="mt-8 text-4xl text-teal-400">
+            <h2
+              style={{ fontFamily: "Ubuntu" }}
+              className="mt-2 text-xl font-semibold text-purple-300"
+            >
+              1Sat Ordinals
+            </h2>
+            <h1 className="mt-2 mb-2 text-4xl text-yellow-600 font-mono font-semibold">
               {numMinted ? `${numMinted.toLocaleString()}` : ""}
             </h1>
-            <h2 className="mb-12 text-2xl">Inscriptions Made</h2>
-            <div className="mx-auto h-[calc(300px-72px)] max-w-5xl">
+            <h2 className="mb-12 text-xl text-gray-600 font-sans">
+              Inscriptions Made
+            </h2>
+            <div className="mx-auto max-w-5xl">
               {artifact && (
                 <Artifact
                   id={artifact?.id}
-                  outPoint={`${artifact?.txid}_${artifact?.vout}`}
+                  outPoint={
+                    artifact.origin || ` ${artifact?.txid}_${artifact?.vout}`
+                  }
                   contentType={artifact.type}
                   classNames={{
                     wrapper: "min-w-96",
                     media: "max-h-96 max-w-96",
                   }}
+                  to={`/inscription/${artifact?.id}`}
                 />
               )}
               {!artifact && (

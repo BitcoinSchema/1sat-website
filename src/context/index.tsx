@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react";
+import { RatesProvider } from "./rates";
 import { WalletProvider } from "./wallet";
 
 interface Props {
@@ -6,7 +7,9 @@ interface Props {
 }
 
 const AppContext: React.FC<Props> = ({ children }) => (
-  <WalletProvider>{children}</WalletProvider>
+  <RatesProvider>
+    <WalletProvider>{children}</WalletProvider>
+  </RatesProvider>
 );
 
 export default AppContext;

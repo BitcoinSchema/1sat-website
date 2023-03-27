@@ -1,5 +1,7 @@
 import Tabs, { Tab } from "@/components/tabs";
+import { useRates } from "@/context/rates";
 import { useWallet } from "@/context/wallet";
+import { MAPI_HOST } from "@/pages/_app";
 import { useLocalStorage } from "@/utils/storage";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -44,6 +46,18 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
     FetchStatus.Idle
   );
 
+  const [usdRate, setUsdRate] = useState<number>(0);
+  const { rates } = useRates();
+
+  useEffect(() => {
+    if (rates && rates.length > 0) {
+      // Gives rate for 1 USD in satoshis
+      let usdRate = rates.filter((r) => r.currency === "usd")[0]
+        .price_in_satoshis;
+      setUsdRate(usdRate);
+    }
+  }, [rates, usdRate]);
+
   useEffect(() => {
     const fire = async (a: string) => {
       await getUTXOs(a);
@@ -64,7 +78,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
     }
     setBroadcastStatus(FetchStatus.Loading);
     const body = Buffer.from(pendingTransaction.rawTx, "hex");
-    const response = await fetch(`https://mapi.gorillapool.io/mapi/tx`, {
+    const response = await fetch(`${MAPI_HOST}/mapi/tx`, {
       method: "POST",
       headers: {
         "Content-type": "application/octet-stream",
@@ -141,6 +155,10 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
               <div className="flex justify-between">
                 <div>Fee</div>
                 <div>{pendingTransaction.fee} Satoshis</div>
+              </div>
+              <div className="flex justify-between">
+                <div>Fee USD</div>
+                <div>${(pendingTransaction.fee / usdRate).toFixed(2)}</div>
               </div>
               {pendingTransaction.fee && (
                 <div className="flex justify-between">

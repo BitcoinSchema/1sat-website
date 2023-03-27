@@ -126,7 +126,7 @@ export const send = functions.https.onRequest((req, res) => {
       }
     }
 
-    res.status(409).send({
+    res.status(400).send({
       error: "some param not set",
     });
   });
@@ -190,7 +190,7 @@ export const transfer = functions.https.onRequest((req, res) => {
       }
     }
 
-    res.status(409).send({ error: "some param not set" });
+    res.status(400).send({ error: "some param not set" });
   });
 });
 

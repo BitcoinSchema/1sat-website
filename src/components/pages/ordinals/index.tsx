@@ -6,7 +6,9 @@ import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router from "next/router";
 import { useEffect, useMemo, useState } from "react";
-import { LoaderIcon } from "react-hot-toast";
+import CopyToClipboard from "react-copy-to-clipboard";
+import toast, { LoaderIcon } from "react-hot-toast";
+import { FiCopy } from "react-icons/fi";
 import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
@@ -31,10 +33,13 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
   useEffect(() => {
     const fire = async (ords: OrdUtxo[]) => {
       for (let o of ords) {
+        console.log({ o });
         if (o.origin) {
           const art = await getArtifactsByTxId(o.origin);
+          console.log("art", art);
           let ords: OrdUtxo[] = [];
           for (let u of art) {
+            console.log("filling", u);
             let filledU = await fillContentType(u);
             if (filledU.type) {
               ords.push(filledU);
@@ -45,7 +50,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
         }
       }
     };
-
+    console.log({ ordUtxos });
     const typeLess = ordUtxos?.filter((a) => !a.type);
     if (typeLess && typeLess?.length > 0) {
       // look them up
@@ -59,32 +64,48 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
         ordinals?.map((a) => {
           return (
             <Artifact
-              key={`${a.txid}_${a.vout}`}
-              outPoint={`${a.txid}_${a.vout}`}
+              //key={`${a.txid}_${a.vout}`}
+              //outPoint={`${a.txid}_${a.vout}`}
+              key={a.origin || `${a.txid}_${a.vout}`}
+              outPoint={a.origin || `${a.txid}_${a.vout}`}
               contentType={a.type}
               id={a.id}
-              classNames={{ wrapper: "max-w-72 max-h-72 overflow-hidden" }}
+              to={
+                a.id !== undefined
+                  ? `/inscription/${a.id}`
+                  : `/tx/${a.origin}` || `/tx/${a.txid}_${a.vout}`
+              }
+              classNames={{ wrapper: "max-w-72 max-h-72 overflow-hidden mb-2" }}
             />
           );
         }) || [];
 
-      return ordUtxos
-        ?.filter((a) => !!a.type)
-        .map((a) => {
-          return (
-            <Artifact
-              key={`${a.txid}_${a.vout}`}
-              outPoint={`${a.txid}_${a.vout}`}
-              contentType={a.type}
-              id={a.id}
-              classNames={{ wrapper: "max-w-72 max-h-72 overflow-hidden" }}
-            />
-          );
-        })
-        .concat(ordinalArtifacts);
+      return (
+        ordUtxos
+          ?.filter((a) => !!a.type)
+          .map((a) => {
+            return (
+              <Artifact
+                key={a.origin || `${a.txid}_${a.vout}`}
+                outPoint={a.origin || `${a.txid}_${a.vout}`}
+                contentType={a.type}
+                id={a.id}
+                to={
+                  a.id !== undefined
+                    ? `/inscription/${a.id}`
+                    : `/tx/${a.origin}` || `/tx/${a.txid}_${a.vout}`
+                }
+                classNames={{
+                  wrapper: "max-w-72 max-h-72 overflow-hidden mb-2",
+                }}
+              />
+            );
+          }) || []
+      ).concat(ordinalArtifacts);
     }
   }, [ordinals, ordUtxos]);
 
+  console.log({ artifacts, fetchOrdinalUtxosStatus });
   return (
     <>
       <Head>
@@ -110,7 +131,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
         showIndicator={fetchOrdinalUtxosStatus !== FetchStatus.Loading}
       />
 
-      <div>
+      <div className="p-4">
         {fetchOrdinalUtxosStatus === FetchStatus.Loading && (
           <div className="w-full my-12 max-w-4xl mx-auto text-center">
             <LoaderIcon className="mx-auto" />
@@ -134,8 +155,41 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
               You, sadly, have no artifacts.
             </div>
           )}
+        {/* 
 
-        <div className="p-2 w-full my-12 grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto">
+<button className="w-full p-2 text-lg bg-orange-400 rounded my-4 text-black font-semibold flex items-center">
+                <div className="mx-auto flex items-center justify-center">
+                  <FiCopy className="w-10" />
+                  <div>Copy BSV Address</div>
+                </div>
+              </button>
+               */}
+
+        {ordAddress && (
+          <CopyToClipboard
+            text={ordAddress}
+            onCopy={() => {
+              toast.success("Copied. Send ordinals only!", {
+                style: {
+                  background: "#333",
+                  color: "#fff",
+                },
+              });
+            }}
+          >
+            <button className="w-full flex rounded p-2 transition bg-[#111] hover:bg-[#222] justify-between items-center text-gray-600 max-w-lg mx-auto">
+              <div className="flex w-full flex-col text-left text-sm">
+                <div>Ordinal Address:</div>
+                <div className="text-orange-400">{ordAddress}</div>
+              </div>
+              <div className="w-12 h-[2rem] text-gray-600 flex items-center justify-center h-full">
+                <FiCopy className="mx-auto" />
+              </div>
+            </button>
+          </CopyToClipboard>
+        )}
+
+        <div className="w-full my-12 grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto w-[calc(100vw-4rem)] min-h-[300px]">
           {artifacts}
         </div>
       </div>

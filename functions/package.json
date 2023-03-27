@@ -21,7 +21,7 @@
     "cors": "^2.8.5",
     "firebase-admin": "^11.5.0",
     "firebase-functions": "^4.2.1",
-    "js-1sat-ord": "^0.0.12",
+    "js-1sat-ord": "^0.0.14",
     "js-arc-client": "^1.0.2",
     "mime-types": "^2.1.35"
   },

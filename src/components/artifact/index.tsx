@@ -1,5 +1,6 @@
-import { head } from "lodash";
+import { API_HOST } from "@/pages/_app";
 import React, { useMemo } from "react";
+import styled from "styled-components";
 import Model from "../model";
 import AudioArtifact from "./audio";
 import VideoArtifact from "./video";
@@ -18,11 +19,12 @@ export enum ArtifactType {
 }
 
 type ArtifactProps = {
-  outPoint: string;
-  contentType?: string | undefined;
+  outPoint?: string; // can be left out when previewing inscription not on chain yet
+  contentType?: string;
   id?: number;
   classNames?: { wrapper?: string; media?: string };
-  to?: string | undefined;
+  to?: string;
+  src?: string;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -31,6 +33,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   classNames,
   id,
   to,
+  src,
 }) => {
   const type = useMemo(() => {
     let artifactType = undefined;
@@ -58,33 +61,65 @@ const Artifact: React.FC<ArtifactProps> = ({
     return artifactType;
   }, [contentType]);
 
+  const ArtifactContainer = styled.a`
+    &:after {
+      position: absolute;
+      content: "";
+      top: 5vw;
+      left: 0;
+      right: 0;
+      z-index: -1;
+      height: 100%;
+      width: 100%;
+      margin: 0 auto;
+      transform: scale(0.75);
+      -webkit-filter: blur(5vw);
+      -moz-filter: blur(5vw);
+      -ms-filter: blur(5vw);
+      filter: blur(5vw);
+      background: linear-gradient(270deg, #ffa60f85, #942fff66);
+      background-size: 200% 200%;
+      animation: animateGlow 10s ease infinite;
+    }
+  `;
   return (
-    <a
+    <ArtifactContainer
       key={outPoint}
-      className={`flex flex-col items-center justify-center min-h-48 min-w-48 bg-[#111] w-full h-full relative rounded cursor-pointer block transition mx-auto ${
+      className={`flex flex-col items-center justify-center min-h-[300px] min-w-[300px] bg-[#111] w-full h-full p-2 relative rounded ${
+        to ? "cursor-pointer" : ""
+      } block transition mx-auto ${
         classNames?.wrapper ? classNames.wrapper : ""
       }`}
-      target={to ? "_blank" : "_self"}
-      href={
-        to
-          ? to
-          : id !== undefined
-          ? `/inscription/${id}`
-          : `/tx/${head(outPoint.split("_"))}`
-      }
+      target={to ? "_self" : undefined}
+      href={to}
+      onClick={(e) => {
+        if (!to) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }}
     >
       {type === ArtifactType.Video ? (
         <VideoArtifact
           outPoint={outPoint}
+          src={src}
           className={`h-full ${classNames?.media ? classNames.media : ""}`}
         />
       ) : type === ArtifactType.Audio ? (
         <AudioArtifact
           outPoint={outPoint}
+          src={src}
           className={`p-1 absolute bottom-0 left-0 w-full ${
             classNames?.media ? classNames.media : ""
           }`}
         />
+      ) : type === ArtifactType.HTML ? (
+        <div className="w-full h-full">
+          <iframe
+            className="w-full h-full min-h-[60vh]"
+            src={`${API_HOST}/api/files/inscriptions/${outPoint}`}
+          />
+        </div>
       ) : type === ArtifactType.JSON ? (
         <div
           className={`p-4 ${classNames?.wrapper || ""} ${
@@ -118,7 +153,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           }}
         >
           <Model
-            src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
+            src={src ? src : `${API_HOST}/api/files/inscriptions/${outPoint}`}
           />
         </div>
       ) : type === ArtifactType.MarkDown ? (
@@ -134,13 +169,13 @@ const Artifact: React.FC<ArtifactProps> = ({
           PDF Inscriptions not yet supported.
         </div>
       ) : (
-        <div className="flex items-center justify-center w-full h-full bg-[#111] rounded">
+        <div className="flex items-center justify-center w-full h-full bg-[#111] rounded min-h-[300px]">
           <img
             className={`h-auto rounded ${
               classNames?.media ? classNames.media : ""
             }`}
-            src={`https://ordinals.gorillapool.io/api/files/inscriptions/${outPoint}`}
-            id={`${outPoint}_image`}
+            src={src ? src : `${API_HOST}/api/files/inscriptions/${outPoint}`}
+            id={`artifact_${new Date().getTime()}_image`}
           />
         </div>
       )}
@@ -153,7 +188,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           <div className={`rounded bg-[#222] p-2`}>{contentType}</div>
         </div>
       )}
-    </a>
+    </ArtifactContainer>
   );
 };
 
