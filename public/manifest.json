@@ -1,0 +1,19 @@
+{
+    "name": "1Sat Ordinals",
+    "description": "1 Sat Ordinals Wallet",
+    "short_name": "1Sat Ordinals",
+    "orientation": "portrait",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "1satlogo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "start_url": "/",
+    "theme_color": "#000000",
+    "background_color": "#000000",
+    "display": "standalone"
+}
