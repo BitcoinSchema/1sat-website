@@ -144,7 +144,7 @@ type ContextValue = {
   changeAddress: string | undefined;
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
-  generateKeys: () => void;
+  generateKeys: () => Promise<void>;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactByInscriptionId: (
@@ -1027,11 +1027,18 @@ const WalletProvider: React.FC<Props> = (props) => {
     return b;
   }, [fundingUtxos]);
 
-  const generateKeys = useCallback(async () => {
-    console.log("callback");
-    const { payPk, ordPk } = randomKeys();
-    setPayPk(payPk);
-    setOrdPk(ordPk);
+  const generateKeys = useCallback(() => {
+    return new Promise<void>(async (resolve, reject) => {
+      console.log("callback");
+      try {
+        const { payPk, ordPk } = await randomKeys();
+        setPayPk(payPk);
+        setOrdPk(ordPk);
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
   }, [setOrdPk, setPayPk]);
 
   const backupKeys = useCallback(

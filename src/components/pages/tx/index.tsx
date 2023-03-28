@@ -100,7 +100,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
           )}
 
         <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4">
-          <div className="flex justify-between items-center">
+          <div className="flex-col md:flex justify-between items-center">
             <div>Transaction ID:</div>
             <div>{txid}</div>
             {vout !== undefined ? (
@@ -152,12 +152,12 @@ const TxPage: React.FC<PageProps> = ({}) => {
                   Send
                 </div>
               </div>
-              <div className="flex justify-between items-center mt-4">
+              {/* <div className="flex justify-between items-center mt-4">
                 <div>Re-Inscribe</div>
                 <div className="rounded bg-[#222] p-2" onClick={async () => {}}>
                   SoonTm
                 </div>
-              </div>
+              </div> */}
             </div>
           </>
         )}

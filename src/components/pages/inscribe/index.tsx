@@ -25,21 +25,23 @@ const InscribePage: React.FC<PageProps> = ({ router }) => {
         />
       </Head>
       <Tabs currentTab={Tab.Inscribe} />
-      {(!payPk || !fundingUtxos) && (
-        <div
-          className="rounded bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-8"
-          onClick={() => Router.push("./wallet")}
-        >
-          You need funds to inscribe. Check your wallet.
-        </div>
-      )}
-      {payPk && fundingUtxos && (
-        <Inscribe
-          inscribedCallback={(inscription) => {
-            Router.push("/preview");
-          }}
-        />
-      )}
+      <div className="p-2 md:p-4">
+        {(!payPk || !fundingUtxos) && (
+          <div
+            className="rounded bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-4 md:p-8"
+            onClick={() => Router.push("./wallet")}
+          >
+            You need funds to inscribe. Check your wallet.
+          </div>
+        )}
+        {payPk && fundingUtxos && (
+          <Inscribe
+            inscribedCallback={(inscription) => {
+              Router.push("/preview");
+            }}
+          />
+        )}
+      </div>
     </>
   );
 };

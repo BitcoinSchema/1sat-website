@@ -140,7 +140,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
         {fetchOrdinalUtxosStatus !== FetchStatus.Loading &&
           (!payPk || !ordPk) && (
             <div
-              className="max-w-md rounded my-8 bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-8"
+              className="max-w-md rounded my-8 bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-4 md:p-8"
               onClick={() => Router.push("./wallet")}
             >
               You need a wallet first.
@@ -176,7 +176,7 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
               });
             }}
           >
-            <button className="w-full flex rounded p-2 transition bg-[#111] hover:bg-[#222] justify-between items-center text-gray-600 max-w-lg mx-auto">
+            <button className="w-full flex rounded p-2 transition bg-[#111] hover:bg-[#222] justify-between items-center text-gray-600 max-w-lg ">
               <div className="flex w-full flex-col text-left text-sm">
                 <div>Ordinal Address:</div>
                 <div className="text-orange-400">{ordAddress}</div>

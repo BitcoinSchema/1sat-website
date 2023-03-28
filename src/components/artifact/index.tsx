@@ -184,7 +184,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       {id !== undefined && (
         <div className="flex items-center justify-between w-full p-4 h-18">
           <div className={`rounded bg-[#222] p-2`}>Inscription #{id}</div>
-          <div className={``}>&nbsp;</div>
+          <div className={`hidden md:block`}>&nbsp;</div>
           <div className={`rounded bg-[#222] p-2`}>{contentType}</div>
         </div>
       )}
