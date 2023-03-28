@@ -123,7 +123,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 key={artifact.txid}
                 classNames={{
                   wrapper: "max-w-4xl w-full h-full",
-                  media: `max-h-[calc(100vh-30em)]`,
+                  media: `md:max-h-[calc(100vh-30em)]`,
                 }}
                 contentType={artifact.type}
                 outPoint={artifact.origin || ""}

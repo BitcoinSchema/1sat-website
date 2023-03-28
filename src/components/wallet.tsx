@@ -95,7 +95,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
   }
 
   return (
-    <div className="flex flex-col w-full max-w-xl mx-auto p-4">
+    <div className="flex flex-col w-full max-w-xl mx-auto p-2 md:p-4">
       {(!ordPk || !payPk) && (
         <>
           <div className="w-full">
@@ -161,7 +161,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
           <h2 className="mb-24 text-center text-teal-600">
             {sb.toBitcoin(balance)} BSV
           </h2>
-          <div className="text-center w-full items-center flex px-8">
+          <div className="text-center w-full items-center flex md:px-8">
             <div
               className="rounded-full hover:bg-[#222] transition cursor-pointer bg-[#111] text-teal-600 flex items-center mx-auto w-36 justify-center px-4 p-2"
               onClick={() => setShowAddMoney(true)}

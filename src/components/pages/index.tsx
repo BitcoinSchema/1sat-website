@@ -11,6 +11,13 @@ export enum FetchStatus {
   Error,
 }
 
+export enum ConnectionStatus {
+  IDLE = 0,
+  CONNECTING = 1,
+  OPEN = 2,
+  FAILED = 3,
+}
+
 interface Props {
   children?: ReactNode;
 }
@@ -81,7 +88,7 @@ const Layout: React.FC<Props> = ({ children }) => {
         {children}
       </div>
       <div
-        className="max-w-7xl mx-auto  h-10 flex items-center justify-center font-mono text-yellow-400 py-8"
+        className="max-w-7xl mx-auto  h-10 flex items-center justify-center font-mono text-yellow-400 py-8 p-2"
         style={{
           height: "4rem",
           textAlign: "center",

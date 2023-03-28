@@ -1,7 +1,6 @@
 import { FetchStatus } from "@/components/pages";
 import { API_HOST } from "@/pages/_app";
 import { addressFromWif } from "@/utils/address";
-import { fillContentType } from "@/utils/artifact";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
 import {
@@ -113,7 +112,7 @@ type GPInscription = {
   vout: number;
   file: GPFile;
   origin: string;
-  ordinal: number;
+  ordinal?: number;
   height: number;
   idx: number;
   lock: string;
@@ -258,28 +257,25 @@ const WalletProvider: React.FC<Props> = (props) => {
       setFetchOrdinalUtxosStatus(FetchStatus.Loading);
 
       try {
-        const r = await fetch(`${API_HOST}/api/utxos/address/${address}`);
-        // const r = await fetch(
-        //   `https://ordinals.gorillapool.io/api/utxos/address/${address}`
-        // );
-        const utxos = (await r.json()) as GPUtxo[];
+        const r = await fetch(
+          `${API_HOST}/api/utxos/address/${address}/inscriptions`
+        );
 
-        //
-        let filledOrdUtxos: OrdUtxo[] = [];
+        const utxos = (await r.json()) as GPInscription[];
+
+        let oUtxos: OrdUtxo[] = [];
         for (let a of utxos) {
-          // some ords will come back w json type because they are sendarounds
           const parts = a.origin.split("_");
-          const newA = await fillContentType({
-            satoshis: a.satoshis,
+
+          oUtxos.push({
+            satoshis: 1, // all ord utxos currently 1 satoshi
             txid: a.txid,
             vout: parseInt(parts[1]),
             origin: a.origin,
+            type: a.file.type,
           } as OrdUtxo);
-
-          filledOrdUtxos.push(newA);
         }
-        console.log("setting filled", filledOrdUtxos);
-        setOrdUtxos(filledOrdUtxos);
+        setOrdUtxos(oUtxos);
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         return;
       } catch (e) {

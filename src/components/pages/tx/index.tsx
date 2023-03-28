@@ -92,45 +92,75 @@ const TxPage: React.FC<PageProps> = ({}) => {
             );
           })}
         </div>
-        <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4">
-          Transaction ID: {txid}
-          {fetchInscriptionsStatus === FetchStatus.Success &&
-            artifacts.length === 0 && <div>No artifacts matching that ID</div>}
-          {vout !== undefined ? (
-            <>
-              <br />
-              {"Output #" + vout}
-            </>
-          ) : (
-            ""
+        {fetchInscriptionsStatus === FetchStatus.Success &&
+          artifacts.length === 0 && (
+            <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4">
+              <div>No artifacts matching that ID</div>
+            </div>
           )}
-          {ordUtxos?.some((ou) => ou.origin === outpoint) && (
-            <div
-              className="rounded bg-[#222]"
-              onClick={async () => {
-                console.log("click send");
-                const address = prompt(
-                  "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
-                );
 
-                if (address) {
-                  console.log(
-                    "transferring",
-                    { ordinalUtxo },
-                    "to",
-                    { address },
-                    "funded by",
-                    { fundingUtxos }
-                  );
-
-                  await transfer(ordinalUtxo, address);
-                }
-              }}
-            >
-              Send
+        <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4">
+          <div className="flex justify-between items-center">
+            <div>Transaction ID:</div>
+            <div>{txid}</div>
+            {vout !== undefined ? (
+              <>
+                <br />
+              </>
+            ) : (
+              ""
+            )}
+          </div>
+          {vout !== undefined && (
+            <div className="flex justify-between items-center">
+              <div>Output Index</div>
+              <div>#{vout}</div>
             </div>
           )}
         </div>
+
+        {ordUtxos?.some((ou) => ou.origin === outpoint) && (
+          <>
+            <h1 className="mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 flex justify-center items-center text-center">
+              Owner Controls
+            </h1>
+            <div className="bg-[#111] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4 flex flex-col">
+              <div className="flex justify-between items-center">
+                <div>Transfer Ownership</div>
+                <div
+                  className="rounded bg-[#222] p-2"
+                  onClick={async () => {
+                    console.log("click send");
+                    const address = prompt(
+                      "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+                    );
+
+                    if (address) {
+                      console.log(
+                        "transferring",
+                        { ordinalUtxo },
+                        "to",
+                        { address },
+                        "funded by",
+                        { fundingUtxos }
+                      );
+
+                      await transfer(ordinalUtxo, address);
+                    }
+                  }}
+                >
+                  Send
+                </div>
+              </div>
+              <div className="flex justify-between items-center mt-4">
+                <div>Re-Inscribe</div>
+                <div className="rounded bg-[#222] p-2" onClick={async () => {}}>
+                  SoonTm
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

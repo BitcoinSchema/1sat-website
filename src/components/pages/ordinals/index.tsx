@@ -105,7 +105,6 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
     }
   }, [ordinals, ordUtxos]);
 
-  console.log({ artifacts, fetchOrdinalUtxosStatus });
   return (
     <>
       <Head>
