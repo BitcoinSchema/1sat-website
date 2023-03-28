@@ -131,6 +131,7 @@ export interface OrdUtxo extends Utxo {
   type?: string;
   origin?: string;
   id?: number;
+  MAP?: MAP;
 }
 
 type ContextValue = {
@@ -146,6 +147,7 @@ type ContextValue = {
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
   generateKeys: () => void;
+  getRawTxById: (id: string) => Promise<string>;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactByInscriptionId: (
@@ -1092,6 +1094,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       setFetchInscriptionsStatus,
       getArtifactsByOrigin: getArtifactsByTxId,
       transfer,
+      getRawTxById,
     }),
     [
       backupFile,
@@ -1125,6 +1128,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       getArtifactByInscriptionId,
       setFetchInscriptionsStatus,
       transfer,
+      getRawTxById,
     ]
   );
 

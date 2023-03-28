@@ -37,8 +37,14 @@ type BroadcastResponsePayload = {
 interface PageProps extends WithRouterProps {}
 
 const PreviewPage: React.FC<PageProps> = ({ router }) => {
-  const { pendingTransaction, fundingUtxos, getUTXOs, changeAddress } =
-    useWallet();
+  const {
+    pendingTransaction,
+    fundingUtxos,
+    getUTXOs,
+    changeAddress,
+    setOrdUtxos,
+    ordUtxos,
+  } = useWallet();
 
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
     useLocalStorage<BroadcastResponsePayload>("1satbrs", undefined);
@@ -101,6 +107,8 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
         });
         setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponsePayload(respData);
+
+        // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
         Router.push("/ordinals");
         return;
       } else {
@@ -113,7 +121,13 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
       }
       setBroadcastStatus(FetchStatus.Error);
     }
-  }, [pendingTransaction, setBroadcastResponsePayload, fundingUtxos]);
+  }, [
+    //pendingOrdUtxo,
+    ordUtxos,
+    pendingTransaction,
+    setBroadcastResponsePayload,
+    fundingUtxos,
+  ]);
 
   return (
     <>

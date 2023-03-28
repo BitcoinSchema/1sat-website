@@ -13,7 +13,7 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.resolve.fallback = { fs: false, module: false };
+      config.resolve.fallback = { dns: false, fs: false, module: false };
     }
     return config;
   },

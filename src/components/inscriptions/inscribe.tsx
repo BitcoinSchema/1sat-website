@@ -1,6 +1,7 @@
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
+import { Transaction } from "bsv-wasm-web";
 import { head } from "lodash";
 import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -102,6 +103,12 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         console.log("Completion Data @ Client: ", response, data);
 
         setPendingTransaction(data);
+        const tx = Transaction.from_hex(data.rawTx);
+
+        // setPendingOrdUtxo({
+        //   txid:
+        // } as OrdUtxo)
+
         inscribedCallback(data);
         setInscribeStatus(FetchStatus.Success);
       } else if (response.status === 402) {

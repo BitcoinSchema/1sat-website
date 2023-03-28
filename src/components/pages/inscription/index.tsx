@@ -2,19 +2,41 @@ import Artifact from "@/components/artifact";
 import Tabs from "@/components/tabs";
 import { OrdUtxo, useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
+import { TransformTx } from "bmapjs";
+import { BmapTx } from "bmapjs/types/common";
+import BPU from "bpu";
+import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { FetchStatus } from "..";
-
 interface PageProps extends WithRouterProps {}
+
+const bobFromRawTx = async (rawtx: string) => {
+  return await BPU.parse({
+    tx: { r: rawtx },
+    split: [
+      {
+        token: { op: 106 },
+        include: "l",
+      },
+      {
+        token: { op: 0 },
+        include: "l",
+      },
+      {
+        token: { s: "|" },
+      },
+    ],
+  });
+};
 
 const InscriptionPage: React.FC<PageProps> = ({}) => {
   const router = useRouter();
   const [artifacts, setArtifacts] = useState<OrdUtxo[]>([]);
   const { inscriptionId } = router.query;
-
+  const { getRawTxById } = useWallet();
   const { getArtifactByInscriptionId, fetchInscriptionsStatus } = useWallet();
 
   useEffect(() => {
@@ -23,6 +45,13 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       const art = await getArtifactByInscriptionId(iid);
       if (art) {
         const art2 = await fillContentType(art);
+        const raw = await getRawTxById(art.txid);
+        const bobTx = await bobFromRawTx(raw);
+        const bmapTx: BmapTx = await TransformTx(bobTx);
+        console.log({ bmapTx });
+        if (bmapTx.MAP) {
+          art2.MAP = head(bmapTx.MAP);
+        }
         console.log("setting", art2);
         setArtifacts([art2]);
       }
