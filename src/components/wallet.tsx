@@ -9,7 +9,7 @@ import { FiArrowDown, FiCopy } from "react-icons/fi";
 import { TbCurrencyBitcoin } from "react-icons/tb";
 import sb from "satoshi-bitcoin";
 import styled from "styled-components";
-import { FetchStatus } from "./pages";
+import { FetchStatus, toastProps } from "./pages";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -210,12 +210,10 @@ If you still have ordinals in your wallet, you will be unable to send them witho
                 <CopyToClipboard
                   text={changeAddress}
                   onCopy={() => {
-                    toast.success("Copied. Remember, send BSV only!", {
-                      style: {
-                        background: "#333",
-                        color: "#fff",
-                      },
-                    });
+                    toast.success(
+                      "Copied. Remember, send BSV only!",
+                      toastProps
+                    );
                     setShowAddMoney(false);
                   }}
                 >

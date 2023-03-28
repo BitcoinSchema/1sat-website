@@ -1,4 +1,4 @@
-import { FetchStatus } from "@/components/pages";
+import { FetchStatus, toastProps } from "@/components/pages";
 import { API_HOST } from "@/pages/_app";
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
@@ -393,12 +393,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     if (fundingUtxos && !currentTxId) {
       if (fundingUtxos) {
         setCurrentTxId(head(fundingUtxos)?.txid);
-        toast.success(`Found ${fundingUtxos.length} UTXOs`, {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.success(`Found ${fundingUtxos.length} UTXOs`, toastProps);
       } else {
         console.info("No UTXOs. Please make a depot and refresh the page.");
       }
@@ -536,12 +531,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         setInscribedUtxos(iUtxos);
         setArtifacts(artifacts);
-        toast.success(`Got ${artifacts.length} artifacts`, {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.success(`Got ${artifacts.length} artifacts`, toastProps);
       } catch (e) {
         setFetchOrdinalUtxosStatus(FetchStatus.Error);
         throw e;
@@ -1002,12 +992,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       setBackupFile(undefined);
       setOrdUtxos(undefined);
 
-      toast.success("Keys Cleared", {
-        style: {
-          background: "#333",
-          color: "#fff",
-        },
-      });
+      toast.success("Keys Cleared", toastProps);
       Router.push("/");
     }
   }, [

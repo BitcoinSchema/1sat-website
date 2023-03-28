@@ -11,6 +11,17 @@ export enum FetchStatus {
   Error,
 }
 
+export const toastProps = {
+  style: {
+    background: "#333",
+    color: "#fff",
+  },
+  iconTheme: {
+    primary: "#111",
+    secondary: "#0fffc3",
+  },
+};
+
 export enum ConnectionStatus {
   IDLE = 0,
   CONNECTING = 1,

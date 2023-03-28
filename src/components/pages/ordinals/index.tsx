@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
-import { FetchStatus } from "..";
+import { FetchStatus, toastProps } from "..";
 
 interface PageProps extends WithRouterProps {}
 
@@ -168,15 +168,10 @@ const OrdinalsPage: React.FC<PageProps> = ({ router }) => {
           <CopyToClipboard
             text={ordAddress}
             onCopy={() => {
-              toast.success("Copied. Send ordinals only!", {
-                style: {
-                  background: "#333",
-                  color: "#fff",
-                },
-              });
+              toast.success("Copied. Send ordinals only!", toastProps);
             }}
           >
-            <button className="w-full flex rounded p-2 transition bg-[#111] hover:bg-[#222] justify-between items-center text-gray-600 max-w-lg ">
+            <button className="w-full flex rounded p-2 transition bg-[#111] hover:bg-[#222] justify-between mx-auto items-center text-gray-600 max-w-lg ">
               <div className="flex w-full flex-col text-left text-sm">
                 <div>Ordinal Address:</div>
                 <div className="text-orange-400">{ordAddress}</div>

@@ -9,6 +9,8 @@ export const randomKeys: () => Promise<WalletKeys> = () => {
     const payPk = PrivateKey.from_random().to_wif();
     let ordPk = PrivateKey.from_random();
     const timeoutMs = 100000;
+    // TODO: This needs to be done in the backend
+    // and transmitted securely to do 1sat addresses
     // TODO: Estimate remaining time
     // TODO: cancel
     // TODO: gpu acceleration?
@@ -16,7 +18,6 @@ export const randomKeys: () => Promise<WalletKeys> = () => {
     // TODO: escape w timeout
     const ts = new Date().getTime();
     while (!addressForPrivakeKey(ordPk).startsWith("1s")) {
-      console.log("no match", addressForPrivakeKey(ordPk));
       ordPk = PrivateKey.from_random();
       if (new Date().getTime() - ts > timeoutMs) {
         reject({});
