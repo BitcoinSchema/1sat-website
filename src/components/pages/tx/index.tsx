@@ -27,6 +27,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
     fetchInscriptionsStatus,
     transfer,
     fundingUtxos,
+    getArtifactsByOrigin,
   } = useWallet();
 
   const ordinalUtxo = useMemo(() => {
@@ -41,7 +42,12 @@ const TxPage: React.FC<PageProps> = ({}) => {
   useEffect(() => {
     console.log({ vout });
     const fire = async (t: string) => {
-      const art = await getArtifactsByTxId(t);
+      let art: OrdUtxo[] = [];
+      if (vout) {
+        art = await getArtifactsByOrigin(outpoint as string);
+      } else {
+        art = await getArtifactsByTxId(t);
+      }
       let arts = [];
       for (let a of art) {
         if (a.origin?.split("_")[0] === a.txid) {
@@ -57,8 +63,10 @@ const TxPage: React.FC<PageProps> = ({}) => {
     if (txid) {
       fire(txid);
     }
-  }, [vout, getArtifactsByTxId, txid]);
+  }, [getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
 
+  const singleStyle = `text-center w-full h-full flex items-center justify-center`;
+  const collectionStyle = `grid grid-rows-4 w-full h-full`;
   return (
     <>
       <Head>
@@ -76,7 +84,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
       </Head>
       <Tabs currentTab={undefined} />
       <div className="p-4 w-full">
-        <div className="text-center w-full h-full flex items-center justify-center">
+        <div className={vout ? singleStyle : collectionStyle}>
           {artifacts?.map((artifact) => {
             return (
               <Artifact
