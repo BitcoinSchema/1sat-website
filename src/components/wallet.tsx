@@ -189,7 +189,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
                   
 Must be a normal Bitcoin SV address starting with a 1.
                   
-Do not send ordinals to this address, it is only for dunding transactions.
+Do not send ordinals to this address, it is only for funding transactions.
                   
 If you still have ordinals in your wallet, you will be unable to send them without BSV in your wallet.`
                 );

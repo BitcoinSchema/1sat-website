@@ -130,7 +130,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
                     onClick={async () => {
                       console.log("click send");
                       const address = prompt(
-                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDING TO UNDERSTANDS ORDINALS, AND EXPECTS TO RECEIVE 1SAT ORDINALS AT THIS ADDRESS!"
                       );
 
                       if (address) {
