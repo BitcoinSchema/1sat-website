@@ -61,7 +61,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
           componentY
         )
       : undefined;
-  }, [position, duration, data, componentX, componentY]);
+  }, [position, data, componentX, componentY]);
 
   useEffect(() => {
     const interval = setInterval(() => {

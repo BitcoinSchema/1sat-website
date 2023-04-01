@@ -19,6 +19,8 @@ import {
   TxOut,
   VarInt,
 } from "@ts-bitcoin/core";
+import { BmapTx } from "bmapjs/types/common";
+import { MAP } from "bmapjs/types/protocols/map";
 
 import init, {
   P2PKHAddress,
@@ -146,12 +148,9 @@ type ContextValue = {
   changeAddress: string | undefined;
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
-<<<<<<< HEAD
-  generateKeys: () => void;
   getRawTxById: (id: string) => Promise<string>;
-=======
+  getBmapTxById: (id: string) => Promise<BmapTx>;
   generateKeys: () => Promise<void>;
->>>>>>> origin/master
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactByInscriptionId: (
@@ -385,6 +384,13 @@ const WalletProvider: React.FC<Props> = (props) => {
       `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
     );
     return await r.text();
+  };
+
+  const getBmapTxById = async (txid: string): Promise<BmapTx> => {
+    const r = await fetch(`https://b.map.sv/tx/${txid}/bmap`, {
+      headers: { Accept: "application/json" },
+    });
+    return (await r.json()) as BmapTx;
   };
 
   const getUTXOs = useCallback(
@@ -1111,6 +1117,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       getArtifactsByOrigin: getArtifactsByTxId,
       transfer,
       getRawTxById,
+      getBmapTxById,
     }),
     [
       backupFile,
@@ -1145,6 +1152,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       setFetchInscriptionsStatus,
       transfer,
       getRawTxById,
+      getBmapTxById,
     ]
   );
 

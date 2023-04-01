@@ -1,4 +1,5 @@
 import { API_HOST } from "@/pages/_app";
+import Router from "next/router";
 import React, { useMemo } from "react";
 import styled from "styled-components";
 import Model from "../model";
@@ -139,7 +140,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         </div>
       ) : type === ArtifactType.Model ? (
         <div
-          className={`w-full h-full ${classNames?.wrapper || ""} ${
+          className={`w-full h-[50vh] ${classNames?.wrapper || ""} ${
             classNames?.media || ""
           }`}
           onClick={(e) => {
@@ -183,7 +184,10 @@ const Artifact: React.FC<ArtifactProps> = ({
       {/* TODO: Show indicator when more than one isncription */}
       {id !== undefined && (
         <div className="flex items-center justify-between w-full p-2 md:p-4 h-18">
-          <div className={`rounded bg-[#222] p-2 text-[#aaa]`}>
+          <div
+            className={`rounded bg-[#222] p-2 text-[#aaa] cursor-pointer`}
+            onClick={() => Router.push(`/inscription/${id}`)}
+          >
             Inscription #{id}
           </div>
           <div className={`hidden md:block`}>&nbsp;</div>

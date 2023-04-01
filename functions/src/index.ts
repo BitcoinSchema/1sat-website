@@ -5,7 +5,7 @@ import { createOrdinal, sendOrdinal, sendUtxos, Utxo } from "js-1sat-ord";
 
 const allowedOrigins = ["http://localhost:80"];
 const options = {
-  origin: allowedOrigins,
+  origin: "*",
 };
 const cors = corsModule(options);
 

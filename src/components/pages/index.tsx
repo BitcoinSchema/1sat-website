@@ -79,7 +79,7 @@ const Layout: React.FC<Props> = ({ children }) => {
     ) {
       connect(oAddress);
     }
-  }, [oAddress, connect, connectionStatus]);
+  }, [ordAddress, oAddress, connect, connectionStatus]);
 
   const importKeys = useCallback(() => {
     if (!backupFile) {

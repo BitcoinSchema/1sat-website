@@ -65,7 +65,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
     }
   }, [outpoint, getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
 
-  const singleStyle = `text-center h-full flex items-center justify-center`;
+  const singleStyle = `w-full text-center h-full flex items-center justify-center`;
   const collectionStyle = `grid grid-rows-4 h-full`;
 
   return (
@@ -86,7 +86,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
       <Tabs currentTab={undefined} />
 
       <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl">
-        <div className={vout ? singleStyle : collectionStyle}>
+        <div className={singleStyle}>
           {artifacts?.map((artifact) => {
             return (
               <Artifact
@@ -102,7 +102,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
             );
           })}
         </div>
-        <div className="md:ml-4">
+        <div className="md:ml-4 w-full max-w-sm">
           {fetchInscriptionsStatus === FetchStatus.Success &&
             artifacts.length === 0 && (
               <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">

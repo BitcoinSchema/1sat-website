@@ -41,7 +41,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     if (!randomNumber) {
       setRandomNumber(getRandomInt(0, numMinted));
     }
-  }, [setRandomNumber]);
+  }, [randomNumber, numMinted, setRandomNumber]);
 
   useEffect(() => {
     const fire = async () => {
@@ -88,7 +88,12 @@ const HomePage: React.FC<PageProps> = ({}) => {
     ) {
       fire(randomNumber);
     }
-  }, [randomNumber, artifact, getArtifactByInscriptionId]);
+  }, [
+    fetchInscriptionsStatus,
+    randomNumber,
+    artifact,
+    getArtifactByInscriptionId,
+  ]);
 
   return (
     <>
