@@ -57,7 +57,6 @@ const TxPage: React.FC<PageProps> = ({}) => {
           console.log("other", a);
         }
       }
-      console.log("setting", arts);
       setArtifacts(arts);
     };
     if (txid) {
@@ -104,10 +103,10 @@ const TxPage: React.FC<PageProps> = ({}) => {
           {fetchInscriptionsStatus === FetchStatus.Success &&
             artifacts.length === 0 && (
               <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">
-                <div>No artifacts matching that ID</div>
+                <div>No ordinals matching that ID</div>
               </div>
             )}
-          <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4">
+          <div className="bg-[#222] mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 my-4 md:my-0">
             <div className="flex flex-col justify-between mb-1">
               <div className="mb-1">Transaction ID</div>
               <div className="text-xs">{txid}</div>
@@ -122,11 +121,11 @@ const TxPage: React.FC<PageProps> = ({}) => {
 
           {ordUtxos?.some((ou) => ou.origin === outpoint) && (
             <>
-              <div className="bg-[#111] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mx-4 flex flex-col">
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-4">
                 <div className="flex justify-between items-center">
                   <div>Transfer Ownership</div>
                   <div
-                    className="rounded bg-[#222] p-2"
+                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
                     onClick={async () => {
                       console.log("click send");
                       const address = prompt(

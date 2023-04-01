@@ -112,26 +112,45 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
         // : {}
       );
 
+      // s.addEventListener("message", (e) => {
+      //   console.log("secondary logger outer", e);
+      // });
+
       s.onmessage = function (e) {
+        // const sampleResponse = {
+        //   txid: "e28fee530019d6ca2e4a1e347097602074535a3662fa500528a314e1b8955899",
+        //   vout: 0,
+        //   satoshis: 1,
+        //   acc_sats: 1,
+        //   lock: "b0a542a4a4707f7b5b48f4c7a45e12bee4f9481a5ad3db250dfd3730f5ff4225",
+        //   vin: 0,
+        //   origin:
+        //     "81976f67aec534881107fe2c063f5192a3a925fdd6bf1b93ea9a4e1e692e23ad_0",
+        //   ordinal: 0,
+        //   height: 0,
+        //   idx: 0,
+        // };
         // TODO: LEID
-        console.log("message!", e);
-        // if (!unmounted.current && e.lastEventId !== "undefined") {
-        //   setLeid(e.lastEventId);
-        // }
+        // console.log("message!", e);
+        if (!unmounted.current && e.lastEventId !== "undefined") {
+          setLeid(e.lastEventId);
+        }
         if (e.data) {
           const data = JSON.parse(e.data);
-          if (!unmounted.current && data.type === "push") {
-            console.log("push type", data);
+          if (!unmounted.current) {
+            console.log("socket data", data);
             setLastEvent(data);
           }
         }
       };
       s.onopen = function () {
         if (!unmounted.current) {
+          console.log("open");
           setConnectionStatus(ConnectionStatus.OPEN);
         }
       };
-      s.onerror = function () {
+      s.onerror = function (e) {
+        console.log("socket error", e);
         if (!unmounted.current) {
           setConnectionStatus(ConnectionStatus.FAILED);
         }
@@ -143,6 +162,7 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
     [
       connectionStatus,
       leid,
+      setLastEvent,
       // location.pathname,
       setOrdAddress,
       setLeid,

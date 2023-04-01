@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FiArrowDown, FiCopy } from "react-icons/fi";
+import { RiErrorWarningFill } from "react-icons/ri";
 import { TbCurrencyBitcoin } from "react-icons/tb";
 import sb from "satoshi-bitcoin";
 import styled from "styled-components";
@@ -224,6 +225,10 @@ If you still have ordinals in your wallet, you will be unable to send them witho
                     </div>
                   </button>
                 </CopyToClipboard>
+                <div className="text-yellow-500 test-sm flex justify-center items-center">
+                  <RiErrorWarningFill className="mr-2" /> Do not send ordinals
+                  to this address
+                </div>
               </div>
             </div>
           )}

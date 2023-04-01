@@ -96,7 +96,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
         toast.success("Broadcasted", toastProps);
         setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponsePayload(respData);
-        Router.push("/ordinals");
+        Router.push("/artifacts");
         return;
       } else {
         toast.error(
@@ -128,7 +128,14 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
       {pendingTransaction && (
         <div>
           <h1 className="text-center text-2xl">
-            {`${pendingTransaction.numOutputs === 1 ? "Refund" : "Ordinal"}
+            {`${
+              pendingTransaction.numOutputs === 1
+                ? "Refund"
+                : pendingTransaction.numOutputs === 2 &&
+                  pendingTransaction.numInputs === 2
+                ? "Transfer"
+                : "Ordinal"
+            }
             Generated`}
           </h1>
           <div className="text-center text-[#aaa] my-2">

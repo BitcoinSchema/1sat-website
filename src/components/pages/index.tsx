@@ -1,8 +1,10 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
+import { useBitsocket } from "@/context/bitsocket";
 import { useWallet } from "@/context/wallet";
+import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
 import Router, { useRouter } from "next/router";
-import { ChangeEvent, ReactNode, useCallback, useEffect } from "react";
+import { ChangeEvent, ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Toaster } from "react-hot-toast";
 export enum FetchStatus {
   Idle,
@@ -45,6 +47,9 @@ const Layout: React.FC<Props> = ({ children }) => {
     changeAddress,
   } = useWallet();
 
+  const { ordPk, initialized } = useWallet();
+  const { connectionStatus, connect, ordAddress } = useBitsocket();
+
   const router = useRouter();
   useEffect(() => {
     const fire = async (a: string) => {
@@ -55,6 +60,26 @@ const Layout: React.FC<Props> = ({ children }) => {
       fire(changeAddress);
     }
   }, [getUTXOs, fetchUtxosStatus, changeAddress]);
+
+  const oAddress = useMemo(() => {
+    if (initialized && ordPk) {
+      const wif = PrivateKey.from_wif(ordPk);
+      const pk = PublicKey.from_private_key(wif);
+      return wif && pk && P2PKHAddress.from_pubkey(pk).to_string();
+    }
+  }, [initialized, ordPk]);
+
+  useEffect(() => {
+    if (
+      oAddress &&
+      connectionStatus !== ConnectionStatus.CONNECTING &&
+      (!ordAddress ||
+        ordAddress !== oAddress ||
+        connectionStatus === ConnectionStatus.IDLE)
+    ) {
+      connect(oAddress);
+    }
+  }, [oAddress, connect, connectionStatus]);
 
   const importKeys = useCallback(() => {
     if (!backupFile) {

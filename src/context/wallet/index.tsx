@@ -42,6 +42,7 @@ import React, {
   useState,
 } from "react";
 import toast from "react-hot-toast";
+import { useBitsocket } from "../bitsocket";
 
 export const PROTOCOL_START_HEIGHT = 783968;
 
@@ -178,7 +179,7 @@ interface Props {
 const WalletProvider: React.FC<Props> = (props) => {
   const [backupFile, setBackupFile] = useState<File>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
-
+  const { leid, lastEvent } = useBitsocket();
   const [pendingTransaction, setPendingTransaction] = useLocalStorage<
     PendingTransaction | undefined
   >("1satpin", undefined);
@@ -186,6 +187,7 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [inscribedUtxos, setInscribedUtxos] = useState<Utxo[] | undefined>(
     undefined
   );
+  const [lastEventId, setLastEventId] = useState<string>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [artifacts, setArtifacts] = useLocalStorage<Inscription2[] | undefined>(
     "1satart",
@@ -207,6 +209,28 @@ const WalletProvider: React.FC<Props> = (props) => {
     "1satok",
     undefined
   );
+
+  useEffect(() => {
+    if (lastEvent && ordUtxos && leid !== lastEventId) {
+      setLastEventId(leid);
+      const e = lastEvent as any;
+      const filteredOrdUtxos =
+        ordUtxos?.filter((o) => o.txid !== e.spend) || [];
+      debugger;
+      if (e && !e.spend) {
+        setOrdUtxos([
+          {
+            satoshis: e.satoshis,
+            txid: e.txid,
+            vout: e.vout,
+            type: e.file?.type,
+            origin: e.origin,
+          } as OrdUtxo,
+          ...filteredOrdUtxos,
+        ]);
+      }
+    }
+  }, [leid, setLastEventId, lastEvent, lastEventId]);
 
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
     FetchStatus.Idle

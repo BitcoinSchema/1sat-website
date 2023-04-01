@@ -182,10 +182,14 @@ const Artifact: React.FC<ArtifactProps> = ({
 
       {/* TODO: Show indicator when more than one isncription */}
       {id !== undefined && (
-        <div className="flex items-center justify-between w-full p-4 h-18">
-          <div className={`rounded bg-[#222] p-2`}>Inscription #{id}</div>
+        <div className="flex items-center justify-between w-full p-2 md:p-4 h-18">
+          <div className={`rounded bg-[#222] p-2 text-[#aaa]`}>
+            Inscription #{id}
+          </div>
           <div className={`hidden md:block`}>&nbsp;</div>
-          <div className={`rounded bg-[#222] p-2`}>{contentType}</div>
+          <div className={`rounded bg-[#222] p-2 text-[#aaa]`}>
+            {contentType}
+          </div>
         </div>
       )}
     </ArtifactContainer>

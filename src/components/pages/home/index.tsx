@@ -79,7 +79,6 @@ const HomePage: React.FC<PageProps> = ({}) => {
       const art = await getArtifactByInscriptionId(iid);
       if (art) {
         const art2 = await fillContentType(art);
-        console.log("setting", art2);
         setArtifact(art2);
       }
     };
