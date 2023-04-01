@@ -58,16 +58,16 @@ const TxPage: React.FC<PageProps> = ({}) => {
           console.log("other", a);
         }
       }
-      console.log("setting", arts);
       setArtifacts(arts);
     };
     if (txid) {
       fire(txid);
     }
-  }, [vout, getArtifactsByTxId, txid]);
+  }, [outpoint, getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
 
-  const singleStyle = `text-center w-full h-full flex items-center justify-center`;
-  const collectionStyle = `grid grid-rows-4 w-full h-full`;
+  const singleStyle = `text-center h-full flex items-center justify-center`;
+  const collectionStyle = `grid grid-rows-4 h-full`;
+
   return (
     <>
       <Head>
@@ -84,7 +84,8 @@ const TxPage: React.FC<PageProps> = ({}) => {
         />
       </Head>
       <Tabs currentTab={undefined} />
-      <div className="p-4 w-full">
+
+      <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl">
         <div className={vout ? singleStyle : collectionStyle}>
           {artifacts?.map((artifact) => {
             return (
@@ -101,43 +102,64 @@ const TxPage: React.FC<PageProps> = ({}) => {
             );
           })}
         </div>
-        <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 m-4">
-          Transaction ID: {txid}
+        <div className="md:ml-4">
           {fetchInscriptionsStatus === FetchStatus.Success &&
-            artifacts.length === 0 && <div>No artifacts matching that ID</div>}
-          {vout !== undefined ? (
-            <>
-              <br />
-              {"Output #" + vout}
-            </>
-          ) : (
-            ""
-          )}
-          {ordUtxos?.some((ou) => ou.origin === outpoint) && (
-            <div
-              className="rounded bg-[#222]"
-              onClick={async () => {
-                console.log("click send");
-                const address = prompt(
-                  "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
-                );
-
-                if (address) {
-                  console.log(
-                    "transferring",
-                    { ordinalUtxo },
-                    "to",
-                    { address },
-                    "funded by",
-                    { fundingUtxos }
-                  );
-
-                  await transfer(ordinalUtxo, address);
-                }
-              }}
-            >
-              Send
+            artifacts.length === 0 && (
+              <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">
+                <div>No ordinals matching that ID</div>
+              </div>
+            )}
+          <div className="bg-[#222] mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 my-4 md:my-0">
+            <div className="flex flex-col justify-between mb-1">
+              <div className="mb-1">Transaction ID</div>
+              <div className="text-xs">{txid}</div>
             </div>
+            {vout !== undefined && (
+              <div className="flex justify-between items-center">
+                <div>Output Index</div>
+                <div>{vout}</div>
+              </div>
+            )}
+          </div>
+
+          {ordUtxos?.some((ou) => ou.origin === outpoint) && (
+            <>
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-4">
+                <div className="flex justify-between items-center">
+                  <div>Transfer Ownership</div>
+                  <div
+                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                    onClick={async () => {
+                      console.log("click send");
+                      const address = prompt(
+                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+                      );
+
+                      if (address) {
+                        console.log(
+                          "transferring",
+                          { ordinalUtxo },
+                          "to",
+                          { address },
+                          "funded by",
+                          { fundingUtxos }
+                        );
+
+                        await transfer(ordinalUtxo, address);
+                      }
+                    }}
+                  >
+                    Send
+                  </div>
+                </div>
+                {/* <div className="flex justify-between items-center mt-4">
+                <div>Re-Inscribe</div>
+                <div className="rounded bg-[#222] p-2" onClick={async () => {}}>
+                  SoonTm
+                </div>
+              </div> */}
+              </div>
+            </>
           )}
         </div>
       </div>

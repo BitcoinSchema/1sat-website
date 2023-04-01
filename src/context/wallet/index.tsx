@@ -1,7 +1,6 @@
-import { FetchStatus } from "@/components/pages";
+import { FetchStatus, toastProps } from "@/components/pages";
 import { API_HOST } from "@/pages/_app";
 import { addressFromWif } from "@/utils/address";
-import { fillContentType } from "@/utils/artifact";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
 import {
@@ -43,6 +42,7 @@ import React, {
   useState,
 } from "react";
 import toast from "react-hot-toast";
+import { useBitsocket } from "../bitsocket";
 
 export const PROTOCOL_START_HEIGHT = 783968;
 
@@ -113,7 +113,7 @@ type GPInscription = {
   vout: number;
   file: GPFile;
   origin: string;
-  ordinal: number;
+  ordinal?: number;
   height: number;
   idx: number;
   lock: string;
@@ -146,8 +146,12 @@ type ContextValue = {
   changeAddress: string | undefined;
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
+<<<<<<< HEAD
   generateKeys: () => void;
   getRawTxById: (id: string) => Promise<string>;
+=======
+  generateKeys: () => Promise<void>;
+>>>>>>> origin/master
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactByInscriptionId: (
@@ -181,7 +185,7 @@ interface Props {
 const WalletProvider: React.FC<Props> = (props) => {
   const [backupFile, setBackupFile] = useState<File>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
-
+  const { leid, lastEvent } = useBitsocket();
   const [pendingTransaction, setPendingTransaction] = useLocalStorage<
     PendingTransaction | undefined
   >("1satpin", undefined);
@@ -189,6 +193,7 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [inscribedUtxos, setInscribedUtxos] = useState<Utxo[] | undefined>(
     undefined
   );
+  const [lastEventId, setLastEventId] = useState<string>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [artifacts, setArtifacts] = useLocalStorage<Inscription2[] | undefined>(
     "1satart",
@@ -210,6 +215,28 @@ const WalletProvider: React.FC<Props> = (props) => {
     "1satok",
     undefined
   );
+
+  useEffect(() => {
+    if (lastEvent && ordUtxos && leid !== lastEventId) {
+      setLastEventId(leid);
+      const e = lastEvent as any;
+      const filteredOrdUtxos =
+        ordUtxos?.filter((o) => o.txid !== e.spend) || [];
+      debugger;
+      if (e && !e.spend) {
+        setOrdUtxos([
+          {
+            satoshis: e.satoshis,
+            txid: e.txid,
+            vout: e.vout,
+            type: e.file?.type,
+            origin: e.origin,
+          } as OrdUtxo,
+          ...filteredOrdUtxos,
+        ]);
+      }
+    }
+  }, [leid, setLastEventId, lastEvent, lastEventId]);
 
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -260,28 +287,25 @@ const WalletProvider: React.FC<Props> = (props) => {
       setFetchOrdinalUtxosStatus(FetchStatus.Loading);
 
       try {
-        const r = await fetch(`${API_HOST}/api/utxos/address/${address}`);
-        // const r = await fetch(
-        //   `https://ordinals.gorillapool.io/api/utxos/address/${address}`
-        // );
-        const utxos = (await r.json()) as GPUtxo[];
+        const r = await fetch(
+          `${API_HOST}/api/utxos/address/${address}/inscriptions`
+        );
 
-        //
-        let filledOrdUtxos: OrdUtxo[] = [];
+        const utxos = (await r.json()) as GPInscription[];
+
+        let oUtxos: OrdUtxo[] = [];
         for (let a of utxos) {
-          // some ords will come back w json type because they are sendarounds
           const parts = a.origin.split("_");
-          const newA = await fillContentType({
-            satoshis: a.satoshis,
+
+          oUtxos.push({
+            satoshis: 1, // all ord utxos currently 1 satoshi
             txid: a.txid,
             vout: parseInt(parts[1]),
             origin: a.origin,
+            type: a.file.type,
           } as OrdUtxo);
-
-          filledOrdUtxos.push(newA);
         }
-        console.log("setting filled", filledOrdUtxos);
-        setOrdUtxos(filledOrdUtxos);
+        setOrdUtxos(oUtxos);
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         return;
       } catch (e) {
@@ -399,12 +423,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     if (fundingUtxos && !currentTxId) {
       if (fundingUtxos) {
         setCurrentTxId(head(fundingUtxos)?.txid);
-        toast.success(`Found ${fundingUtxos.length} UTXOs`, {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.success(`Found ${fundingUtxos.length} UTXOs`, toastProps);
       } else {
         console.info("No UTXOs. Please make a depot and refresh the page.");
       }
@@ -542,12 +561,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         setInscribedUtxos(iUtxos);
         setArtifacts(artifacts);
-        toast.success(`Got ${artifacts.length} artifacts`, {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.success(`Got ${artifacts.length} artifacts`, toastProps);
       } catch (e) {
         setFetchOrdinalUtxosStatus(FetchStatus.Error);
         throw e;
@@ -1008,12 +1022,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       setBackupFile(undefined);
       setOrdUtxos(undefined);
 
-      toast.success("Keys Cleared", {
-        style: {
-          background: "#333",
-          color: "#fff",
-        },
-      });
+      toast.success("Keys Cleared", toastProps);
       Router.push("/");
     }
   }, [
@@ -1033,11 +1042,18 @@ const WalletProvider: React.FC<Props> = (props) => {
     return b;
   }, [fundingUtxos]);
 
-  const generateKeys = useCallback(async () => {
-    console.log("callback");
-    const { payPk, ordPk } = randomKeys();
-    setPayPk(payPk);
-    setOrdPk(ordPk);
+  const generateKeys = useCallback(() => {
+    return new Promise<void>(async (resolve, reject) => {
+      console.log("callback");
+      try {
+        const { payPk, ordPk } = await randomKeys();
+        setPayPk(payPk);
+        setOrdPk(ordPk);
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
   }, [setOrdPk, setPayPk]);
 
   const backupKeys = useCallback(

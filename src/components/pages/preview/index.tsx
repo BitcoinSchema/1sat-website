@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RxReset } from "react-icons/rx";
 import { TbBroadcast } from "react-icons/tb";
-import { FetchStatus } from "../../pages";
+import { FetchStatus, toastProps } from "../../pages";
 
 type BroadcastResponse = {
   encoding: string;
@@ -99,25 +99,19 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
         data.payload || "{}"
       ) as BroadcastResponsePayload;
       if (respData?.returnResult === "success") {
-        toast.success("Broadcasted", {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.success("Broadcasted", toastProps);
         setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponsePayload(respData);
 
         // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
         Router.push("/ordinals");
+
         return;
       } else {
-        toast.error("Failed to broadcast " + respData.resultDescription, {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.error(
+          "Failed to broadcast " + respData.resultDescription,
+          toastProps
+        );
       }
       setBroadcastStatus(FetchStatus.Error);
     }
@@ -149,7 +143,14 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
       {pendingTransaction && (
         <div>
           <h1 className="text-center text-2xl">
-            {`${pendingTransaction.numOutputs === 1 ? "Refund" : "Ordinal"}
+            {`${
+              pendingTransaction.numOutputs === 1
+                ? "Refund"
+                : pendingTransaction.numOutputs === 2 &&
+                  pendingTransaction.numInputs === 2
+                ? "Transfer"
+                : "Ordinal"
+            }
             Generated`}
           </h1>
           <div className="text-center text-[#aaa] my-2">
@@ -191,14 +192,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
           <div className="max-w-md mx-auto">
             <CopyToClipboard
               text={pendingTransaction?.rawTx}
-              onCopy={() =>
-                toast.success("Copied Raw Tx", {
-                  style: {
-                    background: "#333",
-                    color: "#fff",
-                  },
-                })
-              }
+              onCopy={() => toast.success("Copied Raw Tx", toastProps)}
             >
               <button className="w-full p-2 text-lg bg-teal-400 rounded my-4 text-black font-semibold flex items-center">
                 <div className="mx-auto flex items-center justify-center">

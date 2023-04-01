@@ -79,7 +79,6 @@ const HomePage: React.FC<PageProps> = ({}) => {
       const art = await getArtifactByInscriptionId(iid);
       if (art) {
         const art2 = await fillContentType(art);
-        console.log("setting", art2);
         setArtifact(art2);
       }
     };
@@ -142,7 +141,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
               )}
               {!artifact && (
                 <div className="max-w-[600px] text-yellow-400 font-mono">
-                  <div className="cursor-pointer my-8 w-full">
+                  <div className="cursor-pointer mb-8 w-full">
                     <Image
                       style={{
                         boxShadow: "0 0 0 0 rgba(0, 0, 0, 1)",

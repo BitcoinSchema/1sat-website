@@ -1,14 +1,34 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
+import { useBitsocket } from "@/context/bitsocket";
 import { useWallet } from "@/context/wallet";
+import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
 import Router, { useRouter } from "next/router";
-import { ChangeEvent, ReactNode, useCallback, useEffect } from "react";
+import { ChangeEvent, ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Toaster } from "react-hot-toast";
 export enum FetchStatus {
   Idle,
   Loading,
   Success,
   Error,
+}
+
+export const toastProps = {
+  style: {
+    background: "#333",
+    color: "#fff",
+  },
+  iconTheme: {
+    primary: "#111",
+    secondary: "#0fffc3",
+  },
+};
+
+export enum ConnectionStatus {
+  IDLE = 0,
+  CONNECTING = 1,
+  OPEN = 2,
+  FAILED = 3,
 }
 
 interface Props {
@@ -27,6 +47,9 @@ const Layout: React.FC<Props> = ({ children }) => {
     changeAddress,
   } = useWallet();
 
+  const { ordPk, initialized } = useWallet();
+  const { connectionStatus, connect, ordAddress } = useBitsocket();
+
   const router = useRouter();
   useEffect(() => {
     const fire = async (a: string) => {
@@ -37,6 +60,26 @@ const Layout: React.FC<Props> = ({ children }) => {
       fire(changeAddress);
     }
   }, [getUTXOs, fetchUtxosStatus, changeAddress]);
+
+  const oAddress = useMemo(() => {
+    if (initialized && ordPk) {
+      const wif = PrivateKey.from_wif(ordPk);
+      const pk = PublicKey.from_private_key(wif);
+      return wif && pk && P2PKHAddress.from_pubkey(pk).to_string();
+    }
+  }, [initialized, ordPk]);
+
+  useEffect(() => {
+    if (
+      oAddress &&
+      connectionStatus !== ConnectionStatus.CONNECTING &&
+      (!ordAddress ||
+        ordAddress !== oAddress ||
+        connectionStatus === ConnectionStatus.IDLE)
+    ) {
+      connect(oAddress);
+    }
+  }, [oAddress, connect, connectionStatus]);
 
   const importKeys = useCallback(() => {
     if (!backupFile) {
@@ -81,7 +124,7 @@ const Layout: React.FC<Props> = ({ children }) => {
         {children}
       </div>
       <div
-        className="max-w-7xl mx-auto  h-10 flex items-center justify-center font-mono text-yellow-400 py-8"
+        className="max-w-7xl mx-auto  h-10 flex items-center justify-center font-mono text-yellow-400 py-8 p-2"
         style={{
           height: "4rem",
           textAlign: "center",

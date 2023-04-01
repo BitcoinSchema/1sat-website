@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
 import Artifact from "../artifact";
-import { FetchStatus } from "../pages";
+import { FetchStatus, toastProps } from "../pages";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -123,12 +123,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       }
     } catch (e) {
       setInscribeStatus(FetchStatus.Error);
-      toast.error("Failed to inscribe " + e, {
-        style: {
-          background: "#333",
-          color: "#fff",
-        },
-      });
+      toast.error("Failed to inscribe " + e, toastProps);
       console.error(e);
     }
   };
@@ -153,7 +148,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       <div className="w-full">
         <Label
           className={`${
-            selectedFile ? "" : "min-h-[300px]"
+            selectedFile ? "" : "min-h-[300px] min-w-[300px]"
           } rounded border border-dashed border-[#222] flex items-center justify-center`}
         >
           {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}

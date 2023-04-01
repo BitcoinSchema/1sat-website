@@ -6,10 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FiArrowDown, FiCopy } from "react-icons/fi";
+import { RiErrorWarningFill } from "react-icons/ri";
 import { TbCurrencyBitcoin } from "react-icons/tb";
 import sb from "satoshi-bitcoin";
 import styled from "styled-components";
-import { FetchStatus } from "./pages";
+import { FetchStatus, toastProps } from "./pages";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -41,6 +42,9 @@ const Wallet: React.FC<WalletProps> = ({}) => {
   const [showKeys, setShowKeys] = useState<boolean>(false);
   const [initialized, setInitialized] = useState<boolean>(false);
   const [showAddMoney, setShowAddMoney] = useState<boolean>(false);
+  const [generateStatus, setGenerateStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
 
   const [usdRate, setUsdRate] = useState<number>(0);
   const { rates } = useRates();
@@ -95,7 +99,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
   }
 
   return (
-    <div className="flex flex-col w-full max-w-xl mx-auto p-4">
+    <div className="flex flex-col w-full max-w-xl mx-auto p-2 md:p-4">
       {(!ordPk || !payPk) && (
         <>
           <div className="w-full">
@@ -115,13 +119,19 @@ const Wallet: React.FC<WalletProps> = ({}) => {
             </p>
             <button
               type="submit"
-              onClick={() => {
-                generateKeys();
+              disabled={generateStatus === FetchStatus.Loading}
+              onClick={async () => {
+                setGenerateStatus(FetchStatus.Loading);
+                await generateKeys();
+                setGenerateStatus(FetchStatus.Success);
                 setShowKeys(true);
               }}
-              className="w-full cursor-pointer p-2 bg-yellow-600 text-xl rounded my-4 text-white"
+              className="disabled:bg-[#222] disabled:text-[#555] w-full cursor-pointer p-2 bg-yellow-600 text-xl rounded my-4 text-white"
             >
-              Generate Wallets
+              {generateStatus === FetchStatus.Loading
+                ? "Generating"
+                : "Generate"}{" "}
+              Wallets
             </button>
           </div>
         </>
@@ -156,12 +166,12 @@ const Wallet: React.FC<WalletProps> = ({}) => {
           >
             {/* <QRCode value={changeAddress || ""} size={420} />
              */}
-            ${(balance / usdRate).toFixed(2)}
+            ${balance ? (balance / usdRate).toFixed(2) : balance.toFixed(2)}
           </h1>
           <h2 className="mb-24 text-center text-teal-600">
             {sb.toBitcoin(balance)} BSV
           </h2>
-          <div className="text-center w-full items-center flex px-8">
+          <div className="text-center w-full items-center flex md:px-8">
             <div
               className="rounded-full hover:bg-[#222] transition cursor-pointer bg-[#111] text-teal-600 flex items-center mx-auto w-36 justify-center px-4 p-2"
               onClick={() => setShowAddMoney(true)}
@@ -169,7 +179,11 @@ const Wallet: React.FC<WalletProps> = ({}) => {
               <TbCurrencyBitcoin className="mr-2" /> Add Money
             </div>
             <div
-              className="rounded-full cursor-pointer hover:bg-[#222] transition bg-[#111] text-yellow-400 flex items-center mx-auto w-36 justify-center px-4 p-2"
+              className={`${
+                balance > 0
+                  ? "bg-[#111] text-yellow-400"
+                  : "bg-[#222] hover:bg-[#222] text-[#555]"
+              }  rounded-full cursor-pointer  transition  flex items-center mx-auto w-36 justify-center px-4 p-2`}
               onClick={() => {
                 const address = prompt(
                   `ENTER AN ADDRESS. Sends entire ${balance} Sat BSV balance. 
@@ -197,12 +211,10 @@ If you still have ordinals in your wallet, you will be unable to send them witho
                 <CopyToClipboard
                   text={changeAddress}
                   onCopy={() => {
-                    toast.success("Copied. Remember, send BSV only!", {
-                      style: {
-                        background: "#333",
-                        color: "#fff",
-                      },
-                    });
+                    toast.success(
+                      "Copied. Remember, send BSV only!",
+                      toastProps
+                    );
                     setShowAddMoney(false);
                   }}
                 >
@@ -213,6 +225,10 @@ If you still have ordinals in your wallet, you will be unable to send them witho
                     </div>
                   </button>
                 </CopyToClipboard>
+                <div className="text-yellow-500 test-sm flex justify-center items-center">
+                  <RiErrorWarningFill className="mr-2" /> Do not send ordinals
+                  to this address
+                </div>
               </div>
             </div>
           )}

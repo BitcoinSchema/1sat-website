@@ -45,6 +45,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       const art = await getArtifactByInscriptionId(iid);
       if (art) {
         const art2 = await fillContentType(art);
+
         const raw = await getRawTxById(art.txid);
         const bobTx = await bobFromRawTx(raw);
         const bmapTx: BmapTx = await TransformTx(bobTx);
@@ -53,6 +54,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           art2.MAP = head(bmapTx.MAP);
         }
         console.log("setting", art2);
+
         setArtifacts([art2]);
       }
     };
@@ -152,7 +154,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 key={artifact.txid}
                 classNames={{
                   wrapper: "max-w-4xl w-full h-full",
-                  media: `max-h-[calc(100vh-30em)]`,
+                  media: `md:max-h-[calc(100vh-30em)]`,
                 }}
                 contentType={artifact.type}
                 outPoint={artifact.origin || ""}
