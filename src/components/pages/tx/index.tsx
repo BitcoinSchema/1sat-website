@@ -62,7 +62,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
     if (txid) {
       fire(txid);
     }
-  }, [getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
+  }, [outpoint, getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
 
   const singleStyle = `text-center h-full flex items-center justify-center`;
   const collectionStyle = `grid grid-rows-4 h-full`;
