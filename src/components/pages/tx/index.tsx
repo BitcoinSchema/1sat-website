@@ -6,7 +6,7 @@ import { find, head, last } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}

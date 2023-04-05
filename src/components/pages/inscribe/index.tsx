@@ -4,6 +4,7 @@ import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router from "next/router";
+import React from "react";
 
 interface PageProps extends WithRouterProps {}
 

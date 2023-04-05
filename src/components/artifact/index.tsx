@@ -1,9 +1,12 @@
 import { API_HOST } from "@/pages/_app";
 import Router from "next/router";
 import React, { useMemo } from "react";
+import { LoaderIcon } from "react-hot-toast";
 import styled from "styled-components";
 import Model from "../model";
 import AudioArtifact from "./audio";
+import JsonArtifact from "./json";
+import TextArtifact from "./text";
 import VideoArtifact from "./video";
 
 export enum ArtifactType {
@@ -34,7 +37,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   classNames,
   id,
   to,
-  src,
+  src = `${API_HOST}/api/files/inscriptions/${outPoint}`,
 }) => {
   const type = useMemo(() => {
     let artifactType = undefined;
@@ -83,10 +86,96 @@ const Artifact: React.FC<ArtifactProps> = ({
       animation: animateGlow 10s ease infinite;
     }
   `;
+
+  const content = useMemo(() => {
+    return type === ArtifactType.Video ? (
+      <VideoArtifact
+        outPoint={outPoint}
+        src={src}
+        className={`${classNames?.media ? classNames.media : ""}`}
+      />
+    ) : type === ArtifactType.Audio ? (
+      <>
+        <AudioArtifact
+          outPoint={outPoint}
+          src={src}
+          className={`p-1 absolute bottom-0 left-0 w-full ${
+            classNames?.media ? classNames.media : ""
+          }`}
+        />
+      </>
+    ) : type === ArtifactType.HTML ? (
+      <div className="w-full h-full">
+        <iframe
+          className="w-full h-full min-h-[60vh]"
+          src={`${API_HOST}/api/files/inscriptions/${outPoint}`}
+        />
+      </div>
+    ) : type === ArtifactType.JSON ? (
+      <div
+        className={`h-full p-4 ${classNames?.wrapper || ""} ${
+          classNames?.media || ""
+        }`}
+      >
+        <JsonArtifact outPoint={outPoint} />
+      </div>
+    ) : type === ArtifactType.Text ? (
+      <div
+        className={`h-full p-4 ${classNames?.wrapper || ""} ${
+          classNames?.media || ""
+        }`}
+      >
+        {/* {generatedImage} */}
+        <TextArtifact outPoint={outPoint} />
+      </div>
+    ) : type === ArtifactType.Model ? (
+      <div
+        className={`w-full h-[50vh] ${classNames?.wrapper || ""} ${
+          classNames?.media || ""
+        }`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onAuxClick={(e) => {
+          console.log("middle click");
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <Model src={src} />
+      </div>
+    ) : type === ArtifactType.MarkDown ? (
+      <div
+        className={`h-full p-4 ${classNames?.wrapper || ""} ${
+          classNames?.media || ""
+        }`}
+      >
+        MarkDown Inscriptions not yet supported.
+      </div>
+    ) : type === ArtifactType.PDF ? (
+      <div
+        className={`h-full p-4 ${classNames?.wrapper || ""} ${
+          classNames?.media || ""
+        }`}
+      >
+        PDF Inscriptions not yet supported.
+      </div>
+    ) : (
+      <div className="flex items-center justify-center w-full h-full bg-[#111] rounded min-h-[300px]">
+        <img
+          className={`h-auto ${classNames?.media ? classNames.media : ""}`}
+          src={src}
+          id={`artifact_${new Date().getTime()}_image`}
+        />
+      </div>
+    );
+  }, [type, src, classNames, outPoint]);
+
   return (
     <ArtifactContainer
       key={outPoint}
-      className={`flex flex-col items-center justify-center min-h-[300px] min-w-[300px] bg-[#111] w-full h-full p-2 relative rounded ${
+      className={`flex flex-col pb-[65px] items-center justify-center min-h-[356px] min-w-[300px] bg-[#111] w-full h-full relative rounded ${
         to ? "cursor-pointer" : ""
       } block transition mx-auto ${
         classNames?.wrapper ? classNames.wrapper : ""
@@ -100,95 +189,21 @@ const Artifact: React.FC<ArtifactProps> = ({
         }
       }}
     >
-      {type === ArtifactType.Video ? (
-        <VideoArtifact
-          outPoint={outPoint}
-          src={src}
-          className={`h-full ${classNames?.media ? classNames.media : ""}`}
-        />
-      ) : type === ArtifactType.Audio ? (
-        <AudioArtifact
-          outPoint={outPoint}
-          src={src}
-          className={`p-1 absolute bottom-0 left-0 w-full ${
-            classNames?.media ? classNames.media : ""
-          }`}
-        />
-      ) : type === ArtifactType.HTML ? (
-        <div className="w-full h-full">
-          <iframe
-            className="w-full h-full min-h-[60vh]"
-            src={`${API_HOST}/api/files/inscriptions/${outPoint}`}
-          />
-        </div>
-      ) : type === ArtifactType.JSON ? (
-        <div
-          className={`p-4 ${classNames?.wrapper || ""} ${
-            classNames?.media || ""
-          }`}
-        >
-          JSON Inscriptions not yet supported.
-        </div>
-      ) : type === ArtifactType.Text ? (
-        <div
-          className={`p-4 ${classNames?.wrapper || ""} ${
-            classNames?.media || ""
-          }`}
-        >
-          {/* {generatedImage} */}
-          Text inscriptions not yet supported.
-        </div>
-      ) : type === ArtifactType.Model ? (
-        <div
-          className={`w-full h-[50vh] ${classNames?.wrapper || ""} ${
-            classNames?.media || ""
-          }`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onAuxClick={(e) => {
-            console.log("middle click");
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          <Model
-            src={src ? src : `${API_HOST}/api/files/inscriptions/${outPoint}`}
-          />
-        </div>
-      ) : type === ArtifactType.MarkDown ? (
-        <div
-          className={`${classNames?.wrapper || ""} ${classNames?.media || ""}`}
-        >
-          MarkDown Inscriptions not yet supported.
-        </div>
-      ) : type === ArtifactType.PDF ? (
-        <div
-          className={`${classNames?.wrapper || ""} ${classNames?.media || ""}`}
-        >
-          PDF Inscriptions not yet supported.
-        </div>
-      ) : (
-        <div className="flex items-center justify-center w-full h-full bg-[#111] rounded min-h-[300px]">
-          <img
-            className={`h-auto rounded ${
-              classNames?.media ? classNames.media : ""
-            }`}
-            src={src ? src : `${API_HOST}/api/files/inscriptions/${outPoint}`}
-            id={`artifact_${new Date().getTime()}_image`}
-          />
+      {(!src || type === undefined) && (
+        <div className="w-full h-full flex items-center justify-center mx-auto text-center">
+          <LoaderIcon className="mx-auto" />
         </div>
       )}
+      {src && type !== undefined && content}
 
       {/* TODO: Show indicator when more than one isncription */}
       {id !== undefined && (
-        <div className="flex items-center justify-between w-full p-2 md:p-4 h-18">
+        <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
           <div
             className={`rounded bg-[#222] p-2 text-[#aaa] cursor-pointer`}
             onClick={() => Router.push(`/inscription/${id}`)}
           >
-            Inscription #{id}
+            #{id}
           </div>
           <div className={`hidden md:block`}>&nbsp;</div>
           <div className={`rounded bg-[#222] p-2 text-[#aaa]`}>

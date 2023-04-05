@@ -8,15 +8,8 @@ import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Image from "next/image";
 import Router from "next/router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FetchStatus } from "..";
-
-export type CallbackData = {
-  numInputs: number;
-  numOutputs: number;
-  fee: number;
-  rawTx: string;
-};
 
 interface PageProps extends WithRouterProps {}
 
