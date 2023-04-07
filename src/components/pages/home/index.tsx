@@ -1,22 +1,14 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
-import { OrdUtxo, useWallet } from "@/context/wallet";
-import { API_HOST } from "@/pages/_app";
+import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { fillContentType } from "@/utils/artifact";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Image from "next/image";
 import Router from "next/router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FetchStatus } from "..";
-
-export type CallbackData = {
-  numInputs: number;
-  numOutputs: number;
-  fee: number;
-  rawTx: string;
-};
 
 interface PageProps extends WithRouterProps {}
 
@@ -29,7 +21,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     setFetchInscriptionsStatus,
     fetchInscriptionsStatus,
     getArtifactByInscriptionId,
-  } = useWallet();
+  } = useOrdinals();
   const [fetchCountStatus, setFetchCountStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -41,7 +33,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     if (!randomNumber) {
       setRandomNumber(getRandomInt(0, numMinted));
     }
-  }, [setRandomNumber]);
+  }, [randomNumber, numMinted, setRandomNumber]);
 
   useEffect(() => {
     const fire = async () => {
@@ -88,7 +80,12 @@ const HomePage: React.FC<PageProps> = ({}) => {
     ) {
       fire(randomNumber);
     }
-  }, [randomNumber, artifact, getArtifactByInscriptionId]);
+  }, [
+    fetchInscriptionsStatus,
+    randomNumber,
+    artifact,
+    getArtifactByInscriptionId,
+  ]);
 
   return (
     <>

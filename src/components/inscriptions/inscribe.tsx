@@ -1,13 +1,15 @@
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
+import { PrivateKey } from "bsv-wasm-web";
+import { createOrdinal } from "js-1sat-ord";
 import { head } from "lodash";
-import { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
 import Artifact from "../artifact";
-import { FetchStatus, toastProps } from "../pages";
+import { FetchStatus, toastErrorProps } from "../pages";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -46,7 +48,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     }
   }, [initialized, payPk]);
 
-  function readFileAsBase64(file: any) {
+  function readFileAsBase64(file: any): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -77,46 +79,68 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
   const utxo = useMemo(() => head(fundingUtxos), [fundingUtxos]);
 
-  const handleInscribing = async () => {
+  const clickInscribe = async () => {
+    if (
+      !utxo ||
+      !payPk ||
+      !selectedFile?.type ||
+      !ordAddress ||
+      !changeAddress
+    ) {
+      return;
+    }
     setInscribeStatus(FetchStatus.Loading);
     try {
       const fileAsBase64 = await readFileAsBase64(selectedFile);
-      const apiEndpoint = "/api/inscribe";
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      try {
+        setInscribeStatus(FetchStatus.Loading);
+        const tx = await handleInscribing(
           payPk,
           fileAsBase64,
-          fileContentType: selectedFile?.type,
+          selectedFile?.type,
           ordAddress,
           changeAddress,
-          fundingUtxo: utxo,
-        }),
-      });
-      console.log({ status: response.status, response });
-      if (response.status === 200) {
-        const data = (await response.json()) as PendingTransaction;
-        console.log("Completion Data @ Client: ", response, data);
+          utxo
+        );
+        const satsIn = utxo.satoshis;
+        const satsOut = Number(tx.satoshis_out());
+        if (satsIn && satsOut) {
+          const fee = satsIn - satsOut;
 
-        setPendingTransaction(data);
-        inscribedCallback(data);
-        setInscribeStatus(FetchStatus.Success);
-      } else if (response.status === 402) {
-        // payment required
+          if (fee < 0) {
+            console.error("Fee inadequate");
+            toast.error("Fee Inadequate", toastErrorProps);
+            setInscribeStatus(FetchStatus.Error);
+            return;
+          }
+          const result = {
+            rawTx: tx.to_hex(),
+            size: tx.get_size(),
+            fee,
+            numInputs: tx.get_ninputs(),
+            numOutputs: tx.get_noutputs(),
+            txid: tx.get_id_hex(),
+          } as PendingTransaction;
+          console.log(Object.keys(result));
+          // res.status(200).json(result);
+
+          console.log("Completion Data @ Client: ", result);
+
+          setPendingTransaction(result);
+          inscribedCallback(result);
+          setInscribeStatus(FetchStatus.Success);
+          // const tx = Transaction.from_hex(result.rawTx);
+          return;
+        }
+      } catch (e) {
+        console.error(e);
         setInscribeStatus(FetchStatus.Error);
-        const { error } = await response.json();
-        throw new Error(error);
-      } else {
-        setInscribeStatus(FetchStatus.Error);
-        const body = await response.text();
-        throw new Error(body);
+        // res.status(500).send(e.toString());
+        return;
       }
     } catch (e) {
       setInscribeStatus(FetchStatus.Error);
-      toast.error("Failed to inscribe " + e, toastProps);
+      toast.error("Failed to inscribe " + e, toastErrorProps);
       console.error(e);
     }
   };
@@ -141,7 +165,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       <div className="w-full">
         <Label
           className={`${
-            selectedFile ? "" : "min-h-[300px] min-w-[300px]"
+            selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
           } rounded border border-dashed border-[#222] flex items-center justify-center`}
         >
           {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
@@ -183,7 +207,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         <button
           disabled={!selectedFile || inscribeStatus === FetchStatus.Loading}
           type="submit"
-          onClick={handleInscribing}
+          onClick={clickInscribe}
           className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
         >
           Preview
@@ -194,3 +218,34 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 };
 
 export default Inscribe;
+
+const handleInscribing = async (
+  payPk: string,
+  fileAsBase64: string,
+  fileContentType: string,
+  ordAddress: string,
+  changeAddress: string,
+  fundingUtxo: any
+) => {
+  const paymentPk = PrivateKey.from_wif(payPk);
+
+  // inscription
+  const inscription = {
+    dataB64: fileAsBase64,
+    contentType: fileContentType,
+  };
+
+  try {
+    const tx = await createOrdinal(
+      fundingUtxo,
+      ordAddress,
+      paymentPk,
+      changeAddress,
+      0.06,
+      inscription
+    );
+    return tx;
+  } catch (e) {
+    throw e;
+  }
+};

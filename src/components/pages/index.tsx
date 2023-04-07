@@ -24,6 +24,17 @@ export const toastProps = {
   },
 };
 
+export const toastErrorProps = {
+  style: {
+    background: "#333",
+    color: "#fff",
+  },
+  iconTheme: {
+    primary: "#111",
+    secondary: "#f63b42",
+  },
+};
+
 export enum ConnectionStatus {
   IDLE = 0,
   CONNECTING = 1,
@@ -79,7 +90,7 @@ const Layout: React.FC<Props> = ({ children }) => {
     ) {
       connect(oAddress);
     }
-  }, [oAddress, connect, connectionStatus]);
+  }, [ordAddress, oAddress, connect, connectionStatus]);
 
   const importKeys = useCallback(() => {
     if (!backupFile) {

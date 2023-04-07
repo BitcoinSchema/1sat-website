@@ -112,11 +112,17 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
         // : {}
       );
 
-      // s.addEventListener("message", (e) => {
-      //   console.log("secondary logger outer", e);
-      // });
+      // calculate lock
+      // const buf = P2PKHAddress.from_string(ordAddress)
+      //   .get_locking_script()
+      //   .to_bytes();
+      // const ab = await crypto.subtle.digest("SHA-256", buf);
+      // const lock = Buffer.from(ab).reverse().toString("hex");
 
-      s.onmessage = function (e) {
+      s.addEventListener(ordAddress, (e) => {
+        // console.log("secondary logger outer", e);
+
+        console.log(`ordAddress event ${ordAddress}`, { e });
         // const sampleResponse = {
         //   txid: "e28fee530019d6ca2e4a1e347097602074535a3662fa500528a314e1b8955899",
         //   vout: 0,
@@ -132,17 +138,18 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
         // };
         // TODO: LEID
         // console.log("message!", e);
-        if (!unmounted.current && e.lastEventId !== "undefined") {
+        if (e.lastEventId !== undefined) {
           setLeid(e.lastEventId);
         }
         if (e.data) {
           const data = JSON.parse(e.data);
-          if (!unmounted.current) {
-            console.log("socket data", data);
-            setLastEvent(data);
-          }
+          console.log({ mount: unmounted.current });
+
+          console.log("socket data", data);
+          setLastEvent(data);
         }
-      };
+      });
+
       s.onopen = function () {
         if (!unmounted.current) {
           console.log("open");
@@ -161,7 +168,7 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
     },
     [
       connectionStatus,
-      leid,
+      // leid,
       setLastEvent,
       // location.pathname,
       setOrdAddress,

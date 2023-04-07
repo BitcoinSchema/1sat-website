@@ -1,4 +1,4 @@
-import { API_HOST } from "@/pages/_app";
+import { API_HOST } from "@/context/ordinals";
 import React from "react";
 
 type VideoArtifactProps = {

@@ -1,4 +1,4 @@
-import { API_HOST } from "@/pages/_app";
+import { API_HOST } from "@/context/ordinals";
 import { encode } from "blurhash";
 import { toSvg } from "jdenticon";
 import React, { useEffect, useMemo, useState } from "react";
@@ -61,7 +61,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
           componentY
         )
       : undefined;
-  }, [position, duration, data, componentX, componentY]);
+  }, [position, data, componentX, componentY]);
 
   useEffect(() => {
     const interval = setInterval(() => {

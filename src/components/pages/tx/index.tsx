@@ -1,12 +1,13 @@
 import Artifact from "@/components/artifact";
 import Tabs from "@/components/tabs";
-import { OrdUtxo, useWallet } from "@/context/wallet";
+import { OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
 import { find, head, last } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
@@ -21,15 +22,9 @@ const TxPage: React.FC<PageProps> = ({}) => {
     ? last((outpoint as string | undefined)?.split("_"))
     : undefined;
 
-  const {
-    ordUtxos,
-    getArtifactsByTxId,
-    fetchInscriptionsStatus,
-    transfer,
-    fundingUtxos,
-    getArtifactsByOrigin,
-  } = useWallet();
-
+  const { ordUtxos, transfer, fundingUtxos } = useWallet();
+  const { getArtifactsByTxId, fetchInscriptionsStatus, getArtifactsByOrigin } =
+    useOrdinals();
   const ordinalUtxo = useMemo(() => {
     return (
       (find(
@@ -48,6 +43,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
       } else {
         art = await getArtifactsByTxId(t);
       }
+
       let arts = [];
       for (let a of art) {
         if (a.origin?.split("_")[0] === a.txid) {
@@ -64,8 +60,9 @@ const TxPage: React.FC<PageProps> = ({}) => {
     }
   }, [outpoint, getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
 
-  const singleStyle = `text-center h-full flex items-center justify-center`;
+  const singleStyle = `w-full text-center h-full flex items-center justify-center`;
   const collectionStyle = `grid grid-rows-4 h-full`;
+
   return (
     <>
       <Head>
@@ -82,8 +79,9 @@ const TxPage: React.FC<PageProps> = ({}) => {
         />
       </Head>
       <Tabs currentTab={undefined} />
+
       <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl">
-        <div className={vout ? singleStyle : collectionStyle}>
+        <div className={singleStyle}>
           {artifacts?.map((artifact) => {
             return (
               <Artifact
@@ -99,7 +97,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
             );
           })}
         </div>
-        <div className="md:ml-4">
+        <div className="md:ml-4 w-full max-w-sm">
           {fetchInscriptionsStatus === FetchStatus.Success &&
             artifacts.length === 0 && (
               <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">
