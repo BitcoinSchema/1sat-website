@@ -1,7 +1,7 @@
 import Layout from "@/components/pages";
 import HomePage from "@/components/pages/home";
 import { WithRouterProps } from "next/dist/client/with-router";
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 interface PageProps extends WithRouterProps {}
 

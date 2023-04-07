@@ -51,8 +51,14 @@ export const RatesProvider: React.FC<Props> = (props) => {
   }, [setRates]);
 
   useEffect(() => {
+    const fire = async () => {
+      debugger;
+      if (ratesStatus === FetchStatus.Idle) {
+        await fetchRates();
+      }
+    };
     if (rates === undefined && ratesStatus === FetchStatus.Idle) {
-      fetchRates();
+      fire();
     }
   }, [fetchRates, rates, ratesStatus]);
 

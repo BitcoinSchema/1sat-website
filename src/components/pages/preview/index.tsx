@@ -1,18 +1,18 @@
 import Tabs, { Tab } from "@/components/tabs";
-import { useRates } from "@/context/rates";
 import { useWallet } from "@/context/wallet";
 import { MAPI_HOST } from "@/pages/_app";
+import { formatBytes } from "@/utils/bytes";
 import { useLocalStorage } from "@/utils/storage";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import Router from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import Router, { useRouter } from "next/router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
-import { FiCopy } from "react-icons/fi";
+import { FiCopy, FiDownload } from "react-icons/fi";
 import { RxReset } from "react-icons/rx";
 import { TbBroadcast } from "react-icons/tb";
-import { FetchStatus } from "../../pages";
+import { FetchStatus, toastErrorProps, toastProps } from "../../pages";
 
 type BroadcastResponse = {
   encoding: string;
@@ -20,6 +20,9 @@ type BroadcastResponse = {
   payload: string;
   publicKey: string;
   signature: string;
+  code?: number;
+  status?: number;
+  error?: string;
 };
 
 type BroadcastResponsePayload = {
@@ -36,27 +39,22 @@ type BroadcastResponsePayload = {
 
 interface PageProps extends WithRouterProps {}
 
-const PreviewPage: React.FC<PageProps> = ({ router }) => {
-  const { pendingTransaction, fundingUtxos, getUTXOs, changeAddress } =
-    useWallet();
+const PreviewPage: React.FC<PageProps> = ({}) => {
+  const {
+    pendingTransaction,
+    fundingUtxos,
+    getUTXOs,
+    changeAddress,
+    downloadPendingTx,
+    usdRate,
+  } = useWallet();
 
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
     useLocalStorage<BroadcastResponsePayload>("1satbrs", undefined);
   const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
-
-  const [usdRate, setUsdRate] = useState<number>(0);
-  const { rates } = useRates();
-
-  useEffect(() => {
-    if (rates && rates.length > 0) {
-      // Gives rate for 1 USD in satoshis
-      let usdRate = rates.filter((r) => r.currency === "usd")[0]
-        .price_in_satoshis;
-      setUsdRate(usdRate);
-    }
-  }, [rates, usdRate]);
+  const router = useRouter();
 
   useEffect(() => {
     const fire = async (a: string) => {
@@ -72,10 +70,11 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
     if (!fundingUtxos) {
       return;
     }
-    console.log("click broadcast", pendingTransaction?.rawTx);
+    console.log("click broadcast");
     if (!pendingTransaction?.rawTx) {
       return;
     }
+    console.log({ pendingTransaction });
     setBroadcastStatus(FetchStatus.Loading);
     const body = Buffer.from(pendingTransaction.rawTx, "hex");
     const response = await fetch(`${MAPI_HOST}/mapi/tx`, {
@@ -93,27 +92,44 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
         data.payload || "{}"
       ) as BroadcastResponsePayload;
       if (respData?.returnResult === "success") {
-        toast.success("Broadcasted", {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.success("Broadcasted", toastProps);
         setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponsePayload(respData);
+
+        // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
         Router.push("/ordinals");
+
         return;
       } else {
-        toast.error("Failed to broadcast " + respData.resultDescription, {
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
+        toast.error(
+          "Failed to broadcast " + respData.resultDescription,
+          toastErrorProps
+        );
       }
       setBroadcastStatus(FetchStatus.Error);
+    } else if (data && data.error) {
+      toast("Failed to broadcast: " + data.error, toastErrorProps);
+      setBroadcastStatus(FetchStatus.Error);
     }
-  }, [pendingTransaction, setBroadcastResponsePayload, fundingUtxos]);
+  }, [
+    //pendingOrdUtxo,
+    // ordUtxos,
+    pendingTransaction,
+    setBroadcastResponsePayload,
+    fundingUtxos,
+  ]);
+
+  const feeUsd = useMemo(() => {
+    return usdRate && pendingTransaction
+      ? `$${(pendingTransaction.fee / usdRate).toFixed(2)}`
+      : undefined;
+  }, [usdRate, pendingTransaction]);
+
+  useEffect(() => {
+    if (!pendingTransaction) {
+      router.push("/inscribe");
+    }
+  }, [router, pendingTransaction]);
 
   return (
     <>
@@ -135,30 +151,46 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
       {pendingTransaction && (
         <div>
           <h1 className="text-center text-2xl">
-            {`${pendingTransaction.numOutputs === 1 ? "Refund" : "Ordinal"}
-            Generated`}
+            {`${
+              pendingTransaction.numOutputs === 1
+                ? "Refund"
+                : pendingTransaction.numOutputs === 2 &&
+                  pendingTransaction.numInputs === 2
+                ? "Transfer"
+                : "Inscription"
+            }
+            Preview`}
           </h1>
           <div className="text-center text-[#aaa] my-2">
-            You still need to broadcast this before it goes live.
+            Transaction generated. Broadcast to finalize.
           </div>
-          <div className="w-[600px] w-full max-w-lg mx-auto p-2 h-[300px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-teal-700 my-8 relative">
-            {pendingTransaction.rawTx}
-            <div className="p-4 absolute w-full text-white bg-black bg-opacity-75 bottom-0 left-0">
-              <div className="flex justify-between border-b pb-2 mb-2 border-[#222]">
+
+          <div className="w-[600px] w-full max-w-lg mx-auto p-2 h-[260px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-teal-700 my-8 relative">
+            <span className="opacity-50 select-none">
+              {pendingTransaction.rawTx?.slice(0, 888)}
+            </span>
+            <div className="p-6 absolute w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent">
+              <div className="font-semibold text-center text-sm text-[#aaa] mb-2 py-2">
+                Transaction ID
+              </div>
+              <div className="rounded-full bg-[#222] border flex items-center  justify-center text-center text-[10px] md:text-xs text-[#aaa] border-[#333] my-2 py-2">
+                {pendingTransaction.txid}
+              </div>
+              <div className="flex justify-between mt-4">
                 <div>{pendingTransaction.numInputs} Inputs</div>
                 <div>{pendingTransaction.numOutputs} Outputs</div>
               </div>
               <div className="flex justify-between">
                 <div>Size</div>
-                <div>{pendingTransaction.rawTx?.length / 2} Bytes</div>
+                <div>{formatBytes(pendingTransaction.rawTx.length / 2)}</div>
               </div>
               <div className="flex justify-between">
                 <div>Fee</div>
-                <div>{pendingTransaction.fee} Satoshis</div>
+                <div>{pendingTransaction.fee.toLocaleString()} Satoshis</div>
               </div>
               <div className="flex justify-between">
                 <div>Fee USD</div>
-                <div>${(pendingTransaction.fee / usdRate).toFixed(2)}</div>
+                <div>{feeUsd}</div>
               </div>
               {pendingTransaction.fee && (
                 <div className="flex justify-between">
@@ -174,36 +206,42 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
               )}
             </div>
           </div>
-          <div className="max-w-md mx-auto">
-            <CopyToClipboard
-              text={pendingTransaction?.rawTx}
-              onCopy={() =>
-                toast.success("Copied Raw Tx", {
-                  style: {
-                    background: "#333",
-                    color: "#fff",
-                  },
-                })
-              }
-            >
-              <button className="w-full p-2 text-lg bg-teal-400 rounded my-4 text-black font-semibold flex items-center">
-                <div className="mx-auto flex items-center justify-center">
-                  <FiCopy className="w-10" />
-                  <div>Copy</div>
-                </div>
-              </button>
-            </CopyToClipboard>
-
+          <div className="p-6 md:p-0 max-w-md mx-auto">
             <button
               onClick={handleClickBroadcast}
-              className="w-full p-2 text-lg disabled:bg-[#333] text-[#aaa] bg-orange-400 rounded my-4 text-black font-semibold"
+              className="w-full p-2 text-lg disabled:bg-[#333] text-[#aaa] hover:bg-yellow-400 bg-yellow-500 rounded mb-4 text-black font-semibold transition"
               disabled={broadcastStatus === FetchStatus.Loading}
             >
               <div className="mx-auto flex items-center justify-center">
                 <TbBroadcast className="w-10" />
-                <div>Broadcast</div>
+                <div>Broadcast {feeUsd}</div>
               </div>
             </button>
+
+            <div className="flex items-center my-2">
+              <CopyToClipboard
+                text={Buffer.from(pendingTransaction?.rawTx).toString("hex")}
+                onCopy={() => toast.success("Copied Raw Tx", toastProps)}
+              >
+                <button className="w-full p-1 text-lg hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center mr-1 transition">
+                  <div className="mx-auto flex items-center justify-center">
+                    <FiCopy className="w-10" />
+                    <div>Copy Raw Tx</div>
+                  </div>
+                </button>
+              </CopyToClipboard>
+
+              <button
+                className="w-full ml-1 p-1 text-lg hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center transition"
+                onClick={downloadPendingTx}
+              >
+                <div className="mx-auto flex items-center justify-center">
+                  <FiDownload className="w-10" />
+                  <div>Download</div>
+                </div>
+              </button>
+            </div>
+
             <button
               onClick={() => {
                 // reset();
@@ -211,7 +249,7 @@ const PreviewPage: React.FC<PageProps> = ({ router }) => {
                 // // setShowWallet(false);
                 Router.push("/inscribe");
               }}
-              className="w-full p-2 text-lg bg-gray-400 rounded my-4 text-black font-semibold"
+              className="w-full p-2 text-lg hover:bg-[#333] bg-[#222] rounded my-4 font-semibold text-[#777] hover:text-white transition"
             >
               <div className="mx-auto flex items-center justify-center">
                 <RxReset className="w-10" />

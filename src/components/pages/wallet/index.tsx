@@ -2,6 +2,7 @@ import Tabs, { Tab } from "@/components/tabs";
 import Wallet from "@/components/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
+import React from "react";
 
 interface PageProps extends WithRouterProps {}
 

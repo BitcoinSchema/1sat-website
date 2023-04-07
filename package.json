@@ -7,14 +7,9 @@
     "build": "next build && next export",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "yarn build && firebase deploy",
-    "deploy-hosting": "yarn build && firebase deploy --only hosting",
-    "deploy-functions": "firebase deploy --only functions"
+    "deploy": "yarn build && firebase deploy"
   },
   "export": "next export",
-  "resolve": {
-    "bsv-wasm": "bsv-wasm-web"
-  },
   "dependencies": {
     "@emotion/babel-preset-css-prop": "^11.0.0",
     "@emotion/css": "^11.0.0",
@@ -32,12 +27,12 @@
     "@types/styled-components": "^5.1.26",
     "autoprefixer": "^10.4.14",
     "blurhash": "^2.0.5",
-    "bsv-wasm": "^2.0.0",
+    "bmapjs": "^0.4.0-beta.34",
     "bsv-wasm-web": "^2.0.0",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
     "jdenticon": "^3.2.0",
-    "js-1sat-ord": "^0.0.12",
+    "js-1sat-ord": "^0.0.19",
     "lodash": "^4.17.21",
     "next": "13.2.4",
     "postcss": "^8.4.21",
@@ -56,10 +51,16 @@
     "twin.macro": "^3.1.0",
     "typescript": "5.0.2"
   },
+  "overrides": {
+    "bsv-wasm": "$bsv-wasm-web"
+  },
   "devDependencies": {
+    "@babel/core": "^7.21.4",
+    "@babel/preset-react": "^7.18.6",
     "@emotion/babel-plugin": "^11.10.6",
     "babel-plugin-macros": "^3.1.0",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.1-security",
+    "replace-module-webpack-plugin": "^1.0.0"
   },
   "babelMacros": {
     "twin": {

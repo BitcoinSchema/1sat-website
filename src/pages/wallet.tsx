@@ -1,6 +1,7 @@
 import Layout from "@/components/pages";
 import WalletPage from "@/components/pages/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
+import React from "react";
 
 interface PageProps extends WithRouterProps {}
 

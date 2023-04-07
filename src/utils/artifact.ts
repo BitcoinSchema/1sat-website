@@ -1,5 +1,4 @@
-import { OrdUtxo } from "@/context/wallet";
-import { API_HOST } from "@/pages/_app";
+import { API_HOST, OrdUtxo } from "@/context/ordinals";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
   const origin = artifact.origin || `${artifact.txid}_${artifact.vout}`;

@@ -8,24 +8,12 @@
     ],
     "rewrites": [
       {
-        "source": "/api/payment/send",
-        "function": "send"
-      },
-      {
-        "source": "/api/ordinal/send",
-        "function": "transfer"
-      },
-      {
-        "source": "/api/inscribe",
-        "function": "inscribe"
-      },
-      {
-        "source": "/api/broadcast",
-        "function": "broadcast"
-      },
-      {
         "source": "/wallet",
         "destination": "/wallet.html"
+      },
+      {
+        "source": "/ordinals/**",
+        "destination": "/ordinals/[location].html"
       },
       {
         "source": "/ordinals",
@@ -51,18 +39,6 @@
         "source": "**",
         "destination": "/index.html"
       }
-    ]
-  },
-  "functions": {
-    "ignore": [
-      "node_modules",
-      ".git",
-      "firebase-debug.log",
-      "firebase-debug.*.log"
-    ],
-    "predeploy": [
-      "npm --prefix \"$RESOURCE_DIR\" run lint",
-      "npm --prefix \"$RESOURCE_DIR\" run build"
     ]
   }
 }
