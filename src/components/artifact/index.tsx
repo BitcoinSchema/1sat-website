@@ -1,4 +1,4 @@
-import { API_HOST } from "@/pages/_app";
+import { API_HOST } from "@/context/ordinals";
 import Router from "next/router";
 import React, { useMemo } from "react";
 import { LoaderIcon } from "react-hot-toast";

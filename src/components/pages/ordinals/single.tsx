@@ -1,7 +1,7 @@
 import Artifact from "@/components/artifact";
 import OrdAddress from "@/components/ordAddress";
+import { API_HOST } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
-import { API_HOST } from "@/pages/_app";
 import { head } from "lodash";
 import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
@@ -73,7 +73,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ txid, vout }) => {
         </div>
       )
     );
-  }, [ord, fundingUtxo, transfer, ordUtxos]);
+  }, [ord, transfer, ordUtxos]);
 
   return (
     <div className="flex md:flex-row flex-col justify-between items-start w-full">

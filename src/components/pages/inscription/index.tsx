@@ -1,6 +1,7 @@
 import Artifact from "@/components/artifact";
 import Tabs from "@/components/tabs";
-import { OrdUtxo, useWallet } from "@/context/wallet";
+import { useBitcoinSchema } from "@/context/bitcoinschema";
+import { OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { fillContentType } from "@/utils/artifact";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -18,8 +19,8 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     FetchStatus.Idle
   );
   const { inscriptionId } = router.query;
-  const { getBmapTxById, artifacts } = useWallet();
-  const { getArtifactByInscriptionId, fetchInscriptionsStatus } = useWallet();
+  const { getBmapTxById } = useBitcoinSchema();
+  const { getArtifactByInscriptionId, fetchInscriptionsStatus } = useOrdinals();
 
   useEffect(() => {
     console.log({ inscriptionId });

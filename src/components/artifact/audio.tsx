@@ -1,4 +1,4 @@
-import { API_HOST } from "@/pages/_app";
+import { API_HOST } from "@/context/ordinals";
 import { encode } from "blurhash";
 import { toSvg } from "jdenticon";
 import React, { useEffect, useMemo, useState } from "react";

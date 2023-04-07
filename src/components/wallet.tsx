@@ -1,4 +1,3 @@
-import { useRates } from "@/context/rates";
 import { useWallet } from "@/context/wallet";
 import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -29,13 +28,13 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     generateKeys,
     ordPk,
     payPk,
-    fundingUtxos,
     changeAddress,
     backupFile,
     getUTXOs,
     fetchUtxosStatus,
     balance,
     send,
+    usdRate,
   } = useWallet();
 
   const [showKeys, setShowKeys] = useState<boolean>(false);
@@ -44,18 +43,6 @@ const Wallet: React.FC<WalletProps> = ({}) => {
   const [generateStatus, setGenerateStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
-
-  const [usdRate, setUsdRate] = useState<number>(0);
-  const { rates } = useRates();
-
-  useEffect(() => {
-    if (rates && rates.length > 0) {
-      // Gives rate for 1 USD in satoshis
-      let usdRate = rates.filter((r) => r.currency === "usd")[0]
-        .price_in_satoshis;
-      setUsdRate(usdRate);
-    }
-  }, [rates, usdRate]);
 
   useEffect(() => {
     const fire = async () => {
@@ -165,7 +152,10 @@ const Wallet: React.FC<WalletProps> = ({}) => {
           >
             {/* <QRCode value={changeAddress || ""} size={420} />
              */}
-            ${balance ? (balance / usdRate).toFixed(2) : balance.toFixed(2)}
+            $
+            {usdRate && balance
+              ? (balance / usdRate).toFixed(2)
+              : balance.toFixed(2)}
           </h1>
           <h2 className="mb-24 text-center text-teal-600">
             {sb.toBitcoin(balance)} BSV

@@ -1,5 +1,4 @@
 import Tabs, { Tab } from "@/components/tabs";
-import { useRates } from "@/context/rates";
 import { useWallet } from "@/context/wallet";
 import { MAPI_HOST } from "@/pages/_app";
 import { formatBytes } from "@/utils/bytes";
@@ -46,8 +45,8 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     fundingUtxos,
     getUTXOs,
     changeAddress,
-    ordUtxos,
     downloadPendingTx,
+    usdRate,
   } = useWallet();
 
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
@@ -56,17 +55,6 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     FetchStatus.Idle
   );
   const router = useRouter();
-  const [usdRate, setUsdRate] = useState<number>(0);
-  const { rates } = useRates();
-
-  useEffect(() => {
-    if (rates && rates.length > 0) {
-      // Gives rate for 1 USD in satoshis
-      let usdRate = rates.filter((r) => r.currency === "usd")[0]
-        .price_in_satoshis;
-      setUsdRate(usdRate);
-    }
-  }, [rates, usdRate]);
 
   useEffect(() => {
     const fire = async (a: string) => {
@@ -125,7 +113,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     }
   }, [
     //pendingOrdUtxo,
-    ordUtxos,
+    // ordUtxos,
     pendingTransaction,
     setBroadcastResponsePayload,
     fundingUtxos,
@@ -141,7 +129,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     if (!pendingTransaction) {
       router.push("/inscribe");
     }
-  }, [pendingTransaction]);
+  }, [router, pendingTransaction]);
 
   return (
     <>

@@ -1,24 +1,22 @@
 import { FetchStatus, toastProps } from "@/components/pages";
-import { API_HOST } from "@/pages/_app";
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage } from "@/utils/storage";
-import { MAP } from "bmapjs/types/protocols/map";
 import init, {
   P2PKHAddress,
   PrivateKey,
-  Script as WasmScript,
   SigHash,
   Transaction,
+  Script as WasmScript,
   TxIn as WasmTxIn,
   TxOut as WasmTxOut,
 } from "bsv-wasm-web";
-import { Inscription, sendOrdinal, Utxo } from "js-1sat-ord";
+import { Inscription, Utxo, sendOrdinal } from "js-1sat-ord";
 import { head } from "lodash";
 import Router from "next/router";
 import React, {
-  createContext,
   ReactNode,
+  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -27,13 +25,10 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 import { useBitsocket } from "../bitsocket";
+import { API_HOST, GPInscription, OrdUtxo } from "../ordinals";
+import { useRates } from "../rates";
 
 export const PROTOCOL_START_HEIGHT = 783968;
-
-type OutPoint = {
-  txid: string;
-  vout: number;
-};
 
 type ScriptSig = {
   asm: string;
@@ -85,24 +80,6 @@ type HistoryItem = {
   height: number;
 };
 
-type GPFile = {
-  hash: string;
-  size: number;
-  type: string;
-};
-
-type GPInscription = {
-  id: number;
-  txid: string;
-  vout: number;
-  file: GPFile;
-  origin: string;
-  ordinal?: number;
-  height: number;
-  idx: number;
-  lock: string;
-};
-
 export type PendingTransaction = {
   rawTx: string;
   size: number;
@@ -112,52 +89,37 @@ export type PendingTransaction = {
   txid: string;
 };
 
-export interface OrdUtxo extends Utxo {
-  type?: string;
-  origin?: string;
-  id?: number;
-  height?: number;
-  MAP?: MAP;
-}
-
 type ContextValue = {
-  fundingUtxos: Utxo[] | undefined;
-  ordUtxos: OrdUtxo[] | undefined;
-  payPk: string | undefined;
-  ordPk: string | undefined;
-  setBackupFile: (backupFile: File) => void;
-  initialized: boolean;
-  deleteKeys: (e?: any) => void;
-  ordAddress: string | undefined;
-  changeAddress: string | undefined;
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
-  getRawTxById: (id: string) => Promise<string>;
-  getBmapTxById: (id: string) => Promise<any>;
-  generateKeys: () => Promise<void>;
-  getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
-  getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
-  getArtifactByInscriptionId: (
-    inscriptionId: number
-  ) => Promise<OrdUtxo | undefined>;
-  getUTXOs: (address: string) => Promise<Utxo[]>;
-  currentTxId: string | undefined;
-  setCurrentTxId: (txid: string) => void;
-  setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
-  send: (address: string) => Promise<void>;
-  transfer: (ordUtxo: OrdUtxo, toAddress: string) => Promise<void>;
   backupKeys: (e?: any) => void;
+  balance: number;
+  changeAddress: string | undefined;
+  currentTxId: string | undefined;
+  deleteKeys: (e?: any) => void;
   downloadPendingTx: (e?: any) => void;
+  fetchOrdinalUtxosStatus: FetchStatus | undefined;
   fetchUtxosStatus: FetchStatus;
-  fetchInscriptionsStatus: FetchStatus;
-  setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
+  fundingUtxos: Utxo[] | undefined;
+  generateKeys: () => Promise<void>;
+  getOrdinalUTXOs: (address: string) => Promise<void>;
+  getRawTxById: (id: string) => Promise<string>;
+  getUTXOs: (address: string) => Promise<Utxo[]>;
+  initialized: boolean;
+  ordAddress: string | undefined;
+  ordPk: string | undefined;
+  ordUtxos: OrdUtxo[] | undefined;
+  payPk: string | undefined;
   pendingTransaction: PendingTransaction | undefined;
   reset: () => void;
-  getOrdinalUTXOs: (address: string) => Promise<void>;
-  fetchOrdinalUtxosStatus: FetchStatus | undefined;
+  send: (address: string) => Promise<void>;
+  setBackupFile: (backupFile: File) => void;
+  setCurrentTxId: (txid: string) => void;
   setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
-  setFetchInscriptionsStatus: (status: FetchStatus) => void;
-  balance: number;
+  setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
+  setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
+  transfer: (ordUtxo: OrdUtxo, toAddress: string) => Promise<void>;
+  usdRate: number | undefined;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -200,6 +162,18 @@ const WalletProvider: React.FC<Props> = (props) => {
     undefined
   );
 
+  const [usdRate, setUsdRate] = useState<number>(0);
+  const { rates } = useRates();
+
+  useEffect(() => {
+    if (rates && rates.length > 0) {
+      // Gives rate for 1 USD in satoshis
+      let usdRate = rates.filter((r) => r.currency === "usd")[0]
+        .price_in_satoshis;
+      setUsdRate(usdRate);
+    }
+  }, [rates, usdRate]);
+
   useEffect(() => {
     if (lastEvent && ordUtxos && leid !== lastEventId) {
       debugger;
@@ -241,8 +215,6 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
-  const [fetchInscriptionsStatus, setFetchInscriptionsStatus] =
-    useState<FetchStatus>(FetchStatus.Idle);
 
   useEffect(() => {
     const fire = async () => {
@@ -335,62 +307,11 @@ const WalletProvider: React.FC<Props> = (props) => {
     return utxo;
   };
 
-  const getInscriptionsById = useCallback(
-    async (txidOrOrigin: string): Promise<GPInscription[]> => {
-      let [txid, vout] = txidOrOrigin.split("_");
-      let suffix = "";
-      if (vout) {
-        suffix += `origin/${txid}_${vout}`;
-      } else {
-        suffix += `txid/${txid}`;
-      }
-
-      setFetchInscriptionsStatus(FetchStatus.Loading);
-      try {
-        const r = await fetch(`${API_HOST}/api/inscriptions/${suffix}`);
-        const inscriptions = (await r.json()) as GPInscription[];
-        setFetchInscriptionsStatus(FetchStatus.Success);
-        // let utxo = res.find((u: any) => u.value > 1);
-        // TODO: How to get script?
-
-        return inscriptions;
-      } catch (e) {
-        setFetchInscriptionsStatus(FetchStatus.Error);
-
-        throw e;
-      }
-    },
-    []
-  );
-
-  const getInscriptionByInscriptionId = useCallback(
-    async (inscriptionId: number): Promise<GPInscription> => {
-      setFetchInscriptionsStatus(FetchStatus.Loading);
-      try {
-        const r = await fetch(`${API_HOST}/api/inscriptions/${inscriptionId}`);
-        const inscription = (await r.json()) as GPInscription;
-        setFetchInscriptionsStatus(FetchStatus.Success);
-        return inscription;
-      } catch (e) {
-        setFetchInscriptionsStatus(FetchStatus.Error);
-        throw e;
-      }
-    },
-    [setFetchInscriptionsStatus]
-  );
-
   const getRawTxById = useCallback(async (txid: string): Promise<string> => {
     const r = await fetch(
       `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
     );
     return await r.text();
-  }, []);
-
-  const getBmapTxById = useCallback(async (txid: string): Promise<any> => {
-    const r = await fetch(`https://b.map.sv/tx/${txid}/bmap`, {
-      headers: { Accept: "application/json" },
-    });
-    return await r.json();
   }, []);
 
   const getUTXOs = useCallback(
@@ -435,56 +356,6 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
     }
   }, [setCurrentTxId, currentTxId, fundingUtxos]);
-
-  const getArtifactsByTxId = useCallback(
-    async (txidOrOrigin: string): Promise<OrdUtxo[]> => {
-      const gpInscriptions = await getInscriptionsById(txidOrOrigin);
-
-      if (!gpInscriptions) {
-        return [];
-      }
-      return gpInscriptions.map((i) => {
-        return {
-          vout: i.vout,
-          satoshis: 1,
-          txid: i.txid,
-          type: i.file.type,
-          origin: i.origin,
-          id: i.id,
-        } as OrdUtxo;
-      });
-    },
-    [getInscriptionsById]
-  );
-
-  const getArtifactByInscriptionId = useCallback(
-    async (inscriptionId: number): Promise<OrdUtxo | undefined> => {
-      const gpInscription = await getInscriptionByInscriptionId(inscriptionId);
-
-      if (!gpInscription) {
-        return;
-      }
-      return {
-        vout: gpInscription.vout,
-        satoshis: 1,
-        txid: gpInscription.txid,
-        type: gpInscription.file.type,
-        origin: gpInscription.origin,
-        id: gpInscription.id,
-      } as OrdUtxo;
-    },
-    [getInscriptionByInscriptionId]
-  );
-
-  type GPUtxo = {
-    txid: string;
-    vout: Number;
-    satoshis: Number;
-    acc_sats: Number;
-    lock: string;
-    origin: string;
-    ordinal: number;
-  };
 
   // [
   //   {
@@ -891,77 +762,68 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   const value = useMemo(
     () => ({
-      changeAddress,
-      ordAddress,
       artifacts,
-      ordPk,
-      payPk,
-      fundingUtxos,
-      backupKeys,
-      deleteKeys,
       backupFile,
-      generateKeys,
-      send: sendWasm,
-      pendingTransaction,
-      setPendingTransaction,
-      reset,
-      setBackupFile,
-      initialized,
-      currentTxId,
-      setCurrentTxId,
-      getOrdinalUTXOs,
-      fetchUtxosStatus,
-      fetchOrdinalUtxosStatus,
-      setFetchOrdinalUtxosStatus,
+      backupKeys,
       balance,
-      getUTXOs,
-      ordUtxos,
-      setOrdUtxos,
-      fetchInscriptionsStatus,
-      getArtifactsByTxId,
-      getArtifactByInscriptionId,
-      setFetchInscriptionsStatus,
-      getArtifactsByOrigin: getArtifactsByTxId,
-      transfer,
-      getRawTxById,
-      getBmapTxById,
+      changeAddress,
+      currentTxId,
+      deleteKeys,
       downloadPendingTx,
+      fetchOrdinalUtxosStatus,
+      fetchUtxosStatus,
+      fundingUtxos,
+      generateKeys,
+      getOrdinalUTXOs,
+      getRawTxById,
+      getUTXOs,
+      initialized,
+      ordAddress,
+      ordPk,
+      ordUtxos,
+      payPk,
+      pendingTransaction,
+      reset,
+      send: sendWasm,
+      setBackupFile,
+      setCurrentTxId,
+      setFetchOrdinalUtxosStatus,
+      setOrdUtxos,
+      setPendingTransaction,
+      transfer,
+      usdRate,
     }),
     [
-      backupFile,
-      changeAddress,
-      ordUtxos,
-      ordAddress,
       artifacts,
-      ordPk,
-      payPk,
-      fundingUtxos,
-      deleteKeys,
+      backupFile,
       backupKeys,
+      balance,
+      changeAddress,
+      currentTxId,
+      deleteKeys,
+      downloadPendingTx,
+      fetchOrdinalUtxosStatus,
+      fetchUtxosStatus,
+      fundingUtxos,
       generateKeys,
-      sendWasm,
-      setPendingTransaction,
+      getOrdinalUTXOs,
+      getRawTxById,
+      getUTXOs,
+      initialized,
+      ordAddress,
+      ordPk,
+      ordUtxos,
+      payPk,
       pendingTransaction,
       reset,
-      getOrdinalUTXOs,
+      sendWasm,
       setBackupFile,
-      initialized,
-      currentTxId,
       setCurrentTxId,
-      fetchUtxosStatus,
-      fetchOrdinalUtxosStatus,
       setFetchOrdinalUtxosStatus,
-      balance,
       setOrdUtxos,
-      getUTXOs,
-      getArtifactsByTxId,
-      fetchInscriptionsStatus,
-      getArtifactByInscriptionId,
-      setFetchInscriptionsStatus,
+      setPendingTransaction,
       transfer,
-      getRawTxById,
-      getBmapTxById,
-      downloadPendingTx,
+      usdRate,
     ]
   );
 

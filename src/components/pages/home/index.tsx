@@ -1,8 +1,7 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
-import { OrdUtxo, useWallet } from "@/context/wallet";
-import { API_HOST } from "@/pages/_app";
+import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { fillContentType } from "@/utils/artifact";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -22,7 +21,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     setFetchInscriptionsStatus,
     fetchInscriptionsStatus,
     getArtifactByInscriptionId,
-  } = useWallet();
+  } = useOrdinals();
   const [fetchCountStatus, setFetchCountStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );

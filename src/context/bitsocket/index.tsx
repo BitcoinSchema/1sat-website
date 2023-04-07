@@ -168,7 +168,7 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
     },
     [
       connectionStatus,
-      leid,
+      // leid,
       setLastEvent,
       // location.pathname,
       setOrdAddress,

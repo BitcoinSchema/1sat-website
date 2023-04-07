@@ -1,6 +1,7 @@
 import Artifact from "@/components/artifact";
 import Tabs from "@/components/tabs";
-import { OrdUtxo, useWallet } from "@/context/wallet";
+import { OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
 import { find, head, last } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
@@ -21,15 +22,9 @@ const TxPage: React.FC<PageProps> = ({}) => {
     ? last((outpoint as string | undefined)?.split("_"))
     : undefined;
 
-  const {
-    ordUtxos,
-    getArtifactsByTxId,
-    fetchInscriptionsStatus,
-    transfer,
-    fundingUtxos,
-    getArtifactsByOrigin,
-  } = useWallet();
-
+  const { ordUtxos, transfer, fundingUtxos } = useWallet();
+  const { getArtifactsByTxId, fetchInscriptionsStatus, getArtifactsByOrigin } =
+    useOrdinals();
   const ordinalUtxo = useMemo(() => {
     return (
       (find(
