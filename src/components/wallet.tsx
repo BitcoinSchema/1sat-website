@@ -1,5 +1,6 @@
 import { useWallet } from "@/context/wallet";
 import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
+import { QRCodeSVG } from "qrcode.react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast, { LoaderIcon } from "react-hot-toast";
@@ -150,8 +151,6 @@ const Wallet: React.FC<WalletProps> = ({}) => {
               await getUTXOs(changeAddress);
             }}
           >
-            {/* <QRCode value={changeAddress || ""} size={420} />
-             */}
             $
             {usdRate && balance
               ? (balance / usdRate).toFixed(2)
@@ -192,11 +191,29 @@ If you still have ordinals in your wallet, you will be unable to send them witho
             </div>
           </div>
           {showAddMoney && (
-            <div className="my-12">
-              <div className="flex flex-col text-center justify-between text-teal-600">
+            <div
+              className="left-0 top-0 overflow-hidden w-full h-full absolute flex items-center justify-center bg-[#555]/30 backdrop-blur"
+              onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                const target = (e.target as HTMLDivElement)?.id;
+                if (target === "backdrop") {
+                  setShowAddMoney(false);
+                }
+              }}
+              id="backdrop"
+            >
+              <div className="flex flex-col text-center justify-between text-teal-600 bg-black max-w-2xl p-4 md:p-8 rounded-lg">
                 <div>Send Funds to:</div>
-                <div>{changeAddress}</div>
+                <div className="font-semibold md:text-xl my-2">
+                  {changeAddress}
+                </div>
 
+                <div className="text-center rounded-lg h-full w-full">
+                  <QRCodeSVG
+                    value={changeAddress || ""}
+                    className="w-full h-full"
+                    includeMargin={true}
+                  />
+                </div>
                 <CopyToClipboard
                   text={changeAddress}
                   onCopy={() => {
@@ -214,7 +231,7 @@ If you still have ordinals in your wallet, you will be unable to send them witho
                     </div>
                   </button>
                 </CopyToClipboard>
-                <div className="text-yellow-500 test-sm flex justify-center items-center">
+                <div className="text-yellow-500 text-xs sm:test-sm md:text-base flex justify-center items-center">
                   <RiErrorWarningFill className="mr-2" /> Do not send ordinals
                   to this address
                 </div>

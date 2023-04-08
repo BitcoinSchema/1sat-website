@@ -1,14 +1,12 @@
-import Artifact from "@/components/artifact";
 import Tabs from "@/components/tabs";
 import { OrdUtxo, useOrdinals } from "@/context/ordinals";
-import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
-import { find, head, last } from "lodash";
+import { head, last } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import React, { useEffect, useMemo, useState } from "react";
-import { FetchStatus } from "..";
+import React, { useEffect, useState } from "react";
+import Ordinal from "../ordinals/single";
 
 interface PageProps extends WithRouterProps {}
 
@@ -22,17 +20,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
     ? last((outpoint as string | undefined)?.split("_"))
     : undefined;
 
-  const { ordUtxos, transfer, fundingUtxos } = useWallet();
-  const { getArtifactsByTxId, fetchInscriptionsStatus, getArtifactsByOrigin } =
-    useOrdinals();
-  const ordinalUtxo = useMemo(() => {
-    return (
-      (find(
-        ordUtxos,
-        (ou) => ou.origin && ou.origin === outpoint
-      ) as OrdUtxo) || undefined
-    );
-  }, [ordUtxos, outpoint]);
+  const { getArtifactsByTxId, getArtifactsByOrigin } = useOrdinals();
 
   useEffect(() => {
     console.log({ vout });
@@ -60,9 +48,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
     }
   }, [outpoint, getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
 
-  const singleStyle = `w-full text-center h-full flex items-center justify-center`;
-  const collectionStyle = `grid grid-rows-4 h-full`;
-
+  console.log({ artifacts });
   return (
     <>
       <Head>
@@ -79,84 +65,10 @@ const TxPage: React.FC<PageProps> = ({}) => {
         />
       </Head>
       <Tabs currentTab={undefined} />
-
       <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl">
-        <div className={singleStyle}>
-          {artifacts?.map((artifact) => {
-            return (
-              <Artifact
-                key={artifact.txid}
-                classNames={{
-                  wrapper: `max-w-5xl w-full h-full`,
-                  media: `max-h-[calc(100vh-20em)]`,
-                }}
-                contentType={artifact.type}
-                outPoint={artifact.origin || ""}
-                id={artifact.id}
-              />
-            );
-          })}
-        </div>
-        <div className="md:ml-4 w-full max-w-sm">
-          {fetchInscriptionsStatus === FetchStatus.Success &&
-            artifacts.length === 0 && (
-              <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">
-                <div>No ordinals matching that ID</div>
-              </div>
-            )}
-          <div className="bg-[#222] mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 my-4 md:my-0">
-            <div className="flex flex-col justify-between mb-1">
-              <div className="mb-1">Transaction ID</div>
-              <div className="text-xs">{txid}</div>
-            </div>
-            {vout !== undefined && (
-              <div className="flex justify-between items-center">
-                <div>Output Index</div>
-                <div>{vout}</div>
-              </div>
-            )}
-          </div>
-
-          {ordUtxos?.some((ou) => ou.origin === outpoint) && (
-            <>
-              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-4">
-                <div className="flex justify-between items-center">
-                  <div>Transfer Ownership</div>
-                  <div
-                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                    onClick={async () => {
-                      console.log("click send");
-                      const address = prompt(
-                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDING TO UNDERSTANDS ORDINALS, AND EXPECTS TO RECEIVE 1SAT ORDINALS AT THIS ADDRESS!"
-                      );
-
-                      if (address) {
-                        console.log(
-                          "transferring",
-                          { ordinalUtxo },
-                          "to",
-                          { address },
-                          "funded by",
-                          { fundingUtxos }
-                        );
-
-                        await transfer(ordinalUtxo, address);
-                      }
-                    }}
-                  >
-                    Send
-                  </div>
-                </div>
-                {/* <div className="flex justify-between items-center mt-4">
-                <div>Re-Inscribe</div>
-                <div className="rounded bg-[#222] p-2" onClick={async () => {}}>
-                  SoonTm
-                </div>
-              </div> */}
-              </div>
-            </>
-          )}
-        </div>
+        {artifacts?.map((a) => {
+          return <Ordinal key={a.txid} artifact={a} />;
+        })}
       </div>
     </>
   );

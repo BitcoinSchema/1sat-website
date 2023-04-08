@@ -13,6 +13,7 @@ export enum Tab {
   Wallet = "wallet",
   Ordinals = "ordinals",
   Inscribe = "inscribe",
+  Market = "market",
 }
 
 const Tabs: React.FC<Props> = ({
@@ -64,6 +65,17 @@ const Tabs: React.FC<Props> = ({
       >
         Ordinals
       </S.Tab>
+      {/* <S.Tab
+        partiallyactive={currentTab === Tab.Market ? "true" : "false"}
+        href={`/market`}
+        onClick={(e) =>
+          currentTab === Tab.Market && onClickSelected
+            ? onClickSelected(e)
+            : () => {}
+        }
+      >
+        Market
+      </S.Tab> */}
     </S.Tabs>
   );
 };

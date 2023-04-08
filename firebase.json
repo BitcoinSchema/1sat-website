@@ -12,10 +12,6 @@
         "destination": "/wallet.html"
       },
       {
-        "source": "/ordinals/**",
-        "destination": "/ordinals/[location].html"
-      },
-      {
         "source": "/ordinals",
         "destination": "/ordinals.html"
       },

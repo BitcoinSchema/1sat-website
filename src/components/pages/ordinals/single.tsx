@@ -1,34 +1,23 @@
 import Artifact from "@/components/artifact";
 import OrdAddress from "@/components/ordAddress";
-import { API_HOST } from "@/context/ordinals";
+import { API_HOST, OrdUtxo } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
-import { head } from "lodash";
 import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { toastErrorProps } from "..";
 
 type OrdinalProps = {
-  txid: string;
-  vout: number;
+  artifact: OrdUtxo;
 };
 
-const Ordinal: React.FC<OrdinalProps> = ({ txid, vout }) => {
-  const { ordAddress, ordUtxos, transfer, fundingUtxos } = useWallet();
+const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
+  const { ordAddress, ordUtxos, transfer } = useWallet();
 
-  const ord = useMemo(
-    () => head(ordUtxos?.filter((a) => a.txid === txid && a.vout === vout)),
-    [txid, vout, ordUtxos]
-  );
-
-  const fundingUtxo = useMemo(() => {
-    return fundingUtxos?.sort((a, b) => (a.satoshis > b.satoshis ? -1 : 1));
-  }, [fundingUtxos]);
-
-  useEffect(() => console.log({ ord, ordUtxos }), [ord, ordUtxos]);
+  useEffect(() => console.log({ artifact }), [artifact]);
 
   const adminControls = useMemo(() => {
     return (
-      ord && (
+      artifact && (
         <div className="md:mt-0 mt-8 w-full">
           {ordAddress && <OrdAddress className="mb-4" />}
           <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col">
@@ -43,17 +32,12 @@ const Ordinal: React.FC<OrdinalProps> = ({ txid, vout }) => {
                   );
 
                   if (address) {
-                    console.log(
-                      "transferring",
-                      { ord },
-                      "to",
-                      { address },
-                      "funded by",
-                      { fundingUtxos }
-                    );
+                    console.log("transferring", { artifact }, "to", {
+                      address,
+                    });
 
                     try {
-                      await transfer(ord, address);
+                      await transfer(artifact, address);
                     } catch (e) {
                       toast.error("Something went wrong" + e, toastErrorProps);
                     }
@@ -63,9 +47,22 @@ const Ordinal: React.FC<OrdinalProps> = ({ txid, vout }) => {
                 Send
               </div>
             </div>
+
+            {/* <div className="flex justify-between items-center mt-4">
+              <div>List for Sale</div>
+              <div
+                className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                onClick={async () => {
+                  Router.push(`/market/new/${ord.txid}_${ord.vout}`);
+                }}
+              >
+                List
+              </div>
+            </div> */}
+
             {/* <div className="flex justify-between items-center mt-4">
         <div>Re-Inscribe</div>
-        <div className="rounded bg-[#222] p-2" onClick={async () => {}}>
+        <div className="rounded bg-[#111] p-2" onClick={async () => {}}>
           SoonTm
         </div>
       </div> */}
@@ -73,16 +70,20 @@ const Ordinal: React.FC<OrdinalProps> = ({ txid, vout }) => {
         </div>
       )
     );
-  }, [ord, transfer, ordUtxos]);
+  }, [artifact, transfer, ordUtxos]);
 
   return (
     <div className="flex md:flex-row flex-col justify-between items-start w-full">
       <Artifact
-        to={ord ? `/inscription/${ord.id}` : "#"}
-        outPoint={ord ? `${ord.txid}_${ord.vout}` : undefined}
-        src={ord ? `${API_HOST}/api/files/inscriptions/${ord.origin}` : ""}
-        id={ord?.id}
-        contentType={ord?.type}
+        to={artifact ? `/inscription/${artifact.id}` : "#"}
+        outPoint={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
+        src={
+          artifact
+            ? `${API_HOST}/api/files/inscriptions/${artifact.origin}`
+            : ""
+        }
+        id={artifact?.id}
+        contentType={artifact?.type}
       />
       <div className="ml-0 md:ml-4 w-full max-w-sm">{adminControls}</div>
     </div>

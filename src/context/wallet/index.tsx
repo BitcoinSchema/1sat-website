@@ -176,7 +176,6 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   useEffect(() => {
     if (lastEvent && ordUtxos && leid !== lastEventId) {
-      debugger;
       setLastEventId(leid);
       const e = lastEvent as any;
       const filteredOrdUtxos =
@@ -492,20 +491,6 @@ const WalletProvider: React.FC<Props> = (props) => {
           fundingUtxo.script = script.to_asm_string();
         }
       }
-      // const response = await fetch(`/api/ordinal/send`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     fundingUtxo,
-      //     ordUtxo,
-      //     payPk,
-      //     ordPk,
-      //     address: toOrdAddress,
-      //     satsPerByteFee: 0.125,
-      //   }),
-      // });
 
       const address = toOrdAddress;
       const satsPerByteFee = 0.125;

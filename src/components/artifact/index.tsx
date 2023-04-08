@@ -1,4 +1,5 @@
 import { API_HOST } from "@/context/ordinals";
+import Image from "next/image";
 import Router from "next/router";
 import React, { useMemo } from "react";
 import { LoaderIcon } from "react-hot-toast";
@@ -29,6 +30,8 @@ type ArtifactProps = {
   classNames?: { wrapper?: string; media?: string };
   to?: string;
   src?: string;
+  onClick?: (outPoint: string) => void;
+  txid?: string;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -38,6 +41,8 @@ const Artifact: React.FC<ArtifactProps> = ({
   id,
   to,
   src = `${API_HOST}/api/files/inscriptions/${outPoint}`,
+  onClick,
+  txid,
 }) => {
   const type = useMemo(() => {
     let artifactType = undefined;
@@ -163,11 +168,17 @@ const Artifact: React.FC<ArtifactProps> = ({
       </div>
     ) : (
       <div className="flex items-center justify-center w-full h-full bg-[#111] rounded min-h-[300px]">
-        <img
-          className={`h-auto ${classNames?.media ? classNames.media : ""}`}
-          src={src}
-          id={`artifact_${new Date().getTime()}_image`}
-        />
+        {src && (
+          <Image
+            className={`h-auto ${classNames?.media ? classNames.media : ""}`}
+            src={src}
+            id={`artifact_${new Date().getTime()}_image`}
+            alt={`Inscription${id ? " #" + id : ""}`}
+            placeholder="blur"
+            width={300}
+            height={300}
+          />
+        )}
       </div>
     );
   }, [type, src, classNames, outPoint]);
@@ -186,6 +197,9 @@ const Artifact: React.FC<ArtifactProps> = ({
         if (!to) {
           e.stopPropagation();
           e.preventDefault();
+          if (txid && onClick) {
+            onClick(txid);
+          }
         }
       }}
     >

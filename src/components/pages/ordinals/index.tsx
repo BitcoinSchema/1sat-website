@@ -3,21 +3,15 @@ import Tabs, { Tab } from "@/components/tabs";
 import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import Router, { useRouter } from "next/router";
-import React from "react";
+import Router from "next/router";
+import React, { useCallback, useState } from "react";
+import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { FetchStatus } from "..";
 import Ordinals from "./list";
-import Ordinal from "./single";
 
 interface PageProps extends WithRouterProps {}
 
 const OrdinalsPage: React.FC<PageProps> = ({}) => {
-  const router = useRouter();
-  const { location } = router.query;
-  const parts = (location as string)?.split("_");
-  const txid = parts?.length ? parts[0] : undefined;
-  const vout = parts?.length == 2 && parts[1] ? parseInt(parts[1]) : 0;
-
   const {
     ordAddress,
     payPk,
@@ -26,6 +20,10 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     fetchOrdinalUtxosStatus,
     setFetchOrdinalUtxosStatus,
   } = useWallet();
+
+  const [sort, setSort] = useState<boolean>(false);
+
+  const toggleSort = useCallback(() => setSort(!sort), [sort]);
 
   return (
     <>
@@ -71,18 +69,29 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
             </div>
           )}
 
-        {!txid && ordAddress && <OrdAddress />}
+        {ordAddress && <OrdAddress />}
 
         <div
-          className={`${
-            txid ? "" : "my-12"
-          } max-w-7xl mx-auto w-[calc(100vw-4rem)] min-h-[300px]`}
+          className={`${"my-12"} max-w-7xl mx-auto w-[calc(100vw-4rem)] min-h-[300px]`}
         >
-          {txid ? (
-            <Ordinal txid={txid} vout={vout} />
-          ) : (
-            <Ordinals sort={false} />
-          )}
+          {
+            <div className="my-2 text-lg flex justify-between items-center">
+              <div>{ordUtxos?.length} Ordinals</div>
+              <div
+                className="flex items-center cursor-pointer"
+                onClick={toggleSort}
+              >
+                {sort ? (
+                  <FiArrowDown className="mr-2" />
+                ) : (
+                  <FiArrowUp className="mr-2" />
+                )}{" "}
+                Sort
+              </div>
+            </div>
+          }
+
+          <Ordinals sort={sort} />
         </div>
       </div>
     </>

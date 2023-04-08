@@ -1,11 +1,14 @@
+import { WithRouterProps } from "next/dist/client/with-router";
+import { useRouter } from "next/router";
 import React from "react";
 
-type ListingProps = {
-  outPoint: string;
+interface PageProps extends WithRouterProps {}
+
+const ListingPage: React.FC<PageProps> = ({}) => {
+  const router = useRouter();
+  const { outPoint } = router.query;
+
+  return <div>Listing {outPoint}</div>;
 };
 
-const Listing: React.FC<ListingProps> = ({ outPoint }) => {
-  return <div>Listing</div>;
-};
-
-export default Listing;
+export default ListingPage;

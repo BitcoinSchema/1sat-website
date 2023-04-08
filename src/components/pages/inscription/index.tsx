@@ -2,13 +2,14 @@ import Artifact from "@/components/artifact";
 import Tabs from "@/components/tabs";
 import { useBitcoinSchema } from "@/context/bitcoinschema";
 import { OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import React, { useEffect, useMemo, useState } from "react";
-import { LoaderIcon } from "react-hot-toast";
-import { FetchStatus } from "..";
+import toast, { LoaderIcon } from "react-hot-toast";
+import { FetchStatus, toastErrorProps } from "..";
 
 interface PageProps extends WithRouterProps {}
 
@@ -18,6 +19,8 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   const [fetchDataStatus, setFetchDataStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+  const { fundingUtxos, transfer, ordUtxos, fetchOrdinalUtxosStatus } =
+    useWallet();
   const { inscriptionId } = router.query;
   const { getBmapTxById } = useBitcoinSchema();
   const { getArtifactByInscriptionId, fetchInscriptionsStatus } = useOrdinals();
@@ -64,7 +67,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           <div className="">
             {parseInt(inscriptionId as string) > 100 && (
               <button
-                className="bg-[#222] rounded mb-8 text-sm p-2 md:p-4 my-4 mr-4"
+                className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4 mr-4"
                 onClick={() =>
                   router.push(`${parseInt(inscriptionId as string) - 100}`)
                 }
@@ -76,7 +79,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           <div className="">
             {parseInt(inscriptionId as string) > 0 && (
               <button
-                className="bg-[#222] rounded mb-8 text-sm p-2 md:p-4 my-4"
+                className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
                 onClick={() =>
                   router.push(`${parseInt(inscriptionId as string) - 1}`)
                 }
@@ -85,16 +88,16 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
               </button>
             )}
           </div>
-          <div className="bg-[#222] rounded flex items-center mb-8 max-w-2xl text-sm p-2 md:p-4 m-4">
+          <div className="bg-[#111] rounded flex items-center mb-8 max-w-2xl text-sm p-2 md:p-4 m-4">
             <span className="hidden md:block">Inscription </span>&nbsp; #
             {inscriptionId}
-            {fetchInscriptionsStatus !== FetchStatus.Loading && !artifact && (
-              <div>No match for #{inscriptionId}</div>
-            )}
+            {fetchInscriptionsStatus === FetchStatus.Success &&
+              fetchOrdinalUtxosStatus === FetchStatus.Success &&
+              !artifact && <div>No match for #{inscriptionId}</div>}
           </div>
           <div className="">
             <button
-              className="bg-[#222] rounded mb-8 text-sm p-2 md:p-4 my-4"
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
               onClick={() =>
                 router.push(`${parseInt(inscriptionId as string) + 1}`)
               }
@@ -104,7 +107,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           </div>
           <div className="">
             <button
-              className="bg-[#222] rounded mb-8 text-sm p-2 md:p-4 my-4 ml-4"
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4 ml-4"
               onClick={() =>
                 router.push(`${parseInt(inscriptionId as string) + 100}`)
               }
@@ -161,40 +164,123 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
             )}
           </div>
           <div className="md:ml-4 w-full max-w-sm">
-            {fetchDataStatus === FetchStatus.Loading && (
-              <div>
-                <LoaderIcon className="mx-auto" />
-              </div>
-            )}
             {fetchDataStatus === FetchStatus.Success && !artifact && (
-              <div className="bg-[#222] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">
+              <div className="bg-[#111] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">
                 <div>No ordinal matching that ID</div>
               </div>
             )}
-            <div className="bg-[#222] mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 my-4 md:my-0 md:mb-2">
-              <div>Inscription #{inscriptionId}</div>
+            <div className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 mx-4 my-4 md:my-0 md:mb-2">
+              {fetchDataStatus === FetchStatus.Loading && (
+                <div className="p-2">
+                  <LoaderIcon className="mx-auto" />
+                </div>
+              )}
+
+              {fetchDataStatus === FetchStatus.Success && (
+                <div className="flex items-center justify-center font-semibold text-xl">
+                  Inscription #{inscriptionId}
+                </div>
+              )}
             </div>
+            {ordUtxos?.some(
+              (o) => o.id === parseInt(inscriptionId as string)
+            ) && (
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
+                <div className="flex justify-between items-center">
+                  <div>Transfer Ownership</div>
+                  <div
+                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                    onClick={async () => {
+                      if (!artifact) {
+                        return;
+                      }
+                      console.log("click send");
+                      const address = prompt(
+                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+                      );
+
+                      if (address) {
+                        console.log(
+                          "transferring",
+                          { artifact },
+                          "to",
+                          { address },
+                          "funded by",
+                          { fundingUtxos }
+                        );
+
+                        try {
+                          await transfer(artifact, address);
+                        } catch (e) {
+                          toast.error(
+                            "Something went wrong" + e,
+                            toastErrorProps
+                          );
+                        }
+                      }
+                    }}
+                  >
+                    Send
+                  </div>
+                </div>
+              </div>
+            )}
+
             {artifact?.MAP &&
               Object.entries(artifact.MAP)
                 .filter(([k, v]) => k !== "cmd" && k !== "type" && k !== "type")
                 .map(([k, v]) => (
                   <div
-                    className="bg-[#222] mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 my-4 md:my-0 md:mb-2"
+                    className={`${
+                      k === "collection" ? "cursor-pointer hover:bg-[#222]" : ""
+                    } bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 my-4 md:my-0 md:mb-2`}
                     key={k}
+                    onClick={() => {
+                      if (k === "collection") {
+                        router.push(
+                          `/collection/${encodeURIComponent(v as string)}`
+                        );
+                      }
+                    }}
                   >
-                    <div className="flex flex-row justify-between overflow-auto">
-                      <div>{k}</div>
-                      <div className="">
+                    <div
+                      className={`flex items-center overflow-auto ${
+                        k === "audio" || k === "stats"
+                          ? "flex-col"
+                          : "flex-row justify-between"
+                      }`}
+                    >
+                      <div
+                        className={`${
+                          k === "audio" || k === "stats"
+                            ? "text-center"
+                            : "text-left"
+                        } `}
+                      >
+                        {k}
+                      </div>
+                      <div
+                        className={`${
+                          k === "audio" || k === "stats"
+                            ? "w-full"
+                            : "text-right"
+                        } `}
+                      >
                         {k === "stats" ? (
                           Object.entries(JSON.parse(v as string)).map(
                             ([ks, vs]) => (
-                              <div key={ks}>
-                                {ks} {vs as string}
+                              <div
+                                key={ks}
+                                className="w-full flex items-center justify-between"
+                              >
+                                <div className="">{ks}</div>
+                                <div>{vs as string}</div>
                               </div>
                             )
                           )
                         ) : k === "audio" ? (
                           <audio
+                            className="w-full h-8 mt-2"
                             src={`https://b.map.sv/tx/${
                               (v as string)?.split("b://")[1]
                             }/file`}
@@ -207,45 +293,6 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     </div>
                   </div>
                 ))}
-            {/* {artifacts?.some((a) => a.id === inscriptionId) && (
-              <>
-                <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-4">
-                  <div className="flex justify-between items-center">
-                    <div>Transfer Ownership</div>
-                    <div
-                      className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                      onClick={async () => {
-                        console.log("click send");
-                        // const address = prompt(
-                        //   "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
-                        // );
-
-                        // if (address) {
-                        //   console.log(
-                        //     "transferring",
-                        //     { ordinalUtxo },
-                        //     "to",
-                        //     { address },
-                        //     "funded by",
-                        //     { fundingUtxos }
-                        //   );
-
-                        //   await transfer(ordinalUtxo, address);
-                        // }
-                      }}
-                    >
-                      Send
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center mt-4">
-                <div>Re-Inscribe</div>
-                <div className="rounded bg-[#222] p-2" onClick={async () => {}}>
-                  SoonTm
-                </div>
-              </div>
-                </div>
-              </>
-            )} */}
           </div>
         </div>
       </div>

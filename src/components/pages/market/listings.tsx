@@ -1,9 +1,13 @@
 import Artifact from "@/components/artifact";
+import MarketTabs, { MarketTab } from "@/components/pages/market/tabs/tabs";
 import { useOrdinals } from "@/context/ordinals";
+import { WithRouterProps } from "next/dist/client/with-router";
 import React, { useEffect } from "react";
 import { FetchStatus } from "..";
 
-const Listings: React.FC = ({}) => {
+interface PageProps extends WithRouterProps {}
+
+const ListingsPage: React.FC<PageProps> = ({}) => {
   const { listings, getListings, fetchListingsStatus } = useOrdinals();
 
   useEffect(() => {
@@ -13,10 +17,11 @@ const Listings: React.FC = ({}) => {
     if (!listings && fetchListingsStatus === FetchStatus.Idle) {
       fire();
     }
-  }, [fetchListingsStatus]);
+  }, [listings, getListings, fetchListingsStatus]);
 
   return (
     <div>
+      <MarketTabs currentTab={MarketTab.Listings} />
       <h1>Listings</h1>
       {fetchListingsStatus === FetchStatus.Success && (
         <div>
@@ -34,4 +39,4 @@ const Listings: React.FC = ({}) => {
   );
 };
 
-export default Listings;
+export default ListingsPage;
