@@ -70,15 +70,6 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
               You, sadly, have no artifacts.
             </div>
           )}
-        {/* 
-
-<button className="w-full p-2 text-lg bg-orange-400 rounded my-4 text-black font-semibold flex items-center">
-                <div className="mx-auto flex items-center justify-center">
-                  <FiCopy className="w-10" />
-                  <div>Copy BSV Address</div>
-                </div>
-              </button>
-               */}
 
         {!txid && ordAddress && <OrdAddress />}
 
@@ -87,7 +78,11 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
             txid ? "" : "my-12"
           } max-w-7xl mx-auto w-[calc(100vw-4rem)] min-h-[300px]`}
         >
-          {txid ? <Ordinal txid={txid} vout={vout} /> : <Ordinals />}
+          {txid ? (
+            <Ordinal txid={txid} vout={vout} />
+          ) : (
+            <Ordinals sort={false} />
+          )}
         </div>
       </div>
     </>

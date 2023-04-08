@@ -2,7 +2,12 @@ import Artifact from "@/components/artifact";
 import { useWallet } from "@/context/wallet";
 import { useEffect } from "react";
 
-const Ordinals: React.FC = () => {
+type Props = {
+  onClick?: (ordina: any) => void;
+  sort: boolean;
+};
+
+const Ordinals: React.FC<Props> = ({ onClick }) => {
   const { ordUtxos } = useWallet();
 
   useEffect(() => console.log(ordUtxos), [ordUtxos]);

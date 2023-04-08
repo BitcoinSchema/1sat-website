@@ -1354,6 +1354,13 @@
   dependencies:
     "@types/react" "*"
 
+"@types/react-gamepad@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@types/react-gamepad/-/react-gamepad-1.0.3.tgz#038ecfe8b1230842ca075ffe06f4041181a29937"
+  integrity sha512-3nwhsEa0anwl7XlT/L8y6yXdUb/qXO/frDcFeFKGt5ydTi5ECXv14RbJdCe3/yokowszftM+CAAjVTvldJJRVg==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react@*":
   version "18.0.31"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-18.0.31.tgz#a69ef8dd7bfa849734d258c793a8fe343a338205"
@@ -4537,6 +4544,11 @@ react-frame-component@^5.2.6:
   version "5.2.6"
   resolved "https://registry.yarnpkg.com/react-frame-component/-/react-frame-component-5.2.6.tgz#0d9991d251ff1f7177479d8f370deea06b824b79"
   integrity sha512-CwkEM5VSt6nFwZ1Op8hi3JB5rPseZlmnp5CGiismVTauE6S4Jsc4TNMlT0O7Cts4WgIC3ZBAQ2p1Mm9XgLbj+w==
+
+react-gamepad@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/react-gamepad/-/react-gamepad-1.0.3.tgz#c50606992c34589bd19f8bb09914084f5c92f4a2"
+  integrity sha512-gMwITmfoHtCaMFpDaEshcjeibHAgynXD28NnS2pa+dG+stwNoN66YDVizN7GfyIrYiW5Ft1ubRxs6/2xW9sRhQ==
 
 react-hot-toast@^2.4.0:
   version "2.4.0"
