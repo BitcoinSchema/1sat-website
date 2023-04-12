@@ -1,4 +1,4 @@
-import { FetchStatus } from "@/components/pages";
+import { FetchStatus, toastErrorProps } from "@/components/pages";
 import React, {
   ReactNode,
   useCallback,
@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import toast from "react-hot-toast";
 import * as http from "../../utils/httpClient";
 
 export type Rate = {
@@ -53,7 +54,14 @@ export const RatesProvider: React.FC<Props> = (props) => {
   useEffect(() => {
     const fire = async () => {
       if (ratesStatus === FetchStatus.Idle) {
-        await fetchRates();
+        try {
+          const ok = await fetchRates();
+          if (!ok) {
+            toast.error("Failed to get USD rate.", toastErrorProps);
+          }
+        } catch (e) {
+          toast.error("Failed to get USD rate.", toastErrorProps);
+        }
       }
     };
     if (rates === undefined && ratesStatus === FetchStatus.Idle) {
@@ -83,7 +91,7 @@ export const RatesProvider: React.FC<Props> = (props) => {
 export const useRates = (): ContextValue => {
   const context = useContext(RatesContext);
   if (context === undefined) {
-    throw new Error("Rates must be used within an RatesProvider");
+    throw new Error("useRates must be used within an RatesProvider");
   }
   return context;
 };

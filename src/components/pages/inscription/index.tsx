@@ -4,6 +4,7 @@ import { useBitcoinSchema } from "@/context/bitcoinschema";
 import { OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
+import { find } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -60,6 +61,11 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     }
   }, [getBmapTxById, inscriptionId, getArtifactByInscriptionId]);
 
+  const ordUtxo = useMemo(
+    () => artifact?.id && find(ordUtxos, { id: artifact.id }),
+    [ordUtxos]
+  );
+
   const pagination = useMemo(() => {
     return (
       <div className="text-center h-full flex items-center justify-center">
@@ -67,7 +73,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           <div className="">
             {parseInt(inscriptionId as string) > 100 && (
               <button
-                className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4 mr-4"
+                className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 mt-2 mr-4"
                 onClick={() =>
                   router.push(`${parseInt(inscriptionId as string) - 100}`)
                 }
@@ -79,7 +85,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           <div className="">
             {parseInt(inscriptionId as string) > 0 && (
               <button
-                className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
+                className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4"
                 onClick={() =>
                   router.push(`${parseInt(inscriptionId as string) - 1}`)
                 }
@@ -88,7 +94,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
               </button>
             )}
           </div>
-          <div className="bg-[#111] rounded flex items-center mb-8 max-w-2xl text-sm p-2 md:p-4 m-4">
+          <div className="bg-[#111] rounded flex items-center mb-8 max-w-2xl text-sm p-2 md:p-4 mx-4">
             <span className="hidden md:block">Inscription </span>&nbsp; #
             {inscriptionId}
             {fetchInscriptionsStatus === FetchStatus.Success &&
@@ -97,7 +103,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           </div>
           <div className="">
             <button
-              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4"
               onClick={() =>
                 router.push(`${parseInt(inscriptionId as string) + 1}`)
               }
@@ -107,7 +113,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           </div>
           <div className="">
             <button
-              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4 ml-4"
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 ml-4"
               onClick={() =>
                 router.push(`${parseInt(inscriptionId as string) + 100}`)
               }
@@ -182,9 +188,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 </div>
               )}
             </div>
-            {ordUtxos?.some(
-              (o) => o.id === parseInt(inscriptionId as string)
-            ) && (
+            {ordUtxo && (
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <div className="flex justify-between items-center">
                   <div>Transfer Ownership</div>
@@ -201,8 +205,10 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
                       if (address) {
                         console.log(
-                          "transferring",
+                          "transferring artifact",
                           { artifact },
+                          "living in utxo",
+                          { ordUtxo },
                           "to",
                           { address },
                           "funded by",

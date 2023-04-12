@@ -7,7 +7,7 @@ import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
 
-const ListingsPage: React.FC<PageProps> = ({}) => {
+const BrowsePage: React.FC<PageProps> = ({}) => {
   const { listings, getListings, fetchListingsStatus } = useOrdinals();
 
   useEffect(() => {
@@ -21,7 +21,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
 
   return (
     <div>
-      <MarketTabs currentTab={MarketTab.Listings} />
+      <MarketTabs currentTab={MarketTab.Browse} />
       <h1>Listings</h1>
       {fetchListingsStatus === FetchStatus.Success && (
         <div>
@@ -39,4 +39,4 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
   );
 };
 
-export default ListingsPage;
+export default BrowsePage;

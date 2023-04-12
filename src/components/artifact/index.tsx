@@ -58,12 +58,12 @@ const Artifact: React.FC<ArtifactProps> = ({
       artifactType = ArtifactType.Javascript;
     } else if (contentType === "application/json") {
       artifactType = ArtifactType.JSON;
-    } else if (contentType === "text/plain") {
-      artifactType = ArtifactType.Text;
     } else if (contentType === "text/markdown") {
       artifactType = ArtifactType.MarkDown;
     } else if (contentType === "text/html") {
       artifactType = ArtifactType.HTML;
+    } else if (contentType?.startsWith("text")) {
+      artifactType = ArtifactType.Text;
     } else if (contentType?.startsWith("image")) {
       artifactType = ArtifactType.Image;
     }
@@ -118,7 +118,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       </div>
     ) : type === ArtifactType.JSON ? (
       <div
-        className={`h-full p-4 ${classNames?.wrapper || ""} ${
+        className={`overflow-auto h-full p-4 ${classNames?.wrapper || ""} ${
           classNames?.media || ""
         }`}
       >
@@ -126,7 +126,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       </div>
     ) : type === ArtifactType.Text ? (
       <div
-        className={`h-full p-4 ${classNames?.wrapper || ""} ${
+        className={`overflow-auto h-full p-4 ${classNames?.wrapper || ""} ${
           classNames?.media || ""
         }`}
       >
@@ -175,13 +175,16 @@ const Artifact: React.FC<ArtifactProps> = ({
             id={`artifact_${new Date().getTime()}_image`}
             alt={`Inscription${id ? " #" + id : ""}`}
             placeholder="blur"
+            blurDataURL={`data:image/svg+xml;base64,${toBase64(
+              shimmer(700, 475)
+            )}`}
             width={300}
             height={300}
           />
         )}
       </div>
     );
-  }, [type, src, classNames, outPoint]);
+  }, [id, type, src, classNames, outPoint]);
 
   return (
     <ArtifactContainer
@@ -230,3 +233,22 @@ const Artifact: React.FC<ArtifactProps> = ({
 };
 
 export default Artifact;
+
+const toBase64 = (str: string) =>
+  typeof window === "undefined"
+    ? Buffer.from(str).toString("base64")
+    : window.btoa(str);
+
+const shimmer = (w: number, h: number) => `
+<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <linearGradient id="g">
+      <stop stop-color="#333" offset="20%" />
+      <stop stop-color="#222" offset="50%" />
+      <stop stop-color="#333" offset="70%" />
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="#333" />
+  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
+  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
+</svg>`;

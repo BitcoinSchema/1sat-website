@@ -28,7 +28,7 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
     if (collectionId && typeof collectionId === "string") {
       fire(collectionId);
     }
-  }, [getBmapTxById, collectionId, getArtifactByInscriptionId]);
+  }, [getArtifactsByCollectionId, getBmapTxById, collectionId]);
 
   return (
     <>

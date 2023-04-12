@@ -1,10 +1,17 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import { useBitsocket } from "@/context/bitsocket";
+import { useStorage } from "@/context/storage";
 import { useWallet } from "@/context/wallet";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
 import Router, { useRouter } from "next/router";
-import { ChangeEvent, ReactNode, useCallback, useEffect, useMemo } from "react";
+import React, {
+  ChangeEvent,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { Toaster } from "react-hot-toast";
 export enum FetchStatus {
   Idle,
@@ -56,9 +63,23 @@ const Layout: React.FC<Props> = ({ children }) => {
     payPk,
     backupKeys,
     changeAddress,
+    ordPk,
+    initialized,
+    loadEncryptedKeys,
+    encryptedBackup,
+    setEncryptedBackup,
+    setSaltPubKey,
   } = useWallet();
 
-  const { ordPk, initialized } = useWallet();
+  const {
+    encryptionKey,
+    setEncryptionKey,
+    generateEncryptionKey,
+    getItem,
+    setItem,
+    ready,
+  } = useStorage();
+
   const { connectionStatus, connect, ordAddress } = useBitsocket();
 
   const router = useRouter();
@@ -92,6 +113,48 @@ const Layout: React.FC<Props> = ({ children }) => {
     }
   }, [ordAddress, oAddress, connect, connectionStatus]);
 
+  // setItem, setEncryptionKey
+  useEffect(() => {
+    const fire = async () => {
+      const eb = await getItem("encryptedBackup", false);
+      if (!eb) {
+        console.log("no encrypted backup");
+      } else {
+        console.log("got encrypted backup", { eb });
+        setEncryptedBackup(eb);
+      }
+    };
+    if (ready) {
+      fire();
+    }
+  }, [setEncryptedBackup, ready, getItem]);
+
+  useEffect(() => {
+    const storeEncryptedKeys = async () => {
+      if (payPk && ordPk && !encryptedBackup && encryptionKey) {
+        const keyData = JSON.stringify({ payPk, ordPk });
+        const storedData = await setItem("encryptedBackup", keyData, true);
+        const storedData2 = await setItem(
+          "saltPubKey",
+          PrivateKey.from_wif(payPk).to_public_key().to_hex(),
+          false
+        );
+        setEncryptedBackup(storedData);
+        setSaltPubKey(storedData2);
+      }
+    };
+
+    storeEncryptedKeys();
+  }, [
+    ordPk,
+    payPk,
+    encryptedBackup,
+    setItem,
+    setEncryptedBackup,
+    encryptionKey,
+    setSaltPubKey,
+  ]);
+
   const importKeys = useCallback(() => {
     if (!backupFile) {
       const el = document.getElementById("backupFile");
@@ -111,6 +174,39 @@ const Layout: React.FC<Props> = ({ children }) => {
     [setBackupFile]
   );
 
+  const encryptKeys = useCallback(async () => {
+    if (!payPk) {
+      return;
+    }
+    const seedPhrase = prompt(
+      "This will encrypt your keys using a passphrase. Do not forget your passphrase or you will be unable to decrypt the locally stored keys. You should still keep a backup of your seed phrase."
+    );
+    if (!seedPhrase || seedPhrase.length < 6) {
+      alert("Invalid phrase. Too short.");
+      return;
+    }
+
+    const pubKeyBytes = PrivateKey.from_wif(payPk).to_public_key().to_bytes();
+    await setItem(
+      "publicKey",
+      Buffer.from(pubKeyBytes).toString("base64"),
+      false
+    );
+
+    const ec = generateEncryptionKey(
+      seedPhrase,
+      PrivateKey.from_wif(payPk).to_public_key().to_bytes()
+    );
+    setEncryptionKey(ec);
+  }, [
+    setEncryptionKey,
+    generateEncryptionKey,
+    setEncryptedBackup,
+    payPk,
+    ordPk,
+  ]);
+
+  console.log({ encryptedBackup });
   return (
     <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
       <div className="mx-auto">
@@ -147,17 +243,39 @@ const Layout: React.FC<Props> = ({ children }) => {
         >
           Protocol
         </a>
-        <div className="mx-4">·</div>
+        {!payPk && encryptedBackup && (
+          <>
+            <div className="mx-4">·</div>
+            <div className="cursor-pointer" onClick={loadEncryptedKeys}>
+              Unlock Wallet
+            </div>
+          </>
+        )}
+
+        {!encryptedBackup && !payPk && <div className="mx-4">·</div>}
+
+        {payPk && encryptedBackup && <div className="mx-4">·</div>}
+
         {payPk && (
           <div className="cursor-pointer" onClick={backupKeys}>
             Backup Keys
           </div>
         )}
-        {!payPk && (
+
+        {!payPk && !encryptedBackup && (
           <div className="cursor-pointer" onClick={importKeys}>
             Import Keys
           </div>
         )}
+
+        {payPk && !encryptedBackup && <div className="mx-4">·</div>}
+
+        {payPk && !encryptedBackup && (
+          <div className="cursor-pointer" onClick={encryptKeys}>
+            Encrypt Keys
+          </div>
+        )}
+
         {payPk && <div className="mx-4">·</div>}
 
         {payPk && (

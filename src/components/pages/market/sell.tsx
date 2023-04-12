@@ -1,19 +1,23 @@
+import Modal from "@/components/modal";
 import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";
 import React, { useCallback, useState } from "react";
+import { TbSelect } from "react-icons/tb";
 import sb from "satoshi-bitcoin";
+import tw from "twin.macro";
 import Ordinals from "../ordinals/list";
+import MarketTabs from "./tabs/tabs";
 
 interface PageProps extends WithRouterProps {}
 
-const NewListingPage: React.FC<PageProps> = ({}) => {
+const SellPage: React.FC<PageProps> = ({}) => {
   const router = useRouter();
   const { outPoint } = router.query;
   const [price, setPrice] = useState<number>(0);
   const { usdRate } = useWallet();
   const [showSelectItem, setShowSelectItem] = useState<boolean>();
-
+  const [selectedItem, setSelectedItem] = useState<string>(outPoint as string);
   const submit = useCallback(() => {
     console.log("create listing");
     // createListing()
@@ -25,27 +29,38 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
 
   const clickOrdinal = useCallback((ordinal: any) => {
     console.log("Clicked", ordinal);
+    setShowSelectItem(false);
+    setSelectedItem(ordinal);
   }, []);
+
+  const Label = tw.div`flex flex-col`;
+
+  const Input = tw.input`p-2 text-white font-mono rounded my-2`;
 
   return (
     <div>
-      <h1>New Listing</h1>
-      <div>
-        <div>
-          {outPoint ? (
-            outPoint
+      <MarketTabs currentTab={undefined} />
+      <div onClick={() => router.push("/wallet")}>Back to wallet</div>
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="cusror-pointer" onClick={clickSelectItem}>
+          {selectedItem ? (
+            selectedItem
           ) : (
-            <div onClick={clickSelectItem}>Select and Item</div>
+            <div className="hover:bg-[#222] cursor-pointer rounded p-2 flex items-center justify-between">
+              Select and Item
+              <TbSelect className="mr-2" />
+            </div>
           )}
         </div>
         <div className="my-2">
-          <label>
+          <Label>
             Price (BSV)
-            <input
+            <Input
               type="number"
+              value={price}
               onChange={(e) => setPrice(parseFloat(e.target.value))}
             />
-          </label>
+          </Label>
         </div>
         {/* <div>
           <label>
@@ -59,7 +74,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
             </label>
 
         </div> */}
-        <div className="my-2">
+        <div className="my-2 flex justify-end">
           <button
             disabled={!usdRate}
             onClick={submit}
@@ -70,12 +85,12 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
         </div>
       </div>
       {showSelectItem && (
-        <div>
+        <Modal onClose={() => setShowSelectItem(false)}>
           <Ordinals onClick={clickOrdinal} sort={false} />
-        </div>
+        </Modal>
       )}
     </div>
   );
 };
 
-export default NewListingPage;
+export default SellPage;

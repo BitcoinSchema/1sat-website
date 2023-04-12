@@ -18,8 +18,8 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
 
   return (
     <div>
-      <MarketTabs currentTab={MarketTab.Activity} />
-      <h1>Activity</h1>
+      <MarketTabs currentTab={MarketTab.Watch} />
+
       {/* {fetchActivityStatus === FetchStatus.Success && (
         <div>
           {listings?.map((l) => {

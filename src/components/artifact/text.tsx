@@ -35,16 +35,29 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
   }, [text, outPoint, setText, setFetchTextStatus]);
 
   return fetchTextStatus === FetchStatus.Success ? (
-    <pre
-      className={`flex items-center justify-center w-full h-full transition  ${
+    <div
+      className={`flex ${
+        text && (hasWords(text) || isJson(text)) ? "text-left" : "items-center"
+      }  justify-center w-full h-full transition block whitespace-pre-wrap ${
         className ? className : ""
       }`}
     >
       {text}
-    </pre>
+    </div>
   ) : (
     <LoaderIcon className="mx-auto" />
   );
 };
 
 export default TextArtifact;
+
+const isJson = (str: string) => {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+
+const hasWords = (str: string) => str.indexOf(" ") !== -1;

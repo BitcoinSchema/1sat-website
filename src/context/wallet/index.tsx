@@ -5,6 +5,7 @@ import { useLocalStorage } from "@/utils/storage";
 import init, {
   P2PKHAddress,
   PrivateKey,
+  PublicKey,
   SigHash,
   Transaction,
   Script as WasmScript,
@@ -27,6 +28,7 @@ import toast from "react-hot-toast";
 import { useBitsocket } from "../bitsocket";
 import { API_HOST, GPInscription, OrdUtxo } from "../ordinals";
 import { useRates } from "../rates";
+import { useStorage } from "../storage";
 
 export const PROTOCOL_START_HEIGHT = 783968;
 
@@ -120,6 +122,10 @@ type ContextValue = {
   setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
   transfer: (ordUtxo: OrdUtxo, toAddress: string) => Promise<void>;
   usdRate: number | undefined;
+  loadEncryptedKeys: () => Promise<void>;
+  encryptedBackup: string | undefined;
+  setEncryptedBackup: (encryptedBackup: string) => void;
+  setSaltPubKey: (setSaltPubKey: string) => void;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -129,7 +135,19 @@ interface Props {
 }
 
 const WalletProvider: React.FC<Props> = (props) => {
+  const {
+    getItem,
+    setItem,
+    decryptData,
+    generateEncryptionKey,
+    removeItem,
+    setEncryptionKey,
+    setEncryptionKeyFromPassphrase,
+    encryptionKey,
+  } = useStorage(); // Access the storage context values
+
   const [backupFile, setBackupFile] = useState<File>();
+  const [encryptedBackup, setEncryptedBackup] = useState<string>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
   const { leid, lastEvent } = useBitsocket();
   const [pendingTransaction, setPendingTransaction] = useState<
@@ -164,6 +182,58 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   const [usdRate, setUsdRate] = useState<number>(0);
   const { rates } = useRates();
+  const [saltPubKey, setSaltPubKey] = useLocalStorage<string | undefined>(
+    "1sspk",
+    undefined
+  );
+  const loadEncryptedKeys = useCallback(async () => {
+    const encryptedBackup = await getItem("encryptedBackup");
+    if (encryptedBackup) {
+      const passphrase = prompt("Enter your passphrase to decrypt your keys:");
+      if (!passphrase || passphrase.length < 6) {
+        alert("Invalid passphrase. Too short.");
+        return;
+      }
+
+      // Set the encryption key from the passphrase
+      await setEncryptionKeyFromPassphrase(passphrase);
+
+      // Decrypt the keys using the encryptionKey
+      try {
+        if (!encryptionKey) {
+          console.error("no encryption key");
+          return;
+        }
+        const base64EncryptedData = atob(encryptedBackup.replace("ENC:", ""));
+        const str = new TextEncoder().encode(base64EncryptedData);
+        const decryptedBinaryData = decryptData(str, encryptionKey);
+        const decryptedBase64Data = btoa(
+          new TextDecoder().decode(decryptedBinaryData)
+        );
+        const decryptedKeys = JSON.parse(atob(decryptedBase64Data));
+        const { ordPk: decryptedOrdPk, payPk: decryptedPayPk } = decryptedKeys;
+
+        // Set ordPk and payPk with the decrypted keys
+        setOrdPk(decryptedOrdPk);
+        setPayPk(decryptedPayPk);
+      } catch (error) {
+        alert("Failed to decrypt keys. Check your passphrase and try again.");
+        console.error("Decryption error:", error);
+      }
+    } else {
+      // Load keys normally (unencrypted)
+      const ordPk = await getItem("ordPk");
+      const payPk = await getItem("payPk");
+
+      if (ordPk && payPk) {
+        setOrdPk(ordPk);
+        setPayPk(payPk);
+      } else {
+        // Handle the case where the keys are not found in localStorage
+        console.log("No pubkey found");
+      }
+    }
+  }, [encryptionKey, setOrdPk, setPayPk, setEncryptionKeyFromPassphrase]);
 
   useEffect(() => {
     if (rates && rates.length > 0) {
@@ -238,19 +308,79 @@ const WalletProvider: React.FC<Props> = (props) => {
   useEffect(() => {
     const fire = async (f: File) => {
       const jsonString = await f.text();
-      console.log({ jsonString });
       if (jsonString) {
         const json = JSON.parse(jsonString);
-        const pPk = json.payPk;
-        const oPk = json.ordPk;
-        setPayPk(pPk);
-        setOrdPk(oPk);
+        if (json.encryptedBackup) {
+          const storedSaltPubKey = json.saltPubKey;
+          if (!storedSaltPubKey) {
+            console.error(
+              "Cannot set encryption key, no salt public key provided"
+            );
+            return;
+          }
+          const passphrase = prompt(
+            "Enter your passphrase to decrypt your keys:"
+          );
+          if (!passphrase || passphrase.length < 6) {
+            alert("Invalid passphrase. Too short.");
+            return;
+          }
+
+          const publicKey = PublicKey.from_hex(storedSaltPubKey);
+          const derivedEncryptionKey = generateEncryptionKey(
+            passphrase,
+            publicKey.to_bytes()
+          );
+          setEncryptionKey(derivedEncryptionKey);
+
+          const ec = encryptionKey || derivedEncryptionKey;
+
+          try {
+            if (ec) {
+              // Remove the "ENC:" prefix from the encrypted backup
+              const encryptedData = json.encryptedBackup.slice(4);
+
+              // Convert the encrypted data from hex string to Uint8Array
+              const str = fromHexString(encryptedData);
+              debugger;
+              // Decrypt the data
+              const decryptedBinaryData = decryptData(str, ec);
+              const decryptedKeys = JSON.parse(
+                new TextDecoder().decode(decryptedBinaryData)
+              );
+
+              const { ordPk: decryptedOrdPk, payPk: decryptedPayPk } =
+                decryptedKeys;
+
+              setOrdPk(decryptedOrdPk);
+              setPayPk(decryptedPayPk);
+            }
+          } catch (error) {
+            alert(
+              "Failed to decrypt keys. Check your passphrase and try again."
+            );
+            console.error("Decryption error:", error);
+          }
+        } else {
+          const pPk = json.payPk;
+          const oPk = json.ordPk;
+          setPayPk(pPk);
+          setOrdPk(oPk);
+        }
       }
     };
+
     if (backupFile) {
       fire(backupFile);
     }
-  }, [setOrdPk, setPayPk, backupFile]);
+  }, [
+    setOrdPk,
+    setPayPk,
+    backupFile,
+    setEncryptionKey,
+    encryptionKey,
+    generateEncryptionKey,
+  ]);
 
   const getOrdinalUTXOs = useCallback(
     async (address: string): Promise<void> => {
@@ -659,12 +789,16 @@ const WalletProvider: React.FC<Props> = (props) => {
     [setPendingTransaction, payPk, fundingUtxos]
   );
 
-  const deleteKeys = useCallback(() => {
+  const deleteKeys = useCallback(async () => {
     const c = confirm(
       "Are you sure you want to clear your keys from the browser? This cannot be undone!"
     );
 
     if (c) {
+      await removeItem("ordPk");
+      await removeItem("payPk");
+      await removeItem("encryptedBackup");
+      setSaltPubKey(undefined);
       setPayPk(undefined);
       setOrdPk(undefined);
       setFundingUtxos(undefined);
@@ -672,18 +806,50 @@ const WalletProvider: React.FC<Props> = (props) => {
       setInscribedUtxos(undefined);
       setBackupFile(undefined);
       setOrdUtxos(undefined);
+      setEncryptedBackup(undefined);
 
       toast.success("Keys Cleared", toastProps);
       Router.push("/");
     }
   }, [
+    setSaltPubKey,
+    removeItem,
     setOrdUtxos,
     setPayPk,
     setOrdPk,
     setFundingUtxos,
     setArtifacts,
     setInscribedUtxos,
+    setEncryptedBackup,
   ]);
+
+  // const deleteKeys = useCallback(async () => {
+  //   const c = confirm(
+  //     "Are you sure you want to clear your keys from the browser? This cannot be undone!"
+  //   );
+
+  //   if (c) {
+  //     setPayPk(undefined);
+  //     setOrdPk(undefined);
+  //     setFundingUtxos(undefined);
+  //     setArtifacts(undefined);
+  //     setInscribedUtxos(undefined);
+  //     setBackupFile(undefined);
+  //     setOrdUtxos(undefined);
+
+  //     await removeItem();
+  //     toast.success("Keys Cleared", toastProps);
+  //     Router.push("/");
+  //   }
+  // }, [
+  //   removeItem,
+  //   setOrdUtxos,
+  //   setPayPk,
+  //   setOrdPk,
+  //   setFundingUtxos,
+  //   setArtifacts,
+  //   setInscribedUtxos,
+  // ]);
 
   const balance = useMemo(() => {
     let b = 0;
@@ -698,6 +864,12 @@ const WalletProvider: React.FC<Props> = (props) => {
       console.log("callback");
       try {
         const { payPk, ordPk } = await randomKeys();
+
+        // store payment public key for encryption salt
+        const publicKey = PrivateKey.from_wif(payPk).to_public_key().to_hex();
+        setItem("publicKey", publicKey, false);
+        setSaltPubKey(publicKey);
+
         setPayPk(payPk);
         setOrdPk(ordPk);
         resolve();
@@ -705,20 +877,25 @@ const WalletProvider: React.FC<Props> = (props) => {
         reject(e);
       }
     });
-  }, [setOrdPk, setPayPk]);
+  }, [setSaltPubKey, setOrdPk, setPayPk]);
 
   const backupKeys = useCallback(
     (e?: any) => {
+      debugger;
+      const keysToSave = encryptedBackup
+        ? { encryptedBackup, saltPubKey }
+        : { payPk, ordPk };
+      debugger;
       var dataStr =
         "data:text/json;charset=utf-8," +
-        encodeURIComponent(JSON.stringify({ payPk, ordPk }));
+        encodeURIComponent(JSON.stringify(keysToSave));
 
       const clicker = document.createElement("a");
       clicker.setAttribute("href", dataStr);
-      clicker.setAttribute("download", "1sat.json");
+      clicker.setAttribute("download", `1sat-${ordAddress}.json`);
       clicker.click();
     },
-    [payPk, ordPk]
+    [payPk, ordPk, encryptedBackup, ordAddress, saltPubKey, encryptionKey]
   );
 
   const downloadPendingTx = useCallback(
@@ -728,8 +905,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         return;
       }
       var dataStr =
-        "data:text/plain;charset=utf-8," +
-        Buffer.from(pendingTransaction?.rawTx).toString("hex");
+        "data:text/plain;charset=utf-8," + pendingTransaction?.rawTx;
 
       const clicker = document.createElement("a");
       clicker.setAttribute("href", dataStr);
@@ -777,6 +953,10 @@ const WalletProvider: React.FC<Props> = (props) => {
       setPendingTransaction,
       transfer,
       usdRate,
+      loadEncryptedKeys,
+      setSaltPubKey,
+      encryptedBackup,
+      setEncryptedBackup,
     }),
     [
       artifacts,
@@ -809,6 +989,10 @@ const WalletProvider: React.FC<Props> = (props) => {
       setPendingTransaction,
       transfer,
       usdRate,
+      loadEncryptedKeys,
+      encryptedBackup,
+      setEncryptedBackup,
+      setSaltPubKey,
     ]
   );
 
@@ -867,3 +1051,9 @@ const handleTransferring = async (
     throw e;
   }
 };
+
+function fromHexString(hexString: string): Uint8Array {
+  return new Uint8Array(
+    hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+  );
+}

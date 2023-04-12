@@ -9,6 +9,7 @@ import { RiErrorWarningFill } from "react-icons/ri";
 import { TbCurrencyBitcoin } from "react-icons/tb";
 import sb from "satoshi-bitcoin";
 import styled from "styled-components";
+import Modal from "./modal";
 import { FetchStatus, toastProps } from "./pages";
 
 const Input = styled.input`
@@ -191,16 +192,7 @@ If you still have ordinals in your wallet, you will be unable to send them witho
             </div>
           </div>
           {showAddMoney && (
-            <div
-              className="left-0 top-0 overflow-hidden w-full h-full absolute flex items-center justify-center bg-[#555]/30 backdrop-blur"
-              onClick={(e: React.MouseEvent<HTMLDivElement>) => {
-                const target = (e.target as HTMLDivElement)?.id;
-                if (target === "backdrop") {
-                  setShowAddMoney(false);
-                }
-              }}
-              id="backdrop"
-            >
+            <Modal onClose={() => setShowAddMoney(false)}>
               <div className="flex flex-col text-center justify-between text-teal-600 bg-black max-w-2xl p-4 md:p-8 rounded-lg">
                 <div>Send Funds to:</div>
                 <div className="font-semibold md:text-xl my-2">
@@ -236,7 +228,7 @@ If you still have ordinals in your wallet, you will be unable to send them witho
                   to this address
                 </div>
               </div>
-            </div>
+            </Modal>
           )}
 
           {/* <div className="mt-4">

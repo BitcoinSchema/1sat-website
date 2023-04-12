@@ -1,5 +1,5 @@
 import Layout from "@/components/pages";
-import NewListingPage from "@/components/pages/market/new";
+import NewListingPage from "@/components/pages/market/sell";
 import { WithRouterProps } from "next/dist/client/with-router";
 import React from "react";
 

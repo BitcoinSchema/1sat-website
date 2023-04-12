@@ -60,14 +60,6 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
               You need a wallet first.
             </div>
           )}
-        {fetchOrdinalUtxosStatus === FetchStatus.Success &&
-          ordUtxos?.length === 0 &&
-          payPk &&
-          ordPk && (
-            <div className="max-w-md rounded bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-8 my-8">
-              You, sadly, have no artifacts.
-            </div>
-          )}
 
         {ordAddress && <OrdAddress />}
 
@@ -90,7 +82,14 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
               </div>
             </div>
           }
-
+          {fetchOrdinalUtxosStatus === FetchStatus.Success &&
+            ordUtxos?.length === 0 &&
+            payPk &&
+            ordPk && (
+              <div className="max-w-md rounded bg-[#222] cursor-pointer mx-auto p-8 my-8">
+                You, sadly, have no artifacts.
+              </div>
+            )}
           <Ordinals sort={sort} />
         </div>
       </div>

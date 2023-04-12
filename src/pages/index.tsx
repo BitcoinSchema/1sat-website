@@ -17,6 +17,7 @@ const App: React.FC<PageProps> = (props) => {
       )
       .catch((err) => console.log("Service Worker registration failed: ", err));
   }, []);
+
   return (
     <Layout>
       <HomePage {...props} />

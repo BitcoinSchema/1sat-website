@@ -9,9 +9,10 @@ interface Props {
 }
 
 export enum MarketTab {
-  Listings = "listings",
-  Activity = "activity",
-  Home = "home",
+  Browse = "browse",
+  Sell = "sell",
+  Watch = "watch",
+  Featured = "featured",
 }
 
 const MarketTabs: React.FC<Props> = ({
@@ -29,38 +30,50 @@ const MarketTabs: React.FC<Props> = ({
       </S.Tab> */}
 
       <S.Tab
-        partiallyactive={currentTab === MarketTab.Home ? "true" : "false"}
+        partiallyactive={currentTab === MarketTab.Featured ? "true" : "false"}
         href={`/market`}
         onClick={(e) =>
-          currentTab === MarketTab.Home && onClickSelected
+          currentTab === MarketTab.Featured && onClickSelected
             ? onClickSelected(e)
             : () => {}
         }
       >
-        Home
+        Featured
       </S.Tab>
       <S.Tab
-        partiallyactive={currentTab === MarketTab.Listings ? "true" : "false"}
-        href={`/market/listings`}
+        partiallyactive={currentTab === MarketTab.Browse ? "true" : "false"}
+        href={`/market/browse`}
         onClick={(e) =>
-          currentTab === MarketTab.Listings && onClickSelected
+          currentTab === MarketTab.Browse && onClickSelected
             ? onClickSelected(e)
             : () => {}
         }
       >
-        Listings
+        Buy
       </S.Tab>
 
       <S.Tab
-        partiallyactive={currentTab === MarketTab.Activity ? "true" : "false"}
-        href={`/market/activity`}
+        partiallyactive={currentTab === MarketTab.Sell ? "true" : "false"}
+        href={`/market/sell`}
         onClick={(e) =>
-          currentTab === MarketTab.Activity && onClickSelected
+          currentTab === MarketTab.Sell && onClickSelected
             ? onClickSelected(e)
             : () => {}
         }
       >
-        Activity
+        Sell
+      </S.Tab>
+
+      <S.Tab
+        partiallyactive={currentTab === MarketTab.Watch ? "true" : "false"}
+        href={`/market/activity`}
+        onClick={(e) =>
+          currentTab === MarketTab.Watch && onClickSelected
+            ? onClickSelected(e)
+            : () => {}
+        }
+      >
+        Watch
       </S.Tab>
     </S.Tabs>
   );

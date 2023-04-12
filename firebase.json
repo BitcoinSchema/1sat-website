@@ -20,6 +20,26 @@
         "destination": "/inscribe.html"
       },
       {
+        "source": "/market/new",
+        "destination": "/market/new/[outPoint].html"
+      },
+      {
+        "source": "/market/sell",
+        "destination": "/market/sell/[outPoint].html"
+      },
+      {
+        "source": "/market/sell",
+        "destination": "/market/sell/index.html"
+      },
+      {
+        "source": "/market/buy",
+        "destination": "/market/buy/[outPoint].html"
+      },
+      {
+        "source": "/market",
+        "destination": "/market.html"
+      },
+      {
         "source": "/preview",
         "destination": "/preview.html"
       },
