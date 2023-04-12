@@ -340,8 +340,8 @@ const WalletProvider: React.FC<Props> = (props) => {
               // Remove the "ENC:" prefix from the encrypted backup
               const encryptedData = json.encryptedBackup.slice(4);
 
-              // Convert the encrypted data from hex string to Uint8Array
-              const str = fromHexString(encryptedData);
+              // Decode the encrypted data from base64url to Uint8Array
+              const str = base64UrlToUint8Array(encryptedData);
               debugger;
               // Decrypt the data
               const decryptedBinaryData = decryptData(str, ec);
@@ -373,14 +373,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     if (backupFile) {
       fire(backupFile);
     }
-  }, [
-    setOrdPk,
-    setPayPk,
-    backupFile,
-    setEncryptionKey,
-    encryptionKey,
-    generateEncryptionKey,
-  ]);
+  }, [setOrdPk, setPayPk, backupFile, setEncryptionKey, generateEncryptionKey]);
 
   const getOrdinalUTXOs = useCallback(
     async (address: string): Promise<void> => {
@@ -1056,4 +1049,15 @@ function fromHexString(hexString: string): Uint8Array {
   return new Uint8Array(
     hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
   );
+}
+
+function base64UrlToUint8Array(base64Url: string) {
+  const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
+  const base64 = (base64Url + padding).replace(/\-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
