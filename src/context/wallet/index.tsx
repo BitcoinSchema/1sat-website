@@ -91,6 +91,12 @@ export type PendingTransaction = {
   txid: string;
 };
 
+interface EncryptedBackupJson {
+  encryptedBackup?: string;
+  ordPk?: string;
+  payPk?: string;
+}
+
 type ContextValue = {
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
@@ -145,7 +151,8 @@ const WalletProvider: React.FC<Props> = (props) => {
     setEncryptionKeyFromPassphrase,
     encryptionKey,
   } = useStorage(); // Access the storage context values
-
+  const [encryptedBackupJson, setEncryptedBackupJson] =
+    useState<EncryptedBackupJson | null>(null);
   const [backupFile, setBackupFile] = useState<File>();
   const [encryptedBackup, setEncryptedBackup] = useState<string>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
@@ -186,25 +193,100 @@ const WalletProvider: React.FC<Props> = (props) => {
     "1sspk",
     undefined
   );
-  const loadEncryptedKeys = useCallback(async () => {
-    const encryptedBackup = await getItem("encryptedBackup");
-    if (encryptedBackup) {
-      const passphrase = prompt("Enter your passphrase to decrypt your keys:");
-      if (!passphrase || passphrase.length < 6) {
-        alert("Invalid passphrase. Too short.");
-        return;
+  // const loadEncryptedKeys = useCallback(async () => {
+  //   const encryptedBackup = await getItem("encryptedBackup");
+  //   if (encryptedBackup) {
+  //     const passphrase = prompt("Enter your passphrase to decrypt your keys:");
+  //     if (!passphrase || passphrase.length < 6) {
+  //       alert("Invalid passphrase. Too short.");
+  //       return;
+  //     }
+
+  //     // Set the encryption key from the passphrase
+  //     await setEncryptionKeyFromPassphrase(passphrase);
+
+  //     // Decrypt the keys using the encryptionKey
+  //     try {
+  //       if (!encryptionKey) {
+  //         console.error("no encryption key");
+  //         return;
+  //       }
+  //       const base64EncryptedData = atob(encryptedBackup.replace("ENC:", ""));
+  //       const str = new TextEncoder().encode(base64EncryptedData);
+  //       const decryptedBinaryData = decryptData(str, encryptionKey);
+  //       const decryptedBase64Data = btoa(
+  //         new TextDecoder().decode(decryptedBinaryData)
+  //       );
+  //       const decryptedKeys = JSON.parse(atob(decryptedBase64Data));
+  //       const { ordPk: decryptedOrdPk, payPk: decryptedPayPk } = decryptedKeys;
+
+  //       // Set ordPk and payPk with the decrypted keys
+  //       setOrdPk(decryptedOrdPk);
+  //       setPayPk(decryptedPayPk);
+  //     } catch (error) {
+  //       alert("Failed to decrypt keys. Check your passphrase and try again.");
+  //       console.error("Decryption error:", error);
+  //     }
+  //   } else {
+  //     // Load keys normally (unencrypted)
+  //     const ordPk = await getItem("ordPk");
+  //     const payPk = await getItem("payPk");
+
+  //     if (ordPk && payPk) {
+  //       setOrdPk(ordPk);
+  //       setPayPk(payPk);
+  //     } else {
+  //       // Handle the case where the keys are not found in localStorage
+  //       console.log("No pubkey found");
+  //     }
+  //   }
+  // }, [encryptionKey, setOrdPk, setPayPk, setEncryptionKeyFromPassphrase]);
+  const loadEncryptedKeys = useCallback(
+    async (file?: File) => {
+      let json;
+      if (file) {
+        const jsonString = await file.text();
+        json = JSON.parse(jsonString);
+      } else {
+        const encryptedBackup = await getItem("encryptedBackup");
+        if (encryptedBackup) {
+          json = { encryptedBackup };
+        } else {
+          const ordPk = await getItem("ordPk");
+          const payPk = await getItem("payPk");
+          if (ordPk && payPk) {
+            setOrdPk(ordPk);
+            setPayPk(payPk);
+            return;
+          } else {
+            console.log("No pubkey found");
+            return;
+          }
+        }
       }
 
-      // Set the encryption key from the passphrase
-      await setEncryptionKeyFromPassphrase(passphrase);
-
-      // Decrypt the keys using the encryptionKey
-      try {
-        if (!encryptionKey) {
-          console.error("no encryption key");
+      if (json.encryptedBackup) {
+        const passphrase = prompt(
+          "Enter your passphrase to decrypt your keys:"
+        );
+        if (!passphrase || passphrase.length < 6) {
+          alert("Invalid passphrase. Too short.");
           return;
         }
-        const base64EncryptedData = atob(encryptedBackup.replace("ENC:", ""));
+
+        await setEncryptionKeyFromPassphrase(passphrase);
+        setEncryptedBackupJson(json);
+      }
+    },
+    [setEncryptedBackupJson, setEncryptionKeyFromPassphrase]
+  );
+
+  useEffect(() => {
+    if (encryptionKey && encryptedBackupJson?.encryptedBackup) {
+      try {
+        const base64EncryptedData = atob(
+          encryptedBackupJson.encryptedBackup.replace("ENC:", "")
+        );
         const str = new TextEncoder().encode(base64EncryptedData);
         const decryptedBinaryData = decryptData(str, encryptionKey);
         const decryptedBase64Data = btoa(
@@ -213,27 +295,22 @@ const WalletProvider: React.FC<Props> = (props) => {
         const decryptedKeys = JSON.parse(atob(decryptedBase64Data));
         const { ordPk: decryptedOrdPk, payPk: decryptedPayPk } = decryptedKeys;
 
-        // Set ordPk and payPk with the decrypted keys
         setOrdPk(decryptedOrdPk);
         setPayPk(decryptedPayPk);
       } catch (error) {
         alert("Failed to decrypt keys. Check your passphrase and try again.");
         console.error("Decryption error:", error);
       }
-    } else {
-      // Load keys normally (unencrypted)
-      const ordPk = await getItem("ordPk");
-      const payPk = await getItem("payPk");
-
-      if (ordPk && payPk) {
-        setOrdPk(ordPk);
-        setPayPk(payPk);
-      } else {
-        // Handle the case where the keys are not found in localStorage
-        console.log("No pubkey found");
-      }
     }
-  }, [encryptionKey, setOrdPk, setPayPk, setEncryptionKeyFromPassphrase]);
+  }, [encryptionKey, encryptedBackupJson, setOrdPk, setPayPk]);
+
+  // useEffect(() => {
+  //   if (backupFile) {
+  //     loadEncryptedKeys(backupFile);
+  //   } else {
+  //     loadEncryptedKeys();
+  //   }
+  // }, [backupFile, loadEncryptedKeys]);
 
   useEffect(() => {
     if (rates && rates.length > 0) {

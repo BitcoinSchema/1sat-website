@@ -11,8 +11,11 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useState,
 } from "react";
 import { Toaster } from "react-hot-toast";
+import { RiErrorWarningFill } from "react-icons/ri";
+import Modal from "../modal";
 export enum FetchStatus {
   Idle,
   Loading,
@@ -80,6 +83,9 @@ const Layout: React.FC<Props> = ({ children }) => {
     ready,
   } = useStorage();
 
+  const [passphrase, setPassphrase] = useState<string | undefined>();
+  const [showEnterPassphrase, setShowEnterPassphrase] =
+    useState<boolean>(false);
   const { connectionStatus, connect, ordAddress } = useBitsocket();
 
   const router = useRouter();
@@ -113,22 +119,23 @@ const Layout: React.FC<Props> = ({ children }) => {
     }
   }, [ordAddress, oAddress, connect, connectionStatus]);
 
-  // setItem, setEncryptionKey
+  // Load encrypted backup from storage if available
   useEffect(() => {
     const fire = async () => {
       const eb = await getItem("encryptedBackup", false);
       if (!eb) {
-        console.log("no encrypted backup");
+        console.log("no encrypted backup in storage");
       } else {
         console.log("got encrypted backup", { eb });
         setEncryptedBackup(eb);
       }
     };
-    if (ready) {
+    if (ready && !encryptedBackup) {
       fire();
     }
-  }, [setEncryptedBackup, ready, getItem]);
+  }, [setEncryptedBackup, ready, getItem, encryptedBackup]);
 
+  // if we have an encryption key but no encryptedBackup
   useEffect(() => {
     const storeEncryptedKeys = async () => {
       if (payPk && ordPk && !encryptedBackup && encryptionKey) {
@@ -167,6 +174,7 @@ const Layout: React.FC<Props> = ({ children }) => {
   const handleFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
+        console.log("handleFileChange called", e.target.files[0]);
         setBackupFile(e.target.files[0]);
         Router?.push("/wallet");
       }
@@ -174,14 +182,22 @@ const Layout: React.FC<Props> = ({ children }) => {
     [setBackupFile]
   );
 
+  // const handleFileChange = useCallback(
+  //   async (e: ChangeEvent<HTMLInputElement>) => {
+  //     if (e.target.files) {
+  //       setBackupFile(e.target.files[0]);
+  //       Router?.push("/wallet");
+  //     }
+  //   },
+  //   [setBackupFile]
+  // );
+
   const encryptKeys = useCallback(async () => {
     if (!payPk) {
       return;
     }
-    const seedPhrase = prompt(
-      "This will encrypt your keys using a passphrase. Do not forget your passphrase or you will be unable to decrypt the locally stored keys. You should still keep a backup of your seed phrase."
-    );
-    if (!seedPhrase || seedPhrase.length < 6) {
+
+    if (!passphrase || passphrase.length < 6) {
       alert("Invalid phrase. Too short.");
       return;
     }
@@ -194,7 +210,7 @@ const Layout: React.FC<Props> = ({ children }) => {
     );
 
     const ec = generateEncryptionKey(
-      seedPhrase,
+      passphrase,
       PrivateKey.from_wif(payPk).to_public_key().to_bytes()
     );
     setEncryptionKey(ec);
@@ -204,9 +220,9 @@ const Layout: React.FC<Props> = ({ children }) => {
     setEncryptedBackup,
     payPk,
     ordPk,
+    passphrase,
   ]);
 
-  console.log({ encryptedBackup });
   return (
     <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
       <div className="mx-auto">
@@ -246,7 +262,7 @@ const Layout: React.FC<Props> = ({ children }) => {
         {!payPk && encryptedBackup && (
           <>
             <div className="mx-4">·</div>
-            <div className="cursor-pointer" onClick={loadEncryptedKeys}>
+            <div className="cursor-pointer" onClick={() => loadEncryptedKeys()}>
               Unlock Wallet
             </div>
           </>
@@ -284,6 +300,31 @@ const Layout: React.FC<Props> = ({ children }) => {
           </div>
         )}
         <div>
+          {showEnterPassphrase && (
+            <Modal onClose={() => setShowEnterPassphrase(false)}>
+              <div className="flex flex-col text-center justify-between text-teal-600 bg-black max-w-2xl p-4 md:p-8 rounded-lg">
+                <h1>Enter a passphrase</h1>
+                <div>
+                  This will encrypt your keys using a passphrase. You should
+                  still keep a backup of your seed phrase.
+                </div>
+                <div className="font-semibold md:text-xl my-2">
+                  <input
+                    type="text"
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    value={passphrase}
+                  />
+                </div>
+
+                <div className="text-yellow-500 text-xs sm:test-sm md:text-base flex justify-center items-center">
+                  <RiErrorWarningFill className="mr-2" /> Do not forget your
+                  passphrase or you will be unable to decrypt the locally stored
+                  keys.
+                </div>
+                <button onClick={encryptKeys}>Encrypt Local Keys</button>
+              </div>
+            </Modal>
+          )}
           <Toaster />
           <input
             accept=".json"
