@@ -17,10 +17,6 @@ const WalletPage: React.FC<PageProps> = ({ router }) => {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
       <Tabs currentTab={Tab.Wallet} />
       <Wallet />

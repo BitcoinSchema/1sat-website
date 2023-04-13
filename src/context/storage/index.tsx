@@ -1,3 +1,4 @@
+import { base64UrlToUint8Array } from "@/utils/uint8array";
 import { AES, AESAlgorithms } from "bsv-wasm";
 import { Hash, KDF, PBKDF2Hashes } from "bsv-wasm-web";
 import crypto from "crypto";
@@ -41,13 +42,13 @@ interface StorageProviderProps {
   children: ReactNode;
 }
 
+export const encryptionPrefix = "ENC:";
 export const StorageProvider: React.FC<StorageProviderProps> = (props) => {
   const [encryptionKey, setEncryptionKey] = useState<Uint8Array | null>(null);
   const [db, setDb] = useState<IDBDatabase | undefined>();
   const [ready, setReady] = useState<boolean>(false);
   const storeName = "keystore";
   const dbName = "onesat";
-  const encryptionPrefix = "ENC:";
 
   useEffect(() => {
     const openDBRequest = indexedDB.open(dbName);
@@ -113,7 +114,8 @@ export const StorageProvider: React.FC<StorageProviderProps> = (props) => {
           ) {
             if (decrypt) {
               const encryptedData = storedData.slice(encryptionPrefix.length);
-              const decryptedData = decryptData(encryptedData, encryptionKey);
+              const str = base64UrlToUint8Array(encryptedData);
+              const decryptedData = decryptData(str, encryptionKey);
               const decryptedString = new TextDecoder().decode(decryptedData);
               resolve(decryptedString);
             } else {
@@ -219,18 +221,19 @@ export const StorageProvider: React.FC<StorageProviderProps> = (props) => {
     async (passphrase: string) => {
       const storedPublicKey = await getItem("publicKey", false);
       if (!storedPublicKey) {
-        alert("No public key found. Unable to decrypt.");
+        debugger;
+        console.error("No public key found. Unable to decrypt.");
+        return;
+      }
+
+      if (!passphrase || passphrase.length < 6) {
+        console.error("Invalid phrase. Too short.");
         return;
       }
 
       const pubKeyBytes = new Uint8Array(
         Buffer.from(storedPublicKey, "base64").buffer
       );
-
-      if (!passphrase || passphrase.length < 6) {
-        alert("Invalid phrase. Too short.");
-        return;
-      }
 
       const ec = generateEncryptionKey(passphrase, pubKeyBytes);
       setEncryptionKey(ec);

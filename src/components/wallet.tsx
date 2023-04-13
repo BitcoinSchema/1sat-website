@@ -6,22 +6,10 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FiArrowDown, FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
-import { TbCurrencyBitcoin } from "react-icons/tb";
+import { TbCurrencyBitcoin, TbQuestionCircle } from "react-icons/tb";
 import sb from "satoshi-bitcoin";
-import styled from "styled-components";
 import Modal from "./modal";
 import { FetchStatus, toastProps } from "./pages";
-
-const Input = styled.input`
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  margin: 0.5rem 0 0.5rem 0;
-`;
-
-const Label = styled.label`
-  display: flex;
-  flex-direction: column;
-`;
 
 type WalletProps = {};
 
@@ -37,10 +25,13 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     balance,
     send,
     usdRate,
+    mnemonic,
+    setShowEnterPassphrase,
   } = useWallet();
 
   const [showKeys, setShowKeys] = useState<boolean>(false);
   const [initialized, setInitialized] = useState<boolean>(false);
+  const [showMore, setShowMore] = useState<boolean>(false);
   const [showAddMoney, setShowAddMoney] = useState<boolean>(false);
   const [generateStatus, setGenerateStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -64,10 +55,12 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     }
   }, [initialized, ordPk]);
 
-  const handleConfirm = async () => {
+  const handleConfirm = useCallback(async () => {
     console.log("callback confirm");
+    // encrypt keys
+    setShowEnterPassphrase(true);
     setShowKeys(false);
-  };
+  }, [setShowEnterPassphrase]);
 
   const handleUploadClick = useCallback(() => {
     if (!backupFile) {
@@ -78,6 +71,15 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     console.log({ backupFile });
   }, [backupFile]);
 
+  const handleSeedClick = useCallback(() => {
+    const phrase = prompt("Enter your 12 word seed phrase.");
+    if (!phrase) {
+      return;
+    }
+    // TODO
+    return;
+  }, []);
+
   if (fetchUtxosStatus === FetchStatus.Loading) {
     return (
       <div className="flex flex-col w-full max-w-4xl mx-auto">
@@ -87,23 +89,12 @@ const Wallet: React.FC<WalletProps> = ({}) => {
   }
 
   return (
-    <div className="flex flex-col w-full max-w-xl mx-auto p-2 md:p-4">
+    <div className="flex flex-col w-full max-w-xl mx-auto p-2 md:p-4 text-[#777]">
       {(!ordPk || !payPk) && (
         <>
-          <div className="w-full">
-            <p>Import a wallet from existing backup</p>
-            <button
-              type="submit"
-              onClick={handleUploadClick}
-              className="w-full cursor-pointer p-2 bg-teal-600 text-xl rounded my-4 text-white"
-            >
-              Import Wallets
-            </button>
-          </div>
-          <div className="w-full">
-            <p>
-              This will generate 2 local wallets. 1 for sats, and 1 for
-              ordinals.
+          <div className="w-full group">
+            <p className="md:opacity-0 group-hover:opacity-100 transition">
+              Generate new keys, and encrypt them with a passphrase.
             </p>
             <button
               type="submit"
@@ -118,24 +109,81 @@ const Wallet: React.FC<WalletProps> = ({}) => {
             >
               {generateStatus === FetchStatus.Loading
                 ? "Generating"
-                : "Generate"}{" "}
-              Wallets
+                : "Create New"}{" "}
+              Wallet
             </button>
+          </div>
+          <div className="flex relative">
+            <div className="w-full group w-1/2 mr-2">
+              <p className="md:opacity-0 group-hover:opacity-100 transition absolute bottom-0 left-0 w-full h-full pointer-events-none">
+                Import a wallet you've previously backed up.
+              </p>
+              <button
+                type="submit"
+                onClick={handleUploadClick}
+                className="mt-10 w-full cursor-pointer p-2 bg-teal-600 text-xl rounded my-4 text-white"
+              >
+                Import Backup File
+              </button>
+            </div>
+            <div className="w-full group w-1/2 ml-2">
+              <p className="md:opacity-0 group-hover:opacity-100 transition absolute bottom-0 left-0 w-full h-full pointer-events-none">
+                Use your 12 word mnemonic seed phrase to restore your wallet.
+              </p>
+              <button
+                type="submit"
+                onClick={handleSeedClick}
+                className="mt-10 w-full cursor-pointer p-2 bg-gray-600 text-xl rounded my-4 text-white"
+              >
+                Use Seed Phrase
+              </button>
+            </div>
           </div>
         </>
       )}
       {showKeys && (
-        <div>
-          <div className="w-full">
-            <p>These are your keys. Keep them safe.</p>
-            <pre>{payPk}</pre>
-            <pre>{ordPk}</pre>
+        <div className="w-full">
+          <div className="w-full text-[#aaa]">
+            <p className="text-2xl text-center text-purple-200 font-bold mb-4">
+              Save your Seed Phrase
+            </p>
+            <div className="cursor-pointer hover:text-blue-400 transition mb-4 flex items-center justify-center">
+              <p onClick={() => setShowMore(true)}>
+                Record these words in order
+              </p>
+              <TbQuestionCircle className="ml-2 text-blue-300" />
+            </div>
+            {showMore && (
+              <p className="mb-4">
+                This is your seed phrase. We used it to generate your keys. It
+                can be used to restore your wallet. Do not share it with anyone
+                including us! We will never ask you for your seed phrase.
+              </p>
+            )}
+            <div className="cursor-pointer hover:bg-[#333] transition my-4 mx-auto rounded bg-[#222] w-full p-4 text-yellow-500">
+              <CopyToClipboard
+                text={mnemonic || ""}
+                onCopy={() => {
+                  if (mnemonic) {
+                    toast.success(
+                      "Copied seed phrase. Careful now!",
+                      toastProps
+                    );
+                  }
+                }}
+              >
+                <div className="flex items-center justify-center">
+                  {mnemonic}
+                  <FiCopy className="w-8 h-8" />
+                </div>
+              </CopyToClipboard>
+            </div>
             <button
               type="submit"
               onClick={handleConfirm}
               className="w-full p-1 bg-yellow-600 text-xl cursor-pointer rounded my-4 text-white"
             >
-              I Backed Them Up
+              Encrypt Keys & Continue
             </button>
           </div>
         </div>

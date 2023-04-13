@@ -2,6 +2,7 @@ import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import { useBitsocket } from "@/context/bitsocket";
 import { useStorage } from "@/context/storage";
 import { useWallet } from "@/context/wallet";
+import { generatePassphrase } from "@/utils/passphrase";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
 import Router, { useRouter } from "next/router";
@@ -11,11 +12,13 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useState,
 } from "react";
-import { Toaster } from "react-hot-toast";
+import CopyToClipboard from "react-copy-to-clipboard";
+import toast, { Toaster } from "react-hot-toast";
+import { FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
 import Modal from "../modal";
+import * as S from "./styles";
 export enum FetchStatus {
   Idle,
   Loading,
@@ -72,6 +75,10 @@ const Layout: React.FC<Props> = ({ children }) => {
     encryptedBackup,
     setEncryptedBackup,
     setSaltPubKey,
+    showEnterPassphrase,
+    setShowEnterPassphrase,
+    passphrase,
+    setPassphrase,
   } = useWallet();
 
   const {
@@ -81,11 +88,9 @@ const Layout: React.FC<Props> = ({ children }) => {
     getItem,
     setItem,
     ready,
+    setEncryptionKeyFromPassphrase,
   } = useStorage();
 
-  const [passphrase, setPassphrase] = useState<string | undefined>();
-  const [showEnterPassphrase, setShowEnterPassphrase] =
-    useState<boolean>(false);
   const { connectionStatus, connect, ordAddress } = useBitsocket();
 
   const router = useRouter();
@@ -135,7 +140,11 @@ const Layout: React.FC<Props> = ({ children }) => {
     }
   }, [setEncryptedBackup, ready, getItem, encryptedBackup]);
 
-  // if we have an encryption key but no encryptedBackup
+  useEffect(() => {
+    console.log({ encryptionKey, encryptedBackup, payPk, ordPk });
+  }, [encryptionKey, encryptedBackup, payPk, ordPk]);
+
+  // if we have keys, and an encryptionKey but no encryptedBackup
   useEffect(() => {
     const storeEncryptedKeys = async () => {
       if (payPk && ordPk && !encryptedBackup && encryptionKey) {
@@ -182,46 +191,62 @@ const Layout: React.FC<Props> = ({ children }) => {
     [setBackupFile]
   );
 
-  // const handleFileChange = useCallback(
-  //   async (e: ChangeEvent<HTMLInputElement>) => {
-  //     if (e.target.files) {
-  //       setBackupFile(e.target.files[0]);
-  //       Router?.push("/wallet");
-  //     }
-  //   },
-  //   [setBackupFile]
-  // );
+  // const encryptKeys = useCallback(async () => {
+  //   if (!payPk) {
+  //     return;
+  //   }
 
-  const encryptKeys = useCallback(async () => {
-    if (!payPk) {
-      return;
+  //   if (!passphrase || passphrase.length < 6) {
+  //     toast.error("Invalid phrase. Too short.", toastErrorProps);
+  //     return;
+  //   }
+
+  //   const pubKeyBytes = PrivateKey.from_wif(payPk).to_public_key().to_bytes();
+  //   await setItem(
+  //     "publicKey",
+  //     Buffer.from(pubKeyBytes).toString("base64"),
+  //     false
+  //   );
+
+  //   const ec = generateEncryptionKey(
+  //     passphrase,
+  //     PrivateKey.from_wif(payPk).to_public_key().to_bytes()
+  //   );
+  //   setEncryptionKey(ec);
+  // }, [
+  //   setEncryptionKey,
+  //   generateEncryptionKey,
+  //   setEncryptedBackup,
+  //   payPk,
+  //   ordPk,
+  //   passphrase,
+  // ]);
+
+  const handlePassphraseChange = useCallback(
+    (e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setPassphrase(e.target.value);
+    },
+    [setPassphrase]
+  );
+
+  const handleClickEncrypt = useCallback(async () => {
+    if (passphrase) {
+      console.log("encrypt keys", { passphrase });
+      try {
+        await setEncryptionKeyFromPassphrase(passphrase);
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to encrypt keys", toastErrorProps);
+      }
     }
+  }, [passphrase, setEncryptionKeyFromPassphrase]);
 
-    if (!passphrase || passphrase.length < 6) {
-      alert("Invalid phrase. Too short.");
-      return;
-    }
-
-    const pubKeyBytes = PrivateKey.from_wif(payPk).to_public_key().to_bytes();
-    await setItem(
-      "publicKey",
-      Buffer.from(pubKeyBytes).toString("base64"),
-      false
-    );
-
-    const ec = generateEncryptionKey(
-      passphrase,
-      PrivateKey.from_wif(payPk).to_public_key().to_bytes()
-    );
-    setEncryptionKey(ec);
-  }, [
-    setEncryptionKey,
-    generateEncryptionKey,
-    setEncryptedBackup,
-    payPk,
-    ordPk,
-    passphrase,
-  ]);
+  const handleClickGenerate = useCallback(() => {
+    const phrase = generatePassphrase(2);
+    setPassphrase(phrase);
+  }, [setPassphrase]);
 
   return (
     <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
@@ -287,7 +312,10 @@ const Layout: React.FC<Props> = ({ children }) => {
         {payPk && !encryptedBackup && <div className="mx-4">·</div>}
 
         {payPk && !encryptedBackup && (
-          <div className="cursor-pointer" onClick={encryptKeys}>
+          <div
+            className="cursor-pointer"
+            onClick={() => setShowEnterPassphrase(true)}
+          >
             Encrypt Keys
           </div>
         )}
@@ -303,25 +331,58 @@ const Layout: React.FC<Props> = ({ children }) => {
           {showEnterPassphrase && (
             <Modal onClose={() => setShowEnterPassphrase(false)}>
               <div className="flex flex-col text-center justify-between text-teal-600 bg-black max-w-2xl p-4 md:p-8 rounded-lg">
-                <h1>Enter a passphrase</h1>
-                <div>
-                  This will encrypt your keys using a passphrase. You should
-                  still keep a backup of your seed phrase.
+                <h1 className="text-2xl">Enter a passphrase</h1>
+                <div className="my-4">
+                  This will encrypt your locally stored keys.
+                  <br />
+                  You still need to keep your seed phrase safe and private.
                 </div>
-                <div className="font-semibold md:text-xl my-2">
-                  <input
+                <div className="font-semibold md:text-xl my-2 relative">
+                  <div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
+                    <CopyToClipboard
+                      text={passphrase || ""}
+                      onCopy={() => {
+                        toast.success(
+                          "Copied phrase. Careful now!",
+                          toastProps
+                        );
+                      }}
+                    >
+                      <button
+                        disabled={!passphrase}
+                        className="disabled:text-[#555] transition text-black font-semibold font-mono"
+                      >
+                        <FiCopy />
+                      </button>
+                    </CopyToClipboard>
+                  </div>
+                  <S.Input
                     type="text"
-                    onChange={(e) => setPassphrase(e.target.value)}
+                    onChange={handlePassphraseChange}
                     value={passphrase}
+                    className="w-full"
+                    placeholder={`>sup3rDup3rSTOONGpwd<`}
                   />
                 </div>
-
-                <div className="text-yellow-500 text-xs sm:test-sm md:text-base flex justify-center items-center">
-                  <RiErrorWarningFill className="mr-2" /> Do not forget your
-                  passphrase or you will be unable to decrypt the locally stored
-                  keys.
+                <div>
+                  <div
+                    onClick={handleClickGenerate}
+                    className="cursor-pointer w-full p-2 text-blue-400 hover:text-blue-500 w-full flex text-end"
+                  >
+                    Generate a strong passphrase
+                  </div>
                 </div>
-                <button onClick={encryptKeys}>Encrypt Local Keys</button>
+                <div className="text-gray-500 text-xs sm:test-sm md:text-base flex justify-center items-center my-4 ">
+                  <RiErrorWarningFill className="mr-2" /> Your passphrase
+                  unlocks your wallet each time you visit.
+                </div>
+
+                <button
+                  className="p-2 bg-yellow-500 hover:bg-yellow-600 transition text-black font-semibold font-mono"
+                  onClick={handleClickEncrypt}
+                >
+                  Encrypt & Continue
+                </button>
               </div>
             </Modal>
           )}
