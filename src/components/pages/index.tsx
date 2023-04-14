@@ -1,7 +1,8 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import { useSocket } from "@/context/bitsocket";
 import { useStorage } from "@/context/storage";
-import { EncryptDecrypt, useWallet } from "@/context/wallet";
+import { useWallet } from "@/context/wallet";
+import { EncryptDecrypt } from "@/context/wallet/types";
 import { generatePassphrase } from "@/utils/passphrase";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";

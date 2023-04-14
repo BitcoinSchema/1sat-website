@@ -1,4 +1,5 @@
-import { EncryptDecrypt, useWallet } from "@/context/wallet";
+import { useWallet } from "@/context/wallet";
+import { EncryptDecrypt } from "@/context/wallet/types";
 import { restoreKeysFromMnemonic } from "@/utils/keys";
 import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { QRCodeSVG } from "qrcode.react";

@@ -2,6 +2,7 @@ import Tabs, { Tab } from "@/components/tabs";
 import { useWallet } from "@/context/wallet";
 import { MAPI_HOST } from "@/pages/_app";
 import { formatBytes } from "@/utils/bytes";
+import { downloadPendingTx } from "@/utils/download";
 import { useLocalStorage } from "@/utils/storage";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
