@@ -537,9 +537,10 @@ const WalletProvider: React.FC<Props> = (props) => {
             }
             // res.status(200).json(result);
 
-            console.log("Transfer Tx", tx.to_hex());
+            const rawTx = tx.to_hex();
+            console.log("Transfer Tx", rawTx);
             setPendingTransaction({
-              rawTx: tx.to_hex(),
+              rawTx,
               size: tx.get_size(),
               fee,
               numInputs: tx.get_ninputs(),
@@ -728,8 +729,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         return;
       }
       var dataStr =
-        "data:text/plain;charset=utf-8," +
-        Buffer.from(pendingTransaction?.rawTx).toString("hex");
+        "data:text/plain;charset=utf-8," + pendingTransaction?.rawTx;
 
       const clicker = document.createElement("a");
       clicker.setAttribute("href", dataStr);

@@ -220,7 +220,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
 
             <div className="flex items-center my-2">
               <CopyToClipboard
-                text={Buffer.from(pendingTransaction?.rawTx).toString("hex")}
+                text={pendingTransaction?.rawTx}
                 onCopy={() => toast.success("Copied Raw Tx", toastProps)}
               >
                 <button className="w-full p-1 text-lg hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center mr-1 transition">
