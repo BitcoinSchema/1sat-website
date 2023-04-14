@@ -93,8 +93,19 @@ export type PendingTransaction = {
 
 interface EncryptedBackupJson {
   encryptedBackup?: string;
+  pubKey?: string;
+  fundingChildKey: number;
+  ordChildKey: number;
+}
+
+interface DecryptedBackupJson {
   ordPk?: string;
   payPk?: string;
+}
+
+export enum EncryptDecrypt {
+  Encrypt,
+  Decrypt,
 }
 
 type ContextValue = {
@@ -108,6 +119,7 @@ type ContextValue = {
   downloadPendingTx: (e?: any) => void;
   fetchOrdinalUtxosStatus: FetchStatus | undefined;
   fetchUtxosStatus: FetchStatus;
+  generateStatus: FetchStatus;
   fundingUtxos: Utxo[] | undefined;
   generateKeys: () => Promise<void>;
   getOrdinalUTXOs: (address: string) => Promise<void>;
@@ -129,14 +141,15 @@ type ContextValue = {
   transfer: (ordUtxo: OrdUtxo, toAddress: string) => Promise<void>;
   usdRate: number | undefined;
   loadEncryptedKeys: () => Promise<void>;
-  encryptedBackup: string | undefined;
-  setEncryptedBackup: (encryptedBackup: string) => void;
-  setSaltPubKey: (setSaltPubKey: string) => void;
-  showEnterPassphrase: boolean;
-  setShowEnterPassphrase: (show: boolean) => void;
+  showEnterPassphrase: EncryptDecrypt | undefined;
+  setShowEnterPassphrase: (show: EncryptDecrypt | undefined) => void;
   passphrase: string | undefined;
   setPassphrase: (phrase: string) => void;
   mnemonic: string | undefined;
+  changeAddressPath: string | undefined;
+  ordAddressPath: string | undefined;
+  encryptedBackupJson: EncryptedBackupJson | undefined;
+  setEncryptedBackupJson: (json: EncryptedBackupJson) => void;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -156,12 +169,12 @@ const WalletProvider: React.FC<Props> = (props) => {
     encryptionKey,
   } = useStorage(); // Access the storage context values
 
-  const [showEnterPassphrase, setShowEnterPassphrase] =
-    useState<boolean>(false);
-  const [encryptedBackupJson, setEncryptedBackupJson] =
-    useState<EncryptedBackupJson | null>(null);
+  const [showEnterPassphrase, setShowEnterPassphrase] = useState<
+    EncryptDecrypt | undefined
+  >();
+
   const [backupFile, setBackupFile] = useState<File>();
-  const [encryptedBackup, setEncryptedBackup] = useState<string>();
+
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
   const { leid, lastEvent } = useBitsocket();
   const [pendingTransaction, setPendingTransaction] = useState<
@@ -189,16 +202,39 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [payPk, setPayPk] = useState<string | undefined>(undefined);
   const [ordPk, setOrdPk] = useState<string | undefined>(undefined);
   const [mnemonic, setMnemonic] = useState<string | undefined>(undefined);
+  const [changeAddressPath, setChangeAddressPath] = useState<
+    string | undefined
+  >(undefined);
+  const [ordAddressPath, setOrdAddressPath] = useState<string | undefined>(
+    undefined
+  );
 
   const [usdRate, setUsdRate] = useState<number>(0);
   const { rates } = useRates();
 
   // Needs to persist so we can decrypt the local keys file
-  const [saltPubKey, setSaltPubKey] = useLocalStorage<string | undefined>(
-    "1sspk",
-    undefined
+  const [encryptedBackupJson, setEncryptedBackupJson] =
+    useLocalStorage<EncryptedBackupJson>("1sebj", undefined);
+  const [generateStatus, setGenerateStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
   );
 
+  const loadUnencryptedKeys = useCallback(async () => {
+    const ordPk = await getItem("ordPk");
+    const payPk = await getItem("payPk");
+    if (ordPk && payPk) {
+      setOrdPk(ordPk);
+      setPayPk(payPk);
+      return;
+    } else {
+      console.log("No keys");
+      return;
+    }
+  }, [ordPk, payPk, setOrdPk, setPayPk]);
+
+  // The file can be encryptred or not
+  // an encrypted file must have a pubKey
+  // a non-encrypted file must have a payPk and ordPk
   const loadEncryptedKeys = useCallback(
     async (file?: File) => {
       let json;
@@ -207,38 +243,34 @@ const WalletProvider: React.FC<Props> = (props) => {
         json = JSON.parse(jsonString);
         console.log({ json });
       } else {
-        const encryptedBackup = await getItem("encryptedBackup");
+        const encryptedBackup = await getItem("encryptedBackup", false);
         if (encryptedBackup) {
-          json = { encryptedBackup };
+          const pubKey = await getItem("pubKey", false);
+          json = { encryptedBackup, pubKey };
         } else {
-          const ordPk = await getItem("ordPk");
-          const payPk = await getItem("payPk");
-          if (ordPk && payPk) {
-            setOrdPk(ordPk);
-            setPayPk(payPk);
-            return;
-          } else {
-            console.log("No pubkey found");
-            return;
-          }
+          debugger;
+          await loadUnencryptedKeys();
         }
       }
 
       if (json.encryptedBackup) {
-        setEncryptedBackupJson(json);
+        setEncryptedBackupJson(json as EncryptedBackupJson);
         if (!payPk) {
-          setShowEnterPassphrase(true);
+          debugger;
+          setShowEnterPassphrase(EncryptDecrypt.Decrypt);
         }
       }
     },
     [getItem, payPk, setEncryptedBackupJson]
   );
 
-  // Once encrypted backup is loaded into json
+  // Once encrypted backup is loaded into json, load the keys
   useEffect(() => {
+    console.log({ encryptionKey, encryptedBackupJson });
+
     if (encryptionKey && encryptedBackupJson?.encryptedBackup) {
+      debugger;
       try {
-        debugger;
         const encryptedData = encryptedBackupJson.encryptedBackup.slice(
           encryptionPrefix.length
         );
@@ -757,7 +789,6 @@ const WalletProvider: React.FC<Props> = (props) => {
       await removeItem("ordPk");
       await removeItem("payPk");
       await removeItem("encryptedBackup");
-      setSaltPubKey(undefined);
       setPayPk(undefined);
       setOrdPk(undefined);
       setMnemonic(undefined);
@@ -766,13 +797,18 @@ const WalletProvider: React.FC<Props> = (props) => {
       setInscribedUtxos(undefined);
       setBackupFile(undefined);
       setOrdUtxos(undefined);
-      setEncryptedBackup(undefined);
+
+      setEncryptedBackupJson(undefined);
+      setChangeAddressPath(undefined);
+      setOrdAddressPath(undefined);
 
       toast.success("Keys Cleared", toastProps);
-      Router.push("/");
+      // Router.push("/");
     }
   }, [
-    setSaltPubKey,
+    setOrdAddressPath,
+    setChangeAddressPath,
+    setEncryptedBackupJson,
     removeItem,
     setOrdUtxos,
     setPayPk,
@@ -780,7 +816,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     setFundingUtxos,
     setArtifacts,
     setInscribedUtxos,
-    setEncryptedBackup,
+
     setMnemonic,
   ]);
 
@@ -795,29 +831,47 @@ const WalletProvider: React.FC<Props> = (props) => {
   const generateKeys = useCallback(() => {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        const { payPk, ordPk, mnemonic } = await randomKeys();
+        setGenerateStatus(FetchStatus.Loading);
+        const { payPk, ordPk, mnemonic, changeAddressPath, ordAddressPath } =
+          await randomKeys();
+        setGenerateStatus(FetchStatus.Success);
 
         // store payment public key for encryption salt
         const publicKey = PrivateKey.from_wif(payPk).to_public_key().to_hex();
         setItem("publicKey", publicKey, false);
-        setSaltPubKey(publicKey);
+        setEncryptedBackupJson({
+          pubKey: publicKey,
+          encryptedBackup: encryptedBackupJson?.encryptedBackup,
+          fundingChildKey: changeAddressPath,
+          ordChildKey: ordAddressPath,
+        });
         setMnemonic(mnemonic);
+        // setChangeAddressPath(`m/${changeAddressPath}`);
+        // setOrdAddressPath(`m/${ordAddressPath}`);
         setPayPk(payPk);
         setOrdPk(ordPk);
         resolve();
       } catch (e) {
+        setGenerateStatus(FetchStatus.Error);
         reject(e);
       }
     });
-  }, [setItem, setMnemonic, ready, setSaltPubKey, setOrdPk, setPayPk]);
+  }, [
+    setChangeAddressPath,
+    setOrdAddressPath,
+    setGenerateStatus,
+    setItem,
+    setMnemonic,
+    ready,
+    setOrdPk,
+    setPayPk,
+  ]);
 
   const backupKeys = useCallback(
     (e?: any) => {
-      debugger;
-      const keysToSave = encryptedBackup
-        ? { encryptedBackup, saltPubKey }
+      const keysToSave = encryptedBackupJson
+        ? encryptedBackupJson
         : { payPk, ordPk };
-      debugger;
       var dataStr =
         "data:text/json;charset=utf-8," +
         encodeURIComponent(JSON.stringify(keysToSave));
@@ -831,9 +885,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       encryptionKey,
       payPk,
       ordPk,
-      encryptedBackup,
       ordAddress,
-      saltPubKey,
+      encryptedBackupJson,
       encryptionKey,
     ]
   );
@@ -894,14 +947,16 @@ const WalletProvider: React.FC<Props> = (props) => {
       transfer,
       usdRate,
       loadEncryptedKeys,
-      setSaltPubKey,
-      encryptedBackup,
-      setEncryptedBackup,
       passphrase,
       setPassphrase,
       showEnterPassphrase,
       setShowEnterPassphrase,
       mnemonic,
+      generateStatus,
+      ordAddressPath,
+      changeAddressPath,
+      encryptedBackupJson,
+      setEncryptedBackupJson,
     }),
     [
       artifacts,
@@ -935,14 +990,16 @@ const WalletProvider: React.FC<Props> = (props) => {
       transfer,
       usdRate,
       loadEncryptedKeys,
-      encryptedBackup,
-      setEncryptedBackup,
-      setSaltPubKey,
       passphrase,
       setPassphrase,
       showEnterPassphrase,
       setShowEnterPassphrase,
       mnemonic,
+      generateStatus,
+      changeAddressPath,
+      ordAddressPath,
+      encryptedBackupJson,
+      setEncryptedBackupJson,
     ]
   );
 

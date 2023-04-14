@@ -139,7 +139,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
                       style={{
                         boxShadow: "0 0 0 0 rgba(0, 0, 0, 1)",
                         transform: "scale(1)",
-                        animation: "pulse 2s infinite",
+                        animation: "pulseLogo 2s infinite",
                         width: "12rem",
                         height: "12rem",
                       }}

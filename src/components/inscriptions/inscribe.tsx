@@ -1,5 +1,4 @@
 import { PendingTransaction, useWallet } from "@/context/wallet";
-import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { PrivateKey } from "bsv-wasm-web";
 import { createOrdinal } from "js-1sat-ord";
@@ -33,6 +32,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     ordAddress,
     payPk,
     initialized,
+    changeAddress,
   } = useWallet();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -41,12 +41,6 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   );
 
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
-
-  const changeAddress = useMemo(() => {
-    if (initialized && payPk) {
-      return addressFromWif(payPk);
-    }
-  }, [initialized, payPk]);
 
   function readFileAsBase64(file: any): Promise<string> {
     return new Promise((resolve, reject) => {

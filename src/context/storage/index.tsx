@@ -33,7 +33,10 @@ type ContextValue = {
     iv: Uint8Array
   ) => Uint8Array;
   removeItem: (key: string) => Promise<void>;
-  setEncryptionKeyFromPassphrase: (passphrase: string) => Promise<void>;
+  setEncryptionKeyFromPassphrase: (
+    passphrase: string,
+    pubKey?: string
+  ) => Promise<void>;
 };
 
 const StorageContext = createContext<ContextValue | undefined>(undefined);
@@ -67,7 +70,7 @@ export const StorageProvider: React.FC<StorageProviderProps> = (props) => {
     openDBRequest.onerror = () => {
       console.error("Error opening IndexedDB:", openDBRequest.error);
     };
-  }, [setDb]);
+  }, [setDb, setReady]);
 
   const encryptData = (
     data: Uint8Array,
@@ -218,8 +221,8 @@ export const StorageProvider: React.FC<StorageProviderProps> = (props) => {
   };
 
   const setEncryptionKeyFromPassphrase = useCallback(
-    async (passphrase: string) => {
-      const storedPublicKey = await getItem("publicKey", false);
+    async (passphrase: string, pubKey?: string) => {
+      const storedPublicKey = pubKey || (await getItem("publicKey", false));
       if (!storedPublicKey) {
         debugger;
         console.error("No public key found. Unable to decrypt.");

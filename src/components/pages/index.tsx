@@ -1,7 +1,7 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import { useBitsocket } from "@/context/bitsocket";
 import { useStorage } from "@/context/storage";
-import { useWallet } from "@/context/wallet";
+import { EncryptDecrypt, useWallet } from "@/context/wallet";
 import { generatePassphrase } from "@/utils/passphrase";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
@@ -17,6 +17,7 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import toast, { Toaster } from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
+import { TbDice } from "react-icons/tb";
 import Modal from "../modal";
 import * as S from "./styles";
 export enum FetchStatus {
@@ -72,13 +73,12 @@ const Layout: React.FC<Props> = ({ children }) => {
     ordPk,
     initialized,
     loadEncryptedKeys,
-    encryptedBackup,
-    setEncryptedBackup,
-    setSaltPubKey,
     showEnterPassphrase,
     setShowEnterPassphrase,
     passphrase,
     setPassphrase,
+    encryptedBackupJson,
+    setEncryptedBackupJson,
   } = useWallet();
 
   const {
@@ -89,6 +89,7 @@ const Layout: React.FC<Props> = ({ children }) => {
     setItem,
     ready,
     setEncryptionKeyFromPassphrase,
+    decryptData,
   } = useStorage();
 
   const { connectionStatus, connect, ordAddress } = useBitsocket();
@@ -132,44 +133,50 @@ const Layout: React.FC<Props> = ({ children }) => {
         console.log("no encrypted backup in storage");
       } else {
         console.log("got encrypted backup", { eb });
-        setEncryptedBackup(eb);
+        setEncryptedBackupJson({
+          encryptedBackup: eb,
+          pubKey: "",
+          fundingChildKey: 0,
+          ordChildKey: 0,
+        });
       }
     };
-    if (ready && !encryptedBackup) {
+    if (ready && !encryptedBackupJson) {
       fire();
     }
-  }, [setEncryptedBackup, ready, getItem, encryptedBackup]);
+  }, [setEncryptedBackupJson, ready, getItem]);
 
   useEffect(() => {
-    console.log({ encryptionKey, encryptedBackup, payPk, ordPk });
-  }, [encryptionKey, encryptedBackup, payPk, ordPk]);
+    console.log({ encryptionKey, encryptedBackupJson, payPk, ordPk });
+  }, [encryptionKey, encryptedBackupJson, payPk, ordPk]);
 
-  // if we have keys, and an encryptionKey but no encryptedBackup
+  // if we have keys, and an encryptionKey but no encryptedBackupJson
   useEffect(() => {
     const storeEncryptedKeys = async () => {
-      if (payPk && ordPk && !encryptedBackup && encryptionKey) {
+      if (payPk && ordPk && !encryptedBackupJson && encryptionKey) {
         const keyData = JSON.stringify({ payPk, ordPk });
-        const storedData = await setItem("encryptedBackup", keyData, true);
-        const storedData2 = await setItem(
-          "saltPubKey",
+        const encryptedBackup = await setItem("encryptedBackup", keyData, true);
+
+        const pubKey = await setItem(
+          "pubKey",
           PrivateKey.from_wif(payPk).to_public_key().to_hex(),
           false
         );
-        setEncryptedBackup(storedData);
-        setSaltPubKey(storedData2);
+
+        debugger;
+        // TODO: find ordChildKey
+
+        setEncryptedBackupJson({
+          encryptedBackup,
+          pubKey,
+          fundingChildKey: 0,
+          ordChildKey: 99999,
+        });
       }
     };
 
     storeEncryptedKeys();
-  }, [
-    ordPk,
-    payPk,
-    encryptedBackup,
-    setItem,
-    setEncryptedBackup,
-    encryptionKey,
-    setSaltPubKey,
-  ]);
+  }, [ordPk, payPk, setItem, encryptionKey, encryptedBackupJson]);
 
   const importKeys = useCallback(() => {
     if (!backupFile) {
@@ -233,7 +240,7 @@ const Layout: React.FC<Props> = ({ children }) => {
 
   const handleClickEncrypt = useCallback(async () => {
     if (passphrase) {
-      console.log("encrypt keys", { passphrase });
+      console.log("encrypt keys with passphrase");
       try {
         await setEncryptionKeyFromPassphrase(passphrase);
       } catch (e) {
@@ -243,8 +250,26 @@ const Layout: React.FC<Props> = ({ children }) => {
     }
   }, [passphrase, setEncryptionKeyFromPassphrase]);
 
+  const handleClickDecrypt = useCallback(async () => {
+    if (passphrase) {
+      console.log("decrypt keys w passphrase");
+
+      try {
+        await setEncryptionKeyFromPassphrase(
+          passphrase,
+          encryptedBackupJson?.pubKey
+        );
+        // setShowEnterPassphrase(false);
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to decrypt keys", toastErrorProps);
+      }
+    }
+    encryptedBackupJson;
+  }, [setShowEnterPassphrase, passphrase, setEncryptionKeyFromPassphrase]);
+
   const handleClickGenerate = useCallback(() => {
-    const phrase = generatePassphrase(2);
+    const phrase = generatePassphrase(1);
     setPassphrase(phrase);
   }, [setPassphrase]);
 
@@ -284,7 +309,7 @@ const Layout: React.FC<Props> = ({ children }) => {
         >
           Protocol
         </a>
-        {!payPk && encryptedBackup && (
+        {!payPk && encryptedBackupJson && (
           <>
             <div className="mx-4">·</div>
             <div className="cursor-pointer" onClick={() => loadEncryptedKeys()}>
@@ -293,9 +318,9 @@ const Layout: React.FC<Props> = ({ children }) => {
           </>
         )}
 
-        {!encryptedBackup && !payPk && <div className="mx-4">·</div>}
+        {!encryptedBackupJson && !payPk && <div className="mx-4">·</div>}
 
-        {payPk && encryptedBackup && <div className="mx-4">·</div>}
+        {payPk && encryptedBackupJson && <div className="mx-4">·</div>}
 
         {payPk && (
           <div className="cursor-pointer" onClick={backupKeys}>
@@ -303,39 +328,45 @@ const Layout: React.FC<Props> = ({ children }) => {
           </div>
         )}
 
-        {!payPk && !encryptedBackup && (
-          <div className="cursor-pointer" onClick={importKeys}>
-            Import Keys
+        {!payPk && !encryptedBackupJson && (
+          <div
+            className="cursor-pointer"
+            onClick={() => {
+              Router.push("/wallet");
+            }}
+          >
+            Sign In
           </div>
         )}
 
-        {payPk && !encryptedBackup && <div className="mx-4">·</div>}
+        {payPk && !encryptedBackupJson && <div className="mx-4">·</div>}
 
-        {payPk && !encryptedBackup && (
+        {payPk && !encryptedBackupJson && (
           <div
             className="cursor-pointer"
-            onClick={() => setShowEnterPassphrase(true)}
+            onClick={() => setShowEnterPassphrase(EncryptDecrypt.Encrypt)}
           >
             Encrypt Keys
           </div>
         )}
 
-        {payPk && <div className="mx-4">·</div>}
+        {(payPk || encryptedBackupJson) && <div className="mx-4">·</div>}
 
-        {payPk && (
+        {(payPk || encryptedBackupJson) && (
           <div className="cursor-pointer text-red-500" onClick={deleteKeys}>
             Delete Keys
           </div>
         )}
         <div>
-          {showEnterPassphrase && (
-            <Modal onClose={() => setShowEnterPassphrase(false)}>
-              <div className="flex flex-col text-center justify-between text-teal-600 bg-black max-w-2xl p-4 md:p-8 rounded-lg">
-                <h1 className="text-2xl">Enter a passphrase</h1>
+          {showEnterPassphrase !== undefined && (
+            <Modal onClose={() => setShowEnterPassphrase(undefined)}>
+              <div className="flex flex-col text-center justify-between text-[#aaa] bg-black max-w-2xl p-4 md:p-8 rounded-lg">
+                <h1 className="text-2xl">Enter a password</h1>
                 <div className="my-4">
-                  This will encrypt your locally stored keys.
-                  <br />
-                  You still need to keep your seed phrase safe and private.
+                  {showEnterPassphrase === EncryptDecrypt.Decrypt
+                    ? "Decrypt"
+                    : "Encrypt"}{" "}
+                  your saved keys.
                 </div>
                 <div className="font-semibold md:text-xl my-2 relative">
                   <div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
@@ -357,31 +388,45 @@ const Layout: React.FC<Props> = ({ children }) => {
                     </CopyToClipboard>
                   </div>
                   <S.Input
-                    type="text"
+                    type="password"
                     onChange={handlePassphraseChange}
                     value={passphrase}
-                    className="w-full"
-                    placeholder={`>sup3rDup3rSTOONGpwd<`}
+                    className="w-full placeholder-[#555]"
+                    placeholder={"your-password-here"}
                   />
                 </div>
-                <div>
-                  <div
-                    onClick={handleClickGenerate}
-                    className="cursor-pointer w-full p-2 text-blue-400 hover:text-blue-500 w-full flex text-end"
-                  >
-                    Generate a strong passphrase
+                {showEnterPassphrase === EncryptDecrypt.Encrypt && (
+                  <div>
+                    <div className="flex items-center">
+                      <div
+                        onClick={handleClickGenerate}
+                        className="flex items-center cursor-pointer p-2 group text-blue-400 hover:text-blue-500"
+                      >
+                        <TbDice className="mr-2 group-hover:animate-spin" />{" "}
+                        Generate a strong passphrase
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="text-gray-500 text-xs sm:test-sm md:text-base flex justify-center items-center my-4 ">
-                  <RiErrorWarningFill className="mr-2" /> Your passphrase
-                  unlocks your wallet each time you visit.
+                  <RiErrorWarningFill className="mr-2" />
+                  {showEnterPassphrase === EncryptDecrypt.Encrypt
+                    ? "You still need to keep your 12 word seed  phrase."
+                    : "Your password unlocks your wallet each time you visit"}
                 </div>
 
                 <button
-                  className="p-2 bg-yellow-500 hover:bg-yellow-600 transition text-black font-semibold font-mono"
-                  onClick={handleClickEncrypt}
+                  disabled={(passphrase?.length || 0) < 6}
+                  className="rounded p-2 bg-yellow-500 hover:bg-yellow-600 transition text-black font-semibold font-mono"
+                  onClick={
+                    showEnterPassphrase === EncryptDecrypt.Decrypt
+                      ? handleClickDecrypt
+                      : handleClickEncrypt
+                  }
                 >
-                  Encrypt & Continue
+                  {showEnterPassphrase === EncryptDecrypt.Decrypt
+                    ? "Unlock Wallet"
+                    : "Encrypt & Continue"}
                 </button>
               </div>
             </Modal>

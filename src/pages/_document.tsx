@@ -5,7 +5,8 @@ export default function Document() {
     <Html lang="en">
       <Head>
         <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&family=Ubuntu+Mono&display=swap
+          "
           rel="stylesheet"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />

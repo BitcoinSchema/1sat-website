@@ -1,6 +1,6 @@
 import OrdAddress from "@/components/ordAddress";
 import Tabs, { Tab } from "@/components/tabs";
-import { useWallet } from "@/context/wallet";
+import { EncryptDecrypt, useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router from "next/router";
@@ -19,6 +19,8 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     ordUtxos,
     fetchOrdinalUtxosStatus,
     setFetchOrdinalUtxosStatus,
+    encryptedBackup,
+    setShowEnterPassphrase,
   } = useWallet();
 
   const [sort, setSort] = useState<boolean>(false);
@@ -50,10 +52,17 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
         {fetchOrdinalUtxosStatus !== FetchStatus.Loading &&
           (!payPk || !ordPk) && (
             <div
-              className="max-w-md rounded my-8 bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-4 md:p-8"
-              onClick={() => Router.push("./wallet")}
+              className="max-w-md rounded my-8 bg-[#222] hover:bg-[#333] text-[#aaa] cursor-pointer mx-auto p-4 md:p-8"
+              onClick={() => {
+                if (encryptedBackup) {
+                  setShowEnterPassphrase(EncryptDecrypt.Decrypt);
+                }
+                Router.push("./wallet");
+              }}
             >
-              You need a wallet first.
+              {encryptedBackup
+                ? "Your wallet is encrypted. Enter your passphrase to unlock it."
+                : "You need a wallet first."}
             </div>
           )}
 
