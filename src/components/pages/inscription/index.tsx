@@ -61,10 +61,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     }
   }, [getBmapTxById, inscriptionId, getArtifactByInscriptionId]);
 
-  const ordUtxo = useMemo(
-    () => artifact?.id && find(ordUtxos, { id: artifact.id }),
-    [artifact, ordUtxos]
-  );
+  const ordUtxo = useMemo(() => {
+    return artifact?.id && find(ordUtxos, { id: artifact.id });
+  }, [artifact, ordUtxos]);
 
   const pagination = useMemo(() => {
     return (
@@ -218,7 +217,14 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                         );
 
                         try {
-                          await transfer(artifact, address);
+                          if (ordUtxo) {
+                            await transfer(ordUtxo, address);
+                          } else {
+                            toast.error(
+                              "No ordinal utxo found.",
+                              toastErrorProps
+                            );
+                          }
                         } catch (e) {
                           toast.error(
                             "Something went wrong" + e,
