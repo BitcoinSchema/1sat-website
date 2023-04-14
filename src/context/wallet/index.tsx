@@ -658,9 +658,10 @@ const WalletProvider: React.FC<Props> = (props) => {
             }
             // res.status(200).json(result);
 
-            console.log("Transfer Tx", tx.to_hex());
+            const rawTx = tx.to_hex();
+            console.log("Transfer Tx", rawTx);
             setPendingTransaction({
-              rawTx: tx.to_hex(),
+              rawTx,
               size: tx.get_size(),
               fee,
               numInputs: tx.get_ninputs(),

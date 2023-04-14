@@ -32,7 +32,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     usdRate,
     mnemonic,
     setShowEnterPassphrase,
-    encryptedBackup,
+    encryptedBackupJson,
     fetchOrdinalUtxosStatus,
     generateStatus,
     changeAddress,
@@ -167,7 +167,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
         </div>
       )}
       {(!ordPk || !payPk) &&
-        !encryptedBackup &&
+        !encryptedBackupJson &&
         viewMode !== MnemonicGridMode.Import && (
           <>
             <div className="w-full group">
@@ -239,7 +239,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
           </>
         )}
       {(!ordPk || !payPk) &&
-        encryptedBackup &&
+        encryptedBackupJson &&
         fetchOrdinalUtxosStatus !== FetchStatus.Loading &&
         (!payPk || !ordPk) && (
           <div

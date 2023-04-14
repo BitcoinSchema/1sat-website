@@ -19,7 +19,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     ordUtxos,
     fetchOrdinalUtxosStatus,
     setFetchOrdinalUtxosStatus,
-    encryptedBackup,
+    encryptedBackupJson,
     setShowEnterPassphrase,
   } = useWallet();
 
@@ -54,13 +54,13 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
             <div
               className="max-w-md rounded my-8 bg-[#222] hover:bg-[#333] text-[#aaa] cursor-pointer mx-auto p-4 md:p-8"
               onClick={() => {
-                if (encryptedBackup) {
+                if (encryptedBackupJson) {
                   setShowEnterPassphrase(EncryptDecrypt.Decrypt);
                 }
                 Router.push("./wallet");
               }}
             >
-              {encryptedBackup
+              {encryptedBackupJson
                 ? "Your wallet is encrypted. Enter your passphrase to unlock it."
                 : "You need a wallet first."}
             </div>

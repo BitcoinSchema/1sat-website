@@ -124,7 +124,13 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
         </div>
       </div>
     );
-  }, [router, artifact, fetchInscriptionsStatus, inscriptionId]);
+  }, [
+    fetchOrdinalUtxosStatus,
+    router,
+    artifact,
+    fetchInscriptionsStatus,
+    inscriptionId,
+  ]);
 
   return (
     <>
