@@ -10,13 +10,13 @@ import { FiArrowDown, FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
 import { TbCurrencyBitcoin, TbQuestionCircle } from "react-icons/tb";
 import sb from "satoshi-bitcoin";
-import { default as AnimatedLogo3D } from "./animatedLogo3d";
+import { default as AnimatedLogo3D } from "../animatedLogo3d";
 import MnemonicGrid, {
   MnemonicGridMode,
   MnemonicResult,
-} from "./mnemonicGrid/index";
-import Modal from "./modal";
-import { FetchStatus, toastErrorProps, toastProps } from "./pages";
+} from "../mnemonicGrid/index";
+import Modal from "../modal";
+import { FetchStatus, toastErrorProps, toastProps } from "../pages";
 
 type WalletProps = {};
 
@@ -33,7 +33,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     usdRate,
     mnemonic,
     setShowEnterPassphrase,
-    encryptedBackupJson,
+    encryptedBackup,
     fetchOrdinalUtxosStatus,
     generateStatus,
     changeAddress,
@@ -168,7 +168,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
         </div>
       )}
       {(!ordPk || !payPk) &&
-        !encryptedBackupJson &&
+        !encryptedBackup &&
         viewMode !== MnemonicGridMode.Import && (
           <>
             <div className="w-full group">
@@ -240,7 +240,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
           </>
         )}
       {(!ordPk || !payPk) &&
-        encryptedBackupJson &&
+        encryptedBackup &&
         fetchOrdinalUtxosStatus !== FetchStatus.Loading &&
         (!payPk || !ordPk) && (
           <div

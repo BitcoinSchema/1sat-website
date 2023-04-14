@@ -46,7 +46,7 @@ type ContextValue = {
   changeAddress: string | undefined;
   changeAddressPath: string | undefined;
   deleteKeys: (e?: any) => void;
-  encryptedBackupJson: EncryptedBackupJson | undefined;
+  encryptedBackup: EncryptedBackupJson | undefined;
   fetchOrdinalUtxosStatus: FetchStatus | undefined;
   fetchUtxosStatus: FetchStatus;
   fundingUtxos: Utxo[] | undefined;
@@ -67,7 +67,7 @@ type ContextValue = {
   pendingTransaction: PendingTransaction | undefined;
   send: (address: string) => Promise<void>;
   setBackupFile: (backupFile: File) => void;
-  setEncryptedBackupJson: (json: EncryptedBackupJson) => void;
+  setEncryptedBackup: (json: EncryptedBackupJson) => void;
   setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
   setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
   setPassphrase: (phrase: string) => void;
@@ -143,7 +143,7 @@ const WalletProvider: React.FC<Props> = (props) => {
   const { rates } = useRates();
 
   // Needs to persist so we can decrypt the local keys file
-  const [encryptedBackupJson, setEncryptedBackupJson] =
+  const [encryptedBackup, setEncryptedBackup] =
     useLocalStorage<EncryptedBackupJson>("1sebj", undefined);
   const [generateStatus, setGenerateStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -185,7 +185,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
 
       if (json?.encryptedBackup) {
-        setEncryptedBackupJson(json as EncryptedBackupJson);
+        setEncryptedBackup(json as EncryptedBackupJson);
         if (!payPk) {
           setShowEnterPassphrase(EncryptDecrypt.Decrypt);
         }
@@ -193,14 +193,14 @@ const WalletProvider: React.FC<Props> = (props) => {
         console.log("Tried to find encrypted keys but none found");
       }
     },
-    [loadUnencryptedKeys, getItem, payPk, setEncryptedBackupJson]
+    [loadUnencryptedKeys, getItem, payPk, setEncryptedBackup]
   );
 
   // Once encrypted backup is loaded into json, load the keys
   useEffect(() => {
-    if (encryptionKey && encryptedBackupJson?.encryptedBackup) {
+    if (encryptionKey && encryptedBackup?.encryptedBackup) {
       try {
-        const encryptedData = encryptedBackupJson.encryptedBackup.slice(
+        const encryptedData = encryptedBackup.encryptedBackup.slice(
           encryptionPrefix.length
         );
 
@@ -218,7 +218,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         console.error("Decryption error:", error);
       }
     }
-  }, [decryptData, encryptionKey, encryptedBackupJson, setOrdPk, setPayPk]);
+  }, [decryptData, encryptionKey, encryptedBackup, setOrdPk, setPayPk]);
 
   // Load encrypted keys from backup as soon
   // as it is available, or when a file is set
@@ -607,7 +607,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       setBackupFile(undefined);
       setOrdUtxos(undefined);
 
-      setEncryptedBackupJson(undefined);
+      setEncryptedBackup(undefined);
       setChangeAddressPath(undefined);
       setOrdAddressPath(undefined);
 
@@ -617,7 +617,7 @@ const WalletProvider: React.FC<Props> = (props) => {
   }, [
     setOrdAddressPath,
     setChangeAddressPath,
-    setEncryptedBackupJson,
+    setEncryptedBackup,
     removeItem,
     setOrdUtxos,
     setPayPk,
@@ -645,9 +645,9 @@ const WalletProvider: React.FC<Props> = (props) => {
         // store payment public key for encryption salt
         const publicKey = PrivateKey.from_wif(payPk).to_public_key().to_hex();
         setItem("publicKey", publicKey, false);
-        setEncryptedBackupJson({
+        setEncryptedBackup({
           pubKey: publicKey,
-          encryptedBackup: encryptedBackupJson?.encryptedBackup,
+          encryptedBackup: encryptedBackup?.encryptedBackup,
           fundingChildKey: changeAddressPath,
           ordChildKey: ordAddressPath,
         });
@@ -663,7 +663,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
     });
   }, [
-    encryptedBackupJson,
+    encryptedBackup,
     setChangeAddressPath,
     setOrdAddressPath,
     setGenerateStatus,
@@ -676,9 +676,7 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   const backupKeys = useCallback(
     (e?: any) => {
-      const keysToSave = encryptedBackupJson
-        ? encryptedBackupJson
-        : { payPk, ordPk };
+      const keysToSave = encryptedBackup ? encryptedBackup : { payPk, ordPk };
       var dataStr =
         "data:text/json;charset=utf-8," +
         encodeURIComponent(JSON.stringify(keysToSave));
@@ -688,14 +686,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       clicker.setAttribute("download", `1sat-${ordAddress}.json`);
       clicker.click();
     },
-    [
-      encryptionKey,
-      payPk,
-      ordPk,
-      ordAddress,
-      encryptedBackupJson,
-      encryptionKey,
-    ]
+    [encryptionKey, payPk, ordPk, ordAddress, encryptedBackup, encryptionKey]
   );
 
   const value = useMemo(
@@ -734,8 +725,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       generateStatus,
       ordAddressPath,
       changeAddressPath,
-      encryptedBackupJson,
-      setEncryptedBackupJson,
+      encryptedBackup,
+      setEncryptedBackup,
     }),
     [
       backupFile,
@@ -772,8 +763,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       generateStatus,
       changeAddressPath,
       ordAddressPath,
-      encryptedBackupJson,
-      setEncryptedBackupJson,
+      encryptedBackup,
+      setEncryptedBackup,
     ]
   );
 
