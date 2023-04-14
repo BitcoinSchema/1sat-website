@@ -37,6 +37,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                     });
 
                     try {
+                      // TODO: Send ordUtxo instead of artifact
                       await transfer(artifact, address);
                     } catch (e) {
                       toast.error("Something went wrong" + e, toastErrorProps);
