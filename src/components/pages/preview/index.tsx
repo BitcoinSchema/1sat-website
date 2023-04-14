@@ -40,14 +40,8 @@ type BroadcastResponsePayload = {
 interface PageProps extends WithRouterProps {}
 
 const PreviewPage: React.FC<PageProps> = ({}) => {
-  const {
-    pendingTransaction,
-    fundingUtxos,
-    getUTXOs,
-    changeAddress,
-    downloadPendingTx,
-    usdRate,
-  } = useWallet();
+  const { pendingTransaction, fundingUtxos, getUTXOs, changeAddress, usdRate } =
+    useWallet();
 
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
     useLocalStorage<BroadcastResponsePayload>("1satbrs", undefined);
@@ -229,7 +223,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
 
               <button
                 className="w-full ml-1 p-1 text-lg hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center transition"
-                onClick={downloadPendingTx}
+                onClick={() => downloadPendingTx(pendingTransaction)}
               >
                 <div className="mx-auto flex items-center justify-center">
                   <FiDownload className="w-10" />
@@ -240,7 +234,6 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
 
             <button
               onClick={() => {
-                // reset();
                 // setShowInscribe(false);
                 // // setShowWallet(false);
                 Router.push("/inscribe");

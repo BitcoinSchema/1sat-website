@@ -433,29 +433,6 @@ If you still have ordinals in your wallet, you will be unable to send them witho
                 </div>
               </Modal>
             )}
-
-            {/* <div className="mt-4">
-            <Label>
-              Deposit TxID
-              <Input
-                type="text"
-                className="w-full"
-                value={currentTxId}
-                onChange={(e) => {
-                  setCurrentTxId(e.target.value);
-                }}
-              />
-            </Label>
-          </div> */}
-            {/* <div className="flex items-center justify-between">
-            <div></div>
-            <div></div>
-            {fundingUtxos && (
-              <button className="w-full p-2 bg-[#222] cursor-pointer rounded my-4">
-                Send Money
-              </button>
-            )}
-          </div> */}
           </div>
         )}
     </div>

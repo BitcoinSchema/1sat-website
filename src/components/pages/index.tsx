@@ -1,5 +1,5 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
-import { useBitsocket } from "@/context/bitsocket";
+import { useSocket } from "@/context/bitsocket";
 import { useStorage } from "@/context/storage";
 import { EncryptDecrypt, useWallet } from "@/context/wallet";
 import { generatePassphrase } from "@/utils/passphrase";
@@ -92,7 +92,7 @@ const Layout: React.FC<Props> = ({ children }) => {
     decryptData,
   } = useStorage();
 
-  const { connectionStatus, connect, ordAddress } = useBitsocket();
+  const { connectionStatus, connect, ordAddress } = useSocket();
 
   const router = useRouter();
   useEffect(() => {

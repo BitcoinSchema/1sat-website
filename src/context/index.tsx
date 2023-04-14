@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { BitcoinSchemaProvider } from "./bitcoinschema";
-import { BitsocketProvider } from "./bitsocket";
+import { SocketProvider } from "./bitsocket";
 import { OrdinalsProvider } from "./ordinals";
 import { RatesProvider } from "./rates";
 import { StorageProvider } from "./storage";
@@ -11,7 +11,7 @@ interface Props {
 }
 
 const AppContext: React.FC<Props> = ({ children }) => (
-  <BitsocketProvider>
+  <SocketProvider>
     <RatesProvider>
       <BitcoinSchemaProvider>
         <OrdinalsProvider>
@@ -21,7 +21,7 @@ const AppContext: React.FC<Props> = ({ children }) => (
         </OrdinalsProvider>
       </BitcoinSchemaProvider>
     </RatesProvider>
-  </BitsocketProvider>
+  </SocketProvider>
 );
 
 export default AppContext;

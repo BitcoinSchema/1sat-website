@@ -20,15 +20,13 @@ type ContextValue = {
   sock: EventSource | null;
 };
 
-const BitsocketContext = React.createContext<ContextValue | undefined>(
-  undefined
-);
+const SocketContext = React.createContext<ContextValue | undefined>(undefined);
 
 type Props = {
   children?: ReactNode;
 };
 
-export const BitsocketProvider: React.FC<Props> = (props) => {
+export const SocketProvider: React.FC<Props> = (props) => {
   const [leid, setLeid] = useLocalStorage<string | undefined>(
     leidStorageKey,
     undefined
@@ -39,7 +37,6 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
   const [connectionStatus, setConnectionStatus] = useState<number>(
     ConnectionStatus.IDLE
   );
-  const [lastPath, setLastPath] = useState<string | null>(null);
   const [wasUnmounted, setWasUnmounted] = useState<boolean>();
 
   const unmounted = useRef(false);
@@ -57,33 +54,9 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
     []
   );
 
-  // useEffect(() => {
-  //   // If the path changes and we have an open socket, close the socket and reset the provider
-  //   if (!unmounted.current && lastPath && lastPath !== location.pathname) {
-  //     if (sock?.OPEN === connectionStatus) {
-  //       sock.close();
-  //     }
-  //     setSock(null);
-  //     setOrdAddress(null);
-  //     setFundingAddress(null);
-  //     setLastEvent(null);
-  //     setLeid(undefined);
-  //     setConnectionStatus(ConnectionStatus.IDLE);
-  //   }
-  // }, [
-  //   setOrdAddress,
-  //   setFundingAddress,
-  //   connectionStatus,
-  //   lastPath,
-  //   location,
-  //   setLeid,
-  //   sock,
-  // ]);
-
   const connect = useCallback(
     async (ordAddress: string): Promise<void> => {
       setOrdAddress(ordAddress);
-      // setLastPath(location.pathname);
 
       if (ordAddress == null) {
         if (sock?.OPEN === connectionStatus) {
@@ -189,15 +162,15 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
     [ordAddress, connect, connectionStatus, leid, sock, lastEvent]
   );
 
-  return <BitsocketContext.Provider value={value} {...props} />;
+  return <SocketContext.Provider value={value} {...props} />;
 };
 
-export const useBitsocket = (): ContextValue => {
-  const context = useContext(BitsocketContext);
+export const useSocket = (): ContextValue => {
+  const context = useContext(SocketContext);
   if (context === undefined) {
-    throw new Error("Bitsocket must be used within an BitsocketProvider");
+    throw new Error("Socket must be used within an SocketProvider");
   }
   return context;
 };
 
-const leidStorageKey = "tp__BitsocketProvider_leid";
+const leidStorageKey = "tp__SocketProvider_leid";
