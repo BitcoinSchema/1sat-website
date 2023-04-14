@@ -63,7 +63,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
   const ordUtxo = useMemo(
     () => artifact?.id && find(ordUtxos, { id: artifact.id }),
-    [ordUtxos]
+    [artifact, ordUtxos]
   );
 
   const pagination = useMemo(() => {

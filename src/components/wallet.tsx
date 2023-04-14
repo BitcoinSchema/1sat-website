@@ -72,7 +72,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     console.log("callback confirm");
     setViewMode(MnemonicGridMode.Prove);
     // encrypt keys
-  }, [setViewMode, setShowEnterPassphrase]);
+  }, [setViewMode]);
 
   const handleProve = useCallback(
     async ({ verified }: MnemonicResult) => {

@@ -230,7 +230,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       console.log("No keys");
       return;
     }
-  }, [ordPk, payPk, setOrdPk, setPayPk]);
+  }, [getItem, ordPk, payPk, setOrdPk, setPayPk]);
 
   // The file can be encryptred or not
   // an encrypted file must have a pubKey
@@ -261,7 +261,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         }
       }
     },
-    [getItem, payPk, setEncryptedBackupJson]
+    [loadUnencryptedKeys, getItem, payPk, setEncryptedBackupJson]
   );
 
   // Once encrypted backup is loaded into json, load the keys
@@ -858,6 +858,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
     });
   }, [
+    encryptedBackupJson,
     setChangeAddressPath,
     setOrdAddressPath,
     setGenerateStatus,
