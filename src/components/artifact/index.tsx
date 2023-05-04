@@ -114,6 +114,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         <iframe
           className="w-full h-full min-h-[60vh]"
           src={`${API_HOST}/api/files/inscriptions/${outPoint}`}
+          sandbox=" "
         />
       </div>
     ) : type === ArtifactType.JSON ? (
