@@ -1,10 +1,11 @@
 import OrdAddress from "@/components/ordAddress";
 import Tabs, { Tab } from "@/components/tabs";
-import { useWallet } from "@/context/wallet";
+import { ORDS_PER_PAGE, useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import Router from "next/router";
-import React, { useCallback, useState } from "react";
+import Router, { useRouter } from "next/router";
+
+import React, { useCallback, useMemo, useState } from "react";
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { FetchStatus } from "..";
 import Ordinals from "./list";
@@ -20,6 +21,20 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     fetchOrdinalUtxosStatus,
     setFetchOrdinalUtxosStatus,
   } = useWallet();
+  const router = useRouter();
+  const { page } = router.query;
+
+  const currentPage = useMemo(() => {
+    return typeof page === "string" ? parseInt(page) : 1;
+  }, [page]);
+
+  const from = useMemo(() => {
+    return (currentPage - 1) * ORDS_PER_PAGE + 1;
+  }, [currentPage]);
+
+  const to = useMemo(() => {
+    return from + (ordUtxos?.length ? ordUtxos.length - 1 : 0);
+  }, [ordUtxos, from, currentPage]);
 
   const [sort, setSort] = useState<boolean>(false);
 
@@ -76,7 +91,9 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
         >
           {
             <div className="my-2 text-lg flex justify-between items-center">
-              <div>{ordUtxos?.length} Ordinals</div>
+              <div>
+                Ordinals {ordUtxos?.length || 0 > 0 ? `${from} - ${to}` : ``}
+              </div>
               <div
                 className="flex items-center cursor-pointer"
                 onClick={toggleSort}
@@ -91,7 +108,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
             </div>
           }
 
-          <Ordinals sort={sort} />
+          <Ordinals sort={sort} currentPage={currentPage} />
         </div>
       </div>
     </>

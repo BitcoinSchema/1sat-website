@@ -1,16 +1,15 @@
 import Artifact from "@/components/artifact";
 import { ORDS_PER_PAGE, useWallet } from "@/context/wallet";
 import { sortedUniqBy } from "lodash";
-import Router, { useRouter } from "next/router";
+import Router from "next/router";
 import { useEffect, useMemo } from "react";
 
 type Props = {
   onClick?: (outPoint: string) => void;
   sort: boolean;
+  currentPage: number;
 };
-const Ordinals: React.FC<Props> = ({ onClick, sort }) => {
-  const router = useRouter();
-  const { page } = router.query;
+const Ordinals: React.FC<Props> = ({ onClick, sort, currentPage = 1 }) => {
   const { ordUtxos } = useWallet();
 
   const sortedUtxos = useMemo(() => {
@@ -19,21 +18,9 @@ const Ordinals: React.FC<Props> = ({ onClick, sort }) => {
       : sortedUniqBy(ordUtxos, (u) => u.id).reverse() || [];
   }, [ordUtxos, sort]);
 
-  const currentPage = useMemo(() => {
-    return typeof page === "string" ? parseInt(page) : 1;
-  }, [page]);
-
   useEffect(() => {
     console.log({ currentPage });
   }, [currentPage]);
-
-  const from = useMemo(() => {
-    return (currentPage - 1) * ORDS_PER_PAGE + 1;
-  }, [currentPage]);
-
-  const to = useMemo(() => {
-    return from + (ordUtxos?.length ? ordUtxos.length - 1 : 0);
-  }, [ordUtxos, from, currentPage]);
 
   const pagination = useMemo(() => {
     return (
@@ -48,11 +35,7 @@ const Ordinals: React.FC<Props> = ({ onClick, sort }) => {
         ) : (
           <div></div>
         )}
-        <div className="p-2 text-center text-sm">
-          {`Page ${currentPage}`}
-          <br />
-          {ordUtxos?.length || 0 > 0 ? `${from} - ${to}` : ``}
-        </div>
+        <div className="p-2 text-center text-sm">{`Page ${currentPage}`}</div>
         {ordUtxos?.length === ORDS_PER_PAGE ? (
           <button
             className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"

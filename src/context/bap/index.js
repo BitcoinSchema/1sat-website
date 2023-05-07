@@ -23,7 +23,6 @@ const BapProvider = (props) => {
     FetchStatus.Idle
   );
   const { encrypt, decrypt } = useWallet();
-
   const dispatch = useDispatch();
 
   useEffect(() => {

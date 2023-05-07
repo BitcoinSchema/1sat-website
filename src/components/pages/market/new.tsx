@@ -71,7 +71,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
       </div>
       {showSelectItem && (
         <div>
-          <Ordinals onClick={clickOrdinal} sort={false} />
+          <Ordinals onClick={clickOrdinal} sort={false} currentPage={1} />
         </div>
       )}
     </div>
