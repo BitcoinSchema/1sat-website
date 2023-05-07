@@ -13,7 +13,7 @@ import init, {
 } from "bsv-wasm-web";
 import { Inscription, Utxo, sendOrdinal } from "js-1sat-ord";
 import { head } from "lodash";
-import Router from "next/router";
+import Router, { useRouter } from "next/router";
 import React, {
   ReactNode,
   createContext,
@@ -29,6 +29,7 @@ import { API_HOST, GPInscription, OrdUtxo } from "../ordinals";
 import { useRates } from "../rates";
 
 export const PROTOCOL_START_HEIGHT = 783968;
+export const ORDS_PER_PAGE = 2;
 
 type ScriptSig = {
   asm: string;
@@ -165,6 +166,14 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [usdRate, setUsdRate] = useState<number>(0);
   const { rates } = useRates();
 
+  const router = useRouter();
+  const { page } = router.query;
+
+  const currentPage = useMemo(() => {
+    setFetchOrdinalUtxosStatus(FetchStatus.Idle);
+    return typeof page === "string" ? parseInt(page) : 1;
+  }, [page, setFetchOrdinalUtxosStatus]);
+
   useEffect(() => {
     if (rates && rates.length > 0) {
       // Gives rate for 1 USD in satoshis
@@ -253,13 +262,14 @@ const WalletProvider: React.FC<Props> = (props) => {
   }, [setOrdPk, setPayPk, backupFile]);
 
   const getOrdinalUTXOs = useCallback(
-    async (address: string): Promise<void> => {
+    async (address: string, page: number = 1): Promise<void> => {
       // address or custom locking script hash
       setFetchOrdinalUtxosStatus(FetchStatus.Loading);
 
+      const offset = (page - 1) * ORDS_PER_PAGE;
       try {
         const r = await fetch(
-          `${API_HOST}/api/utxos/address/${address}/inscriptions`
+          `${API_HOST}/api/utxos/address/${address}/inscriptions?limit=${ORDS_PER_PAGE}&offset=${offset}`
         );
 
         const utxos = (await r.json()) as GPInscription[];
@@ -279,6 +289,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         return;
       } catch (e) {
+        setOrdUtxos([]);
         setFetchOrdinalUtxosStatus(FetchStatus.Error);
         throw e;
       }
@@ -288,12 +299,12 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   useEffect(() => {
     const fire = async (a: string) => {
-      await getOrdinalUTXOs(a);
+      await getOrdinalUTXOs(a, currentPage);
     };
     if (ordAddress && fetchOrdinalUtxosStatus === FetchStatus.Idle) {
       fire(ordAddress);
     }
-  }, [getOrdinalUTXOs, ordAddress, fetchOrdinalUtxosStatus]);
+  }, [currentPage, getOrdinalUTXOs, ordAddress, fetchOrdinalUtxosStatus]);
 
   const getTxById = async (txid: string): Promise<TxDetails> => {
     const r = await fetch(

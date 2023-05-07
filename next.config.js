@@ -16,7 +16,6 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = { dns: false, fs: false, module: false };
-      // config.resolve.alias = { "bsv-wasm-web": "bsv-wasm" };
     }
 
     config.plugins = [
@@ -27,11 +26,6 @@ const nextConfig = {
             originModule: "bsv-wasm",
             replaceModule: "bsv-wasm-web",
           },
-          // {
-          //   originModule: "bsv-wasm",
-          //   replaceModule: "bsv-wasm-web",
-          //   context: /node_modules\/js-1sat-ord/,
-          // },
         ],
       }),
     ];
