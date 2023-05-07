@@ -107,14 +107,7 @@ const BapProvider = (props) => {
         setLoadIdentityStatus(FetchStatus.Error);
       }
     },
-    [
-      loadIdentityStatus,
-      isValidIdentity,
-      relayEncrypt,
-      authToken,
-      encrypt,
-      setIdentity,
-    ]
+    [loadIdentityStatus, isValidIdentity, authToken, encrypt, setIdentity]
   );
 
   const getIdentity = useCallback(async () => {

@@ -29,7 +29,7 @@ import { API_HOST, GPInscription, OrdUtxo } from "../ordinals";
 import { useRates } from "../rates";
 
 export const PROTOCOL_START_HEIGHT = 783968;
-export const ORDS_PER_PAGE = 2;
+export const ORDS_PER_PAGE = 60;
 
 type ScriptSig = {
   asm: string;
