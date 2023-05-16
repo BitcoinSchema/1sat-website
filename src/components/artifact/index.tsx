@@ -1,10 +1,12 @@
 import { API_HOST } from "@/context/ordinals";
 import Image from "next/image";
 import Router from "next/router";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import styled from "styled-components";
+import tw from "twin.macro";
 import Model from "../model";
+import { FetchStatus } from "../pages";
 import AudioArtifact from "./audio";
 import JsonArtifact from "./json";
 import TextArtifact from "./text";
@@ -44,6 +46,10 @@ const Artifact: React.FC<ArtifactProps> = ({
   onClick,
   txid,
 }) => {
+  const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
+    FetchStatus.Loading
+  );
+
   const type = useMemo(() => {
     let artifactType = undefined;
     if (contentType?.startsWith("audio")) {
@@ -92,7 +98,19 @@ const Artifact: React.FC<ArtifactProps> = ({
     }
   `;
 
+  const ItemContainer = tw.div`
+  flex items-center justify-center w-full h-full rounded min-h-[300px]
+  `;
+
   const content = useMemo(() => {
+    if (!src || type === undefined) {
+      return (
+        <ItemContainer className="bg-white">
+          <LoaderIcon className="m-auto" />
+        </ItemContainer>
+      );
+    }
+
     return type === ArtifactType.Video ? (
       <VideoArtifact
         outPoint={outPoint}
@@ -132,7 +150,9 @@ const Artifact: React.FC<ArtifactProps> = ({
         }`}
       >
         {/* {generatedImage} */}
-        <TextArtifact outPoint={outPoint} />
+        <ItemContainer>
+          <TextArtifact outPoint={outPoint} />
+        </ItemContainer>
       </div>
     ) : type === ArtifactType.Model ? (
       <div
@@ -168,22 +188,22 @@ const Artifact: React.FC<ArtifactProps> = ({
         PDF Inscriptions not yet supported.
       </div>
     ) : (
-      <div className="flex items-center justify-center w-full h-full bg-[#111] rounded min-h-[300px]">
-        {src && (
+      <ItemContainer>
+        {src !== "" && src != undefined && (
           <Image
             className={`h-auto ${classNames?.media ? classNames.media : ""}`}
             src={src}
             id={`artifact_${new Date().getTime()}_image`}
             alt={`Inscription${id ? " #" + id : ""}`}
-            placeholder="blur"
-            blurDataURL={`data:image/svg+xml;base64,${toBase64(
-              shimmer(700, 475)
-            )}`}
+            // placeholder="blur"
+            // blurDataURL={`data:image/svg+xml;base64,${toBase64(
+            //   shimmer(700, 475)
+            // )}`}
             width={300}
             height={300}
           />
         )}
-      </div>
+      </ItemContainer>
     );
   }, [type, src, classNames, outPoint]);
 
@@ -207,12 +227,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         }
       }}
     >
-      {(!src || type === undefined) && (
-        <div className="w-full h-full flex items-center justify-center mx-auto text-center">
-          <LoaderIcon className="mx-auto" />
-        </div>
-      )}
-      {src && type !== undefined && content}
+      {content}
 
       {/* TODO: Show indicator when more than one isncription */}
       {id !== undefined && (

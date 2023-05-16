@@ -235,9 +235,9 @@ const handleInscribing = async (
     contentType: fileContentType,
   };
 
-  const idKey = PrivateKey.from_wif(
-    "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
-  );
+  // const idKey = PrivateKey.from_wif(
+  //   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
+  // );
   try {
     const tx = await createOrdinal(
       fundingUtxo,
@@ -246,8 +246,8 @@ const handleInscribing = async (
       changeAddress,
       0.06,
       inscription,
-      undefined, // optional metadata
-      idKey // optional id key
+      undefined // optional metadata
+      // idKey // optional id key
     );
     return tx;
   } catch (e) {

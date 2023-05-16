@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react";
+import { BapProvider } from "./bap";
 import { BitcoinSchemaProvider } from "./bitcoinschema";
 import { BitsocketProvider } from "./bitsocket";
 import { OrdinalsProvider } from "./ordinals";
@@ -14,7 +15,9 @@ const AppContext: React.FC<Props> = ({ children }) => (
     <RatesProvider>
       <BitcoinSchemaProvider>
         <OrdinalsProvider>
-          <WalletProvider>{children}</WalletProvider>
+          <WalletProvider>
+            <BapProvider>{children}</BapProvider>
+          </WalletProvider>
         </OrdinalsProvider>
       </BitcoinSchemaProvider>
     </RatesProvider>

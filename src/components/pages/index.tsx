@@ -1,4 +1,5 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
+import { useBap } from "@/context/bap";
 import { useBitsocket } from "@/context/bitsocket";
 import { useWallet } from "@/context/wallet";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
@@ -6,6 +7,7 @@ import Image from "next/image";
 import Router, { useRouter } from "next/router";
 import { ChangeEvent, ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Toaster } from "react-hot-toast";
+
 export enum FetchStatus {
   Idle,
   Loading,
@@ -58,6 +60,7 @@ const Layout: React.FC<Props> = ({ children }) => {
     changeAddress,
   } = useWallet();
 
+  const { idKey, onFileChange } = useBap();
   const { ordPk, initialized } = useWallet();
   const { connectionStatus, connect, ordAddress } = useBitsocket();
 
@@ -100,6 +103,15 @@ const Layout: React.FC<Props> = ({ children }) => {
     }
     console.log({ backupFile });
   }, [backupFile]);
+
+  const importId = useCallback(() => {
+    if (!idKey) {
+      const el = document.getElementById("idFile");
+      el?.click();
+      return;
+    }
+    console.log({ idKey });
+  }, [idKey]);
 
   const handleFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
@@ -165,6 +177,14 @@ const Layout: React.FC<Props> = ({ children }) => {
             Delete Keys
           </div>
         )}
+
+        {/* {!idKey && <div className="mx-4">·</div>}
+
+        {!idKey && (
+          <div className="cursor-pointer text-red-500" onClick={importId}>
+            Import Identity
+          </div>
+        )} */}
         <div>
           <Toaster />
           <input
@@ -172,6 +192,13 @@ const Layout: React.FC<Props> = ({ children }) => {
             className="hidden"
             id="backupFile"
             onChange={handleFileChange}
+            type="file"
+          />
+          <input
+            accept=".json"
+            className="hidden"
+            id="idFile"
+            onChange={onFileChange}
             type="file"
           />
         </div>

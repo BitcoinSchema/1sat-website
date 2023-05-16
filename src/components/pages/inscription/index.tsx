@@ -244,7 +244,21 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 </div>
               </div>
             )}
-
+            {
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
+                <div className="flex justify-between items-center">
+                  <div className="whitespace-nowrap mr-8">Tx ID</div>
+                  <div className="truncate">
+                    <a
+                      href={`https://whatsonchain.com/tx/${artifact?.txid}`}
+                      target="_blank"
+                    >
+                      {artifact?.txid}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            }
             {artifact?.MAP &&
               Object.entries(artifact.MAP)
                 .filter(([k, v]) => k !== "cmd" && k !== "type" && k !== "type")

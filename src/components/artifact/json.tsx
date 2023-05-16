@@ -1,7 +1,7 @@
 import { API_HOST } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
-import { FetchStatus } from "../pages";
+import { FetchStatus } from "../../components/pages";
 
 type TextArtifactProps = {
   outPoint?: string;

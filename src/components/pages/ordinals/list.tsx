@@ -1,22 +1,20 @@
 import Artifact from "@/components/artifact";
 import { ORDS_PER_PAGE, useWallet } from "@/context/wallet";
-import { sortedUniqBy } from "lodash";
-import Router from "next/router";
+import Router, { useRouter } from "next/router";
 import { useEffect, useMemo } from "react";
 
 type Props = {
   onClick?: (outPoint: string) => void;
-  sort: boolean;
+
   currentPage: number;
 };
-const Ordinals: React.FC<Props> = ({ onClick, sort, currentPage = 1 }) => {
+const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
   const { ordUtxos } = useWallet();
+  const { sort } = useRouter().query;
 
-  const sortedUtxos = useMemo(() => {
-    return sort
-      ? sortedUniqBy(ordUtxos, (u) => u.id)
-      : sortedUniqBy(ordUtxos, (u) => u.id).reverse() || [];
-  }, [ordUtxos, sort]);
+  const currentSort = useMemo(() => {
+    return typeof sort === "string" ? parseInt(sort) : 0;
+  }, [sort]);
 
   useEffect(() => {
     console.log({ currentPage });
@@ -28,7 +26,11 @@ const Ordinals: React.FC<Props> = ({ onClick, sort, currentPage = 1 }) => {
         {currentPage > 1 ? (
           <button
             className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-            onClick={() => Router.push(`/ordinals?page=${currentPage - 1}`)}
+            onClick={() =>
+              Router.push(
+                `/ordinals?page=${currentPage - 1}&sort=${currentSort ? 1 : 0}}`
+              )
+            }
           >
             {`Page ${currentPage - 1}`}
           </button>
@@ -40,7 +42,9 @@ const Ordinals: React.FC<Props> = ({ onClick, sort, currentPage = 1 }) => {
           <button
             className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
             onClick={() => {
-              Router.push(`/ordinals?page=${currentPage + 1}`);
+              Router.push(
+                `/ordinals?page=${currentPage + 1}&sort=${currentSort ? 1 : 0}`
+              );
             }}
             // Disable the Next Page button until we know a next page is available
           >
@@ -51,12 +55,12 @@ const Ordinals: React.FC<Props> = ({ onClick, sort, currentPage = 1 }) => {
         )}
       </div>
     );
-  }, [ordUtxos, currentPage]);
+  }, [currentSort, ordUtxos, currentPage]);
 
   return (
     <div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 mb-4">
-        {sortedUtxos?.map((a) => (
+        {ordUtxos?.map((a) => (
           <Artifact
             onClick={() =>
               onClick && onClick(a.origin || `${a.txid}_${a.vout}`)
@@ -69,7 +73,7 @@ const Ordinals: React.FC<Props> = ({ onClick, sort, currentPage = 1 }) => {
               onClick
                 ? undefined
                 : a.id !== undefined
-                ? `/inscription/${a.id}`
+                ? `/inscription/${a.id}?page=${currentPage}`
                 : `/tx/${a.txid}_${a.vout}`
             }
             classNames={{

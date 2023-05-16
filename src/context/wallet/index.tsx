@@ -167,12 +167,17 @@ const WalletProvider: React.FC<Props> = (props) => {
   const { rates } = useRates();
 
   const router = useRouter();
-  const { page } = router.query;
+  const { page, sort } = router.query;
 
   const currentPage = useMemo(() => {
     setFetchOrdinalUtxosStatus(FetchStatus.Idle);
     return typeof page === "string" ? parseInt(page) : 1;
   }, [page, setFetchOrdinalUtxosStatus]);
+
+  const currentSort = useMemo(() => {
+    setFetchOrdinalUtxosStatus(FetchStatus.Idle);
+    return typeof sort === "string" ? parseInt(sort) : 0;
+  }, [sort, setFetchOrdinalUtxosStatus]);
 
   useEffect(() => {
     if (rates && rates.length > 0) {
@@ -262,14 +267,20 @@ const WalletProvider: React.FC<Props> = (props) => {
   }, [setOrdPk, setPayPk, backupFile]);
 
   const getOrdinalUTXOs = useCallback(
-    async (address: string, page: number = 1): Promise<void> => {
+    async (
+      address: string,
+      page: number = 1,
+      sort: boolean = false
+    ): Promise<void> => {
       // address or custom locking script hash
       setFetchOrdinalUtxosStatus(FetchStatus.Loading);
 
       const offset = (page - 1) * ORDS_PER_PAGE;
       try {
+        const direction = sort ? "ASC" : "DESC";
+
         const r = await fetch(
-          `${API_HOST}/api/utxos/address/${address}/inscriptions?limit=${ORDS_PER_PAGE}&offset=${offset}`
+          `${API_HOST}/api/utxos/address/${address}/inscriptions?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}`
         );
 
         const utxos = (await r.json()) as GPInscription[];
@@ -299,12 +310,18 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   useEffect(() => {
     const fire = async (a: string) => {
-      await getOrdinalUTXOs(a, currentPage);
+      await getOrdinalUTXOs(a, currentPage, currentSort === 1);
     };
     if (ordAddress && fetchOrdinalUtxosStatus === FetchStatus.Idle) {
       fire(ordAddress);
     }
-  }, [currentPage, getOrdinalUTXOs, ordAddress, fetchOrdinalUtxosStatus]);
+  }, [
+    currentSort,
+    currentPage,
+    getOrdinalUTXOs,
+    ordAddress,
+    fetchOrdinalUtxosStatus,
+  ]);
 
   const getTxById = async (txid: string): Promise<TxDetails> => {
     const r = await fetch(

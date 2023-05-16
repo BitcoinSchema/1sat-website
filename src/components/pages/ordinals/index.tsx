@@ -4,8 +4,7 @@ import { ORDS_PER_PAGE, useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router, { useRouter } from "next/router";
-
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { FetchStatus } from "..";
 import Ordinals from "./list";
@@ -22,11 +21,15 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     setFetchOrdinalUtxosStatus,
   } = useWallet();
   const router = useRouter();
-  const { page } = router.query;
+  const { page, sort } = router.query;
 
   const currentPage = useMemo(() => {
     return typeof page === "string" ? parseInt(page) : 1;
   }, [page]);
+
+  const currentSort = useMemo(() => {
+    return typeof sort === "string" ? parseInt(sort) : 0;
+  }, [sort]);
 
   const from = useMemo(() => {
     return (currentPage - 1) * ORDS_PER_PAGE + 1;
@@ -36,9 +39,9 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     return from + (ordUtxos?.length ? ordUtxos.length - 1 : 0);
   }, [ordUtxos, from, currentPage]);
 
-  const [sort, setSort] = useState<boolean>(false);
-
-  const toggleSort = useCallback(() => setSort(!sort), [sort]);
+  const toggleSort = useCallback(() => {
+    Router.push(`/ordinals/?sort=${currentSort === 1 ? 0 : 1}`);
+  }, [currentSort]);
 
   return (
     <>
@@ -98,7 +101,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
                 className="flex items-center cursor-pointer"
                 onClick={toggleSort}
               >
-                {sort ? (
+                {currentSort === 0 ? (
                   <FiArrowDown className="mr-2" />
                 ) : (
                   <FiArrowUp className="mr-2" />
@@ -108,7 +111,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
             </div>
           }
 
-          <Ordinals sort={sort} currentPage={currentPage} />
+          <Ordinals currentPage={currentPage} />
         </div>
       </div>
     </>

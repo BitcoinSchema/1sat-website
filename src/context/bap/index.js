@@ -1,3 +1,4 @@
+// import { BAP } from "bap"
 import { head } from "lodash";
 import React, {
   useCallback,
@@ -6,11 +7,25 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { useDispatch } from "react-redux";
-import { FetchStatus } from "../../utils/common";
+import { FetchStatus } from "../../components/pages";
 import { useLocalStorage } from "../../utils/storage";
 import { useWallet } from "../wallet";
-const { BAP } = require("bitcoin-bap");
+
+// duymmy class until bap is fixed
+class BAP {
+  constructor(xprv) {
+    this.xprv = xprv;
+  }
+  importIds(ids) {
+    this.ids = ids;
+  }
+  listIds() {
+    return this.ids;
+  }
+  getId(id) {
+    return id;
+  }
+}
 
 const BapContext = React.createContext(undefined);
 
@@ -22,8 +37,9 @@ const BapProvider = (props) => {
   const [loadIdentityStatus, setLoadIdentityStatus] = useState(
     FetchStatus.Idle
   );
+  const [decryptStatus, setDecryptStatus] = useState(FetchStatus.Idle);
+
   const { encrypt, decrypt } = useWallet();
-  const dispatch = useDispatch();
 
   useEffect(() => {
     const fire = async () => {
@@ -44,15 +60,7 @@ const BapProvider = (props) => {
       // console.log("FIRE");
       fire();
     }
-  }, [
-    dispatch,
-    identity,
-    decrypt,
-    decryptStatus,
-    decIdentity,
-    setDecIdentity,
-    relayDecrypt,
-  ]);
+  }, [identity, decrypt, decryptStatus, decIdentity, setDecIdentity]);
 
   const isValidIdentity = useCallback((decryptedIdString) => {
     const decIdentity = JSON.parse(decryptedIdString);
@@ -106,7 +114,7 @@ const BapProvider = (props) => {
         setLoadIdentityStatus(FetchStatus.Error);
       }
     },
-    [loadIdentityStatus, isValidIdentity, authToken, encrypt, setIdentity]
+    [loadIdentityStatus, isValidIdentity, encrypt, setIdentity]
   );
 
   const getIdentity = useCallback(async () => {
@@ -119,6 +127,7 @@ const BapProvider = (props) => {
     const payload = {
       idKey: ``,
     };
+
     const res = await fetch(`https://bap-api.com/v1/getIdentity`, {
       method: "POST",
       headers: {
@@ -130,7 +139,7 @@ const BapProvider = (props) => {
     setBapProfileStatus(FetchStatus.Success);
     setBapProfile(resp);
     return resp;
-  }, [bapProfileStatus, bapProfile]);
+  }, [setBapProfile, bapProfileStatus, bapProfile]);
 
   const value = useMemo(
     () => ({
