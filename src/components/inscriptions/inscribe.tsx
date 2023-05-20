@@ -4,12 +4,14 @@ import { formatBytes } from "@/utils/bytes";
 import { PrivateKey } from "bsv-wasm-web";
 import { createOrdinal } from "js-1sat-ord";
 import { head } from "lodash";
+import { useRouter } from "next/router";
 import React, { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
 import Artifact from "../artifact";
 import { FetchStatus, toastErrorProps } from "../pages";
+import InscriptionTabs, { InscriptionTab } from "./tabs";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -34,6 +36,8 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     payPk,
     initialized,
   } = useWallet();
+
+  const { tab } = useRouter().query as { tab: InscriptionTab };
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
@@ -162,25 +166,48 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   console.log({ preview });
   return (
     <div className="flex flex-col w-full max-w-xl mx-auto p-4">
+      <InscriptionTabs currentTab={InscriptionTab.Image} />
       <div className="w-full">
-        <Label
-          className={`${
-            selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
-          } rounded border border-dashed border-[#222] flex items-center justify-center`}
-        >
-          {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
-          {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
-          <Input type="file" className="hidden" onChange={handleFileChange} />
-          {selectedFile && (
-            <div className="text-sm text-center w-full">
-              {formatBytes(selectedFile.size)} Bytes
-            </div>
-          )}
-        </Label>
+        {(!tab || tab === InscriptionTab.Image) && (
+          <Label
+            className={`${
+              selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
+            } rounded border border-dashed border-[#222] flex items-center justify-center`}
+          >
+            {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
+            {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
+            <Input type="file" className="hidden" onChange={handleFileChange} />
+            {selectedFile && (
+              <div className="text-sm text-center w-full">
+                {formatBytes(selectedFile.size)} Bytes
+              </div>
+            )}
+          </Label>
+        )}
+
+        {tab === InscriptionTab.Text && (
+          <div className="w-full min-w-[20vw]">
+            <textarea className="w-full rounded min-h-[20vh]" />
+          </div>
+        )}
+
+        {tab === InscriptionTab.BSV20 && (
+          <div className="w-full min-w-[20vw]">
+            <label className="my-2">
+              Ticker
+              <input className="w-full rounded" />
+            </label>
+            <label className="my-2">
+              Limit
+              <input className="w-full rounded" />
+            </label>
+          </div>
+        )}
 
         {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
 
         {selectedFile && preview && <>{artifact}</>}
+
         {/* {selectedFile?.type.startsWith("video") ? (
               <video
                 src={preview as string}
