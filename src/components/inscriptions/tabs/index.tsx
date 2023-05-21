@@ -1,7 +1,7 @@
 import React from "react";
 import * as S from "./styles";
 interface Props {
-  currentTab: Tab | undefined;
+  currentTab: InscriptionTab | undefined;
   showIndicator?: boolean;
   onClickSelected?: (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
@@ -11,6 +11,7 @@ interface Props {
 export enum InscriptionTab {
   Image = "image",
   BSV20 = "bsv20",
+  SNS = "sns",
   Text = "text",
 }
 
@@ -52,7 +53,7 @@ const InscriptionTabs: React.FC<Props> = ({
             : () => {}
         }
       >
-        BRC-20
+        BSV-20
       </S.Tab>
     </S.Tabs>
   );

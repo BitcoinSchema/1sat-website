@@ -192,7 +192,8 @@ const Artifact: React.FC<ArtifactProps> = ({
         {src !== "" && src != undefined && (
           <Image
             className={`h-auto ${classNames?.media ? classNames.media : ""}`}
-            src={src}
+            // TODO: Use a opl account for this
+            src={`https://res.cloudinary.com/jamifybitcoin/image/fetch/c_fill,g_center,h_300,w_300/f_auto/${src}`}
             id={`artifact_${new Date().getTime()}_image`}
             alt={`Inscription${id ? " #" + id : ""}`}
             // placeholder="blur"

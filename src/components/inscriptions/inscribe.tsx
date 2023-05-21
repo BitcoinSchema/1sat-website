@@ -24,6 +24,21 @@ const Label = styled.label`
   flex-direction: column;
 `;
 
+type BSV20 = {
+  p: string;
+  op: string;
+  amount?: string;
+  tick: string;
+  max?: number;
+  dec?: number;
+  lim?: number;
+};
+
+enum ActionType {
+  Mint = "mint",
+  Deploy = "deploy",
+}
+
 type InscribeProps = {
   inscribedCallback: (inscription: PendingTransaction) => void;
 };
@@ -43,6 +58,16 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+
+  const [selectedActionType, setSelectedActionType] = useState<ActionType>(
+    ActionType.Deploy
+  );
+  const [selectedBsv20, setSelectedBsv20] = useState<BSV20>();
+  const [limit, setLimit] = useState<string>("1000");
+  const [maxSupply, setMaxSupply] = useState<string>("21000000");
+  const [decimals, setDecimals] = useState<number>(0);
+  const [amount, setAmount] = useState<string>();
+  const [ticker, setTicker] = useState<string>();
 
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 
@@ -83,14 +108,8 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
   const utxo = useMemo(() => head(fundingUtxos), [fundingUtxos]);
 
-  const clickInscribe = async () => {
-    if (
-      !utxo ||
-      !payPk ||
-      !selectedFile?.type ||
-      !ordAddress ||
-      !changeAddress
-    ) {
+  const inscribeImage = async () => {
+    if (!selectedFile?.type) {
       return;
     }
     setInscribeStatus(FetchStatus.Loading);
@@ -99,14 +118,14 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       try {
         setInscribeStatus(FetchStatus.Loading);
         const tx = await handleInscribing(
-          payPk,
+          payPk!,
           fileAsBase64,
-          selectedFile?.type,
-          ordAddress,
-          changeAddress,
+          selectedFile.type,
+          ordAddress!,
+          changeAddress!,
           utxo
         );
-        const satsIn = utxo.satoshis;
+        const satsIn = utxo!.satoshis;
         const satsOut = Number(tx.satoshis_out());
         if (satsIn && satsOut) {
           const fee = satsIn - satsOut;
@@ -126,26 +145,136 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             txid: tx.get_id_hex(),
           } as PendingTransaction;
           console.log(Object.keys(result));
-          // res.status(200).json(result);
-
-          console.log("Completion Data @ Client: ", result);
 
           setPendingTransaction(result);
           inscribedCallback(result);
           setInscribeStatus(FetchStatus.Success);
-          // const tx = Transaction.from_hex(result.rawTx);
           return;
         }
       } catch (e) {
         console.error(e);
         setInscribeStatus(FetchStatus.Error);
-        // res.status(500).send(e.toString());
         return;
       }
     } catch (e) {
       setInscribeStatus(FetchStatus.Error);
       toast.error("Failed to inscribe " + e, toastErrorProps);
       console.error(e);
+    }
+  };
+
+  const inscribeText = async () => {
+    setInscribeStatus(FetchStatus.Loading);
+
+    console.log("TODO: Inscribe text");
+    setInscribeStatus(FetchStatus.Success);
+  };
+
+  const inscribeBsv20 = async () => {
+    if (ticker?.length === 0) {
+      return;
+    }
+
+    setInscribeStatus(FetchStatus.Loading);
+
+    try {
+      let inscription = {
+        p: "bsv-20",
+        op: selectedActionType,
+      } as any;
+
+      switch (selectedActionType) {
+        case ActionType.Deploy:
+          if (parseInt(maxSupply) == 0 || BigInt(maxSupply) > maxMaxSupply) {
+            alert(
+              `Invalid input: please enter a number less than or equal to ${
+                maxMaxSupply - BigInt(1)
+              }`
+            );
+            return;
+          }
+
+          inscription.max = maxSupply;
+          inscription.decimals = decimals;
+
+          break;
+        case ActionType.Mint:
+          if (
+            !amount ||
+            parseInt(amount) == 0 ||
+            BigInt(amount) > maxMaxSupply
+          ) {
+            alert(
+              `Invalid input: please enter a positive integer less than or equal to ${
+                maxMaxSupply - BigInt(1)
+              }`
+            );
+            return;
+          }
+          inscription.tick = selectedBsv20?.ticker;
+          inscription.amount = amount;
+        default:
+          break;
+      }
+
+      const fileAsBase64 = Buffer.from(JSON.stringify(inscription)).toString(
+        "base64"
+      );
+      const tx = await handleInscribing(
+        payPk!,
+        fileAsBase64,
+        "application/bsv-20",
+        ordAddress!,
+        changeAddress!,
+        utxo
+      );
+
+      const result = {
+        rawTx: tx.to_hex(),
+        size: tx.get_size(),
+        fee: utxo!.satoshis - Number(tx.satoshis_out()),
+        numInputs: tx.get_ninputs(),
+        numOutputs: tx.get_noutputs(),
+        txid: tx.get_id_hex(),
+      };
+      setPendingTransaction(result);
+      inscribedCallback(result);
+
+      setInscribeStatus(FetchStatus.Success);
+    } catch (error) {
+      setInscribeStatus(FetchStatus.Error);
+
+      alert("Invalid max supply: please enter a number. " + error);
+      return;
+    }
+  };
+
+  const submitDisabled = useMemo(() => {
+    switch (tab as InscriptionTab) {
+      case InscriptionTab.Image:
+        return !selectedFile || inscribeStatus === FetchStatus.Loading;
+      case InscriptionTab.Text:
+        return inscribeStatus === FetchStatus.Loading;
+      case InscriptionTab.BSV20:
+        return !ticker?.length || inscribeStatus === FetchStatus.Loading;
+      default:
+        return true;
+    }
+  }, [ticker, selectedFile, inscribeStatus]);
+
+  const clickInscribe = async () => {
+    if (!utxo || !payPk || !ordAddress || !changeAddress) {
+      return;
+    }
+    switch (tab as InscriptionTab) {
+      case InscriptionTab.Image:
+        return inscribeImage();
+      case InscriptionTab.Text:
+        return inscribeText();
+      case InscriptionTab.BSV20:
+        return inscribeBsv20();
+      default:
+        return;
     }
   };
 
@@ -164,75 +293,205 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   }, [preview, selectedFile?.type]);
 
   console.log({ preview });
+
+  const changeLimit = useCallback(
+    (e: any) => {
+      setLimit(e.target.value);
+    },
+    [setLimit]
+  );
+  const changeDecimals = useCallback(
+    (e: any) => {
+      setDecimals(parseInt(e.target.value));
+    },
+    [setDecimals]
+  );
+  const changeAmount = useCallback(
+    (e: any) => {
+      setAmount(e.target.value);
+    },
+    [setAmount]
+  );
+  const changeTicker = useCallback(
+    (e: any) => {
+      setTicker(e.target.value);
+    },
+    [setTicker]
+  );
+
+  const changeMaxSupply = useCallback(
+    (e: any) => {
+      setMaxSupply(e.target.value);
+    },
+    [setMaxSupply]
+  );
+
   return (
     <div className="flex flex-col w-full max-w-xl mx-auto p-4">
-      <InscriptionTabs currentTab={InscriptionTab.Image} />
+      <InscriptionTabs currentTab={tab} />
       <div className="w-full">
-        {(!tab || tab === InscriptionTab.Image) && (
-          <Label
-            className={`${
-              selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
-            } rounded border border-dashed border-[#222] flex items-center justify-center`}
-          >
-            {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
-            {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
-            <Input type="file" className="hidden" onChange={handleFileChange} />
-            {selectedFile && (
-              <div className="text-sm text-center w-full">
-                {formatBytes(selectedFile.size)} Bytes
+        <form>
+          {(!tab || tab === InscriptionTab.Image) && (
+            <Label
+              className={`${
+                selectedFile
+                  ? ""
+                  : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
+              } rounded border border-dashed border-[#222] flex items-center justify-center`}
+            >
+              {!selectedFile && (
+                <TbClick className="text-6xl my-4 text-[#555]" />
+              )}
+              {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
+              <Input
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              {selectedFile && (
+                <div className="text-sm text-center w-full">
+                  {formatBytes(selectedFile.size)} Bytes
+                </div>
+              )}
+            </Label>
+          )}
+
+          {tab === InscriptionTab.Text && (
+            <div className="w-full min-w-[25vw]">
+              <textarea className="w-full rounded min-h-[20vh] p-2" />
+            </div>
+          )}
+
+          {tab === InscriptionTab.BSV20 && (
+            <div className="w-full min-w-[25vw]">
+              <select
+                className="w-full p-2 rounded my-2 cursor-pointer"
+                value={selectedActionType}
+                onChange={(e) => {
+                  console.log({ val: e.target.value });
+                  setSelectedActionType(
+                    e.target.value.toLocaleLowerCase() as ActionType
+                  );
+                }}
+              >
+                <option value={ActionType.Deploy}>Deploy</option>
+                <option value={ActionType.Mint}>Mint</option>
+              </select>
+              <div className="my-2">
+                <label>
+                  {/* TODO: Autofill */}
+                  Ticker
+                  <input
+                    className="w-full rounded p-2 uppercase"
+                    maxLength={4}
+                    pattern="^\S+$"
+                    onKeyDown={(event) => {
+                      if (event.key === " " || event.key === "Enter") {
+                        event.preventDefault();
+                      }
+                    }}
+                    value={ticker}
+                    onChange={changeTicker}
+                  />
+                </label>
               </div>
-            )}
-          </Label>
-        )}
 
-        {tab === InscriptionTab.Text && (
-          <div className="w-full min-w-[20vw]">
-            <textarea className="w-full rounded min-h-[20vh]" />
-          </div>
-        )}
+              <div className="my-2">
+                <label>
+                  Max Supply
+                  <input
+                    pattern="\d+"
+                    type="text"
+                    className="w-full rounded p-2 uppercase"
+                    onChange={changeMaxSupply}
+                    value={maxSupply}
+                  />
+                </label>
+              </div>
 
-        {tab === InscriptionTab.BSV20 && (
-          <div className="w-full min-w-[20vw]">
-            <label className="my-2">
-              Ticker
-              <input className="w-full rounded" />
-            </label>
-            <label className="my-2">
-              Limit
-              <input className="w-full rounded" />
-            </label>
-          </div>
-        )}
+              {selectedActionType === ActionType.Deploy && (
+                <div className="my-2">
+                  <label>
+                    Limit Per Mint
+                    <input
+                      className="w-full rounded p-2"
+                      type="string"
+                      value={limit}
+                      pattern="^\S+$"
+                      onKeyDown={(event) => {
+                        if (event.key === " " || event.key === "Enter") {
+                          event.preventDefault();
+                        }
+                      }}
+                      onChange={changeLimit}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {selectedActionType === ActionType.Deploy && (
+                <div className="my-2">
+                  <label>
+                    Decimal Precision
+                    <input
+                      className="w-full rounded p-2"
+                      type="number"
+                      min={0}
+                      max={18}
+                      value={decimals}
+                      onChange={changeDecimals}
+                    />
+                  </label>
+                </div>
+              )}
+              {selectedActionType === ActionType.Mint && (
+                <div className="my-2">
+                  <label>
+                    Amount
+                    <input
+                      className="w-full rounded p-2"
+                      type="number"
+                      min={1}
+                      max={selectedBsv20?.lim}
+                      onChange={changeAmount}
+                      value={amount}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+        </form>
 
         {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
 
         {selectedFile && preview && <>{artifact}</>}
 
         {/* {selectedFile?.type.startsWith("video") ? (
-              <video
-                src={preview as string}
-                autoPlay={true}
-                controls={true}
-                loop={true}
-                className="w-full"
-              />
-            ) : selectedFile?.type.startsWith("audio") ? (
-              <audio
-                src={preview as string}
-                autoPlay
-                controls
-                className="w-full"
-              />
+          <video
+          src={preview as string}
+          autoPlay={true}
+          controls={true}
+          loop={true}
+          className="w-full"
+          />
+          ) : selectedFile?.type.startsWith("audio") ? (
+            <audio
+            src={preview as string}
+            autoPlay
+            controls
+            className="w-full"
+            />
             ) : (
               <img src={preview as string} alt="Preview" className="w-full" />
-            )}
-
-            </>
-          )} */}
+              )}
+              
+              </>
+            )} */}
 
         {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
         <button
-          disabled={!selectedFile || inscribeStatus === FetchStatus.Loading}
+          disabled={submitDisabled}
           type="submit"
           onClick={clickInscribe}
           className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
@@ -281,3 +540,5 @@ const handleInscribing = async (
     throw e;
   }
 };
+
+const maxMaxSupply = BigInt("18446744073709551615");
