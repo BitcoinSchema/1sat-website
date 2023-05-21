@@ -76,6 +76,8 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   const [decimals, setDecimals] = useState<number>(18);
   const [amount, setAmount] = useState<string>();
   const [ticker, setTicker] = useState<string>();
+  const [text, setText] = useState<string>();
+  const [mintError, setMintError] = useState<string>();
   const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
 
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
@@ -87,9 +89,6 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   }, [initialized, payPk]);
 
   const toggleOptionalFields = useCallback(() => {
-    if (!showOptionalFields && !limit) {
-      setLimit("10000");
-    }
     setShowOptionalFields(!showOptionalFields);
   }, [limit, showOptionalFields]);
 
@@ -179,12 +178,43 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     }
   };
 
-  const inscribeText = async () => {
+  const inscribeUtf8 = useCallback(
+    async (text: string, contentType: string) => {
+      const fileAsBase64 = Buffer.from(text).toString("base64");
+      const tx = await handleInscribing(
+        payPk!,
+        fileAsBase64,
+        contentType,
+        ordAddress!,
+        changeAddress!,
+        utxo
+      );
+
+      const result = {
+        rawTx: tx.to_hex(),
+        size: tx.get_size(),
+        fee: utxo!.satoshis - Number(tx.satoshis_out()),
+        numInputs: tx.get_ninputs(),
+        numOutputs: tx.get_noutputs(),
+        txid: tx.get_id_hex(),
+      };
+      setPendingTransaction(result);
+      inscribedCallback(result);
+    },
+    [inscribedCallback, payPk, ordAddress, changeAddress, utxo]
+  );
+
+  const inscribeText = useCallback(async () => {
+    if (!text) {
+      return;
+    }
     setInscribeStatus(FetchStatus.Loading);
+
+    await inscribeUtf8(text, "text/plain");
 
     console.log("TODO: Inscribe text");
     setInscribeStatus(FetchStatus.Success);
-  };
+  }, [inscribeUtf8, text]);
 
   const inscribeBsv20 = async () => {
     if (!ticker || ticker?.length === 0) {
@@ -248,28 +278,9 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           break;
       }
 
-      const fileAsBase64 = Buffer.from(JSON.stringify(inscription)).toString(
-        "base64"
-      );
-      const tx = await handleInscribing(
-        payPk!,
-        fileAsBase64,
-        "application/bsv-20",
-        ordAddress!,
-        changeAddress!,
-        utxo
-      );
+      const text = JSON.stringify(inscription);
 
-      const result = {
-        rawTx: tx.to_hex(),
-        size: tx.get_size(),
-        fee: utxo!.satoshis - Number(tx.satoshis_out()),
-        numInputs: tx.get_ninputs(),
-        numOutputs: tx.get_noutputs(),
-        txid: tx.get_id_hex(),
-      };
-      setPendingTransaction(result);
-      inscribedCallback(result);
+      inscribeUtf8(text, "application/bsv-20");
 
       setInscribeStatus(FetchStatus.Success);
     } catch (error) {
@@ -297,6 +308,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         return true;
     }
   }, [
+    tab,
     fetchTickerStatus,
     tickerAvailable,
     ticker,
@@ -364,11 +376,19 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     [selectedActionType, setAmount]
   );
 
+  const changeText = useCallback(
+    (e: any) => {
+      setText(e.target.value);
+    },
+    [setText]
+  );
+
   const changeTicker = useCallback(
     (e: any) => {
       setTicker(e.target.value);
+      if (mintError) setMintError(undefined);
     },
-    [setTicker]
+    [setTicker, mintError]
   );
 
   const checkTicker = useCallback(
@@ -387,7 +407,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             event.preventDefault();
             setTickerAvailable(false);
           } else if (expectExist) {
-            const { p, op, tick, lim, max, dec } = await resp.json();
+            const { p, op, tick, lim, max, dec, supply } = await resp.json();
             const bsv20 = {
               p,
               op,
@@ -398,9 +418,14 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             };
             console.log("selected BSV20", { bsv20 });
             setSelectedBsv20(bsv20);
-            setTickerAvailable(true);
+            if (parseInt(supply) < parseInt(max)) {
+              setTickerAvailable(true);
+            } else {
+              setMintError("Minted Out");
+            }
           }
         } else if (resp.status === 404) {
+          console.log("ticker not found", tick, "expectExist", expectExist);
           if (expectExist) {
             setTickerAvailable(false);
             setSelectedBsv20(undefined);
@@ -442,9 +467,19 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   );
 
   // Define the debounced function outside of the render method
-  const debouncedCheckTicker = debounce(async (event) => {
-    await checkTicker(event.target.value, event);
+  const debouncedCheckTicker = debounce(async (event, expectExist) => {
+    await checkTicker(event.target.value, expectExist, event);
   }, 300); // This is a common debounce time. Adjust as needed.
+
+  const tickerNote = useMemo(() => {
+    return tickerAvailable === false
+      ? selectedActionType === ActionType.Deploy
+        ? ticker === ""
+          ? `¯\\_(ツ)_/¯`
+          : "Ticker Unavailable"
+        : mintError
+      : "1-4 Characters";
+  }, [mintError, selectedActionType, tickerAvailable]);
 
   return (
     <div className="flex flex-col w-full max-w-xl mx-auto p-4">
@@ -478,7 +513,11 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
           {tab === InscriptionTab.Text && (
             <div className="w-full min-w-[25vw]">
-              <textarea className="w-full rounded min-h-[20vh] p-2" />
+              <textarea
+                className="w-full rounded min-h-[20vh] p-2"
+                onChange={changeText}
+                value={text}
+              />
             </div>
           )}
 
@@ -496,12 +535,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                 <label className="block mb-4">
                   {/* TODO: Autofill */}
                   <div className="flex items-center justify-between my-2">
-                    Ticker{" "}
-                    <span className="text-[#555]">
-                      {tickerAvailable === false
-                        ? "Ticker Unavailable"
-                        : "1-4 Characters"}
-                    </span>
+                    Ticker <span className="text-[#555]">{tickerNote}</span>
                   </div>
                   <div className="relative">
                     <input
@@ -517,7 +551,10 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                       value={ticker}
                       onChange={(event) => {
                         changeTicker(event);
-                        debouncedCheckTicker(event);
+                        debouncedCheckTicker(
+                          event,
+                          selectedActionType === ActionType.Mint
+                        );
                       }}
                     />
                     {tickerAvailable === true && (
@@ -552,16 +589,22 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
               {selectedActionType === ActionType.Mint && (
                 <div className="my-2">
                   <label className="block mb-4">
-                    <div className="my-2">
+                    <div className="my-2 flex justify-between items-center">
                       Amount{" "}
                       {selectedBsv20 && (
-                        <span className="text-[#555]">
+                        <span
+                          className="text-[#555] cursor-pointer transition hover:text-[#777]"
+                          onClick={() => {
+                            setAmount(selectedBsv20.lim);
+                          }}
+                        >
                           Max: {selectedBsv20?.lim}
                         </span>
                       )}
                     </div>
 
                     <input
+                      disabled={!!mintError}
                       className="w-full rounded p-2"
                       type="number"
                       min={1}
@@ -610,7 +653,9 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                 showOptionalFields && (
                   <div className="my-2">
                     <label className="block mb-4">
-                      <div className="my-2">Decimal Precision</div>
+                      <div className="my-2 flex items-center justify-between">
+                        Decimal Precision
+                      </div>
                       <input
                         className="w-full rounded p-2"
                         type="number"

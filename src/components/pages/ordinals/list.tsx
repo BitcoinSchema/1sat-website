@@ -67,7 +67,7 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
             }
             key={a.origin || `${a.txid}_${a.vout}`}
             outPoint={a.origin || `${a.txid}_${a.vout}`}
-            contentType={a.type}
+            contentType={a.file?.type}
             id={a.id}
             to={
               onClick

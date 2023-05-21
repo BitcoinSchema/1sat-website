@@ -48,7 +48,6 @@
     "react-hot-toast": "^2.4.0",
     "react-icons": "^4.8.0",
     "react-qr-code": "^2.0.11",
-    "satoshi-bitcoin": "^1.0.5",
     "satoshi-bitcoin-ts": "^0.2.4",
     "sigma-protocol": "^0.0.3",
     "styled-components": "^5.3.9",

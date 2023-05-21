@@ -84,7 +84,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
             : ""
         }
         id={artifact?.id}
-        contentType={artifact?.type}
+        contentType={artifact?.file?.type}
       />
       <div className="ml-0 md:ml-4 w-full max-w-sm">{adminControls}</div>
     </div>

@@ -151,7 +151,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
         <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl justify-center">
           <div className="text-center h-full flex flex-row items-center justify-center">
-            {artifact && !artifact.type && (
+            {artifact && !artifact.file?.type && (
               <div
                 key={artifact.txid}
                 className="bg-[#111] rounded p-2 w-72 h-73 flex items-center justify-center font-mono"
@@ -167,7 +167,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                   wrapper: `max-w-5xl w-full h-full`,
                   media: `max-h-[calc(100vh-20em)]`,
                 }}
-                contentType={artifact.type}
+                contentType={artifact.file?.type}
                 outPoint={artifact.origin || ""}
                 id={artifact.id}
               />

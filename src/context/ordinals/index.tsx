@@ -31,14 +31,19 @@ export type GPInscription = {
 };
 
 export interface OrdUtxo extends Utxo {
-  type?: string;
+  file?: GPFile;
   origin?: string;
   id?: number;
   height?: number;
   MAP?: MAP;
 }
 
-export interface Listing extends OrdUtxo {
+export interface Listing extends Utxo {
+  id: number | undefined;
+  origin: string;
+  outPoint: string;
+  MAP: MAP;
+  file: GPFile;
   price: number;
   payout: string; // base64 encoded
   spend: string;
@@ -171,7 +176,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
           vout: i.vout,
           satoshis: 1,
           txid: i.txid,
-          type: i.file.type,
+          file: i.file,
           origin: i.origin,
           id: i.id,
         } as OrdUtxo;
@@ -191,7 +196,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
         vout: gpInscription.vout,
         satoshis: 1,
         txid: gpInscription.txid,
-        type: gpInscription.file.type,
+        file: gpInscription.file,
         origin: gpInscription.origin,
         id: gpInscription.id,
       } as OrdUtxo;
