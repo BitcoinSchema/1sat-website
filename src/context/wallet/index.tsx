@@ -507,7 +507,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         return;
       }
     },
-    [getRawTxById, setPendingTransaction, payPk, ordPk, fundingUtxos]
+    [setPendingTransaction, payPk, ordPk, fundingUtxos]
   );
 
   const send = useCallback(
@@ -662,17 +662,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         reject(e);
       }
     });
-  }, [
-    encryptedBackup,
-    setChangeAddressPath,
-    setOrdAddressPath,
-    setGenerateStatus,
-    setItem,
-    setMnemonic,
-    ready,
-    setOrdPk,
-    setPayPk,
-  ]);
+  }, [setItem, setEncryptedBackup, encryptedBackup?.encryptedBackup]);
 
   const backupKeys = useCallback(
     (e?: any) => {
@@ -686,7 +676,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       clicker.setAttribute("download", `1sat-${ordAddress}.json`);
       clicker.click();
     },
-    [encryptionKey, payPk, ordPk, ordAddress, encryptedBackup, encryptionKey]
+    [payPk, ordPk, ordAddress, encryptedBackup]
   );
 
   const value = useMemo(
@@ -739,7 +729,6 @@ const WalletProvider: React.FC<Props> = (props) => {
       fundingUtxos,
       generateKeys,
       getOrdinalUTXOs,
-      getRawTxById,
       getUTXOs,
       initialized,
       ordAddress,
