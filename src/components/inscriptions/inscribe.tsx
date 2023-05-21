@@ -11,7 +11,7 @@ import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
 import Artifact from "../artifact";
 import { FetchStatus, toastErrorProps } from "../pages";
-import InscriptionTabs, { InscriptionTab } from "./tabs";
+import { InscriptionTab } from "./tabs";
 
 const Input = styled.input`
   padding: 0.5rem;
@@ -211,7 +211,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             );
             return;
           }
-          inscription.tick = selectedBsv20?.ticker;
+          inscription.tick = selectedBsv20?.tick;
           inscription.amount = amount;
         default:
           break;
@@ -328,7 +328,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
   return (
     <div className="flex flex-col w-full max-w-xl mx-auto p-4">
-      <InscriptionTabs currentTab={tab} />
+      {/* <InscriptionTabs currentTab={tab} /> */}
       <div className="w-full">
         <form>
           {(!tab || tab === InscriptionTab.Image) && (

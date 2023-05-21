@@ -23,6 +23,7 @@ export enum ArtifactType {
   MarkDown,
   Text,
   JSON,
+  BSV20,
 }
 
 type ArtifactProps = {
@@ -70,6 +71,8 @@ const Artifact: React.FC<ArtifactProps> = ({
       artifactType = ArtifactType.MarkDown;
     } else if (contentType === "text/html") {
       artifactType = ArtifactType.HTML;
+    } else if (contentType === "application/bsv-20") {
+      artifactType = ArtifactType.BSV20;
     } else if (contentType?.startsWith("image")) {
       artifactType = ArtifactType.Image;
     }
@@ -135,7 +138,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           sandbox=" "
         />
       </div>
-    ) : type === ArtifactType.JSON ? (
+    ) : type === ArtifactType.BSV20 || type === ArtifactType.JSON ? (
       <div
         className={`h-full p-4 ${classNames?.wrapper || ""} ${
           classNames?.media || ""
