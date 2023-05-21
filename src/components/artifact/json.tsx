@@ -6,10 +6,15 @@ import { FetchStatus } from "../../components/pages";
 type TextArtifactProps = {
   outPoint?: string;
   className?: string;
+  json?: JSON;
 };
 
-const JsonArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
-  const [json, setJson] = useState<JSON>();
+const JsonArtifact: React.FC<TextArtifactProps> = ({
+  outPoint,
+  className,
+  json: j,
+}) => {
+  const [json, setJson] = useState<JSON | undefined>(j);
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );

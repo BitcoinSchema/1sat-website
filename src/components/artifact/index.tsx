@@ -1,8 +1,10 @@
 import { API_HOST } from "@/context/ordinals";
+import { head } from "lodash";
 import Image from "next/image";
 import Router from "next/router";
 import React, { useMemo, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import styled from "styled-components";
 import tw from "twin.macro";
 import Model from "../model";
@@ -35,6 +37,7 @@ type ArtifactProps = {
   src?: string;
   onClick?: (outPoint: string) => void;
   txid?: string;
+  price?: number;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -46,6 +49,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   src = `${API_HOST}/api/files/inscriptions/${outPoint}`,
   onClick,
   txid,
+  price,
 }) => {
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
@@ -53,27 +57,28 @@ const Artifact: React.FC<ArtifactProps> = ({
 
   const type = useMemo(() => {
     let artifactType = undefined;
+    const t = head(contentType?.toLowerCase().split(";"));
     if (contentType?.startsWith("audio")) {
       artifactType = ArtifactType.Audio;
-    } else if (contentType?.startsWith("video")) {
+    } else if (t?.startsWith("video")) {
       artifactType = ArtifactType.Video;
-    } else if (contentType?.startsWith("model")) {
+    } else if (t?.startsWith("model")) {
       artifactType = ArtifactType.Model;
-    } else if (contentType === "application/pdf") {
+    } else if (t === "application/pdf") {
       artifactType = ArtifactType.Model;
-    } else if (contentType === "application/javascript") {
+    } else if (t === "application/javascript") {
       artifactType = ArtifactType.Javascript;
-    } else if (contentType === "application/json") {
+    } else if (t === "application/json") {
       artifactType = ArtifactType.JSON;
-    } else if (contentType === "text/plain") {
+    } else if (t === "text/plain") {
       artifactType = ArtifactType.Text;
-    } else if (contentType === "text/markdown") {
+    } else if (t === "text/markdown") {
       artifactType = ArtifactType.MarkDown;
-    } else if (contentType === "text/html") {
+    } else if (t === "text/html") {
       artifactType = ArtifactType.HTML;
-    } else if (contentType === "application/bsv-20") {
+    } else if (t === "application/bsv-20") {
       artifactType = ArtifactType.BSV20;
-    } else if (contentType?.startsWith("image")) {
+    } else if (t?.startsWith("image")) {
       artifactType = ArtifactType.Image;
     }
     return artifactType;
@@ -152,10 +157,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           classNames?.media || ""
         }`}
       >
-        {/* {generatedImage} */}
-        <ItemContainer>
-          <TextArtifact outPoint={outPoint} />
-        </ItemContainer>
+        <TextArtifact outPoint={outPoint} />
       </div>
     ) : type === ArtifactType.Model ? (
       <div
@@ -244,7 +246,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           </div>
           <div className={`hidden md:block`}>&nbsp;</div>
           <div className={`rounded bg-[#222] p-2 text-[#aaa]`}>
-            {contentType}
+            {price ? `${toBitcoin(price)} BSV` : contentType}
           </div>
         </div>
       )}

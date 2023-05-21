@@ -2,7 +2,7 @@ import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";
 import React, { useCallback, useState } from "react";
-import sb from "satoshi-bitcoin";
+import sb from "satoshi-bitcoin-ts";
 import Ordinals from "../ordinals/list";
 
 interface PageProps extends WithRouterProps {}

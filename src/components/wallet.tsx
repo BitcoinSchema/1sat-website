@@ -7,7 +7,7 @@ import toast, { LoaderIcon } from "react-hot-toast";
 import { FiArrowDown, FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
 import { TbCurrencyBitcoin } from "react-icons/tb";
-import sb from "satoshi-bitcoin";
+import sb from "satoshi-bitcoin-ts";
 import styled from "styled-components";
 import { FetchStatus, toastProps } from "./pages";
 

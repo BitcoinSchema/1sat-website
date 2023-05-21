@@ -38,6 +38,12 @@ export interface OrdUtxo extends Utxo {
   MAP?: MAP;
 }
 
+export interface Listing extends OrdUtxo {
+  price: number;
+  payout: string; // base64 encoded
+  spend: string;
+}
+
 type ContextValue = {
   getListings: () => Promise<void>;
   getListing: (outPoint: string) => Promise<void>;
@@ -45,7 +51,7 @@ type ContextValue = {
   fetchListingStatus: FetchStatus;
   fetchInscriptionsStatus: FetchStatus;
   listing?: OrdUtxo;
-  listings?: OrdUtxo[];
+  listings?: Listing[];
   setFetchInscriptionsStatus: (status: FetchStatus) => void;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
@@ -72,7 +78,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     useState<FetchStatus>(FetchStatus.Idle);
 
   const [listing, setListing] = useState<OrdUtxo>();
-  const [listings, setListings] = useState<OrdUtxo[]>();
+  const [listings, setListings] = useState<Listing[]>();
 
   const getListing = useCallback(
     async (outPoint: string) => {

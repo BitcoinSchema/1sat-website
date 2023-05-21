@@ -2,6 +2,7 @@ import { API_HOST } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FetchStatus } from "../pages";
+import JsonArtifact from "./json";
 
 type TextArtifactProps = {
   outPoint?: string;
@@ -13,35 +14,51 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+  const [isJson, setIsJson] = useState<boolean>(false);
 
   useEffect(() => {
     const fire = async () => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
-
+        console.log("Fetching");
         const result = await fetch(
           `${API_HOST}/api/files/inscriptions/${outPoint}`
         );
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
+        try {
+          JSON.parse(resultText);
+          setIsJson(true);
+        } catch (e) {}
         setText(resultText);
       } catch (e) {
         setFetchTextStatus(FetchStatus.Error);
       }
     };
-    if (!text) {
+    if (!text && fetchTextStatus === FetchStatus.Idle) {
       fire();
     }
   }, [text, outPoint, setText, setFetchTextStatus]);
 
+  useEffect(() => {
+    console.log("Text", text);
+  }, [text]);
+
   return fetchTextStatus === FetchStatus.Success ? (
-    <pre
-      className={`flex items-center justify-center w-full h-full transition  ${
-        className ? className : ""
-      }`}
-    >
-      {text}
-    </pre>
+    isJson ? (
+      <JsonArtifact
+        outPoint={outPoint}
+        className={className ? className : ""}
+      />
+    ) : (
+      <pre
+        className={`flex items-center justify-center w-full h-full transition  ${
+          className ? className : ""
+        }`}
+      >
+        {text}
+      </pre>
+    )
   ) : (
     <LoaderIcon className="mx-auto" />
   );
