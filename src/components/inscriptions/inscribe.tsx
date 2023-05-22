@@ -1,4 +1,4 @@
-import { API_HOST } from "@/context/ordinals";
+import { API_HOST, BSV20 } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
@@ -25,16 +25,6 @@ const Label = styled.label`
   display: flex;
   flex-direction: column;
 `;
-
-type BSV20 = {
-  p: string;
-  op: string;
-  amt?: string;
-  tick: string;
-  max?: string;
-  dec?: string;
-  lim?: string;
-};
 
 enum ActionType {
   Mint = "mint",
@@ -71,7 +61,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     ActionType.Deploy
   );
   const [selectedBsv20, setSelectedBsv20] = useState<BSV20>();
-  const [limit, setLimit] = useState<string | undefined>(undefined);
+  const [limit, setLimit] = useState<string | undefined>("1337");
   const [maxSupply, setMaxSupply] = useState<string>("21000000");
   const [decimals, setDecimals] = useState<number>(18);
   const [amount, setAmount] = useState<string>();
@@ -90,7 +80,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
   const toggleOptionalFields = useCallback(() => {
     setShowOptionalFields(!showOptionalFields);
-  }, [limit, showOptionalFields]);
+  }, [showOptionalFields]);
 
   function readFileAsBase64(file: any): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -118,12 +108,12 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         setPreview(null);
       }
     },
-    [setPreview]
+    [setPreview, setSelectedFile]
   );
 
   const utxo = useMemo(() => head(fundingUtxos), [fundingUtxos]);
 
-  const inscribeImage = async () => {
+  const inscribeImage = useCallback(async () => {
     if (!selectedFile?.type) {
       return;
     }
@@ -176,7 +166,16 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       toast.error("Failed to inscribe " + e, toastErrorProps);
       console.error(e);
     }
-  };
+  }, [
+    setInscribeStatus,
+    selectedFile,
+    inscribedCallback,
+    payPk,
+    ordAddress,
+    changeAddress,
+    setPendingTransaction,
+    utxo,
+  ]);
 
   const inscribeUtf8 = useCallback(
     async (text: string, contentType: string) => {
@@ -407,20 +406,23 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             event.preventDefault();
             setTickerAvailable(false);
           } else if (expectExist) {
-            const { p, op, tick, lim, max, dec, supply } = await resp.json();
-            const bsv20 = {
-              p,
-              op,
-              tick,
-              lim,
-              max,
-              dec,
-            };
-            console.log("selected BSV20", { bsv20 });
+            const bsv20 = (await resp.json()) as BSV20;
+
+            console.log(
+              "selected BSV20",
+              { bsv20 },
+              parseInt(bsv20.supply!) < parseInt(bsv20.max!)
+            );
             setSelectedBsv20(bsv20);
-            if (parseInt(supply) < parseInt(max)) {
+            if (
+              !!bsv20 &&
+              bsv20.max !== undefined &&
+              bsv20.supply !== undefined &&
+              parseInt(bsv20.supply) < parseInt(bsv20.max)
+            ) {
               setTickerAvailable(true);
             } else {
+              setTickerAvailable(false);
               setMintError("Minted Out");
             }
           }
@@ -439,12 +441,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         setFetchTickerStatus(FetchStatus.Error);
       }
     },
-    [
-      setSelectedBsv20,
-      setTickerAvailable,
-      setFetchTickerStatus,
-      tickerAvailable,
-    ]
+    [setSelectedBsv20, setTickerAvailable, setFetchTickerStatus]
   );
 
   const changeMaxSupply = useCallback(
@@ -479,10 +476,10 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           : "Ticker Unavailable"
         : mintError
       : "1-4 Characters";
-  }, [mintError, selectedActionType, tickerAvailable]);
+  }, [ticker, mintError, selectedActionType, tickerAvailable]);
 
   return (
-    <div className="flex flex-col w-full max-w-xl mx-auto p-4">
+    <div className="flex flex-col w-full mx-auto p-4">
       <InscriptionTabs currentTab={tab} />
       <div className="w-full">
         <form>
@@ -524,7 +521,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           {tab === InscriptionTab.BSV20 && (
             <div className="w-full min-w-[25vw]">
               <select
-                className="w-full p-2 rounded my-2 cursor-pointer"
+                className="text-white w-full p-2 rounded my-2 cursor-pointer"
                 value={selectedActionType}
                 onChange={changeSelectedActionType}
               >
@@ -578,7 +575,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                     <input
                       pattern="\d+"
                       type="text"
-                      className="w-full rounded p-2 uppercase"
+                      className="text-white w-full rounded p-2 uppercase"
                       onChange={changeMaxSupply}
                       value={maxSupply}
                     />
@@ -605,7 +602,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
                     <input
                       disabled={!!mintError}
-                      className="w-full rounded p-2"
+                      className="text-white w-full rounded p-2"
                       type="number"
                       min={1}
                       max={selectedBsv20?.lim}
@@ -624,7 +621,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                       <span className="text-[#555]">Optional</span>
                     </div>
                     <input
-                      className="w-full rounded p-2"
+                      className="text-white w-full rounded p-2"
                       type="string"
                       value={limit}
                       pattern="^\S+$"
@@ -657,7 +654,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                         Decimal Precision
                       </div>
                       <input
-                        className="w-full rounded p-2"
+                        className="text-white w-full rounded p-2"
                         type="number"
                         min={0}
                         max={18}
@@ -748,7 +745,7 @@ const handleInscribing = async (
       ordAddress,
       paymentPk,
       changeAddress,
-      0.06,
+      0.9,
       inscription,
       undefined // optional metadata
       // idKey // optional id key

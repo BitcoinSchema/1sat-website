@@ -38,7 +38,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
     if (!text && fetchTextStatus === FetchStatus.Idle) {
       fire();
     }
-  }, [text, outPoint, setText, setFetchTextStatus]);
+  }, [fetchTextStatus, text, outPoint, setText, setFetchTextStatus]);
 
   useEffect(() => {
     console.log("Text", text);

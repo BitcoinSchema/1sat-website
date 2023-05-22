@@ -2,7 +2,7 @@ import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";
 import React, { useCallback, useState } from "react";
-import sb from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import Ordinals from "../ordinals/list";
 
 interface PageProps extends WithRouterProps {}
@@ -65,7 +65,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
             onClick={submit}
             className="p-2 rounded bg-teal-500 text-white"
           >
-            List for {usdRate ? sb.toBitcoin(usdRate * price) : ""} BSV
+            List for {usdRate ? toBitcoin(usdRate * price) : ""} BSV
           </button>
         </div>
       </div>

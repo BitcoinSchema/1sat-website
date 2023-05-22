@@ -2,27 +2,89 @@ import Artifact from "@/components/artifact";
 import MarketTabs, { MarketTab } from "@/components/pages/market/tabs/tabs";
 import { useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
-import React, { useEffect } from "react";
+import { useRouter } from "next/router";
+import React, { useEffect, useMemo } from "react";
 import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
 
 const ListingsPage: React.FC<PageProps> = ({}) => {
+  const router = useRouter();
+  const { page } = router.query as { page: string | undefined };
+
   const { listings, getListings, fetchListingsStatus } = useOrdinals();
 
   useEffect(() => {
     const fire = async () => {
-      await getListings();
+      await getListings(parseInt(page || "1"));
     };
     if (!listings && fetchListingsStatus === FetchStatus.Idle) {
       fire();
     }
-  }, [listings, getListings, fetchListingsStatus]);
+  }, [page, listings, getListings, fetchListingsStatus]);
+
+  const pagination = useMemo(() => {
+    return (
+      <div className="text-center h-full flex items-center justify-center">
+        <div className="flex items-center justify-between max-w-2xl">
+          {/* <div className="">
+            <button
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4 mr-4"
+              onClick={() =>
+                router.push(`${parseInt(inscriptionId as string) - 100}`)
+              }
+            >
+              -100
+            </button>
+          </div> */}
+          <div className="">
+            <button
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
+              onClick={() =>
+                router.push(
+                  `/market/listings/?page=${page ? parseInt(page) - 1 : 1}`
+                )
+              }
+            >
+              Prev
+            </button>
+          </div>
+          <div className="bg-[#111] rounded flex items-center mb-8 max-w-2xl text-sm p-2 md:p-4 m-4">
+            Page {parseInt(page || "1")}
+          </div>
+          <div className="">
+            <button
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
+              onClick={() =>
+                router.push(
+                  page
+                    ? `/market/listings/?page=${parseInt(page || "1") + 1}`
+                    : "/market/listings/?page=2"
+                )
+              }
+            >
+              Next
+            </button>
+          </div>
+          {/* <div className="">
+            <button
+              className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4 ml-4"
+              onClick={() =>
+                router.push(`/${parseInt(inscriptionId as string) + 100}`)
+              }
+            >
+              +100
+            </button>
+          </div> */}
+        </div>
+      </div>
+    );
+  }, [router, page]);
 
   return (
     <div>
       <MarketTabs currentTab={MarketTab.Listings} />
-      <h1 className="mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
+      <h1 className="text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
         Market Listings
       </h1>
       {fetchListingsStatus === FetchStatus.Success && (
@@ -46,6 +108,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
           })}
         </div>
       )}
+      {pagination}
     </div>
   );
 };

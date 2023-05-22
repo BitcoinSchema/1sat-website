@@ -7,7 +7,7 @@ import toast, { LoaderIcon } from "react-hot-toast";
 import { FiArrowDown, FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
 import { TbCurrencyBitcoin } from "react-icons/tb";
-import sb from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import styled from "styled-components";
 import { FetchStatus, toastProps } from "./pages";
 
@@ -157,7 +157,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
               : balance.toFixed(2)}
           </h1>
           <h2 className="mb-24 text-center text-teal-600">
-            {sb.toBitcoin(balance)} BSV
+            {toBitcoin(balance)} BSV
           </h2>
           <div className="text-center w-full items-center flex md:px-8">
             <div

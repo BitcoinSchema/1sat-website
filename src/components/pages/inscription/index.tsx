@@ -4,6 +4,7 @@ import { useBitcoinSchema } from "@/context/bitcoinschema";
 import { OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
+import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -38,6 +39,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           setFetchDataStatus(FetchStatus.Success);
 
           console.log({ bmapTx });
+
           if (bmapTx.MAP) {
             // TODO: This assumes the AMP index is the same as vout
             // thile this may work in most cases it is a bad assumption
@@ -62,7 +64,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
   const ordUtxo = useMemo(() => {
     return ordUtxos?.find((o) => o.id === parseInt(inscriptionId as string));
-  }, [ordUtxos]);
+  }, [inscriptionId, ordUtxos]);
 
   const pagination = useMemo(() => {
     return (
@@ -130,6 +132,30 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     inscriptionId,
   ]);
 
+  const isBsv20 = useMemo(() => {
+    if (artifact) {
+      console.log(
+        { artifact },
+        (artifact.height || 0) > 793000,
+        head(artifact.file!.type.split(";"))
+      );
+      if (
+        (head(artifact.file!.type.split(";")) === "text/plain" &&
+          (artifact.height || 0) > 793000) ||
+        head(artifact.file!.type.split(";")) === "application/bsv-20"
+      ) {
+        return true;
+      }
+      return;
+    } else {
+      return false;
+    }
+  }, [artifact]);
+
+  useEffect(() => {
+    console.log({ isBsv20 });
+  }, [isBsv20]);
+
   return (
     <>
       <Head>
@@ -194,56 +220,57 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
             </div>
             {ordUtxos?.some(
               (o) => o.id === parseInt(inscriptionId as string)
-            ) && (
-              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
-                <div className="flex justify-between items-center">
-                  <div>Transfer Ownership</div>
-                  <div
-                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                    onClick={async () => {
-                      if (!artifact) {
-                        return;
-                      }
-                      console.log("click send");
-                      const address = prompt(
-                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
-                      );
-
-                      if (address) {
-                        console.log(
-                          "transferring",
-                          { artifact },
-                          "from",
-                          { ordUtxo },
-                          "to",
-                          { address },
-                          "funded by",
-                          { fundingUtxos }
+            ) &&
+              !isBsv20 && (
+                <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
+                  <div className="flex justify-between items-center">
+                    <div>Transfer Ownership</div>
+                    <div
+                      className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                      onClick={async () => {
+                        if (!artifact) {
+                          return;
+                        }
+                        console.log("click send");
+                        const address = prompt(
+                          "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
                         );
 
-                        try {
-                          if (ordUtxo) {
-                            await transfer(ordUtxo, address);
-                          } else {
+                        if (address) {
+                          console.log(
+                            "transferring",
+                            { artifact },
+                            "from",
+                            { ordUtxo },
+                            "to",
+                            { address },
+                            "funded by",
+                            { fundingUtxos }
+                          );
+
+                          try {
+                            if (ordUtxo) {
+                              await transfer(ordUtxo, address);
+                            } else {
+                              toast.error(
+                                "No ordinal utxo found.",
+                                toastErrorProps
+                              );
+                            }
+                          } catch (e) {
                             toast.error(
-                              "No ordinal utxo found.",
+                              "Something went wrong" + e,
                               toastErrorProps
                             );
                           }
-                        } catch (e) {
-                          toast.error(
-                            "Something went wrong" + e,
-                            toastErrorProps
-                          );
                         }
-                      }
-                    }}
-                  >
-                    Send
+                      }}
+                    >
+                      Send
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             {
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <div className="flex justify-between items-center">

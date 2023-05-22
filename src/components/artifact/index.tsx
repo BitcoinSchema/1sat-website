@@ -198,7 +198,11 @@ const Artifact: React.FC<ArtifactProps> = ({
           <Image
             className={`h-auto ${classNames?.media ? classNames.media : ""}`}
             // TODO: Use a opl account for this
-            src={`https://res.cloudinary.com/jamifybitcoin/image/fetch/c_fill,g_center,h_300,w_300/f_auto/${src}`}
+            src={
+              src.startsWith("data:")
+                ? src
+                : `https://res.cloudinary.com/jamifybitcoin/image/fetch/c_fill,g_center,h_300,w_300/f_auto/${src}`
+            }
             id={`artifact_${new Date().getTime()}_image`}
             alt={`Inscription${id ? " #" + id : ""}`}
             // placeholder="blur"
@@ -211,7 +215,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         )}
       </ItemContainer>
     );
-  }, [type, src, classNames, outPoint]);
+  }, [ItemContainer, type, src, classNames, outPoint]);
 
   return (
     <ArtifactContainer

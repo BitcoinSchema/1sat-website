@@ -37,7 +37,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
 
   const to = useMemo(() => {
     return from + (ordUtxos?.length ? ordUtxos.length - 1 : 0);
-  }, [ordUtxos, from, currentPage]);
+  }, [ordUtxos, from]);
 
   const toggleSort = useCallback(() => {
     Router.push(`/ordinals/?sort=${currentSort === 1 ? 0 : 1}`);

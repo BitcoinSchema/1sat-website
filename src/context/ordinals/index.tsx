@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import * as http from "../../utils/httpClient";
+import { ORDS_PER_PAGE } from "../wallet";
 
 export const API_HOST = `https://ordinals.gorillapool.io`;
 
@@ -44,13 +45,32 @@ export interface Listing extends Utxo {
   outPoint: string;
   MAP: MAP;
   file: GPFile;
+  listing: boolean;
   price: number;
   payout: string; // base64 encoded
   spend: string;
 }
 
+export type BSV20 = {
+  p: string;
+  op: string;
+  amt?: string;
+  tick: string;
+  max?: string;
+  dec?: string;
+  lim?: string;
+  supply?: string;
+  valid: boolean;
+};
+
 type ContextValue = {
-  getListings: () => Promise<void>;
+  bsv20s?: BSV20[];
+  getBsv20: (page: number) => Promise<void>;
+  fetchBsv20Status: FetchStatus;
+  activity?: Listing[];
+  getActivity: (page: number) => Promise<void>;
+  fetchActivityStatus: FetchStatus;
+  getListings: (page: number) => Promise<void>;
   getListing: (outPoint: string) => Promise<void>;
   fetchListingsStatus: FetchStatus;
   fetchListingStatus: FetchStatus;
@@ -73,6 +93,9 @@ interface Props {
   children?: ReactNode;
 }
 export const OrdinalsProvider: React.FC<Props> = (props) => {
+  const [fetchActivityStatus, setFetchActivityStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
   const [fetchListingsStatus, setFetchListingsStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -84,7 +107,12 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
 
   const [listing, setListing] = useState<OrdUtxo>();
   const [listings, setListings] = useState<Listing[]>();
+  const [activity, setActivity] = useState<Listing[]>();
 
+  const [bsv20s, setBsv20s] = useState<BSV20[]>();
+  const [fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
   const getListing = useCallback(
     async (outPoint: string) => {
       setFetchListingStatus(FetchStatus.Loading);
@@ -102,23 +130,74 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
         console.error("failed to get listings", e);
       }
     },
-    [setListing]
+    [setFetchListingStatus, setListing]
   );
 
-  const getListings = useCallback(async () => {
-    setFetchListingsStatus(FetchStatus.Loading);
-    try {
-      const { promise } = http.customFetch<any>(`${API_HOST}/api/market`);
+  const getListings = useCallback(
+    async (page: number) => {
+      setFetchListingsStatus(FetchStatus.Loading);
+      try {
+        const offset = (page - 1) * ORDS_PER_PAGE;
 
-      const results = await promise;
-      setFetchListingsStatus(FetchStatus.Success);
+        const { promise } = http.customFetch<any>(
+          `${API_HOST}/api/market?limit=${ORDS_PER_PAGE}&offset=${offset}`
+        );
 
-      setListings(results);
-    } catch (e) {
-      setFetchListingsStatus(FetchStatus.Error);
-      console.error("failed to get listings", e);
-    }
-  }, [setListings]);
+        const results = await promise;
+        setFetchListingsStatus(FetchStatus.Success);
+
+        setListings(results);
+      } catch (e) {
+        setFetchListingsStatus(FetchStatus.Error);
+        console.error("failed to get listings", e);
+      }
+    },
+    [setFetchListingsStatus, setListings]
+  );
+
+  const getActivity = useCallback(
+    async (page: number) => {
+      setFetchActivityStatus(FetchStatus.Loading);
+      try {
+        const offset = (page - 1) * ORDS_PER_PAGE;
+
+        const { promise } = http.customFetch<any>(
+          `${API_HOST}/api/market/recent?limit=${ORDS_PER_PAGE}&offset=${offset}`
+        );
+
+        const results = await promise;
+        setFetchActivityStatus(FetchStatus.Success);
+
+        setActivity(results);
+      } catch (e) {
+        setFetchActivityStatus(FetchStatus.Error);
+        console.error("failed to get listings", e);
+      }
+    },
+    [setActivity, setFetchActivityStatus]
+  );
+
+  const getBsv20 = useCallback(
+    async (page: number) => {
+      setFetchBsv20Status(FetchStatus.Loading);
+      try {
+        const offset = (page - 1) * ORDS_PER_PAGE;
+
+        const { promise } = http.customFetch<any>(
+          `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}`
+        );
+
+        const results = await promise;
+        setFetchBsv20Status(FetchStatus.Success);
+
+        setBsv20s(results);
+      } catch (e) {
+        setFetchBsv20Status(FetchStatus.Error);
+        console.error("failed to get listings", e);
+      }
+    },
+    [setBsv20s, setFetchBsv20Status]
+  );
 
   const getInscriptionsById = useCallback(
     async (txidOrOrigin: string): Promise<GPInscription[]> => {
@@ -206,6 +285,12 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
 
   const value = useMemo(
     () => ({
+      bsv20s,
+      getBsv20,
+      fetchBsv20Status,
+      activity,
+      getActivity,
+      fetchActivityStatus,
       listing,
       listings,
       fetchListingsStatus,
@@ -219,6 +304,12 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       getArtifactsByOrigin: getArtifactsByTxId,
     }),
     [
+      bsv20s,
+      getBsv20,
+      fetchBsv20Status,
+      activity,
+      getActivity,
+      fetchActivityStatus,
       fetchListingStatus,
       listing,
       listings,
