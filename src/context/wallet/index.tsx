@@ -213,7 +213,7 @@ const WalletProvider: React.FC<Props> = (props) => {
             txid: e.txid,
             // id: parseInt(e.id),
             vout: e.vout,
-            type: e.file?.type,
+            file: e.file,
             origin: e.origin,
             height: e.height,
           } as OrdUtxo,
@@ -293,7 +293,7 @@ const WalletProvider: React.FC<Props> = (props) => {
             vout: a.vout,
             id: a.id,
             origin: a.origin,
-            type: a.file.type,
+            file: a.file,
           } as OrdUtxo);
         }
         setOrdUtxos(oUtxos);

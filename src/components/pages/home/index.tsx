@@ -128,7 +128,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
                   outPoint={
                     artifact.origin || ` ${artifact?.txid}_${artifact?.vout}`
                   }
-                  contentType={artifact.type}
+                  contentType={artifact.file?.type}
                   classNames={{
                     wrapper: "min-w-96",
                     media: "max-h-96 max-w-96",

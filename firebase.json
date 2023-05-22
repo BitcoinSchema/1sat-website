@@ -24,6 +24,10 @@
         "destination": "/preview.html"
       },
       {
+        "source": "/market/bsv20",
+        "destination": "/market/bsv20.html"
+      },
+      {
         "source": "/tx/**",
         "destination": "/tx/[outpoint].html"
       },

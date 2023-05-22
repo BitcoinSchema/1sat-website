@@ -10,6 +10,7 @@ interface Props {
 
 export enum MarketTab {
   Listings = "listings",
+  BSV20 = "bsv20",
   Activity = "activity",
   Home = "home",
 }
@@ -20,7 +21,7 @@ const MarketTabs: React.FC<Props> = ({
   onClickSelected,
 }) => {
   return (
-    <S.Tabs className="max-w-7xl mx-auto my-8">
+    <S.Tabs className="max-w-7xl mx-auto my-8 flex justify-center">
       {/* <S.Tab
         partiallyactive={currentTab === Tab.Overview ? "true" : "false"}
         href={`/`}
@@ -49,6 +50,17 @@ const MarketTabs: React.FC<Props> = ({
         }
       >
         Listings
+      </S.Tab>
+      <S.Tab
+        partiallyactive={currentTab === MarketTab.BSV20 ? "true" : "false"}
+        href={`/market/bsv20`}
+        onClick={(e) =>
+          currentTab === MarketTab.BSV20 && onClickSelected
+            ? onClickSelected(e)
+            : () => {}
+        }
+      >
+        BSV-20
       </S.Tab>
 
       <S.Tab
