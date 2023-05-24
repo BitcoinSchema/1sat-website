@@ -20,7 +20,6 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
     const fire = async () => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
-        console.log("Fetching");
         const result = await fetch(
           `${API_HOST}/api/files/inscriptions/${outPoint}`
         );
@@ -38,11 +37,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
     if (!text && fetchTextStatus === FetchStatus.Idle) {
       fire();
     }
-  }, [fetchTextStatus, text, outPoint, setText, setFetchTextStatus]);
-
-  useEffect(() => {
-    console.log("Text", text);
-  }, [text]);
+  }, [text, fetchTextStatus, outPoint, setText, setFetchTextStatus]);
 
   return fetchTextStatus === FetchStatus.Success ? (
     isJson ? (

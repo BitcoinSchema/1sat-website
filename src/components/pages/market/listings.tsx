@@ -1,5 +1,5 @@
 import Artifact from "@/components/artifact";
-import MarketTabs, { MarketTab } from "@/components/pages/market/tabs/tabs";
+import MarketTabs, { MarketTab } from "@/components/pages/market/tabs";
 import { useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";

@@ -1,5 +1,6 @@
 import OrdAddress from "@/components/ordAddress";
 import Tabs, { Tab } from "@/components/tabs";
+import { useOrdinals } from "@/context/ordinals";
 import { ORDS_PER_PAGE, useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -20,6 +21,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     fetchOrdinalUtxosStatus,
     setFetchOrdinalUtxosStatus,
   } = useWallet();
+  const { stats, fetchStatsStatus } = useOrdinals();
   const router = useRouter();
   const { page, sort } = router.query;
 
