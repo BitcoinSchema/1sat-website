@@ -1,4 +1,4 @@
-import { API_HOST, BSV20 } from "@/context/ordinals";
+import { API_HOST, BSV20, useOrdinals } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
@@ -6,8 +6,9 @@ import { PrivateKey } from "bsv-wasm-web";
 import { createOrdinal } from "js-1sat-ord";
 import { debounce, head } from "lodash";
 import { useRouter } from "next/router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { CheckmarkIcon, ErrorIcon, LoaderIcon } from "react-hot-toast";
+import { IoMdWarning } from "react-icons/io";
 import { RiSettings2Fill } from "react-icons/ri";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
@@ -44,7 +45,13 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     initialized,
   } = useWallet();
 
-  const { tab } = useRouter().query as { tab: InscriptionTab };
+  const { fetchStatsStatus, stats } = useOrdinals();
+
+  const { tab, tick, op } = useRouter().query as {
+    tab: InscriptionTab;
+    tick: string;
+    op: string;
+  };
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
@@ -65,12 +72,18 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   const [maxSupply, setMaxSupply] = useState<string>("21000000");
   const [decimals, setDecimals] = useState<number>(18);
   const [amount, setAmount] = useState<string>();
-  const [ticker, setTicker] = useState<string>();
+  const [ticker, setTicker] = useState<string>(tick);
   const [text, setText] = useState<string>();
   const [mintError, setMintError] = useState<string>();
   const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
 
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
+
+  useEffect(() => {
+    if (op) {
+      setSelectedActionType(op as ActionType);
+    }
+  }, [selectedActionType, op]);
 
   const changeAddress = useMemo(() => {
     if (initialized && payPk) {
@@ -200,7 +213,14 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       setPendingTransaction(result);
       inscribedCallback(result);
     },
-    [inscribedCallback, payPk, ordAddress, changeAddress, utxo]
+    [
+      setPendingTransaction,
+      inscribedCallback,
+      payPk,
+      ordAddress,
+      changeAddress,
+      utxo,
+    ]
   );
 
   const inscribeText = useCallback(async () => {
@@ -372,7 +392,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         setAmount(e.target.value);
       }
     },
-    [selectedActionType, setAmount]
+    [selectedBsv20, selectedActionType, setAmount]
   );
 
   const changeText = useCallback(
@@ -418,7 +438,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
               !!bsv20 &&
               bsv20.max !== undefined &&
               bsv20.supply !== undefined &&
-              parseInt(bsv20.supply) < parseInt(bsv20.max)
+              parseInt(bsv20.supply) <= parseInt(bsv20.max)
             ) {
               setTickerAvailable(true);
             } else {
@@ -460,13 +480,21 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         await checkTicker(ticker, actionType === ActionType.Mint);
       }
     },
-    [setSelectedActionType, ticker, checkTicker, selectedActionType]
+    [setSelectedActionType, ticker, checkTicker]
   );
 
   // Define the debounced function outside of the render method
   const debouncedCheckTicker = debounce(async (event, expectExist) => {
     await checkTicker(event.target.value, expectExist, event);
   }, 300); // This is a common debounce time. Adjust as needed.
+
+  const inSync = useMemo(() => {
+    return (
+      fetchStatsStatus !== FetchStatus.Loading &&
+      stats &&
+      stats.settled + 6 >= stats.latest
+    );
+  }, [fetchStatsStatus, stats]);
 
   const tickerNote = useMemo(() => {
     return tickerAvailable === false
@@ -475,12 +503,16 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           ? `¯\\_(ツ)_/¯`
           : "Ticker Unavailable"
         : mintError
-      : "1-4 Characters";
-  }, [ticker, mintError, selectedActionType, tickerAvailable]);
+      : inSync
+      ? "1-4 Characters"
+      : selectedActionType === ActionType.Deploy
+      ? "Syncing. May already be deployed."
+      : "Syncing. May be minted out.";
+  }, [ticker, mintError, selectedActionType, tickerAvailable, inSync]);
 
   return (
     <div className="flex flex-col w-full mx-auto p-4">
-      <InscriptionTabs currentTab={tab} />
+      <InscriptionTabs currentTab={tab || InscriptionTab.Image} />
       <div className="w-full">
         <form>
           {(!tab || tab === InscriptionTab.Image) && (
@@ -554,7 +586,14 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                         );
                       }}
                     />
-                    {tickerAvailable === true && (
+
+                    {tickerAvailable === true && !inSync && (
+                      <div className="absolute right-0 bottom-0 mb-2 mr-2">
+                        <IoMdWarning />
+                      </div>
+                    )}
+
+                    {tickerAvailable === true && inSync && (
                       <div className="absolute right-0 bottom-0 mb-2 mr-2">
                         <CheckmarkIcon />
                       </div>
@@ -592,10 +631,17 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                         <span
                           className="text-[#555] cursor-pointer transition hover:text-[#777]"
                           onClick={() => {
-                            setAmount(selectedBsv20.lim);
+                            setAmount(
+                              selectedBsv20?.lim && selectedBsv20.lim !== "0"
+                                ? selectedBsv20.lim
+                                : selectedBsv20.max
+                            );
                           }}
                         >
-                          Max: {selectedBsv20?.lim}
+                          Max:{" "}
+                          {selectedBsv20?.lim && selectedBsv20.lim !== "0"
+                            ? selectedBsv20.lim
+                            : selectedBsv20?.max}
                         </span>
                       )}
                     </div>
@@ -608,6 +654,13 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
                       max={selectedBsv20?.lim}
                       onChange={changeAmount}
                       value={amount}
+                      onFocus={(event) =>
+                        checkTicker(
+                          ticker,
+                          selectedActionType === ActionType.Mint,
+                          event
+                        )
+                      }
                     />
                   </label>
                 </div>

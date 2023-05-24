@@ -1,12 +1,13 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import { useBap } from "@/context/bap";
 import { useBitsocket } from "@/context/bitsocket";
+import { useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
 import Router, { useRouter } from "next/router";
 import { ChangeEvent, ReactNode, useCallback, useEffect, useMemo } from "react";
-import { Toaster } from "react-hot-toast";
+import { LoaderIcon, Toaster } from "react-hot-toast";
 
 export enum FetchStatus {
   Idle,
@@ -59,10 +60,11 @@ const Layout: React.FC<Props> = ({ children }) => {
     backupKeys,
     changeAddress,
   } = useWallet();
+  const { fetchStatsStatus, stats } = useOrdinals();
 
   const { idKey, onFileChange } = useBap();
   const { ordPk, initialized } = useWallet();
-  const { connectionStatus, connect, ordAddress } = useBitsocket();
+  const { addressConnectionStatus, connect, ordAddress } = useBitsocket();
 
   const router = useRouter();
   useEffect(() => {
@@ -86,14 +88,14 @@ const Layout: React.FC<Props> = ({ children }) => {
   useEffect(() => {
     if (
       oAddress &&
-      connectionStatus !== ConnectionStatus.CONNECTING &&
+      addressConnectionStatus !== ConnectionStatus.CONNECTING &&
       (!ordAddress ||
         ordAddress !== oAddress ||
-        connectionStatus === ConnectionStatus.IDLE)
+        addressConnectionStatus === ConnectionStatus.IDLE)
     ) {
       connect(oAddress);
     }
-  }, [ordAddress, oAddress, connect, connectionStatus]);
+  }, [ordAddress, oAddress, connect, addressConnectionStatus]);
 
   const importKeys = useCallback(() => {
     if (!backupFile) {
@@ -125,6 +127,22 @@ const Layout: React.FC<Props> = ({ children }) => {
 
   return (
     <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
+      {fetchStatsStatus !== FetchStatus.Loading &&
+        stats &&
+        stats.settled + 6 < stats.latest && (
+          <div className="rounded bg-[#111] p-2 mb-8 w-full">
+            <div className=" mx-auto max-w-lg">
+              <p className="flex items-center justify-center text-orange-300 ">
+                <LoaderIcon className="mr-2" />
+                Syncing. {stats.latest - stats.settled - 6} block
+                {stats.latest - stats.settled - 6 > 1 ? "s" : ""} behind.
+              </p>
+              <p className="text-center text-red-300 mt-2">
+                BALANCES WILL BE INACCURATE UNTIL SYNCED.
+              </p>
+            </div>
+          </div>
+        )}
       <div className="mx-auto">
         <div
           className="text-2xl md:opacity-25 md:hover:opacity-100 duration-700 transition mt-6 text-white cursor-pointer"

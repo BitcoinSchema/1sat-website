@@ -14,9 +14,10 @@ import { useLocalStorage } from "../../utils/storage";
 type ContextValue = {
   ordAddress: string | undefined;
   connect: (ordAddress: string) => Promise<void>;
-  connectionStatus: ConnectionStatus;
+  addressConnectionStatus: ConnectionStatus;
   leid: string | undefined;
-  lastEvent: JSON | null;
+  lastAddressEvent: JSON | null;
+  lastSettledEvent: string | null;
   sock: EventSource | null;
 };
 
@@ -35,10 +36,11 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
   );
   const [ordAddress, setOrdAddress] = useState<string | undefined>(undefined);
   const [sock, setSock] = useState<EventSource | null>(null);
-  const [lastEvent, setLastEvent] = useState<JSON | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<number>(
-    ConnectionStatus.IDLE
-  );
+  const [lastAddressEvent, setLastAddressEvent] = useState<JSON | null>(null);
+  const [lastSettledEvent, setLastSettledEvent] = useState<string | null>(null);
+  const [addressConnectionStatus, setAddressConnectionStatus] =
+    useState<number>(ConnectionStatus.IDLE);
+
   const [lastPath, setLastPath] = useState<string | null>(null);
   const [wasUnmounted, setWasUnmounted] = useState<boolean>();
 
@@ -51,7 +53,7 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
   useEffect(
     () => () => {
       unmounted.current = true;
-      setConnectionStatus(ConnectionStatus.IDLE);
+      setAddressConnectionStatus(ConnectionStatus.IDLE);
       setWasUnmounted(true);
     },
     []
@@ -83,28 +85,29 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
   const connect = useCallback(
     async (ordAddress: string): Promise<void> => {
       setOrdAddress(ordAddress);
+
       // setLastPath(location.pathname);
 
       if (ordAddress == null) {
-        if (sock?.OPEN === connectionStatus) {
+        if (sock?.OPEN === addressConnectionStatus) {
           sock.close();
         }
         return;
       }
 
       if (sock) {
-        if (sock.CONNECTING === connectionStatus) {
+        if (sock.CONNECTING === addressConnectionStatus) {
           return;
         }
-        if (sock.OPEN === connectionStatus) {
+        if (sock.OPEN === addressConnectionStatus) {
           sock.close();
         }
       }
 
       // Subscribe
-      setConnectionStatus(ConnectionStatus.CONNECTING);
+      setAddressConnectionStatus(ConnectionStatus.CONNECTING);
       const s = new EventSource(
-        `https://ordinals.gorillapool.io/api/subscribe?address=${ordAddress}`
+        `https://ordinals.gorillapool.io/api/subscribe?address=${ordAddress}&channel=settled&channel=indexed`
         // leid !== "undefined"
         //   ? {
         //       headers: { "Last-Event-Id": leid },
@@ -146,20 +149,28 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
           console.log({ mount: unmounted.current });
 
           console.log("socket data", data);
-          setLastEvent(data);
+          setLastAddressEvent(data);
+        }
+      });
+
+      s.addEventListener("settled", (e) => {
+        if (e.data) {
+          const data = e.data as string;
+          console.log({ settled: data });
+          setLastSettledEvent(data);
         }
       });
 
       s.onopen = function () {
         if (!unmounted.current) {
           console.log("open");
-          setConnectionStatus(ConnectionStatus.OPEN);
+          setAddressConnectionStatus(ConnectionStatus.OPEN);
         }
       };
       s.onerror = function (e) {
         console.log("socket error", e);
         if (!unmounted.current) {
-          setConnectionStatus(ConnectionStatus.FAILED);
+          setAddressConnectionStatus(ConnectionStatus.FAILED);
         }
       };
       if (!unmounted.current) {
@@ -167,9 +178,9 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
       }
     },
     [
-      connectionStatus,
+      addressConnectionStatus,
       // leid,
-      setLastEvent,
+      setLastAddressEvent,
       // location.pathname,
       setOrdAddress,
       setLeid,
@@ -180,13 +191,22 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
   const value = useMemo(
     () => ({
       ordAddress,
-      connectionStatus,
+      addressConnectionStatus,
       leid,
       connect,
       sock,
-      lastEvent,
+      lastAddressEvent,
+      lastSettledEvent,
     }),
-    [ordAddress, connect, connectionStatus, leid, sock, lastEvent]
+    [
+      ordAddress,
+      connect,
+      addressConnectionStatus,
+      leid,
+      sock,
+      lastAddressEvent,
+      lastSettledEvent,
+    ]
   );
 
   return <BitsocketContext.Provider value={value} {...props} />;

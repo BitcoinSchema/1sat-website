@@ -92,7 +92,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
         </div>
       )
     );
-  }, [ordAddress, artifact, transfer, ordUtxos]);
+  }, [ordAddress, isBsv20, artifact, transfer, ordUtxos]);
 
   return (
     <div className="flex md:flex-row flex-col justify-between items-start w-full">

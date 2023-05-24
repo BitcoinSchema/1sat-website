@@ -24,6 +24,14 @@
         "destination": "/preview.html"
       },
       {
+        "source": "/bsv20",
+        "destination": "/bsv20.html"
+      },
+      {
+        "source": "/market/bsv20/[tick].html",
+        "destination": "/market/bsv20/[tick].html"
+      },
+      {
         "source": "/market/bsv20",
         "destination": "/market/bsv20.html"
       },

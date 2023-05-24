@@ -20,7 +20,8 @@ export const Tab = styled(Link)<{
     sm:m-2
     md:ml-4
     mr-2
-    px-3
+    px-2
+    md:px-3
     py-2    
     font-medium
     text-sm

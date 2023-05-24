@@ -1,5 +1,7 @@
 import React from "react";
+import { IoMdArrowRoundBack } from "react-icons/io";
 import * as S from "./styles";
+
 interface Props {
   currentTab: MarketTab | undefined;
   showIndicator?: boolean;
@@ -12,7 +14,7 @@ export enum MarketTab {
   Listings = "listings",
   BSV20 = "bsv20",
   Activity = "activity",
-  Home = "home",
+  Featured = "featured",
 }
 
 const MarketTabs: React.FC<Props> = ({
@@ -22,23 +24,20 @@ const MarketTabs: React.FC<Props> = ({
 }) => {
   return (
     <S.Tabs className="max-w-7xl mx-auto my-8 flex justify-center">
-      {/* <S.Tab
-        partiallyactive={currentTab === Tab.Overview ? "true" : "false"}
-        href={`/`}
-      >
-        <IoMdSettings className="w-4 h-4" />
-      </S.Tab> */}
+      <S.Tab partiallyactive={"false"} href={`/`}>
+        <IoMdArrowRoundBack className="w-4 h-4" />
+      </S.Tab>
 
       <S.Tab
-        partiallyactive={currentTab === MarketTab.Home ? "true" : "false"}
+        partiallyactive={currentTab === MarketTab.Featured ? "true" : "false"}
         href={`/market`}
         onClick={(e) =>
-          currentTab === MarketTab.Home && onClickSelected
+          currentTab === MarketTab.Featured && onClickSelected
             ? onClickSelected(e)
             : () => {}
         }
       >
-        Home
+        Featured
       </S.Tab>
       <S.Tab
         partiallyactive={currentTab === MarketTab.Listings ? "true" : "false"}

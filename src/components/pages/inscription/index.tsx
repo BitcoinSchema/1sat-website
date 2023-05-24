@@ -220,57 +220,56 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
             </div>
             {ordUtxos?.some(
               (o) => o.id === parseInt(inscriptionId as string)
-            ) &&
-              !isBsv20 && (
-                <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
-                  <div className="flex justify-between items-center">
-                    <div>Transfer Ownership</div>
-                    <div
-                      className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                      onClick={async () => {
-                        if (!artifact) {
-                          return;
-                        }
-                        console.log("click send");
-                        const address = prompt(
-                          "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+            ) && (
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
+                <div className="flex justify-between items-center">
+                  <div>Transfer Ownership</div>
+                  <div
+                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                    onClick={async () => {
+                      if (!artifact) {
+                        return;
+                      }
+                      console.log("click send");
+                      const address = prompt(
+                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+                      );
+
+                      if (address) {
+                        console.log(
+                          "transferring",
+                          { artifact },
+                          "from",
+                          { ordUtxo },
+                          "to",
+                          { address },
+                          "funded by",
+                          { fundingUtxos }
                         );
 
-                        if (address) {
-                          console.log(
-                            "transferring",
-                            { artifact },
-                            "from",
-                            { ordUtxo },
-                            "to",
-                            { address },
-                            "funded by",
-                            { fundingUtxos }
-                          );
-
-                          try {
-                            if (ordUtxo) {
-                              await transfer(ordUtxo, address);
-                            } else {
-                              toast.error(
-                                "No ordinal utxo found.",
-                                toastErrorProps
-                              );
-                            }
-                          } catch (e) {
+                        try {
+                          if (ordUtxo) {
+                            await transfer(ordUtxo, address);
+                          } else {
                             toast.error(
-                              "Something went wrong" + e,
+                              "No ordinal utxo found.",
                               toastErrorProps
                             );
                           }
+                        } catch (e) {
+                          toast.error(
+                            "Something went wrong" + e,
+                            toastErrorProps
+                          );
                         }
-                      }}
-                    >
-                      Send
-                    </div>
+                      }
+                    }}
+                  >
+                    Send
                   </div>
                 </div>
-              )}
+              </div>
+            )}
             {
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <div className="flex justify-between items-center">

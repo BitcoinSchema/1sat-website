@@ -5,10 +5,12 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import * as http from "../../utils/httpClient";
+import { useBitsocket } from "../bitsocket";
 import { ORDS_PER_PAGE } from "../wallet";
 
 export const API_HOST = `https://ordinals.gorillapool.io`;
@@ -52,6 +54,7 @@ export interface Listing extends Utxo {
 }
 
 export type BSV20 = {
+  idx: string;
   p: string;
   op: string;
   amt?: string;
@@ -61,6 +64,19 @@ export type BSV20 = {
   lim?: string;
   supply?: string;
   valid: boolean;
+  height?: number;
+  txid?: string;
+  reason?: string;
+};
+
+export interface Ticker extends BSV20 {
+  accounts: number;
+}
+
+type Stats = {
+  settled: number;
+  indexed: number;
+  latest: number;
 };
 
 type ContextValue = {
@@ -83,6 +99,9 @@ type ContextValue = {
   getArtifactByInscriptionId: (
     inscriptionId: number
   ) => Promise<OrdUtxo | undefined>;
+  fetchStatsStatus: FetchStatus;
+  stats?: Stats | undefined;
+  getStats: () => void;
 };
 
 const OrdinalsContext = React.createContext<ContextValue | undefined>(
@@ -93,10 +112,14 @@ interface Props {
   children?: ReactNode;
 }
 export const OrdinalsProvider: React.FC<Props> = (props) => {
+  const { lastSettledEvent } = useBitsocket();
   const [fetchActivityStatus, setFetchActivityStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
   const [fetchListingsStatus, setFetchListingsStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
+  const [fetchStatsStatus, setFetchStatsStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
   const [fetchListingStatus, setFetchListingStatus] = useState<FetchStatus>(
@@ -108,11 +131,69 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   const [listing, setListing] = useState<OrdUtxo>();
   const [listings, setListings] = useState<Listing[]>();
   const [activity, setActivity] = useState<Listing[]>();
-
+  const [stats, setStats] = useState<Stats>();
   const [bsv20s, setBsv20s] = useState<BSV20[]>();
   const [fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+
+  type ChainInfo = {
+    chain: string;
+    blocks: number;
+    headers: number;
+    bestblockhash: string;
+    difficulty: number;
+    mediantime: number;
+    verificationprogress: number;
+    chainwork: string;
+    pruned: boolean;
+  };
+
+  const lastSettledBlock = useMemo(() => {
+    if (lastSettledEvent) {
+      return parseInt(lastSettledEvent as any);
+    }
+    return 0;
+  }, [lastSettledEvent]);
+
+  // useEffect(() => {
+  //   if (lastSettledBlock > 0 && lastSettledBlock !== stats?.settled) {
+  //     const newStats = {
+  //       ...stats,
+  //       settled: lastSettledBlock,
+  //     } as Stats;
+  //     setStats(newStats);
+  //   }
+  // }, [lastSettledBlock, setStats, stats]);
+
+  const getStats = useCallback(async () => {
+    setFetchStatsStatus(FetchStatus.Loading);
+    // https://api.whatsonchain.com/v1/bsv/main/chain/info
+    const resp = await fetch(
+      `https://api.whatsonchain.com/v1/bsv/main/chain/info`
+    );
+
+    const chainInfo = (await resp.json()) as ChainInfo;
+
+    const resp2 = await fetch(`${API_HOST}/api/stats`);
+    try {
+      const s = (await resp2.json()) as { settled: number; indexed: number };
+      setStats({ ...s, latest: chainInfo.blocks });
+      setFetchStatsStatus(FetchStatus.Success);
+    } catch (e) {
+      setFetchStatsStatus(FetchStatus.Error);
+    }
+  }, [setFetchStatsStatus, setStats]);
+
+  useEffect(() => {
+    const fire = async () => {
+      await getStats();
+    };
+    if (fetchStatsStatus === FetchStatus.Idle) {
+      fire();
+    }
+  }, [fetchStatsStatus, getStats]);
+
   const getListing = useCallback(
     async (outPoint: string) => {
       setFetchListingStatus(FetchStatus.Loading);
@@ -302,6 +383,9 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       getArtifactByInscriptionId,
       setFetchInscriptionsStatus,
       getArtifactsByOrigin: getArtifactsByTxId,
+      fetchStatsStatus,
+      stats,
+      getStats,
     }),
     [
       bsv20s,
@@ -320,6 +404,9 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       fetchInscriptionsStatus,
       getArtifactByInscriptionId,
       setFetchInscriptionsStatus,
+      fetchStatsStatus,
+      stats,
+      getStats,
     ]
   );
 

@@ -25,7 +25,7 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 import { useBitsocket } from "../bitsocket";
-import { API_HOST, GPInscription, OrdUtxo } from "../ordinals";
+import { API_HOST, BSV20, GPInscription, OrdUtxo } from "../ordinals";
 import { useRates } from "../rates";
 
 export const PROTOCOL_START_HEIGHT = 783968;
@@ -91,6 +91,16 @@ export type PendingTransaction = {
 };
 
 type ContextValue = {
+  bsv20Activity: BSV20[] | undefined;
+  getBsv20Activity: (
+    address: string,
+    page?: number | undefined,
+    sort?: boolean | undefined
+  ) => Promise<BSV20[]>;
+  fetchBsv20ActivityStatus: FetchStatus;
+  bsv20Balances: { [tick: string]: number } | undefined;
+  getBsv20Balances: (address: string) => Promise<{ [tick: string]: number }>;
+  fetchBsv20sStatus: FetchStatus;
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
   backupKeys: (e?: any) => void;
@@ -103,7 +113,11 @@ type ContextValue = {
   fetchUtxosStatus: FetchStatus;
   fundingUtxos: Utxo[] | undefined;
   generateKeys: () => Promise<void>;
-  getOrdinalUTXOs: (address: string) => Promise<void>;
+  getOrdinalUTXOs: (
+    address: string,
+    page?: number | undefined,
+    sort?: boolean | undefined
+  ) => Promise<void>;
   getRawTxById: (id: string) => Promise<string>;
   getUTXOs: (address: string) => Promise<Utxo[]>;
   initialized: boolean;
@@ -117,6 +131,7 @@ type ContextValue = {
   setBackupFile: (backupFile: File) => void;
   setCurrentTxId: (txid: string) => void;
   setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
+  setFetchBsv20sStatus: (status: FetchStatus) => void;
   setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
   setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
   transfer: (ordUtxo: OrdUtxo, toAddress: string) => Promise<void>;
@@ -132,7 +147,7 @@ interface Props {
 const WalletProvider: React.FC<Props> = (props) => {
   const [backupFile, setBackupFile] = useState<File>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
-  const { leid, lastEvent } = useBitsocket();
+  const { leid, lastAddressEvent, lastSettledEvent } = useBitsocket();
   const [pendingTransaction, setPendingTransaction] = useState<
     PendingTransaction | undefined
   >(undefined);
@@ -149,9 +164,20 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [fundingUtxos, setFundingUtxos] = useState<Utxo[] | undefined>(
     undefined
   );
+  const [bsv20Balances, setBsv20Balances] = useState<
+    { [key: string]: number } | undefined
+  >(undefined);
+  const [bsv20Activity, setBsv20Activity] = useState<BSV20[] | undefined>(
+    undefined
+  );
   const [ordUtxos, setOrdUtxos] = useState<Utxo[] | undefined>(undefined);
 
   const [fetchOrdinalUtxosStatus, setFetchOrdinalUtxosStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
+  const [fetchBsv20sStatus, setFetchBsv20sStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
+  const [fetchBsv20ActivityStatus, setFetchBsv20ActivityStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
   const [payPk, setPayPk] = useLocalStorage<string | undefined>(
@@ -170,14 +196,16 @@ const WalletProvider: React.FC<Props> = (props) => {
   const { page, sort } = router.query;
 
   const currentPage = useMemo(() => {
+    setFetchBsv20sStatus(FetchStatus.Idle);
     setFetchOrdinalUtxosStatus(FetchStatus.Idle);
     return typeof page === "string" ? parseInt(page) : 1;
-  }, [page, setFetchOrdinalUtxosStatus]);
+  }, [page, setFetchOrdinalUtxosStatus, setFetchBsv20sStatus]);
 
   const currentSort = useMemo(() => {
+    setFetchBsv20sStatus(FetchStatus.Idle);
     setFetchOrdinalUtxosStatus(FetchStatus.Idle);
     return typeof sort === "string" ? parseInt(sort) : 0;
-  }, [sort, setFetchOrdinalUtxosStatus]);
+  }, [sort, setFetchOrdinalUtxosStatus, setFetchBsv20sStatus]);
 
   useEffect(() => {
     if (rates && rates.length > 0) {
@@ -189,9 +217,9 @@ const WalletProvider: React.FC<Props> = (props) => {
   }, [rates, usdRate]);
 
   useEffect(() => {
-    if (lastEvent && ordUtxos && leid !== lastEventId) {
+    if (lastAddressEvent && ordUtxos && leid !== lastEventId) {
       setLastEventId(leid);
-      const e = lastEvent as any;
+      const e = lastAddressEvent as any;
       const filteredOrdUtxos =
         ordUtxos?.filter((o) => o.txid !== e.spend) || [];
       if (e && !e.spend) {
@@ -223,7 +251,14 @@ const WalletProvider: React.FC<Props> = (props) => {
         setOrdUtxos(filteredOrdUtxos);
       }
     }
-  }, [leid, setLastEventId, ordUtxos, setOrdUtxos, lastEvent, lastEventId]);
+  }, [
+    leid,
+    setLastEventId,
+    ordUtxos,
+    setOrdUtxos,
+    lastAddressEvent,
+    lastEventId,
+  ]);
 
   const [fetchUtxosStatus, setFetchUtxosStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -280,7 +315,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         const direction = sort ? "ASC" : "DESC";
 
         const r = await fetch(
-          `${API_HOST}/api/utxos/address/${address}/inscriptions?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}`
+          `${API_HOST}/api/utxos/address/${address}/inscriptions?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&excludeBsv20=true`
         );
 
         const utxos = (await r.json()) as GPInscription[];
@@ -372,6 +407,72 @@ const WalletProvider: React.FC<Props> = (props) => {
     },
     [setFetchUtxosStatus, setFundingUtxos]
   );
+
+  const getBsv20Balances = useCallback(
+    async (address: string): Promise<{ [tick: string]: number }> => {
+      setFetchBsv20sStatus(FetchStatus.Loading);
+      try {
+        const r = await fetch(
+          `${API_HOST}/api/bsv20/address/${address}/balance`
+        );
+        const balances = (await r.json()) as { [tick: string]: number };
+
+        setFetchBsv20sStatus(FetchStatus.Success);
+
+        setBsv20Balances(balances);
+        return balances;
+      } catch (e) {
+        setFetchBsv20sStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchBsv20sStatus, setBsv20Balances]
+  );
+
+  const getBsv20Activity = useCallback(
+    async (
+      address: string,
+      page: number = 1,
+      sort: boolean = false
+    ): Promise<BSV20[]> => {
+      setFetchBsv20sStatus(FetchStatus.Loading);
+      const offset = (page - 1) * ORDS_PER_PAGE;
+      const direction = sort ? "ASC" : "DESC";
+
+      try {
+        const r = await fetch(
+          `${API_HOST}/api/bsv20/address/${address}?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&status=4`
+        );
+        const utxos = (await r.json()) as BSV20[];
+
+        setFetchBsv20sStatus(FetchStatus.Success);
+
+        setBsv20Activity(utxos);
+        return utxos;
+      } catch (e) {
+        setFetchBsv20sStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchBsv20sStatus, setBsv20Activity]
+  );
+
+  useEffect(() => {
+    const fire = async (a: string) => {
+      await getBsv20Balances(a);
+      await getBsv20Activity(a, currentPage, currentSort === 1);
+    };
+    if (ordAddress && fetchBsv20sStatus === FetchStatus.Idle) {
+      fire(ordAddress);
+    }
+  }, [
+    currentSort,
+    currentPage,
+    getBsv20Balances,
+    getBsv20Activity,
+    ordAddress,
+    fetchBsv20sStatus,
+  ]);
 
   useEffect(() => {
     if (fundingUtxos && !currentTxId) {
@@ -783,6 +884,12 @@ const WalletProvider: React.FC<Props> = (props) => {
       currentTxId,
       deleteKeys,
       downloadPendingTx,
+      bsv20Balances,
+      getBsv20Balances,
+      bsv20Activity,
+      getBsv20Activity,
+      fetchBsv20ActivityStatus,
+      fetchBsv20sStatus,
       fetchOrdinalUtxosStatus,
       fetchUtxosStatus,
       fundingUtxos,
@@ -799,6 +906,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       reset,
       send: sendWasm,
       setBackupFile,
+      setFetchBsv20sStatus,
       setCurrentTxId,
       setFetchOrdinalUtxosStatus,
       setOrdUtxos,
@@ -807,6 +915,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       usdRate,
     }),
     [
+      bsv20Activity,
+      getBsv20Activity,
+      fetchBsv20ActivityStatus,
       artifacts,
       backupFile,
       backupKeys,
@@ -815,6 +926,10 @@ const WalletProvider: React.FC<Props> = (props) => {
       currentTxId,
       deleteKeys,
       downloadPendingTx,
+      bsv20Balances,
+      getBsv20Balances,
+      setFetchBsv20sStatus,
+      fetchBsv20sStatus,
       fetchOrdinalUtxosStatus,
       fetchUtxosStatus,
       fundingUtxos,
