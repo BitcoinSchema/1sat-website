@@ -97,8 +97,11 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
         setBroadcastResponsePayload(respData);
 
         // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
-        Router.push("/ordinals");
-
+        if (pendingTransaction.contentType !== "application/bsv-20") {
+          Router.push("/bsv20");
+        } else {
+          Router.push("/ordinals");
+        }
         return;
       } else {
         toast.error(

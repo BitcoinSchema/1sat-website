@@ -15,6 +15,19 @@ import { ORDS_PER_PAGE } from "../wallet";
 
 export const API_HOST = `https://ordinals.gorillapool.io`;
 
+export const enum SortBy {
+  PC = "pct_minted",
+  Available = "available",
+  Tick = "tick",
+  Max = "max",
+  Height = "height",
+}
+
+export const enum Dir {
+  ASC = "asc",
+  DESC = "desc",
+}
+
 type GPFile = {
   hash: string;
   size: number;
@@ -22,7 +35,6 @@ type GPFile = {
 };
 
 export type GPInscription = {
-  id: number;
   txid: string;
   vout: number;
   file: GPFile;
@@ -31,18 +43,19 @@ export type GPInscription = {
   height: number;
   idx: number;
   lock: string;
+  num: number;
 };
 
 export interface OrdUtxo extends Utxo {
   file?: GPFile;
   origin?: string;
-  id?: number;
+  num?: number;
   height?: number;
   MAP?: MAP;
 }
 
 export interface Listing extends Utxo {
-  id: number | undefined;
+  num: number | undefined;
   origin: string;
   outPoint: string;
   MAP: MAP;
@@ -81,7 +94,7 @@ type Stats = {
 
 type ContextValue = {
   bsv20s?: BSV20[];
-  getBsv20: (page: number) => Promise<void>;
+  getBsv20: (page: number, sortBy: SortBy, dir: Dir) => Promise<void>;
   fetchBsv20Status: FetchStatus;
   activity?: Listing[];
   getActivity: (page: number) => Promise<void>;
@@ -259,13 +272,13 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const getBsv20 = useCallback(
-    async (page: number) => {
+    async (page: number, sordBy: SortBy, dir: Dir) => {
       setFetchBsv20Status(FetchStatus.Loading);
       try {
         const offset = (page - 1) * ORDS_PER_PAGE;
-
+        // Available values : pct_minted, available, tick, max, height
         const { promise } = http.customFetch<any>(
-          `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}`
+          `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sordBy}&dir=${dir}`
         );
 
         const results = await promise;
@@ -338,7 +351,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
           txid: i.txid,
           file: i.file,
           origin: i.origin,
-          id: i.id,
+          num: i.num,
         } as OrdUtxo;
       });
     },
@@ -358,7 +371,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
         txid: gpInscription.txid,
         file: gpInscription.file,
         origin: gpInscription.origin,
-        id: gpInscription.id,
+        num: gpInscription.num,
       } as OrdUtxo;
     },
     [getInscriptionByInscriptionId]

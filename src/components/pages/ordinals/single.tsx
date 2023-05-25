@@ -92,19 +92,19 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
         </div>
       )
     );
-  }, [ordAddress, isBsv20, artifact, transfer, ordUtxos]);
+  }, [ordAddress, isBsv20, artifact, transfer]);
 
   return (
     <div className="flex md:flex-row flex-col justify-between items-start w-full">
       <Artifact
-        to={artifact && artifact.id ? `/inscription/${artifact.id}` : "#"}
+        to={artifact && artifact.num ? `/inscription/${artifact.num}` : "#"}
         outPoint={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
         src={
           artifact
             ? `${API_HOST}/api/files/inscriptions/${artifact.origin}`
             : ""
         }
-        id={artifact?.id}
+        num={artifact?.num}
         contentType={artifact?.file?.type}
       />
       <div className="ml-0 md:ml-4 w-full max-w-sm">{adminControls}</div>

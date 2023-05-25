@@ -31,7 +31,7 @@ export enum ArtifactType {
 type ArtifactProps = {
   outPoint?: string; // can be left out when previewing inscription not on chain yet
   contentType?: string;
-  id?: number;
+  num?: number;
   classNames?: { wrapper?: string; media?: string };
   to?: string;
   src?: string;
@@ -44,7 +44,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   outPoint,
   contentType,
   classNames,
-  id,
+  num,
   to,
   src = `${API_HOST}/api/files/inscriptions/${outPoint}`,
   onClick,
@@ -204,7 +204,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                 : `https://res.cloudinary.com/jamifybitcoin/image/fetch/c_fill,g_center,h_300,w_300/f_auto/${src}`
             }
             id={`artifact_${new Date().getTime()}_image`}
-            alt={`Inscription${id ? " #" + id : ""}`}
+            alt={`Inscription${num ? " #" + num : ""}`}
             // placeholder="blur"
             // blurDataURL={`data:image/svg+xml;base64,${toBase64(
             //   shimmer(700, 475)
@@ -215,7 +215,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         )}
       </ItemContainer>
     );
-  }, [ItemContainer, type, src, classNames, outPoint]);
+  }, [src, type, outPoint, classNames, ItemContainer, num]);
 
   return (
     <ArtifactContainer
@@ -240,13 +240,13 @@ const Artifact: React.FC<ArtifactProps> = ({
       {content}
 
       {/* TODO: Show indicator when more than one isncription */}
-      {id !== undefined && (
+      {num !== undefined && (
         <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
           <div
             className={`rounded bg-[#222] p-2 text-[#aaa] cursor-pointer`}
-            onClick={() => Router.push(`/inscription/${id}`)}
+            onClick={() => Router.push(`/inscription/${num}`)}
           >
-            #{id}
+            #{num}
           </div>
           <div className={`hidden md:block`}>&nbsp;</div>
           <div className={`rounded bg-[#222] p-2 text-[#aaa]`}>

@@ -96,7 +96,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   key={l.origin || `${l.txid}_${l.vout}`}
                   outPoint={l.origin || `${l.txid}_${l.vout}`}
                   contentType={l.file?.type}
-                  id={l.id}
+                  num={l.num}
                   classNames={{
                     wrapper: "max-w-72 max-h-72 overflow-hidden mb-2",
                   }}

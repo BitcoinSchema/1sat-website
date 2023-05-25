@@ -88,6 +88,7 @@ export type PendingTransaction = {
   numInputs: number;
   numOutputs: number;
   txid: string;
+  contentType?: string;
 };
 
 type ContextValue = {
@@ -326,7 +327,7 @@ const WalletProvider: React.FC<Props> = (props) => {
             satoshis: 1, // all ord utxos currently 1 satoshi
             txid: a.txid,
             vout: a.vout,
-            id: a.id,
+            num: a.num,
             origin: a.origin,
             file: a.file,
           } as OrdUtxo);
@@ -441,7 +442,7 @@ const WalletProvider: React.FC<Props> = (props) => {
 
       try {
         const r = await fetch(
-          `${API_HOST}/api/bsv20/address/${address}?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&status=4`
+          `${API_HOST}/api/bsv20/address/${address}?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&status=all`
         );
         const utxos = (await r.json()) as BSV20[];
 

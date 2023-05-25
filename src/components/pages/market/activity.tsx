@@ -98,7 +98,7 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
                   key={l.origin || `${l.txid}_${l.vout}`}
                   outPoint={l.origin || `${l.txid}_${l.vout}`}
                   contentType={l.file?.type}
-                  id={l.id}
+                  num={l.num}
                   classNames={{
                     wrapper: "overflow-hidden mb-2",
                   }}

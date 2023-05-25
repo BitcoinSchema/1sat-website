@@ -63,7 +63,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   }, [getBmapTxById, inscriptionId, getArtifactByInscriptionId]);
 
   const ordUtxo = useMemo(() => {
-    return ordUtxos?.find((o) => o.id === parseInt(inscriptionId as string));
+    return ordUtxos?.find((o) => o.num === parseInt(inscriptionId as string));
   }, [inscriptionId, ordUtxos]);
 
   const pagination = useMemo(() => {
@@ -195,17 +195,17 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 }}
                 contentType={artifact.file?.type}
                 outPoint={artifact.origin || ""}
-                id={artifact.id}
+                num={artifact.num}
               />
             )}
           </div>
           <div className="md:ml-4 w-full max-w-sm">
             {fetchDataStatus === FetchStatus.Success && !artifact && (
-              <div className="bg-[#111] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4 mb-4">
+              <div className="bg-[#111] mx-auto rounded mb-8 max-w-2xl break-words text-sm p-4">
                 <div>No ordinal matching that ID</div>
               </div>
             )}
-            <div className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 mx-4 my-4 md:my-0 md:mb-2">
+            <div className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 my-4 md:my-0 md:mb-2">
               {fetchDataStatus === FetchStatus.Loading && (
                 <div className="p-2">
                   <LoaderIcon className="mx-auto" />
@@ -219,7 +219,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
               )}
             </div>
             {ordUtxos?.some(
-              (o) => o.id === parseInt(inscriptionId as string)
+              (o) => o.num === parseInt(inscriptionId as string)
             ) && (
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <div className="flex justify-between items-center">
@@ -292,7 +292,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                   <div
                     className={`${
                       k === "collection" ? "cursor-pointer hover:bg-[#222]" : ""
-                    } bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-4 mx-4 my-4 md:my-0 md:mb-2`}
+                    } bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-4 my-4 md:my-0 md:mb-2`}
                     key={k}
                     onClick={() => {
                       if (k === "collection") {

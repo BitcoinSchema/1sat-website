@@ -65,6 +65,9 @@ const TickerPage: React.FC<PageProps> = ({}) => {
     return ticker?.supply === ticker?.max;
   }, [ticker]);
 
+  // available count
+  // pct minted
+
   console.log({ mintedOut });
   return (
     <>
