@@ -1,6 +1,7 @@
 import { API_HOST } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
+import { ArtifactType } from ".";
 import { FetchStatus } from "../pages";
 import JsonArtifact from "./json";
 
@@ -15,6 +16,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
     FetchStatus.Idle
   );
   const [isJson, setIsJson] = useState<boolean>(false);
+  const [isBsv20, setIsBsv20] = useState<boolean>(false);
 
   useEffect(() => {
     const fire = async () => {
@@ -26,11 +28,20 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
         try {
-          JSON.parse(resultText);
-          setIsJson(true);
-        } catch (e) {}
+          const res = JSON.parse(resultText);
+
+          if (res.op && res.p && res.p === "bsv-20") {
+            setIsBsv20(true);
+          } else {
+            setIsJson(true);
+          }
+        } catch (e) {
+          // not json
+          return;
+        }
         setText(resultText);
       } catch (e) {
+        console.error("Failed to fetch inscription", e);
         setFetchTextStatus(FetchStatus.Error);
       }
     };
@@ -40,8 +51,15 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
   }, [text, fetchTextStatus, outPoint, setText, setFetchTextStatus]);
 
   return fetchTextStatus === FetchStatus.Success ? (
-    isJson ? (
+    isBsv20 ? (
       <JsonArtifact
+        type={ArtifactType.BSV20}
+        outPoint={outPoint}
+        className={className ? className : ""}
+      />
+    ) : isJson ? (
+      <JsonArtifact
+        type={ArtifactType.JSON}
         outPoint={outPoint}
         className={className ? className : ""}
       />

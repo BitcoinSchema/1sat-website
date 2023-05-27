@@ -8,11 +8,17 @@ import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FetchStatus, toastErrorProps } from "..";
+import CollectionItem from "./collectionItem";
 
 interface PageProps extends WithRouterProps {}
+
+enum SubType {
+  Collection = "collection",
+  CollectionItem = "collectionItem",
+}
 
 const InscriptionPage: React.FC<PageProps> = ({}) => {
   const router = useRouter();
@@ -156,6 +162,56 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     console.log({ isBsv20 });
   }, [isBsv20]);
 
+  const renderSubTypeItem = useCallback((subType: SubType, value: string) => {
+    switch (subType) {
+      case SubType.Collection:
+      //return <Collection {...value} />;
+      case SubType.CollectionItem:
+        const item = JSON.parse(value) as CollectionItem;
+        return <CollectionItem collectionItem={item} />;
+    }
+    return <div></div>;
+  }, []);
+
+  const renderSubType = useCallback(
+    (k: string, v: string) => {
+      return (
+        <div
+          className={`${k === "subTypeData" ? "w-full" : ""} ${
+            k === "audio" || k === "stats" || k === "subTypeData"
+              ? "w-full"
+              : "text-right"
+          } `}
+        >
+          {k === "stats" ? (
+            Object.entries(JSON.parse(v)).map(([ks, vs]) => (
+              <div
+                key={ks}
+                className="w-full flex items-center justify-between"
+              >
+                <div className="">{ks}</div>
+                <div>{vs as string}</div>
+              </div>
+            ))
+          ) : k === "audio" ? (
+            <audio
+              className="w-full h-8 mt-2"
+              src={`https://b.map.sv/tx/${v?.split("b://")[1]}/file`}
+              controls
+            />
+          ) : k === "subTypeData" ? (
+            <div className="w-full flex items-center justify-between">
+              {renderSubTypeItem("collectionItem" as SubType, v as string)}
+            </div>
+          ) : (
+            v
+          )}
+        </div>
+      );
+    },
+    [renderSubTypeItem]
+  );
+
   return (
     <>
       <Head>
@@ -196,6 +252,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 contentType={artifact.file?.type}
                 outPoint={artifact.origin || ""}
                 num={artifact.num}
+                height={artifact.height}
               />
             )}
           </div>
@@ -309,46 +366,18 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                           : "flex-row justify-between"
                       }`}
                     >
-                      <div
-                        className={`${
-                          k === "audio" || k === "stats"
-                            ? "text-center"
-                            : "text-left"
-                        } `}
-                      >
-                        {k}
-                      </div>
-                      <div
-                        className={`${
-                          k === "audio" || k === "stats"
-                            ? "w-full"
-                            : "text-right"
-                        } `}
-                      >
-                        {k === "stats" ? (
-                          Object.entries(JSON.parse(v as string)).map(
-                            ([ks, vs]) => (
-                              <div
-                                key={ks}
-                                className="w-full flex items-center justify-between"
-                              >
-                                <div className="">{ks}</div>
-                                <div>{vs as string}</div>
-                              </div>
-                            )
-                          )
-                        ) : k === "audio" ? (
-                          <audio
-                            className="w-full h-8 mt-2"
-                            src={`https://b.map.sv/tx/${
-                              (v as string)?.split("b://")[1]
-                            }/file`}
-                            controls
-                          />
-                        ) : (
-                          v
-                        )}
-                      </div>
+                      {k !== "subType" && k !== "subTypeData" ? (
+                        <div
+                          className={`${
+                            k === "audio" || k === "stats"
+                              ? "text-center"
+                              : "text-left"
+                          } `}
+                        >
+                          {k}
+                        </div>
+                      ) : null}
+                      {k !== "subType" && renderSubType(k, v as string)}
                     </div>
                   </div>
                 ))}

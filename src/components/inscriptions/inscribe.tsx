@@ -67,6 +67,14 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   const [selectedActionType, setSelectedActionType] = useState<ActionType>(
     ActionType.Deploy
   );
+
+  const selectedTab = useMemo(() => {
+    if (tab) {
+      return tab as InscriptionTab;
+    }
+    return InscriptionTab.Image;
+  }, [tab]);
+
   const [selectedBsv20, setSelectedBsv20] = useState<BSV20>();
   const [limit, setLimit] = useState<string | undefined>("1337");
   const [maxSupply, setMaxSupply] = useState<string>("21000000");
@@ -161,6 +169,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             numInputs: tx.get_ninputs(),
             numOutputs: tx.get_noutputs(),
             txid: tx.get_id_hex(),
+            inputTxid: tx.get_input(0)?.to_hex(),
           } as PendingTransaction;
           console.log(Object.keys(result));
 
@@ -209,6 +218,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
+        inputTxid: tx.get_input(0)!.to_hex(),
       };
       setPendingTransaction(result);
       inscribedCallback(result);
@@ -311,7 +321,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   };
 
   const submitDisabled = useMemo(() => {
-    switch (tab as InscriptionTab) {
+    switch (selectedTab) {
       case InscriptionTab.Image:
         return !selectedFile || inscribeStatus === FetchStatus.Loading;
       case InscriptionTab.Text:
@@ -327,7 +337,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         return true;
     }
   }, [
-    tab,
+    selectedTab,
     fetchTickerStatus,
     tickerAvailable,
     ticker,
@@ -339,7 +349,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     if (!utxo || !payPk || !ordAddress || !changeAddress) {
       return;
     }
-    switch (tab as InscriptionTab) {
+    switch (selectedTab) {
       case InscriptionTab.Image:
         return inscribeImage();
       case InscriptionTab.Text:
@@ -512,10 +522,10 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
 
   return (
     <div className="flex flex-col w-full mx-auto p-4">
-      <InscriptionTabs currentTab={tab || InscriptionTab.Image} />
+      <InscriptionTabs currentTab={selectedTab || InscriptionTab.Image} />
       <div className="w-full">
         <form>
-          {(!tab || tab === InscriptionTab.Image) && (
+          {(!selectedTab || selectedTab === InscriptionTab.Image) && (
             <Label
               className={`${
                 selectedFile
@@ -540,7 +550,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             </Label>
           )}
 
-          {tab === InscriptionTab.Text && (
+          {selectedTab === InscriptionTab.Text && (
             <div className="w-full min-w-[25vw]">
               <textarea
                 className="w-full rounded min-h-[20vh] p-2"
@@ -550,7 +560,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
             </div>
           )}
 
-          {tab === InscriptionTab.BSV20 && (
+          {selectedTab === InscriptionTab.BSV20 && (
             <div className="w-full min-w-[25vw]">
               <select
                 className="text-white w-full p-2 rounded my-2 cursor-pointer"
@@ -754,7 +764,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
           onClick={clickInscribe}
           className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
         >
-          {tab === InscriptionTab.BSV20 ? (
+          {selectedTab === InscriptionTab.BSV20 ? (
             fetchTickerStatus === FetchStatus.Loading ? (
               <div className="flex items-center justify-center">
                 <LoaderIcon />

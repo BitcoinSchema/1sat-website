@@ -80,6 +80,7 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
               wrapper: "max-w-72 max-h-72 overflow-hidden mb-2",
             }}
             txid={a.txid}
+            height={a.height}
           />
         ))}
       </div>

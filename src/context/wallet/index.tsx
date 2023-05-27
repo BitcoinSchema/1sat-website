@@ -1,7 +1,7 @@
 import { FetchStatus, toastProps } from "@/components/pages";
 import { addressFromWif } from "@/utils/address";
 import { randomKeys } from "@/utils/keys";
-import { useLocalStorage } from "@/utils/storage";
+import { useLocalStorage, useSessionStorage } from "@/utils/storage";
 import init, {
   P2PKHAddress,
   PrivateKey,
@@ -12,7 +12,7 @@ import init, {
   TxOut as WasmTxOut,
 } from "bsv-wasm-web";
 import { Inscription, Utxo, sendOrdinal } from "js-1sat-ord";
-import { head } from "lodash";
+import { head, uniq } from "lodash";
 import Router, { useRouter } from "next/router";
 import React, {
   ReactNode,
@@ -89,6 +89,7 @@ export type PendingTransaction = {
   numOutputs: number;
   txid: string;
   contentType?: string;
+  inputTxid: string;
 };
 
 type ContextValue = {
@@ -137,6 +138,8 @@ type ContextValue = {
   setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
   transfer: (ordUtxo: OrdUtxo, toAddress: string) => Promise<void>;
   usdRate: number | undefined;
+  broadcastCache: string[] | undefined;
+  setBroadcastCache: (cache: string[]) => void;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -152,7 +155,9 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [pendingTransaction, setPendingTransaction] = useState<
     PendingTransaction | undefined
   >(undefined);
-
+  const [broadcastCache, setBroadcastCache] = useSessionStorage<
+    string[] | undefined
+  >("1satbc", []);
   const [inscribedUtxos, setInscribedUtxos] = useState<Utxo[] | undefined>(
     undefined
   );
@@ -288,7 +293,6 @@ const WalletProvider: React.FC<Props> = (props) => {
   useEffect(() => {
     const fire = async (f: File) => {
       const jsonString = await f.text();
-      console.log({ jsonString });
       if (jsonString) {
         const json = JSON.parse(jsonString);
         const pPk = json.payPk;
@@ -377,6 +381,10 @@ const WalletProvider: React.FC<Props> = (props) => {
     return await r.text();
   }, []);
 
+  useEffect(() => {
+    console.log(broadcastCache);
+  }, [broadcastCache]);
+
   const getUTXOs = useCallback(
     async (address: string): Promise<Utxo[]> => {
       setFetchUtxosStatus(FetchStatus.Loading);
@@ -387,7 +395,11 @@ const WalletProvider: React.FC<Props> = (props) => {
         const utxos = await r.json();
 
         setFetchUtxosStatus(FetchStatus.Success);
+        const newCache = uniq([...(broadcastCache || [])]);
+        setBroadcastCache(newCache);
+
         const u = utxos
+          .filter((utxo: any) => !newCache.includes(utxo.tx_hash))
           .map((utxo: any) => {
             return {
               satoshis: utxo.value,
@@ -399,6 +411,7 @@ const WalletProvider: React.FC<Props> = (props) => {
             } as Utxo;
           })
           .sort((a: Utxo, b: Utxo) => (a.satoshis > b.satoshis ? -1 : 1));
+        console.log({ u });
         setFundingUtxos(u);
         return u;
       } catch (e) {
@@ -406,7 +419,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         throw e;
       }
     },
-    [setFetchUtxosStatus, setFundingUtxos]
+    [setFetchUtxosStatus, setFundingUtxos, broadcastCache, setBroadcastCache]
   );
 
   const getBsv20Balances = useCallback(
@@ -783,6 +796,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
+        inputTxid: tx.get_input(0)!.to_hex(),
       });
 
       Router.push("/preview");
@@ -914,6 +928,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       setPendingTransaction,
       transfer,
       usdRate,
+      broadcastCache,
+      setBroadcastCache,
     }),
     [
       bsv20Activity,
@@ -953,6 +969,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       setPendingTransaction,
       transfer,
       usdRate,
+      broadcastCache,
+      setBroadcastCache,
     ]
   );
 

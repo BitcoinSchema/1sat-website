@@ -106,6 +106,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
         }
         num={artifact?.num}
         contentType={artifact?.file?.type}
+        height={artifact?.height}
       />
       <div className="ml-0 md:ml-4 w-full max-w-sm">{adminControls}</div>
     </div>

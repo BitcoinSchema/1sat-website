@@ -64,6 +64,7 @@ export interface Listing extends Utxo {
   price: number;
   payout: string; // base64 encoded
   spend: string;
+  height?: number;
 }
 
 export type BSV20 = {
@@ -76,10 +77,11 @@ export type BSV20 = {
   dec?: string;
   lim?: string;
   supply?: string;
-  valid: boolean;
+  valid: boolean | null;
   height?: number;
   txid?: string;
   reason?: string;
+  pctMinted: number;
 };
 
 export interface Ticker extends BSV20 {

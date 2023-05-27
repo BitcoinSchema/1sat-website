@@ -76,6 +76,7 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
                       contentType={artifact.type}
                       outPoint={artifact.origin || ""}
                       num={artifact.num}
+                      height={artifact.height}
                     />
                   )}
                 </div>

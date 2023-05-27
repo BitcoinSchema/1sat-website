@@ -3,6 +3,7 @@ import { useWallet } from "@/context/wallet";
 import { MAPI_HOST } from "@/pages/_app";
 import { formatBytes } from "@/utils/bytes";
 import { useLocalStorage } from "@/utils/storage";
+import { uniq } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router, { useRouter } from "next/router";
@@ -47,6 +48,8 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     changeAddress,
     downloadPendingTx,
     usdRate,
+    broadcastCache,
+    setBroadcastCache,
   } = useWallet();
 
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
@@ -58,7 +61,12 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
 
   useEffect(() => {
     const fire = async (a: string) => {
-      await getUTXOs(a);
+      try {
+        await getUTXOs(a);
+      } catch (e) {
+        console.error({ e });
+        toast.error("Error fetching UTXOs", toastErrorProps);
+      }
     };
 
     if (changeAddress && broadcastStatus === FetchStatus.Success) {
@@ -93,6 +101,10 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
       ) as BroadcastResponsePayload;
       if (respData?.returnResult === "success") {
         toast.success("Broadcasted", toastProps);
+        setBroadcastCache(
+          uniq([...(broadcastCache || []), pendingTransaction.inputTxid])
+        );
+
         setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponsePayload(respData);
 
@@ -109,6 +121,13 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
           toastErrorProps
         );
       }
+      if (respData.resultDescription === "ERROR: 258: txn-mempool-conflict") {
+        console.log("adding to broadcast cache", pendingTransaction.txid);
+        // todo add input tx not this txid!!
+        setBroadcastCache(
+          uniq([...(broadcastCache || []), pendingTransaction.inputTxid])
+        );
+      }
       setBroadcastStatus(FetchStatus.Error);
     } else if (data && data.error) {
       toast("Failed to broadcast: " + data.error, toastErrorProps);
@@ -117,9 +136,11 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
   }, [
     //pendingOrdUtxo,
     // ordUtxos,
+    setBroadcastCache,
     pendingTransaction,
     setBroadcastResponsePayload,
     fundingUtxos,
+    broadcastCache,
   ]);
 
   const feeUsd = useMemo(() => {

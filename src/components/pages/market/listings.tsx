@@ -102,6 +102,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   }}
                   txid={l.txid}
                   price={l.price}
+                  height={l.height}
                 />
               </div>
             );

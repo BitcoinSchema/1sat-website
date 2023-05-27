@@ -139,24 +139,93 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
     [findTicker]
   );
 
-  const availableArrow = useMemo(() => {
-    if (sortBy === SortBy.Available) {
-      if (dir === Dir.ASC) {
-        return <FiArrowDown className="text-white w-4 mr-2" />;
+  const tickerArrow = useMemo(() => {
+    if (sortBy === SortBy.Tick) {
+      if (dir === Dir.DESC) {
+        return <FiArrowDown className="w-4 mr-2" />;
       } else {
-        return <FiArrowUp className="text-white w-4 mr-2" />;
+        return <FiArrowUp className="w-4 mr-2" />;
       }
     }
     return null;
   }, [sortBy, dir]);
 
-  const sortAvailable = useCallback(() => {
-    if (sortBy === SortBy.Available) {
+  const heightArrow = useMemo(() => {
+    if (sortBy === SortBy.Height) {
+      if (dir === Dir.DESC) {
+        return <FiArrowDown className="w-4 mr-2" />;
+      } else {
+        return <FiArrowUp className="w-4 mr-2" />;
+      }
+    }
+    return null;
+  }, [sortBy, dir]);
+
+  const limitArrow = useMemo(() => {
+    if (sortBy === SortBy.Max) {
+      if (dir === Dir.DESC) {
+        return <FiArrowDown className="w-4 mr-2" />;
+      } else {
+        return <FiArrowUp className="w-4 mr-2" />;
+      }
+    }
+    return null;
+  }, [sortBy, dir]);
+
+  const pctMintedArrow = useMemo(() => {
+    if (sortBy === SortBy.PC) {
+      if (dir === Dir.DESC) {
+        return <FiArrowDown className="w-4 mr-2" />;
+      } else {
+        return <FiArrowUp className="w-4 mr-2" />;
+      }
+    }
+    return null;
+  }, [sortBy, dir]);
+
+  const sortHeight = useCallback(() => {
+    if (sortBy === SortBy.Height) {
       setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
     } else {
-      setSortBy(SortBy.Available);
+      setSortBy(SortBy.Height);
     }
   }, [sortBy, dir]);
+
+  const sortPctMinted = useCallback(() => {
+    if (sortBy === SortBy.PC) {
+      setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
+    } else {
+      setSortBy(SortBy.PC);
+    }
+  }, [sortBy, dir]);
+
+  const sortLimit = useCallback(() => {
+    if (sortBy === SortBy.Max) {
+      setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
+    } else {
+      setSortBy(SortBy.Max);
+    }
+  }, [sortBy, dir]);
+
+  const sortTicker = useCallback(() => {
+    if (sortBy === SortBy.Tick) {
+      setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
+    } else {
+      setSortBy(SortBy.Tick);
+    }
+  }, [sortBy, dir]);
+
+  const pctColor = (pct: number) => {
+    if (pct < 25) {
+      return "bg-emerald-500";
+    } else if (pct < 65) {
+      return "bg-orange-400 bg-opacity-75";
+    } else if (pct < 99) {
+      return "bg-red-400 bg-opacity-75";
+    } else {
+      return "bg-[#222]";
+    }
+  };
 
   return (
     <div>
@@ -165,7 +234,7 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
         BSV-20 (Fungible Tokens)
       </h1>
 
-      <div className="flex items-center mb-6">
+      <div className="flex items-center mb-6 px-4 md:max-w-lg md:mx-auto">
         <input
           type="text"
           className="p-2  rounded w-full"
@@ -178,49 +247,74 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
         </button>
       </div>
       {fetchBsv20Status === FetchStatus.Success && (
-        <div className="grid grid-cols-4">
+        <div className="flex flex-col md:grid md:grid-cols-12 gap-2">
           <>
-            <div className="text-left text-[#555] font-semibold">Ticker</div>
-            <div className="text-left text-[#555] font-semibold">
-              Limit/Mint
-            </div>
-            <div className="text-center text-[#555] font-semibold">Supply</div>
             <div
-              className="flex items-center justify-end text-[#555] font-semibold cursor-pointer hover:text-blue-500 transition"
-              onClick={sortAvailable}
+              className="col-span-2 hidden md:flex items-center text-left text-[#555] font-semibold cursor-pointer w-24 hover:text-blue-500 transition"
+              onClick={sortTicker}
             >
-              {availableArrow} Available
+              {tickerArrow} Ticker
+            </div>
+            <div
+              className="col-span-2 hidden md:flex items-center text-left text-[#555] font-semibold cursor-pointer hover:text-blue-500 transition"
+              onClick={sortLimit}
+            >
+              {limitArrow} Limit/Mint
+            </div>
+            <div
+              className="col-span-5 hidden md:flex items-center text-center text-[#555] font-semibold cursor-pointer hover:text-blue-500 transition"
+              onClick={sortPctMinted}
+            >
+              {pctMintedArrow} Supply
+            </div>
+            <div
+              className="col-span-3 hidden md:flex items-center justify-end text-[#555] font-semibold cursor-pointer hover:text-blue-500 transition"
+              onClick={sortHeight}
+            >
+              {heightArrow} Height
             </div>
           </>
-          <hr className="bg-[#333] border-0 h-[1px] my-4 col-span-4" />
+          <hr className="bg-[#333] border-0 h-[1px] my-4 col-span-12" />
           {bsv20s?.map((bsv20, index) => {
             return parseInt(bsv20.max || "0") > 0 ? (
               <React.Fragment key={`${bsv20.tick}-${index}`}>
                 <div
-                  className="p-2 font-semibold cursor-pointer hover:text-blue-500 transition"
+                  className="col-span-2 px-2 w-24 font-semibold cursor-pointer hover:text-blue-500 transition"
                   onClick={() => Router.push(`/market/bsv20/${bsv20.tick}`)}
                 >
                   {bsv20.tick}
                 </div>
 
-                <div className="text-[#AAA]">
+                <div className="col-span-2 px-2 text-[#AAA]">
+                  <span className="md:hidden">Limit/Mint: </span>
                   {parseInt(bsv20.lim || "0") === 0 ? "∞" : bsv20.lim}
                 </div>
-                <div className="text-right text-[#AAA]">
+                <div className="px-2 col-span-6 md:hidden flex items-center text-right text-[#777] relative w-full">
+                  <div className="">
+                    {bsv20.supply} / {bsv20.max}
+                  </div>
+                </div>
+                <div className="col-span-6 md:flex hidden text-right text-[#AAA] relative">
                   {bsv20.supply} / {bsv20.max}
+                  <div className="hidden md:block w-full bg-[#151515] rounded-full h-1 position absolute bottom-0 right-0">
+                    <div
+                      className={`${pctColor(
+                        bsv20.pctMinted
+                      )} h-1 rounded-full`}
+                      style={{ width: `${bsv20.pctMinted}%` }}
+                    ></div>
+                  </div>
                 </div>
                 <div
-                  className={`text-right ${
-                    fetchStatsStatus !== FetchStatus.Loading &&
-                    stats &&
-                    stats.settled + 6 < stats.latest
-                      ? "text-red-500"
-                      : parseInt(bsv20.max!) - parseInt(bsv20.supply!) > 0
-                      ? "text-emerald-400"
-                      : "text-[#555]"
-                  }`}
+                  className={`col-span-2 hidden md:flex justify-end text-right text-[#AAA]`}
                 >
-                  {parseInt(bsv20.max!) - parseInt(bsv20.supply!)}
+                  {bsv20.height}
+                </div>
+                <div className="col-span-12 block md:hidden w-full bg-[#151515] rounded-full h-1 mb-4">
+                  <div
+                    className={`${pctColor(bsv20.pctMinted)} h-1 rounded-full`}
+                    style={{ width: `${bsv20.pctMinted}%` }}
+                  ></div>
                 </div>
               </React.Fragment>
             ) : (

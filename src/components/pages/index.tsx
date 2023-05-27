@@ -6,8 +6,15 @@ import { useWallet } from "@/context/wallet";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
 import Router, { useRouter } from "next/router";
-import { ChangeEvent, ReactNode, useCallback, useEffect, useMemo } from "react";
-import { LoaderIcon, Toaster } from "react-hot-toast";
+import {
+  ChangeEvent,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import toast, { LoaderIcon, Toaster } from "react-hot-toast";
 
 export enum FetchStatus {
   Idle,
@@ -48,6 +55,18 @@ export enum ConnectionStatus {
 interface Props {
   children?: ReactNode;
 }
+// {"hash":"000000000000000006e90982f05673d1cc7ec47386d440e14f72fcd1e8871b4e","coin":1,"height":793523,"time":1685068769,"nonce":1714352154,"version":754237440,"merkleroot":"6a4d5ef9b7cbdff3ab712607ec88e22d3fa584b1fe49d370352af8b520970871","bits":"18107d19","synced":191646}
+type BlockHeader = {
+  hash: string;
+  coin: number;
+  height: number;
+  time: number;
+  nonce: number;
+  version: number;
+  merkleroot: string;
+  bits: string;
+  synced: number;
+};
 
 const Layout: React.FC<Props> = ({ children }) => {
   const {
@@ -65,17 +84,47 @@ const Layout: React.FC<Props> = ({ children }) => {
   const { idKey, onFileChange } = useBap();
   const { ordPk, initialized } = useWallet();
   const { addressConnectionStatus, connect, ordAddress } = useBitsocket();
+  const [showBlockSync, setShowBlockSync] = useState<boolean>(false);
+  const [blockHeaders, setBlockHeaders] = useState<BlockHeader[]>([]);
+  const [fetchBlockHeadersStatus, setFetchBlockHeadersStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
 
   const router = useRouter();
   useEffect(() => {
     const fire = async (a: string) => {
-      await getUTXOs(a);
+      try {
+        await getUTXOs(a);
+      } catch (e) {
+        console.log(e);
+        toast.error("Error fetching UTXOs", toastErrorProps);
+      }
     };
 
     if (changeAddress && fetchUtxosStatus === FetchStatus.Idle) {
       fire(changeAddress);
     }
   }, [getUTXOs, fetchUtxosStatus, changeAddress]);
+
+  useEffect(() => {
+    const fire = async () => {
+      try {
+        const resp = await fetch(
+          `https://junglebus.gorillapool.io/v1/block_header/list/${
+            stats!.settled - 6
+          }`
+        );
+        const data = await resp.json();
+        setBlockHeaders(data);
+      } catch (e) {
+        console.log(e);
+        toast.error("Error fetching block headers", toastErrorProps);
+      }
+    };
+
+    if (stats && fetchBlockHeadersStatus === FetchStatus.Idle) {
+      fire();
+    }
+  }, [stats, fetchBlockHeadersStatus]);
 
   const oAddress = useMemo(() => {
     if (initialized && ordPk) {
@@ -125,6 +174,15 @@ const Layout: React.FC<Props> = ({ children }) => {
     [setBackupFile]
   );
 
+  const missingBlocks = useMemo(
+    () => blockHeaders.filter((b) => b.synced === 0).length,
+    [blockHeaders]
+  );
+
+  const inSync = useMemo(() => {
+    return blockHeaders.every((bh) => bh.synced > 0);
+  }, [blockHeaders]);
+
   return (
     <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
       {fetchStatsStatus !== FetchStatus.Loading &&
@@ -132,10 +190,12 @@ const Layout: React.FC<Props> = ({ children }) => {
         stats.settled + 6 < stats.latest && (
           <div className="rounded bg-[#111] p-2 mb-8 w-full">
             <div className=" mx-auto max-w-lg">
-              <p className="flex items-center justify-center text-orange-300 ">
+              <p
+                className="cursor-pointer flex items-center justify-center hover:text-orange-200 text-orange-300 pl-2"
+                onClick={() => setShowBlockSync(true)}
+              >
                 <LoaderIcon className="mr-2" />
-                Syncing. {stats.latest - stats.settled - 6} block
-                {stats.latest - stats.settled - 6 > 1 ? "s" : ""} behind.
+                Syncing. Click for details.
               </p>
               <p className="text-center text-red-300 mt-2">
                 BALANCES WILL BE INACCURATE UNTIL SYNCED.
@@ -221,6 +281,59 @@ const Layout: React.FC<Props> = ({ children }) => {
           />
         </div>
       </div>
+      {fetchUtxosStatus === FetchStatus.Loading && (
+        <div className="fixed bottom-0 right-0 mr-8 mb-8 bg-[#111] rounded p-2 text-sm flex items-center">
+          <LoaderIcon className="mx-auto mr-2" /> Loading Unspent Coins...
+        </div>
+      )}
+      {showBlockSync && (
+        <div
+          className="absolute left-0 top-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center"
+          onClick={() => setShowBlockSync(false)}
+        >
+          <div className="grid grid-flow-row-dense grid-cols-10 grid-rows-10 bg-[#111] p-8 rounded m-auto">
+            <h1 className="col-span-10 text-lg text-[#777]">
+              Junglebus Sync Status
+            </h1>
+            <div
+              className={`col-span-10 mb-4 ${
+                inSync ? "text-emerald-400" : "text-yellow-400"
+              }`}
+            >
+              {inSync ? "Healthy" : missingBlocks + " blocks syncing"}
+            </div>
+
+            {blockHeaders.map((b) => (
+              <div className="" key={b.hash}>
+                {
+                  <div
+                    className={`inline-flex rounded-full ${
+                      b.synced > 0 ? "bg-emerald-400" : "bg-red-400"
+                    } w-4 h-4 mr-2`}
+                  ></div>
+                }
+              </div>
+            ))}
+
+            {stats && (
+              <div className="col-span-10 mt-4 text-[#777]">
+                <h1 className="font-seminbold text-lg text-[#777]">
+                  1Sat API Status
+                </h1>
+                <div className="text-yellow-400 mb-2">
+                  {stats.latest - stats.settled - 6} block
+                  {stats.latest - stats.settled - 6 > 1 ? "s" : ""} behind
+                </div>
+                Latest: {stats.latest}
+                <br />
+                Synced: {stats.indexed}
+                <br />
+                Settled: {stats.settled}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

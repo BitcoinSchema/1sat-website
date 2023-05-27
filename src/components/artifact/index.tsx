@@ -4,6 +4,7 @@ import Image from "next/image";
 import Router from "next/router";
 import React, { useMemo, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
+import { IoMdWarning } from "react-icons/io";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import styled from "styled-components";
 import tw from "twin.macro";
@@ -32,6 +33,7 @@ type ArtifactProps = {
   outPoint?: string; // can be left out when previewing inscription not on chain yet
   contentType?: string;
   num?: number;
+  height?: number;
   classNames?: { wrapper?: string; media?: string };
   to?: string;
   src?: string;
@@ -50,11 +52,14 @@ const Artifact: React.FC<ArtifactProps> = ({
   onClick,
   txid,
   price,
+  height,
 }) => {
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
   );
 
+  const [showBuy, setShowBuy] = useState<boolean>(false);
+  const [hoverPrice, setHoverPrice] = useState<boolean>(false);
   const type = useMemo(() => {
     let artifactType = undefined;
     const t = head(contentType?.toLowerCase().split(";"));
@@ -110,6 +115,28 @@ const Artifact: React.FC<ArtifactProps> = ({
   flex items-center justify-center w-full h-full rounded min-h-[300px]
   `;
 
+  // const isBsv20 = useMemo(() => {
+  //   if (type === ArtifactType.BSV20) {
+  //     return true;
+  //   }
+  //   if (height) {
+  //     // console.log(
+  //     //   { json },
+  //     //   (json.height || 0) > 793000,
+  //     //   head(json.file!.type.split(";"))
+  //     // );
+
+  //     if (type === ArtifactType.Text && (height || 0) < 793000) {
+  //       try {
+  //         JSON.parse(json)
+  //       }
+  //     }
+  //     return;
+  //   } else {
+  //     return false;
+  //   }
+  // }, [json]);
+
   const content = useMemo(() => {
     if (!src || type === undefined) {
       return (
@@ -149,15 +176,11 @@ const Artifact: React.FC<ArtifactProps> = ({
           classNames?.media || ""
         }`}
       >
-        <JsonArtifact outPoint={outPoint} />
+        <JsonArtifact outPoint={outPoint} type={type} />
       </div>
     ) : type === ArtifactType.Text ? (
-      <div
-        className={`h-full p-4 ${classNames?.wrapper || ""} ${
-          classNames?.media || ""
-        }`}
-      >
-        <TextArtifact outPoint={outPoint} />
+      <div className={`w-full p-2 h-full`}>
+        <TextArtifact outPoint={outPoint} className="w-full" />
       </div>
     ) : type === ArtifactType.Model ? (
       <div
@@ -218,43 +241,97 @@ const Artifact: React.FC<ArtifactProps> = ({
   }, [src, type, outPoint, classNames, ItemContainer, num]);
 
   return (
-    <ArtifactContainer
-      key={outPoint}
-      className={`flex flex-col pb-[65px] items-center justify-center min-h-[356px] min-w-[300px] bg-[#111] w-full h-full relative rounded ${
-        to ? "cursor-pointer" : ""
-      } block transition mx-auto ${
-        classNames?.wrapper ? classNames.wrapper : ""
-      }`}
-      target={to ? "_self" : undefined}
-      href={to}
-      onClick={(e) => {
-        if (!to) {
-          e.stopPropagation();
-          e.preventDefault();
-          if (txid && onClick) {
-            onClick(txid);
+    <React.Fragment>
+      <ArtifactContainer
+        key={outPoint}
+        className={`flex flex-col pb-[65px] items-center justify-center min-h-[356px] min-w-[300px] bg-[#111] w-full h-full relative rounded ${
+          to ? "cursor-pointer" : ""
+        } block transition mx-auto ${
+          classNames?.wrapper ? classNames.wrapper : ""
+        }`}
+        target={to ? "_self" : undefined}
+        href={to}
+        onClick={(e) => {
+          if (!to) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (txid && onClick) {
+              onClick(txid);
+            }
           }
-        }
-      }}
-    >
-      {content}
+        }}
+      >
+        {content}
 
-      {/* TODO: Show indicator when more than one isncription */}
-      {num !== undefined && (
-        <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
-          <div
-            className={`rounded bg-[#222] p-2 text-[#aaa] cursor-pointer`}
-            onClick={() => Router.push(`/inscription/${num}`)}
-          >
-            #{num}
+        {/* TODO: Show indicator when more than one isncription */}
+        {num !== undefined && (
+          <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
+            <div
+              className={`rounded bg-[#222] p-2 text-[#aaa] cursor-pointer`}
+              onClick={() => Router.push(`/inscription/${num}`)}
+            >
+              #{num}
+            </div>
+            <div className={`hidden md:block`}>&nbsp;</div>
+            <div
+              className={` ${
+                price ? "cursor-pointer hover:bg-emerald-600 text-white" : ""
+              } w-24 text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
+              onClick={() => {
+                if (!price) {
+                  return;
+                }
+                // TODO: Enable buy
+                // setShowBuy(true);
+              }}
+              onMouseEnter={() => {
+                // TODO: Enable buy
+                // setHoverPrice(true);
+              }}
+              onMouseLeave={() => {
+                setHoverPrice(false);
+              }}
+            >
+              {price
+                ? hoverPrice
+                  ? "Buy"
+                  : `${toBitcoin(price)} BSV`
+                : contentType}
+            </div>
           </div>
-          <div className={`hidden md:block`}>&nbsp;</div>
-          <div className={`rounded bg-[#222] p-2 text-[#aaa]`}>
-            {price ? `${toBitcoin(price)} BSV` : contentType}
+        )}
+      </ArtifactContainer>
+      {showBuy && (
+        <div
+          className="z-10 flex items-center justify-center absolute top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
+          onClick={() => setShowBuy(false)}
+        >
+          <div
+            className="w-full max-w-lg m-auto p-4 bg-[#111] trext-[#aaa] rounded flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>{content}</div>
+            <div className="rounded mb-4 p-2 text-xs text-[#777]">
+              <h1>License</h1>
+              <IoMdWarning className="inline-block mr-2" /> You are about to
+              purchase this inscription, granting you the ability to own and
+              control the associated token. There is no specific license to any
+              artwork or IP that may be depicted here and no rights are
+              transferred to the purchaser unless specified explicitly in the
+              transaction itself.
+            </div>
+            <button
+              className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
+              onClick={() => {
+                console.log("buying", txid, price);
+              }}
+            >
+              Buy - {toBitcoin(price || 0)} BSV
+            </button>
           </div>
         </div>
       )}
-    </ArtifactContainer>
+    </React.Fragment>
   );
 };
 

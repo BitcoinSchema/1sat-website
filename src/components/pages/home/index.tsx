@@ -134,6 +134,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
                     media: "max-h-96 max-w-96",
                   }}
                   to={`/inscription/${artifact?.num}`}
+                  height={artifact.height}
                 />
               )}
               {!artifact && (
