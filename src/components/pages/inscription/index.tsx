@@ -167,8 +167,12 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       case SubType.Collection:
       //return <Collection {...value} />;
       case SubType.CollectionItem:
-        const item = JSON.parse(value) as CollectionItem;
-        return <CollectionItem collectionItem={item} />;
+        try {
+          const item = JSON.parse(value) as CollectionItem;
+          return <CollectionItem collectionItem={item} />;
+        } catch (e) {
+          console.log(e);
+        }
     }
     return <div></div>;
   }, []);

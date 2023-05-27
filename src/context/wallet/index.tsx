@@ -12,7 +12,7 @@ import init, {
   TxOut as WasmTxOut,
 } from "bsv-wasm-web";
 import { Inscription, Utxo, sendOrdinal } from "js-1sat-ord";
-import { head, uniq } from "lodash";
+import { head } from "lodash";
 import Router, { useRouter } from "next/router";
 import React, {
   ReactNode,
@@ -140,6 +140,9 @@ type ContextValue = {
   usdRate: number | undefined;
   broadcastCache: string[] | undefined;
   setBroadcastCache: (cache: string[]) => void;
+  createdUtxos: Utxo[];
+  setCreatedUtxos: (utxos: Utxo[]) => void;
+  setFundingUtxos: (utxos: Utxo[]) => void;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -152,6 +155,10 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [backupFile, setBackupFile] = useState<File>();
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
   const { leid, lastAddressEvent, lastSettledEvent } = useBitsocket();
+  const [createdUtxos, setCreatedUtxos] = useLocalStorage<Utxo[]>(
+    "1satcutxos",
+    []
+  );
   const [pendingTransaction, setPendingTransaction] = useState<
     PendingTransaction | undefined
   >(undefined);
@@ -395,31 +402,15 @@ const WalletProvider: React.FC<Props> = (props) => {
         const utxos = await r.json();
 
         setFetchUtxosStatus(FetchStatus.Success);
-        const newCache = uniq([...(broadcastCache || [])]);
-        setBroadcastCache(newCache);
 
-        const u = utxos
-          .filter((utxo: any) => !newCache.includes(utxo.tx_hash))
-          .map((utxo: any) => {
-            return {
-              satoshis: utxo.value,
-              vout: utxo.tx_pos,
-              txid: utxo.tx_hash,
-              script: P2PKHAddress.from_string(address)
-                .get_locking_script()
-                .to_asm_string(),
-            } as Utxo;
-          })
-          .sort((a: Utxo, b: Utxo) => (a.satoshis > b.satoshis ? -1 : 1));
-        console.log({ u });
-        setFundingUtxos(u);
-        return u;
+        setFundingUtxos(utxos);
+        return utxos;
       } catch (e) {
         setFetchUtxosStatus(FetchStatus.Error);
         throw e;
       }
     },
-    [setFetchUtxosStatus, setFundingUtxos, broadcastCache, setBroadcastCache]
+    [setFetchUtxosStatus, setFundingUtxos]
   );
 
   const getBsv20Balances = useCallback(
@@ -930,6 +921,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       usdRate,
       broadcastCache,
       setBroadcastCache,
+      createdUtxos,
+      setFundingUtxos,
+      setCreatedUtxos,
     }),
     [
       bsv20Activity,
@@ -971,6 +965,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       usdRate,
       broadcastCache,
       setBroadcastCache,
+      createdUtxos,
+      setCreatedUtxos,
+      setFundingUtxos,
     ]
   );
 

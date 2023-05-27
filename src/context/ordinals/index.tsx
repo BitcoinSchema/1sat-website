@@ -171,15 +171,15 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     return 0;
   }, [lastSettledEvent]);
 
-  // useEffect(() => {
-  //   if (lastSettledBlock > 0 && lastSettledBlock !== stats?.settled) {
-  //     const newStats = {
-  //       ...stats,
-  //       settled: lastSettledBlock,
-  //     } as Stats;
-  //     setStats(newStats);
-  //   }
-  // }, [lastSettledBlock, setStats, stats]);
+  useEffect(() => {
+    if (lastSettledBlock > 0 && lastSettledBlock !== stats?.settled) {
+      const newStats = {
+        ...stats,
+        settled: lastSettledBlock,
+      } as Stats;
+      setStats(newStats);
+    }
+  }, [lastSettledBlock, setStats, stats]);
 
   const getStats = useCallback(async () => {
     setFetchStatsStatus(FetchStatus.Loading);

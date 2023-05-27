@@ -15,6 +15,7 @@ import {
   useState,
 } from "react";
 import toast, { LoaderIcon, Toaster } from "react-hot-toast";
+import Tooltip from "../tooltip";
 
 export enum FetchStatus {
   Idle,
@@ -289,9 +290,16 @@ const Layout: React.FC<Props> = ({ children }) => {
       {showBlockSync && (
         <div
           className="absolute left-0 top-0 w-screen h-screen bg-black bg-opacity-50 flex items-center justify-center"
-          onClick={() => setShowBlockSync(false)}
+          onClick={(e) => {
+            setShowBlockSync(false);
+          }}
         >
-          <div className="grid grid-flow-row-dense grid-cols-10 grid-rows-10 bg-[#111] p-8 rounded m-auto">
+          <div
+            className="grid grid-flow-row-dense grid-cols-10 grid-rows-10 bg-[#111] p-8 rounded m-auto"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
             <h1 className="col-span-10 text-lg text-[#777]">
               Junglebus Sync Status
             </h1>
@@ -304,13 +312,31 @@ const Layout: React.FC<Props> = ({ children }) => {
             </div>
 
             {blockHeaders.map((b) => (
-              <div className="" key={b.hash}>
+              <div className="mb-2 mr-2" key={b.hash}>
                 {
-                  <div
-                    className={`inline-flex rounded-full ${
-                      b.synced > 0 ? "bg-emerald-400" : "bg-red-400"
-                    } w-4 h-4 mr-2`}
-                  ></div>
+                  <Tooltip
+                    message={
+                      b.synced
+                        ? `${b.synced.toLocaleString()} transactions`
+                        : b.hash
+                    }
+                  >
+                    <div
+                      className={`inline-flex rounded-full ${
+                        b.synced > 0
+                          ? "bg-emerald-400"
+                          : "cursor-pointer bg-red-400 hover:bg-red-500"
+                      } w-4 h-4`}
+                      onClick={() => {
+                        if (b.synced === 0) {
+                          window.open(
+                            `https://whatsonchain.com/block/${b.hash}`,
+                            "_blank"
+                          );
+                        }
+                      }}
+                    ></div>
+                  </Tooltip>
                 }
               </div>
             ))}

@@ -3,7 +3,7 @@ import { PendingTransaction, useWallet } from "@/context/wallet";
 import { addressFromWif } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { PrivateKey } from "bsv-wasm-web";
-import { createOrdinal } from "js-1sat-ord";
+import { Utxo, createOrdinal } from "js-1sat-ord";
 import { debounce, head } from "lodash";
 import { useRouter } from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -43,6 +43,8 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     ordAddress,
     payPk,
     initialized,
+    broadcastCache,
+    createdUtxos,
   } = useWallet();
 
   const { fetchStatsStatus, stats } = useOrdinals();
@@ -132,7 +134,36 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     [setPreview, setSelectedFile]
   );
 
-  const utxo = useMemo(() => head(fundingUtxos), [fundingUtxos]);
+  // .map((utxo: any) => {
+  //   return {
+  //     satoshis: utxo.value,
+  //     vout: utxo.tx_pos,
+  //     txid: utxo.tx_hash,
+  //     script: P2PKHAddress.from_string(changeAddress)
+  //       .get_locking_script()
+  //       .to_asm_string(),
+  //   } as Utxo;
+  // })
+
+  const utxo = useMemo(() => {
+    return changeAddress
+      ? head(
+          (fundingUtxos || [])
+            .concat(createdUtxos)
+            .filter(
+              (utxo: any) =>
+                broadcastCache && !broadcastCache.includes(utxo.tx_hash)
+            )
+            .sort((a: Utxo, b: Utxo) =>
+              a.satoshis > b.satoshis ? -1 : 1
+            ) as Utxo[]
+        )
+      : undefined;
+  }, [changeAddress, broadcastCache, fundingUtxos]);
+
+  useEffect(() => {
+    console.log({ utxo });
+  }, [utxo]);
 
   const inscribeImage = useCallback(async () => {
     if (!selectedFile?.type) {

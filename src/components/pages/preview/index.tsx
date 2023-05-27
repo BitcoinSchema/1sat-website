@@ -3,6 +3,8 @@ import { useWallet } from "@/context/wallet";
 import { MAPI_HOST } from "@/pages/_app";
 import { formatBytes } from "@/utils/bytes";
 import { useLocalStorage } from "@/utils/storage";
+import { P2PKHAddress, Transaction } from "bsv-wasm-web";
+import { Utxo } from "js-1sat-ord";
 import { uniq } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -50,6 +52,9 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     usdRate,
     broadcastCache,
     setBroadcastCache,
+    createdUtxos,
+    setCreatedUtxos,
+    setFundingUtxos,
   } = useWallet();
 
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
@@ -108,6 +113,39 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
         setBroadcastStatus(FetchStatus.Success);
         setBroadcastResponsePayload(respData);
 
+        if (changeAddress) {
+          // keep the utxo created
+          // we assume the last output is change and make a utxo from it
+          const pendingTx = Transaction.from_hex(pendingTransaction.rawTx);
+          const changeOut = pendingTx.get_output(pendingTx.get_noutputs() - 1);
+          const address = P2PKHAddress.from_string(changeAddress).to_string();
+          const createdUtxo = {
+            satoshis: Number(changeOut?.get_satoshis()),
+            vout: pendingTx.get_noutputs() - 1,
+            txid: pendingTx.get_id_hex(),
+            script: P2PKHAddress.from_string(address)
+              .get_locking_script()
+              .to_asm_string(),
+          } as Utxo;
+          console.log({ createdUtxo });
+          const cu = [
+            ...createdUtxos.filter(
+              (u) => u.txid === pendingTransaction.inputTxid
+            ),
+            createdUtxo,
+          ];
+          setCreatedUtxos(cu);
+          setFundingUtxos([
+            ...fundingUtxos.filter((u) => {
+              if (u.txid === pendingTransaction.inputTxid) {
+                return false;
+              }
+              return true;
+            }),
+            createdUtxo,
+          ]);
+        }
+
         // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
         if (pendingTransaction.contentType !== "application/bsv-20") {
           Router.push("/bsv20");
@@ -121,9 +159,13 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
           toastErrorProps
         );
       }
-      if (respData.resultDescription === "ERROR: 258: txn-mempool-conflict") {
+      if (
+        changeAddress &&
+        respData.resultDescription === "ERROR: 258: txn-mempool-conflict"
+      ) {
         console.log("adding to broadcast cache", pendingTransaction.txid);
         // todo add input tx not this txid!!
+        debugger;
         setBroadcastCache(
           uniq([...(broadcastCache || []), pendingTransaction.inputTxid])
         );
@@ -136,11 +178,15 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
   }, [
     //pendingOrdUtxo,
     // ordUtxos,
+    changeAddress,
     setBroadcastCache,
     pendingTransaction,
     setBroadcastResponsePayload,
     fundingUtxos,
     broadcastCache,
+    setCreatedUtxos,
+    createdUtxos,
+    setFundingUtxos,
   ]);
 
   const feeUsd = useMemo(() => {

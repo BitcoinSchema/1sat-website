@@ -276,7 +276,7 @@ const Artifact: React.FC<ArtifactProps> = ({
             <div
               className={` ${
                 price ? "cursor-pointer hover:bg-emerald-600 text-white" : ""
-              } w-24 text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
+              } min-w-24 text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
               onClick={() => {
                 if (!price) {
                   return;
@@ -313,12 +313,13 @@ const Artifact: React.FC<ArtifactProps> = ({
             <div>{content}</div>
             <div className="rounded mb-4 p-2 text-xs text-[#777]">
               <h1>License</h1>
-              <IoMdWarning className="inline-block mr-2" /> You are about to
-              purchase this inscription, granting you the ability to own and
-              control the associated token. There is no specific license to any
-              artwork or IP that may be depicted here and no rights are
-              transferred to the purchaser unless specified explicitly in the
-              transaction itself.
+              <IoMdWarning className="inline-block mr-2" />
+              You are about to purchase this inscription, granting you the
+              ability to own and control the associated token. There is no
+              specific license to any artwork or IP that may be depicted here
+              and no rights are transferred to the purchaser unless specified
+              explicitly within the transaction itself. This is not a curated
+              listing, meaning that we have not verified it in any way.
             </div>
             <button
               className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
