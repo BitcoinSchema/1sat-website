@@ -96,7 +96,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
       {!bh && generatedImage}
       <audio
         className={`w-full transition ${className ? className : ""}`}
-        src={src ? src : `${API_HOST}/api/files/inscriptions/${outPoint}`}
+        src={src ? src : `${API_HOST}/api/files/inscriptions/${origin}`}
         id={`${src ? src : outPoint}_audio`}
         onPlaying={(e) => {
           console.log("playing", e);

@@ -6,6 +6,7 @@ import Script from "next/script";
 // export const API_HOST = `http://shruggr.asuscomm.com:8081`;
 
 export const MAPI_HOST = `https://mapi.gorillapool.io`;
+export const WOC_HOST = `https://api.whatsonchain.com`;
 
 export default function App({ Component, pageProps }: AppProps) {
   return (

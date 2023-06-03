@@ -45,6 +45,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     initialized,
     broadcastCache,
     createdUtxos,
+    getUTXOs,
   } = useWallet();
 
   const { fetchStatsStatus, stats } = useOrdinals();
@@ -67,7 +68,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
   );
 
   const [selectedActionType, setSelectedActionType] = useState<ActionType>(
-    ActionType.Deploy
+    ActionType.Mint
   );
 
   const selectedTab = useMemo(() => {
@@ -134,104 +135,103 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     [setPreview, setSelectedFile]
   );
 
-  // .map((utxo: any) => {
-  //   return {
-  //     satoshis: utxo.value,
-  //     vout: utxo.tx_pos,
-  //     txid: utxo.tx_hash,
-  //     script: P2PKHAddress.from_string(changeAddress)
-  //       .get_locking_script()
-  //       .to_asm_string(),
-  //   } as Utxo;
-  // })
+  // const utxo = useMemo(() => {
+  //   return changeAddress
+  //     ? head(
+  //         (fundingUtxos || [])
+  //           // .concat(createdUtxos)
+  //           .map((utxo: any) => {
+  //             return {
+  //               satoshis: utxo.satoshis,
+  //               vout: utxo.vout,
+  //               txid: utxo.txid,
+  //               script: !!utxo.script
+  //                 ? utxo.script
+  //                 : P2PKHAddress.from_string(changeAddress)
+  //                     .get_locking_script()
+  //                     .to_asm_string(),
+  //             } as Utxo;
+  //           })
+  //           .sort((a: Utxo, b: Utxo) =>
+  //             a.satoshis > b.satoshis ? -1 : 1
+  //           ) as Utxo[]
+  //       )
+  //     : undefined;
+  // }, [changeAddress, fundingUtxos]);
 
-  const utxo = useMemo(() => {
-    return changeAddress
-      ? head(
-          (fundingUtxos || [])
-            .concat(createdUtxos)
-            .filter(
-              (utxo: any) =>
-                broadcastCache && !broadcastCache.includes(utxo.tx_hash)
-            )
-            .sort((a: Utxo, b: Utxo) =>
-              a.satoshis > b.satoshis ? -1 : 1
-            ) as Utxo[]
-        )
-      : undefined;
-  }, [changeAddress, broadcastCache, fundingUtxos]);
+  // useEffect(() => {
+  //   console.log({ utxo });
+  // }, [utxo]);
 
-  useEffect(() => {
-    console.log({ utxo });
-  }, [utxo]);
-
-  const inscribeImage = useCallback(async () => {
-    if (!selectedFile?.type) {
-      return;
-    }
-    setInscribeStatus(FetchStatus.Loading);
-    try {
-      const fileAsBase64 = await readFileAsBase64(selectedFile);
+  const inscribeImage = useCallback(
+    async (utxo: Utxo) => {
+      if (!selectedFile?.type || !utxo) {
+        return;
+      }
+      setInscribeStatus(FetchStatus.Loading);
       try {
-        setInscribeStatus(FetchStatus.Loading);
-        const tx = await handleInscribing(
-          payPk!,
-          fileAsBase64,
-          selectedFile.type,
-          ordAddress!,
-          changeAddress!,
-          utxo
-        );
-        const satsIn = utxo!.satoshis;
-        const satsOut = Number(tx.satoshis_out());
-        if (satsIn && satsOut) {
-          const fee = satsIn - satsOut;
+        const fileAsBase64 = await readFileAsBase64(selectedFile);
+        try {
+          setInscribeStatus(FetchStatus.Loading);
+          const tx = await handleInscribing(
+            payPk!,
+            fileAsBase64,
+            selectedFile.type,
+            ordAddress!,
+            changeAddress!,
+            utxo
+          );
+          const satsIn = utxo!.satoshis;
+          const satsOut = Number(tx.satoshis_out());
+          if (satsIn && satsOut) {
+            const fee = satsIn - satsOut;
 
-          if (fee < 0) {
-            console.error("Fee inadequate");
-            toast.error("Fee Inadequate", toastErrorProps);
-            setInscribeStatus(FetchStatus.Error);
+            if (fee < 0) {
+              console.error("Fee inadequate");
+              toast.error("Fee Inadequate", toastErrorProps);
+              setInscribeStatus(FetchStatus.Error);
+              return;
+            }
+            const result = {
+              rawTx: tx.to_hex(),
+              size: tx.get_size(),
+              fee,
+              numInputs: tx.get_ninputs(),
+              numOutputs: tx.get_noutputs(),
+              txid: tx.get_id_hex(),
+              inputTxid: tx.get_input(0)?.get_prev_tx_id_hex(),
+            } as PendingTransaction;
+            console.log(Object.keys(result));
+
+            setPendingTransaction(result);
+            inscribedCallback(result);
+            setInscribeStatus(FetchStatus.Success);
             return;
           }
-          const result = {
-            rawTx: tx.to_hex(),
-            size: tx.get_size(),
-            fee,
-            numInputs: tx.get_ninputs(),
-            numOutputs: tx.get_noutputs(),
-            txid: tx.get_id_hex(),
-            inputTxid: tx.get_input(0)?.to_hex(),
-          } as PendingTransaction;
-          console.log(Object.keys(result));
-
-          setPendingTransaction(result);
-          inscribedCallback(result);
-          setInscribeStatus(FetchStatus.Success);
+        } catch (e) {
+          console.error(e);
+          setInscribeStatus(FetchStatus.Error);
           return;
         }
       } catch (e) {
-        console.error(e);
         setInscribeStatus(FetchStatus.Error);
-        return;
+        toast.error("Failed to inscribe " + e, toastErrorProps);
+        console.error(e);
       }
-    } catch (e) {
-      setInscribeStatus(FetchStatus.Error);
-      toast.error("Failed to inscribe " + e, toastErrorProps);
-      console.error(e);
-    }
-  }, [
-    setInscribeStatus,
-    selectedFile,
-    inscribedCallback,
-    payPk,
-    ordAddress,
-    changeAddress,
-    setPendingTransaction,
-    utxo,
-  ]);
+    },
+    [
+      setInscribeStatus,
+      selectedFile,
+      inscribedCallback,
+      payPk,
+      ordAddress,
+      changeAddress,
+      setPendingTransaction,
+    ]
+  );
 
   const inscribeUtf8 = useCallback(
-    async (text: string, contentType: string) => {
+    async (text: string, contentType: string, utxo: Utxo) => {
       const fileAsBase64 = Buffer.from(text).toString("base64");
       const tx = await handleInscribing(
         payPk!,
@@ -249,107 +249,115 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
-        inputTxid: tx.get_input(0)!.to_hex(),
+        inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
       };
       setPendingTransaction(result);
       inscribedCallback(result);
     },
-    [
-      setPendingTransaction,
-      inscribedCallback,
-      payPk,
-      ordAddress,
-      changeAddress,
-      utxo,
-    ]
+    [setPendingTransaction, inscribedCallback, payPk, ordAddress, changeAddress]
   );
 
-  const inscribeText = useCallback(async () => {
-    if (!text) {
-      return;
-    }
-    setInscribeStatus(FetchStatus.Loading);
+  const inscribeText = useCallback(
+    async (utxo: Utxo) => {
+      if (!text) {
+        return;
+      }
+      setInscribeStatus(FetchStatus.Loading);
 
-    await inscribeUtf8(text, "text/plain");
+      await inscribeUtf8(text, "text/plain", utxo);
 
-    console.log("TODO: Inscribe text");
-    setInscribeStatus(FetchStatus.Success);
-  }, [inscribeUtf8, text]);
+      console.log("TODO: Inscribe text");
+      setInscribeStatus(FetchStatus.Success);
+    },
+    [inscribeUtf8, text]
+  );
 
-  const inscribeBsv20 = async () => {
-    if (!ticker || ticker?.length === 0) {
-      return;
-    }
-
-    setInscribeStatus(FetchStatus.Loading);
-
-    try {
-      let inscription = {
-        p: "bsv-20",
-        op: selectedActionType,
-      } as BSV20;
-
-      switch (selectedActionType) {
-        case ActionType.Deploy:
-          if (parseInt(maxSupply) == 0 || BigInt(maxSupply) > maxMaxSupply) {
-            alert(
-              `Invalid input: please enter a number less than or equal to ${
-                maxMaxSupply - BigInt(1)
-              }`
-            );
-            return;
-          }
-
-          inscription.tick = ticker;
-          inscription.max = maxSupply;
-
-          // optional fields
-          if (decimals !== 18) {
-            inscription.dec = decimals.toString();
-          }
-          if (limit) inscription.lim = limit;
-          else if (
-            !confirm(
-              "Warning: Token will have no mint limit. This means all tokens can be minted at once. Are you sure this is what you want?"
-            )
-          ) {
-            setInscribeStatus(FetchStatus.Idle);
-            return;
-          }
-
-          break;
-        case ActionType.Mint:
-          if (
-            !amount ||
-            parseInt(amount) == 0 ||
-            BigInt(amount) > maxMaxSupply ||
-            !selectedBsv20
-          ) {
-            alert(
-              `Max supply must be a positive integer less than or equal to ${
-                maxMaxSupply - BigInt(1)
-              }`
-            );
-            return;
-          }
-          inscription.tick = selectedBsv20.tick;
-          inscription.amt = amount;
-        default:
-          break;
+  const inscribeBsv20 = useCallback(
+    async (utxo: Utxo) => {
+      if (!ticker || ticker?.length === 0) {
+        return;
       }
 
-      const text = JSON.stringify(inscription);
+      setInscribeStatus(FetchStatus.Loading);
 
-      inscribeUtf8(text, "application/bsv-20");
+      try {
+        let inscription = {
+          p: "bsv-20",
+          op: selectedActionType,
+        } as BSV20;
 
-      setInscribeStatus(FetchStatus.Success);
-    } catch (error) {
-      setInscribeStatus(FetchStatus.Error);
+        switch (selectedActionType) {
+          case ActionType.Deploy:
+            if (parseInt(maxSupply) == 0 || BigInt(maxSupply) > maxMaxSupply) {
+              alert(
+                `Invalid input: please enter a number less than or equal to ${
+                  maxMaxSupply - BigInt(1)
+                }`
+              );
+              return;
+            }
 
-      alert("Invalid max supply: please enter a number. " + error);
-      return;
-    }
-  };
+            inscription.tick = ticker;
+            inscription.max = maxSupply;
+
+            // optional fields
+            if (decimals !== 18) {
+              inscription.dec = decimals.toString();
+            }
+            if (limit) inscription.lim = limit;
+            else if (
+              !confirm(
+                "Warning: Token will have no mint limit. This means all tokens can be minted at once. Are you sure this is what you want?"
+              )
+            ) {
+              setInscribeStatus(FetchStatus.Idle);
+              return;
+            }
+
+            break;
+          case ActionType.Mint:
+            if (
+              !amount ||
+              parseInt(amount) == 0 ||
+              BigInt(amount) > maxMaxSupply ||
+              !selectedBsv20
+            ) {
+              alert(
+                `Max supply must be a positive integer less than or equal to ${
+                  maxMaxSupply - BigInt(1)
+                }`
+              );
+              return;
+            }
+            inscription.tick = selectedBsv20.tick;
+            inscription.amt = amount;
+          default:
+            break;
+        }
+
+        const text = JSON.stringify(inscription);
+
+        inscribeUtf8(text, "application/bsv-20", utxo);
+
+        setInscribeStatus(FetchStatus.Success);
+      } catch (error) {
+        setInscribeStatus(FetchStatus.Error);
+
+        alert("Invalid max supply: please enter a number. " + error);
+        return;
+      }
+    },
+    [
+      amount,
+      decimals,
+      inscribeUtf8,
+      limit,
+      maxSupply,
+      selectedActionType,
+      selectedBsv20,
+      ticker,
+    ]
+  );
 
   const submitDisabled = useMemo(() => {
     switch (selectedTab) {
@@ -369,31 +377,49 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     }
   }, [
     selectedTab,
-    fetchTickerStatus,
-    tickerAvailable,
-    ticker,
     selectedFile,
     inscribeStatus,
+    tickerAvailable,
+    ticker?.length,
+    fetchTickerStatus,
   ]);
 
-  const clickInscribe = async () => {
-    if (!utxo || !payPk || !ordAddress || !changeAddress) {
+  const clickInscribe = useCallback(async () => {
+    if (!payPk || !ordAddress || !changeAddress) {
+      return;
+    }
+
+    const utxos = await getUTXOs(changeAddress);
+    const sortedUtxos = utxos.sort((a, b) =>
+      a.satoshis > b.satoshis ? -1 : 1
+    );
+    const u = head(sortedUtxos);
+    if (!u) {
+      console.log("no utxo");
       return;
     }
     switch (selectedTab) {
       case InscriptionTab.Image:
-        return inscribeImage();
+        return await inscribeImage(u);
       case InscriptionTab.Text:
-        return inscribeText();
+        return await inscribeText(u);
       case InscriptionTab.BSV20:
-        return inscribeBsv20();
+        return await inscribeBsv20(u);
       default:
         return;
     }
-  };
+  }, [
+    getUTXOs,
+    changeAddress,
+    inscribeBsv20,
+    inscribeImage,
+    inscribeText,
+    ordAddress,
+    payPk,
+    selectedTab,
+  ]);
 
   const artifact = useMemo(() => {
-    console.log({ artifactType: selectedFile?.type });
     return (
       selectedFile?.type &&
       preview && (
@@ -479,7 +505,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
               !!bsv20 &&
               bsv20.max !== undefined &&
               bsv20.supply !== undefined &&
-              parseInt(bsv20.supply) <= parseInt(bsv20.max)
+              parseInt(bsv20.supply) < parseInt(bsv20.max)
             ) {
               setTickerAvailable(true);
             } else {
@@ -820,7 +846,7 @@ const handleInscribing = async (
   fileContentType: string,
   ordAddress: string,
   changeAddress: string,
-  fundingUtxo: any
+  fundingUtxo: Utxo
 ) => {
   const paymentPk = PrivateKey.from_wif(payPk);
 
@@ -840,8 +866,8 @@ const handleInscribing = async (
       paymentPk,
       changeAddress,
       0.9,
-      inscription,
-      undefined // optional metadata
+      inscription
+      // undefined // optional metadata
       // idKey // optional id key
     );
     return tx;

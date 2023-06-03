@@ -1,5 +1,6 @@
 import { FetchStatus, toastProps } from "@/components/pages";
 import { addressFromWif } from "@/utils/address";
+import { customFetch } from "@/utils/httpClient";
 import { randomKeys } from "@/utils/keys";
 import { useLocalStorage, useSessionStorage } from "@/utils/storage";
 import init, {
@@ -31,6 +32,13 @@ import { useRates } from "../rates";
 export const PROTOCOL_START_HEIGHT = 783968;
 export const ORDS_PER_PAGE = 60;
 
+export type WocUtxo = {
+  height: number;
+  tx_hash: string;
+  tx_pos: number;
+  value: number;
+};
+
 type ScriptSig = {
   asm: string;
   hex: string;
@@ -54,8 +62,8 @@ type ScriptPubKey = {
 };
 
 type VOut = {
-  value: 6.27138654;
-  n: 0;
+  value: number;
+  n: number;
   scriptPubKey: ScriptPubKey;
 };
 
@@ -90,6 +98,8 @@ export type PendingTransaction = {
   txid: string;
   contentType?: string;
   inputTxid: string;
+  price?: number;
+  marketFee?: number;
 };
 
 type ContextValue = {
@@ -156,7 +166,7 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
   const { leid, lastAddressEvent, lastSettledEvent } = useBitsocket();
   const [createdUtxos, setCreatedUtxos] = useLocalStorage<Utxo[]>(
-    "1satcutxos",
+    "1satcutx2",
     []
   );
   const [pendingTransaction, setPendingTransaction] = useState<
@@ -388,23 +398,27 @@ const WalletProvider: React.FC<Props> = (props) => {
     return await r.text();
   }, []);
 
-  useEffect(() => {
-    console.log(broadcastCache);
-  }, [broadcastCache]);
-
   const getUTXOs = useCallback(
     async (address: string): Promise<Utxo[]> => {
       setFetchUtxosStatus(FetchStatus.Loading);
       try {
-        const r = await fetch(
+        const { promise } = customFetch<WocUtxo[]>(
           `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
         );
-        const utxos = await r.json();
-
+        const utxos = await promise;
         setFetchUtxosStatus(FetchStatus.Success);
-
-        setFundingUtxos(utxos);
-        return utxos;
+        const u = utxos.map((u: WocUtxo) => {
+          return {
+            satoshis: u.value,
+            txid: u.tx_hash,
+            vout: u.tx_pos,
+            script: P2PKHAddress.from_string(address)
+              .get_locking_script()
+              .to_asm_string(),
+          };
+        });
+        setFundingUtxos(u);
+        return u;
       } catch (e) {
         setFetchUtxosStatus(FetchStatus.Error);
         throw e;
@@ -680,6 +694,7 @@ const WalletProvider: React.FC<Props> = (props) => {
               numInputs: tx.get_ninputs(),
               numOutputs: tx.get_noutputs(),
               txid: tx.get_id_hex(),
+              inputTxid: tx.get_input(0)?.get_prev_tx_id_hex(),
             } as PendingTransaction);
 
             Router.push("/preview");
@@ -787,7 +802,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
-        inputTxid: tx.get_input(0)!.to_hex(),
+        inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
       });
 
       Router.push("/preview");
@@ -921,7 +936,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       usdRate,
       broadcastCache,
       setBroadcastCache,
-      createdUtxos,
+      createdUtxos: createdUtxos || [],
       setFundingUtxos,
       setCreatedUtxos,
     }),

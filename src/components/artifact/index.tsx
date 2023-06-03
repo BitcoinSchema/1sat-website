@@ -1,19 +1,42 @@
 import { API_HOST } from "@/context/ordinals";
-import { head } from "lodash";
+import { useWallet } from "@/context/wallet";
+import { customFetch } from "@/utils/httpClient";
+import {
+  P2PKHAddress,
+  PrivateKey,
+  Script,
+  SigHash,
+  Transaction,
+  TxIn,
+  TxOut,
+} from "bsv-wasm-web";
+import { Utxo } from "js-1sat-ord";
+import { head, sumBy } from "lodash";
 import Image from "next/image";
 import Router from "next/router";
-import React, { useMemo, useState } from "react";
-import { LoaderIcon } from "react-hot-toast";
+import React, { useCallback, useMemo, useState } from "react";
+import toast, { LoaderIcon } from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import styled from "styled-components";
 import tw from "twin.macro";
 import Model from "../model";
-import { FetchStatus } from "../pages";
+import { FetchStatus, toastErrorProps } from "../pages";
 import AudioArtifact from "./audio";
 import JsonArtifact from "./json";
 import TextArtifact from "./text";
 import VideoArtifact from "./video";
+
+type MarketResponse = {
+  txid: string;
+  vout: number;
+  height: number;
+  idx: number;
+  price: number;
+  payout: string;
+  script: string;
+  origin: string;
+};
 
 export enum ArtifactType {
   Audio,
@@ -40,15 +63,17 @@ type ArtifactProps = {
   onClick?: (outPoint: string) => void;
   txid?: string;
   price?: number;
+  origin?: string;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
   outPoint,
+  origin,
   contentType,
   classNames,
   num,
   to,
-  src = `${API_HOST}/api/files/inscriptions/${outPoint}`,
+  src = `${API_HOST}/api/files/inscriptions/${origin}`,
   onClick,
   txid,
   price,
@@ -57,6 +82,14 @@ const Artifact: React.FC<ArtifactProps> = ({
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
   );
+
+  const {
+    ordAddress,
+    changeAddress,
+    fundingUtxos,
+    payPk,
+    setPendingTransaction,
+  } = useWallet();
 
   const [showBuy, setShowBuy] = useState<boolean>(false);
   const [hoverPrice, setHoverPrice] = useState<boolean>(false);
@@ -112,7 +145,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   `;
 
   const ItemContainer = tw.div`
-  flex items-center justify-center w-full h-full rounded min-h-[300px]
+  flex items-center justify-center w-full h-full rounded
   `;
 
   // const isBsv20 = useMemo(() => {
@@ -128,19 +161,216 @@ const Artifact: React.FC<ArtifactProps> = ({
 
   //     if (type === ArtifactType.Text && (height || 0) < 793000) {
   //       try {
-  //         JSON.parse(json)
+  //         JSON.parse(json);
+  //         return true
+  //       } catch (e) {
+  //         console.log(e);
+  //         return true
   //       }
   //     }
   //     return;
   //   } else {
   //     return false;
   //   }
-  // }, [json]);
+  // }, [height, type]);
+
+  const calculateFee = (numPaymentUtxos: number, purchaseTx: Transaction) => {
+    const byteSize = Math.ceil(
+      P2PKHInputSize * numPaymentUtxos + purchaseTx.to_bytes().byteLength
+    );
+    return Math.ceil(byteSize * 0.05);
+  };
+
+  const buyArtifact = useCallback(async () => {
+    if (!fundingUtxos || !payPk || !ordAddress || !changeAddress) {
+      return;
+    }
+
+    // I1 - Ordinal
+    // I2 - Funding
+    // O1 - Ordinal destination
+    // O2 - Payment to lister
+    // O3 - Change
+    // O4 - Market Fee
+
+    const purchaseTx = new Transaction(1, 0);
+
+    const { promise } = customFetch<MarketResponse>(
+      `${API_HOST}/api/market/${outPoint}`
+    );
+
+    const { script, payout, vout, txid, price } = await promise;
+    console.log(
+      { script, payout, vout, txid, price },
+      sumBy(fundingUtxos, "satoshis")
+    );
+
+    // make sure funding UTXOs can cover price, otherwise show error
+    if (
+      (price === 0 ? minimumMarketFee + price : price * 1.04) >=
+      sumBy(fundingUtxos, "satoshis") + P2PKHInputSize * fundingUtxos.length
+    ) {
+      toast.error("Not enough Bitcoion!", toastErrorProps);
+      return;
+    }
+    const listingInput = new TxIn(
+      Buffer.from(txid, "hex"),
+      vout,
+      Script.from_asm_string("")
+    );
+    purchaseTx.add_input(listingInput);
+
+    // output 0
+    const buyerOutput = new TxOut(
+      BigInt(1),
+      P2PKHAddress.from_string(ordAddress).get_locking_script()
+    );
+    purchaseTx.add_output(buyerOutput);
+
+    // output 1
+    const payOutput = TxOut.from_hex(
+      Buffer.from(payout, "base64").toString("hex")
+    );
+    purchaseTx.add_output(payOutput);
+
+    // output 2
+    let marketFee = price * 0.04;
+    if (marketFee === 0) {
+      marketFee = minimumMarketFee;
+    }
+    const marketFeeOutput = new TxOut(
+      BigInt(marketFee),
+      P2PKHAddress.from_string(marketAddress).get_locking_script()
+    );
+    purchaseTx.add_output(marketFeeOutput);
+
+    // output 3
+    const dummyChangeOutput = new TxOut(
+      BigInt(0),
+      P2PKHAddress.from_string(changeAddress).get_locking_script()
+    );
+    purchaseTx.add_output(dummyChangeOutput);
+
+    let preimage = purchaseTx.sighash_preimage(
+      SigHash.InputOutput,
+      0,
+      Script.from_bytes(Buffer.from(script, "base64")),
+      BigInt(1) // todo use amount from listing
+    );
+
+    listingInput.set_unlocking_script(
+      Script.from_asm_string(
+        `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
+          .get_output(3)!
+          .to_hex()} ${Buffer.from(preimage).toString("hex")} OP_0`
+      )
+    );
+    purchaseTx.set_input(0, listingInput);
+
+    // Calculate the fee
+    // account for funding input (not added to tx yet)
+
+    let paymentUtxos: Utxo[] = [];
+    let satsCollected = 0;
+    // initialize fee and satsNeeded (updated with each added payment utxo)
+    let satsNeeded = calculateFee(1, purchaseTx) + price;
+    let fee = satsNeeded + price;
+    // collect the required utxos
+    const sortedFundingUtxos = fundingUtxos.sort((a, b) =>
+      a.satoshis > b.satoshis ? -1 : 1
+    );
+    for (let utxo of sortedFundingUtxos) {
+      if (satsCollected < satsNeeded) {
+        satsCollected += utxo.satoshis;
+        paymentUtxos.push(utxo);
+
+        // if we had to add additional
+        fee = calculateFee(paymentUtxos.length, purchaseTx);
+        satsNeeded = fee + price;
+      }
+    }
+
+    // Replace change output
+    const changeAmt = satsCollected - satsNeeded;
+
+    const changeOutput = new TxOut(
+      BigInt(changeAmt),
+      P2PKHAddress.from_string(changeAddress).get_locking_script()
+    );
+
+    purchaseTx.set_output(2, changeOutput);
+
+    preimage = purchaseTx.sighash_preimage(
+      SigHash.InputOutputs,
+      0,
+      Script.from_bytes(Buffer.from(script, "base64")),
+      BigInt(1)
+    );
+
+    listingInput.set_unlocking_script(
+      Script.from_asm_string(
+        `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
+          .get_output(3)!
+          .to_hex()} ${Buffer.from(preimage).toString("hex")} OP_0`
+      )
+    );
+    purchaseTx.set_input(0, listingInput);
+
+    // create and sign input 1 (payment)
+    const paymentPk = PrivateKey.from_wif(payPk);
+
+    paymentUtxos.forEach((utxo, idx) => {
+      const fundingInput = new TxIn(
+        Buffer.from(utxo.txid, "hex"),
+        utxo.vout,
+        Script.from_asm_string(utxo.script)
+      );
+      purchaseTx.add_input(fundingInput);
+
+      const sig = purchaseTx.sign(
+        paymentPk,
+        SigHash.InputsOutputs,
+        1 + idx,
+        Script.from_asm_string(utxo.script),
+        BigInt(utxo.satoshis)
+      );
+
+      fundingInput.set_unlocking_script(
+        Script.from_asm_string(
+          `${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`
+        )
+      );
+
+      purchaseTx.set_input(1 + idx, fundingInput);
+    });
+
+    setPendingTransaction({
+      rawTx: purchaseTx.to_hex(),
+      size: purchaseTx.get_size(),
+      fee,
+      price,
+      numInputs: purchaseTx.get_ninputs(),
+      numOutputs: purchaseTx.get_noutputs(),
+      txid: purchaseTx.get_id_hex(),
+      marketFee,
+      // TODO: support multiple txids here
+      inputTxid: head(paymentUtxos)!.txid,
+    });
+
+    Router.push("/preview");
+  }, [
+    changeAddress,
+    fundingUtxos,
+    ordAddress,
+    outPoint,
+    payPk,
+    setPendingTransaction,
+  ]);
 
   const content = useMemo(() => {
     if (!src || type === undefined) {
       return (
-        <ItemContainer className="bg-white">
+        <ItemContainer className="bg-white min-h-[300px]">
           <LoaderIcon className="m-auto" />
         </ItemContainer>
       );
@@ -148,7 +378,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 
     return type === ArtifactType.Video ? (
       <VideoArtifact
-        outPoint={outPoint}
+        origin={origin}
         src={src}
         className={`${classNames?.media ? classNames.media : ""}`}
       />
@@ -166,7 +396,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       <div className="w-full h-full">
         <iframe
           className="w-full h-full min-h-[60vh]"
-          src={`${API_HOST}/api/files/inscriptions/${outPoint}`}
+          src={`${API_HOST}/api/files/inscriptions/${origin}`}
           sandbox=" "
         />
       </div>
@@ -176,11 +406,11 @@ const Artifact: React.FC<ArtifactProps> = ({
           classNames?.media || ""
         }`}
       >
-        <JsonArtifact outPoint={outPoint} type={type} />
+        <JsonArtifact origin={origin} type={type} />
       </div>
     ) : type === ArtifactType.Text ? (
       <div className={`w-full p-2 h-full`}>
-        <TextArtifact outPoint={outPoint} className="w-full" />
+        <TextArtifact origin={origin} className="w-full" />
       </div>
     ) : type === ArtifactType.Model ? (
       <div
@@ -216,7 +446,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         PDF Inscriptions not yet supported.
       </div>
     ) : (
-      <ItemContainer>
+      <ItemContainer className="min-h-[300px]">
         {src !== "" && src != undefined && (
           <Image
             className={`h-auto ${classNames?.media ? classNames.media : ""}`}
@@ -238,7 +468,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         )}
       </ItemContainer>
     );
-  }, [src, type, outPoint, classNames, ItemContainer, num]);
+  }, [src, type, origin, classNames, outPoint, ItemContainer, num]);
 
   return (
     <React.Fragment>
@@ -275,35 +505,39 @@ const Artifact: React.FC<ArtifactProps> = ({
             <div className={`hidden md:block`}>&nbsp;</div>
             <div
               className={` ${
-                price ? "cursor-pointer hover:bg-emerald-600 text-white" : ""
-              } min-w-24 text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
+                price &&
+                type !== ArtifactType.BSV20 &&
+                !(height && type === ArtifactType.Text && height >= 793000)
+                  ? "cursor-pointer hover:bg-emerald-600 text-white"
+                  : ""
+              } select-none min-w-24 text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
               onClick={() => {
-                if (!price) {
+                if (
+                  !(
+                    price &&
+                    type !== ArtifactType.BSV20 &&
+                    !(height && type === ArtifactType.Text && height >= 793000)
+                  )
+                ) {
                   return;
                 }
-                // TODO: Enable buy
-                // setShowBuy(true);
+                setShowBuy(true);
               }}
               onMouseEnter={() => {
-                // TODO: Enable buy
-                // setHoverPrice(true);
+                setHoverPrice(true);
               }}
               onMouseLeave={() => {
                 setHoverPrice(false);
               }}
             >
-              {price
-                ? hoverPrice
-                  ? "Buy"
-                  : `${toBitcoin(price)} BSV`
-                : contentType}
+              {price ? `${toBitcoin(price || 0)} BSV` : contentType}
             </div>
           </div>
         )}
       </ArtifactContainer>
       {showBuy && (
         <div
-          className="z-10 flex items-center justify-center absolute top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
+          className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
           onClick={() => setShowBuy(false)}
         >
           <div
@@ -314,18 +548,16 @@ const Artifact: React.FC<ArtifactProps> = ({
             <div className="rounded mb-4 p-2 text-xs text-[#777]">
               <h1>License</h1>
               <IoMdWarning className="inline-block mr-2" />
-              You are about to purchase this inscription, granting you the
-              ability to own and control the associated token. There is no
-              specific license to any artwork or IP that may be depicted here
-              and no rights are transferred to the purchaser unless specified
-              explicitly within the transaction itself. This is not a curated
-              listing, meaning that we have not verified it in any way.
+              You are about to purchase this inscription, granting you ownership
+              and control the associated token. There purchase does not include
+              a license to any artwork or IP that may be depicted here and no
+              rights are transferred to the purchaser unless specified
+              explicitly within the transaction itself.
             </div>
+
             <button
               className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
-              onClick={() => {
-                console.log("buying", txid, price);
-              }}
+              onClick={buyArtifact}
             >
               Buy - {toBitcoin(price || 0)} BSV
             </button>
@@ -356,3 +588,7 @@ const shimmer = (w: number, h: number) => `
   <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
   <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
 </svg>`;
+
+const P2PKHInputSize = 148;
+const marketAddress = `15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z`;
+const minimumMarketFee = 10000;

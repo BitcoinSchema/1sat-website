@@ -109,15 +109,18 @@ const Layout: React.FC<Props> = ({ children }) => {
   useEffect(() => {
     const fire = async () => {
       try {
+        setFetchBlockHeadersStatus(FetchStatus.Loading);
         const resp = await fetch(
           `https://junglebus.gorillapool.io/v1/block_header/list/${
             stats!.settled - 6
           }`
         );
+        setFetchBlockHeadersStatus(FetchStatus.Success);
         const data = await resp.json();
         setBlockHeaders(data);
       } catch (e) {
         console.log(e);
+        setFetchBlockHeadersStatus(FetchStatus.Error);
         toast.error("Error fetching block headers", toastErrorProps);
       }
     };
@@ -176,12 +179,12 @@ const Layout: React.FC<Props> = ({ children }) => {
   );
 
   const missingBlocks = useMemo(
-    () => blockHeaders.filter((b) => b.synced === 0).length,
+    () => blockHeaders?.filter((b) => b.synced === 0).length || 0,
     [blockHeaders]
   );
 
   const inSync = useMemo(() => {
-    return blockHeaders.every((bh) => bh.synced > 0);
+    return blockHeaders?.every((bh) => bh.synced > 0) || false;
   }, [blockHeaders]);
 
   return (
@@ -301,7 +304,7 @@ const Layout: React.FC<Props> = ({ children }) => {
             }}
           >
             <h1 className="col-span-10 text-lg text-[#777]">
-              Junglebus Sync Status
+              Bitcoin Sync Status
             </h1>
             <div
               className={`col-span-10 mb-4 ${

@@ -6,11 +6,11 @@ import { FetchStatus } from "../pages";
 import JsonArtifact from "./json";
 
 type TextArtifactProps = {
-  outPoint?: string;
+  origin?: string;
   className?: string;
 };
 
-const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
+const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className }) => {
   const [text, setText] = useState<string>();
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -23,7 +23,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
         const result = await fetch(
-          `${API_HOST}/api/files/inscriptions/${outPoint}`
+          `${API_HOST}/api/files/inscriptions/${origin}`
         );
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
@@ -48,19 +48,19 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ outPoint, className }) => {
     if (!text && fetchTextStatus === FetchStatus.Idle) {
       fire();
     }
-  }, [text, fetchTextStatus, outPoint, setText, setFetchTextStatus]);
+  }, [text, fetchTextStatus, origin, setText, setFetchTextStatus]);
 
   return fetchTextStatus === FetchStatus.Success ? (
     isBsv20 ? (
       <JsonArtifact
         type={ArtifactType.BSV20}
-        outPoint={outPoint}
+        origin={origin}
         className={className ? className : ""}
       />
     ) : isJson ? (
       <JsonArtifact
         type={ArtifactType.JSON}
-        outPoint={outPoint}
+        origin={origin}
         className={className ? className : ""}
       />
     ) : (

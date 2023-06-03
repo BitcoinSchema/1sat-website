@@ -1,7 +1,8 @@
 import Tabs, { Tab } from "@/components/tabs";
 import { useWallet } from "@/context/wallet";
-import { MAPI_HOST } from "@/pages/_app";
+import { MAPI_HOST, WOC_HOST } from "@/pages/_app";
 import { formatBytes } from "@/utils/bytes";
+import { customFetch } from "@/utils/httpClient";
 import { useLocalStorage } from "@/utils/storage";
 import { P2PKHAddress, Transaction } from "bsv-wasm-web";
 import { Utxo } from "js-1sat-ord";
@@ -15,6 +16,7 @@ import toast from "react-hot-toast";
 import { FiCopy, FiDownload } from "react-icons/fi";
 import { RxReset } from "react-icons/rx";
 import { TbBroadcast } from "react-icons/tb";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import { FetchStatus, toastErrorProps, toastProps } from "../../pages";
 
 type BroadcastResponse = {
@@ -40,6 +42,7 @@ type BroadcastResponsePayload = {
   txid: string;
 };
 
+type WocResult = {};
 interface PageProps extends WithRouterProps {}
 
 const PreviewPage: React.FC<PageProps> = ({}) => {
@@ -87,6 +90,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     if (!pendingTransaction?.rawTx) {
       return;
     }
+
     console.log({ pendingTransaction });
     setBroadcastStatus(FetchStatus.Loading);
     const body = Buffer.from(pendingTransaction.rawTx, "hex");
@@ -98,8 +102,27 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
       body,
     });
 
+    try {
+      const { promise } = customFetch<WocResult>(
+        `${WOC_HOST}/v1/bsv/main/tx/raw`,
+        {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: JSON.stringify({
+            txhex: pendingTransaction.rawTx,
+          }),
+        }
+      );
+      const wocResponse = await promise;
+      console.log("woc broadcast", wocResponse);
+    } catch (e) {
+      console.error("woc broadcast error", e);
+    }
     const data: BroadcastResponse = await response.json();
     console.log({ data });
+
     if (data && data.payload) {
       const respData = JSON.parse(
         data.payload || "{}"
@@ -107,7 +130,10 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
       if (respData?.returnResult === "success") {
         toast.success("Broadcasted", toastProps);
         setBroadcastCache(
-          uniq([...(broadcastCache || []), pendingTransaction.inputTxid])
+          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
+            0,
+            10
+          )
         );
 
         setBroadcastStatus(FetchStatus.Success);
@@ -134,6 +160,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
             ),
             createdUtxo,
           ];
+
           setCreatedUtxos(cu);
           setFundingUtxos([
             ...fundingUtxos.filter((u) => {
@@ -165,9 +192,11 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
       ) {
         console.log("adding to broadcast cache", pendingTransaction.txid);
         // todo add input tx not this txid!!
-        debugger;
         setBroadcastCache(
-          uniq([...(broadcastCache || []), pendingTransaction.inputTxid])
+          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
+            0,
+            10
+          )
         );
       }
       setBroadcastStatus(FetchStatus.Error);
@@ -192,6 +221,17 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
   const feeUsd = useMemo(() => {
     return usdRate && pendingTransaction
       ? `$${(pendingTransaction.fee / usdRate).toFixed(2)}`
+      : undefined;
+  }, [usdRate, pendingTransaction]);
+
+  const totalUsd = useMemo(() => {
+    return usdRate && pendingTransaction
+      ? `$${(
+          (pendingTransaction.fee +
+            (pendingTransaction.marketFee || 0) +
+            (pendingTransaction.price || 0)) /
+          usdRate
+        ).toFixed(2)}`
       : undefined;
   }, [usdRate, pendingTransaction]);
 
@@ -231,60 +271,78 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
             }
             Preview`}
           </h1>
-          <div className="text-center text-[#aaa] my-2">
-            Transaction generated. Broadcast to finalize.
+          <div className="text-center text-[#aaa] mt-2">
+            Broadcast to finalize.
           </div>
 
-          <div className="w-[600px] w-full max-w-lg mx-auto p-2 h-[260px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-teal-700 my-8 relative">
+          <div className="w-full max-w-lg mx-auto h-[260px] whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden p-2 text-teal-700 mt-4 mb-8 relative">
             <span className="opacity-50 select-none">
               {pendingTransaction.rawTx?.slice(0, 888)}
             </span>
-            <div className="p-6 absolute w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent">
+            <div className="p-2 md:p-6 absolute w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent">
               <div className="font-semibold text-center text-sm text-[#aaa] mb-2 py-2">
                 Transaction ID
               </div>
-              <div className="rounded-full bg-[#222] border flex items-center  justify-center text-center text-[10px] md:text-xs text-[#aaa] border-[#333] my-2 py-2">
+              <div className="rounded-full bg-[#222] border flex items-center justify-center text-center text-[9px] md:text-[11px] text-[#aaa] border-[#333] my-2 py-2">
                 {pendingTransaction.txid}
               </div>
-              <div className="flex justify-between mt-4">
-                <div>{pendingTransaction.numInputs} Inputs</div>
-                <div>{pendingTransaction.numOutputs} Outputs</div>
-              </div>
-              <div className="flex justify-between">
-                <div>Size</div>
-                <div>{formatBytes(pendingTransaction.rawTx.length / 2)}</div>
-              </div>
-              <div className="flex justify-between">
-                <div>Fee</div>
-                <div>{pendingTransaction.fee.toLocaleString()} Satoshis</div>
-              </div>
-              <div className="flex justify-between">
-                <div>Fee USD</div>
-                <div>{feeUsd}</div>
-              </div>
-              {pendingTransaction.fee && (
-                <div className="flex justify-between">
-                  <div>Fee Rate</div>
-                  <div>
-                    {(
-                      pendingTransaction.fee /
-                      (pendingTransaction.rawTx?.length / 2)
-                    ).toFixed(5)}{" "}
-                    sat/B
-                  </div>
+              <div className="px-2">
+                <div className="flex justify-between mt-4">
+                  <div>{pendingTransaction.numInputs} Inputs</div>
+                  <div>{pendingTransaction.numOutputs} Outputs</div>
                 </div>
-              )}
+                <div className="flex justify-between">
+                  <div>Size</div>
+                  <div>{formatBytes(pendingTransaction.rawTx.length / 2)}</div>
+                </div>
+                {pendingTransaction.price && (
+                  <div className="flex justify-between">
+                    <div>Market Price</div>
+                    <div>{toBitcoin(pendingTransaction.price || 0)} BSV</div>
+                  </div>
+                )}
+                {pendingTransaction.marketFee && (
+                  <div className="flex justify-between">
+                    <div>Market Fee (4%)</div>
+                    <div>
+                      {pendingTransaction.marketFee <= 50000
+                        ? `${pendingTransaction.marketFee.toLocaleString()} Satoshis`
+                        : `${toBitcoin(pendingTransaction.marketFee || 0)} BSV`}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <div>Network Fee</div>
+                  <div>{pendingTransaction.fee.toLocaleString()} Satoshis</div>
+                </div>
+                <div className="flex justify-between">
+                  <div>Network Fee USD</div>
+                  <div>{feeUsd}</div>
+                </div>
+                {pendingTransaction.fee && (
+                  <div className="flex justify-between">
+                    <div>Fee Rate</div>
+                    <div>
+                      {(
+                        pendingTransaction.fee /
+                        (pendingTransaction.rawTx?.length / 2)
+                      ).toFixed(5)}{" "}
+                      sat/B
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <div className="p-6 md:p-0 max-w-md mx-auto">
+          <div className="px-6 md:p-0 max-w-md mx-auto">
             <button
               onClick={handleClickBroadcast}
-              className="w-full p-2 text-lg disabled:bg-[#333] text-[#aaa] hover:bg-yellow-400 bg-yellow-500 rounded mb-4 text-black font-semibold transition"
+              className="w-full p-2 text-lg disabled:bg-[#333] text-black hover:bg-yellow-400 bg-yellow-500 rounded mb-4 font-semibold transition"
               disabled={broadcastStatus === FetchStatus.Loading}
             >
               <div className="mx-auto flex items-center justify-center">
                 <TbBroadcast className="w-10" />
-                <div>Broadcast {feeUsd}</div>
+                <div>Broadcast {totalUsd}</div>
               </div>
             </button>
 
@@ -293,7 +351,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
                 text={pendingTransaction?.rawTx}
                 onCopy={() => toast.success("Copied Raw Tx", toastProps)}
               >
-                <button className="w-full p-1 text-lg hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center mr-1 transition">
+                <button className="w-full p-1 hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center mr-1 transition">
                   <div className="mx-auto flex items-center justify-center">
                     <FiCopy className="w-10" />
                     <div>Copy Raw Tx</div>
@@ -302,7 +360,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
               </CopyToClipboard>
 
               <button
-                className="w-full ml-1 p-1 text-lg hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center transition"
+                className="w-full ml-1 p-1 hover:bg-[#444] bg-[#333] rounded hover:text-white text-sm flex items-center transition"
                 onClick={downloadPendingTx}
               >
                 <div className="mx-auto flex items-center justify-center">

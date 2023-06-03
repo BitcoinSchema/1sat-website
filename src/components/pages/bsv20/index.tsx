@@ -50,7 +50,7 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
       // setFetchBsv20sStatus(FetchStatus.Idle);
       setLastSettled(stats.settled);
     }
-  }, [stats]);
+  }, [lastSettled, stats]);
 
   const filteredActivity = useMemo(() => {
     if (!showInvalid) {

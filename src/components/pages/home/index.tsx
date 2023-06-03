@@ -125,7 +125,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
               {artifact && (
                 <Artifact
                   num={artifact?.num}
-                  outPoint={
+                  origin={
                     artifact.origin || ` ${artifact?.txid}_${artifact?.vout}`
                   }
                   contentType={artifact.file?.type}

@@ -6,7 +6,7 @@ interface PageProps extends WithRouterProps {}
 
 const MarketPage: React.FC<PageProps> = ({}) => {
   return (
-    <div>
+    <div className="p-4">
       <MarketTabs currentTab={MarketTab.Featured} />
       <h1 className="mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
         Market

@@ -74,7 +74,7 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
                         media: `max-h-[calc(100vh-20em)]`,
                       }}
                       contentType={artifact.type}
-                      outPoint={artifact.origin || ""}
+                      origin={artifact.origin || ""}
                       num={artifact.num}
                       height={artifact.height}
                     />

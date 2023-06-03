@@ -31,45 +31,50 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
     }
   }, [artifact]);
 
+  useEffect(() => {
+    console.log({ isBsv20 });
+  }, [isBsv20]);
+
   const adminControls = useMemo(() => {
     return (
       artifact && (
         <div className="md:mt-0 mt-8 w-full">
           {ordAddress && <OrdAddress className="mb-4" />}
-          {!isBsv20 && (
-            <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col">
-              <div className="flex justify-between items-center">
-                <div>Transfer Ownership</div>
-                <div
-                  className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                  onClick={async () => {
-                    console.log("click send");
-                    const address = prompt(
-                      "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
-                    );
+          {isBsv20 === undefined ||
+            (!isBsv20 && (
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col">
+                <div className="flex justify-between items-center">
+                  <div>Transfer Ownership</div>
+                  <div
+                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                    onClick={async () => {
+                      console.log("click send");
+                      const address = prompt(
+                        "Enter the Bitcoin address to send this ordinal to. MAKE SURE THE WALLET ADDRESS YOU'RE SENDNG TO UNDERSTANDS ORDINALS, AND EXPECTS TORECIEVE 1SAT ORDINALS AT THIS ADDRESS!"
+                      );
 
-                    if (address) {
-                      console.log("transferring", { artifact }, "to", {
-                        address,
-                      });
+                      if (address) {
+                        console.log("transferring", { artifact }, "to", {
+                          address,
+                        });
 
-                      try {
-                        // TODO: Send ordUtxo instead of artifact
-                        await transfer(artifact, address);
-                      } catch (e) {
-                        toast.error(
-                          "Something went wrong" + e,
-                          toastErrorProps
-                        );
+                        try {
+                          // TODO: Send ordUtxo instead of artifact
+                          await transfer(artifact, address);
+                        } catch (e) {
+                          toast.error(
+                            "Something went wrong" + e,
+                            toastErrorProps
+                          );
+                        }
                       }
-                    }
-                  }}
-                >
-                  Send
+                    }}
+                  >
+                    Send
+                  </div>
                 </div>
-              </div>
 
-              {/* <div className="flex justify-between items-center mt-4">
+                {/* <div className="flex justify-between items-center mt-4">
               <div>List for Sale</div>
               <div
                 className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
@@ -81,14 +86,14 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
               </div>
             </div> */}
 
-              {/* <div className="flex justify-between items-center mt-4">
+                {/* <div className="flex justify-between items-center mt-4">
         <div>Re-Inscribe</div>
         <div className="rounded bg-[#111] p-2" onClick={async () => {}}>
           SoonTm
         </div>
       </div> */}
-            </div>
-          )}
+              </div>
+            ))}
         </div>
       )
     );
@@ -98,7 +103,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
     <div className="flex md:flex-row flex-col justify-between items-start w-full">
       <Artifact
         to={artifact && artifact.num ? `/inscription/${artifact.num}` : "#"}
-        outPoint={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
+        origin={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
         src={
           artifact
             ? `${API_HOST}/api/files/inscriptions/${artifact.origin}`

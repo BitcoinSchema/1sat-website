@@ -140,11 +140,11 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
   const isBsv20 = useMemo(() => {
     if (artifact) {
-      console.log(
-        { artifact },
-        (artifact.height || 0) > 793000,
-        head(artifact.file!.type.split(";"))
-      );
+      // console.log(
+      //   { artifact },
+      //   (artifact.height || 0) > 793000,
+      //   head(artifact.file!.type.split(";"))
+      // );
       if (
         (head(artifact.file!.type.split(";")) === "text/plain" &&
           (artifact.height || 0) > 793000) ||
@@ -254,7 +254,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                   media: `max-h-[calc(100vh-20em)]`,
                 }}
                 contentType={artifact.file?.type}
-                outPoint={artifact.origin || ""}
+                origin={artifact.origin || ""}
                 num={artifact.num}
                 height={artifact.height}
               />

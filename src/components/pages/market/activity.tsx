@@ -96,7 +96,7 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
                 {/* <div>Listing? {l.listing ? "True" : "False"}</div> */}
                 <Artifact
                   key={l.origin || `${l.txid}_${l.vout}`}
-                  outPoint={l.origin || `${l.txid}_${l.vout}`}
+                  origin={l.origin || `${l.txid}_${l.vout}`}
                   contentType={l.file?.type}
                   num={l.num}
                   classNames={{

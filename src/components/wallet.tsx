@@ -36,6 +36,7 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     balance,
     send,
     usdRate,
+    backupKeys,
   } = useWallet();
 
   const [showKeys, setShowKeys] = useState<boolean>(false);
@@ -129,13 +130,22 @@ const Wallet: React.FC<WalletProps> = ({}) => {
             <p>These are your keys. Keep them safe.</p>
             <pre>{payPk}</pre>
             <pre>{ordPk}</pre>
-            <button
-              type="submit"
-              onClick={handleConfirm}
-              className="w-full p-1 bg-yellow-600 text-xl cursor-pointer rounded my-4 text-white"
-            >
-              I Backed Them Up
-            </button>
+            <div className="flex items-center">
+              <button
+                type="submit"
+                onClick={backupKeys}
+                className="w-full p-1 mr-2 bg-yellow-600 hover:bg-yellow-500 text-xl cursor-pointer rounded my-4 text-white"
+              >
+                Download Backup
+              </button>
+              <button
+                type="submit"
+                onClick={handleConfirm}
+                className="w-full p-1 ml-2 bg-yellow-600 hover:bg-yellow-500 text-xl cursor-pointer rounded my-4 text-white"
+              >
+                I Backed Them Up
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -152,12 +162,12 @@ const Wallet: React.FC<WalletProps> = ({}) => {
             }}
           >
             $
-            {usdRate && balance
+            {usdRate && balance > 0
               ? (balance / usdRate).toFixed(2)
               : balance.toFixed(2)}
           </h1>
           <h2 className="mb-24 text-center text-teal-600">
-            {toBitcoin(balance)} BSV
+            {balance ? toBitcoin(balance || 0) : 0} BSV
           </h2>
           <div className="text-center w-full items-center flex md:px-8">
             <div

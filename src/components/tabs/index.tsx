@@ -23,7 +23,7 @@ const Tabs: React.FC<Props> = ({
   onClickSelected,
 }) => {
   return (
-    <S.Tabs className="max-w-7xl mx-auto my-8">
+    <S.Tabs className="max-w-7xl mx-auto my-8 flex justify-center">
       {/* <S.Tab
         partiallyactive={currentTab === Tab.Overview ? "true" : "false"}
         href={`/`}

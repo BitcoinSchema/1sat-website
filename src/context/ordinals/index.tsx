@@ -57,7 +57,7 @@ export interface OrdUtxo extends Utxo {
 export interface Listing extends Utxo {
   num: number | undefined;
   origin: string;
-  outPoint: string;
+  outpoint: string;
   MAP: MAP;
   file: GPFile;
   listing: boolean;

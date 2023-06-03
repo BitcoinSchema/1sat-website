@@ -48,7 +48,6 @@ const TxPage: React.FC<PageProps> = ({}) => {
     }
   }, [outpoint, getArtifactsByOrigin, vout, getArtifactsByTxId, txid]);
 
-  console.log({ artifacts });
   return (
     <>
       <Head>

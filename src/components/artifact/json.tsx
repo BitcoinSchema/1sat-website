@@ -6,14 +6,14 @@ import { ArtifactType } from ".";
 import { FetchStatus } from "../../components/pages";
 
 type TextArtifactProps = {
-  outPoint?: string;
+  origin?: string;
   className?: string;
   json?: JSON;
   type?: ArtifactType;
 };
 
 const JsonArtifact: React.FC<TextArtifactProps> = ({
-  outPoint,
+  origin,
   className,
   json: j,
   type = ArtifactType.JSON,
@@ -34,7 +34,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
         setFetchTextStatus(FetchStatus.Loading);
 
         const result = await fetch(
-          `${API_HOST}/api/files/inscriptions/${outPoint}`
+          `${API_HOST}/api/files/inscriptions/${origin}`
         );
         const resultText = await result.json();
         setFetchTextStatus(FetchStatus.Success);
@@ -42,8 +42,8 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
 
         if (type === ArtifactType.BSV20) {
           const bsv20Result = await fetch(
-            `${API_HOST}/api/bsv20/outpoint/${outPoint?.split("_")[0]}/${
-              outPoint?.split("_")[1]
+            `${API_HOST}/api/bsv20/outpoint/${origin?.split("_")[0]}/${
+              origin?.split("_")[1]
             }`
           );
           if (bsv20Result.status === 200) {
@@ -110,7 +110,6 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
   }, [
     json,
     bsv20,
-    outPoint,
     setJson,
     setBsv20,
     setFetchTextStatus,
@@ -118,6 +117,9 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
     type,
     limCache.size,
     setLimCache,
+    fetchTextStatus,
+    limCache,
+    origin,
   ]);
 
   return fetchTextStatus === FetchStatus.Success ? (

@@ -94,7 +94,8 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
               <div key={l.origin}>
                 <Artifact
                   key={l.origin || `${l.txid}_${l.vout}`}
-                  outPoint={l.origin || `${l.txid}_${l.vout}`}
+                  origin={l.origin || `${l.txid}_${l.vout}`}
+                  outPoint={l.outpoint}
                   contentType={l.file?.type}
                   num={l.num}
                   classNames={{
