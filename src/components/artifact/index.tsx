@@ -190,8 +190,8 @@ const Artifact: React.FC<ArtifactProps> = ({
     // I2 - Funding
     // O1 - Ordinal destination
     // O2 - Payment to lister
-    // O3 - Change
-    // O4 - Market Fee
+    // O3 - Market Fee
+    // O4 - Change
 
     const purchaseTx = new Transaction(1, 0);
 
@@ -233,23 +233,19 @@ const Artifact: React.FC<ArtifactProps> = ({
     );
     purchaseTx.add_output(payOutput);
 
-    // output 2
-    let marketFee = price * 0.04;
-    if (marketFee === 0) {
-      marketFee = minimumMarketFee;
-    }
-    const marketFeeOutput = new TxOut(
-      BigInt(marketFee),
-      P2PKHAddress.from_string(marketAddress).get_locking_script()
-    );
-    purchaseTx.add_output(marketFeeOutput);
-
-    // output 3
+    // output 2 - change
     const dummyChangeOutput = new TxOut(
       BigInt(0),
       P2PKHAddress.from_string(changeAddress).get_locking_script()
     );
     purchaseTx.add_output(dummyChangeOutput);
+
+    // output 3 - marketFee
+    const dummyMarketFeeOutput = new TxOut(
+      BigInt(0),
+      P2PKHAddress.from_string(marketAddress).get_locking_script()
+    );
+    purchaseTx.add_output(dummyMarketFeeOutput);
 
     let preimage = purchaseTx.sighash_preimage(
       SigHash.InputOutput,
@@ -261,20 +257,27 @@ const Artifact: React.FC<ArtifactProps> = ({
     listingInput.set_unlocking_script(
       Script.from_asm_string(
         `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
-          .get_output(3)!
-          .to_hex()} ${Buffer.from(preimage).toString("hex")} OP_0`
+          .get_output(2)!
+          .to_hex()}${purchaseTx.get_output(3)!.to_hex()} ${Buffer.from(
+          preimage
+        ).toString("hex")} OP_0`
       )
     );
     purchaseTx.set_input(0, listingInput);
 
-    // Calculate the fee
-    // account for funding input (not added to tx yet)
+    // calculate market fee
+    let marketFee = price * 0.04;
+    if (marketFee === 0) {
+      marketFee = minimumMarketFee;
+    }
 
+    // Calculate the network fee
+    // account for funding input and market output (not added to tx yet)
     let paymentUtxos: Utxo[] = [];
     let satsCollected = 0;
     // initialize fee and satsNeeded (updated with each added payment utxo)
-    let satsNeeded = calculateFee(1, purchaseTx) + price;
-    let fee = satsNeeded + price;
+    let fee = calculateFee(1, purchaseTx);
+    let satsNeeded = fee + price + marketFee;
     // collect the required utxos
     const sortedFundingUtxos = fundingUtxos.sort((a, b) =>
       a.satoshis > b.satoshis ? -1 : 1
@@ -286,11 +289,11 @@ const Artifact: React.FC<ArtifactProps> = ({
 
         // if we had to add additional
         fee = calculateFee(paymentUtxos.length, purchaseTx);
-        satsNeeded = fee + price;
+        satsNeeded = fee + price + marketFee;
       }
     }
 
-    // Replace change output
+    // Replace dummy change output
     const changeAmt = satsCollected - satsNeeded;
 
     const changeOutput = new TxOut(
@@ -299,6 +302,13 @@ const Artifact: React.FC<ArtifactProps> = ({
     );
 
     purchaseTx.set_output(2, changeOutput);
+
+    // add output 3 - market fee (not part of preimage?)
+    const marketFeeOutput = new TxOut(
+      BigInt(marketFee),
+      P2PKHAddress.from_string(marketAddress).get_locking_script()
+    );
+    purchaseTx.set_output(3, marketFeeOutput);
 
     preimage = purchaseTx.sighash_preimage(
       SigHash.InputOutputs,
@@ -310,13 +320,15 @@ const Artifact: React.FC<ArtifactProps> = ({
     listingInput.set_unlocking_script(
       Script.from_asm_string(
         `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
-          .get_output(3)!
-          .to_hex()} ${Buffer.from(preimage).toString("hex")} OP_0`
+          .get_output(2)!
+          .to_hex()}${purchaseTx.get_output(3)!.to_hex()} ${Buffer.from(
+          preimage
+        ).toString("hex")} OP_0`
       )
     );
     purchaseTx.set_input(0, listingInput);
 
-    // create and sign input 1 (payment)
+    // create and sign inputs (payment)
     const paymentPk = PrivateKey.from_wif(payPk);
 
     paymentUtxos.forEach((utxo, idx) => {
