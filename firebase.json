@@ -48,6 +48,10 @@
         "destination": "/tx/[outpoint].html"
       },
       {
+        "source": "/collection/**",
+        "destination": "/collection/[collectionId].html"
+      },
+      {
         "source": "/inscription/**",
         "destination": "/inscription/[inscriptionId].html"
       },

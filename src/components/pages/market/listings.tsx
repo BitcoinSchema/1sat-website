@@ -1,27 +1,64 @@
 import Artifact from "@/components/artifact";
 import MarketTabs, { MarketTab } from "@/components/pages/market/tabs";
-import { useOrdinals } from "@/context/ordinals";
+import Tabs, { Tab } from "@/components/tabs";
+import { Dir, useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
 
+export const enum SortListingsBy {
+  Price = "price",
+  Recent = "recent",
+  Num = "num",
+}
+
 const ListingsPage: React.FC<PageProps> = ({}) => {
   const router = useRouter();
-  const { page } = router.query as { page: string | undefined };
+  const [dir, setDir] = useState<Dir>(Dir.DESC);
+  const [showSort, setShowSort] = useState(false);
+  const [sortBy, setSortBy] = useState<SortListingsBy>(SortListingsBy.Recent);
+  const [lastSortBy, setLastSortBy] = useState<SortListingsBy>(sortBy);
+  const [lastDir, setLastDir] = useState<Dir>(dir);
 
   const { listings, getListings, fetchListingsStatus } = useOrdinals();
 
+  const currentPage = useMemo(() => {
+    return typeof router.query.page === "string"
+      ? parseInt(router.query.page)
+      : 1;
+  }, [router.query.page]);
+
+  const [lastPage, setLastPage] = useState(currentPage);
+
   useEffect(() => {
     const fire = async () => {
-      await getListings(parseInt(page || "1"));
+      await getListings(currentPage, sortBy, dir);
     };
-    if (!listings && fetchListingsStatus === FetchStatus.Idle) {
+    if (
+      fetchListingsStatus === FetchStatus.Idle ||
+      lastPage !== currentPage ||
+      sortBy !== lastSortBy ||
+      dir !== lastDir
+    ) {
       fire();
+      setLastPage(currentPage);
+      setLastDir(dir);
+      setLastSortBy(sortBy);
     }
-  }, [page, listings, getListings, fetchListingsStatus]);
+  }, [
+    currentPage,
+    listings,
+    getListings,
+    fetchListingsStatus,
+    sortBy,
+    dir,
+    lastPage,
+    lastSortBy,
+    lastDir,
+  ]);
 
   const pagination = useMemo(() => {
     return (
@@ -42,7 +79,9 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
               className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
               onClick={() =>
                 router.push(
-                  `/market/listings/?page=${page ? parseInt(page) - 1 : 1}`
+                  `/market/listings/?page=${
+                    currentPage ? currentPage - 1 : 1
+                  }&sortBy=${sortBy}&dir=${dir}`
                 )
               }
             >
@@ -50,16 +89,18 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
             </button>
           </div>
           <div className="bg-[#111] rounded flex items-center mb-8 max-w-2xl text-sm p-2 md:p-4 m-4">
-            Page {parseInt(page || "1")}
+            Page {currentPage}
           </div>
           <div className="">
             <button
               className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
               onClick={() =>
                 router.push(
-                  page
-                    ? `/market/listings/?page=${parseInt(page || "1") + 1}`
-                    : "/market/listings/?page=2"
+                  currentPage
+                    ? `/market/listings/?page=${
+                        currentPage + 1
+                      }&sortBy=${sortBy}&dir=${dir}`
+                    : `/market/listings/?page=2&sortBy=${sortBy}&dir=${dir}`
                 )
               }
             >
@@ -79,13 +120,42 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
         </div>
       </div>
     );
-  }, [router, page]);
+  }, [router, currentPage]);
+
+  const sortPrice = useCallback(() => {
+    if (sortBy === SortListingsBy.Price) {
+      setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
+    } else {
+      setSortBy(SortListingsBy.Price);
+    }
+  }, [sortBy, dir]);
+
+  const sortNum = useCallback(() => {
+    if (sortBy === SortListingsBy.Num) {
+      setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
+    } else {
+      setSortBy(SortListingsBy.Num);
+    }
+  }, [sortBy, dir]);
+
+  const sortRecent = useCallback(() => {
+    if (sortBy === SortListingsBy.Recent) {
+      setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
+    } else {
+      setSortBy(SortListingsBy.Recent);
+    }
+  }, [sortBy, dir]);
 
   return (
     <div>
+      <Tabs currentTab={Tab.Market} />
+
       <MarketTabs currentTab={MarketTab.Listings} />
-      <h1 className="text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
-        Market Listings
+      <h1 className="flex items-center text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold justify-between">
+        <div>Market Listings</div>
+        <div onClick={() => setShowSort(true)} className="cursor-pointer">
+          Sort
+        </div>
       </h1>
       {fetchListingsStatus === FetchStatus.Success && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -104,10 +174,58 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   txid={l.txid}
                   price={l.price}
                   height={l.height}
+                  isListing={true}
                 />
               </div>
             );
           })}
+          {showSort && (
+            <div
+              className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
+              onClick={() => setShowSort(false)}
+            >
+              <div
+                className="w-full max-w-lg m-auto p-4 bg-[#111] trext-[#aaa] rounded flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mb-4">Sort By</div>
+
+                <div
+                  onClick={() => {
+                    setShowSort(false);
+                    sortNum();
+                  }}
+                  className="mb-4 p-2 cursor-pointer rounded text-black font-semibold transition bg-yellow-500 hover:bg-yellow-600"
+                >
+                  Inscription Number
+                </div>
+                <div
+                  onClick={() => {
+                    setShowSort(false);
+                    sortRecent();
+                  }}
+                  className="mb-4 p-2 cursor-pointer rounded text-black font-semibold transition bg-yellow-500 hover:bg-yellow-600"
+                >
+                  Recent
+                </div>
+                <div
+                  onClick={() => {
+                    setShowSort(false);
+                    sortPrice();
+                  }}
+                  className="mb-4 p-2 cursor-pointer rounded text-black font-semibold transition bg-yellow-500 hover:bg-yellow-600"
+                >
+                  Price
+                </div>
+                <button
+                  className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
+                  onClick={() => setShowSort(false)}
+                >
+                  CLOSE
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {pagination}

@@ -256,7 +256,7 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
           rel="stylesheet"
         />
       </Head>
-      <Tabs currentTab={Tab.Ordinals} />
+      <Tabs currentTab={Tab.Wallet} />
 
       {pendingTransaction && (
         <div>

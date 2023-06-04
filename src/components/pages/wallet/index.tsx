@@ -2,11 +2,14 @@ import Tabs, { Tab } from "@/components/tabs";
 import Wallet from "@/components/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import React from "react";
+import WalletTabs, { WalletTab } from "./tabs";
 
 interface PageProps extends WithRouterProps {}
 
-const WalletPage: React.FC<PageProps> = ({ router }) => {
+const WalletPage: React.FC<PageProps> = ({}) => {
+  const router = useRouter();
   return (
     <>
       <Head>
@@ -23,6 +26,7 @@ const WalletPage: React.FC<PageProps> = ({ router }) => {
         />
       </Head>
       <Tabs currentTab={Tab.Wallet} />
+      <WalletTabs currentTab={WalletTab.Bitcoin} />
       <Wallet />
     </>
   );

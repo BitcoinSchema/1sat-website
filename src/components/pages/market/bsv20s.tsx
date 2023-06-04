@@ -1,4 +1,5 @@
 import MarketTabs, { MarketTab } from "@/components/pages/market/tabs";
+import Tabs, { Tab } from "@/components/tabs";
 import { API_HOST, Dir, SortBy, useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Router, { useRouter } from "next/router";
@@ -81,7 +82,9 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
                 className="bg-[#111] rounded mb-8 text-sm p-2 md:p-4 my-4"
                 onClick={() =>
                   Router.push(
-                    `/market/bsv20/?page=${currentPage ? currentPage - 1 : 1}`
+                    `/market/bsv20/?page=${
+                      currentPage ? currentPage - 1 : 1
+                    }&sortBy=${sortBy}&dir=${dir}`
                   )
                 }
               >
@@ -98,8 +101,10 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
               onClick={() =>
                 Router.push(
                   currentPage
-                    ? `/market/bsv20/?page=${currentPage + 1}`
-                    : "/market/bsv20/?page=2"
+                    ? `/market/bsv20/?page=${
+                        currentPage + 1
+                      }&sortBy=${sortBy}&dir=${dir}`
+                    : `/market/bsv20/?page=2&sortBy=${sortBy}&dir=${dir}`
                 )
               }
             >
@@ -229,6 +234,8 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
 
   return (
     <div>
+      <Tabs currentTab={Tab.Market} />
+
       <MarketTabs currentTab={MarketTab.BSV20} />
       <h1 className="text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
         BSV-20 (Fungible Tokens)

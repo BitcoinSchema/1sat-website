@@ -7,7 +7,7 @@ import { fillContentType } from "@/utils/artifact";
 import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import { useRouter } from "next/router";
+import Router, { useRouter } from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FetchStatus, toastErrorProps } from "..";
@@ -283,7 +283,10 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
               (o) => o.num === parseInt(inscriptionId as string)
             ) && (
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
-                <div className="flex justify-between items-center">
+                <h2 className="text-xl text-center font-semibold mb-2">
+                  You Own This Item
+                </h2>
+                <div className="flex justify-between items-center mb-2">
                   <div>Transfer Ownership</div>
                   <div
                     className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
@@ -327,6 +330,17 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     }}
                   >
                     Send
+                  </div>
+                </div>
+                <div className="flex justify-between items-center mt-4">
+                  <div>List for Sale</div>
+                  <div
+                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                    onClick={async () => {
+                      Router.push(`/market/new/${artifact?.origin}`);
+                    }}
+                  >
+                    List
                   </div>
                 </div>
               </div>

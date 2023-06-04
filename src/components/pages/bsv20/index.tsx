@@ -6,6 +6,7 @@ import Head from "next/head";
 import Router, { useRouter } from "next/router";
 import React, { useEffect, useMemo, useState } from "react";
 import { FetchStatus } from "..";
+import WalletTabs, { WalletTab } from "../wallet/tabs";
 
 interface PageProps extends WithRouterProps {}
 
@@ -113,7 +114,7 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
         />
       </Head>
       <Tabs
-        currentTab={Tab.BSV20}
+        currentTab={Tab.Wallet}
         onClickSelected={() =>
           fetchBsv20sStatus === FetchStatus.Loading
             ? () => {}
@@ -121,6 +122,7 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
         }
         showIndicator={fetchBsv20sStatus !== FetchStatus.Loading}
       />
+      <WalletTabs currentTab={WalletTab.BSV20} />
 
       <div className="p-4">
         {fetchBsv20sStatus !== FetchStatus.Loading && (!payPk || !ordPk) && (

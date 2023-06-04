@@ -1,4 +1,5 @@
 import React from "react";
+import { IoMdWallet } from "react-icons/io";
 import * as S from "./styles";
 interface Props {
   currentTab: Tab | undefined;
@@ -11,10 +12,8 @@ interface Props {
 export enum Tab {
   Overview = "overview",
   Wallet = "wallet",
-  Ordinals = "ordinals",
   Inscribe = "inscribe",
   Market = "market",
-  BSV20 = "bsv20",
 }
 
 const Tabs: React.FC<Props> = ({
@@ -23,7 +22,7 @@ const Tabs: React.FC<Props> = ({
   onClickSelected,
 }) => {
   return (
-    <S.Tabs className="max-w-7xl mx-auto my-8 flex justify-center">
+    <S.Tabs className="max-w-7xl mx-auto mt-8 flex justify-center">
       {/* <S.Tab
         partiallyactive={currentTab === Tab.Overview ? "true" : "false"}
         href={`/`}
@@ -40,7 +39,7 @@ const Tabs: React.FC<Props> = ({
             : () => {}
         }
       >
-        Wallet
+        <IoMdWallet className="w-4 h-4" />
       </S.Tab>
 
       <S.Tab
@@ -55,28 +54,6 @@ const Tabs: React.FC<Props> = ({
         Inscribe
       </S.Tab>
 
-      <S.Tab
-        partiallyactive={currentTab === Tab.Ordinals ? "true" : "false"}
-        href={`/ordinals`}
-        onClick={(e) =>
-          currentTab === Tab.Ordinals && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Ordinals
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === Tab.BSV20 ? "true" : "false"}
-        href={`/bsv20`}
-        onClick={(e) =>
-          currentTab === Tab.BSV20 && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        BSV-20
-      </S.Tab>
       <S.Tab
         partiallyactive={currentTab === Tab.Market ? "true" : "false"}
         href={`/market`}

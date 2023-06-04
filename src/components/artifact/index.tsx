@@ -64,6 +64,7 @@ type ArtifactProps = {
   txid?: string;
   price?: number;
   origin?: string;
+  isListing?: boolean;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -78,6 +79,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   txid,
   price,
   height,
+  isListing,
 }) => {
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
@@ -210,7 +212,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       (price === 0 ? minimumMarketFee + price : price * 1.04) >=
       sumBy(fundingUtxos, "satoshis") + P2PKHInputSize * fundingUtxos.length
     ) {
-      toast.error("Not enough Bitcoion!", toastErrorProps);
+      toast.error("Not enough Bitcoin!", toastErrorProps);
       return;
     }
     const listingInput = new TxIn(
@@ -527,6 +529,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                 if (
                   !(
                     price &&
+                    isListing &&
                     type !== ArtifactType.BSV20 &&
                     !(height && type === ArtifactType.Text && height >= 793000)
                   )

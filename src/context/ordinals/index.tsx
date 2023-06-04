@@ -1,4 +1,5 @@
 import { FetchStatus } from "@/components/pages";
+import { SortListingsBy } from "@/components/pages/market/listings";
 import { MAP } from "bmapjs/types/protocols/map";
 import { Utxo } from "js-1sat-ord";
 import React, {
@@ -101,7 +102,11 @@ type ContextValue = {
   activity?: Listing[];
   getActivity: (page: number) => Promise<void>;
   fetchActivityStatus: FetchStatus;
-  getListings: (page: number) => Promise<void>;
+  getListings: (
+    page: number,
+    sortBy: SortListingsBy,
+    dir: Dir
+  ) => Promise<void>;
   getListing: (outPoint: string) => Promise<void>;
   fetchListingsStatus: FetchStatus;
   fetchListingStatus: FetchStatus;
@@ -230,13 +235,13 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const getListings = useCallback(
-    async (page: number) => {
+    async (page: number, sortBy: SortListingsBy, dir: Dir) => {
       setFetchListingsStatus(FetchStatus.Loading);
       try {
         const offset = (page - 1) * ORDS_PER_PAGE;
 
         const { promise } = http.customFetch<any>(
-          `${API_HOST}/api/market?limit=${ORDS_PER_PAGE}&offset=${offset}`
+          `${API_HOST}/api/market?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sortBy}&dir=${dir}`
         );
 
         const results = await promise;
@@ -274,13 +279,13 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const getBsv20 = useCallback(
-    async (page: number, sordBy: SortBy, dir: Dir) => {
+    async (page: number, sortBy: SortBy, dir: Dir) => {
       setFetchBsv20Status(FetchStatus.Loading);
       try {
         const offset = (page - 1) * ORDS_PER_PAGE;
         // Available values : pct_minted, available, tick, max, height
         const { promise } = http.customFetch<any>(
-          `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sordBy}&dir=${dir}`
+          `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sortBy}&dir=${dir}`
         );
 
         const results = await promise;

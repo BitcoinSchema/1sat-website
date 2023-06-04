@@ -8,6 +8,7 @@ import Router, { useRouter } from "next/router";
 import React, { useCallback, useMemo } from "react";
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { FetchStatus } from "..";
+import WalletTabs, { WalletTab } from "../wallet/tabs";
 import Ordinals from "./list";
 
 interface PageProps extends WithRouterProps {}
@@ -61,7 +62,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
         />
       </Head>
       <Tabs
-        currentTab={Tab.Ordinals}
+        currentTab={Tab.Wallet}
         onClickSelected={() =>
           fetchOrdinalUtxosStatus === FetchStatus.Loading
             ? () => {}
@@ -69,6 +70,7 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
         }
         showIndicator={fetchOrdinalUtxosStatus !== FetchStatus.Loading}
       />
+      <WalletTabs currentTab={WalletTab.Ordinals} />
 
       <div className="p-4">
         {fetchOrdinalUtxosStatus !== FetchStatus.Loading &&

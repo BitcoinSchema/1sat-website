@@ -1,10 +1,12 @@
 import Artifact from "@/components/artifact";
 import MarketTabs, { MarketTab } from "@/components/pages/market/tabs";
+import { Tab } from "@/components/tabs";
 import { useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";
 import React, { useEffect, useMemo } from "react";
 import { FetchStatus } from "..";
+import Tabs from "../../tabs";
 
 interface PageProps extends WithRouterProps {}
 
@@ -83,13 +85,14 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
 
   return (
     <div>
+      <Tabs currentTab={Tab.Market} />
       <MarketTabs currentTab={MarketTab.Activity} />
       <h1 className="text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
         Recent Activity
       </h1>
       <span className="text-center text-[#555]"></span>
       {fetchActivityStatus === FetchStatus.Success && (
-        <div className="flex flex-col">
+        <div className="grid md:grid-cols-4 gap-4">
           {activity?.map((l) => {
             return (
               <div key={l.origin} className="flex">
@@ -105,6 +108,8 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
                   txid={l.txid}
                   price={l.price}
                   height={l.height}
+                  isListing={l.listing}
+                  outPoint={l.outpoint}
                 />
               </div>
             );

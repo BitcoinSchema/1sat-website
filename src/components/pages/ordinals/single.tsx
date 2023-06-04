@@ -75,16 +75,18 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                 </div>
 
                 {/* <div className="flex justify-between items-center mt-4">
-              <div>List for Sale</div>
-              <div
-                className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                onClick={async () => {
-                  Router.push(`/market/new/${ord.txid}_${ord.vout}`);
-                }}
-              >
-                List
-              </div>
-            </div> */}
+                  <div>List for Sale</div>
+                  <div
+                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                    onClick={async () => {
+                      Router.push(
+                        `/market/new/${artifact.txid}_${artifact.vout}`
+                      );
+                    }}
+                  >
+                    List
+                  </div>
+                </div> */}
 
                 {/* <div className="flex justify-between items-center mt-4">
         <div>Re-Inscribe</div>
