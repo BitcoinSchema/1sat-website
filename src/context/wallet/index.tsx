@@ -1,4 +1,5 @@
-import { FetchStatus, toastProps } from "@/components/pages";
+import { FetchStatus, toastErrorProps, toastProps } from "@/components/pages";
+import { MAPI_HOST, WOC_HOST } from "@/pages/_app";
 import { addressFromWif } from "@/utils/address";
 import { customFetch } from "@/utils/httpClient";
 import { randomKeys } from "@/utils/keys";
@@ -13,7 +14,7 @@ import init, {
   TxOut as WasmTxOut,
 } from "bsv-wasm-web";
 import { Inscription, Utxo, sendOrdinal } from "js-1sat-ord";
-import { head } from "lodash";
+import { head, uniq } from "lodash";
 import Router, { useRouter } from "next/router";
 import React, {
   ReactNode,
@@ -31,6 +32,17 @@ import { useRates } from "../rates";
 
 export const PROTOCOL_START_HEIGHT = 783968;
 export const ORDS_PER_PAGE = 60;
+
+type BroadcastResponse = {
+  encoding: string;
+  mimeType: string;
+  payload: string;
+  publicKey: string;
+  signature: string;
+  code?: number;
+  status?: number;
+  error?: string;
+};
 
 export type WocUtxo = {
   height: number;
@@ -100,6 +112,19 @@ export type PendingTransaction = {
   inputTxid: string;
   price?: number;
   marketFee?: number;
+  iterations?: number;
+};
+
+export type BroadcastResponsePayload = {
+  apiVersion: string;
+  currentHighestBlockHash: string;
+  currentHighestBlockHeight: number;
+  minerId: string;
+  resultDescription: string;
+  returnResult: string;
+  timestamp: string;
+  txSecondMempoolExpiry: number;
+  txid: string;
 };
 
 type ContextValue = {
@@ -153,6 +178,10 @@ type ContextValue = {
   createdUtxos: Utxo[];
   setCreatedUtxos: (utxos: Utxo[]) => void;
   setFundingUtxos: (utxos: Utxo[]) => void;
+  broadcastStatus: FetchStatus;
+  broadcastPendingTx: (
+    tx: PendingTransaction
+  ) => Promise<BroadcastResponsePayload>;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -163,6 +192,9 @@ interface Props {
 
 const WalletProvider: React.FC<Props> = (props) => {
   const [backupFile, setBackupFile] = useState<File>();
+  const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
   const [currentTxId, setCurrentTxId] = useLocalStorage<string>("1satctx");
   const { leid, lastAddressEvent, lastSettledEvent } = useBitsocket();
   const [createdUtxos, setCreatedUtxos] = useLocalStorage<Utxo[]>(
@@ -809,6 +841,130 @@ const WalletProvider: React.FC<Props> = (props) => {
     },
     [setPendingTransaction, payPk, fundingUtxos]
   );
+  type WocResult = {};
+
+  const broadcastPendingTx = useCallback(async () => {
+    if (!fundingUtxos) {
+      return;
+    }
+    console.log("click broadcast");
+    if (!pendingTransaction?.rawTx) {
+      return;
+    }
+
+    console.log({ pendingTransaction });
+    setBroadcastStatus(FetchStatus.Loading);
+    const body = Buffer.from(pendingTransaction.rawTx, "hex");
+    const response = await fetch(`${MAPI_HOST}/mapi/tx`, {
+      method: "POST",
+      headers: {
+        "Content-type": "application/octet-stream",
+      },
+      body,
+    });
+
+    try {
+      const { promise } = customFetch<WocResult>(
+        `${WOC_HOST}/v1/bsv/main/tx/raw`,
+        {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: JSON.stringify({
+            txhex: pendingTransaction.rawTx,
+          }),
+        }
+      );
+      const wocResponse = await promise;
+      console.log("woc broadcast", wocResponse);
+    } catch (e) {
+      console.error("woc broadcast error", e);
+    }
+    const data: BroadcastResponse = await response.json();
+    console.log({ data });
+
+    if (data && data.payload) {
+      const respData = JSON.parse(
+        data.payload || "{}"
+      ) as BroadcastResponsePayload;
+      if (respData?.returnResult === "success") {
+        toast.success("Broadcasted", toastProps);
+        setBroadcastCache(
+          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
+            0,
+            10
+          )
+        );
+
+        setBroadcastStatus(FetchStatus.Success);
+
+        if (changeAddress) {
+          // keep the utxo created
+          // we assume the last output is change and make a utxo from it
+          const pendingTx = Transaction.from_hex(pendingTransaction.rawTx);
+          const changeOut = pendingTx.get_output(pendingTx.get_noutputs() - 1);
+          const address = P2PKHAddress.from_string(changeAddress).to_string();
+          const createdUtxo = {
+            satoshis: Number(changeOut?.get_satoshis()),
+            vout: pendingTx.get_noutputs() - 1,
+            txid: pendingTx.get_id_hex(),
+            script: P2PKHAddress.from_string(address)
+              .get_locking_script()
+              .to_asm_string(),
+          } as Utxo;
+          console.log({ createdUtxo });
+          const cu = [
+            ...(createdUtxos || []).filter(
+              (u) => u.txid === pendingTransaction.inputTxid
+            ),
+            createdUtxo,
+          ];
+
+          setCreatedUtxos(cu);
+          setFundingUtxos([
+            ...fundingUtxos.filter((u) => {
+              if (u.txid === pendingTransaction.inputTxid) {
+                return false;
+              }
+              return true;
+            }),
+            createdUtxo,
+          ]);
+        }
+
+        // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
+        if (pendingTransaction.contentType !== "application/bsv-20") {
+          Router.push("/bsv20");
+        } else {
+          Router.push("/ordinals");
+        }
+        return;
+      } else {
+        toast.error(
+          "Failed to broadcast " + respData.resultDescription,
+          toastErrorProps
+        );
+      }
+      if (
+        changeAddress &&
+        respData.resultDescription === "ERROR: 258: txn-mempool-conflict"
+      ) {
+        console.log("adding to broadcast cache", pendingTransaction.txid);
+        // todo add input tx not this txid!!
+        setBroadcastCache(
+          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
+            0,
+            10
+          )
+        );
+      }
+      setBroadcastStatus(FetchStatus.Error);
+    } else if (data && data.error) {
+      toast("Failed to broadcast: " + data.error, toastErrorProps);
+      setBroadcastStatus(FetchStatus.Error);
+    }
+  }, []);
 
   const deleteKeys = useCallback(() => {
     const c = confirm(
@@ -939,6 +1095,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       createdUtxos: createdUtxos || [],
       setFundingUtxos,
       setCreatedUtxos,
+      broadcastPendingTx,
+      broadcastStatus,
     }),
     [
       bsv20Activity,
@@ -983,6 +1141,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       createdUtxos,
       setCreatedUtxos,
       setFundingUtxos,
+      broadcastPendingTx,
+      broadcastStatus,
     ]
   );
 

@@ -257,6 +257,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 origin={artifact.origin || ""}
                 num={artifact.num}
                 height={artifact.height}
+                clickToZoom={true}
               />
             )}
           </div>

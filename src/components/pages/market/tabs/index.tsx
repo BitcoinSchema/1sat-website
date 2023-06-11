@@ -13,7 +13,7 @@ export enum MarketTab {
   Listings = "listings",
   BSV20 = "bsv20",
   Activity = "activity",
-  Featured = "featured",
+  Collections = "collections",
   New = "new",
 }
 
@@ -23,21 +23,23 @@ const MarketTabs: React.FC<Props> = ({
   onClickSelected,
 }) => {
   return (
-    <S.Tabs className="max-w-7xl mx-auto my-8 flex justify-center">
+    <S.Tabs className="max-w-7xl mx-auto mb-8 flex justify-center">
       {/* <S.Tab partiallyactive={"false"} href={`/wallet`}>
         <IoMdWallet className="w-4 h-4" />
       </S.Tab> */}
 
       <S.Tab
-        partiallyactive={currentTab === MarketTab.Featured ? "true" : "false"}
+        partiallyactive={
+          currentTab === MarketTab.Collections ? "true" : "false"
+        }
         href={`/market`}
         onClick={(e) =>
-          currentTab === MarketTab.Featured && onClickSelected
+          currentTab === MarketTab.Collections && onClickSelected
             ? onClickSelected(e)
             : () => {}
         }
       >
-        Featured
+        Collections
       </S.Tab>
       <S.Tab
         partiallyactive={currentTab === MarketTab.Listings ? "true" : "false"}
@@ -73,7 +75,7 @@ const MarketTabs: React.FC<Props> = ({
       >
         Activity
       </S.Tab>
-      <S.Tab
+      {/* <S.Tab
         partiallyactive={currentTab === MarketTab.New ? "true" : "false"}
         href={`/market/new`}
         onClick={(e) =>
@@ -83,7 +85,7 @@ const MarketTabs: React.FC<Props> = ({
         }
       >
         New Listing
-      </S.Tab>
+      </S.Tab> */}
     </S.Tabs>
   );
 };

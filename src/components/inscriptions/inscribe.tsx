@@ -5,11 +5,11 @@ import { formatBytes } from "@/utils/bytes";
 import { PrivateKey } from "bsv-wasm-web";
 import { Utxo, createOrdinal } from "js-1sat-ord";
 import { debounce, head } from "lodash";
-import { useRouter } from "next/router";
+import Router, { useRouter } from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { CheckmarkIcon, ErrorIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
-import { RiSettings2Fill } from "react-icons/ri";
+import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
 import Artifact from "../artifact";
@@ -34,9 +34,13 @@ enum ActionType {
 
 type InscribeProps = {
   inscribedCallback: (inscription: PendingTransaction) => void;
+  className?: string;
 };
 
-const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
+const Inscribe: React.FC<InscribeProps> = ({
+  inscribedCallback,
+  className,
+}) => {
   const {
     setPendingTransaction,
     fundingUtxos,
@@ -46,8 +50,8 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     broadcastCache,
     createdUtxos,
     getUTXOs,
+    bsv20Balances,
   } = useWallet();
-
   const { fetchStatsStatus, stats } = useOrdinals();
 
   const { tab, tick, op } = useRouter().query as {
@@ -55,6 +59,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     tick: string;
     op: string;
   };
+  const [iterations, setIterations] = useState<number>(1);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
@@ -95,6 +100,12 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       setSelectedActionType(op as ActionType);
     }
   }, [selectedActionType, op]);
+
+  useEffect(() => {
+    if (tick) {
+      setTicker(tick);
+    }
+  }, [setTicker, tick]);
 
   const changeAddress = useMemo(() => {
     if (initialized && payPk) {
@@ -220,6 +231,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       }
     },
     [
+      iterations,
       setInscribeStatus,
       selectedFile,
       inscribedCallback,
@@ -250,11 +262,19 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
         inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
+        iterations,
       };
       setPendingTransaction(result);
       inscribedCallback(result);
     },
-    [setPendingTransaction, inscribedCallback, payPk, ordAddress, changeAddress]
+    [
+      iterations,
+      setPendingTransaction,
+      inscribedCallback,
+      payPk,
+      ordAddress,
+      changeAddress,
+    ]
   );
 
   const inscribeText = useCallback(
@@ -384,6 +404,42 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     fetchTickerStatus,
   ]);
 
+  const bulkInscribe = useCallback(async () => {
+    if (!payPk || !ordAddress || !changeAddress) {
+      return;
+    }
+
+    for (let i = 0; i < iterations; i++) {
+      const utxos = await getUTXOs(changeAddress);
+      const sortedUtxos = utxos.sort((a, b) =>
+        a.satoshis > b.satoshis ? -1 : 1
+      );
+      const u = head(sortedUtxos);
+      if (!u) {
+        console.log("no utxo");
+        return;
+      }
+      switch (selectedTab) {
+        case InscriptionTab.Image:
+          return await inscribeImage(u);
+        case InscriptionTab.Text:
+          return await inscribeText(u);
+        case InscriptionTab.BSV20:
+          return await inscribeBsv20(u);
+        default:
+          return;
+      }
+    }
+  }, [
+    getUTXOs,
+    changeAddress,
+    inscribeBsv20,
+    inscribeImage,
+    inscribeText,
+    ordAddress,
+    payPk,
+    selectedTab,
+  ]);
   const clickInscribe = useCallback(async () => {
     if (!payPk || !ordAddress || !changeAddress) {
       return;
@@ -563,6 +619,14 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
     );
   }, [fetchStatsStatus, stats]);
 
+  const changeIterations = useCallback(
+    (e: any) => {
+      console.log("changing iterations to", e.target.value);
+      setIterations(parseInt(e.target.value));
+    },
+    [setIterations]
+  );
+
   const tickerNote = useMemo(() => {
     return tickerAvailable === false
       ? selectedActionType === ActionType.Deploy
@@ -577,8 +641,16 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
       : "Syncing. May be minted out.";
   }, [ticker, mintError, selectedActionType, tickerAvailable, inSync]);
 
+  const totalTokens = useMemo(() => {
+    return iterations * parseInt(amount || "0");
+  }, [amount, iterations]);
+
   return (
-    <div className="flex flex-col w-full mx-auto p-4">
+    <div
+      className={`${
+        className ? className : ""
+      } flex flex-col w-full mx-auto p-4`}
+    >
       <InscriptionTabs currentTab={selectedTab || InscriptionTab.Image} />
       <div className="w-full">
         <form>
@@ -690,47 +762,92 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
               )}
 
               {selectedActionType === ActionType.Mint && (
-                <div className="my-2">
-                  <label className="block mb-4">
-                    <div className="my-2 flex justify-between items-center">
-                      Amount{" "}
-                      {selectedBsv20 && (
-                        <span
-                          className="text-[#555] cursor-pointer transition hover:text-[#777]"
-                          onClick={() => {
-                            setAmount(
-                              selectedBsv20?.lim && selectedBsv20.lim !== "0"
-                                ? selectedBsv20.lim
-                                : selectedBsv20.max
-                            );
-                          }}
-                        >
-                          Max:{" "}
-                          {selectedBsv20?.lim && selectedBsv20.lim !== "0"
-                            ? selectedBsv20.lim
-                            : selectedBsv20?.max}
-                        </span>
-                      )}
-                    </div>
+                <React.Fragment>
+                  <div className="my-2">
+                    <label className="block mb-4">
+                      <div className="my-2 flex justify-between items-center">
+                        Amount{" "}
+                        {selectedBsv20 && (
+                          <span
+                            className="text-[#555] cursor-pointer transition hover:text-[#777]"
+                            onClick={() => {
+                              setAmount(
+                                selectedBsv20?.lim && selectedBsv20.lim !== "0"
+                                  ? selectedBsv20.lim
+                                  : selectedBsv20.max
+                              );
+                            }}
+                          >
+                            Max:{" "}
+                            {selectedBsv20?.lim && selectedBsv20.lim !== "0"
+                              ? selectedBsv20.lim
+                              : selectedBsv20?.max}
+                          </span>
+                        )}
+                      </div>
 
-                    <input
-                      disabled={!!mintError}
-                      className="text-white w-full rounded p-2"
-                      type="number"
-                      min={1}
-                      max={selectedBsv20?.lim}
-                      onChange={changeAmount}
-                      value={amount}
-                      onFocus={(event) =>
-                        checkTicker(
-                          ticker,
-                          selectedActionType === ActionType.Mint,
-                          event
-                        )
-                      }
-                    />
-                  </label>
-                </div>
+                      <input
+                        disabled={!!mintError}
+                        className="text-white w-full rounded p-2"
+                        type="number"
+                        min={1}
+                        max={selectedBsv20?.lim}
+                        onChange={changeAmount}
+                        value={amount}
+                        onFocus={(event) =>
+                          checkTicker(
+                            ticker,
+                            selectedActionType === ActionType.Mint,
+                            event
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    {bsv20Balances &&
+                      !Object.keys(bsv20Balances)?.some(
+                        (b) => b.toUpperCase() === "BULK"
+                      ) && (
+                        <div className="p-2 bg-[#111] my-2 rounded">
+                          Acquire{" "}
+                          <span
+                            className="font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
+                            onClick={() => {
+                              Router.push(
+                                "/inscribe?tab=bsv20&tick=BULK&op=mint"
+                              );
+                            }}
+                          >
+                            BULK
+                          </span>{" "}
+                          to enable bulk minting.
+                        </div>
+                      )}
+                    <label className="block mb-4">
+                      <div className="my-2 flex justify-between items-center">
+                        <div>Iterations</div>
+                        <div className="opacity-75 text-purple-400 font-mono flex items-center">
+                          <RiMagicFill className="mr-2" />
+                          BULK
+                        </div>
+                      </div>
+                      <input
+                        className="text-white w-full rounded p-2"
+                        type="text"
+                        onChange={changeIterations}
+                        value={iterations}
+                        max={30}
+                      />
+                    </label>
+                    {/* TODO: Display accurately at end of supply */}
+                    {amount && ticker && (
+                      <div className="bg-[#111] text-[#555] rounded p-2">
+                        You will recieve {totalTokens} {ticker.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                </React.Fragment>
               )}
 
               {selectedActionType === ActionType.Deploy && (
@@ -818,7 +935,7 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
         <button
           disabled={submitDisabled}
           type="submit"
-          onClick={clickInscribe}
+          onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
           className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
         >
           {selectedTab === InscriptionTab.BSV20 ? (
@@ -826,6 +943,8 @@ const Inscribe: React.FC<InscribeProps> = ({ inscribedCallback }) => {
               <div className="flex items-center justify-center">
                 <LoaderIcon />
               </div>
+            ) : bulkEnabled && iterations > 1 ? (
+              "Bulk Inscribe"
             ) : (
               "Preview"
             )
@@ -877,3 +996,4 @@ const handleInscribing = async (
 };
 
 const maxMaxSupply = BigInt("18446744073709551615");
+const bulkEnabled = false;

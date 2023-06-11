@@ -26,6 +26,14 @@ const InscribePage: React.FC<PageProps> = ({ router }) => {
         />
       </Head>
       <Tabs currentTab={Tab.Inscribe} />
+      {payPk && fundingUtxos && (
+        <Inscribe
+          inscribedCallback={(inscription) => {
+            Router.push("/preview");
+          }}
+          className="max-w-lg mx-auto"
+        />
+      )}
       <div className="p-2 md:p-4">
         {(!payPk || !fundingUtxos) && (
           <div
@@ -34,13 +42,6 @@ const InscribePage: React.FC<PageProps> = ({ router }) => {
           >
             You need funds to inscribe. Check your wallet.
           </div>
-        )}
-        {payPk && fundingUtxos && (
-          <Inscribe
-            inscribedCallback={(inscription) => {
-              Router.push("/preview");
-            }}
-          />
         )}
       </div>
     </>

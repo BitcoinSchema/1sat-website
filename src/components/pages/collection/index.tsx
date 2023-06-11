@@ -1,5 +1,5 @@
 import Artifact from "@/components/artifact";
-import Tabs from "@/components/tabs";
+import Tabs, { Tab } from "@/components/tabs";
 import { API_HOST } from "@/context/ordinals";
 import { customFetch } from "@/utils/httpClient";
 import { head } from "lodash";
@@ -10,6 +10,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import { FetchStatus } from "..";
 import CollectionItem from "../inscription/collectionItem";
+import MarketTabs, { MarketTab } from "../market/tabs";
 
 interface PageProps extends WithRouterProps {}
 
@@ -102,7 +103,8 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           rel="stylesheet"
         />
       </Head>
-      <Tabs currentTab={undefined} />
+      <Tabs currentTab={Tab.Market} />
+      <MarketTabs currentTab={MarketTab.Collections} />
       <div className="p-4 flex flex-col w-full justify-center items-center mx-auto max-w-7xl">
         <div className="w-full my-4 text-xl font-semibold flex items-center justify-between">
           <div

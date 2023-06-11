@@ -47,6 +47,7 @@
     "react-gamepad": "^1.0.3",
     "react-hot-toast": "^2.4.0",
     "react-icons": "^4.8.0",
+    "react-lightgallery": "^0.9.0",
     "react-qr-code": "^2.0.11",
     "satoshi-bitcoin-ts": "^0.2.4",
     "sigma-protocol": "^0.0.3",

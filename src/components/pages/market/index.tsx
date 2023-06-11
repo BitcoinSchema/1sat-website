@@ -10,13 +10,12 @@ const MarketPage: React.FC<PageProps> = ({}) => {
   return (
     <React.Fragment>
       <Tabs currentTab={Tab.Market} />
-
-      <MarketTabs currentTab={MarketTab.Featured} />
+      <MarketTabs currentTab={MarketTab.Collections} />
       <div className="p-4">
-        <h1 className="mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
-          Featured Collections
+        <h1 className="mt-2 text-4xl text-yellow-600 font-mono font-semibold">
+          Collections
         </h1>
-        <div className="p-4 rounded bg-[#222] mb-4">
+        <div className="max-w-7xl mb-4">
           <FeaturedCollections />
         </div>
       </div>

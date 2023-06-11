@@ -5,6 +5,7 @@ import { useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";
 import React, { useEffect, useMemo } from "react";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import { FetchStatus } from "..";
 import Tabs from "../../tabs";
 
@@ -92,10 +93,10 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
       </h1>
       <span className="text-center text-[#555]"></span>
       {fetchActivityStatus === FetchStatus.Success && (
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="p-4 grid w-full mx-auto justify-center sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {activity?.map((l) => {
             return (
-              <div key={l.origin} className="flex">
+              <div key={l.origin} className="">
                 {/* <div>Listing? {l.listing ? "True" : "False"}</div> */}
                 <Artifact
                   key={l.origin || `${l.txid}_${l.vout}`}
@@ -106,7 +107,7 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
                     wrapper: "overflow-hidden mb-2",
                   }}
                   txid={l.txid}
-                  price={l.price}
+                  price={toBitcoin(l.price)}
                   height={l.height}
                   isListing={l.listing}
                   outPoint={l.outpoint}

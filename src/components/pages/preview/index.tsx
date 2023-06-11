@@ -1,16 +1,11 @@
 import Tabs, { Tab } from "@/components/tabs";
-import { useWallet } from "@/context/wallet";
-import { MAPI_HOST, WOC_HOST } from "@/pages/_app";
+import { BroadcastResponsePayload, useWallet } from "@/context/wallet";
 import { formatBytes } from "@/utils/bytes";
-import { customFetch } from "@/utils/httpClient";
 import { useLocalStorage } from "@/utils/storage";
-import { P2PKHAddress, Transaction } from "bsv-wasm-web";
-import { Utxo } from "js-1sat-ord";
-import { uniq } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router, { useRouter } from "next/router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy, FiDownload } from "react-icons/fi";
@@ -19,30 +14,6 @@ import { TbBroadcast } from "react-icons/tb";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import { FetchStatus, toastErrorProps, toastProps } from "../../pages";
 
-type BroadcastResponse = {
-  encoding: string;
-  mimeType: string;
-  payload: string;
-  publicKey: string;
-  signature: string;
-  code?: number;
-  status?: number;
-  error?: string;
-};
-
-type BroadcastResponsePayload = {
-  apiVersion: string;
-  currentHighestBlockHash: string;
-  currentHighestBlockHeight: number;
-  minerId: string;
-  resultDescription: string;
-  returnResult: string;
-  timestamp: string;
-  txSecondMempoolExpiry: number;
-  txid: string;
-};
-
-type WocResult = {};
 interface PageProps extends WithRouterProps {}
 
 const PreviewPage: React.FC<PageProps> = ({}) => {
@@ -58,13 +29,13 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     createdUtxos,
     setCreatedUtxos,
     setFundingUtxos,
+    broadcastPendingTx,
+    broadcastStatus,
   } = useWallet();
 
   const [broadcastResponsePayload, setBroadcastResponsePayload] =
     useLocalStorage<BroadcastResponsePayload>("1satbrs", undefined);
-  const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
-    FetchStatus.Idle
-  );
+
   const router = useRouter();
 
   useEffect(() => {
@@ -83,140 +54,17 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
   }, [getUTXOs, broadcastStatus, changeAddress]);
 
   const handleClickBroadcast = useCallback(async () => {
-    if (!fundingUtxos) {
-      return;
-    }
-    console.log("click broadcast");
-    if (!pendingTransaction?.rawTx) {
-      return;
-    }
-
-    console.log({ pendingTransaction });
-    setBroadcastStatus(FetchStatus.Loading);
-    const body = Buffer.from(pendingTransaction.rawTx, "hex");
-    const response = await fetch(`${MAPI_HOST}/mapi/tx`, {
-      method: "POST",
-      headers: {
-        "Content-type": "application/octet-stream",
-      },
-      body,
-    });
-
-    try {
-      const { promise } = customFetch<WocResult>(
-        `${WOC_HOST}/v1/bsv/main/tx/raw`,
-        {
-          method: "POST",
-          headers: {
-            "Content-type": "application/json",
-          },
-          body: JSON.stringify({
-            txhex: pendingTransaction.rawTx,
-          }),
-        }
-      );
-      const wocResponse = await promise;
-      console.log("woc broadcast", wocResponse);
-    } catch (e) {
-      console.error("woc broadcast error", e);
-    }
-    const data: BroadcastResponse = await response.json();
-    console.log({ data });
-
-    if (data && data.payload) {
-      const respData = JSON.parse(
-        data.payload || "{}"
-      ) as BroadcastResponsePayload;
-      if (respData?.returnResult === "success") {
-        toast.success("Broadcasted", toastProps);
-        setBroadcastCache(
-          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
-            0,
-            10
-          )
-        );
-
-        setBroadcastStatus(FetchStatus.Success);
-        setBroadcastResponsePayload(respData);
-
-        if (changeAddress) {
-          // keep the utxo created
-          // we assume the last output is change and make a utxo from it
-          const pendingTx = Transaction.from_hex(pendingTransaction.rawTx);
-          const changeOut = pendingTx.get_output(pendingTx.get_noutputs() - 1);
-          const address = P2PKHAddress.from_string(changeAddress).to_string();
-          const createdUtxo = {
-            satoshis: Number(changeOut?.get_satoshis()),
-            vout: pendingTx.get_noutputs() - 1,
-            txid: pendingTx.get_id_hex(),
-            script: P2PKHAddress.from_string(address)
-              .get_locking_script()
-              .to_asm_string(),
-          } as Utxo;
-          console.log({ createdUtxo });
-          const cu = [
-            ...createdUtxos.filter(
-              (u) => u.txid === pendingTransaction.inputTxid
-            ),
-            createdUtxo,
-          ];
-
-          setCreatedUtxos(cu);
-          setFundingUtxos([
-            ...fundingUtxos.filter((u) => {
-              if (u.txid === pendingTransaction.inputTxid) {
-                return false;
-              }
-              return true;
-            }),
-            createdUtxo,
-          ]);
-        }
-
-        // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
-        if (pendingTransaction.contentType !== "application/bsv-20") {
-          Router.push("/bsv20");
-        } else {
-          Router.push("/ordinals");
-        }
-        return;
-      } else {
-        toast.error(
-          "Failed to broadcast " + respData.resultDescription,
-          toastErrorProps
-        );
+    if (pendingTransaction) {
+      try {
+        const response = await broadcastPendingTx(pendingTransaction);
+        console.log({ response });
+        setBroadcastResponsePayload(response);
+      } catch (e) {
+        console.error({ e });
+        toast.error("Error broadcasting transaction", toastErrorProps);
       }
-      if (
-        changeAddress &&
-        respData.resultDescription === "ERROR: 258: txn-mempool-conflict"
-      ) {
-        console.log("adding to broadcast cache", pendingTransaction.txid);
-        // todo add input tx not this txid!!
-        setBroadcastCache(
-          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
-            0,
-            10
-          )
-        );
-      }
-      setBroadcastStatus(FetchStatus.Error);
-    } else if (data && data.error) {
-      toast("Failed to broadcast: " + data.error, toastErrorProps);
-      setBroadcastStatus(FetchStatus.Error);
     }
-  }, [
-    //pendingOrdUtxo,
-    // ordUtxos,
-    changeAddress,
-    setBroadcastCache,
-    pendingTransaction,
-    setBroadcastResponsePayload,
-    fundingUtxos,
-    broadcastCache,
-    setCreatedUtxos,
-    createdUtxos,
-    setFundingUtxos,
-  ]);
+  }, [pendingTransaction]);
 
   const feeUsd = useMemo(() => {
     return usdRate && pendingTransaction
@@ -331,6 +179,13 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
                     </div>
                   </div>
                 )}
+                {pendingTransaction.iterations &&
+                  pendingTransaction.iterations > 1 && (
+                    <div className="flex justify-between">
+                      <div>Iterations</div>{" "}
+                      <div>{pendingTransaction.iterations}</div>
+                    </div>
+                  )}
               </div>
             </div>
           </div>

@@ -17,6 +17,7 @@ import Router from "next/router";
 import React, { useCallback, useMemo, useState } from "react";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
+import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import styled from "styled-components";
 import tw from "twin.macro";
@@ -65,6 +66,7 @@ type ArtifactProps = {
   price?: number;
   origin?: string;
   isListing?: boolean;
+  clickToZoom?: boolean;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -80,10 +82,12 @@ const Artifact: React.FC<ArtifactProps> = ({
   price,
   height,
   isListing,
+  clickToZoom,
 }) => {
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
   );
+  const [showZoom, setShowZoom] = useState<boolean>(false);
 
   const {
     ordAddress,
@@ -213,7 +217,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       sumBy(fundingUtxos, "satoshis") + P2PKHInputSize * fundingUtxos.length
     ) {
       toast.error("Not enough Bitcoin!", toastErrorProps);
-      return;
+      Router.push("/wallet");
     }
     const listingInput = new TxIn(
       Buffer.from(txid, "hex"),
@@ -460,15 +464,25 @@ const Artifact: React.FC<ArtifactProps> = ({
         PDF Inscriptions not yet supported.
       </div>
     ) : (
-      <ItemContainer className="min-h-[300px]">
+      <ItemContainer className={showZoom ? "h-auto" : `min-h-[300px]`}>
         {src !== "" && src != undefined && (
           <Image
-            className={`h-auto ${classNames?.media ? classNames.media : ""}`}
+            className={`${showZoom ? "h-auto w-auto" : ""} h-auto ${
+              classNames?.media ? classNames.media : ""
+            } ${
+              clickToZoom
+                ? !showZoom
+                  ? "cursor-zoom-in"
+                  : "cursor-zoom-out"
+                : ""
+            }`}
             // TODO: Use a opl account for this
             src={
               src.startsWith("data:")
                 ? src
-                : `https://res.cloudinary.com/jamifybitcoin/image/fetch/c_fill,g_center,h_300,w_300/f_auto/${src}`
+                : showZoom
+                ? `https://res.cloudinary.com/tonicpow/image/fetch/f_auto/${src}`
+                : `https://res.cloudinary.com/tonicpow/image/fetch/c_fill,g_center,h_300,w_300/f_auto/${src}`
             }
             id={`artifact_${new Date().getTime()}_image`}
             alt={`Inscription${num ? " #" + num : ""}`}
@@ -478,7 +492,20 @@ const Artifact: React.FC<ArtifactProps> = ({
             // )}`}
             width={300}
             height={300}
+            onClick={
+              clickToZoom
+                ? () => (showZoom ? setShowZoom(false) : setShowZoom(true))
+                : undefined
+            }
           />
+        )}
+        {showZoom && (
+          <div
+            className="cursor-pointer absolute top-0 right-0 mr-4 mt-4 text-4xl"
+            onClick={() => setShowZoom(false)}
+          >
+            <RiCloseLine />
+          </div>
         )}
       </ItemContainer>
     );
@@ -526,6 +553,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                   : ""
               } select-none min-w-24 text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
               onClick={() => {
+                clickToZoom && setShowZoom(true);
                 if (
                   !(
                     price &&
@@ -545,18 +573,31 @@ const Artifact: React.FC<ArtifactProps> = ({
                 setHoverPrice(false);
               }}
             >
-              {price ? `${toBitcoin(price || 0)} BSV` : contentType}
+              {price ? `${price} BSV` : contentType}
             </div>
           </div>
         )}
       </ArtifactContainer>
+      {showZoom && (
+        <div
+          className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
+          onClick={() => setShowZoom(false)}
+        >
+          <div
+            className="w-full h-full m-auto p-4 bg-[#111] trext-[#aaa] rounded flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {content}
+          </div>
+        </div>
+      )}
       {showBuy && (
         <div
           className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
           onClick={() => setShowBuy(false)}
         >
           <div
-            className="w-full max-w-lg m-auto p-4 bg-[#111] trext-[#aaa] rounded flex flex-col"
+            className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div>{content}</div>

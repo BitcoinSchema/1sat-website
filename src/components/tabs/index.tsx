@@ -1,6 +1,7 @@
 import React from "react";
 import { IoMdWallet } from "react-icons/io";
 import * as S from "./styles";
+
 interface Props {
   currentTab: Tab | undefined;
   showIndicator?: boolean;
@@ -11,6 +12,7 @@ interface Props {
 
 export enum Tab {
   Overview = "overview",
+  Airdrop = "airdrop",
   Wallet = "wallet",
   Inscribe = "inscribe",
   Market = "market",
@@ -53,6 +55,18 @@ const Tabs: React.FC<Props> = ({
       >
         Inscribe
       </S.Tab>
+
+      {/* <S.Tab
+        partiallyactive={currentTab === Tab.Airdrop ? "true" : "false"}
+        href={`/airdrop`}
+        onClick={(e) =>
+          currentTab === Tab.Inscribe && onClickSelected
+            ? onClickSelected(e)
+            : () => {}
+        }
+      >
+        Airdrop
+      </S.Tab> */}
 
       <S.Tab
         partiallyactive={currentTab === Tab.Market ? "true" : "false"}
