@@ -43,7 +43,7 @@ const AirdropPage: React.FC<PageProps> = ({}) => {
       tx.add_output(txOut);
     });
     console.log(tx.to_hex());
-  }, []);
+  }, [amt, additionalAddresses]);
 
   const changeTicker = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -99,7 +99,10 @@ const AirdropPage: React.FC<PageProps> = ({}) => {
           <h1 className="self-start text-4xl">To</h1>
 
           {additionalAddresses.map((address, idx) => (
-            <div className="w-full my-4 mx-4 relative">
+            <div
+              className="w-full my-4 mx-4 relative"
+              key={`${address}-${idx}`}
+            >
               <input
                 type="text"
                 className="w-full p-2 text-xl rounded "

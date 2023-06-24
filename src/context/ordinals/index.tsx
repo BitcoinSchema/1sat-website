@@ -55,6 +55,15 @@ export interface OrdUtxo extends Utxo {
   MAP?: MAP;
 }
 
+// {"vin":0,"valid":true,"address":"18z9RxyXLzNLsJa5WsheDiqBhSrgf9qEr3","algorithm":"BSM","signature":"HxEudhvOxqPMC867Y7sZ2/LUxT8srQw9zlQiINLaJhRiA4QFBCVnj9IKJglAgZuM8ncTT/zXcWS9h9PUkF61hHQ="}
+export type SIGMA = {
+  vin: number;
+  valid: boolean;
+  address: string;
+  algorithm: string;
+  signature: string;
+};
+
 export interface Listing extends Utxo {
   num: number | undefined;
   origin: string;
@@ -66,6 +75,7 @@ export interface Listing extends Utxo {
   payout: string; // base64 encoded
   spend: string;
   height?: number;
+  SIGMA?: SIGMA[];
 }
 
 export type BSV20 = {

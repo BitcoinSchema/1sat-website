@@ -9,6 +9,7 @@ type CollectionItem = {
       value: string;
     }
   ];
+  [key: string]: any;
 };
 
 type CollectionItemProps = {

@@ -120,7 +120,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
         </div>
       </div>
     );
-  }, [router, currentPage]);
+  }, [dir, sortBy, router, currentPage]);
 
   const sortPrice = useCallback(() => {
     if (sortBy === SortListingsBy.Price) {
@@ -151,15 +151,18 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
       <Tabs currentTab={Tab.Market} />
 
       <MarketTabs currentTab={MarketTab.Listings} />
-      <h1 className="flex items-center text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold justify-between">
+      <h1 className="flex items-center text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold justify-between px-2">
         <div>Market Listings</div>
         <div onClick={() => setShowSort(true)} className="cursor-pointer">
           Sort
         </div>
       </h1>
       {fetchListingsStatus === FetchStatus.Success && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-2">
           {listings?.map((l) => {
+            if (l.SIGMA) {
+              console.log({ sigma: l.SIGMA, price: l.price });
+            }
             return (
               <div key={l.origin}>
                 <Artifact
@@ -172,9 +175,11 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                     wrapper: "max-w-72 max-h-72 overflow-hidden mb-2",
                   }}
                   txid={l.txid}
-                  price={l.price}
+                  price={l.price || 0}
                   height={l.height}
                   isListing={true}
+                  sigma={l.SIGMA}
+                  clickToZoom={true}
                 />
               </div>
             );

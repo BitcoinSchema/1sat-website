@@ -231,7 +231,6 @@ const Inscribe: React.FC<InscribeProps> = ({
       }
     },
     [
-      iterations,
       setInscribeStatus,
       selectedFile,
       inscribedCallback,
@@ -431,6 +430,7 @@ const Inscribe: React.FC<InscribeProps> = ({
       }
     }
   }, [
+    iterations,
     getUTXOs,
     changeAddress,
     inscribeBsv20,
@@ -680,9 +680,9 @@ const Inscribe: React.FC<InscribeProps> = ({
           )}
 
           {selectedTab === InscriptionTab.Text && (
-            <div className="w-full min-w-[25vw]">
+            <div className="w-full">
               <textarea
-                className="w-full rounded min-h-[20vh] p-2"
+                className="w-full p-2"
                 onChange={changeText}
                 value={text}
               />
@@ -690,7 +690,7 @@ const Inscribe: React.FC<InscribeProps> = ({
           )}
 
           {selectedTab === InscriptionTab.BSV20 && (
-            <div className="w-full min-w-[25vw]">
+            <div className="w-full">
               <select
                 className="text-white w-full p-2 rounded my-2 cursor-pointer"
                 value={selectedActionType}
@@ -804,49 +804,53 @@ const Inscribe: React.FC<InscribeProps> = ({
                       />
                     </label>
                   </div>
-                  <div>
-                    {bsv20Balances &&
-                      !Object.keys(bsv20Balances)?.some(
-                        (b) => b.toUpperCase() === "BULK"
-                      ) && (
-                        <div className="p-2 bg-[#111] my-2 rounded">
-                          Acquire{" "}
-                          <span
-                            className="font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
-                            onClick={() => {
-                              Router.push(
-                                "/inscribe?tab=bsv20&tick=BULK&op=mint"
-                              );
-                            }}
-                          >
-                            BULK
-                          </span>{" "}
-                          to enable bulk minting.
+                  {bulkEnabled && (
+                    <div>
+                      {bsv20Balances &&
+                        !Object.keys(bsv20Balances)?.some(
+                          (b) => b.toUpperCase() === "BULK"
+                        ) && (
+                          <div className="p-2 bg-[#111] my-2 rounded">
+                            Acquire{" "}
+                            <span
+                              className="font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
+                              onClick={() => {
+                                Router.push(
+                                  "/inscribe?tab=bsv20&tick=BULK&op=mint"
+                                );
+                              }}
+                            >
+                              BULK
+                            </span>{" "}
+                            to enable bulk minting.
+                          </div>
+                        )}
+                      {bulkEnabled && (
+                        <label className="block mb-4">
+                          <div className="my-2 flex justify-between items-center">
+                            <div>Iterations</div>
+                            <div className="opacity-75 text-purple-400 font-mono flex items-center">
+                              <RiMagicFill className="mr-2" />
+                              BULK
+                            </div>
+                          </div>
+                          <input
+                            className="text-white w-full rounded p-2"
+                            type="text"
+                            onChange={changeIterations}
+                            value={iterations}
+                            max={30}
+                          />
+                        </label>
+                      )}
+                      {/* TODO: Display accurately at end of supply */}
+                      {bulkEnabled && amount && ticker && (
+                        <div className="bg-[#111] text-[#555] rounded p-2">
+                          You will recieve {totalTokens} {ticker.toUpperCase()}
                         </div>
                       )}
-                    <label className="block mb-4">
-                      <div className="my-2 flex justify-between items-center">
-                        <div>Iterations</div>
-                        <div className="opacity-75 text-purple-400 font-mono flex items-center">
-                          <RiMagicFill className="mr-2" />
-                          BULK
-                        </div>
-                      </div>
-                      <input
-                        className="text-white w-full rounded p-2"
-                        type="text"
-                        onChange={changeIterations}
-                        value={iterations}
-                        max={30}
-                      />
-                    </label>
-                    {/* TODO: Display accurately at end of supply */}
-                    {amount && ticker && (
-                      <div className="bg-[#111] text-[#555] rounded p-2">
-                        You will recieve {totalTokens} {ticker.toUpperCase()}
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </React.Fragment>
               )}
 

@@ -1,4 +1,4 @@
-import { API_HOST } from "@/context/ordinals";
+import { API_HOST, SIGMA } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { customFetch } from "@/utils/httpClient";
 import {
@@ -15,7 +15,7 @@ import { head, sumBy } from "lodash";
 import Image from "next/image";
 import Router from "next/router";
 import React, { useCallback, useMemo, useState } from "react";
-import toast, { LoaderIcon } from "react-hot-toast";
+import toast, { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-bitcoin-ts";
@@ -23,6 +23,7 @@ import styled from "styled-components";
 import tw from "twin.macro";
 import Model from "../model";
 import { FetchStatus, toastErrorProps } from "../pages";
+import Tooltip from "../tooltip";
 import AudioArtifact from "./audio";
 import JsonArtifact from "./json";
 import TextArtifact from "./text";
@@ -67,6 +68,7 @@ type ArtifactProps = {
   origin?: string;
   isListing?: boolean;
   clickToZoom?: boolean;
+  sigma?: SIGMA[];
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -83,6 +85,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   height,
   isListing,
   clickToZoom,
+  sigma,
 }) => {
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
@@ -253,11 +256,12 @@ const Artifact: React.FC<ArtifactProps> = ({
     );
     purchaseTx.add_output(dummyMarketFeeOutput);
 
+    // OMFG this has to be "InputOutput" and then second time is InputOutputs
     let preimage = purchaseTx.sighash_preimage(
       SigHash.InputOutput,
       0,
       Script.from_bytes(Buffer.from(script, "base64")),
-      BigInt(1) // todo use amount from listing
+      BigInt(1) //TODO: use amount from listing
     );
 
     listingInput.set_unlocking_script(
@@ -272,7 +276,7 @@ const Artifact: React.FC<ArtifactProps> = ({
     purchaseTx.set_input(0, listingInput);
 
     // calculate market fee
-    let marketFee = price * 0.04;
+    let marketFee = price * marketRate;
     if (marketFee === 0) {
       marketFee = minimumMarketFee;
     }
@@ -309,7 +313,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 
     purchaseTx.set_output(2, changeOutput);
 
-    // add output 3 - market fee (not part of preimage?)
+    // add output 3 - market fee
     const marketFeeOutput = new TxOut(
       BigInt(marketFee),
       P2PKHAddress.from_string(marketAddress).get_locking_script()
@@ -322,6 +326,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       Script.from_bytes(Buffer.from(script, "base64")),
       BigInt(1)
     );
+    //                             f.set_unlocking_script(m.Xf.from_asm_string("".concat(n.get_output(0).to_hex(), " ").concat(n.get_output(2).to_hex()).concat(n.get_output(3).to_hex(), " ").concat(V.from(k).toString("hex"), " OP_0"))),
 
     listingInput.set_unlocking_script(
       Script.from_asm_string(
@@ -338,6 +343,7 @@ const Artifact: React.FC<ArtifactProps> = ({
     const paymentPk = PrivateKey.from_wif(payPk);
 
     paymentUtxos.forEach((utxo, idx) => {
+      debugger;
       const fundingInput = new TxIn(
         Buffer.from(utxo.txid, "hex"),
         utxo.vout,
@@ -467,9 +473,9 @@ const Artifact: React.FC<ArtifactProps> = ({
       <ItemContainer className={showZoom ? "h-auto" : `min-h-[300px]`}>
         {src !== "" && src != undefined && (
           <Image
-            className={`${showZoom ? "h-auto w-auto" : ""} h-auto ${
-              classNames?.media ? classNames.media : ""
-            } ${
+            className={`${
+              showZoom ? "h-auto w-auto max-h-screen" : ""
+            } h-auto ${classNames?.media ? classNames.media : ""} ${
               clickToZoom
                 ? !showZoom
                   ? "cursor-zoom-in"
@@ -509,7 +515,17 @@ const Artifact: React.FC<ArtifactProps> = ({
         )}
       </ItemContainer>
     );
-  }, [src, type, origin, classNames, outPoint, ItemContainer, num]);
+  }, [
+    showZoom,
+    clickToZoom,
+    src,
+    type,
+    origin,
+    classNames,
+    outPoint,
+    ItemContainer,
+    num,
+  ]);
 
   return (
     <React.Fragment>
@@ -533,7 +549,13 @@ const Artifact: React.FC<ArtifactProps> = ({
         }}
       >
         {content}
-
+        {sigma && head(sigma)?.valid && (
+          <div className="absolute top-0 left-0 ml-2 mt-2">
+            <Tooltip message={head(sigma)?.address || ""}>
+              <CheckmarkIcon className="m-auto" />
+            </Tooltip>
+          </div>
+        )}
         {/* TODO: Show indicator when more than one isncription */}
         {num !== undefined && (
           <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
@@ -552,8 +574,8 @@ const Artifact: React.FC<ArtifactProps> = ({
                   ? "cursor-pointer hover:bg-emerald-600 text-white"
                   : ""
               } select-none min-w-24 text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
-              onClick={() => {
-                clickToZoom && setShowZoom(true);
+              onClick={(e) => {
+                // clickToZoom && setShowZoom(true);
                 if (
                   !(
                     price &&
@@ -564,6 +586,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                 ) {
                   return;
                 }
+                e.stopPropagation();
                 setShowBuy(true);
               }}
               onMouseEnter={() => {
@@ -573,7 +596,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                 setHoverPrice(false);
               }}
             >
-              {price ? `${price} BSV` : contentType}
+              {price ? `${toBitcoin(price)} BSV` : contentType}
             </div>
           </div>
         )}
@@ -584,7 +607,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           onClick={() => setShowZoom(false)}
         >
           <div
-            className="w-full h-full m-auto p-4 bg-[#111] trext-[#aaa] rounded flex flex-col"
+            className="w-full h-full m-auto p-4 bg-[#111] overscroll-none text-[#aaa] rounded flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {content}
@@ -615,7 +638,7 @@ const Artifact: React.FC<ArtifactProps> = ({
               className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
               onClick={buyArtifact}
             >
-              Buy - {toBitcoin(price || 0)} BSV
+              Buy - {price && price > 0 ? toBitcoin(price) : 0} BSV
             </button>
           </div>
         </div>
@@ -648,3 +671,4 @@ const shimmer = (w: number, h: number) => `
 const P2PKHInputSize = 148;
 const marketAddress = `15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z`;
 const minimumMarketFee = 10000;
+const marketRate = 0.04;

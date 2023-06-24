@@ -3,6 +3,7 @@ import OrdAddress from "@/components/ordAddress";
 import { API_HOST, OrdUtxo } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { head } from "lodash";
+import Router from "next/router";
 import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { toastErrorProps } from "..";
@@ -74,19 +75,21 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                   </div>
                 </div>
 
-                {/* <div className="flex justify-between items-center mt-4">
-                  <div>List for Sale</div>
-                  <div
-                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                    onClick={async () => {
-                      Router.push(
-                        `/market/new/${artifact.txid}_${artifact.vout}`
-                      );
-                    }}
-                  >
-                    List
+                {listEnabled && (
+                  <div className="flex justify-between items-center mt-4">
+                    <div>List for Sale</div>
+                    <div
+                      className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                      onClick={async () => {
+                        Router.push(
+                          `/market/new/${artifact.txid}_${artifact.vout}`
+                        );
+                      }}
+                    >
+                      List
+                    </div>
                   </div>
-                </div> */}
+                )}
 
                 {/* <div className="flex justify-between items-center mt-4">
         <div>Re-Inscribe</div>
@@ -121,3 +124,4 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
 };
 
 export default Ordinal;
+const listEnabled = false;

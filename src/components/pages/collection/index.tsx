@@ -1,15 +1,18 @@
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
+import Tooltip from "@/components/tooltip";
 import { API_HOST } from "@/context/ordinals";
 import { customFetch } from "@/utils/httpClient";
-import { head } from "lodash";
+import { find, head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
+import { GiHolyGrail } from "react-icons/gi";
 import { FetchStatus } from "..";
 import CollectionItem from "../inscription/collectionItem";
+import { Collection, ancientCollections } from "../market/featured";
 import MarketTabs, { MarketTab } from "../market/tabs";
 
 interface PageProps extends WithRouterProps {}
@@ -48,10 +51,40 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
   const router = useRouter();
   const { name: queryName } = router.query;
   const [collection, setCollection] = useState<Item[] | undefined>();
+  const [isAncient, setIsAncient] = useState<boolean>(false);
 
   const { collectionId } = router.query;
   const [fetchCollectionStatus, setFetchCollectionStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
+
+  const setCollectionFromCollectionId = useCallback(
+    async (keyName: string = "ColectionId", collectionId: string) => {
+      try {
+        setFetchCollectionStatus(FetchStatus.Loading);
+        const { promise } = customFetch<Item[]>(
+          `${API_HOST}/api/inscriptions/search/map`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              query: {
+                [keyName]: collectionId,
+              },
+            }),
+          }
+        );
+        const c = await promise;
+        console.log({ collectionItems: c });
+
+        setCollection(c);
+        setFetchCollectionStatus(FetchStatus.Success);
+      } catch (error) {
+        console.log(error);
+        setFetchCollectionStatus(FetchStatus.Error);
+      }
+      //
+    },
+    [setCollection, setFetchCollectionStatus]
+  );
 
   useEffect(() => {
     console.log({ collectionId });
@@ -62,8 +95,25 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           `${API_HOST}/api/collections/${cid}/items`
         );
         const c = await promise;
-        console.log({ c });
-        setCollection(c);
+        console.log({ collectionItems: c });
+        if (c.length > 0) {
+          setCollection(c);
+        } else if (
+          c.length === 0 &&
+          ancientCollections.some((c) => c.origin === collectionId)
+        ) {
+          const c = find(ancientCollections, { origin: collectionId }) as
+            | Collection
+            | undefined;
+
+          setIsAncient(true);
+          if (c?.MAP.collectionID) {
+            setCollectionFromCollectionId("collectionID", c.MAP.collectionID);
+
+            // TODO: Handle other ancient collection schema variations
+            // setCollection((c as Collection).items as Item[]);
+          }
+        }
         setFetchCollectionStatus(FetchStatus.Success);
       } catch (error) {
         console.log(error);
@@ -77,11 +127,20 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
     ) {
       fire(collectionId);
     }
-  }, [collectionId]);
+  }, [
+    setIsAncient,
+    fetchCollectionStatus,
+    collectionId,
+    setCollectionFromCollectionId,
+  ]);
 
   const collectionName = useMemo(() => {
     const c = head(collection);
-    return !!c && c.MAP.name?.length > 0 ? c.MAP.name : queryName;
+    return !!c && c.MAP.collectionID?.length > 0
+      ? c.MAP.collectionID
+      : !!c && c.MAP.name?.length > 0
+      ? c.MAP.name
+      : queryName;
   }, [collection, queryName]);
 
   useEffect(() => {
@@ -115,6 +174,14 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           >
             <FiArrowLeft className="inline-block mr-2" /> Back
           </div>
+          {isAncient && (
+            <Tooltip message={"Minted before collection standards."}>
+              <div className="flex items-center justify-center font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-orange-400 to-red-600 cursor-default relative">
+                <GiHolyGrail className="-mt-1 w-8 h-8 mr-2 text-orange-600" />{" "}
+                Ancient{" "}
+              </div>{" "}
+            </Tooltip>
+          )}
           <div>{collectionName}</div>
         </div>
         <div className="p-4 grid w-full mx-auto justify-center sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

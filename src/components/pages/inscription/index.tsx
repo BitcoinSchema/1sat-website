@@ -333,17 +333,19 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     Send
                   </div>
                 </div>
-                <div className="flex justify-between items-center mt-4">
-                  <div>List for Sale</div>
-                  <div
-                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                    onClick={async () => {
-                      Router.push(`/market/new/${artifact?.origin}`);
-                    }}
-                  >
-                    List
+                {listEnabled && (
+                  <div className="flex justify-between items-center mt-4">
+                    <div>List for Sale</div>
+                    <div
+                      className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                      onClick={async () => {
+                        Router.push(`/market/new/${artifact?.origin}`);
+                      }}
+                    >
+                      List
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
             {
@@ -408,3 +410,5 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 };
 
 export default InscriptionPage;
+
+const listEnabled = false;

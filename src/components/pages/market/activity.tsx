@@ -5,7 +5,6 @@ import { useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useRouter } from "next/router";
 import React, { useEffect, useMemo } from "react";
-import { toBitcoin } from "satoshi-bitcoin-ts";
 import { FetchStatus } from "..";
 import Tabs from "../../tabs";
 
@@ -107,7 +106,7 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
                     wrapper: "overflow-hidden mb-2",
                   }}
                   txid={l.txid}
-                  price={toBitcoin(l.price)}
+                  price={l.price || 0}
                   height={l.height}
                   isListing={l.listing}
                   outPoint={l.outpoint}

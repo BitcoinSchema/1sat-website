@@ -57,7 +57,7 @@ const AirdropOrdinalsPage: React.FC<PageProps> = ({}) => {
         <h1 className="self-start text-4xl">To</h1>
 
         {additionalAddresses.map((address, idx) => (
-          <div className="w-full my-4 mx-4 relative">
+          <div className="w-full my-4 mx-4 relative" key={`address-${idx}`}>
             <input
               type="text"
               className="w-full p-2 text-xl rounded "

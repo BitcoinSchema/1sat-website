@@ -124,7 +124,7 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
         </div>
       </div>
     );
-  }, [currentPage]);
+  }, [dir, sortBy, currentPage]);
 
   const findTicker = useCallback(async () => {
     const resp = await fetch(`${API_HOST}/api/bsv20/${ticker}`);

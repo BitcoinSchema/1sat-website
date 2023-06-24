@@ -7,6 +7,7 @@ import { useLocalStorage, useSessionStorage } from "@/utils/storage";
 import init, {
   P2PKHAddress,
   PrivateKey,
+  Script,
   SigHash,
   Transaction,
   Script as WasmScript,
@@ -168,6 +169,8 @@ type ContextValue = {
   setBackupFile: (backupFile: File) => void;
   setCurrentTxId: (txid: string) => void;
   setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
+  setFetchUtxoByOriginStatus: (status: FetchStatus) => void;
+  fetchUtxoByOriginStatus: FetchStatus;
   setFetchBsv20sStatus: (status: FetchStatus) => void;
   setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
   setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
@@ -181,7 +184,8 @@ type ContextValue = {
   broadcastStatus: FetchStatus;
   broadcastPendingTx: (
     tx: PendingTransaction
-  ) => Promise<BroadcastResponsePayload>;
+  ) => Promise<BroadcastResponsePayload | void>;
+  getUtxoByOrigin: (origin: string) => Promise<OrdUtxo | undefined>;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -228,6 +232,8 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [ordUtxos, setOrdUtxos] = useState<Utxo[] | undefined>(undefined);
 
   const [fetchOrdinalUtxosStatus, setFetchOrdinalUtxosStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
+  const [fetchUtxoByOriginStatus, setFetchUtxoByOriginStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
   const [fetchBsv20sStatus, setFetchBsv20sStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -354,6 +360,29 @@ const WalletProvider: React.FC<Props> = (props) => {
       fire(backupFile);
     }
   }, [setOrdPk, setPayPk, backupFile]);
+
+  const getUtxoByOrigin = useCallback(
+    async (origin: string): Promise<OrdUtxo> => {
+      setFetchUtxoByOriginStatus(FetchStatus.Loading);
+      try {
+        const { promise } = customFetch<OrdUtxo>(
+          `${API_HOST}/api/utxos/origin/${origin}`
+        );
+        const ordUtxo = await promise;
+        setFetchUtxoByOriginStatus(FetchStatus.Success);
+
+        ordUtxo.script = Script.from_bytes(
+          Buffer.from(ordUtxo.script, "base64")
+        ).to_asm_string();
+
+        return ordUtxo;
+      } catch (e) {
+        setFetchUtxoByOriginStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchUtxoByOriginStatus]
+  );
 
   const getOrdinalUTXOs = useCallback(
     async (
@@ -964,7 +993,15 @@ const WalletProvider: React.FC<Props> = (props) => {
       toast("Failed to broadcast: " + data.error, toastErrorProps);
       setBroadcastStatus(FetchStatus.Error);
     }
-  }, []);
+  }, [
+    broadcastCache,
+    changeAddress,
+    createdUtxos,
+    fundingUtxos,
+    pendingTransaction,
+    setBroadcastCache,
+    setCreatedUtxos,
+  ]);
 
   const deleteKeys = useCallback(() => {
     const c = confirm(
@@ -1097,6 +1134,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       setCreatedUtxos,
       broadcastPendingTx,
       broadcastStatus,
+      getUtxoByOrigin,
+      setFetchUtxoByOriginStatus,
+      fetchUtxoByOriginStatus,
     }),
     [
       bsv20Activity,
@@ -1143,6 +1183,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       setFundingUtxos,
       broadcastPendingTx,
       broadcastStatus,
+      getUtxoByOrigin,
+      setFetchUtxoByOriginStatus,
+      fetchUtxoByOriginStatus,
     ]
   );
 

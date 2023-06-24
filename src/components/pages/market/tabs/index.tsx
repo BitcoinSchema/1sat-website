@@ -75,7 +75,7 @@ const MarketTabs: React.FC<Props> = ({
       >
         Activity
       </S.Tab>
-      {/* <S.Tab
+      <S.Tab
         partiallyactive={currentTab === MarketTab.New ? "true" : "false"}
         href={`/market/new`}
         onClick={(e) =>
@@ -85,7 +85,7 @@ const MarketTabs: React.FC<Props> = ({
         }
       >
         New Listing
-      </S.Tab> */}
+      </S.Tab>
     </S.Tabs>
   );
 };

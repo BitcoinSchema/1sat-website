@@ -8,6 +8,8 @@ import Head from "next/head";
 import Image from "next/image";
 import Router from "next/router";
 import React, { useEffect, useState } from "react";
+import * as S from "./styles";
+
 import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
@@ -115,9 +117,9 @@ const HomePage: React.FC<PageProps> = ({}) => {
             >
               1Sat Ordinals
             </h2>
-            <h1 className="mt-2 mb-2 text-4xl text-yellow-600 font-mono font-semibold">
+            <S.Heading>
               {numMinted ? `${numMinted.toLocaleString()}` : ""}
-            </h1>
+            </S.Heading>
             <h2 className="mb-12 text-xl text-gray-600 font-sans">
               Inscriptions Made
             </h2>

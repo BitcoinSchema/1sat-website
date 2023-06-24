@@ -57,14 +57,16 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
     if (pendingTransaction) {
       try {
         const response = await broadcastPendingTx(pendingTransaction);
-        console.log({ response });
-        setBroadcastResponsePayload(response);
+        if (response) {
+          console.log({ response });
+          setBroadcastResponsePayload(response);
+        }
       } catch (e) {
         console.error({ e });
         toast.error("Error broadcasting transaction", toastErrorProps);
       }
     }
-  }, [pendingTransaction]);
+  }, [pendingTransaction, broadcastPendingTx, setBroadcastResponsePayload]);
 
   const feeUsd = useMemo(() => {
     return usdRate && pendingTransaction
@@ -143,22 +145,22 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
                   <div>Size</div>
                   <div>{formatBytes(pendingTransaction.rawTx.length / 2)}</div>
                 </div>
-                {pendingTransaction.price && (
+                {(pendingTransaction.price || 0) > 0 && (
                   <div className="flex justify-between">
                     <div>Market Price</div>
                     <div>{toBitcoin(pendingTransaction.price || 0)} BSV</div>
                   </div>
                 )}
-                {pendingTransaction.marketFee && (
+                {pendingTransaction?.marketFee ? (
                   <div className="flex justify-between">
                     <div>Market Fee (4%)</div>
                     <div>
                       {pendingTransaction.marketFee <= 50000
                         ? `${pendingTransaction.marketFee.toLocaleString()} Satoshis`
-                        : `${toBitcoin(pendingTransaction.marketFee || 0)} BSV`}
+                        : `${toBitcoin(pendingTransaction.marketFee)} BSV`}
                     </div>
                   </div>
-                )}
+                ) : null}
                 <div className="flex justify-between">
                   <div>Network Fee</div>
                   <div>{pendingTransaction.fee.toLocaleString()} Satoshis</div>
