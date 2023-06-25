@@ -28,6 +28,10 @@
         "destination": "/bsv20.html"
       },
       {
+        "source": "/market",
+        "destination": "/market/index.html"
+      },
+      {
         "source": "/market/bsv20",
         "destination": "/market/bsv20.html"
       },
@@ -44,8 +48,8 @@
         "destination": "/market/new/[outPoint].html"
       },
       {
-        "source": "/market/actibity",
-        "destination": "/market/actibity.html"
+        "source": "/market/activity",
+        "destination": "/market/activity.html"
       },
       {
         "source": "/market/bsv20/**",
