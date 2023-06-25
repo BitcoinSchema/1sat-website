@@ -81,6 +81,7 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
             }}
             txid={a.txid}
             height={a.height}
+            isListing={a.listing}
           />
         ))}
       </div>

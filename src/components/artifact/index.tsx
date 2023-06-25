@@ -16,7 +16,7 @@ import Image from "next/image";
 import Router from "next/router";
 import React, { useCallback, useMemo, useState } from "react";
 import toast, { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
-import { IoMdWarning } from "react-icons/io";
+import { IoMdPricetag, IoMdWarning } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import styled from "styled-components";
@@ -551,9 +551,14 @@ const Artifact: React.FC<ArtifactProps> = ({
         {content}
         {sigma && head(sigma)?.valid && (
           <div className="absolute top-0 left-0 ml-2 mt-2">
-            <Tooltip message={head(sigma)?.address || ""}>
+            <Tooltip message={`Signed by ${head(sigma)?.address}` || ""}>
               <CheckmarkIcon className="m-auto" />
             </Tooltip>
+          </div>
+        )}
+        {isListing && (
+          <div className="absolute top-0 right-0 mr-2 mt-2 pointer-events-none opacity-75">
+            <IoMdPricetag className="m-auto w-6 h-6 text-blue-400" />
           </div>
         )}
         {/* TODO: Show indicator when more than one isncription */}

@@ -150,7 +150,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
     <div>
       <Tabs currentTab={Tab.Market} />
 
-      <MarketTabs currentTab={MarketTab.Listings} />
+      <MarketTabs currentTab={MarketTab.New} />
       <h1 className="flex items-center text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold justify-between px-2">
         <div>Market Listings</div>
         <div onClick={() => setShowSort(true)} className="cursor-pointer">

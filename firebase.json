@@ -36,6 +36,14 @@
         "destination": "/market/listings.html"
       },
       {
+        "source": "/market/new",
+        "destination": "/market/new.html"
+      },
+      {
+        "source": "/market/new/**",
+        "destination": "/market/new/[outPoint].html"
+      },
+      {
         "source": "/market/actibity",
         "destination": "/market/actibity.html"
       },

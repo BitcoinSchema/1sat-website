@@ -35,24 +35,20 @@ type GPFile = {
   type: string;
 };
 
-export type GPInscription = {
-  txid: string;
-  vout: number;
-  file: GPFile;
-  origin: string;
-  ordinal?: number;
-  height: number;
-  idx: number;
-  lock: string;
-  num: number;
-};
-
 export interface OrdUtxo extends Utxo {
   file?: GPFile;
   origin?: string;
-  num?: number;
+  outpoint: string;
+  listing: boolean;
+  price?: number;
+  SIGMA?: SIGMA[];
+  num: number | undefined;
   height?: number;
   MAP?: MAP;
+  payout?: string; // base64 encoded
+  spend: string;
+  lock: string;
+  idx: number;
 }
 
 // {"vin":0,"valid":true,"address":"18z9RxyXLzNLsJa5WsheDiqBhSrgf9qEr3","algorithm":"BSM","signature":"HxEudhvOxqPMC867Y7sZ2/LUxT8srQw9zlQiINLaJhRiA4QFBCVnj9IKJglAgZuM8ncTT/zXcWS9h9PUkF61hHQ="}
@@ -63,20 +59,6 @@ export type SIGMA = {
   algorithm: string;
   signature: string;
 };
-
-export interface Listing extends Utxo {
-  num: number | undefined;
-  origin: string;
-  outpoint: string;
-  MAP: MAP;
-  file: GPFile;
-  listing: boolean;
-  price: number;
-  payout: string; // base64 encoded
-  spend: string;
-  height?: number;
-  SIGMA?: SIGMA[];
-}
 
 export type BSV20 = {
   idx: string;
@@ -109,7 +91,7 @@ type ContextValue = {
   bsv20s?: BSV20[];
   getBsv20: (page: number, sortBy: SortBy, dir: Dir) => Promise<void>;
   fetchBsv20Status: FetchStatus;
-  activity?: Listing[];
+  activity?: OrdUtxo[];
   getActivity: (page: number) => Promise<void>;
   fetchActivityStatus: FetchStatus;
   getListings: (
@@ -122,7 +104,7 @@ type ContextValue = {
   fetchListingStatus: FetchStatus;
   fetchInscriptionsStatus: FetchStatus;
   listing?: OrdUtxo;
-  listings?: Listing[];
+  listings?: OrdUtxo[];
   setFetchInscriptionsStatus: (status: FetchStatus) => void;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
@@ -159,8 +141,8 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     useState<FetchStatus>(FetchStatus.Idle);
 
   const [listing, setListing] = useState<OrdUtxo>();
-  const [listings, setListings] = useState<Listing[]>();
-  const [activity, setActivity] = useState<Listing[]>();
+  const [listings, setListings] = useState<OrdUtxo[]>();
+  const [activity, setActivity] = useState<OrdUtxo[]>();
   const [stats, setStats] = useState<Stats>();
   const [bsv20s, setBsv20s] = useState<BSV20[]>();
   const [fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
@@ -311,7 +293,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const getInscriptionsById = useCallback(
-    async (txidOrOrigin: string): Promise<GPInscription[]> => {
+    async (txidOrOrigin: string): Promise<OrdUtxo[]> => {
       let [txid, vout] = txidOrOrigin.split("_");
       let suffix = "";
       if (vout) {
@@ -323,7 +305,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       setFetchInscriptionsStatus(FetchStatus.Loading);
       try {
         const r = await fetch(`${API_HOST}/api/inscriptions/${suffix}`);
-        const inscriptions = (await r.json()) as GPInscription[];
+        const inscriptions = (await r.json()) as OrdUtxo[];
         setFetchInscriptionsStatus(FetchStatus.Success);
         // let utxo = res.find((u: any) => u.value > 1);
         // TODO: How to get script?
@@ -339,11 +321,11 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const getInscriptionByInscriptionId = useCallback(
-    async (inscriptionId: number): Promise<GPInscription> => {
+    async (inscriptionId: number): Promise<OrdUtxo> => {
       setFetchInscriptionsStatus(FetchStatus.Loading);
       try {
         const r = await fetch(`${API_HOST}/api/inscriptions/${inscriptionId}`);
-        const inscription = (await r.json()) as GPInscription;
+        const inscription = (await r.json()) as OrdUtxo;
         setFetchInscriptionsStatus(FetchStatus.Success);
         return inscription;
       } catch (e) {

@@ -44,7 +44,7 @@ const AirdropBitcoinPage: React.FC<PageProps> = ({}) => {
       tx.add_output(txOut);
     });
     console.log(tx.to_hex());
-  }, [additionalAddresses]);
+  }, [amt, additionalAddresses]);
 
   const changeTicker = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {

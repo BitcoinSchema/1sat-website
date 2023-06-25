@@ -216,6 +216,12 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     [renderSubTypeItem]
   );
 
+  useEffect(() => {
+    if (ordUtxo) {
+      console.log({ ordUtxo });
+    }
+  }, [ordUtxo]);
+
   return (
     <>
       <Head>
@@ -333,16 +339,31 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     Send
                   </div>
                 </div>
-                {listEnabled && (
+                {ordUtxo && !ordUtxo.listing && (
                   <div className="flex justify-between items-center mt-4">
                     <div>List for Sale</div>
                     <div
                       className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
                       onClick={async () => {
-                        Router.push(`/market/new/${artifact?.origin}`);
+                        Router.push(`/market/new/${ordUtxo?.origin}`);
                       }}
                     >
                       List
+                    </div>
+                  </div>
+                )}
+                {ordUtxo && ordUtxo.listing && (
+                  <div className="flex justify-between items-center mt-4">
+                    <div>Cancel Listing</div>
+                    <div
+                      className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                      onClick={async () => {
+                        Router.push(
+                          `/market/cancel/${ordUtxo.txid}_${ordUtxo.vout}`
+                        );
+                      }}
+                    >
+                      Cancel
                     </div>
                   </div>
                 )}
@@ -410,5 +431,3 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 };
 
 export default InscriptionPage;
-
-const listEnabled = false;

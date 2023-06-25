@@ -28,7 +28,7 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 import { useBitsocket } from "../bitsocket";
-import { API_HOST, BSV20, GPInscription, OrdUtxo } from "../ordinals";
+import { API_HOST, BSV20, OrdUtxo } from "../ordinals";
 import { useRates } from "../rates";
 
 export const PROTOCOL_START_HEIGHT = 783968;
@@ -229,7 +229,7 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [bsv20Activity, setBsv20Activity] = useState<BSV20[] | undefined>(
     undefined
   );
-  const [ordUtxos, setOrdUtxos] = useState<Utxo[] | undefined>(undefined);
+  const [ordUtxos, setOrdUtxos] = useState<OrdUtxo[] | undefined>(undefined);
 
   const [fetchOrdinalUtxosStatus, setFetchOrdinalUtxosStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
@@ -305,6 +305,10 @@ const WalletProvider: React.FC<Props> = (props) => {
             file: e.file,
             origin: e.origin,
             height: e.height,
+            outpoint: e.outpoint,
+            listing: e.listing,
+            num: e.num,
+            spend: e.spend,
           } as OrdUtxo,
           ...filteredOrdUtxos,
         ]);
@@ -401,20 +405,9 @@ const WalletProvider: React.FC<Props> = (props) => {
           `${API_HOST}/api/utxos/address/${address}/inscriptions?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&excludeBsv20=true`
         );
 
-        const utxos = (await r.json()) as GPInscription[];
+        const utxos = (await r.json()) as OrdUtxo[];
 
-        let oUtxos: OrdUtxo[] = [];
-        for (let a of utxos) {
-          oUtxos.push({
-            satoshis: 1, // all ord utxos currently 1 satoshi
-            txid: a.txid,
-            vout: a.vout,
-            num: a.num,
-            origin: a.origin,
-            file: a.file,
-          } as OrdUtxo);
-        }
-        setOrdUtxos(oUtxos);
+        setOrdUtxos(utxos);
         setFetchOrdinalUtxosStatus(FetchStatus.Success);
         return;
       } catch (e) {
@@ -1016,7 +1009,6 @@ const WalletProvider: React.FC<Props> = (props) => {
       setInscribedUtxos(undefined);
       setBackupFile(undefined);
       setOrdUtxos(undefined);
-
       toast.success("Keys Cleared", toastProps);
       Router.push("/");
     }

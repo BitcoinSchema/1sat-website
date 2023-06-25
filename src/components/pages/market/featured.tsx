@@ -123,7 +123,7 @@ const FeaturedCollections: React.FC = () => {
     if (fetchFeaturedStatus === FetchStatus.Idle) {
       fire();
     }
-  }, [ancientCollections, fetchFeaturedStatus]);
+  }, [fetchFeaturedStatus]);
 
   return (
     <div className="p-4 grid w-full mx-auto justify-center sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

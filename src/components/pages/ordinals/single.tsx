@@ -75,7 +75,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                   </div>
                 </div>
 
-                {listEnabled && (
+                {!artifact.listing && (
                   <div className="flex justify-between items-center mt-4">
                     <div>List for Sale</div>
                     <div
@@ -87,6 +87,21 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                       }}
                     >
                       List
+                    </div>
+                  </div>
+                )}
+                {artifact.listing && (
+                  <div className="flex justify-between items-center mt-4">
+                    <div>Cancel Listing</div>
+                    <div
+                      className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                      onClick={async () => {
+                        Router.push(
+                          `/market/cancel/${artifact.txid}_${artifact.vout}`
+                        );
+                      }}
+                    >
+                      Cancel
                     </div>
                   </div>
                 )}
@@ -124,4 +139,3 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
 };
 
 export default Ordinal;
-const listEnabled = false;

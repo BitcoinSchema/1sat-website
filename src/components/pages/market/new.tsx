@@ -1,6 +1,6 @@
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
-import { API_HOST, Listing, OrdUtxo } from "@/context/ordinals";
+import { API_HOST, OrdUtxo } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import { customFetch } from "@/utils/httpClient";
 import {
@@ -17,12 +17,13 @@ import { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Router, { useRouter } from "next/router";
-import React, { useCallback, useMemo, useState } from "react";
-import { toast } from "react-hot-toast";
-import { FiArrowLeft, FiCompass } from "react-icons/fi";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { FiArrowLeft } from "react-icons/fi";
 import { IoMdInformationCircle } from "react-icons/io";
+import { TbClick } from "react-icons/tb";
 import { toSatoshi } from "satoshi-bitcoin-ts";
-import { toastProps } from "..";
+import { toastErrorProps } from "..";
 import Ordinals from "../ordinals/list";
 import MarketTabs, { MarketTab } from "./tabs";
 
@@ -151,6 +152,18 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     [getRawTxById]
   );
 
+  useEffect(() => {
+    const fire = async () => {
+      if (outpoint) {
+        const items = await fetchOrdinal(outpoint);
+        setSelectedItem(head(items));
+      }
+    };
+    if (outpoint && !selectedItem) {
+      fire();
+    }
+  }, [outpoint, selectedItem]);
+
   const submit = useCallback(async () => {
     console.log("create listing", selectedItem, price);
     if (!fundingUtxos || !payPk || !ordPk || !changeAddress || !ordAddress) {
@@ -175,7 +188,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
       changeAddress,
       price
     );
-    toast.success(`Listed ${pendingTx.txid}`, toastProps);
+
     setPendingTransaction(pendingTx);
 
     Router.push("/preview");
@@ -189,6 +202,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     payPk,
     ordPk,
     ordAddress,
+    getUtxoByOrigin,
   ]);
 
   // const cancelOrdinal = async(listingTxid, listingUtxo, ordPk, paymentUtxo, paymentPk, toAddress, changeAddress) => {
@@ -231,17 +245,28 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     setShowSelectItem(true);
   }, []);
 
-  const clickOrdinal = useCallback(async (outpoint: string) => {
-    console.log("Clicked", outpoint);
-    const { promise } = customFetch<Listing[]>(
-      `${API_HOST}/api/inscriptions/origin/${outpoint}`
-    );
-    const items = await promise;
-    console.log({ items });
-    setSelectedItem(head(items));
-    setShowSelectItem(false);
-    setOutpoint(outpoint);
-  }, []);
+  const clickOrdinal = useCallback(
+    async (outpoint: string) => {
+      console.log("Clicked", outpoint);
+      //     const items = await fetchOrdinal(outpoint);
+      const ordUtxo = await getUtxoByOrigin(outpoint);
+
+      console.log({ ordUtxo });
+      // do not set the item if it is a listing
+      if (ordUtxo) {
+        if (!ordUtxo.listing) {
+          setSelectedItem(ordUtxo);
+        } else {
+          toast.error("This item is already listed", toastErrorProps);
+          return;
+        }
+      }
+
+      setShowSelectItem(false);
+      setOutpoint(outpoint);
+    },
+    [setOutpoint, getUtxoByOrigin, setShowSelectItem]
+  );
 
   const artifact = useMemo(() => {
     return ordUtxos?.find((utxo) => utxo.origin === outpoint);
@@ -279,32 +304,31 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
         <div>Create Listing</div>
       </div>
 
-      <div className="flex flex-col md:flex-row px-4 md:px-unset">
+      <div className="flex flex-col md:flex-row px-4 md:px-0 w-full">
         <div className="md:w-2/3 md:mr-2">
-          <div className="my-2 p-2 rounded bg-[#111]">
+          <div className="my-2 md:my-0 p-2 rounded bg-[#111]">
             {!outpoint && (
               <div
                 onClick={clickSelectItem}
                 className="text-blue-400 hover:text-blue-500 transition font-semibold cursor-pointer p-2 flex items-center justify-center w-full h-64 border rounded-lg border-[#333] border-dashed hover:bg-[#1a1a1a] transition mx-auto"
               >
-                <FiCompass className="mr-2" /> Select an Item
+                <TbClick className="text-2xl mr-2" /> Select an Item
               </div>
             )}
 
             {outpoint && (
               <div className="px-4 md:px-unset">
-                <div className="rounded p-4 max-w-4xl text-[#777] flex mb-2 items-start justify-start">
-                  <IoMdInformationCircle className="w-24 h-24 mr-2 opacity-25 text-emerald-200" />
-                  <div className="text-2xl">
-                    {`Listings lock up your ordinal, and are
-            be accessable across platforms. Listings can be cancelled at any time.`}
+                <div className="rounded p-2 md:p-4 max-w-4xl text-[#777] flex mb-2 items-start justify-start">
+                  <IoMdInformationCircle className="-mt-6 md:w-24 md:h-24 md:mr-2 opacity-25 text-emerald-200" />
+                  <div className="md:text-xl">
+                    {`Listings are can be purchased on the market page, or on other platforms. Listings can be cancelled at any time.`}
                   </div>
                 </div>
               </div>
             )}
 
             <div className="my-2 w-full md:px-4">
-              <label className="flex items-center justify-between">
+              <label className="flex items-center justify-between text-white">
                 Price (BSV)
                 <input
                   className="p-2 rounded"
@@ -312,6 +336,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
                   onChange={(e) => {
                     if (e.target.value === "") {
                       setPrice(0);
+                      return;
                     }
                     setPrice(
                       toSatoshi(
@@ -336,7 +361,9 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
                     }
                     submit();
                   }}
-                  className={`w-full cursor-pointer bg-teal-500 hover:bg-teal-600 transition text-white p-2 rounded disabled:bg-[#111] disabled:text-[#555]`}
+                  className={`${
+                    !outpoint ? `` : `cursor-pointer`
+                  } w-full bg-teal-500 hover:bg-teal-600 transition text-white p-2 rounded disabled:bg-[#111] disabled:text-[#555]`}
                 >
                   {` ${
                     !outpoint ? "Select an Item" : !price ? "Set a Price" : ""
@@ -352,7 +379,11 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
           </div>
         </div>
         <div className="md:w-1/3 md:ml-2">
-          <div>Listing Preview</div>
+          {!outpoint && (
+            <div className="border border-[#222] text-[#555] rounded flex items-center justify-center text-center w-full h-full h-32">
+              Listing Preview Will Display Here
+            </div>
+          )}
           {outpoint && (
             <Artifact
               outPoint={outpoint as string}
@@ -436,4 +467,12 @@ const createChangeOutput = (
   const change = paymentSatoshis - fee;
   const changeOut = new TxOut(BigInt(change), changeScript);
   return changeOut;
+};
+
+const fetchOrdinal = async (outpoint: string) => {
+  const { promise } = customFetch<OrdUtxo[]>(
+    `${API_HOST}/api/inscriptions/origin/${outpoint}`
+  );
+  const items = await promise;
+  return items;
 };
