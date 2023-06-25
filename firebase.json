@@ -1,11 +1,7 @@
 {
   "hosting": {
     "public": "out",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "/wallet",
@@ -28,6 +24,10 @@
         "destination": "/bsv20.html"
       },
       {
+        "source": "/market",
+        "destination": "/market/index.html"
+      },
+      {
         "source": "/market/bsv20",
         "destination": "/market/bsv20.html"
       },
@@ -36,8 +36,8 @@
         "destination": "/market/listings.html"
       },
       {
-        "source": "/market/actibity",
-        "destination": "/market/actibity.html"
+        "source": "/market/activity",
+        "destination": "/market/activity.html"
       },
       {
         "source": "/market/bsv20/**",
