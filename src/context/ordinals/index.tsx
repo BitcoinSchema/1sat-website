@@ -1,7 +1,18 @@
-import { FetchStatus } from "@/components/pages";
+import { FetchStatus, toastErrorProps } from "@/components/pages";
 import { SortListingsBy } from "@/components/pages/market/listings";
 import { MAP } from "bmapjs/types/protocols/map";
+import {
+  P2PKHAddress,
+  PrivateKey,
+  Script,
+  SigHash,
+  Transaction,
+  TxIn,
+  TxOut,
+} from "bsv-wasm-web";
 import { Utxo } from "js-1sat-ord";
+import { head, sumBy } from "lodash";
+import Router from "next/router";
 import React, {
   ReactNode,
   useCallback,
@@ -10,11 +21,23 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import toast from "react-hot-toast";
 import * as http from "../../utils/httpClient";
 import { useBitsocket } from "../bitsocket";
-import { ORDS_PER_PAGE } from "../wallet";
+import { ORDS_PER_PAGE, useWallet } from "../wallet";
 
 export const API_HOST = `https://ordinals.gorillapool.io`;
+
+type MarketResponse = {
+  txid: string;
+  vout: number;
+  height: number;
+  idx: number;
+  price: number;
+  payout: string;
+  script: string;
+  origin: string;
+};
 
 export const enum SortBy {
   PC = "pct_minted",
@@ -114,6 +137,7 @@ type ContextValue = {
   fetchStatsStatus: FetchStatus;
   stats?: Stats | undefined;
   getStats: () => void;
+  buyArtifact: (outPoint: string) => Promise<void>;
 };
 
 const OrdinalsContext = React.createContext<ContextValue | undefined>(
@@ -148,6 +172,14 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   const [fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+
+  const {
+    changeAddress,
+    fundingUtxos,
+    ordAddress,
+    payPk,
+    setPendingTransaction,
+  } = useWallet();
 
   type ChainInfo = {
     chain: string;
@@ -359,21 +391,206 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
 
   const getArtifactByInscriptionId = useCallback(
     async (inscriptionId: number): Promise<OrdUtxo | undefined> => {
-      const gpInscription = await getInscriptionByInscriptionId(inscriptionId);
-
-      if (!gpInscription) {
-        return;
-      }
-      return {
-        vout: gpInscription.vout,
-        satoshis: 1,
-        txid: gpInscription.txid,
-        file: gpInscription.file,
-        origin: gpInscription.origin,
-        num: gpInscription.num,
-      } as OrdUtxo;
+      return await getInscriptionByInscriptionId(inscriptionId);
     },
     [getInscriptionByInscriptionId]
+  );
+
+  const buyArtifact = useCallback(
+    async (outPoint: string) => {
+      if (!fundingUtxos || !payPk || !ordAddress || !changeAddress) {
+        return;
+      }
+
+      // I1 - Ordinal
+      // I2 - Funding
+      // O1 - Ordinal destination
+      // O2 - Payment to lister
+      // O3 - Market Fee
+      // O4 - Change
+
+      const purchaseTx = new Transaction(1, 0);
+
+      const { promise } = http.customFetch<MarketResponse>(
+        `${API_HOST}/api/market/${outPoint}`
+      );
+
+      const { script, payout, vout, txid, price } = await promise;
+      console.log(
+        { script, payout, vout, txid, price },
+        sumBy(fundingUtxos, "satoshis")
+      );
+
+      // make sure funding UTXOs can cover price, otherwise show error
+      if (
+        (price === 0 ? minimumMarketFee + price : price * 1.04) >=
+        sumBy(fundingUtxos, "satoshis") + P2PKHInputSize * fundingUtxos.length
+      ) {
+        toast.error("Not enough Bitcoin!", toastErrorProps);
+        Router.push("/wallet");
+      }
+      const listingInput = new TxIn(
+        Buffer.from(txid, "hex"),
+        vout,
+        Script.from_asm_string("")
+      );
+      purchaseTx.add_input(listingInput);
+
+      // output 0
+      const buyerOutput = new TxOut(
+        BigInt(1),
+        P2PKHAddress.from_string(ordAddress).get_locking_script()
+      );
+      purchaseTx.add_output(buyerOutput);
+
+      // output 1
+      const payOutput = TxOut.from_hex(
+        Buffer.from(payout, "base64").toString("hex")
+      );
+      purchaseTx.add_output(payOutput);
+
+      // output 2 - change
+      const dummyChangeOutput = new TxOut(
+        BigInt(0),
+        P2PKHAddress.from_string(changeAddress).get_locking_script()
+      );
+      purchaseTx.add_output(dummyChangeOutput);
+
+      // output 3 - marketFee
+      const dummyMarketFeeOutput = new TxOut(
+        BigInt(0),
+        P2PKHAddress.from_string(marketAddress).get_locking_script()
+      );
+      purchaseTx.add_output(dummyMarketFeeOutput);
+
+      // OMFG this has to be "InputOutput" and then second time is InputOutputs
+      let preimage = purchaseTx.sighash_preimage(
+        SigHash.InputOutput,
+        0,
+        Script.from_bytes(Buffer.from(script, "base64")),
+        BigInt(1) //TODO: use amount from listing
+      );
+
+      listingInput.set_unlocking_script(
+        Script.from_asm_string(
+          `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
+            .get_output(2)!
+            .to_hex()}${purchaseTx.get_output(3)!.to_hex()} ${Buffer.from(
+            preimage
+          ).toString("hex")} OP_0`
+        )
+      );
+      purchaseTx.set_input(0, listingInput);
+
+      // calculate market fee
+      let marketFee = price * marketRate;
+      if (marketFee === 0) {
+        marketFee = minimumMarketFee;
+      }
+
+      // Calculate the network fee
+      // account for funding input and market output (not added to tx yet)
+      let paymentUtxos: Utxo[] = [];
+      let satsCollected = 0;
+      // initialize fee and satsNeeded (updated with each added payment utxo)
+      let fee = calculateFee(1, purchaseTx);
+      let satsNeeded = fee + price + marketFee;
+      // collect the required utxos
+      const sortedFundingUtxos = fundingUtxos.sort((a, b) =>
+        a.satoshis > b.satoshis ? -1 : 1
+      );
+      for (let utxo of sortedFundingUtxos) {
+        if (satsCollected < satsNeeded) {
+          satsCollected += utxo.satoshis;
+          paymentUtxos.push(utxo);
+
+          // if we had to add additional
+          fee = calculateFee(paymentUtxos.length, purchaseTx);
+          satsNeeded = fee + price + marketFee;
+        }
+      }
+
+      // Replace dummy change output
+      const changeAmt = satsCollected - satsNeeded;
+
+      const changeOutput = new TxOut(
+        BigInt(changeAmt),
+        P2PKHAddress.from_string(changeAddress).get_locking_script()
+      );
+
+      purchaseTx.set_output(2, changeOutput);
+
+      // add output 3 - market fee
+      const marketFeeOutput = new TxOut(
+        BigInt(marketFee),
+        P2PKHAddress.from_string(marketAddress).get_locking_script()
+      );
+      purchaseTx.set_output(3, marketFeeOutput);
+
+      preimage = purchaseTx.sighash_preimage(
+        SigHash.InputOutputs,
+        0,
+        Script.from_bytes(Buffer.from(script, "base64")),
+        BigInt(1)
+      );
+      //                             f.set_unlocking_script(m.Xf.from_asm_string("".concat(n.get_output(0).to_hex(), " ").concat(n.get_output(2).to_hex()).concat(n.get_output(3).to_hex(), " ").concat(V.from(k).toString("hex"), " OP_0"))),
+
+      listingInput.set_unlocking_script(
+        Script.from_asm_string(
+          `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
+            .get_output(2)!
+            .to_hex()}${purchaseTx.get_output(3)!.to_hex()} ${Buffer.from(
+            preimage
+          ).toString("hex")} OP_0`
+        )
+      );
+      purchaseTx.set_input(0, listingInput);
+
+      // create and sign inputs (payment)
+      const paymentPk = PrivateKey.from_wif(payPk);
+
+      paymentUtxos.forEach((utxo, idx) => {
+        debugger;
+        const fundingInput = new TxIn(
+          Buffer.from(utxo.txid, "hex"),
+          utxo.vout,
+          Script.from_asm_string(utxo.script)
+        );
+        purchaseTx.add_input(fundingInput);
+
+        const sig = purchaseTx.sign(
+          paymentPk,
+          SigHash.InputsOutputs,
+          1 + idx,
+          Script.from_asm_string(utxo.script),
+          BigInt(utxo.satoshis)
+        );
+
+        fundingInput.set_unlocking_script(
+          Script.from_asm_string(
+            `${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`
+          )
+        );
+
+        purchaseTx.set_input(1 + idx, fundingInput);
+      });
+
+      setPendingTransaction({
+        rawTx: purchaseTx.to_hex(),
+        size: purchaseTx.get_size(),
+        fee,
+        price,
+        numInputs: purchaseTx.get_ninputs(),
+        numOutputs: purchaseTx.get_noutputs(),
+        txid: purchaseTx.get_id_hex(),
+        marketFee,
+        // TODO: support multiple txids here
+        inputTxid: head(paymentUtxos)!.txid,
+      });
+
+      Router.push("/preview");
+    },
+    [changeAddress, fundingUtxos, ordAddress, payPk, setPendingTransaction]
   );
 
   const value = useMemo(
@@ -398,6 +615,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       fetchStatsStatus,
       stats,
       getStats,
+      buyArtifact,
     }),
     [
       bsv20s,
@@ -419,6 +637,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       fetchStatsStatus,
       stats,
       getStats,
+      buyArtifact,
     ]
   );
 
@@ -431,4 +650,17 @@ export const useOrdinals = (): ContextValue => {
     throw new Error("useOrdinals must be used within an OrdinalsProvider");
   }
   return context;
+};
+
+// Constants
+const marketAddress = `15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z`;
+const minimumMarketFee = 10000;
+const marketRate = 0.04;
+const P2PKHInputSize = 148;
+
+const calculateFee = (numPaymentUtxos: number, purchaseTx: Transaction) => {
+  const byteSize = Math.ceil(
+    P2PKHInputSize * numPaymentUtxos + purchaseTx.to_bytes().byteLength
+  );
+  return Math.ceil(byteSize * 0.05);
 };

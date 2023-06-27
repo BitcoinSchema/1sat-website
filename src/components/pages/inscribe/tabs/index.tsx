@@ -13,6 +13,7 @@ export enum InscriptionTab {
   BSV20 = "bsv20",
   SNS = "sns",
   Text = "text",
+  HTML = "html",
   Video = "video",
 }
 
@@ -44,6 +45,17 @@ const InscriptionTabs: React.FC<Props> = ({
         }
       >
         Text
+      </S.Tab>
+      <S.Tab
+        partiallyactive={currentTab === InscriptionTab.HTML ? "true" : "false"}
+        href={`/inscribe?tab=html`}
+        onClick={(e) =>
+          currentTab === InscriptionTab.HTML && onClickSelected
+            ? onClickSelected(e)
+            : () => {}
+        }
+      >
+        HTML
       </S.Tab>
       <S.Tab
         partiallyactive={currentTab === InscriptionTab.BSV20 ? "true" : "false"}

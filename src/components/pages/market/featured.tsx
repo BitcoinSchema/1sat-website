@@ -186,7 +186,7 @@ const featured: Featured = [
   {
     origin:
       "52609820f2c020b9a6a9eaca44cae0f3972412710f5b76b52a723683a259100e_0",
-    name: "coOM",
+    name: "coOM Test",
   },
   {
     origin:
@@ -227,6 +227,26 @@ const featured: Featured = [
     origin:
       "d2901f73588a012e4d4b1a44354195f86c1f057c1ccf4b612bc20c6359b11248_0",
     name: "Uniqords",
+  },
+  {
+    origin:
+      "d873901497a2743e8832668bad9b58c22706e08b20b6d0b574436c02b8b04d28_1",
+    name: "CoOM Battles · Genesis Airdrop",
+  },
+  {
+    origin:
+      "8c0fe025b4ef7f9242ceb724bb26a5163e05fbd114675fe42ef6fbb40cc61117_0",
+    name: "Testy Bots",
+  },
+  {
+    origin:
+      "9ef343b39a0fe94d7a0558b5ad01e474e6354fa5158a7326953cba45bb6b645b_0",
+    name: "Elephant",
+  },
+  {
+    origin:
+      "df8a277aa03b595f6e50b576093ef6fc039a83635b2325640fce6c8d27f9edb5_0",
+    name: "Cyber Apes",
   },
 ];
 

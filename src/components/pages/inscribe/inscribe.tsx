@@ -12,8 +12,8 @@ import { IoMdWarning } from "react-icons/io";
 import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
-import Artifact from "../artifact";
-import { FetchStatus, toastErrorProps } from "../pages";
+import { FetchStatus, toastErrorProps } from "..";
+import Artifact from "../../artifact";
 import InscriptionTabs, { InscriptionTab } from "./tabs";
 
 const Input = styled.input`
@@ -285,7 +285,20 @@ const Inscribe: React.FC<InscribeProps> = ({
 
       await inscribeUtf8(text, "text/plain", utxo);
 
-      console.log("TODO: Inscribe text");
+      setInscribeStatus(FetchStatus.Success);
+    },
+    [inscribeUtf8, text]
+  );
+
+  const inscribeHTML = useCallback(
+    async (utxo: Utxo) => {
+      if (!text) {
+        return;
+      }
+      setInscribeStatus(FetchStatus.Loading);
+
+      await inscribeUtf8(text, "text/html", utxo);
+
       setInscribeStatus(FetchStatus.Success);
     },
     [inscribeUtf8, text]
@@ -382,6 +395,7 @@ const Inscribe: React.FC<InscribeProps> = ({
     switch (selectedTab) {
       case InscriptionTab.Image:
         return !selectedFile || inscribeStatus === FetchStatus.Loading;
+      case InscriptionTab.HTML:
       case InscriptionTab.Text:
         return inscribeStatus === FetchStatus.Loading;
       case InscriptionTab.BSV20:
@@ -423,6 +437,8 @@ const Inscribe: React.FC<InscribeProps> = ({
           return await inscribeImage(u);
         case InscriptionTab.Text:
           return await inscribeText(u);
+        case InscriptionTab.HTML:
+          return await inscribeHTML(u);
         case InscriptionTab.BSV20:
           return await inscribeBsv20(u);
         default:
@@ -436,6 +452,7 @@ const Inscribe: React.FC<InscribeProps> = ({
     inscribeBsv20,
     inscribeImage,
     inscribeText,
+    inscribeHTML,
     ordAddress,
     payPk,
     selectedTab,
@@ -459,6 +476,8 @@ const Inscribe: React.FC<InscribeProps> = ({
         return await inscribeImage(u);
       case InscriptionTab.Text:
         return await inscribeText(u);
+      case InscriptionTab.HTML:
+        return await inscribeHTML(u);
       case InscriptionTab.BSV20:
         return await inscribeBsv20(u);
       default:
@@ -470,6 +489,7 @@ const Inscribe: React.FC<InscribeProps> = ({
     inscribeBsv20,
     inscribeImage,
     inscribeText,
+    inscribeHTML,
     ordAddress,
     payPk,
     selectedTab,
@@ -679,7 +699,8 @@ const Inscribe: React.FC<InscribeProps> = ({
             </Label>
           )}
 
-          {selectedTab === InscriptionTab.Text && (
+          {(selectedTab === InscriptionTab.Text ||
+            selectedTab === InscriptionTab.HTML) && (
             <div className="w-full">
               <textarea
                 className="w-full p-2"

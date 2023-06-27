@@ -1,4 +1,4 @@
-import Inscribe from "@/components/inscriptions/inscribe";
+import Inscribe from "@/components/pages/inscribe/inscribe";
 import Tabs, { Tab } from "@/components/tabs";
 import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";

@@ -683,6 +683,10 @@ const WalletProvider: React.FC<Props> = (props) => {
           ordUtxo.script = script.to_asm_string();
         }
       }
+      if (!ordUtxo.satoshis) {
+        ordUtxo.satoshis = 1;
+      }
+
       const fundingUtxo = head(fundingUtxos);
       if (fundingUtxo && !fundingUtxo.script) {
         const fundingRawTx = await getRawTxById(fundingUtxo.txid);

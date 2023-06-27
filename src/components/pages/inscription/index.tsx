@@ -1,15 +1,18 @@
 import Artifact from "@/components/artifact";
+import BuyArtifactModal from "@/components/modals/buyArtifact";
 import Tabs from "@/components/tabs";
 import { useBitcoinSchema } from "@/context/bitcoinschema";
-import { OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
+import { customFetch } from "@/utils/httpClient";
 import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Router, { useRouter } from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { LoaderIcon } from "react-hot-toast";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import { FetchStatus, toastErrorProps } from "..";
 import CollectionItem from "./collectionItem";
 
@@ -23,14 +26,20 @@ enum SubType {
 const InscriptionPage: React.FC<PageProps> = ({}) => {
   const router = useRouter();
   const [artifact, setArtifact] = useState<OrdUtxo | undefined>();
+  const [ordListing, setOrdListing] = useState<OrdUtxo | undefined>(undefined);
+  const [fetchListingStatus, setFetchListingStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
   const [fetchDataStatus, setFetchDataStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+  const [showBuy, setShowBuy] = useState<boolean>(false);
   const { fundingUtxos, transfer, ordUtxos, fetchOrdinalUtxosStatus } =
     useWallet();
   const { inscriptionId } = router.query;
   const { getBmapTxById } = useBitcoinSchema();
-  const { getArtifactByInscriptionId, fetchInscriptionsStatus } = useOrdinals();
+  const { getArtifactByInscriptionId, fetchInscriptionsStatus, buyArtifact } =
+    useOrdinals();
 
   useEffect(() => {
     console.log({ inscriptionId });
@@ -41,17 +50,17 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
         if (art) {
           const art2 = await fillContentType(art);
 
-          const bmapTx = await getBmapTxById(art.txid);
+          // const bmapTx = await getBmapTxById(art.txid);
           setFetchDataStatus(FetchStatus.Success);
 
-          console.log({ bmapTx });
+          // console.log({ bmapTx });
 
-          if (bmapTx.MAP) {
-            // TODO: This assumes the AMP index is the same as vout
-            // thile this may work in most cases it is a bad assumption
-            // should update the library to return the vout on each MAP element
-            art2.MAP = bmapTx.MAP[art2.vout];
-          }
+          // if (bmapTx.MAP) {
+          //   // TODO: This assumes the AMP index is the same as vout
+          //   // thile this may work in most cases it is a bad assumption
+          //   // should update the library to return the vout on each MAP element
+          //   art2.MAP = bmapTx.MAP[art2.vout];
+          // }
           console.log("setting", art2);
 
           setArtifact(art2);
@@ -67,6 +76,50 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       }
     }
   }, [getBmapTxById, inscriptionId, getArtifactByInscriptionId]);
+
+  // use the endpoint to fetch the market listings (type OrdUtxo) for this inscription
+  // `${API_HOST}/api/market/${outpoint}`,
+  useEffect(() => {
+    const fire = async (origin: string) => {
+      try {
+        setFetchListingStatus(FetchStatus.Loading);
+        const { promise } = customFetch<OrdUtxo>(
+          `${API_HOST}/api/inscriptions/origin/${origin}/latest`
+        );
+
+        const listing = await promise;
+        setFetchListingStatus(FetchStatus.Success);
+        // if this is a listing, set the listing
+        if (listing.listing) {
+          setOrdListing(listing);
+        } else {
+          setOrdListing(undefined);
+        }
+      } catch (e) {
+        setFetchListingStatus(FetchStatus.Error);
+      }
+    };
+    if (
+      inscriptionId &&
+      artifact?.origin &&
+      fetchListingStatus === FetchStatus.Idle
+    ) {
+      fire(artifact.origin);
+    }
+  }, [
+    inscriptionId,
+    artifact?.origin,
+    artifact?.num,
+    fetchListingStatus,
+    setOrdListing,
+  ]);
+
+  useEffect(() => {
+    if (artifact && ordListing && artifact?.origin !== ordListing?.origin) {
+      setOrdListing(undefined);
+      setFetchListingStatus(FetchStatus.Idle);
+    }
+  }, [ordListing, artifact]);
 
   const ordUtxo = useMemo(() => {
     return ordUtxos?.find((o) => o.num === parseInt(inscriptionId as string));
@@ -104,6 +157,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
             <span className="hidden md:block">Inscription </span>&nbsp; #
             {inscriptionId}
             {fetchInscriptionsStatus === FetchStatus.Success &&
+              fetchListingStatus === FetchStatus.Success &&
               fetchOrdinalUtxosStatus === FetchStatus.Success &&
               !artifact && <div>No match for #{inscriptionId}</div>}
           </div>
@@ -131,6 +185,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       </div>
     );
   }, [
+    fetchListingStatus,
     fetchOrdinalUtxosStatus,
     router,
     artifact,
@@ -162,20 +217,20 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     console.log({ isBsv20 });
   }, [isBsv20]);
 
-  const renderSubTypeItem = useCallback((subType: SubType, value: string) => {
+  const renderSubTypeItem = (subType: SubType, value: any) => {
     switch (subType) {
       case SubType.Collection:
       //return <Collection {...value} />;
       case SubType.CollectionItem:
         try {
-          const item = JSON.parse(value) as CollectionItem;
+          const item = value as CollectionItem;
           return <CollectionItem collectionItem={item} />;
         } catch (e) {
           console.log(e);
         }
     }
     return <div></div>;
-  }, []);
+  };
 
   const renderSubType = useCallback(
     (k: string, v: string) => {
@@ -217,10 +272,32 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   );
 
   useEffect(() => {
-    if (ordUtxo) {
-      console.log({ ordUtxo });
+    console.log({ ordUtxo, artifact });
+  }, [artifact, ordUtxo]);
+
+  const ownsInscription = useMemo(() => {
+    return artifact && ordUtxos?.some((o) => o.origin === artifact.origin);
+  }, [artifact, ordUtxos]);
+
+  const content = useMemo(() => {
+    if (!artifact) {
+      return;
     }
-  }, [ordUtxo]);
+    return (
+      <Artifact
+        key={artifact.txid}
+        classNames={{
+          wrapper: `max-w-5xl w-full h-full`,
+          media: `max-h-[calc(100vh-20em)]`,
+        }}
+        contentType={artifact.file?.type}
+        origin={artifact.origin || ""}
+        num={artifact.num}
+        height={artifact.height}
+        clickToZoom={true}
+      />
+    );
+  }, [artifact]);
 
   return (
     <>
@@ -252,20 +329,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
               </div>
             )}
 
-            {artifact && (
-              <Artifact
-                key={artifact.txid}
-                classNames={{
-                  wrapper: `max-w-5xl w-full h-full`,
-                  media: `max-h-[calc(100vh-20em)]`,
-                }}
-                contentType={artifact.file?.type}
-                origin={artifact.origin || ""}
-                num={artifact.num}
-                height={artifact.height}
-                clickToZoom={true}
-              />
-            )}
+            {artifact && content}
           </div>
           <div className="md:ml-4 w-full max-w-sm">
             {fetchDataStatus === FetchStatus.Success && !artifact && (
@@ -286,19 +350,45 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 </div>
               )}
             </div>
-            {ordUtxos?.some(
-              (o) => o.num === parseInt(inscriptionId as string)
-            ) && (
+            {!ownsInscription && ordListing && (
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
+                <h2 className="text-xl text-center font-semibold mb-2">
+                  For Sale
+                </h2>
+
+                <div className="flex justify-between items-center mb-2">
+                  <div>Price</div>
+                  <div>{toBitcoin(ordListing?.price || 0)} BSV</div>
+                </div>
+                <div className="flex items-center mb-2">
+                  <div
+                    className="rounded bg-emerald-600 cursor-pointer p-2 hover:bg-emerald-500 transition text-white w-full text-center"
+                    onClick={async () => {
+                      if (!artifact?.origin) {
+                        return;
+                      }
+                      console.log("click buy");
+                      setShowBuy(true);
+                      // buyArtifact(artifact.origin);
+                    }}
+                  >
+                    Buy
+                  </div>
+                </div>
+              </div>
+            )}
+            {ownsInscription && (
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <h2 className="text-xl text-center font-semibold mb-2">
                   You Own This Item
                 </h2>
                 <div className="flex justify-between items-center mb-2">
                   <div>Transfer Ownership</div>
-                  <div
-                    className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
+                  <button
+                    disabled={!!ordListing}
+                    className={`rounded disabled:text-[#444] bg-[#222] cursor-pointer disabled:cursor-default p-2 disabled:hover:bg-[#222] hover:bg-[#333] transition text-white`}
                     onClick={async () => {
-                      if (!artifact) {
+                      if (!artifact || ordListing) {
                         return;
                       }
                       console.log("click send");
@@ -337,7 +427,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     }}
                   >
                     Send
-                  </div>
+                  </button>
                 </div>
                 {ordUtxo && !ordUtxo.listing && (
                   <div className="flex justify-between items-center mt-4">
@@ -358,9 +448,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     <div
                       className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
                       onClick={async () => {
-                        Router.push(
-                          `/market/cancel/${ordUtxo.txid}_${ordUtxo.vout}`
-                        );
+                        // Router.push(
+                        //   `/market/cancel/${ordUtxo.txid}_${ordUtxo.vout}`
+                        // );
                       }}
                     >
                       Cancel
@@ -369,6 +459,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 )}
               </div>
             )}
+
             {
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <div className="flex justify-between items-center">
@@ -426,6 +517,14 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           </div>
         </div>
       </div>
+      {ordListing?.outpoint && showBuy && ordListing?.price !== undefined && (
+        <BuyArtifactModal
+          outPoint={ordListing.outpoint}
+          onClose={() => setShowBuy(false)}
+          price={ordListing.price}
+          content={content}
+        />
+      )}
     </>
   );
 };

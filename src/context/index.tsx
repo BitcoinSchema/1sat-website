@@ -14,11 +14,11 @@ const AppContext: React.FC<Props> = ({ children }) => (
   <BitsocketProvider>
     <RatesProvider>
       <BitcoinSchemaProvider>
-        <OrdinalsProvider>
-          <WalletProvider>
+        <WalletProvider>
+          <OrdinalsProvider>
             <BapProvider>{children}</BapProvider>
-          </WalletProvider>
-        </OrdinalsProvider>
+          </OrdinalsProvider>
+        </WalletProvider>
       </BitcoinSchemaProvider>
     </RatesProvider>
   </BitsocketProvider>

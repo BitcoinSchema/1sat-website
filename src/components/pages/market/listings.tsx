@@ -172,14 +172,18 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   contentType={l.file?.type}
                   num={l.num}
                   classNames={{
-                    wrapper: "max-w-72 max-h-72 overflow-hidden mb-2",
+                    wrapper:
+                      "max-w-72 max-h-72 overflow-hidden mb-2 cursor-pointer",
                   }}
                   txid={l.txid}
                   price={l.price || 0}
                   height={l.height}
                   isListing={true}
                   sigma={l.SIGMA}
-                  clickToZoom={true}
+                  clickToZoom={false}
+                  onClick={() => {
+                    router.push(`/inscription/${l.num}`);
+                  }}
                 />
               </div>
             );
