@@ -15,6 +15,8 @@ export enum InscriptionTab {
   Text = "text",
   HTML = "html",
   Video = "video",
+  Model = "model",
+  Collection = "collection",
 }
 
 const InscriptionTabs: React.FC<Props> = ({
@@ -68,6 +70,30 @@ const InscriptionTabs: React.FC<Props> = ({
       >
         BSV-20
       </S.Tab>
+      {/* <S.Tab
+        partiallyactive={currentTab === InscriptionTab.Model ? "true" : "false"}
+        href={`/inscribe?tab=model`}
+        onClick={(e) =>
+          currentTab === InscriptionTab.Model && onClickSelected
+            ? onClickSelected(e)
+            : () => {}
+        }
+      >
+        3D Model
+      </S.Tab> */}
+      {/* <S.Tab
+        partiallyactive={
+          currentTab === InscriptionTab.Collection ? "true" : "false"
+        }
+        href={`/inscribe?tab=collection`}
+        onClick={(e) =>
+          currentTab === InscriptionTab.Collection && onClickSelected
+            ? onClickSelected(e)
+            : () => {}
+        }
+      >
+        Collection
+      </S.Tab> */}
       {/* <S.Tab
         partiallyactive={currentTab === InscriptionTab.BSV20 ? "true" : "false"}
         href={`/inscribe?tab=video`}

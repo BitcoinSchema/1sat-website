@@ -47,6 +47,7 @@ type ArtifactProps = {
   isListing?: boolean;
   clickToZoom?: boolean;
   sigma?: SIGMA[];
+  showFooter?: boolean;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -64,6 +65,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   isListing,
   clickToZoom,
   sigma,
+  showFooter = true,
 }) => {
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
@@ -251,7 +253,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                 ? src
                 : showZoom
                 ? `https://res.cloudinary.com/tonicpow/image/fetch/f_auto/${src}`
-                : `https://res.cloudinary.com/tonicpow/image/fetch/c_fill,g_center,h_300,w_300/f_auto/${src}`
+                : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,g_center,h_300,w_300/f_auto/${src}`
             }
             id={`artifact_${new Date().getTime()}_image`}
             alt={`Inscription${num ? " #" + num : ""}`}
@@ -325,7 +327,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           </div>
         )}
         {/* TODO: Show indicator when more than one isncription */}
-        {num !== undefined && (
+        {showFooter === true && num !== undefined && (
           <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
             <div
               className={`rounded bg-[#222] p-2 text-[#aaa] cursor-pointer`}

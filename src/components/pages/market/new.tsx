@@ -169,7 +169,6 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     if (!fundingUtxos || !payPk || !ordPk || !changeAddress || !ordAddress) {
       return;
     }
-    debugger;
     const paymentPk = PrivateKey.from_wif(payPk);
     const ordinalPk = PrivateKey.from_wif(ordPk);
 

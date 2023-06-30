@@ -1,5 +1,6 @@
 import { FetchStatus, toastErrorProps } from "@/components/pages";
 import { SortListingsBy } from "@/components/pages/market/listings";
+import { readFileAsBase64 } from "@/utils/file";
 import { MAP } from "bmapjs/types/protocols/map";
 import {
   P2PKHAddress,
@@ -10,7 +11,7 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo } from "js-1sat-ord";
+import { Utxo, createOrdinal } from "js-1sat-ord";
 import { head, sumBy } from "lodash";
 import Router from "next/router";
 import React, {
@@ -24,7 +25,7 @@ import React, {
 import toast from "react-hot-toast";
 import * as http from "../../utils/httpClient";
 import { useBitsocket } from "../bitsocket";
-import { ORDS_PER_PAGE, useWallet } from "../wallet";
+import { ORDS_PER_PAGE, PendingTransaction, useWallet } from "../wallet";
 
 export const API_HOST = `https://ordinals.gorillapool.io`;
 
@@ -138,6 +139,17 @@ type ContextValue = {
   stats?: Stats | undefined;
   getStats: () => void;
   buyArtifact: (outPoint: string) => Promise<void>;
+  inscribeUtf8: (
+    text: string,
+    contentType: string,
+    utxo: Utxo,
+    iterations?: number
+  ) => Promise<PendingTransaction>;
+  inscribeStatus: FetchStatus;
+  inscribeFile: (
+    utxo: Utxo,
+    file: File
+  ) => Promise<PendingTransaction | undefined>;
 };
 
 const OrdinalsContext = React.createContext<ContextValue | undefined>(
@@ -149,6 +161,9 @@ interface Props {
 }
 export const OrdinalsProvider: React.FC<Props> = (props) => {
   const { lastSettledEvent } = useBitsocket();
+  const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
   const [fetchActivityStatus, setFetchActivityStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -278,6 +293,93 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       }
     },
     [setFetchListingsStatus, setListings]
+  );
+
+  const inscribeFile = useCallback(
+    async (utxo: Utxo, file: File) => {
+      if (!file?.type || !utxo) {
+        throw new Error("File or utxo not provided");
+      }
+      setInscribeStatus(FetchStatus.Loading);
+      try {
+        const fileAsBase64 = await readFileAsBase64(file);
+        try {
+          setInscribeStatus(FetchStatus.Loading);
+          const tx = await handleInscribing(
+            payPk!,
+            fileAsBase64,
+            file.type,
+            ordAddress!,
+            changeAddress!,
+            utxo
+          );
+          const satsIn = utxo!.satoshis;
+          const satsOut = Number(tx.satoshis_out());
+          if (satsIn && satsOut) {
+            const fee = satsIn - satsOut;
+
+            if (fee < 0) {
+              console.error("Fee inadequate");
+              toast.error("Fee Inadequate", toastErrorProps);
+              setInscribeStatus(FetchStatus.Error);
+              throw new Error("Fee inadequate");
+            }
+            const result = {
+              rawTx: tx.to_hex(),
+              size: tx.get_size(),
+              fee,
+              numInputs: tx.get_ninputs(),
+              numOutputs: tx.get_noutputs(),
+              txid: tx.get_id_hex(),
+              inputTxid: tx.get_input(0)?.get_prev_tx_id_hex(),
+            } as PendingTransaction;
+            console.log(Object.keys(result));
+
+            setPendingTransaction(result);
+            setInscribeStatus(FetchStatus.Success);
+            return result;
+          }
+        } catch (e) {
+          console.error(e);
+          setInscribeStatus(FetchStatus.Error);
+          throw e;
+        }
+      } catch (e) {
+        setInscribeStatus(FetchStatus.Error);
+        toast.error("Failed to inscribe " + e, toastErrorProps);
+        console.error(e);
+        throw e;
+      }
+    },
+    [setInscribeStatus, payPk, ordAddress, changeAddress, setPendingTransaction]
+  );
+
+  const inscribeUtf8 = useCallback(
+    async (text: string, contentType: string, utxo: Utxo, iterations = 1) => {
+      const fileAsBase64 = Buffer.from(text).toString("base64");
+      const tx = await handleInscribing(
+        payPk!,
+        fileAsBase64,
+        contentType,
+        ordAddress!,
+        changeAddress!,
+        utxo
+      );
+
+      const result = {
+        rawTx: tx.to_hex(),
+        size: tx.get_size(),
+        fee: utxo!.satoshis - Number(tx.satoshis_out()),
+        numInputs: tx.get_ninputs(),
+        numOutputs: tx.get_noutputs(),
+        txid: tx.get_id_hex(),
+        inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
+        iterations,
+      } as PendingTransaction;
+      setPendingTransaction(result);
+      return result;
+    },
+    [setPendingTransaction, payPk, ordAddress, changeAddress]
   );
 
   const getActivity = useCallback(
@@ -550,7 +652,6 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       const paymentPk = PrivateKey.from_wif(payPk);
 
       paymentUtxos.forEach((utxo, idx) => {
-        debugger;
         const fundingInput = new TxIn(
           Buffer.from(utxo.txid, "hex"),
           utxo.vout,
@@ -616,6 +717,9 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       stats,
       getStats,
       buyArtifact,
+      inscribeUtf8,
+      inscribeFile,
+      inscribeStatus,
     }),
     [
       bsv20s,
@@ -638,6 +742,9 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       stats,
       getStats,
       buyArtifact,
+      inscribeUtf8,
+      inscribeFile,
+      inscribeStatus,
     ]
   );
 
@@ -663,4 +770,40 @@ const calculateFee = (numPaymentUtxos: number, purchaseTx: Transaction) => {
     P2PKHInputSize * numPaymentUtxos + purchaseTx.to_bytes().byteLength
   );
   return Math.ceil(byteSize * 0.05);
+};
+
+const handleInscribing = async (
+  payPk: string,
+  fileAsBase64: string,
+  fileContentType: string,
+  ordAddress: string,
+  changeAddress: string,
+  fundingUtxo: Utxo
+) => {
+  const paymentPk = PrivateKey.from_wif(payPk);
+
+  // inscription
+  const inscription = {
+    dataB64: fileAsBase64,
+    contentType: fileContentType,
+  };
+
+  // const idKey = PrivateKey.from_wif(
+  //   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
+  // );
+  try {
+    const tx = await createOrdinal(
+      fundingUtxo,
+      ordAddress,
+      paymentPk,
+      changeAddress,
+      0.9,
+      inscription
+      // undefined // optional metadata
+      // idKey // optional id key
+    );
+    return tx;
+  } catch (e) {
+    throw e;
+  }
 };

@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import { GiHolyGrail } from "react-icons/gi";
 import { FetchStatus } from "..";
+import { CollectionStats } from "../inscription";
 import CollectionItem from "../inscription/collectionItem";
 import { Collection, ancientCollections } from "../market/featured";
 import MarketTabs, { MarketTab } from "../market/tabs";
@@ -57,12 +58,13 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
   const [fetchCollectionStatus, setFetchCollectionStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
+  // TODO: Implement infinite scroll
   const setCollectionFromCollectionId = useCallback(
     async (keyName: string = "ColectionId", collectionId: string) => {
       try {
         setFetchCollectionStatus(FetchStatus.Loading);
         const { promise } = customFetch<Item[]>(
-          `${API_HOST}/api/inscriptions/search/map`,
+          `${API_HOST}/api/inscriptions/search/map?dir=asc`,
           {
             method: "POST",
             body: JSON.stringify({
@@ -86,8 +88,33 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
     [setCollection, setFetchCollectionStatus]
   );
 
+  const [collectionStats, setCollectionStats] = useState<
+    CollectionStats | undefined
+  >();
+  const [fetchCollectionStatsStatus, setFetchCollectionStatsStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
+
   useEffect(() => {
-    console.log({ collectionId });
+    const fire = async (id: string) => {
+      setFetchCollectionStatsStatus(FetchStatus.Loading);
+      try {
+        const { promise } = customFetch<CollectionStats>(
+          `${API_HOST}/api/collections/${id}/stats`
+        );
+        const collection = await promise;
+        setFetchCollectionStatsStatus(FetchStatus.Success);
+        setCollectionStats(collection);
+      } catch (e) {
+        setFetchCollectionStatsStatus(FetchStatus.Error);
+      }
+    };
+    // if this is a collectionItem, look up the collection
+    if (collectionId && fetchCollectionStatsStatus === FetchStatus.Idle) {
+      fire(collectionId as string);
+    }
+  }, [collectionId, fetchCollectionStatsStatus]);
+
+  useEffect(() => {
     const fire = async (cid: string) => {
       try {
         setFetchCollectionStatus(FetchStatus.Loading);
@@ -108,10 +135,17 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
 
           setIsAncient(true);
           if (c?.MAP.collectionID) {
-            setCollectionFromCollectionId("collectionID", c.MAP.collectionID);
+            await setCollectionFromCollectionId(
+              "collectionID",
+              c.MAP.collectionID
+            );
 
             // TODO: Handle other ancient collection schema variations
             // setCollection((c as Collection).items as Item[]);
+          } else if (c?.MAP.collection) {
+            await setCollectionFromCollectionId("collection", c.MAP.collection);
+          } else if (c?.MAP.monType === "mask") {
+            await setCollectionFromCollectionId("monType", c.MAP.monType);
           }
         }
         setFetchCollectionStatus(FetchStatus.Success);
@@ -135,13 +169,16 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
   ]);
 
   const collectionName = useMemo(() => {
+    if (collectionStats?.MAP) {
+      return collectionStats.MAP.name;
+    }
     const c = head(collection);
     return !!c && c.MAP.collectionID?.length > 0
       ? c.MAP.collectionID
       : !!c && c.MAP.name?.length > 0
       ? c.MAP.name
       : queryName;
-  }, [collection, queryName]);
+  }, [collection, collectionStats, queryName]);
 
   useEffect(() => {
     console.log({ collectionName, collection });
@@ -185,34 +222,51 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           <div>{collectionName}</div>
         </div>
         <div className="p-4 grid w-full mx-auto justify-center sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {collection?.map((artifact) => {
-            return (
-              <div key={artifact.origin}>
-                {artifact && !artifact.file.type && (
-                  <div
-                    key={artifact.txid}
-                    className="bg-[#111] rounded p-2 w-72 h-73 flex items-center justify-center font-mono"
-                  >
-                    {`This inscription is malformed and can't be rendered. Sad :(`}
-                  </div>
-                )}
+          {collection
+            ?.sort((a, b) => {
+              if (
+                a.MAP?.subTypeData?.mintNumber &&
+                a.MAP?.subTypeData?.mintNumber
+              ) {
+                return a.MAP?.subTypeData?.mintNumber <
+                  b.MAP?.subTypeData?.mintNumber
+                  ? -1
+                  : 1;
+              }
+              return a.num < b.num ? -1 : 1;
+            })
+            .map((artifact) => {
+              return (
+                <div key={artifact.origin}>
+                  {artifact && !artifact.file.type && (
+                    <div
+                      key={artifact.txid}
+                      className="bg-[#111] rounded p-2 w-72 h-73 flex items-center justify-center font-mono"
+                    >
+                      {`This inscription is malformed and can't be rendered. Sad :(`}
+                    </div>
+                  )}
 
-                {artifact && (
-                  <Artifact
-                    key={artifact.txid}
-                    classNames={{
-                      wrapper: `max-w-5xl w-full h-full`,
-                      media: `max-h-[calc(100vh-20em)]`,
-                    }}
-                    contentType={artifact.file.type}
-                    origin={artifact.origin || ""}
-                    num={artifact.num}
-                    height={artifact.height}
-                  />
-                )}
-              </div>
-            );
-          })}
+                  {artifact && (
+                    <Artifact
+                      key={artifact.txid}
+                      classNames={{
+                        wrapper: `max-w-5xl w-full h-full`,
+                        media: `max-h-[calc(100vh-20em)]`,
+                      }}
+                      contentType={artifact.file.type}
+                      origin={artifact.origin || ""}
+                      num={artifact.num}
+                      height={artifact.height}
+                      to={`/inscription/${artifact.num}`}
+                      clickToZoom={false}
+                      price={artifact.price ? artifact.price : undefined}
+                      isListing={artifact.listing}
+                    />
+                  )}
+                </div>
+              );
+            })}
         </div>
       </div>
     </>

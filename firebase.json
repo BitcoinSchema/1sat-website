@@ -29,7 +29,7 @@
       },
       {
         "source": "/market",
-        "destination": "/market/index.html"
+        "destination": "/market.html"
       },
       {
         "source": "/market/bsv20",

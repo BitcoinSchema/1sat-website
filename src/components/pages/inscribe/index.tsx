@@ -26,14 +26,7 @@ const InscribePage: React.FC<PageProps> = ({ router }) => {
         />
       </Head>
       <Tabs currentTab={Tab.Inscribe} />
-      {payPk && fundingUtxos && (
-        <Inscribe
-          inscribedCallback={(inscription) => {
-            Router.push("/preview");
-          }}
-          className="max-w-lg mx-auto"
-        />
-      )}
+      {payPk && fundingUtxos && <Inscribe />}
       <div className="p-2 md:p-4">
         {(!payPk || !fundingUtxos) && (
           <div

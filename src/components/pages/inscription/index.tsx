@@ -1,8 +1,9 @@
 import Artifact from "@/components/artifact";
 import BuyArtifactModal from "@/components/modals/buyArtifact";
 import Tabs from "@/components/tabs";
+import Tooltip from "@/components/tooltip";
 import { useBitcoinSchema } from "@/context/bitcoinschema";
-import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { API_HOST, OrdUtxo, SIGMA, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
 import { customFetch } from "@/utils/httpClient";
@@ -12,11 +13,20 @@ import Head from "next/head";
 import Router, { useRouter } from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { LoaderIcon } from "react-hot-toast";
+import { FaSignature } from "react-icons/fa";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import { FetchStatus, toastErrorProps } from "..";
+import { Collection } from "./collection";
 import CollectionItem from "./collectionItem";
 
 interface PageProps extends WithRouterProps {}
+
+export type CollectionStats = {
+  count: number;
+  highestMintNum: number;
+  MAP: Collection;
+  SIGMA?: SIGMA[];
+};
 
 enum SubType {
   Collection = "collection",
@@ -217,23 +227,68 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     console.log({ isBsv20 });
   }, [isBsv20]);
 
-  const renderSubTypeItem = (subType: SubType, value: any) => {
-    switch (subType) {
-      case SubType.Collection:
-      //return <Collection {...value} />;
-      case SubType.CollectionItem:
-        try {
-          const item = value as CollectionItem;
-          return <CollectionItem collectionItem={item} />;
-        } catch (e) {
-          console.log(e);
-        }
+  // TODO: Collection support
+
+  const [collectionStats, setCollectionStats] = useState<
+    CollectionStats | undefined
+  >();
+  const [fetchCollectionStatus, setFetchCollectionStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
+
+  useEffect(() => {
+    const fire = async (id: string) => {
+      setFetchCollectionStatus(FetchStatus.Loading);
+      try {
+        const { promise } = customFetch<CollectionStats>(
+          `${API_HOST}/api/collections/${id}/stats`
+        );
+        const collection = await promise;
+        setFetchCollectionStatus(FetchStatus.Success);
+        setCollectionStats(collection);
+      } catch (e) {
+        setFetchCollectionStatus(FetchStatus.Error);
+      }
+    };
+    // if this is a collectionItem, look up the collection
+    if (artifact?.MAP?.subType === SubType.CollectionItem) {
+      const collectionId = artifact?.MAP?.subTypeData?.collectionId;
+      if (collectionId) {
+        fire(collectionId);
+
+        return () => {
+          setCollectionStats(undefined);
+          setFetchCollectionStatus(FetchStatus.Idle);
+        };
+      }
     }
-    return <div></div>;
-  };
+  }, [artifact]);
+
+  const renderSubTypeItem = useCallback(
+    (subType: SubType, value: any) => {
+      console.log("rendering 2", subType, value);
+      switch (subType) {
+        case SubType.Collection:
+        //return <Collection {...value} />;
+        case SubType.CollectionItem:
+          try {
+            const item = value as CollectionItem;
+            return (
+              collectionStats && (
+                <CollectionItem collectionItem={item} stats={collectionStats} />
+              )
+            );
+          } catch (e) {
+            console.log(e);
+          }
+      }
+      return <div></div>;
+    },
+    [collectionStats]
+  );
 
   const renderSubType = useCallback(
     (k: string, v: string) => {
+      console.log("renderinggg", k, v);
       return (
         <div
           className={`${k === "subTypeData" ? "w-full" : ""} ${
@@ -258,10 +313,6 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
               src={`https://b.map.sv/tx/${v?.split("b://")[1]}/file`}
               controls
             />
-          ) : k === "subTypeData" ? (
-            <div className="w-full flex items-center justify-between">
-              {renderSubTypeItem("collectionItem" as SubType, v as string)}
-            </div>
           ) : (
             v
           )}
@@ -278,6 +329,20 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   const ownsInscription = useMemo(() => {
     return artifact && ordUtxos?.some((o) => o.origin === artifact.origin);
   }, [artifact, ordUtxos]);
+
+  const collectionSigMatches = useMemo(() => {
+    if (
+      collectionStats &&
+      artifact &&
+      collectionStats.SIGMA &&
+      artifact.SIGMA
+    ) {
+      return (
+        head(collectionStats.SIGMA)?.address === head(artifact.SIGMA)?.address
+      );
+    }
+    return false;
+  }, [collectionStats, artifact]);
 
   const content = useMemo(() => {
     if (!artifact) {
@@ -350,6 +415,43 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 </div>
               )}
             </div>
+            {artifact?.SIGMA &&
+              artifact?.SIGMA?.length > 0 &&
+              !artifact.SIGMA[0]?.valid && (
+                <div className="my-2 bg-red-800 text-white p-2 rounded">
+                  Invalid Signature
+                </div>
+              )}
+            {artifact?.MAP?.subType && (
+              <div
+                className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 my-4 md:my-0 md:mb-2 cursor-pointer hover:bg-[#222]"
+                onClick={() =>
+                  Router.push(
+                    `/collection/${artifact?.MAP?.subTypeData.collectionId}`
+                  )
+                }
+              >
+                {renderSubTypeItem(
+                  artifact?.MAP?.subType,
+                  artifact?.MAP?.subTypeData
+                )}
+              </div>
+            )}
+            {collectionStats?.SIGMA && collectionSigMatches && (
+              <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 md:my-2 w-full">
+                <div className="flex items-center mb-2">
+                  <Tooltip
+                    message={`This item's signature matches the parent collection.`}
+                  >
+                    <FaSignature className="mr-2" />
+                  </Tooltip>{" "}
+                  Signed Collection Item
+                </div>
+                <div className="p-2 rounded bg-black">
+                  {head(collectionStats?.SIGMA)?.address}
+                </div>
+              </div>
+            )}
             {!ownsInscription && ordListing && (
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <h2 className="text-xl text-center font-semibold mb-2">
@@ -460,6 +562,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
               </div>
             )}
 
+            {/* // TODO: Show collection signature vs item signatuer */}
             {
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 flex flex-col md:my-2">
                 <div className="flex justify-between items-center">
@@ -477,43 +580,57 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
             }
             {artifact?.MAP &&
               Object.entries(artifact.MAP)
-                .filter(([k, v]) => k !== "cmd" && k !== "type" && k !== "type")
-                .map(([k, v]) => (
-                  <div
-                    className={`${
-                      k === "collection" ? "cursor-pointer hover:bg-[#222]" : ""
-                    } bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-4 my-4 md:my-0 md:mb-2`}
-                    key={k}
-                    onClick={() => {
-                      if (k === "collection") {
-                        router.push(
-                          `/collection/${encodeURIComponent(v as string)}`
-                        );
-                      }
-                    }}
-                  >
+                .filter(
+                  ([k, v]) =>
+                    k !== "cmd" &&
+                    k !== "type" &&
+                    k !== "subType" &&
+                    k !== "subTypeData"
+                )
+                .map(([k, v]) => {
+                  return (
                     <div
-                      className={`flex items-center overflow-auto ${
-                        k === "audio" || k === "stats"
-                          ? "flex-col"
-                          : "flex-row justify-between"
-                      }`}
+                      className={`${
+                        k === "collection" ||
+                        k === "collectionId" ||
+                        v?.collectionId
+                          ? "cursor-pointer hover:bg-[#222]"
+                          : ""
+                      } bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-4 my-4 md:my-0 md:mb-2`}
+                      key={k}
+                      onClick={() => {
+                        if (
+                          k === "collection" ||
+                          k === "collectionId" ||
+                          v?.collectionId
+                        ) {
+                          router.push(`/collection/${v.collectionId}`);
+                        }
+                      }}
                     >
-                      {k !== "subType" && k !== "subTypeData" ? (
-                        <div
-                          className={`${
-                            k === "audio" || k === "stats"
-                              ? "text-center"
-                              : "text-left"
-                          } `}
-                        >
-                          {k}
-                        </div>
-                      ) : null}
-                      {k !== "subType" && renderSubType(k, v as string)}
+                      <div
+                        className={`flex items-center overflow-auto ${
+                          k === "audio" || k === "stats"
+                            ? "flex-col"
+                            : "flex-row justify-between"
+                        }`}
+                      >
+                        {k !== "subType" && k !== "subTypeData" ? (
+                          <div
+                            className={`${
+                              k === "audio" || k === "stats"
+                                ? "text-center"
+                                : "text-left"
+                            } `}
+                          >
+                            {k}
+                          </div>
+                        ) : null}
+                        {k && v && typeof v === "string" && renderSubType(k, v)}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
           </div>
         </div>
       </div>
