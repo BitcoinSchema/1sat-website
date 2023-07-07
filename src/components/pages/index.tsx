@@ -194,13 +194,13 @@ const Layout: React.FC<Props> = ({ children }) => {
         stats.settled + 6 < stats.latest && (
           <div className="rounded bg-[#111] p-2 mb-8 w-full">
             <div className=" mx-auto max-w-lg">
-              <p
+              <div
                 className="cursor-pointer flex items-center justify-center hover:text-orange-200 text-orange-300 pl-2"
                 onClick={() => setShowBlockSync(true)}
               >
                 <LoaderIcon className="mr-2" />
                 Syncing. Click for details.
-              </p>
+              </div>
               <p className="text-center text-red-300 mt-2">
                 BALANCES WILL BE INACCURATE UNTIL SYNCED.
               </p>
@@ -263,7 +263,7 @@ const Layout: React.FC<Props> = ({ children }) => {
         {/* {!idKey && <div className="mx-4">·</div>}
 
         {!idKey && (
-          <div className="cursor-pointer text-red-500" onClick={importId}>
+          <div className="cursor-pointer" onClick={importId}>
             Import Identity
           </div>
         )} */}

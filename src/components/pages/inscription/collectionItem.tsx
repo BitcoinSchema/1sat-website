@@ -16,20 +16,25 @@ type CollectionItem = {
 };
 
 type CollectionItemProps = {
-  collectionItem: CollectionItem;
+  map: { [key: string]: any };
   stats: CollectionStats;
 };
 
-const CollectionItem: React.FC<CollectionItemProps> = ({
-  collectionItem,
-  stats,
-}) => {
+const CollectionItem: React.FC<CollectionItemProps> = ({ map, stats }) => {
+  const collectionItem = map.subTypeData as CollectionItem;
+  const name = map.name || collectionItem.name;
   return (
     <div className="w-full">
       <div className="text-center font-semibold">
         {stats?.MAP?.name}
         {collectionItem?.mintNumber ? ` #${collectionItem?.mintNumber}` : ""}
       </div>
+      {name && (
+        <div className="flex items-center justify-between">
+          <div className="text-left text-[#777]">name</div>
+          <div className="ml-2">{name}</div>
+        </div>
+      )}
       {collectionItem.rank && (
         <div className="text-left text-[#777]">Rank: {collectionItem.rank}</div>
       )}

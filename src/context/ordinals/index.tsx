@@ -1,7 +1,8 @@
 import { FetchStatus, toastErrorProps } from "@/components/pages";
 import { SortListingsBy } from "@/components/pages/market/listings";
 import { readFileAsBase64 } from "@/utils/file";
-import { MAP } from "bmapjs/types/protocols/map";
+import { createChangeOutput, signPayment } from "@/utils/transaction";
+
 import {
   P2PKHAddress,
   PrivateKey,
@@ -24,6 +25,7 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 import * as http from "../../utils/httpClient";
+import { MAP } from "../bitcoinschema";
 import { useBitsocket } from "../bitsocket";
 import { ORDS_PER_PAGE, PendingTransaction, useWallet } from "../wallet";
 
@@ -139,6 +141,7 @@ type ContextValue = {
   stats?: Stats | undefined;
   getStats: () => void;
   buyArtifact: (outPoint: string) => Promise<void>;
+  cancelListing: (ordUtxo: OrdUtxo) => Promise<void>;
   inscribeUtf8: (
     text: string,
     contentType: string,
@@ -193,6 +196,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     fundingUtxos,
     ordAddress,
     payPk,
+    ordPk,
     setPendingTransaction,
   } = useWallet();
 
@@ -498,6 +502,110 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     [getInscriptionByInscriptionId]
   );
 
+  const cancelListing = useCallback(
+    async (listingUtxo: OrdUtxo) => {
+      if (!payPk || !ordAddress || !ordPk || !changeAddress) {
+        return;
+      }
+
+      const paymentUtxo = head(
+        fundingUtxos?.sort((a, b) => (a.satoshis > b.satoshis ? -1 : 1))
+      );
+
+      if (!paymentUtxo) {
+        console.log("no payment utxo");
+        return;
+      }
+      const paymentPk = PrivateKey.from_wif(payPk);
+      const ordinalPk = PrivateKey.from_wif(ordPk);
+      console.log("cancel listing", listingUtxo);
+      const listingTxid = head(listingUtxo.outpoint.split("_"));
+      if (!listingTxid) {
+        console.log("no listing txid");
+        return;
+      }
+
+      const cancelTx = new Transaction(1, 0);
+
+      const { promise } = http.customFetch<MarketResponse>(
+        `${API_HOST}/api/market/${listingUtxo.outpoint}`
+      );
+
+      const { script } = await promise;
+
+      let ordIn = new TxIn(
+        Buffer.from(listingTxid, "hex"),
+        0,
+        Script.from_asm_string("")
+      );
+      cancelTx.add_input(ordIn);
+
+      let utxoIn = new TxIn(
+        Buffer.from(paymentUtxo.txid, "hex"),
+        paymentUtxo.vout,
+        Script.from_asm_string("")
+      );
+      cancelTx.add_input(utxoIn);
+
+      const destinationAddress = P2PKHAddress.from_string(ordAddress);
+      const satOut = new TxOut(
+        BigInt(1),
+        destinationAddress.get_locking_script()
+      );
+      cancelTx.add_output(satOut);
+
+      const changeOut = createChangeOutput(
+        cancelTx,
+        changeAddress,
+        paymentUtxo.satoshis
+      );
+      cancelTx.add_output(changeOut);
+
+      // sign listing to cancel
+      const sig = cancelTx.sign(
+        ordinalPk,
+        SigHash.SINGLE | SigHash.ANYONECANPAY | SigHash.FORKID,
+        0,
+        Script.from_bytes(Buffer.from(script, "base64")),
+        // TODO: Use actual satoshis amount from listing utxo
+        BigInt(1)
+      );
+
+      ordIn.set_unlocking_script(
+        Script.from_asm_string(
+          `${sig.to_hex()} ${ordinalPk.to_public_key().to_hex()} OP_1`
+        )
+      );
+
+      cancelTx.set_input(0, ordIn);
+
+      utxoIn = signPayment(cancelTx, paymentPk, 1, paymentUtxo, utxoIn);
+      cancelTx.set_input(1, utxoIn);
+
+      setPendingTransaction({
+        rawTx: cancelTx.to_hex(),
+        size: cancelTx.get_size(),
+        // TODO: Fee comes from locked utxo so we havent calculated it here?
+        fee: 0,
+        numInputs: cancelTx.get_ninputs(),
+        numOutputs: cancelTx.get_noutputs(),
+        txid: cancelTx.get_id_hex(),
+        marketFee: 0,
+        inputTxid: paymentUtxo.txid,
+      });
+
+      Router.push("/preview");
+    },
+    [
+      ordPk,
+      fundingUtxos,
+      changeAddress,
+      ordAddress,
+      payPk,
+      setPendingTransaction,
+    ]
+  );
+
   const buyArtifact = useCallback(
     async (outPoint: string) => {
       if (!fundingUtxos || !payPk || !ordAddress || !changeAddress) {
@@ -720,6 +828,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       inscribeUtf8,
       inscribeFile,
       inscribeStatus,
+      cancelListing,
     }),
     [
       bsv20s,
@@ -745,6 +854,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       inscribeUtf8,
       inscribeFile,
       inscribeStatus,
+      cancelListing,
     ]
   );
 
@@ -799,7 +909,7 @@ const handleInscribing = async (
       changeAddress,
       0.9,
       inscription
-      // undefined // optional metadata
+      // undefined, // optional metadata
       // idKey // optional id key
     );
     return tx;

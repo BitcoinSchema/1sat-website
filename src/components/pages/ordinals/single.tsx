@@ -1,6 +1,6 @@
 import Artifact from "@/components/artifact";
 import OrdAddress from "@/components/ordAddress";
-import { API_HOST, OrdUtxo } from "@/context/ordinals";
+import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { head } from "lodash";
 import Router from "next/router";
@@ -14,6 +14,7 @@ type OrdinalProps = {
 
 const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
   const { ordAddress, ordUtxos, transfer } = useWallet();
+  const { cancelListing } = useOrdinals();
 
   useEffect(() => console.log({ artifact }), [artifact]);
 
@@ -95,11 +96,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                     <div>Cancel Listing</div>
                     <div
                       className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
-                      onClick={async () => {
-                        Router.push(
-                          `/market/cancel/${artifact.txid}_${artifact.vout}`
-                        );
-                      }}
+                      onClick={async () => await cancelListing(artifact)}
                     >
                       Cancel
                     </div>
@@ -117,7 +114,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
         </div>
       )
     );
-  }, [ordAddress, isBsv20, artifact, transfer]);
+  }, [ordAddress, isBsv20, artifact, transfer, cancelListing]);
 
   return (
     <div className="flex md:flex-row flex-col justify-between items-start w-full">

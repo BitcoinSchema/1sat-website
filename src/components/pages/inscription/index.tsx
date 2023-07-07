@@ -1,8 +1,8 @@
 import Artifact from "@/components/artifact";
-import BuyArtifactModal from "@/components/modals/buyArtifact";
+import BuyArtifactModal from "@/components/modal/buyArtifact";
 import Tabs from "@/components/tabs";
 import Tooltip from "@/components/tooltip";
-import { useBitcoinSchema } from "@/context/bitcoinschema";
+import { MAP, useBitcoinSchema } from "@/context/bitcoinschema";
 import { API_HOST, OrdUtxo, SIGMA, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { fillContentType } from "@/utils/artifact";
@@ -48,8 +48,12 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     useWallet();
   const { inscriptionId } = router.query;
   const { getBmapTxById } = useBitcoinSchema();
-  const { getArtifactByInscriptionId, fetchInscriptionsStatus, buyArtifact } =
-    useOrdinals();
+  const {
+    getArtifactByInscriptionId,
+    fetchInscriptionsStatus,
+    buyArtifact,
+    cancelListing,
+  } = useOrdinals();
 
   useEffect(() => {
     console.log({ inscriptionId });
@@ -228,10 +232,10 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   }, [isBsv20]);
 
   // TODO: Collection support
-
   const [collectionStats, setCollectionStats] = useState<
     CollectionStats | undefined
   >();
+
   const [fetchCollectionStatus, setFetchCollectionStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
@@ -264,17 +268,16 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   }, [artifact]);
 
   const renderSubTypeItem = useCallback(
-    (subType: SubType, value: any) => {
-      console.log("rendering 2", subType, value);
+    (mapData: MAP) => {
+      const subType: SubType = mapData.subType;
       switch (subType) {
         case SubType.Collection:
         //return <Collection {...value} />;
         case SubType.CollectionItem:
           try {
-            const item = value as CollectionItem;
             return (
               collectionStats && (
-                <CollectionItem collectionItem={item} stats={collectionStats} />
+                <CollectionItem map={mapData} stats={collectionStats} />
               )
             );
           } catch (e) {
@@ -286,41 +289,34 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     [collectionStats]
   );
 
-  const renderSubType = useCallback(
-    (k: string, v: string) => {
-      console.log("renderinggg", k, v);
-      return (
-        <div
-          className={`${k === "subTypeData" ? "w-full" : ""} ${
-            k === "audio" || k === "stats" || k === "subTypeData"
-              ? "w-full"
-              : "text-right"
-          } `}
-        >
-          {k === "stats" ? (
-            Object.entries(JSON.parse(v)).map(([ks, vs]) => (
-              <div
-                key={ks}
-                className="w-full flex items-center justify-between"
-              >
-                <div className="">{ks}</div>
-                <div>{vs as string}</div>
-              </div>
-            ))
-          ) : k === "audio" ? (
-            <audio
-              className="w-full h-8 mt-2"
-              src={`https://b.map.sv/tx/${v?.split("b://")[1]}/file`}
-              controls
-            />
-          ) : (
-            v
-          )}
-        </div>
-      );
-    },
-    [renderSubTypeItem]
-  );
+  const renderSubType = useCallback((k: string, v: string) => {
+    return (
+      <div
+        className={`${k === "subTypeData" ? "w-full" : ""} ${
+          k === "audio" || k === "stats" || k === "subTypeData"
+            ? "w-full"
+            : "text-right"
+        } `}
+      >
+        {k === "stats" ? (
+          Object.entries(JSON.parse(v)).map(([ks, vs]) => (
+            <div key={ks} className="w-full flex items-center justify-between">
+              <div className="">{ks}</div>
+              <div>{vs as string}</div>
+            </div>
+          ))
+        ) : k === "audio" ? (
+          <audio
+            className="w-full h-8 mt-2"
+            src={`https://b.map.sv/tx/${v?.split("b://")[1]}/file`}
+            controls
+          />
+        ) : (
+          v
+        )}
+      </div>
+    );
+  }, []);
 
   useEffect(() => {
     console.log({ ordUtxo, artifact });
@@ -337,8 +333,12 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       collectionStats.SIGMA &&
       artifact.SIGMA
     ) {
+      const collectionAddress = head(collectionStats.SIGMA)?.address;
+      const artifactAddress = head(artifact.SIGMA)?.address;
       return (
-        head(collectionStats.SIGMA)?.address === head(artifact.SIGMA)?.address
+        !!collectionAddress &&
+        !!artifactAddress &&
+        collectionAddress === artifactAddress
       );
     }
     return false;
@@ -422,7 +422,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                   Invalid Signature
                 </div>
               )}
-            {artifact?.MAP?.subType && (
+            {artifact?.MAP?.subType && artifact?.MAP?.subTypeData && (
               <div
                 className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 my-4 md:my-0 md:mb-2 cursor-pointer hover:bg-[#222]"
                 onClick={() =>
@@ -431,10 +431,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                   )
                 }
               >
-                {renderSubTypeItem(
-                  artifact?.MAP?.subType,
-                  artifact?.MAP?.subTypeData
-                )}
+                {renderSubTypeItem(artifact?.MAP)}
               </div>
             )}
             {collectionStats?.SIGMA && collectionSigMatches && (
@@ -550,9 +547,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     <div
                       className="rounded bg-[#222] cursor-pointer p-2 hover:bg-[#333] transition text-white"
                       onClick={async () => {
-                        // Router.push(
-                        //   `/market/cancel/${ordUtxo.txid}_${ordUtxo.vout}`
-                        // );
+                        await cancelListing(ordUtxo);
                       }}
                     >
                       Cancel

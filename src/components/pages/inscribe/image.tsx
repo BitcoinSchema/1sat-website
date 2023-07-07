@@ -99,34 +99,32 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
 
   return (
     <div className="max-w-lg mx-auto">
-      <form>
-        <Label
-          className={`${
-            selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
-          } rounded border border-dashed border-[#222] flex items-center justify-center`}
-        >
-          {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
-          {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
-          <Input type="file" className="hidden" onChange={handleFileChange} />
-          {selectedFile && (
-            <div className="text-sm text-center w-full">
-              {formatBytes(selectedFile.size)} Bytes
-            </div>
-          )}
-        </Label>
-        {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
+      <Label
+        className={`${
+          selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
+        } rounded border border-dashed border-[#222] flex items-center justify-center`}
+      >
+        {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
+        {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
+        <Input type="file" className="hidden" onChange={handleFileChange} />
+        {selectedFile && (
+          <div className="text-sm text-center w-full">
+            {formatBytes(selectedFile.size)} Bytes
+          </div>
+        )}
+      </Label>
+      {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
 
-        {selectedFile && preview && <>{artifact}</>}
+      {selectedFile && preview && <>{artifact}</>}
 
-        <button
-          disabled={submitDisabled}
-          type="submit"
-          onClick={clickInscribe}
-          className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
-        >
-          Inscribe Image
-        </button>
-      </form>
+      <button
+        disabled={submitDisabled}
+        type="submit"
+        onClick={clickInscribe}
+        className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
+      >
+        Inscribe Image
+      </button>
     </div>
   );
 };

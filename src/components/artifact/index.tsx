@@ -1,4 +1,4 @@
-import { API_HOST, SIGMA, useOrdinals } from "@/context/ordinals";
+import { API_HOST, SIGMA } from "@/context/ordinals";
 import { head } from "lodash";
 import Image from "next/image";
 import Router from "next/router";
@@ -9,12 +9,14 @@ import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import styled from "styled-components";
 import tw from "twin.macro";
-import BuyArtifactModal from "../modals/buyArtifact";
+import BuyArtifactModal from "../modal/buyArtifact";
 import Model from "../model";
 import { FetchStatus } from "../pages";
 import Tooltip from "../tooltip";
 import AudioArtifact from "./audio";
+import HTMLArtifact from "./html";
 import JsonArtifact from "./json";
+import MarkdownArtifact from "./markdown";
 import TextArtifact from "./text";
 import VideoArtifact from "./video";
 
@@ -71,10 +73,10 @@ const Artifact: React.FC<ArtifactProps> = ({
     FetchStatus.Loading
   );
   const [showZoom, setShowZoom] = useState<boolean>(false);
-  const { buyArtifact } = useOrdinals();
 
   const [showBuy, setShowBuy] = useState<boolean>(false);
   const [hoverPrice, setHoverPrice] = useState<boolean>(false);
+
   const type = useMemo(() => {
     let artifactType = undefined;
     const t = head(contentType?.toLowerCase().split(";"));
@@ -182,13 +184,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         />
       </>
     ) : type === ArtifactType.HTML ? (
-      <div className="w-full h-full">
-        <iframe
-          className="w-full h-full min-h-[60vh]"
-          src={`${API_HOST}/api/files/inscriptions/${origin}`}
-          sandbox=" "
-        />
-      </div>
+      origin && <HTMLArtifact origin={origin} />
     ) : type === ArtifactType.BSV20 || type === ArtifactType.JSON ? (
       <div
         className={`h-full p-4 ${classNames?.wrapper || ""} ${
@@ -224,7 +220,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           classNames?.media || ""
         }`}
       >
-        MarkDown Inscriptions not yet supported.
+        <MarkdownArtifact origin={origin} />
       </div>
     ) : type === ArtifactType.PDF ? (
       <div
@@ -397,11 +393,6 @@ const Artifact: React.FC<ArtifactProps> = ({
 };
 
 export default Artifact;
-
-const toBase64 = (str: string) =>
-  typeof window === "undefined"
-    ? Buffer.from(str).toString("base64")
-    : window.btoa(str);
 
 const shimmer = (w: number, h: number) => `
 <svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">

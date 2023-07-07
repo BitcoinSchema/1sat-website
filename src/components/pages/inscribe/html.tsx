@@ -18,12 +18,28 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
   const { payPk, ordAddress, changeAddress, getUTXOs } = useWallet();
 
   const changeText = useCallback(
-    (e: any) => {
+    async (e: any) => {
       setText(e.target.value);
-      // TODO: Show HTML preview
     },
     [setText]
   );
+
+  // useEffect(() => {
+  //   const fire = async (t: string) => {
+  //     // send base64 encoded preview html to server
+  //     // https://ordfs.network/preview/<base64 encoded html>
+  //     const encoded = btoa(t);
+  //     const previewUrl = `https://ordfs.network/preview/${encoded}`;
+  //     const result = await fetch(previewUrl);
+  //     const h = await result.text();
+  //     console.log("preview", { h });
+  //     setPreviewHtml(h);
+  //   };
+  //   if (text) {
+  //     fire(text);
+  //   }
+  // }, [text]);
+
   const submitDisabled = useMemo(() => {
     return inscribeStatus === FetchStatus.Loading;
   }, [inscribeStatus]);
@@ -73,7 +89,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
     }
   }, [getUTXOs, changeAddress, ordAddress, payPk, inscribeHtml]);
 
-  const previewHtml = useMemo(() => {
+  const html = useMemo(() => {
     if (!text) {
       return (
         <div className="flex items-center justify-center text-center w-full h-full text-[#333]">
@@ -81,11 +97,14 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
         </div>
       );
     }
+    // base64 encode the html
+    const encoded = btoa(text);
     return (
       <iframe
-        sandbox=" "
+        sandbox="allow-scripts"
         className="w-full rounded h-full"
-        src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}
+        // src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}
+        src={`https://ordfs.network/preview/${encoded}`}
       />
     );
   }, [text]);
@@ -100,10 +119,8 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
             value={text}
           />
         </div>
-        {previewHtml && (
-          <hr className="block md:hidden my-2 h-2 border-0 bg-[#222]" />
-        )}
-        <div className="md:w-1/2 md:ml-2">{previewHtml}</div>
+        {html && <hr className="block md:hidden my-2 h-2 border-0 bg-[#222]" />}
+        <div className="md:w-1/2 md:ml-2">{html}</div>
       </div>
       <button
         disabled={submitDisabled}

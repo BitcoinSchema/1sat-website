@@ -9,6 +9,10 @@ import React, {
 } from "react";
 import * as http from "../../utils/httpClient";
 
+export type MAP = {
+  [key: string]: any;
+};
+
 type ContextValue = {
   getArtifactsByCollectionId: (collectionId: string) => Promise<void>;
   fetchCollectionStatus: FetchStatus;

@@ -1,4 +1,5 @@
 // import { BAP } from "bap"
+import { decryptData, encryptData } from "@/utils/encryption";
 import { head } from "lodash";
 import React, {
   useCallback,
@@ -9,7 +10,6 @@ import React, {
 } from "react";
 import { FetchStatus } from "../../components/pages";
 import { useLocalStorage } from "../../utils/storage";
-import { useWallet } from "../wallet";
 
 // duymmy class until bap is fixed
 class BAP {
@@ -39,11 +39,9 @@ const BapProvider = (props) => {
   );
   const [decryptStatus, setDecryptStatus] = useState(FetchStatus.Idle);
 
-  const { encrypt, decrypt } = useWallet();
-
   useEffect(() => {
     const fire = async () => {
-      const id = await decrypt(identity);
+      const id = decryptData(identity);
 
       let bapId = new BAP(id.xprv);
       // console.log("BAP id", id.xprv);
@@ -60,7 +58,7 @@ const BapProvider = (props) => {
       // console.log("FIRE");
       fire();
     }
-  }, [identity, decrypt, decryptStatus, decIdentity, setDecIdentity]);
+  }, [identity, decryptStatus, decIdentity, setDecIdentity]);
 
   const isValidIdentity = useCallback((decryptedIdString) => {
     const decIdentity = JSON.parse(decryptedIdString);
@@ -90,11 +88,13 @@ const BapProvider = (props) => {
 
   const onFileChange = useCallback(
     async (e) => {
+      console.log("File changed", e.target.files[0]);
       setLoadIdentityStatus(FetchStatus.Loading);
 
       const file = head(e.target.files);
       const text = await toText(file);
 
+      console.log({ text });
       if (!isValidIdentity(text)) {
         console.log("error: invalid identity file");
         setLoadIdentityStatus(FetchStatus.Error);
@@ -104,8 +104,7 @@ const BapProvider = (props) => {
       try {
         // console.log({ text, authToken });
         // encrypt the uploaded file and store it locally
-
-        const encryptedData = await encrypt(JSON.parse(text));
+        const encryptedData = encryptData(JSON.parse(text));
         console.log({ encryptedData });
         setIdentity(encryptedData);
 
@@ -114,7 +113,7 @@ const BapProvider = (props) => {
         setLoadIdentityStatus(FetchStatus.Error);
       }
     },
-    [loadIdentityStatus, isValidIdentity, encrypt, setIdentity]
+    [loadIdentityStatus, isValidIdentity, setIdentity]
   );
 
   const getIdentity = useCallback(async () => {

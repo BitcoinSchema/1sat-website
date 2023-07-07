@@ -14,7 +14,7 @@ import init, {
   TxIn as WasmTxIn,
   TxOut as WasmTxOut,
 } from "bsv-wasm-web";
-import { Inscription, Utxo, sendOrdinal } from "js-1sat-ord";
+import { Inscription, Utxo } from "js-1sat-ord";
 import { head, uniq } from "lodash";
 import Router, { useRouter } from "next/router";
 import React, {
@@ -30,6 +30,9 @@ import toast from "react-hot-toast";
 import { useBitsocket } from "../bitsocket";
 import { API_HOST, BSV20, OrdUtxo } from "../ordinals";
 import { useRates } from "../rates";
+import { useStorage } from "../storage";
+import { handleTransferring } from "./transfer";
+import { EncryptDecrypt, EncryptedBackupJson, WocUtxo } from "./types";
 
 export const PROTOCOL_START_HEIGHT = 783968;
 export const ORDS_PER_PAGE = 60;
@@ -43,13 +46,6 @@ type BroadcastResponse = {
   code?: number;
   status?: number;
   error?: string;
-};
-
-export type WocUtxo = {
-  height: number;
-  tx_hash: string;
-  tx_pos: number;
-  value: number;
 };
 
 type ScriptSig = {
@@ -151,6 +147,9 @@ type ContextValue = {
   fetchUtxosStatus: FetchStatus;
   fundingUtxos: Utxo[] | undefined;
   generateKeys: () => Promise<void>;
+  encryptedBackup: EncryptedBackupJson | undefined;
+  setEncryptedBackup: (json: EncryptedBackupJson) => void;
+  generateStatus: FetchStatus;
   getOrdinalUTXOs: (
     address: string,
     page?: number | undefined,
@@ -171,6 +170,10 @@ type ContextValue = {
   setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
   setFetchUtxoByOriginStatus: (status: FetchStatus) => void;
   fetchUtxoByOriginStatus: FetchStatus;
+  passphrase: string | undefined;
+  setPassphrase: (phrase: string) => void;
+  setShowEnterPassphrase: (show: EncryptDecrypt | undefined) => void;
+  showEnterPassphrase: EncryptDecrypt | undefined;
   setFetchBsv20sStatus: (status: FetchStatus) => void;
   setOrdUtxos: (ordUtxos: OrdUtxo[]) => void;
   setPendingTransaction: (pendingTransaction: PendingTransaction) => void;
@@ -195,6 +198,11 @@ interface Props {
 }
 
 const WalletProvider: React.FC<Props> = (props) => {
+  const { ready, getItem, setItem, removeItem, encryptionKey } = useStorage(); // Access the storage context values
+
+  // bsv-wasm initialization flag
+  const [initialized, setInitialized] = useState<boolean>(false);
+
   const [backupFile, setBackupFile] = useState<File>();
   const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -215,7 +223,6 @@ const WalletProvider: React.FC<Props> = (props) => {
     undefined
   );
   const [lastEventId, setLastEventId] = useState<string>();
-  const [initialized, setInitialized] = useState<boolean>(false);
   const [artifacts, setArtifacts] = useLocalStorage<Inscription2[] | undefined>(
     "1satart",
     undefined
@@ -250,11 +257,34 @@ const WalletProvider: React.FC<Props> = (props) => {
     undefined
   );
 
+  const [mnemonic, setMnemonic] = useState<string | undefined>(undefined);
+  // The child key deptch for the funding and ordinal addresses
+  const [changeAddressPath, setChangeAddressPath] = useState<
+    string | undefined
+  >(undefined);
+  const [ordAddressPath, setOrdAddressPath] = useState<string | undefined>(
+    undefined
+  );
+
   const [usdRate, setUsdRate] = useState<number>(0);
   const { rates } = useRates();
 
+  // Needs to persist so we can decrypt the local keys file
+  const [encryptedBackup, setEncryptedBackup] =
+    useLocalStorage<EncryptedBackupJson>("1sebj", undefined);
+  const [generateStatus, setGenerateStatus] = useState<FetchStatus>(
+    FetchStatus.Idle
+  );
+
   const router = useRouter();
   const { page, sort } = router.query;
+
+  // Modal control flags
+  const [showEnterPassphrase, setShowEnterPassphrase] = useState<
+    EncryptDecrypt | undefined
+  >();
+  // passphrase is used to encrypt keys
+  const [passphrase, setPassphrase] = useState<string | undefined>();
 
   const currentPage = useMemo(() => {
     setFetchBsv20sStatus(FetchStatus.Idle);
@@ -1061,6 +1091,22 @@ const WalletProvider: React.FC<Props> = (props) => {
     [payPk, ordPk]
   );
 
+  // Set key state variables from indexedDB
+  const loadUnencryptedKeys = useCallback(async () => {
+    if (ready) {
+      const ordPk = await getItem("ordPk");
+      const payPk = await getItem("payPk");
+      if (ordPk && payPk) {
+        setOrdPk(ordPk);
+        setPayPk(payPk);
+        return;
+      } else {
+        console.log("No keys");
+        return;
+      }
+    }
+  }, [ready, getItem, setOrdPk, setPayPk]);
+
   const downloadPendingTx = useCallback(
     (e?: any) => {
       if (!pendingTransaction) {
@@ -1133,6 +1179,13 @@ const WalletProvider: React.FC<Props> = (props) => {
       getUtxoByOrigin,
       setFetchUtxoByOriginStatus,
       fetchUtxoByOriginStatus,
+      passphrase,
+      encryptedBackup,
+      setEncryptedBackup,
+      generateStatus,
+      setPassphrase,
+      setShowEnterPassphrase,
+      showEnterPassphrase,
     }),
     [
       bsv20Activity,
@@ -1182,6 +1235,13 @@ const WalletProvider: React.FC<Props> = (props) => {
       getUtxoByOrigin,
       setFetchUtxoByOriginStatus,
       fetchUtxoByOriginStatus,
+      passphrase,
+      encryptedBackup,
+      setEncryptedBackup,
+      generateStatus,
+      setPassphrase,
+      setShowEnterPassphrase,
+      showEnterPassphrase,
     ]
   );
 
@@ -1201,42 +1261,3 @@ const useWallet = (): ContextValue => {
 };
 
 export { WalletProvider, useWallet };
-
-const handleTransferring = async (
-  payPk: string,
-  ordPk: string,
-  address: string,
-  fundingUtxo: Utxo,
-  ordinalUtxo: Utxo,
-  satsPerByteFee: number
-) => {
-  const paymentPk = PrivateKey.from_wif(payPk);
-  const ordinalPk = PrivateKey.from_wif(ordPk);
-  const changeAddress = P2PKHAddress.from_pubkey(
-    paymentPk.to_public_key()
-  ).to_string();
-  console.log({
-    fundingUtxo,
-    ordinalUtxo,
-    paymentPk,
-    changeAddress,
-    satsPerByteFee,
-    ordinalPk,
-    address,
-  });
-  try {
-    const tx = await sendOrdinal(
-      fundingUtxo,
-      ordinalUtxo,
-      paymentPk,
-      changeAddress,
-      satsPerByteFee,
-      ordinalPk,
-      address
-    );
-    return tx;
-  } catch (e) {
-    console.log({ e });
-    throw e;
-  }
-};
