@@ -365,6 +365,7 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   useEffect(() => {
     const fire = async () => {
+      console.log("INIT!!!!!!!!!!!!!");
       await init();
       setInitialized(true);
     };

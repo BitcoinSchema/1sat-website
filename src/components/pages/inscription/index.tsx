@@ -5,7 +5,6 @@ import Tooltip from "@/components/tooltip";
 import { MAP, useBitcoinSchema } from "@/context/bitcoinschema";
 import { API_HOST, OrdUtxo, SIGMA, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
-import { fillContentType } from "@/utils/artifact";
 import { customFetch } from "@/utils/httpClient";
 import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
@@ -66,7 +65,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
         setFetchDataStatus(FetchStatus.Loading);
         const art = await getArtifactByInscriptionId(iid);
         if (art) {
-          const art2 = await fillContentType(art);
+          // const art2 = await fillContentType(art);
 
           // const bmapTx = await getBmapTxById(art.txid);
           setFetchDataStatus(FetchStatus.Success);
@@ -79,9 +78,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           //   // should update the library to return the vout on each MAP element
           //   art2.MAP = bmapTx.MAP[art2.vout];
           // }
-          console.log("setting", art2);
+          console.log("setting", art);
 
-          setArtifact(art2);
+          setArtifact(art);
         }
       } catch (e) {
         setFetchDataStatus(FetchStatus.Error);

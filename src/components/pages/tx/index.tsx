@@ -1,6 +1,5 @@
 import Tabs from "@/components/tabs";
 import { OrdUtxo, useOrdinals } from "@/context/ordinals";
-import { fillContentType } from "@/utils/artifact";
 import { head, last } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -35,8 +34,8 @@ const TxPage: React.FC<PageProps> = ({}) => {
       let arts = [];
       for (let a of art) {
         if (a.origin?.split("_")[0] === a.txid) {
-          const art2 = await fillContentType(a);
-          arts.push(art2);
+          // const art2 = await fillContentType(a);
+          arts.push(a);
         } else {
           console.log("other", a);
         }

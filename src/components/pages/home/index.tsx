@@ -2,7 +2,6 @@ import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
 import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
-import { fillContentType } from "@/utils/artifact";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Image from "next/image";
@@ -76,8 +75,9 @@ const HomePage: React.FC<PageProps> = ({}) => {
     const fire = async (iid: number) => {
       const art = await getArtifactByInscriptionId(iid);
       if (art) {
-        const art2 = await fillContentType(art);
-        setArtifact(art2);
+        //         console.log("FILLING", { art });
+        // const art2 = await fillContentType(art);
+        setArtifact(art);
       }
     };
     if (
