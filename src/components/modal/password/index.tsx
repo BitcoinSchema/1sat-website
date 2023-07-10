@@ -69,12 +69,7 @@ const PasswordModal: React.FC<Props> = ({ mode, onClose }) => {
       }
     }
     encryptedBackup;
-  }, [
-    setShowEnterPassphrase,
-    passphrase,
-    setEncryptionKeyFromPassphrase,
-    encryptedBackup,
-  ]);
+  }, [passphrase, setEncryptionKeyFromPassphrase, encryptedBackup]);
 
   return (
     <Modal onClose={onClose}>

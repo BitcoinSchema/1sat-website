@@ -1,4 +1,5 @@
-import crypto from "crypto";
+import { Hash } from "bsv-wasm-web";
+import randomBytes from "randombytes";
 import { bip39words } from "./bip39words";
 
 function generateEntropy(bitLength: number): Buffer {
@@ -8,13 +9,15 @@ function generateEntropy(bitLength: number): Buffer {
     );
   }
 
-  return crypto.randomBytes(bitLength / 8);
+  return randomBytes(bitLength / 8);
 }
 
 function entropyToMnemonic(entropy: Buffer): string {
   const entropyBits = bufferToBinaryString(entropy);
-  const checksum = crypto.createHash("sha256").update(entropy).digest();
-  const checksumBits = bufferToBinaryString(checksum).substring(
+  const checksum = Hash.sha_256(entropy).to_bytes();
+  // TODO: Test this change to not use crypto package
+  // const checksum = createHash("sha256").update(entropy).digest();
+  const checksumBits = bufferToBinaryString(Buffer.from(checksum)).substring(
     0,
     (entropy.length * 8) / 32
   );

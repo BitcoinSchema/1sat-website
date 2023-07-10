@@ -3,15 +3,17 @@ import { API_HOST, Ticker } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import Router, { useRouter } from "next/router";
+import { useSearchParams } from "next/navigation";
+import Router from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FetchStatus } from "..";
 
 interface PageProps extends WithRouterProps {}
 
 const TickerPage: React.FC<PageProps> = ({}) => {
-  const router = useRouter();
-  const { tick } = router.query as { tick: string };
+  const searchParams = useSearchParams();
+
+  const tick = searchParams.get("tick");
   const {
     fetchBsv20sStatus,
     setFetchBsv20sStatus,
@@ -73,17 +75,13 @@ const TickerPage: React.FC<PageProps> = ({}) => {
     <>
       {" "}
       <Head>
-        <title>1SatOrdinals.com</title>
+        <title>1SatOrdinals.com - BSV20 Ticker</title>
         <meta
           name="description"
           content="An Ordinals-compatible implementation on Bitcoin SV"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
       <Tabs
         currentTab={MarketTab.BSV20}

@@ -1,7 +1,6 @@
 import { useWallet } from "@/context/wallet";
-import init, { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { QRCodeSVG } from "qrcode.react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FiArrowDown, FiCopy } from "react-icons/fi";
@@ -37,32 +36,14 @@ const Wallet: React.FC<WalletProps> = ({}) => {
     send,
     usdRate,
     backupKeys,
+    ordAddress,
   } = useWallet();
 
   const [showKeys, setShowKeys] = useState<boolean>(false);
-  const [initialized, setInitialized] = useState<boolean>(false);
   const [showAddMoney, setShowAddMoney] = useState<boolean>(false);
   const [generateStatus, setGenerateStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
-
-  useEffect(() => {
-    const fire = async () => {
-      await init();
-      setInitialized(true);
-    };
-    if (!initialized) {
-      fire();
-    }
-  }, [initialized, setInitialized]);
-
-  const ordAddress = useMemo(() => {
-    if (initialized && ordPk) {
-      const wif = PrivateKey.from_wif(ordPk);
-      const pk = PublicKey.from_private_key(wif);
-      return wif && pk && P2PKHAddress.from_pubkey(pk).to_string();
-    }
-  }, [initialized, ordPk]);
 
   const handleConfirm = async () => {
     console.log("callback confirm");

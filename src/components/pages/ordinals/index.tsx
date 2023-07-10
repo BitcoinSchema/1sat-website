@@ -4,7 +4,8 @@ import { useOrdinals } from "@/context/ordinals";
 import { ORDS_PER_PAGE, useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import Router, { useRouter } from "next/router";
+import { useSearchParams } from "next/navigation";
+import Router from "next/router";
 import React, { useCallback, useMemo } from "react";
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { FetchStatus } from "..";
@@ -23,8 +24,9 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
     setFetchOrdinalUtxosStatus,
   } = useWallet();
   const { stats, fetchStatsStatus } = useOrdinals();
-  const router = useRouter();
-  const { page, sort } = router.query;
+  const searchParams = useSearchParams();
+  const page = searchParams.get("page");
+  const sort = searchParams.get("sort");
 
   const currentPage = useMemo(() => {
     return typeof page === "string" ? parseInt(page) : 1;
@@ -49,17 +51,13 @@ const OrdinalsPage: React.FC<PageProps> = ({}) => {
   return (
     <>
       <Head>
-        <title>1SatOrdinals.com</title>
+        <title>1SatOrdinals.com - Ordinals</title>
         <meta
           name="description"
           content="An Ordinals-compatible implementation on Bitcoin SV"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
       <Tabs
         currentTab={Tab.Wallet}

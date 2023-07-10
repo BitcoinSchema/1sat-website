@@ -3,7 +3,7 @@ import MarketTabs, { MarketTab } from "@/components/pages/market/tabs";
 import Tabs, { Tab } from "@/components/tabs";
 import { Dir, useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
-import { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FetchStatus } from "..";
 
@@ -24,12 +24,12 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
   const [lastDir, setLastDir] = useState<Dir>(dir);
 
   const { listings, getListings, fetchListingsStatus } = useOrdinals();
+  const searchParams = useSearchParams();
+  const page = searchParams.get("page");
 
   const currentPage = useMemo(() => {
-    return typeof router.query.page === "string"
-      ? parseInt(router.query.page)
-      : 1;
-  }, [router.query.page]);
+    return typeof page === "string" ? parseInt(page) : 1;
+  }, [page]);
 
   const [lastPage, setLastPage] = useState(currentPage);
 
@@ -150,7 +150,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
     <div>
       <Tabs currentTab={Tab.Market} />
 
-      <MarketTabs currentTab={MarketTab.New} />
+      <MarketTabs currentTab={MarketTab.Listings} />
       <h1 className="flex items-center text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold justify-between px-2">
         <div>Market Listings</div>
         <div onClick={() => setShowSort(true)} className="cursor-pointer">

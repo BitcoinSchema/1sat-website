@@ -3,7 +3,7 @@ import MarketTabs, { MarketTab } from "@/components/pages/market/tabs";
 import { Tab } from "@/components/tabs";
 import { useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
-import { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 import { FetchStatus } from "..";
 import Tabs from "../../tabs";
@@ -12,7 +12,8 @@ interface PageProps extends WithRouterProps {}
 
 const ActivityPage: React.FC<PageProps> = ({}) => {
   const router = useRouter();
-  const { page } = router.query as { page: string | undefined };
+  const searchParams = useSearchParams();
+  const page = searchParams.get("page");
 
   const { activity, getActivity, fetchActivityStatus } = useOrdinals();
 

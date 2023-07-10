@@ -39,7 +39,7 @@ const MarkdownArtifact: React.FC<MarkdownArtifactProps> = ({
   }, [text, fetchTextStatus, origin, setText, setFetchTextStatus]);
 
   const markdown = useMemo(() => {
-    return text && <ReactMarkdown children={text}></ReactMarkdown>;
+    return text && <ReactMarkdown>{text}</ReactMarkdown>;
   }, [text]);
 
   return fetchTextStatus === FetchStatus.Success ? (

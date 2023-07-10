@@ -4,16 +4,16 @@ import { fillContentType } from "@/utils/artifact";
 import { head, last } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import { useRouter } from "next/router";
+import { useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Ordinal from "../ordinals/single";
 
 interface PageProps extends WithRouterProps {}
 
 const TxPage: React.FC<PageProps> = ({}) => {
-  const router = useRouter();
   const [artifacts, setArtifacts] = useState<OrdUtxo[]>([]);
-  const { outpoint } = router.query;
+  const searchParams = useSearchParams();
+  const outpoint = searchParams.get("outpoint");
 
   const txid = head((outpoint as string | undefined)?.split("_"));
   const vout = outpoint?.includes("_")
@@ -51,17 +51,13 @@ const TxPage: React.FC<PageProps> = ({}) => {
   return (
     <>
       <Head>
-        <title>1SatOrdinals.com - {txid}</title>
+        <title>1SatOrdinals.com - Transaction</title>
         <meta
           name="description"
           content="An Ordinals-compatible implementation on Bitcoin SV"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
       <Tabs currentTab={undefined} />
       <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl">

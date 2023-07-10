@@ -1,5 +1,4 @@
 import { FetchStatus } from "@/components/pages";
-import { BmapTx } from "bmapjs/types/common";
 import React, {
   ReactNode,
   useCallback,
@@ -16,7 +15,7 @@ export type MAP = {
 type ContextValue = {
   getArtifactsByCollectionId: (collectionId: string) => Promise<void>;
   fetchCollectionStatus: FetchStatus;
-  collection?: BmapTx[];
+  collection?: any[]; // BmapTx[];
   getBmapTxById: (id: string) => Promise<any>;
 };
 
@@ -31,7 +30,7 @@ export const BitcoinSchemaProvider: React.FC<Props> = (props) => {
   const [fetchCollectionStatus, setFetchCollectionStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
-  const [collection, setCollection] = useState<BmapTx[]>();
+  const [collection, setCollection] = useState<any[]>(); // BmapTx[]
 
   const generateQuery = (collectionId: string, page: number = 1) => {
     const itemsPerPage = 60;
@@ -63,8 +62,11 @@ export const BitcoinSchemaProvider: React.FC<Props> = (props) => {
 
         setCollection(
           results.c.filter(
-            (c: BmapTx) =>
-              c.MAP && c.MAP.some((m) => (m?.jig as string).endsWith("_o2"))
+            (
+              c: any // BmapTx
+            ) =>
+              c.MAP &&
+              c.MAP.some((m: any) => (m?.jig as string).endsWith("_o2"))
           )
         );
       } catch (e) {

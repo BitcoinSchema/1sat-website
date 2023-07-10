@@ -1,7 +1,8 @@
 import Layout from "@/components/pages";
-import MarketPage from "@/components/pages/market";
 import { WithRouterProps } from "next/dist/client/with-router";
+import dynamic from "next/dynamic";
 import React from "react";
+const MarketPage = dynamic(() => import("@/components/pages/market"));
 
 interface PageProps extends WithRouterProps {}
 

@@ -1,7 +1,7 @@
 import Artifact from "@/components/artifact";
 import { ORDS_PER_PAGE, useWallet } from "@/context/wallet";
 import Router, { useRouter } from "next/router";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 type Props = {
   onClick?: (outPoint: string) => void;
@@ -15,10 +15,6 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
   const currentSort = useMemo(() => {
     return typeof sort === "string" ? parseInt(sort) : 0;
   }, [sort]);
-
-  useEffect(() => {
-    console.log({ currentPage });
-  }, [currentPage]);
 
   const pagination = useMemo(() => {
     return (

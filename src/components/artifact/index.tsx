@@ -1,7 +1,6 @@
 import { API_HOST, SIGMA } from "@/context/ordinals";
 import { head } from "lodash";
 import Image from "next/image";
-import Router from "next/router";
 import React, { useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
@@ -106,32 +105,6 @@ const Artifact: React.FC<ArtifactProps> = ({
     return artifactType;
   }, [contentType]);
 
-  const ArtifactContainer = styled.a`
-    &:after {
-      position: absolute;
-      content: "";
-      top: 5vw;
-      left: 0;
-      right: 0;
-      z-index: -1;
-      height: 100%;
-      width: 100%;
-      margin: 0 auto;
-      transform: scale(0.75);
-      -webkit-filter: blur(5vw);
-      -moz-filter: blur(5vw);
-      -ms-filter: blur(5vw);
-      filter: blur(5vw);
-      background: linear-gradient(270deg, #ffa60f85, #942fff66);
-      background-size: 200% 200%;
-      animation: animateGlow 10s ease infinite;
-    }
-  `;
-
-  const ItemContainer = tw.div`
-  flex items-center justify-center w-full h-full rounded
-  `;
-
   // const isBsv20 = useMemo(() => {
   //   if (type === ArtifactType.BSV20) {
   //     return true;
@@ -184,7 +157,17 @@ const Artifact: React.FC<ArtifactProps> = ({
         />
       </>
     ) : type === ArtifactType.HTML ? (
-      origin && <HTMLArtifact origin={origin} />
+      origin && (
+        <HTMLArtifact
+          origin={origin}
+          className={clickToZoom ? "cursor-pointer" : ""}
+          onClick={
+            clickToZoom
+              ? () => (showZoom ? setShowZoom(false) : setShowZoom(true))
+              : undefined
+          }
+        />
+      )
     ) : type === ArtifactType.BSV20 || type === ArtifactType.JSON ? (
       <div
         className={`h-full p-4 ${classNames?.wrapper || ""} ${
@@ -266,27 +249,9 @@ const Artifact: React.FC<ArtifactProps> = ({
             }
           />
         )}
-        {showZoom && (
-          <div
-            className="cursor-pointer absolute top-0 right-0 mr-4 mt-4 text-4xl"
-            onClick={() => setShowZoom(false)}
-          >
-            <RiCloseLine />
-          </div>
-        )}
       </ItemContainer>
     );
-  }, [
-    showZoom,
-    clickToZoom,
-    src,
-    type,
-    origin,
-    classNames,
-    outPoint,
-    ItemContainer,
-    num,
-  ]);
+  }, [showZoom, clickToZoom, src, type, origin, classNames, outPoint, num]);
 
   return (
     <React.Fragment>
@@ -299,7 +264,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         }`}
         target={to ? "_self" : undefined}
         href={to}
-        onClick={(e) => {
+        onClick={(e: any) => {
           if (!to) {
             e.stopPropagation();
             e.preventDefault();
@@ -326,8 +291,10 @@ const Artifact: React.FC<ArtifactProps> = ({
         {showFooter === true && num !== undefined && (
           <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
             <div
-              className={`rounded bg-[#222] p-2 text-[#aaa] cursor-pointer`}
-              onClick={() => Router.push(`/inscription/${num}`)}
+              className={`rounded bg-[#222] p-2 text-[#aaa] ${
+                onClick && outPoint ? "cursor-pointer" : ""
+              }`}
+              onClick={() => onClick && outPoint && onClick(outPoint)}
             >
               #{num}
             </div>
@@ -355,12 +322,12 @@ const Artifact: React.FC<ArtifactProps> = ({
                 e.stopPropagation();
                 setShowBuy(true);
               }}
-              onMouseEnter={() => {
-                setHoverPrice(true);
-              }}
-              onMouseLeave={() => {
-                setHoverPrice(false);
-              }}
+              // onMouseEnter={() => {
+              //   setHoverPrice(true);
+              // }}
+              // onMouseLeave={() => {
+              //   setHoverPrice(false);
+              // }}
             >
               {price !== undefined ? `${toBitcoin(price)} BSV` : contentType}
             </div>
@@ -369,15 +336,13 @@ const Artifact: React.FC<ArtifactProps> = ({
       </ArtifactContainer>
       {showZoom && (
         <div
-          className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
+          className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
           onClick={() => setShowZoom(false)}
         >
-          <div
-            className="w-full h-full m-auto p-4 bg-[#111] overscroll-none text-[#aaa] rounded flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {content}
+          <div className="cursor-pointer absolute top-0 right-0 mr-4 mt-4 text-4xl z-20 p-2">
+            <RiCloseLine />
           </div>
+          {content}
         </div>
       )}
       {outPoint && showBuy && price !== undefined && (
@@ -407,3 +372,29 @@ const shimmer = (w: number, h: number) => `
   <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
   <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
 </svg>`;
+
+const ArtifactContainer = styled.a`
+  &:after {
+    position: absolute;
+    content: "";
+    top: 5vw;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    height: 100%;
+    width: 100%;
+    margin: 0 auto;
+    transform: scale(0.75);
+    -webkit-filter: blur(5vw);
+    -moz-filter: blur(5vw);
+    -ms-filter: blur(5vw);
+    filter: blur(5vw);
+    background: linear-gradient(270deg, #ffa60f85, #942fff66);
+    background-size: 200% 200%;
+    animation: animateGlow 10s ease infinite;
+  }
+`;
+
+const ItemContainer = tw.div`
+flex items-center justify-center w-full h-full rounded
+`;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import * as S from "./styles";
 interface Props {
@@ -21,39 +22,42 @@ const WalletTabs: React.FC<Props> = ({
 }) => {
   return (
     <S.Tabs className="max-w-7xl mx-auto mb-8">
-      <S.Tab
-        partiallyactive={currentTab === WalletTab.Bitcoin ? "true" : "false"}
-        href={`/wallet`}
-        onClick={(e) =>
-          currentTab === WalletTab.Bitcoin && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Bitcoin SV
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === WalletTab.Ordinals ? "true" : "false"}
-        href={`/ordinals`}
-        onClick={(e) =>
-          currentTab === WalletTab.Ordinals && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Ordinals
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === WalletTab.BSV20 ? "true" : "false"}
-        href={`/bsv20`}
-        onClick={(e) =>
-          currentTab === WalletTab.BSV20 && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        BSV-20
-      </S.Tab>
+      <Link href={`/wallet`}>
+        <S.Tab
+          partiallyactive={currentTab === WalletTab.Bitcoin ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === WalletTab.Bitcoin && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Bitcoin SV
+        </S.Tab>
+      </Link>
+      <Link href={`/ordinals`}>
+        <S.Tab
+          partiallyactive={currentTab === WalletTab.Ordinals ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === WalletTab.Ordinals && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Ordinals
+        </S.Tab>
+      </Link>
+      <Link href={`/bsv20`}>
+        <S.Tab
+          partiallyactive={currentTab === WalletTab.BSV20 ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === WalletTab.BSV20 && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          BSV-20
+        </S.Tab>
+      </Link>
       {/* <S.Tab
         partiallyactive={currentTab === WalletTab.BSV20 ? "true" : "false"}
         href={`/inscribe?tab=video`}

@@ -10,7 +10,8 @@ import { customFetch } from "@/utils/httpClient";
 import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import Router, { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
+import Router from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FaSignature } from "react-icons/fa";
@@ -46,7 +47,10 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   const [showBuy, setShowBuy] = useState<boolean>(false);
   const { fundingUtxos, transfer, ordUtxos, fetchOrdinalUtxosStatus } =
     useWallet();
-  const { inscriptionId } = router.query;
+
+  const searchParams = useSearchParams();
+  const inscriptionId = searchParams.get("inscriptionId");
+
   const { getBmapTxById } = useBitcoinSchema();
   const {
     getArtifactByInscriptionId,
@@ -255,7 +259,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     };
     // if this is a collectionItem, look up the collection
     if (artifact?.MAP?.subType === SubType.CollectionItem) {
-      const collectionId = artifact?.MAP?.subTypeData?.collectionId;
+      const collectionId = (artifact?.MAP?.subTypeData as any)?.collectionId;
       if (collectionId) {
         fire(collectionId);
 
@@ -367,17 +371,13 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   return (
     <>
       <Head>
-        <title>1SatOrdinals.com - Inscription #{inscriptionId}</title>
+        <title>1SatOrdinals.com - Inscription</title>
         <meta
           name="description"
           content="An Ordinals-compatible implementation on Bitcoin SV"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
       <Tabs currentTab={undefined} />
       <div className="p-4 flex flex-col w-full justify-center items-center mx-auto max-w-6xl">
@@ -427,7 +427,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 my-4 md:my-0 md:mb-2 cursor-pointer hover:bg-[#222]"
                 onClick={() =>
                   Router.push(
-                    `/collection/${artifact?.MAP?.subTypeData.collectionId}`
+                    `/collection/${
+                      (artifact?.MAP?.subTypeData as any).collectionId
+                    }`
                   )
                 }
               >
@@ -588,7 +590,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                       className={`${
                         k === "collection" ||
                         k === "collectionId" ||
-                        v?.collectionId
+                        (v as any)?.collectionId
                           ? "cursor-pointer hover:bg-[#222]"
                           : ""
                       } bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-4 my-4 md:my-0 md:mb-2`}
@@ -597,9 +599,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                         if (
                           k === "collection" ||
                           k === "collectionId" ||
-                          v?.collectionId
+                          (v as any)?.collectionId
                         ) {
-                          router.push(`/collection/${v.collectionId}`);
+                          router.push(`/collection/${(v as any).collectionId}`);
                         }
                       }}
                     >
@@ -621,7 +623,10 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                             {k}
                           </div>
                         ) : null}
-                        {k && v && typeof v === "string" && renderSubType(k, v)}
+                        {k &&
+                          !!v &&
+                          typeof v === "string" &&
+                          renderSubType(k, v)}
                       </div>
                     </div>
                   );

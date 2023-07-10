@@ -4,7 +4,8 @@ import { formatBytes } from "@/utils/bytes";
 import { useLocalStorage } from "@/utils/storage";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import Router, { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
+import Router from "next/router";
 import React, { useCallback, useEffect, useMemo } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
@@ -94,17 +95,13 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
   return (
     <>
       <Head>
-        <title>1SatOrdinals.com</title>
+        <title>1SatOrdinals.com - Preview</title>
         <meta
           name="description"
           content="An Ordinals-compatible implementation on Bitcoin SV"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
       <Tabs currentTab={Tab.Wallet} />
 
@@ -178,6 +175,24 @@ const PreviewPage: React.FC<PageProps> = ({}) => {
                         (pendingTransaction.rawTx?.length / 2)
                       ).toFixed(5)}{" "}
                       sat/B
+                    </div>
+                  </div>
+                )}
+                {pendingTransaction.metadata && (
+                  <div className="flex justify-between">
+                    <div>Metadata</div>
+                    <div>
+                      {Object.keys(pendingTransaction.metadata).map((k) => {
+                        const v =
+                          pendingTransaction.metadata &&
+                          pendingTransaction.metadata[k];
+                        return (
+                          <div key={k} className="flex justify-between">
+                            <div className="mr-2 text-[#555]">{k}</div>
+                            <div className="ml-2">{v}</div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

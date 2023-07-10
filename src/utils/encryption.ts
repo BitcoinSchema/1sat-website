@@ -8,7 +8,6 @@ export const encryptData = (
   const ivUint8Array = new Uint8Array(iv);
   const dataUint8Array = new Uint8Array(data);
   const keyUint8Array = new Uint8Array(key);
-
   return AES.encrypt(
     keyUint8Array,
     ivUint8Array,

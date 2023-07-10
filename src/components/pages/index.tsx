@@ -3,9 +3,9 @@ import { useBap } from "@/context/bap";
 import { useBitsocket } from "@/context/bitsocket";
 import { useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
-import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import Image from "next/image";
-import Router, { useRouter } from "next/router";
+import { usePathname } from "next/navigation";
+import Router from "next/router";
 import {
   ChangeEvent,
   ReactNode,
@@ -83,14 +83,14 @@ const Layout: React.FC<Props> = ({ children }) => {
   const { fetchStatsStatus, stats } = useOrdinals();
 
   const { idKey, onFileChange } = useBap();
-  const { ordPk, initialized } = useWallet();
+  const { ordAddress: oAddress } = useWallet();
   const { addressConnectionStatus, connect, ordAddress } = useBitsocket();
   const [showBlockSync, setShowBlockSync] = useState<boolean>(false);
   const [blockHeaders, setBlockHeaders] = useState<BlockHeader[]>([]);
   const [fetchBlockHeadersStatus, setFetchBlockHeadersStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
-  const router = useRouter();
+  const pathname = usePathname();
   useEffect(() => {
     const fire = async (a: string) => {
       try {
@@ -130,13 +130,13 @@ const Layout: React.FC<Props> = ({ children }) => {
     }
   }, [stats, fetchBlockHeadersStatus]);
 
-  const oAddress = useMemo(() => {
-    if (initialized && ordPk) {
-      const wif = PrivateKey.from_wif(ordPk);
-      const pk = PublicKey.from_private_key(wif);
-      return wif && pk && P2PKHAddress.from_pubkey(pk).to_string();
-    }
-  }, [initialized, ordPk]);
+  // const oAddress = useMemo(() => {
+  //   if (initialized && ordPk) {
+  //     const wif = PrivateKey.from_wif(ordPk);
+  //     const pk = PublicKey.from_private_key(wif);
+  //     return wif && pk && P2PKHAddress.from_pubkey(pk).to_string();
+  //   }
+  // }, [initialized, ordPk]);
 
   useEffect(() => {
     if (
@@ -187,47 +187,8 @@ const Layout: React.FC<Props> = ({ children }) => {
     return blockHeaders?.every((bh) => bh.synced > 0) || false;
   }, [blockHeaders]);
 
-  return (
-    <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
-      {fetchStatsStatus !== FetchStatus.Loading &&
-        stats &&
-        stats.settled + 6 < stats.latest && (
-          <div className="rounded bg-[#111] p-2 mb-8 w-full">
-            <div className=" mx-auto max-w-lg">
-              <div
-                className="cursor-pointer flex items-center justify-center hover:text-orange-200 text-orange-300 pl-2"
-                onClick={() => setShowBlockSync(true)}
-              >
-                <LoaderIcon className="mr-2" />
-                Syncing. Click for details.
-              </div>
-              <p className="text-center text-red-300 mt-2">
-                BALANCES WILL BE INACCURATE UNTIL SYNCED.
-              </p>
-            </div>
-          </div>
-        )}
-      <div className="mx-auto">
-        <div
-          className="text-2xl md:opacity-25 md:hover:opacity-100 duration-700 transition mt-6 text-white cursor-pointer"
-          onClick={() => Router.push("/")}
-        >
-          {router.pathname !== "/" && (
-            <Image
-              src={oneSatLogo}
-              // onClick={() => Router?.push("/wallet")}
-              alt={"1Sat Ordinals"}
-              className="w-8 h-8 cursor-pointer mx-auto rounded"
-              style={{
-                animation: "opulcity 8s infinite",
-              }}
-            />
-          )}
-        </div>
-      </div>
-      <div className="min-h-[calc(100vh-8rem)] h-full flex flex-col items-center">
-        {children}
-      </div>
+  const footer = useMemo(() => {
+    return (
       <div
         className="max-w-7xl mx-auto  h-10 flex items-center justify-center font-mono text-yellow-400 py-8 p-2"
         style={{
@@ -285,6 +246,60 @@ const Layout: React.FC<Props> = ({ children }) => {
           />
         </div>
       </div>
+    );
+  }, [
+    onFileChange,
+    payPk,
+    idKey,
+    handleFileChange,
+    importId,
+    importKeys,
+    backupKeys,
+    deleteKeys,
+  ]);
+
+  return (
+    <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
+      {fetchStatsStatus !== FetchStatus.Loading &&
+        stats &&
+        stats.settled + 6 < stats.latest && (
+          <div className="rounded bg-[#111] p-2 mb-8 w-full">
+            <div className=" mx-auto max-w-lg">
+              <div
+                className="cursor-pointer flex items-center justify-center hover:text-orange-200 text-orange-300 pl-2"
+                onClick={() => setShowBlockSync(true)}
+              >
+                <LoaderIcon className="mr-2" />
+                Syncing. Click for details.
+              </div>
+              <p className="text-center text-red-300 mt-2">
+                BALANCES WILL BE INACCURATE UNTIL SYNCED.
+              </p>
+            </div>
+          </div>
+        )}
+      <div className="mx-auto">
+        <div
+          className="text-2xl md:opacity-25 md:hover:opacity-100 duration-700 transition mt-6 text-white cursor-pointer"
+          onClick={() => Router.push("/")}
+        >
+          {pathname !== "/" && (
+            <Image
+              src={oneSatLogo}
+              // onClick={() => Router?.push("/wallet")}
+              alt={"1Sat Ordinals"}
+              className="w-8 h-8 cursor-pointer mx-auto rounded"
+              style={{
+                animation: "opulcity 8s infinite",
+              }}
+            />
+          )}
+        </div>
+      </div>
+      <div className="min-h-[calc(100vh-8rem)] h-full flex flex-col items-center">
+        {children}
+      </div>
+      {footer}
       {fetchUtxosStatus === FetchStatus.Loading && (
         <div className="fixed bottom-0 right-0 mr-8 mb-8 bg-[#111] rounded p-2 text-sm flex items-center">
           <LoaderIcon className="mx-auto mr-2" /> Loading Unspent Coins...

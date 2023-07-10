@@ -1,4 +1,3 @@
-import Link from "next/link";
 import styled from "styled-components";
 import tw from "twin.macro";
 
@@ -11,7 +10,7 @@ export const Tabs = tw.nav`
     mx-auto    
 `;
 
-export const Tab = styled(Link)<{
+export const Tab = styled.div<{
   partiallyactive: string;
   disabled?: boolean;
 }>(({ partiallyactive, disabled }) => [

@@ -1,7 +1,9 @@
 import Layout from "@/components/pages";
-import OrdinalsPage from "@/components/pages/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
+import dynamic from "next/dynamic";
 import React from "react";
+
+const OrdinalsPage = dynamic(() => import("@/components/pages/ordinals"));
 
 interface PageProps extends WithRouterProps {}
 

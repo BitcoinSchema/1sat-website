@@ -3,7 +3,7 @@ import { useWallet } from "@/context/wallet";
 import { P2PKHAddress, Transaction, TxOut } from "bsv-wasm-web";
 import { forEach } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
-import { useRouter } from "next/router";
+import { useSearchParams } from "next/navigation";
 import React, { useCallback, useMemo, useState } from "react";
 import { FiPlus } from "react-icons/fi";
 import AirdropTabs, { AirdropTab } from "./tabs";
@@ -11,8 +11,9 @@ import AirdropTabs, { AirdropTab } from "./tabs";
 interface PageProps extends WithRouterProps {}
 
 const AirdropPage: React.FC<PageProps> = ({}) => {
-  const router = useRouter();
-  const { tab } = router.query;
+  const searchParams = useSearchParams();
+
+  const tab = searchParams.get("tab");
   const { bsv20Balances } = useWallet();
 
   const [amt, setAmt] = useState(0);

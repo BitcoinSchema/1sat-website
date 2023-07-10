@@ -16,7 +16,8 @@ import init, {
 } from "bsv-wasm-web";
 import { Inscription, Utxo } from "js-1sat-ord";
 import { head, uniq } from "lodash";
-import Router, { useRouter } from "next/router";
+import { useSearchParams } from "next/navigation";
+import Router from "next/router";
 import React, {
   ReactNode,
   createContext,
@@ -110,6 +111,7 @@ export type PendingTransaction = {
   price?: number;
   marketFee?: number;
   iterations?: number;
+  metadata?: any; // MAP;
 };
 
 export type BroadcastResponsePayload = {
@@ -276,8 +278,10 @@ const WalletProvider: React.FC<Props> = (props) => {
     FetchStatus.Idle
   );
 
-  const router = useRouter();
-  const { page, sort } = router.query;
+  const searchParams = useSearchParams();
+
+  const page = searchParams.get("page");
+  const sort = searchParams.get("sort");
 
   // Modal control flags
   const [showEnterPassphrase, setShowEnterPassphrase] = useState<

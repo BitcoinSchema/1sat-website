@@ -73,7 +73,7 @@ const AnimatedLogo3D: React.FC<Props> = ({ boost, hover }) => {
     return () => {
       containerRef.current?.removeChild(renderer.domElement);
     };
-  }, [hover, boost]);
+  }, [hover, boost, camera, scene]);
 
   return <div ref={containerRef}></div>;
 };

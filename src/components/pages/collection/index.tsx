@@ -6,7 +6,7 @@ import { customFetch } from "@/utils/httpClient";
 import { find, head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
-import { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import { GiHolyGrail } from "react-icons/gi";
@@ -49,12 +49,14 @@ type Item = {
 };
 
 const CollectionPage: React.FC<PageProps> = ({}) => {
+  const searchParams = useSearchParams();
+
+  const queryName = searchParams.get("name");
+  const collectionId = searchParams.get("collectionId");
   const router = useRouter();
-  const { name: queryName } = router.query;
   const [collection, setCollection] = useState<Item[] | undefined>();
   const [isAncient, setIsAncient] = useState<boolean>(false);
 
-  const { collectionId } = router.query;
   const [fetchCollectionStatus, setFetchCollectionStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
@@ -75,7 +77,6 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           }
         );
         const c = await promise;
-        console.log({ collectionItems: c });
 
         setCollection(c);
         setFetchCollectionStatus(FetchStatus.Success);
@@ -122,7 +123,6 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           `${API_HOST}/api/collections/${cid}/items`
         );
         const c = await promise;
-        console.log({ collectionItems: c });
         if (c.length > 0) {
           setCollection(c);
         } else if (
@@ -180,24 +180,16 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
       : queryName;
   }, [collection, collectionStats, queryName]);
 
-  useEffect(() => {
-    console.log({ collectionName, collection });
-  }, [collectionName, collection]);
-
   return (
     <>
       <Head>
-        <title>1SatOrdinals.com - Collection {collectionId}</title>
+        <title>1SatOrdinals.com - Collection</title>
         <meta
           name="description"
           content="An Ordinals-compatible implementation on Bitcoin SV"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto+Slab&family=Ubuntu:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </Head>
       <Tabs currentTab={Tab.Market} />
       <MarketTabs currentTab={MarketTab.Collections} />

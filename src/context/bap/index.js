@@ -1,5 +1,6 @@
 // import { BAP } from "bap"
 import { decryptData, encryptData } from "@/utils/encryption";
+import { ExtendedPrivateKey } from "bsv-wasm-web";
 import { head } from "lodash";
 import React, {
   useCallback,
@@ -10,6 +11,7 @@ import React, {
 } from "react";
 import { FetchStatus } from "../../components/pages";
 import { useLocalStorage } from "../../utils/storage";
+import { useStorage } from "../storage";
 
 // duymmy class until bap is fixed
 class BAP {
@@ -38,6 +40,7 @@ const BapProvider = (props) => {
     FetchStatus.Idle
   );
   const [decryptStatus, setDecryptStatus] = useState(FetchStatus.Idle);
+  const { setEncryptionKeyFromPassphrase, encryptionKey } = useStorage();
 
   useEffect(() => {
     const fire = async () => {
@@ -102,18 +105,31 @@ const BapProvider = (props) => {
       }
 
       try {
+        debugger;
         // console.log({ text, authToken });
         // encrypt the uploaded file and store it locally
-        const encryptedData = encryptData(JSON.parse(text));
+        const pass = prompt("Enter passphrase to encrypt your identity file.");
+        const decIdentity = JSON.parse(text);
+        const expk = ExtendedPrivateKey.from_string(decIdentity.xprv);
+        const publicKey = expk.get_public_key();
+        await setEncryptionKeyFromPassphrase(pass, publicKey);
+        const encryptedData = encryptData(Buffer.from(text), encryptionKey);
         console.log({ encryptedData });
-        setIdentity(encryptedData);
+        setIdentity(Buffer.from(encryptedData).toString("base64"));
 
         setLoadIdentityStatus(FetchStatus.Success);
       } catch (e) {
+        console.error(e);
         setLoadIdentityStatus(FetchStatus.Error);
       }
     },
-    [loadIdentityStatus, isValidIdentity, setIdentity]
+    [
+      loadIdentityStatus,
+      isValidIdentity,
+      setIdentity,
+      encryptionKey,
+      setEncryptionKeyFromPassphrase,
+    ]
   );
 
   const getIdentity = useCallback(async () => {

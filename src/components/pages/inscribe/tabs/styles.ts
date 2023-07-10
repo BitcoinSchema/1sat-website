@@ -1,4 +1,3 @@
-import Link from "next/link";
 import styled from "styled-components";
 import tw from "twin.macro";
 
@@ -11,10 +10,10 @@ export const Tabs = tw.nav`
     mx-auto    
 `;
 
-export const Tab = styled(Link)<{
-  partiallyactive: string;
+export const Tab = styled.div<{
+  $partiallyactive: string;
   disabled?: boolean;
-}>(({ partiallyactive, disabled }) => [
+}>(({ $partiallyactive, disabled }) => [
   tw`
     my-1
     sm:m-2
@@ -39,7 +38,7 @@ export const Tab = styled(Link)<{
         cursor-default
         transition
         `
-    : partiallyactive === "true"
+    : $partiallyactive === "true"
     ? tw`
         text-[#AAA]
         bg-[#111]

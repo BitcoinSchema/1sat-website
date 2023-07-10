@@ -2,7 +2,6 @@ import { FetchStatus, toastErrorProps } from "@/components/pages";
 import { SortListingsBy } from "@/components/pages/market/listings";
 import { readFileAsBase64 } from "@/utils/file";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
-
 import {
   P2PKHAddress,
   PrivateKey,
@@ -25,7 +24,6 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 import * as http from "../../utils/httpClient";
-import { MAP } from "../bitcoinschema";
 import { useBitsocket } from "../bitsocket";
 import { ORDS_PER_PAGE, PendingTransaction, useWallet } from "../wallet";
 
@@ -70,7 +68,7 @@ export interface OrdUtxo extends Utxo {
   SIGMA?: SIGMA[];
   num: number | undefined;
   height?: number;
-  MAP?: MAP;
+  MAP?: any; // MAP
   payout?: string; // base64 encoded
   spend: string;
   lock: string;
@@ -151,7 +149,8 @@ type ContextValue = {
   inscribeStatus: FetchStatus;
   inscribeFile: (
     utxo: Utxo,
-    file: File
+    file: File,
+    metadata?: any // MAP
   ) => Promise<PendingTransaction | undefined>;
 };
 
@@ -300,7 +299,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const inscribeFile = useCallback(
-    async (utxo: Utxo, file: File) => {
+    async (utxo: Utxo, file: File, metadata?: any) => {
       if (!file?.type || !utxo) {
         throw new Error("File or utxo not provided");
       }
@@ -315,7 +314,8 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
             file.type,
             ordAddress!,
             changeAddress!,
-            utxo
+            utxo,
+            metadata
           );
           const satsIn = utxo!.satoshis;
           const satsOut = Number(tx.satoshis_out());
@@ -336,6 +336,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
               numOutputs: tx.get_noutputs(),
               txid: tx.get_id_hex(),
               inputTxid: tx.get_input(0)?.get_prev_tx_id_hex(),
+              metadata,
             } as PendingTransaction;
             console.log(Object.keys(result));
 
@@ -888,7 +889,8 @@ const handleInscribing = async (
   fileContentType: string,
   ordAddress: string,
   changeAddress: string,
-  fundingUtxo: Utxo
+  fundingUtxo: Utxo,
+  metadata?: any // MAP
 ) => {
   const paymentPk = PrivateKey.from_wif(payPk);
 
@@ -901,6 +903,7 @@ const handleInscribing = async (
   // const idKey = PrivateKey.from_wif(
   //   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
   // );
+  console.log("Inscribing with", { metadata });
   try {
     const tx = await createOrdinal(
       fundingUtxo,
@@ -908,8 +911,8 @@ const handleInscribing = async (
       paymentPk,
       changeAddress,
       0.9,
-      inscription
-      // undefined, // optional metadata
+      inscription,
+      metadata // optional metadata
       // idKey // optional id key
     );
     return tx;

@@ -20,7 +20,8 @@ import { Buffer } from "buffer";
 import { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
-import Router, { useRouter } from "next/router";
+import { useSearchParams } from "next/navigation";
+import Router from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FiArrowLeft } from "react-icons/fi";
@@ -34,8 +35,8 @@ import MarketTabs, { MarketTab } from "./tabs";
 interface PageProps extends WithRouterProps {}
 
 const NewListingPage: React.FC<PageProps> = ({}) => {
-  const router = useRouter();
-  const { outPoint } = router.query;
+  const searchParams = useSearchParams();
+  const outPoint = searchParams.get("outPoint");
   const [outpoint, setOutpoint] = useState<string | undefined>(
     outPoint as string | undefined
   );
@@ -256,7 +257,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     <div className="flex flex-col">
       <Tabs currentTab={Tab.Market} />
 
-      <MarketTabs currentTab={MarketTab.Listings} />
+      <MarketTabs currentTab={MarketTab.New} />
 
       <div className="w-full text-xl px-4 md:px-0 mb-4 flex items-center justify-between">
         <div

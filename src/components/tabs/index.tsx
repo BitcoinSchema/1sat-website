@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import { IoMdWallet } from "react-icons/io";
 import * as S from "./styles";
@@ -32,29 +33,31 @@ const Tabs: React.FC<Props> = ({
         <IoMdSettings className="w-4 h-4" />
       </S.Tab> */}
 
-      <S.Tab
-        partiallyactive={currentTab === Tab.Wallet ? "true" : "false"}
-        href={`/wallet`}
-        onClick={(e) =>
-          currentTab === Tab.Wallet && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        <IoMdWallet className="w-4 h-4" />
-      </S.Tab>
+      <Link href={`/wallet`}>
+        <S.Tab
+          $partiallyactive={currentTab === Tab.Wallet ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === Tab.Wallet && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          <IoMdWallet className="w-4 h-4" />
+        </S.Tab>
+      </Link>
 
-      <S.Tab
-        partiallyactive={currentTab === Tab.Inscribe ? "true" : "false"}
-        href={`/inscribe`}
-        onClick={(e) =>
-          currentTab === Tab.Inscribe && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Inscribe
-      </S.Tab>
+      <Link href={`/inscribe`}>
+        <S.Tab
+          $partiallyactive={currentTab === Tab.Inscribe ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === Tab.Inscribe && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Inscribe
+        </S.Tab>
+      </Link>
 
       {/* <S.Tab
         partiallyactive={currentTab === Tab.Airdrop ? "true" : "false"}
@@ -67,18 +70,18 @@ const Tabs: React.FC<Props> = ({
       >
         Airdrop
       </S.Tab> */}
-
-      <S.Tab
-        partiallyactive={currentTab === Tab.Market ? "true" : "false"}
-        href={`/market`}
-        onClick={(e) =>
-          currentTab === Tab.Market && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Market
-      </S.Tab>
+      <Link href={`/market`}>
+        <S.Tab
+          $partiallyactive={currentTab === Tab.Market ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === Tab.Market && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Market
+        </S.Tab>
+      </Link>
     </S.Tabs>
   );
 };

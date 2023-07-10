@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import * as S from "./styles";
 
@@ -28,64 +29,72 @@ const MarketTabs: React.FC<Props> = ({
         <IoMdWallet className="w-4 h-4" />
       </S.Tab> */}
 
-      <S.Tab
-        partiallyactive={
-          currentTab === MarketTab.Collections ? "true" : "false"
-        }
-        href={`/market`}
-        onClick={(e) =>
-          currentTab === MarketTab.Collections && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Collections
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === MarketTab.Listings ? "true" : "false"}
-        href={`/market/listings`}
-        onClick={(e) =>
-          currentTab === MarketTab.Listings && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Listings
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === MarketTab.BSV20 ? "true" : "false"}
-        href={`/market/bsv20`}
-        onClick={(e) =>
-          currentTab === MarketTab.BSV20 && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        BSV-20
-      </S.Tab>
-
-      <S.Tab
-        partiallyactive={currentTab === MarketTab.Activity ? "true" : "false"}
-        href={`/market/activity`}
-        onClick={(e) =>
-          currentTab === MarketTab.Activity && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Activity
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === MarketTab.New ? "true" : "false"}
-        href={`/market/new`}
-        onClick={(e) =>
-          currentTab === MarketTab.New && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        New Listing
-      </S.Tab>
+      <Link href={`/market`}>
+        <S.Tab
+          $partiallyactive={
+            currentTab === MarketTab.Collections ? "true" : "false"
+          }
+          onClick={(e: any) =>
+            currentTab === MarketTab.Collections && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Collections
+        </S.Tab>
+      </Link>
+      <Link href={`/market/listings`}>
+        <S.Tab
+          $partiallyactive={
+            currentTab === MarketTab.Listings ? "true" : "false"
+          }
+          onClick={(e: any) =>
+            currentTab === MarketTab.Listings && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Listings
+        </S.Tab>
+      </Link>
+      <Link href={`/market/bsv20`}>
+        <S.Tab
+          $partiallyactive={currentTab === MarketTab.BSV20 ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === MarketTab.BSV20 && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          BSV-20
+        </S.Tab>
+      </Link>
+      <Link href={`/market/activity`}>
+        <S.Tab
+          $partiallyactive={
+            currentTab === MarketTab.Activity ? "true" : "false"
+          }
+          onClick={(e: any) =>
+            currentTab === MarketTab.Activity && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Activity
+        </S.Tab>
+      </Link>
+      <Link href={`/market/new`}>
+        <S.Tab
+          $partiallyactive={currentTab === MarketTab.New ? "true" : "false"}
+          onClick={(e: any) =>
+            currentTab === MarketTab.New && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          New Listing
+        </S.Tab>
+      </Link>
     </S.Tabs>
   );
 };

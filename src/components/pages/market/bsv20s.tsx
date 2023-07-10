@@ -2,7 +2,8 @@ import MarketTabs, { MarketTab } from "@/components/pages/market/tabs";
 import Tabs, { Tab } from "@/components/tabs";
 import { API_HOST, Dir, SortBy, useOrdinals } from "@/context/ordinals";
 import { WithRouterProps } from "next/dist/client/with-router";
-import Router, { useRouter } from "next/router";
+import { useSearchParams } from "next/navigation";
+import Router from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { FetchStatus } from "..";
@@ -10,7 +11,6 @@ import { FetchStatus } from "..";
 interface PageProps extends WithRouterProps {}
 
 const BSV20Page: React.FC<PageProps> = ({}) => {
-  const router = useRouter();
   const [dir, setDir] = useState<Dir>(Dir.DESC);
   const [sortBy, setSortBy] = useState<SortBy>(SortBy.Height);
   const { bsv20s, getBsv20, fetchBsv20Status, fetchStatsStatus, stats } =
@@ -18,12 +18,12 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
 
   const [lastSortBy, setLastSortBy] = useState<SortBy>(sortBy);
   const [lastDir, setLastDir] = useState<Dir>(dir);
+  const searchParams = useSearchParams();
+  const page = searchParams.get("page");
 
   const currentPage = useMemo(() => {
-    return typeof router.query.page === "string"
-      ? parseInt(router.query.page)
-      : 1;
-  }, [router.query.page]);
+    return typeof page === "string" ? parseInt(page) : 1;
+  }, [page]);
 
   const [lastPage, setLastPage] = useState(currentPage);
   const [ticker, setTicker] = useState<string>();

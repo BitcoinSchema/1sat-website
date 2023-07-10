@@ -4,7 +4,7 @@ import {
   generateEncryptionKey,
 } from "@/utils/encryption";
 import { base64UrlToUint8Array } from "@/utils/uint8array";
-import crypto from "crypto";
+import randomBytes from "randombytes";
 import React, {
   ReactNode,
   createContext,
@@ -145,7 +145,7 @@ export const StorageProvider: React.FC<StorageProviderProps> = (props) => {
 
         let dataToStore = value;
         if (isEncrypted && encryptionKey) {
-          const iv = new Uint8Array(crypto.randomBytes(16).buffer);
+          const iv = new Uint8Array(randomBytes(16).buffer);
           const encryptedData = encryptData(
             new TextEncoder().encode(value),
             encryptionKey,

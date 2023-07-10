@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import * as S from "./styles";
 interface Props {
@@ -26,50 +27,62 @@ const InscriptionTabs: React.FC<Props> = ({
 }) => {
   return (
     <S.Tabs className="max-w-7xl mx-auto my-8">
-      <S.Tab
-        partiallyactive={currentTab === InscriptionTab.Image ? "true" : "false"}
-        href={`/inscribe?tab=image`}
-        onClick={(e) =>
-          currentTab === InscriptionTab.Image && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Image
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === InscriptionTab.Text ? "true" : "false"}
-        href={`/inscribe?tab=text`}
-        onClick={(e) =>
-          currentTab === InscriptionTab.Text && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        Text
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === InscriptionTab.HTML ? "true" : "false"}
-        href={`/inscribe?tab=html`}
-        onClick={(e) =>
-          currentTab === InscriptionTab.HTML && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        HTML
-      </S.Tab>
-      <S.Tab
-        partiallyactive={currentTab === InscriptionTab.BSV20 ? "true" : "false"}
-        href={`/inscribe?tab=bsv20`}
-        onClick={(e) =>
-          currentTab === InscriptionTab.BSV20 && onClickSelected
-            ? onClickSelected(e)
-            : () => {}
-        }
-      >
-        BSV-20
-      </S.Tab>
+      <Link href={`/inscribe`}>
+        <S.Tab
+          $partiallyactive={
+            currentTab === InscriptionTab.Image ? "true" : "false"
+          }
+          onClick={(e: any) =>
+            currentTab === InscriptionTab.Image && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Image
+        </S.Tab>
+      </Link>
+      <Link href={`/inscribe?tab=text`}>
+        <S.Tab
+          $partiallyactive={
+            currentTab === InscriptionTab.Text ? "true" : "false"
+          }
+          onClick={(e: any) =>
+            currentTab === InscriptionTab.Text && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          Text
+        </S.Tab>
+      </Link>
+      <Link href={`/inscribe?tab=sns`}>
+        <S.Tab
+          $partiallyactive={
+            currentTab === InscriptionTab.HTML ? "true" : "false"
+          }
+          onClick={(e: any) =>
+            currentTab === InscriptionTab.HTML && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          HTML
+        </S.Tab>
+      </Link>
+      <Link href={`/inscribe?tab=sns`}>
+        <S.Tab
+          $partiallyactive={
+            currentTab === InscriptionTab.BSV20 ? "true" : "false"
+          }
+          onClick={(e: any) =>
+            currentTab === InscriptionTab.BSV20 && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          BSV-20
+        </S.Tab>
+      </Link>
       {/* <S.Tab
         partiallyactive={currentTab === InscriptionTab.Model ? "true" : "false"}
         href={`/inscribe?tab=model`}
