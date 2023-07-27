@@ -1,4 +1,5 @@
 import { FetchStatus } from "@/components/pages";
+import { toBase64 } from "@/utils/string";
 import React, {
   ReactNode,
   useCallback,
@@ -47,7 +48,7 @@ export const BitcoinSchemaProvider: React.FC<Props> = (props) => {
     };
 
     const collectionQueryStr = JSON.stringify(collectionQuery);
-    return btoa(collectionQueryStr);
+    return toBase64(collectionQueryStr);
   };
 
   const getArtifactsByCollectionId = useCallback(

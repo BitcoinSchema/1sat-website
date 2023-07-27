@@ -3,6 +3,7 @@ import { useOrdinals } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import { formatBytes } from "@/utils/bytes";
 import { head } from "lodash";
+import * as mime from "mime";
 import React, { useCallback, useMemo, useState } from "react";
 import { FaPlus } from "react-icons/fa";
 import { TbClick } from "react-icons/tb";
@@ -16,7 +17,7 @@ interface InscribeImageProps {
 const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
-
+  const [isImage, setIsImage] = useState<boolean>(false);
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -27,6 +28,41 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   const handleFileChange = useCallback(
     (event: any) => {
       const file = event.target.files[0] as File;
+      const knownImageTypes = [
+        "image/gif",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/svg+xml",
+        "image/bmp",
+        "image/tiff",
+        "image/x-icon",
+        "image/vnd.microsoft.icon",
+        "image/vnd.wap.wbmp",
+        "image/heic",
+        "image/heif",
+        "image/avif",
+        "image/apng",
+        "image/jxl",
+        "image/jpg",
+        "image/jfif",
+        "image/pjpeg",
+        "image/pjp",
+      ];
+      const knownVideoTypes = ["video/mp4", "video/webm", "video/ogg"];
+
+      // TODO: Add more direct support for audio and video
+      const knownAudioTypes = ["audio/mpeg", "audio/ogg", "audio/wav"];
+      if (knownImageTypes.includes(file.type)) {
+        setIsImage(true);
+      } else if (knownVideoTypes.includes(file.type)) {
+        setIsImage(false);
+      } else if (knownAudioTypes.includes(file.type)) {
+        setIsImage(false);
+      } else {
+        setIsImage(false);
+      }
+
       setSelectedFile(file);
       if (file) {
         const reader = new FileReader();
@@ -38,7 +74,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
         setPreview(null);
       }
     },
-    [setPreview, setSelectedFile]
+    [setPreview, setSelectedFile, setIsImage]
   );
 
   type MetaMap = {
@@ -79,8 +115,18 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
     // metadata
     const m =
       metadata && Object.keys(metadata).length > 0 ? mapData : undefined;
-
-    const pendingTx = await inscribeFile(u, selectedFile, m);
+    let file: File | undefined;
+    if (selectedFile.type === "") {
+      const newType = mime.getType(selectedFile.name);
+      console.log("new type", newType);
+      if (newType !== null) {
+        file = new File([selectedFile], selectedFile.name, { type: newType });
+      }
+    }
+    if (!file) {
+      file = selectedFile;
+    }
+    const pendingTx = await inscribeFile(u, file, m);
     if (pendingTx) {
       inscribedCallback(pendingTx);
     }
@@ -262,7 +308,13 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
       {selectedFile && preview && (
         <div>
           {metaForm}
-          {artifact}
+          {isImage ? (
+            artifact
+          ) : (
+            <div className="w-full h-full bg-[#111] rounded flex items-center justify-center">
+              FILE
+            </div>
+          )}
         </div>
       )}
 
@@ -272,7 +324,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
         onClick={clickInscribe}
         className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
       >
-        Inscribe Image
+        Inscribe {isImage ? "Image" : "File"}
       </button>
     </div>
   );

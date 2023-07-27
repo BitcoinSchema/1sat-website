@@ -63,7 +63,7 @@ const AirdropTabs: React.FC<Props> = ({
         </S.Tab>
       </Link>
       {/* <S.Tab
-        partiallyactive={currentTab === AirdropTab.BSV20 ? "true" : "false"}
+        $partiallyactive={currentTab === AirdropTab.BSV20 ? "true" : "false"}
         href={`/inscribe?tab=video`}
         onClick={(e) =>
           currentTab === AirdropTab.Video && onClickSelected

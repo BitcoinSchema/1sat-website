@@ -365,7 +365,6 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   useEffect(() => {
     const fire = async () => {
-      console.log("INIT!!!!!!!!!!!!!");
       await init();
       setInitialized(true);
     };
@@ -995,7 +994,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         }
 
         // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
-        if (pendingTransaction.contentType !== "application/bsv-20") {
+        if (pendingTransaction.contentType === "application/bsv-20") {
           Router.push("/bsv20");
         } else {
           Router.push("/ordinals");

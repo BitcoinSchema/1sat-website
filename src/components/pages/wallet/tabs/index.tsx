@@ -24,7 +24,7 @@ const WalletTabs: React.FC<Props> = ({
     <S.Tabs className="max-w-7xl mx-auto mb-8">
       <Link href={`/wallet`}>
         <S.Tab
-          partiallyactive={currentTab === WalletTab.Bitcoin ? "true" : "false"}
+          $partiallyactive={currentTab === WalletTab.Bitcoin ? "true" : "false"}
           onClick={(e: any) =>
             currentTab === WalletTab.Bitcoin && onClickSelected
               ? onClickSelected(e)
@@ -36,7 +36,9 @@ const WalletTabs: React.FC<Props> = ({
       </Link>
       <Link href={`/ordinals`}>
         <S.Tab
-          partiallyactive={currentTab === WalletTab.Ordinals ? "true" : "false"}
+          $partiallyactive={
+            currentTab === WalletTab.Ordinals ? "true" : "false"
+          }
           onClick={(e: any) =>
             currentTab === WalletTab.Ordinals && onClickSelected
               ? onClickSelected(e)
@@ -48,7 +50,7 @@ const WalletTabs: React.FC<Props> = ({
       </Link>
       <Link href={`/bsv20`}>
         <S.Tab
-          partiallyactive={currentTab === WalletTab.BSV20 ? "true" : "false"}
+          $partiallyactive={currentTab === WalletTab.BSV20 ? "true" : "false"}
           onClick={(e: any) =>
             currentTab === WalletTab.BSV20 && onClickSelected
               ? onClickSelected(e)
@@ -59,7 +61,7 @@ const WalletTabs: React.FC<Props> = ({
         </S.Tab>
       </Link>
       {/* <S.Tab
-        partiallyactive={currentTab === WalletTab.BSV20 ? "true" : "false"}
+        $partiallyactive={currentTab === WalletTab.BSV20 ? "true" : "false"}
         href={`/inscribe?tab=video`}
         onClick={(e) =>
           currentTab === WalletTab.Video && onClickSelected

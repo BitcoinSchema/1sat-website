@@ -1,6 +1,7 @@
 import { FetchStatus, toastErrorProps } from "@/components/pages";
 import { SortListingsBy } from "@/components/pages/market/listings";
 import { readFileAsBase64 } from "@/utils/file";
+
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import {
   P2PKHAddress,
@@ -11,7 +12,7 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo, createOrdinal } from "js-1sat-ord";
+import { RemoteSigner, Utxo, createOrdinal } from "js-1sat-ord";
 import { head, sumBy } from "lodash";
 import Router from "next/router";
 import React, {
@@ -301,13 +302,16 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   const inscribeFile = useCallback(
     async (utxo: Utxo, file: File, metadata?: any) => {
       if (!file?.type || !utxo) {
+        debugger;
         throw new Error("File or utxo not provided");
       }
+
       setInscribeStatus(FetchStatus.Loading);
       try {
         const fileAsBase64 = await readFileAsBase64(file);
         try {
           setInscribeStatus(FetchStatus.Loading);
+
           const tx = await handleInscribing(
             payPk!,
             fileAsBase64,
@@ -904,6 +908,11 @@ const handleInscribing = async (
   //   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
   // );
   console.log("Inscribing with", { metadata });
+  const signer = {
+    // idKey // optional id key
+    keyHost: "http://localhost:21000",
+  } as RemoteSigner;
+
   try {
     const tx = await createOrdinal(
       fundingUtxo,
@@ -912,8 +921,8 @@ const handleInscribing = async (
       changeAddress,
       0.9,
       inscription,
-      metadata // optional metadata
-      // idKey // optional id key
+      metadata, // optional metadata
+      undefined
     );
     return tx;
   } catch (e) {

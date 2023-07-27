@@ -19,14 +19,14 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
   return (
     <div
-      className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50"
+      className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
       onClick={() => onClose()}
     >
       <div
         className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div>{content}</div>
+        <div className="relative w-full h-64 md:h-96">{content}</div>
         <div className="rounded mb-4 p-2 text-xs text-[#777]">
           <h1>License</h1>
           <IoMdWarning className="inline-block mr-2" />

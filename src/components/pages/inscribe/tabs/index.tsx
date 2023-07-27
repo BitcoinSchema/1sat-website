@@ -55,7 +55,7 @@ const InscriptionTabs: React.FC<Props> = ({
           Text
         </S.Tab>
       </Link>
-      <Link href={`/inscribe?tab=sns`}>
+      <Link href={`/inscribe?tab=html`}>
         <S.Tab
           $partiallyactive={
             currentTab === InscriptionTab.HTML ? "true" : "false"
@@ -69,7 +69,7 @@ const InscriptionTabs: React.FC<Props> = ({
           HTML
         </S.Tab>
       </Link>
-      <Link href={`/inscribe?tab=sns`}>
+      <Link href={`/inscribe?tab=bsv20`}>
         <S.Tab
           $partiallyactive={
             currentTab === InscriptionTab.BSV20 ? "true" : "false"
@@ -84,7 +84,7 @@ const InscriptionTabs: React.FC<Props> = ({
         </S.Tab>
       </Link>
       {/* <S.Tab
-        partiallyactive={currentTab === InscriptionTab.Model ? "true" : "false"}
+        $partiallyactive={currentTab === InscriptionTab.Model ? "true" : "false"}
         href={`/inscribe?tab=model`}
         onClick={(e) =>
           currentTab === InscriptionTab.Model && onClickSelected
@@ -95,7 +95,7 @@ const InscriptionTabs: React.FC<Props> = ({
         3D Model
       </S.Tab> */}
       {/* <S.Tab
-        partiallyactive={
+        $partiallyactive={
           currentTab === InscriptionTab.Collection ? "true" : "false"
         }
         href={`/inscribe?tab=collection`}
@@ -108,7 +108,7 @@ const InscriptionTabs: React.FC<Props> = ({
         Collection
       </S.Tab> */}
       {/* <S.Tab
-        partiallyactive={currentTab === InscriptionTab.BSV20 ? "true" : "false"}
+        $partiallyactive={currentTab === InscriptionTab.BSV20 ? "true" : "false"}
         href={`/inscribe?tab=video`}
         onClick={(e) =>
           currentTab === InscriptionTab.Video && onClickSelected

@@ -283,17 +283,15 @@ const Layout: React.FC<Props> = ({ children }) => {
           className="text-2xl md:opacity-25 md:hover:opacity-100 duration-700 transition mt-6 text-white cursor-pointer"
           onClick={() => Router.push("/")}
         >
-          {pathname !== "/" && (
-            <Image
-              src={oneSatLogo}
-              // onClick={() => Router?.push("/wallet")}
-              alt={"1Sat Ordinals"}
-              className="w-8 h-8 cursor-pointer mx-auto rounded"
-              style={{
-                animation: "opulcity 8s infinite",
-              }}
-            />
-          )}
+          <Image
+            src={oneSatLogo}
+            // onClick={() => Router?.push("/wallet")}
+            alt={"1Sat Ordinals"}
+            className="w-8 h-8 cursor-pointer mx-auto rounded"
+            style={{
+              animation: "opulcity 8s infinite",
+            }}
+          />
         </div>
       </div>
       <div className="min-h-[calc(100vh-8rem)] h-full flex flex-col items-center">

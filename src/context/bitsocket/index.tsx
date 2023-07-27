@@ -163,7 +163,7 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
 
       s.onopen = function () {
         if (!unmounted.current) {
-          console.log("open");
+          // console.log("open");
           setAddressConnectionStatus(ConnectionStatus.OPEN);
         }
       };

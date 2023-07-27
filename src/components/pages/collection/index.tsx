@@ -65,8 +65,11 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
     async (keyName: string = "ColectionId", collectionId: string) => {
       try {
         setFetchCollectionStatus(FetchStatus.Loading);
+        // 2 diff views
+        // one is what is listed for sale
+        // the other is everything
         const { promise } = customFetch<Item[]>(
-          `${API_HOST}/api/inscriptions/search/map?dir=asc`,
+          `${API_HOST}/api/inscriptions/search/map?dir=desc&sort=listing`,
           {
             method: "POST",
             body: JSON.stringify({

@@ -158,7 +158,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
         </div>
       </h1>
       {fetchListingsStatus === FetchStatus.Success && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-2 max-w-7xl">
           {listings?.map((l) => {
             if (l.SIGMA) {
               console.log({ sigma: l.SIGMA, price: l.price });

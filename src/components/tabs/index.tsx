@@ -27,7 +27,7 @@ const Tabs: React.FC<Props> = ({
   return (
     <S.Tabs className="max-w-7xl mx-auto mt-8 flex justify-center">
       {/* <S.Tab
-        partiallyactive={currentTab === Tab.Overview ? "true" : "false"}
+        $partiallyactive={currentTab === Tab.Overview ? "true" : "false"}
         href={`/`}
       >
         <IoMdSettings className="w-4 h-4" />
@@ -60,7 +60,7 @@ const Tabs: React.FC<Props> = ({
       </Link>
 
       {/* <S.Tab
-        partiallyactive={currentTab === Tab.Airdrop ? "true" : "false"}
+        $partiallyactive={currentTab === Tab.Airdrop ? "true" : "false"}
         href={`/airdrop`}
         onClick={(e) =>
           currentTab === Tab.Inscribe && onClickSelected

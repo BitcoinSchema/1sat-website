@@ -18,7 +18,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
       <iframe
         className={`pointer-events-none w-full h-full bg-none overflow-hidden no-scrollbar`}
         src={`https://ordfs.network/${origin}`}
-        sandbox="allow-scripts"
+        sandbox=" "
         height="100%"
         width="100%"
         scrolling="no"

@@ -20,6 +20,11 @@ export default function Document() {
       />
       <meta property="og:description" content="1Sat Ordinals Wallet" />
       <link rel="icon" href="/favicon.ico" />
+      <link rel="preconnect" href="https://api.whatsonchain.com"></link>
+      <link rel="preconnect" href="https://fonts.gstatic.com"></link>
+      <link rel="preconnect" href="https://webserver.tonicpow.com"></link>
+      <link rel="preconnect" href="https://ordfs.network"></link>
+      <link rel="preconnect" href="https://ordinals.gorillapool.io"></link>
       <meta name="twitter:card" content="summary" />
       <meta name="twitter:creator" content="@1SatOrdinals" />
       <meta

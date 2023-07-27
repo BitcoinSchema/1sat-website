@@ -11,9 +11,9 @@ export const Tabs = tw.nav`
 `;
 
 export const Tab = styled.div<{
-  partiallyactive: string;
+  $partiallyactive: string;
   disabled?: boolean;
-}>(({ partiallyactive, disabled }) => [
+}>(({ $partiallyactive, disabled }) => [
   tw`
     my-1
     sm:m-2
@@ -38,7 +38,7 @@ export const Tab = styled.div<{
         cursor-default
         transition
         `
-    : partiallyactive === "true"
+    : $partiallyactive === "true"
     ? tw`
         text-[#AAA]
         bg-[#111]

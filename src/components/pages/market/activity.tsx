@@ -93,7 +93,7 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
       </h1>
       <span className="text-center text-[#555]"></span>
       {fetchActivityStatus === FetchStatus.Success && (
-        <div className="p-4 grid w-full mx-auto justify-center sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="p-4 grid w-full mx-auto justify-center sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-7xl">
           {activity?.map((l) => {
             return (
               <div key={l.origin} className="">

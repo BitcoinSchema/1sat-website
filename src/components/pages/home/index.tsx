@@ -105,13 +105,12 @@ const HomePage: React.FC<PageProps> = ({}) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <Tabs currentTab={Tab.Overview} />
 
       <main className="px-4 flex items-center justify-center h-full w-full">
         <div className="flex flex-col items-center justify-between w-full h-full">
           <div className="w-full flex flex-col items-center justify-center ">
-            <nav>
-              <Tabs currentTab={Tab.Overview} />
-            </nav>
+            <nav></nav>
             <h2
               style={{ fontFamily: "Ubuntu" }}
               className="mt-2 text-xl font-semibold text-purple-300"

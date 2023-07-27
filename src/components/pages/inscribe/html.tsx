@@ -1,8 +1,9 @@
 import { useOrdinals } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
+import { toBase64 } from "@/utils/string";
 import { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FetchStatus } from "..";
 
 interface InscribeHtmlProps {
@@ -28,7 +29,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
   //   const fire = async (t: string) => {
   //     // send base64 encoded preview html to server
   //     // https://ordfs.network/preview/<base64 encoded html>
-  //     const encoded = btoa(t);
+  //     const encoded = toBase64(t);
   //     const previewUrl = `https://ordfs.network/preview/${encoded}`;
   //     const result = await fetch(previewUrl);
   //     const h = await result.text();
@@ -89,25 +90,56 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
     }
   }, [getUTXOs, changeAddress, ordAddress, payPk, inscribeHtml]);
 
+  const [encoded, setEncoded] = useState<string>();
+
+  useEffect(() => {
+    if (text) {
+      if (text.length > 8000) {
+        setEncoded(toBase64("Too large to preview"));
+        return;
+      }
+      // base64 encode the html
+      var blob = new Blob(
+        // I'm using page innerHTML as data
+        // note that you can use the array
+        // to concatenate many long strings EFFICIENTLY
+        [text],
+        // Mime type is important for data url
+        { type: "text/html" }
+      );
+      // This FileReader works asynchronously, so it doesn't lag
+      // the web application
+      var a = new FileReader();
+      a.onload = function (e) {
+        // Capture result here
+        console.log(e.target?.result);
+
+        setEncoded((e.target?.result as string).split(",")[1] as string);
+      };
+      a.readAsDataURL(blob);
+    }
+  }, [text, setEncoded]);
+
   const html = useMemo(() => {
-    if (!text) {
+    if (!text || !encoded) {
       return (
         <div className="flex items-center justify-center text-center w-full h-full text-[#333]">
           Preview
         </div>
       );
     }
-    // base64 encode the html
-    const encoded = btoa(text);
+
+    // const encoded = toBase64(text);
     return (
       <iframe
-        sandbox="allow-scripts"
+        id="previewIframe"
+        sandbox=" "
         className="w-full rounded h-full"
         // src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}
         src={`https://ordfs.network/preview/${encoded}`}
       />
     );
-  }, [text]);
+  }, [encoded, text]);
 
   return (
     <div className="w-full max-w-4xl mx-auto">
