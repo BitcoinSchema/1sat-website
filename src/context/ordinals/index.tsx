@@ -130,6 +130,7 @@ type ContextValue = {
   fetchInscriptionsStatus: FetchStatus;
   listing?: OrdUtxo;
   listings?: OrdUtxo[];
+  filteredListings?: OrdUtxo[];
   setFetchInscriptionsStatus: (status: FetchStatus) => void;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
@@ -283,7 +284,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       try {
         const offset = (page - 1) * ORDS_PER_PAGE;
 
-        const { promise } = http.customFetch<any>(
+        const { promise } = http.customFetch<OrdUtxo[]>(
           `${API_HOST}/api/market?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sortBy}&dir=${dir}`
         );
 
@@ -298,6 +299,37 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     },
     [setFetchListingsStatus, setListings]
   );
+
+  const filteredListings = useMemo(() => {
+    return (listings || []).filter(
+      (l) =>
+        !lockBlacklist.includes(l.lock) &&
+        !txidBlacklist.includes(l.txid) &&
+        l.file?.hash &&
+        !fileHashBlacklist.includes(l.file.hash) &&
+        (!l.SIGMA || !l.SIGMA.some((s) => sigmaBlacklist.includes(s.address)))
+    );
+  }, [listings]);
+
+  const blockedListings = useMemo(() => {
+    return (listings || []).filter(
+      (l) =>
+        lockBlacklist.includes(l.lock) ||
+        txidBlacklist.includes(l.txid) ||
+        (l.SIGMA && l.SIGMA.some((s) => sigmaBlacklist.includes(s.address)))
+    );
+  }, [listings]);
+
+  const suspiciousListings = useMemo(() => {
+    return (listings || []).filter(
+      (l) =>
+        l && l.SIGMA && l.SIGMA.some((s) => sigmaGreylist.includes(s.address))
+    );
+  }, [listings]);
+
+  // useEffect(() => {
+  //   console.log({ blockedListings, suspiciousListings });
+  // }, [blockedListings, suspiciousListings]);
 
   const inscribeFile = useCallback(
     async (utxo: Utxo, file: File, metadata?: any) => {
@@ -834,6 +866,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       inscribeFile,
       inscribeStatus,
       cancelListing,
+      filteredListings,
     }),
     [
       bsv20s,
@@ -860,6 +893,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       inscribeFile,
       inscribeStatus,
       cancelListing,
+      filteredListings,
     ]
   );
 
@@ -929,3 +963,25 @@ const handleInscribing = async (
     throw e;
   }
 };
+
+const lockBlacklist = [
+  "23ce2a1ce41a8a3bbc1f2390e84e70303d9d1e160ef5a9cb00906e7932facdd6", // same guy as 1AFyyfCgx1UtDy1jb9nsXmCFHK6jrnYN2J I think
+];
+
+const sigmaBlacklist = [
+  "1AFyyfCgx1UtDy1jb9nsXmCFHK6jrnYN2J", // malicious html inscriptions c23a4c99d83d00dffe83bd7453e552ded916c0ed4f5236561c0620959c8b03e7 (his ord address?) funding address is   1HfS57RPC5oSoUMrxHgMwMvJRxJ6oah1Vd
+];
+
+const sigmaGreylist = [
+  "154YFnNM3cyPN3bY64X8M1stut5Ey54Nun", // malicious inscription listing 7940b0b590df5b97d35d82e1f042374bbb08592ec6f08135e0198187ebf6150a but is this a platform or user signature?
+];
+
+const txidBlacklist = [
+  "c23a4c99d83d00dffe83bd7453e552ded916c0ed4f5236561c0620959c8b03e7", // malicious html inscription
+  "f23e1800f7b989511a48c3110279126cd42e037b6b3e653f89e908953e4e4e4e", // malicious html inscription
+  "7940b0b590df5b97d35d82e1f042374bbb08592ec6f08135e0198187ebf6150a", // malicious html inscription
+];
+
+const fileHashBlacklist = [
+  "e13e4ba81fe85a34b37f99c7083cd210bcc54c617a7e1c500e02ad412b0a7f70",
+]; // infinite loop inscription #27349134

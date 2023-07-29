@@ -23,7 +23,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
   const [lastSortBy, setLastSortBy] = useState<SortListingsBy>(sortBy);
   const [lastDir, setLastDir] = useState<Dir>(dir);
 
-  const { listings, getListings, fetchListingsStatus } = useOrdinals();
+  const { filteredListings, getListings, fetchListingsStatus } = useOrdinals();
   const searchParams = useSearchParams();
   const page = searchParams.get("page");
 
@@ -50,7 +50,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
     }
   }, [
     currentPage,
-    listings,
+    filteredListings,
     getListings,
     fetchListingsStatus,
     sortBy,
@@ -159,10 +159,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
       </h1>
       {fetchListingsStatus === FetchStatus.Success && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-2 max-w-7xl">
-          {listings?.map((l) => {
-            if (l.SIGMA) {
-              console.log({ sigma: l.SIGMA, price: l.price });
-            }
+          {filteredListings?.map((l) => {
             return (
               <div key={l.origin}>
                 <Artifact
