@@ -1,4 +1,3 @@
-import { API_HOST } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { ArtifactType } from ".";
@@ -22,9 +21,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className }) => {
     const fire = async () => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
-        const result = await fetch(
-          `${API_HOST}/api/files/inscriptions/${origin}`
-        );
+        const result = await fetch(`/content/${origin}`);
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
         try {
@@ -37,9 +34,9 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className }) => {
           }
         } catch (e) {
           // not json
+          setText(resultText);
           return;
         }
-        setText(resultText);
       } catch (e) {
         console.error("Failed to fetch inscription", e);
         setFetchTextStatus(FetchStatus.Error);

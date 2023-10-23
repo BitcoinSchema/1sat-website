@@ -33,16 +33,14 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
       try {
         setFetchTextStatus(FetchStatus.Loading);
 
-        const result = await fetch(
-          `${API_HOST}/api/files/inscriptions/${origin}`
-        );
+        const result = await fetch(`/content/${origin}`);
         const resultText = await result.json();
         setFetchTextStatus(FetchStatus.Success);
         setJson(resultText);
 
         if (type === ArtifactType.BSV20) {
           const bsv20Result = await fetch(
-            `${API_HOST}/api/bsv20/outpoint/${origin?.split("_")[0]}/${
+            `${API_HOST}/api/txos/${origin?.split("_")[0]}/${
               origin?.split("_")[1]
             }`
           );

@@ -336,7 +336,7 @@ const WalletProvider: React.FC<Props> = (props) => {
             txid: e.txid,
             // id: parseInt(e.id),
             vout: e.vout,
-            file: e.file,
+            data: { insc: e.file },
             origin: e.origin,
             height: e.height,
             outpoint: e.outpoint,
@@ -436,7 +436,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         const direction = sort ? "ASC" : "DESC";
 
         const r = await fetch(
-          `${API_HOST}/api/utxos/address/${address}/inscriptions?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&excludeBsv20=true`
+          `${API_HOST}/api/txos/address/${address}/unspent?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&bsv20=false`
         );
 
         const utxos = (await r.json()) as OrdUtxo[];
@@ -519,9 +519,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     async (address: string): Promise<{ [tick: string]: number }> => {
       setFetchBsv20sStatus(FetchStatus.Loading);
       try {
-        const r = await fetch(
-          `${API_HOST}/api/bsv20/address/${address}/balance`
-        );
+        const r = await fetch(`${API_HOST}/api/bsv20/${address}/balance`);
         const balances = (await r.json()) as { [tick: string]: number };
 
         setFetchBsv20sStatus(FetchStatus.Success);
@@ -548,7 +546,7 @@ const WalletProvider: React.FC<Props> = (props) => {
 
       try {
         const r = await fetch(
-          `${API_HOST}/api/bsv20/address/${address}?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&status=all`
+          `${API_HOST}/api/txos/address/${address}/unspent?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&status=all&bsv20=true`
         );
         const utxos = (await r.json()) as BSV20[];
 

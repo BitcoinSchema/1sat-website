@@ -1,4 +1,4 @@
-import { API_HOST, SIGMA } from "@/context/ordinals";
+import { SIGMA } from "@/context/ordinals";
 import { head } from "lodash";
 import Image from "next/image";
 import React, { useMemo, useState } from "react";
@@ -31,6 +31,7 @@ export enum ArtifactType {
   Text,
   JSON,
   BSV20,
+  OPNS,
 }
 
 type ArtifactProps = {
@@ -58,7 +59,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   classNames,
   num,
   to,
-  src = `${API_HOST}/api/files/inscriptions/${origin}`,
+  src = `/content/${origin}`,
   onClick,
   txid,
   price,
@@ -99,6 +100,8 @@ const Artifact: React.FC<ArtifactProps> = ({
       artifactType = ArtifactType.HTML;
     } else if (t === "application/bsv-20") {
       artifactType = ArtifactType.BSV20;
+    } else if (t === "application/op-ns") {
+      artifactType = ArtifactType.OPNS;
     } else if (t?.startsWith("image")) {
       artifactType = ArtifactType.Image;
     }
@@ -176,7 +179,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       >
         <JsonArtifact origin={origin} type={type} />
       </div>
-    ) : type === ArtifactType.Text ? (
+    ) : type === ArtifactType.Text || type === ArtifactType.OPNS ? (
       <div className={`w-full p-2 h-full`}>
         <TextArtifact origin={origin} className="w-full" />
       </div>

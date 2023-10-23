@@ -44,7 +44,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     const fire = async () => {
       try {
         setFetchCountStatus(FetchStatus.Loading);
-        const resp = await fetch(`${API_HOST}/api/inscriptions/count`);
+        const resp = await fetch(`${API_HOST}/api/origins/count`);
 
         const { count } = await resp.json();
         setNumMinted(count);
@@ -74,6 +74,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
   useEffect(() => {
     const fire = async (iid: number) => {
       const art = await getArtifactByInscriptionId(iid);
+
       if (art) {
         //         console.log("FILLING", { art });
         // const art2 = await fillContentType(art);
@@ -128,9 +129,10 @@ const HomePage: React.FC<PageProps> = ({}) => {
                 <Artifact
                   num={artifact?.num}
                   origin={
-                    artifact.origin || ` ${artifact?.txid}_${artifact?.vout}`
+                    artifact.origin?.outpoint ||
+                    ` ${artifact?.txid}_${artifact?.vout}`
                   }
-                  contentType={artifact.file?.type}
+                  contentType={artifact.data?.insc?.file.type}
                   classNames={{
                     wrapper: "min-w-96",
                     media: "max-h-96 max-w-96",

@@ -1,6 +1,6 @@
 import Artifact from "@/components/artifact";
 import OrdAddress from "@/components/ordAddress";
-import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { head } from "lodash";
 import Router from "next/router";
@@ -121,11 +121,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
       <Artifact
         to={artifact && artifact.num ? `/inscription/${artifact.num}` : "#"}
         origin={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
-        src={
-          artifact
-            ? `${API_HOST}/api/files/inscriptions/${artifact.origin}`
-            : ""
-        }
+        src={artifact ? `/content/${artifact.origin}` : ""}
         num={artifact?.num}
         contentType={artifact?.file?.type}
         height={artifact?.height}

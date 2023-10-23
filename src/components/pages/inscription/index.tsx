@@ -121,7 +121,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       artifact?.origin &&
       fetchListingStatus === FetchStatus.Idle
     ) {
-      fire(artifact.origin);
+      fire(artifact.origin.outpoint);
     }
   }, [
     inscriptionId,
@@ -353,19 +353,19 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     }
     return (
       <Artifact
-        key={artifact.txid}
+        key={ordListing?.txid || artifact.txid}
         classNames={{
           wrapper: `max-w-5xl w-full h-full`,
           media: `max-h-[calc(100vh-20em)]`,
         }}
         contentType={artifact.file?.type}
-        origin={artifact.origin || ""}
+        origin={artifact.origin?.outpoint || ""}
         num={artifact.num}
         height={artifact.height}
         clickToZoom={true}
       />
     );
-  }, [artifact]);
+  }, [ordListing, artifact]);
 
   return (
     <>

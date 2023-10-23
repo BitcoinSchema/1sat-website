@@ -33,7 +33,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
 
       let arts = [];
       for (let a of art) {
-        if (a.origin?.split("_")[0] === a.txid) {
+        if (a.origin?.outpoint?.split("_")[0] === a.txid) {
           // const art2 = await fillContentType(a);
           arts.push(a);
         } else {

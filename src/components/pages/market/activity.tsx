@@ -96,11 +96,11 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
         <div className="p-4 grid w-full mx-auto justify-center sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-7xl">
           {activity?.map((l) => {
             return (
-              <div key={l.origin} className="">
+              <div key={l.origin?.outpoint} className="">
                 {/* <div>Listing? {l.listing ? "True" : "False"}</div> */}
                 <Artifact
-                  key={l.origin || `${l.txid}_${l.vout}`}
-                  origin={l.origin || `${l.txid}_${l.vout}`}
+                  key={l.origin?.outpoint || `${l.txid}_${l.vout}`}
+                  origin={l.origin?.outpoint || `${l.txid}_${l.vout}`}
                   contentType={l.file?.type}
                   num={l.num}
                   classNames={{

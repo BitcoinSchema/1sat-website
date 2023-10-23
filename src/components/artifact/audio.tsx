@@ -1,4 +1,3 @@
-import { API_HOST } from "@/context/ordinals";
 import { encode } from "blurhash";
 import { toSvg } from "jdenticon";
 import React, { useEffect, useMemo, useState } from "react";
@@ -96,7 +95,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
       {!bh && generatedImage}
       <audio
         className={`w-full transition ${className ? className : ""}`}
-        src={src ? src : `${API_HOST}/api/files/inscriptions/${origin}`}
+        src={src ? src : `/content/${origin}`}
         id={`${src ? src : outPoint}_audio`}
         onPlaying={(e) => {
           console.log("playing", e);

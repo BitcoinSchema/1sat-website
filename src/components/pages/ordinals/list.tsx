@@ -59,10 +59,10 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
         {ordUtxos?.map((a) => (
           <Artifact
             onClick={() =>
-              onClick && onClick(a.origin || `${a.txid}_${a.vout}`)
+              onClick && onClick(a.origin?.outpoint || `${a.txid}_${a.vout}`)
             }
-            key={a.origin || `${a.txid}_${a.vout}`}
-            origin={a.origin || `${a.txid}_${a.vout}`}
+            key={a.origin?.outpoint || `${a.txid}_${a.vout}`}
+            origin={a.origin?.outpoint || `${a.txid}_${a.vout}`}
             contentType={a.file?.type}
             num={a.num}
             to={

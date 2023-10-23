@@ -28,7 +28,7 @@ import * as http from "../../utils/httpClient";
 import { useBitsocket } from "../bitsocket";
 import { ORDS_PER_PAGE, PendingTransaction, useWallet } from "../wallet";
 
-export const API_HOST = `https://ordinals.gorillapool.io`;
+export const API_HOST = `https://v3.ordinals.gorillapool.io`;
 
 type MarketResponse = {
   txid: string;
@@ -60,20 +60,68 @@ type GPFile = {
   type: string;
 };
 
-export interface OrdUtxo extends Utxo {
-  file?: GPFile;
-  origin?: string;
+export enum Bsv20Status {
+  Invalid = -1,
+  Pending = 0,
+  Valid = 1,
+}
+
+export class TxoData {
+  types?: string[];
+  insc?: Inscription;
+  map?: { [key: string]: any };
+  b?: File;
+  sigma?: SIGMA[];
+  list?: {
+    price: number;
+    payout: string;
+  };
+  bsv20?: {
+    id?: string;
+    p: string;
+    op: string;
+    tick?: string;
+    amt: string;
+    status?: Bsv20Status;
+  };
+}
+
+export interface Claim {
+  sub: string;
+  type: string;
+  value: string;
+}
+
+type Origin = {
+  data?: TxoData;
+  num?: number;
   outpoint: string;
+  map?: { [key: string]: any };
+};
+
+export interface OrdUtxo extends Utxo {
+  txid: string;
+  vout: number;
+  outpoint: string;
+  satoshis: number;
+  accSats: number;
+  owner?: string;
+  script: string;
+  spend?: string;
+  origin?: Origin;
+  height: number;
+  idx: number;
+  data?: TxoData;
+  file?: GPFile;
+  // origin?: string;
+  // outpoint: string;
   listing: boolean;
   price?: number;
   SIGMA?: SIGMA[];
   num: number | undefined;
-  height?: number;
   MAP?: any; // MAP
-  payout?: string; // base64 encoded
-  spend: string;
+  // payout?: string; // base64 encoded == moved to data.list.payout
   lock: string;
-  idx: number;
 }
 
 // {"vin":0,"valid":true,"address":"18z9RxyXLzNLsJa5WsheDiqBhSrgf9qEr3","algorithm":"BSM","signature":"HxEudhvOxqPMC867Y7sZ2/LUxT8srQw9zlQiINLaJhRiA4QFBCVnj9IKJglAgZuM8ncTT/zXcWS9h9PUkF61hHQ="}
@@ -111,6 +159,13 @@ type Stats = {
   indexed: number;
   latest: number;
 };
+
+export interface Inscription {
+  json?: any;
+  text?: string;
+  words?: string[];
+  file: GPFile;
+}
 
 type ContextValue = {
   bsv20s?: BSV20[];
@@ -305,8 +360,8 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       (l) =>
         !lockBlacklist.includes(l.lock) &&
         !txidBlacklist.includes(l.txid) &&
-        l.file?.hash &&
-        !fileHashBlacklist.includes(l.file.hash) &&
+        l.data?.insc?.file.hash &&
+        !fileHashBlacklist.includes(l.data!.insc.file.hash) &&
         (!l.SIGMA || !l.SIGMA.some((s) => sigmaBlacklist.includes(s.address)))
     );
   }, [listings]);
@@ -334,7 +389,6 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   const inscribeFile = useCallback(
     async (utxo: Utxo, file: File, metadata?: any) => {
       if (!file?.type || !utxo) {
-        debugger;
         throw new Error("File or utxo not provided");
       }
 
@@ -499,7 +553,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     async (inscriptionId: number): Promise<OrdUtxo> => {
       setFetchInscriptionsStatus(FetchStatus.Loading);
       try {
-        const r = await fetch(`${API_HOST}/api/inscriptions/${inscriptionId}`);
+        const r = await fetch(`${API_HOST}/api/origins/num/${inscriptionId}`);
         const inscription = (await r.json()) as OrdUtxo;
         setFetchInscriptionsStatus(FetchStatus.Success);
         return inscription;

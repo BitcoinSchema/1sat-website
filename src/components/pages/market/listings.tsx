@@ -161,10 +161,10 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-2 max-w-7xl">
           {filteredListings?.map((l) => {
             return (
-              <div key={l.origin}>
+              <div key={l.origin?.outpoint}>
                 <Artifact
-                  key={l.origin || `${l.txid}_${l.vout}`}
-                  origin={l.origin || `${l.txid}_${l.vout}`}
+                  key={l.origin?.outpoint || `${l.txid}_${l.vout}`}
+                  origin={l.origin?.outpoint || `${l.txid}_${l.vout}`}
                   outPoint={l.outpoint}
                   contentType={l.file?.type}
                   num={l.num}

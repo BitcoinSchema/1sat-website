@@ -107,7 +107,7 @@ export const BitsocketProvider: React.FC<Props> = (props) => {
       // Subscribe
       setAddressConnectionStatus(ConnectionStatus.CONNECTING);
       const s = new EventSource(
-        `https://ordinals.gorillapool.io/api/subscribe?address=${ordAddress}&channel=settled&channel=indexed`
+        `https://v3.ordinals.gorillapool.io/api/subscribe?address=${ordAddress}&channel=settled&channel=indexed`
         // leid !== "undefined"
         //   ? {
         //       headers: { "Last-Event-Id": leid },

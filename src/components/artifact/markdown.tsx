@@ -1,4 +1,3 @@
-import { API_HOST } from "@/context/ordinals";
 import React, { useEffect, useMemo, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
@@ -22,9 +21,7 @@ const MarkdownArtifact: React.FC<MarkdownArtifactProps> = ({
     const fire = async () => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
-        const result = await fetch(
-          `${API_HOST}/api/files/inscriptions/${origin}`
-        );
+        const result = await fetch(`/content/${origin}`);
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
         setText(resultText);

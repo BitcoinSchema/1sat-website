@@ -1,6 +1,6 @@
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
-import { API_HOST, OrdUtxo } from "@/context/ordinals";
+import { OrdUtxo } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import {
   createChangeOutput,
@@ -247,7 +247,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
   // classNames,
   // num,
   // to,
-  // src = `${API_HOST}/api/files/inscriptions/${origin}`,
+  // src = `/content/${origin}`,
   // onClick,
   // txid,
   // price,
@@ -358,7 +358,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
               origin={outpoint as string}
               contentType="image/png"
               num={artifact?.num}
-              src={`${API_HOST}/api/files/inscriptions/${outpoint}`}
+              src={`/content/${outpoint}`}
               onClick={() => {}}
               txid={artifact?.txid as string}
               price={price}
