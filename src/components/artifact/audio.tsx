@@ -95,7 +95,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
       {!bh && generatedImage}
       <audio
         className={`w-full transition ${className ? className : ""}`}
-        src={src ? src : `/content/${origin}`}
+        src={src ? src : `https://ordfs.network/content/${origin}`}
         id={`${src ? src : outPoint}_audio`}
         onPlaying={(e) => {
           console.log("playing", e);

@@ -59,7 +59,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   classNames,
   num,
   to,
-  src = `/content/${origin}`,
+  src = `https://ordfs.network/content/${origin}`,
   onClick,
   txid,
   price,

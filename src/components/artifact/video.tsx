@@ -14,7 +14,7 @@ const VideoArtifact: React.FC<VideoArtifactProps> = ({
   return (
     <video
       className={`transition  ${className ? className : ""}`}
-      src={src ? src : `/content/${origin}`}
+      src={src ? src : `https://ordfs.network/content/${origin}`}
       controls={true}
     />
   );

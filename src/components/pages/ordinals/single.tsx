@@ -121,7 +121,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
       <Artifact
         to={artifact && artifact.num ? `/inscription/${artifact.num}` : "#"}
         origin={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
-        src={artifact ? `/content/${artifact.origin}` : ""}
+        src={artifact ? `https://ordfs.network/content/${artifact.origin}` : ""}
         num={artifact?.num}
         contentType={artifact?.file?.type}
         height={artifact?.height}

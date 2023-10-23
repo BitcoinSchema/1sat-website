@@ -358,7 +358,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
               origin={outpoint as string}
               contentType="image/png"
               num={artifact?.num}
-              src={`/content/${outpoint}`}
+              src={`https://ordfs.network/content/${outpoint}`}
               onClick={() => {}}
               txid={artifact?.txid as string}
               price={price}

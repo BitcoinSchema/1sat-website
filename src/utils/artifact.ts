@@ -3,7 +3,7 @@ import { Hash } from "bsv-wasm-web";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
   const origin = artifact.origin || `${artifact.txid}_${artifact.vout}`;
-  const url = `/content/${origin}`;
+  const url = `https://ordfs.network/content/${origin}`;
 
   return new Promise(async (resolve, reject) => {
     try {

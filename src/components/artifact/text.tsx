@@ -21,7 +21,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className }) => {
     const fire = async () => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
-        const result = await fetch(`/content/${origin}`);
+        const result = await fetch(`https://ordfs.network/content/${origin}`);
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
         try {
