@@ -318,7 +318,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       setFetchListingStatus(FetchStatus.Loading);
       try {
         const { promise } = http.customFetch<any>(
-          `${API_HOST}/api/market/${outPoint}`
+          `${API_HOST}/api/inscriptions/${outPoint}`
         );
 
         const result = await promise;
@@ -345,7 +345,6 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
 
         const results = await promise;
         setFetchListingsStatus(FetchStatus.Success);
-
         setListings(results);
       } catch (e) {
         setFetchListingsStatus(FetchStatus.Error);
@@ -356,13 +355,13 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const filteredListings = useMemo(() => {
+    // console.log("Listings:", listings)
     return (listings || []).filter(
       (l) =>
-        !lockBlacklist.includes(l.lock) &&
         !txidBlacklist.includes(l.txid) &&
-        l.data?.insc?.file.hash &&
-        !fileHashBlacklist.includes(l.data!.insc.file.hash) &&
-        (!l.SIGMA || !l.SIGMA.some((s) => sigmaBlacklist.includes(s.address)))
+        l.origin?.data?.insc?.file.hash &&
+        !fileHashBlacklist.includes(l.origin?.data!.insc.file.hash) && 
+        (!l.origin.data.sigma || !l.origin.data.sigma.some((s) => sigmaBlacklist.includes(s.address)))
     );
   }, [listings]);
 
@@ -534,7 +533,11 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       setFetchInscriptionsStatus(FetchStatus.Loading);
       try {
         const r = await fetch(`${API_HOST}/api/inscriptions/${suffix}`);
-        const inscriptions = (await r.json()) as OrdUtxo[];
+        const results = await r.json();
+        const inscriptions = Array.isArray(results) ?
+          results as OrdUtxo[] :
+          [results as OrdUtxo];
+        // const inscriptions = await r.json()) as OrdUtxo[];
         setFetchInscriptionsStatus(FetchStatus.Success);
         // let utxo = res.find((u: any) => u.value > 1);
         // TODO: How to get script?
@@ -577,9 +580,9 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
           vout: i.vout,
           satoshis: 1,
           txid: i.txid,
-          file: i.file,
-          origin: i.origin,
-          num: i.num,
+          file: i.origin?.data?.insc?.file,
+          origin: i.origin?.outpoint,
+          num: i.origin?.num,
         } as OrdUtxo;
       });
     },

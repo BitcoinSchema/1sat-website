@@ -166,17 +166,17 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   key={l.origin?.outpoint || `${l.txid}_${l.vout}`}
                   origin={l.origin?.outpoint || `${l.txid}_${l.vout}`}
                   outPoint={l.outpoint}
-                  contentType={l.file?.type}
-                  num={l.num}
+                  contentType={l.origin?.data?.insc?.file?.type}
+                  num={l.origin?.num}
                   classNames={{
                     wrapper:
                       "max-w-72 max-h-72 overflow-hidden mb-2 cursor-pointer",
                   }}
                   txid={l.txid}
-                  price={l.price || 0}
+                  price={l.data?.list?.price || 0}
                   height={l.height}
                   isListing={true}
-                  sigma={l.SIGMA}
+                  sigma={l.origin?.data?.sigma}
                   clickToZoom={false}
                   onClick={() => {
                     router.push(`/inscription/${l.num}`);
