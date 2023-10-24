@@ -40,9 +40,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
 
         if (type === ArtifactType.BSV20) {
           const bsv20Result = await fetch(
-            `${API_HOST}/api/txos/${origin?.split("_")[0]}/${
-              origin?.split("_")[1]
-            }`
+            `${API_HOST}/api/txos/${origin}`
           );
           if (bsv20Result.status === 200) {
             const bsv20ResultJson = await bsv20Result.json();

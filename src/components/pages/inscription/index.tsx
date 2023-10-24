@@ -101,7 +101,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       try {
         setFetchListingStatus(FetchStatus.Loading);
         const { promise } = customFetch<OrdUtxo>(
-          `${API_HOST}/api/inscriptions/origin/${origin}/latest`
+          `${API_HOST}/api/inscriptions/${origin}/latest`
         );
 
         const listing = await promise;

@@ -484,7 +484,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
         const offset = (page - 1) * ORDS_PER_PAGE;
 
         const { promise } = http.customFetch<any>(
-          `${API_HOST}/api/market/recent?limit=${ORDS_PER_PAGE}&offset=${offset}`
+          `${API_HOST}/api/market?limit=${ORDS_PER_PAGE}&offset=${offset}`
         );
 
         const results = await promise;
@@ -526,7 +526,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       let [txid, vout] = txidOrOrigin.split("_");
       let suffix = "";
       if (vout) {
-        suffix += `origin/${txid}_${vout}`;
+        suffix += `${txid}_${vout}`;
       } else {
         suffix += `txid/${txid}`;
       }

@@ -99,7 +99,7 @@ const FeaturedCollections: React.FC = () => {
       try {
         setFetchFeaturedStatus(FetchStatus.Loading);
         const { promise } = await customFetch<Collection[]>(
-          `${API_HOST}/api/collections/recent`
+          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {type: 'collection'}})).toString('base64')}`
         );
 
         const featuredCollections = await promise;

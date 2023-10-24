@@ -51,7 +51,7 @@ export const createChangeOutput = (
 
 export const fetchOrdinal = async (outpoint: string) => {
   const { promise } = customFetch<OrdUtxo[]>(
-    `${API_HOST}/api/inscriptions/origin/${outpoint}`
+    `${API_HOST}/api/inscriptions/${outpoint}`
   );
   const items = await promise;
   return items;

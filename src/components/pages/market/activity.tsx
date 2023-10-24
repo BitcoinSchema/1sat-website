@@ -101,7 +101,7 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
                 <Artifact
                   key={l.origin?.outpoint || `${l.txid}_${l.vout}`}
                   origin={l.origin?.outpoint || `${l.txid}_${l.vout}`}
-                  contentType={l.file?.type}
+                  contentType={l.origin?.data?.insc?.file?.type}
                   num={l.num}
                   classNames={{
                     wrapper: "overflow-hidden mb-2",

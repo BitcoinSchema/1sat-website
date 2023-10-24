@@ -58,13 +58,13 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 mb-4">
         {ordUtxos?.map((a) => (
           <Artifact
-            onClick={() =>
+            onClick={() => 
               onClick && onClick(a.origin?.outpoint || `${a.txid}_${a.vout}`)
             }
             key={a.origin?.outpoint || `${a.txid}_${a.vout}`}
             origin={a.origin?.outpoint || `${a.txid}_${a.vout}`}
-            contentType={a.file?.type}
-            num={a.num}
+            contentType={a.origin?.data?.insc?.file?.type}
+            num={a.origin?.num}
             to={
               onClick
                 ? undefined
@@ -77,7 +77,7 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
             }}
             txid={a.txid}
             height={a.height}
-            isListing={a.listing}
+            isListing={!!a.data?.list}
           />
         ))}
       </div>

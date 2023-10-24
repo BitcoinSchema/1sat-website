@@ -69,11 +69,11 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
         // one is what is listed for sale
         // the other is everything
         const { promise } = customFetch<Item[]>(
-          `${API_HOST}/api/inscriptions/search/map?dir=desc&sort=listing`,
+          `${API_HOST}/api/inscriptions/search`,
           {
             method: "POST",
             body: JSON.stringify({
-              query: {
+              map: {
                 [keyName]: collectionId,
               },
             }),
@@ -123,7 +123,7 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
       try {
         setFetchCollectionStatus(FetchStatus.Loading);
         const { promise } = customFetch<Item[]>(
-          `${API_HOST}/api/collections/${cid}/items`
+          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {subItemData: {collectionId: cid}}})).toString('base64')}`
         );
         const c = await promise;
         if (c.length > 0) {
