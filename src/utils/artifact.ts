@@ -1,9 +1,9 @@
-import { OrdUtxo } from "@/context/ordinals";
+import { API_HOST, OrdUtxo } from "@/context/ordinals";
 import { Hash } from "bsv-wasm-web";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
-  const origin = artifact.origin || `${artifact.txid}_${artifact.vout}`;
-  const url = `https://ordfs.network/content/${origin}`;
+  const origin = artifact.origin?.outpoint || `${artifact.txid}_${artifact.vout}`;
+  const url = `${API_HOST}/content/${origin}`;
 
   return new Promise(async (resolve, reject) => {
     try {

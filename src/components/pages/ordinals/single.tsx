@@ -1,6 +1,6 @@
 import Artifact from "@/components/artifact";
 import OrdAddress from "@/components/ordAddress";
-import { OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { head } from "lodash";
 import Router from "next/router";
@@ -19,18 +19,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
   useEffect(() => console.log({ artifact }), [artifact]);
 
   const isBsv20 = useMemo(() => {
-    if (artifact) {
-      if (
-        (head(artifact.file!.type.split(";")) === "text/plain" &&
-          (artifact.height || 0) > 793000) ||
-        head(artifact.file!.type.split(";")) === "application/bsv-20"
-      ) {
-        return true;
-      }
-      return;
-    } else {
-      return false;
-    }
+    return !!artifact.data?.bsv20
   }, [artifact]);
 
   useEffect(() => {
@@ -119,9 +108,9 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
   return (
     <div className="flex md:flex-row flex-col justify-between items-start w-full">
       <Artifact
-        to={artifact && artifact.num ? `/inscription/${artifact.num}` : "#"}
+        to={artifact ? `/inscription/${artifact.origin?.num}` : "#"}
         origin={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
-        src={artifact ? `https://ordfs.network/content/${artifact.origin}` : ""}
+        src={artifact ? `${API_HOST}/content/${artifact.origin}` : ""}
         num={artifact?.num}
         contentType={artifact?.file?.type}
         height={artifact?.height}

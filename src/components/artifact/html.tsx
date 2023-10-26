@@ -1,3 +1,5 @@
+import { API_HOST } from "@/context/ordinals";
+
 interface ArtifactProps {
   origin: string;
   onClick?: () => void;
@@ -17,7 +19,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
     >
       <iframe
         className={`pointer-events-none w-full h-full bg-none overflow-hidden no-scrollbar`}
-        src={`https://ordfs.network/${origin}`}
+        src={`${API_HOST}/content/${origin}`}
         sandbox=" "
         height="100%"
         width="100%"

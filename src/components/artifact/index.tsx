@@ -1,4 +1,4 @@
-import { SIGMA } from "@/context/ordinals";
+import { API_HOST, SIGMA } from "@/context/ordinals";
 import { head } from "lodash";
 import Image from "next/image";
 import React, { useMemo, useState } from "react";
@@ -59,7 +59,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   classNames,
   num,
   to,
-  src = `https://ordfs.network/content/${origin}`,
+  src = `${API_HOST}/content/${origin}`,
   onClick,
   txid,
   price,

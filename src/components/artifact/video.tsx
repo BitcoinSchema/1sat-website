@@ -1,3 +1,4 @@
+import { API_HOST } from "@/context/ordinals";
 import React from "react";
 
 type VideoArtifactProps = {
@@ -14,7 +15,7 @@ const VideoArtifact: React.FC<VideoArtifactProps> = ({
   return (
     <video
       className={`transition  ${className ? className : ""}`}
-      src={src ? src : `https://ordfs.network/content/${origin}`}
+      src={src ? src : `${API_HOST}/content/${origin}`}
       controls={true}
     />
   );
