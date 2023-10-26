@@ -918,110 +918,69 @@ const WalletProvider: React.FC<Props> = (props) => {
       headers: {
         "Content-type": "application/json",
       },
-      body: JSON.stringify({rawtx}),
+      body: JSON.stringify({ rawtx }),
     });
 
-    try {
-      const { promise } = customFetch<WocResult>(
-        `${WOC_HOST}/v1/bsv/main/tx/raw`,
-        {
-          method: "POST",
-          headers: {
-            "Content-type": "application/json",
-          },
-          body: JSON.stringify({
-            txhex: pendingTransaction.rawTx,
-          }),
-        }
+    if (response.ok) {
+      toast.success("Broadcasted", toastProps);
+      setBroadcastCache(
+        uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
+          0,
+          10
+        )
       );
-      const wocResponse = await promise;
-      console.log("woc broadcast", wocResponse);
-    } catch (e) {
-      console.error("woc broadcast error", e);
-    }
-    const data: BroadcastResponse = await response.json();
-    console.log({ data });
 
-    if (data && data.payload) {
-      const respData = JSON.parse(
-        data.payload || "{}"
-      ) as BroadcastResponsePayload;
-      if (respData?.returnResult === "success") {
-        toast.success("Broadcasted", toastProps);
-        setBroadcastCache(
-          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
-            0,
-            10
-          )
-        );
+      setBroadcastStatus(FetchStatus.Success);
 
-        setBroadcastStatus(FetchStatus.Success);
+      if (changeAddress) {
+        // keep the utxo created
+        // we assume the last output is change and make a utxo from it
+        const pendingTx = Transaction.from_hex(pendingTransaction.rawTx);
+        const changeOut = pendingTx.get_output(pendingTx.get_noutputs() - 1);
+        const address = P2PKHAddress.from_string(changeAddress).to_string();
+        const createdUtxo = {
+          satoshis: Number(changeOut?.get_satoshis()),
+          vout: pendingTx.get_noutputs() - 1,
+          txid: pendingTx.get_id_hex(),
+          script: P2PKHAddress.from_string(address)
+            .get_locking_script()
+            .to_asm_string(),
+        } as Utxo;
+        console.log({ createdUtxo });
+        const cu = [
+          ...(createdUtxos || []).filter(
+            (u) => u.txid === pendingTransaction.inputTxid
+          ),
+          createdUtxo,
+        ];
 
-        if (changeAddress) {
-          // keep the utxo created
-          // we assume the last output is change and make a utxo from it
-          const pendingTx = Transaction.from_hex(pendingTransaction.rawTx);
-          const changeOut = pendingTx.get_output(pendingTx.get_noutputs() - 1);
-          const address = P2PKHAddress.from_string(changeAddress).to_string();
-          const createdUtxo = {
-            satoshis: Number(changeOut?.get_satoshis()),
-            vout: pendingTx.get_noutputs() - 1,
-            txid: pendingTx.get_id_hex(),
-            script: P2PKHAddress.from_string(address)
-              .get_locking_script()
-              .to_asm_string(),
-          } as Utxo;
-          console.log({ createdUtxo });
-          const cu = [
-            ...(createdUtxos || []).filter(
-              (u) => u.txid === pendingTransaction.inputTxid
-            ),
-            createdUtxo,
-          ];
+        setCreatedUtxos(cu);
+        setFundingUtxos([
+          ...fundingUtxos.filter((u) => {
+            if (u.txid === pendingTransaction.inputTxid) {
+              return false;
+            }
+            return true;
+          }),
+          createdUtxo,
+        ]);
+      }
 
-          setCreatedUtxos(cu);
-          setFundingUtxos([
-            ...fundingUtxos.filter((u) => {
-              if (u.txid === pendingTransaction.inputTxid) {
-                return false;
-              }
-              return true;
-            }),
-            createdUtxo,
-          ]);
-        }
-
-        // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
-        if (pendingTransaction.contentType === "application/bsv-20") {
-          Router.push("/bsv20");
-        } else {
-          Router.push("/ordinals");
-        }
-        return;
+      // setOrdUtxos([...(ordUtxos || []), pendingOrdUtxo]);
+      if (pendingTransaction.contentType === "application/bsv-20") {
+        Router.push("/bsv20");
       } else {
-        toast.error(
-          "Failed to broadcast " + respData.resultDescription,
-          toastErrorProps
-        );
+        Router.push("/ordinals");
       }
-      if (
-        changeAddress &&
-        respData.resultDescription === "ERROR: 258: txn-mempool-conflict"
-      ) {
-        console.log("adding to broadcast cache", pendingTransaction.txid);
-        // todo add input tx not this txid!!
-        setBroadcastCache(
-          uniq([...(broadcastCache || []), pendingTransaction.inputTxid]).slice(
-            0,
-            10
-          )
-        );
-      }
-      setBroadcastStatus(FetchStatus.Error);
-    } else if (data && data.error) {
-      toast("Failed to broadcast: " + data.error, toastErrorProps);
-      setBroadcastStatus(FetchStatus.Error);
+      return;
     }
+    const { message } = await response.json()
+    toast.error(
+      "Failed to broadcast " + message,
+      toastErrorProps
+    );
+
+    setBroadcastStatus(FetchStatus.Error);
   }, [
     broadcastCache,
     changeAddress,
