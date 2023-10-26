@@ -57,7 +57,7 @@ const TxPage: React.FC<PageProps> = ({}) => {
       <Tabs currentTab={undefined} />
       <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl">
         {artifacts?.map((a) => {
-          return <Ordinal key={a.txid} artifact={a} />;
+          return <Ordinal key={a.outpoint} artifact={a} />;
         })}
       </div>
     </>

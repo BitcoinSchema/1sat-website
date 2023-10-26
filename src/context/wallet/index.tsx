@@ -912,13 +912,13 @@ const WalletProvider: React.FC<Props> = (props) => {
 
     console.log({ pendingTransaction });
     setBroadcastStatus(FetchStatus.Loading);
-    const body = Buffer.from(pendingTransaction.rawTx, "hex");
-    const response = await fetch(`${MAPI_HOST}/mapi/tx`, {
+    const rawtx = Buffer.from(pendingTransaction.rawTx, "hex").toString('base64');
+    const response = await fetch(`${API_HOST}/api/tx`, {
       method: "POST",
       headers: {
-        "Content-type": "application/octet-stream",
+        "Content-type": "application/json",
       },
-      body,
+      body: JSON.stringify({rawtx}),
     });
 
     try {

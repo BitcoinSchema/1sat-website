@@ -61,15 +61,15 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
             onClick={() => 
               onClick && onClick(a.origin?.outpoint || `${a.txid}_${a.vout}`)
             }
-            key={a.origin?.outpoint || `${a.txid}_${a.vout}`}
-            origin={a.origin?.outpoint || `${a.txid}_${a.vout}`}
+            key={a.origin?.outpoint}
+            origin={a.origin?.outpoint}
             contentType={a.origin?.data?.insc?.file?.type}
             num={a.origin?.num}
             to={
               onClick
                 ? undefined
                 : a.num !== undefined
-                ? `/inscription/${a.num}?page=${currentPage}`
+                ? `/inscription/${a.origin?.num}?page=${currentPage}`
                 : `/tx/${a.txid}_${a.vout}`
             }
             classNames={{

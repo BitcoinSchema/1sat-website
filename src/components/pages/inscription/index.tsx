@@ -139,7 +139,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   }, [ordListing, artifact]);
 
   const ordUtxo = useMemo(() => {
-    return ordUtxos?.find((o) => o.num === parseInt(inscriptionId as string));
+    return ordUtxos?.find((o) => o.origin?.num === parseInt(inscriptionId as string));
   }, [inscriptionId, ordUtxos]);
 
   const pagination = useMemo(() => {
@@ -218,9 +218,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       //   head(artifact.file!.type.split(";"))
       // );
       if (
-        (head(artifact.file!.type.split(";")) === "text/plain" &&
+        (head(artifact.origin?.data?.insc?.file!.type.split(";")) === "text/plain" &&
           (artifact.height || 0) > 793000) ||
-        head(artifact.file!.type.split(";")) === "application/bsv-20"
+        head(artifact.origin?.data?.insc?.file!.type.split(";")) === "application/bsv-20"
       ) {
         return true;
       }
@@ -358,7 +358,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           wrapper: `max-w-5xl w-full h-full`,
           media: `max-h-[calc(100vh-20em)]`,
         }}
-        contentType={artifact.file?.type}
+        contentType={artifact.origin?.data?.insc?.file?.type}
         origin={artifact.origin?.outpoint || ""}
         num={artifact.num}
         height={artifact.height}

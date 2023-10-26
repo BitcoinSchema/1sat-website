@@ -179,7 +179,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   sigma={l.origin?.data?.sigma}
                   clickToZoom={false}
                   onClick={() => {
-                    router.push(`/inscription/${l.num}`);
+                    router.push(`/inscription/${l.origin?.num}`);
                   }}
                 />
               </div>

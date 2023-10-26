@@ -137,7 +137,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
                     wrapper: "min-w-96",
                     media: "max-h-96 max-w-96",
                   }}
-                  to={`/inscription/${artifact?.num}`}
+                  to={`/inscription/${artifact?.origin?.outpoint}`}
                   height={artifact.height}
                 />
               )}

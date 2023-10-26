@@ -1,7 +1,7 @@
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
 import Tooltip from "@/components/tooltip";
-import { API_HOST } from "@/context/ordinals";
+import { API_HOST, OrdUtxo } from "@/context/ordinals";
 import { customFetch } from "@/utils/httpClient";
 import { find, head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
@@ -18,35 +18,7 @@ import MarketTabs, { MarketTab } from "../market/tabs";
 
 interface PageProps extends WithRouterProps {}
 
-type Item = {
-  id: number;
-  num: number;
-  txid: string;
-  vout: number;
-  outpoint: string;
-  file: {
-    hash: string;
-    size: number;
-    type: string;
-  };
-  origin: string;
-  height: number;
-  idx: number;
-  lock: string;
-  spend: string;
-  MAP: CollectionItem;
-  B: {
-    hash: string;
-    size: number;
-    type: string;
-  };
-  SIGMA: string[];
-  listing: boolean;
-  price: number;
-  payout: string;
-  script: string;
-  bsv20: boolean;
-};
+type Item = OrdUtxo;
 
 const CollectionPage: React.FC<PageProps> = ({}) => {
   const searchParams = useSearchParams();
@@ -228,12 +200,12 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
                   ? -1
                   : 1;
               }
-              return a.num < b.num ? -1 : 1;
+              return (a.origin?.num || 0) < (b?.origin?.num || 0) ? -1 : 1;
             })
             .map((artifact) => {
               return (
-                <div key={artifact.origin}>
-                  {artifact && !artifact.file.type && (
+                <div key={artifact.origin?.outpoint}>
+                  {artifact && !artifact.origin?.data?.insc?.file.type && (
                     <div
                       key={artifact.txid}
                       className="bg-[#111] rounded p-2 w-72 h-73 flex items-center justify-center font-mono"
@@ -249,11 +221,11 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
                         wrapper: `max-w-5xl w-full h-full`,
                         media: `max-h-[calc(100vh-20em)]`,
                       }}
-                      contentType={artifact.file.type}
-                      origin={artifact.origin || ""}
-                      num={artifact.num}
+                      contentType={artifact.origin?.data?.insc?.file.type}
+                      origin={artifact.origin?.outpoint || ""}
+                      num={artifact.origin?.num}
                       height={artifact.height}
-                      to={`/inscription/${artifact.num}`}
+                      to={`/inscription/${artifact.origin?.num}`}
                       clickToZoom={false}
                       price={artifact.price ? artifact.price : undefined}
                       isListing={artifact.listing}

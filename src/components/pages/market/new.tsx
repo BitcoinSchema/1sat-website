@@ -1,6 +1,6 @@
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
-import { OrdUtxo } from "@/context/ordinals";
+import { API_HOST, OrdUtxo } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import {
   createChangeOutput,
@@ -160,8 +160,8 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
   useEffect(() => {
     const fire = async () => {
       if (outpoint) {
-        const items = await fetchOrdinal(outpoint);
-        setSelectedItem(head(items));
+        const item = await fetchOrdinal(outpoint);
+        setSelectedItem(item);
       }
     };
     if (outpoint && !selectedItem) {
@@ -177,7 +177,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     const paymentPk = PrivateKey.from_wif(payPk);
     const ordinalPk = PrivateKey.from_wif(ordPk);
 
-    const ordUtxo = await getUtxoByOrigin(selectedItem.origin);
+    const ordUtxo = await getUtxoByOrigin(selectedItem.origin.outpoint);
     if (!ordUtxo) {
       // TODO: show error
       return;
@@ -237,7 +237,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
   );
 
   const artifact = useMemo(() => {
-    return ordUtxos?.find((utxo) => utxo.origin === outpoint);
+    return ordUtxos?.find((utxo) => utxo.outpoint === outpoint);
   }, [ordUtxos, outpoint]);
 
   // Artifact component params:
@@ -355,10 +355,10 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
           {outpoint && (
             <Artifact
               outPoint={outpoint as string}
-              origin={outpoint as string}
+              origin={artifact?.origin?.outpoint}
               contentType="image/png"
-              num={artifact?.num}
-              src={`https://ordfs.network/content/${outpoint}`}
+              num={artifact?.origin?.num}
+              src={`${API_HOST}/content/${artifact?.origin?.outpoint}`}
               onClick={() => {}}
               txid={artifact?.txid as string}
               price={price}

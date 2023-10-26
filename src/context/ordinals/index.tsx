@@ -189,6 +189,7 @@ type ContextValue = {
   setFetchInscriptionsStatus: (status: FetchStatus) => void;
   getArtifactsByTxId: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
+  getArtifactByOrigin: (txid: string) => Promise<OrdUtxo>;
   getArtifactByInscriptionId: (
     inscriptionId: number
   ) => Promise<OrdUtxo | undefined>;
@@ -552,6 +553,22 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
     []
   );
 
+  const getInscriptionByOrigin = useCallback(
+    async (origin: string): Promise<OrdUtxo> => {
+      setFetchInscriptionsStatus(FetchStatus.Loading);
+      try {
+        const r = await fetch(`${API_HOST}/api/inscriptions/${origin}/latest`);
+        const inscription = (await r.json()) as OrdUtxo;
+        setFetchInscriptionsStatus(FetchStatus.Success);
+        return inscription;
+      } catch (e) {
+        setFetchInscriptionsStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchInscriptionsStatus]
+  );
+
   const getInscriptionByInscriptionId = useCallback(
     async (inscriptionId: number): Promise<OrdUtxo> => {
       setFetchInscriptionsStatus(FetchStatus.Loading);
@@ -566,6 +583,13 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       }
     },
     [setFetchInscriptionsStatus]
+  );
+
+  const getArtifactByOrigin = useCallback(
+    async (origin: string): Promise<OrdUtxo> => {
+      return getInscriptionByOrigin(origin);
+    },
+    [getInscriptionByOrigin]
   );
 
   const getArtifactsByTxId = useCallback(
@@ -915,6 +939,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       getArtifactByInscriptionId,
       setFetchInscriptionsStatus,
       getArtifactsByOrigin: getArtifactsByTxId,
+      getArtifactByOrigin,
       fetchStatsStatus,
       stats,
       getStats,
@@ -942,6 +967,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       fetchInscriptionsStatus,
       getArtifactByInscriptionId,
       setFetchInscriptionsStatus,
+      getArtifactByOrigin,
       fetchStatsStatus,
       stats,
       getStats,
