@@ -723,7 +723,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       if (fundingUtxo && !fundingUtxo.script) {
         const fundingRawTx = await getRawTxById(fundingUtxo.txid);
         const tx = Transaction.from_hex(fundingRawTx);
-        const out = tx.get_output(ordUtxo.vout);
+        const out = tx.get_output(fundingUtxo.vout);
         const script = out?.get_script_pub_key();
         if (script) {
           fundingUtxo.script = script.to_asm_string();
