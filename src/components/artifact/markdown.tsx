@@ -1,8 +1,8 @@
+import { ORDFS } from "@/context/ordinals";
 import React, { useEffect, useMemo, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import { FetchStatus } from "../pages";
-import { API_HOST } from "@/context/ordinals";
 
 type MarkdownArtifactProps = {
   origin?: string;
@@ -22,7 +22,7 @@ const MarkdownArtifact: React.FC<MarkdownArtifactProps> = ({
     const fire = async () => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
-        const result = await fetch(`${API_HOST}/content/${origin}`);
+        const result = await fetch(`${ORDFS}/${origin}`);
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
         setText(resultText);

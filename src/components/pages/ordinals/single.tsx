@@ -1,8 +1,7 @@
 import Artifact from "@/components/artifact";
 import OrdAddress from "@/components/ordAddress";
-import { API_HOST, OrdUtxo, useOrdinals } from "@/context/ordinals";
+import { ORDFS, OrdUtxo, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
-import { head } from "lodash";
 import Router from "next/router";
 import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
@@ -110,7 +109,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
       <Artifact
         to={artifact ? `/inscription/${artifact.origin?.num}` : "#"}
         origin={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
-        src={artifact ? `${API_HOST}/content/${artifact.origin}` : ""}
+        src={artifact ? `${ORDFS}/${artifact.origin}` : ""}
         num={artifact?.num}
         contentType={artifact?.file?.type}
         height={artifact?.height}

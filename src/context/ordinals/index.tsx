@@ -29,6 +29,7 @@ import { useBitsocket } from "../bitsocket";
 import { ORDS_PER_PAGE, PendingTransaction, useWallet } from "../wallet";
 
 export const API_HOST = `https://v3.ordinals.gorillapool.io`;
+export const ORDFS = `https://ordfs.network`;
 
 type MarketResponse = {
   txid: string;

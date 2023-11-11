@@ -1,6 +1,6 @@
 import Artifact from "@/components/artifact";
 import Tabs, { Tab } from "@/components/tabs";
-import { API_HOST, OrdUtxo } from "@/context/ordinals";
+import { ORDFS, OrdUtxo } from "@/context/ordinals";
 import { PendingTransaction, useWallet } from "@/context/wallet";
 import {
   createChangeOutput,
@@ -18,7 +18,6 @@ import {
 } from "bsv-wasm-web";
 import { Buffer } from "buffer";
 import { Utxo } from "js-1sat-ord";
-import { head } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import { useSearchParams } from "next/navigation";
 import Router from "next/router";
@@ -358,7 +357,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
               origin={artifact?.origin?.outpoint}
               contentType="image/png"
               num={artifact?.origin?.num}
-              src={`${API_HOST}/content/${artifact?.origin?.outpoint}`}
+              src={`${ORDFS}/${artifact?.origin?.outpoint}`}
               onClick={() => {}}
               txid={artifact?.txid as string}
               price={price}

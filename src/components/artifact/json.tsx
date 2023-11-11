@@ -1,4 +1,4 @@
-import { API_HOST, BSV20 } from "@/context/ordinals";
+import { API_HOST, BSV20, ORDFS } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
@@ -33,7 +33,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
       try {
         setFetchTextStatus(FetchStatus.Loading);
 
-        const result = await fetch(`${API_HOST}/content/${origin}`);
+        const result = await fetch(`${ORDFS}/${origin}`);
         const resultText = await result.json();
         setFetchTextStatus(FetchStatus.Success);
         setJson(resultText);

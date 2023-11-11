@@ -1,9 +1,9 @@
+import { ORDFS } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { ArtifactType } from ".";
 import { FetchStatus } from "../pages";
 import JsonArtifact from "./json";
-import { API_HOST } from "@/context/ordinals";
 
 type TextArtifactProps = {
   origin?: string;
@@ -22,7 +22,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className }) => {
     const fire = async () => {
       try {
         setFetchTextStatus(FetchStatus.Loading);
-        const result = await fetch(`${API_HOST}/content/${origin}`);
+        const result = await fetch(`${ORDFS}/${origin}`);
         const resultText = await result.text();
         setFetchTextStatus(FetchStatus.Success);
         try {
