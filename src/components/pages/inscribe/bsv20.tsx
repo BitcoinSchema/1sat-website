@@ -86,7 +86,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       }
       try {
         setFetchTickerStatus(FetchStatus.Loading);
-        const resp = await fetch(`${API_HOST}/api/bsv20/${tick}`);
+        const resp = await fetch(`${API_HOST}/api/bsv20/tick/${tick}`);
 
         if (resp.status === 200) {
           if (!expectExist) {
