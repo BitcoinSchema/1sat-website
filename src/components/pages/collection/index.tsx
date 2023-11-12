@@ -12,7 +12,6 @@ import { FiArrowLeft } from "react-icons/fi";
 import { GiHolyGrail } from "react-icons/gi";
 import { FetchStatus } from "..";
 import { CollectionStats } from "../inscription";
-import CollectionItem from "../inscription/collectionItem";
 import { Collection, ancientCollections } from "../market/featured";
 import MarketTabs, { MarketTab } from "../market/tabs";
 
@@ -32,6 +31,7 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
   const [fetchCollectionStatus, setFetchCollectionStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
+
   // TODO: Implement infinite scroll
   const setCollectionFromCollectionId = useCallback(
     async (keyName: string = "ColectionId", collectionId: string) => {
@@ -44,6 +44,9 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           `${API_HOST}/api/inscriptions/search`,
           {
             method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
               map: {
                 [keyName]: collectionId,
@@ -51,8 +54,9 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
             }),
           }
         );
+        
         const c = await promise;
-
+console.log("1111",{c})
         setCollection(c);
         setFetchCollectionStatus(FetchStatus.Success);
       } catch (error) {
@@ -109,6 +113,7 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
             | undefined;
 
           setIsAncient(true);
+          console.log("!!!!",{c})
           if (c?.MAP.collectionID) {
             await setCollectionFromCollectionId(
               "collectionID",
@@ -148,10 +153,10 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
       return collectionStats.MAP.name;
     }
     const c = head(collection);
-    return !!c && c.MAP.collectionID?.length > 0
-      ? c.MAP.collectionID
-      : !!c && c.MAP.name?.length > 0
-      ? c.MAP.name
+    return !!c && c.data?.map?.collectionID?.length > 0
+      ? c.data?.map?.collectionID
+      : !!c && c.data?.map?.name?.length > 0
+      ? c.data?.map?.name
       : queryName;
   }, [collection, collectionStats, queryName]);
 
@@ -192,11 +197,11 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
           {collection
             ?.sort((a, b) => {
               if (
-                a.MAP?.subTypeData?.mintNumber &&
-                a.MAP?.subTypeData?.mintNumber
+                a.data?.map?.subTypeData?.mintNumber &&
+                a.data?.map?.subTypeData?.mintNumber
               ) {
-                return a.MAP?.subTypeData?.mintNumber <
-                  b.MAP?.subTypeData?.mintNumber
+                return a.data?.map?.subTypeData?.mintNumber <
+                  b.data?.map?.subTypeData?.mintNumber
                   ? -1
                   : 1;
               }
