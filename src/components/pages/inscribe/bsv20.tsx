@@ -250,7 +250,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
             // optional fields
             if (decimals !== 18) {
-              inscription.dec = decimals.toString();
+              inscription.dec = decimals;
             }
             if (limit) inscription.lim = limit;
             else if (

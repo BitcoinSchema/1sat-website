@@ -1,4 +1,4 @@
-import { API_HOST, BSV20, ORDFS } from "@/context/ordinals";
+import { API_HOST, BSV20, Bsv20Status, ORDFS } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
@@ -51,10 +51,10 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
             if (limCache.has(resultText.tick)) {
               let limit = limCache.get(resultText.tick);
               setBsv20({
-                valid:
+                status:
                   resultText.op === "mint" && limit! > parseInt(resultText.amt)
-                    ? true
-                    : false,
+                    ? Bsv20Status.Valid
+                    : Bsv20Status.Invalid,
               });
             } else {
               // try to get by ticker, and check the limit
@@ -85,11 +85,11 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
                     bsv20TickResultJson &&
                     bsv20TickResultJson.lim &&
                     bsv20TickResultJson.lim > resultText.amt
-                      ? true
-                      : false,
-                });
+                      ? Bsv20Status.Valid
+                      : Bsv20Status.Invalid,
+                } as Partial<BSV20>);
               } else {
-                setBsv20({ valid: null });
+                setBsv20({ valid: Bsv20Status.Pending } as Partial<BSV20>);
               }
             }
 
@@ -127,15 +127,15 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
       >
         {JSON.stringify(json, null, 2)}
       </pre>
-      {type === ArtifactType.BSV20 && bsv20 && !bsv20.valid && (
+      {type === ArtifactType.BSV20 && bsv20 && bsv20.status !== Bsv20Status.Valid && (
         <div
           className={`rounded bg-black bg-opacity-75 absolute bottom-0 p-2 md:p-4 ${
-            bsv20.valid === null ? "text-yellow-400" : "text-red-400"
+            bsv20.status === Bsv20Status.Pending ? "text-yellow-400" : "text-red-400"
           } left-0 font-semibold w-full flex items-center justify-center text-sm`}
         >
           <IoMdWarning className="mr-2 w-8" />{" "}
           {`${
-            bsv20.valid === null
+             bsv20.status === Bsv20Status.Pending
               ? "PENDING VALIDATION"
               : "INVALID BSV-20 INSCRIPTION!"
           }`}

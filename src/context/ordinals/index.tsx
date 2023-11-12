@@ -77,14 +77,7 @@ export class TxoData {
     price: number;
     payout: string;
   };
-  bsv20?: {
-    id?: string;
-    p: string;
-    op: string;
-    tick?: string;
-    amt: string;
-    status?: Bsv20Status;
-  };
+  bsv20?: BSV20
 }
 
 export interface Claim {
@@ -135,21 +128,47 @@ export type SIGMA = {
 };
 
 export type BSV20 = {
-  idx: string;
-  p: string;
-  op: string;
-  amt?: string;
-  tick: string;
-  max?: string;
-  dec?: string;
-  lim?: string;
-  supply?: string;
-  valid: boolean | null;
-  height?: number;
-  txid?: string;
-  reason?: string;
-  pctMinted: number;
+  // idx: string;
+  // p: string;
+  // op: string;
+  // amt?: string;
+  // tick: string;
+  // max?: string;
+  // dec?: string;
+  // lim?: string;
+  // supply?: string;
+  // valid: boolean | null;
+  // height?: number;
+  // txid?: string;
+  // reason?: string;
+  // pctMinted: number;
+
+
+  
+    txid?:string,
+    vout?: 0,
+    height?: 792954,
+    idx?: 23726,
+    
+    max?: string,
+    lim?:string,
+    dec?: number,
+    supply?: string,
+    
+    available?: string,
+    pct_minted?: string,
+    reason?: null,
+    pending?: string,
+  
+    id?: string;
+    p: string;
+    op: string;
+    tick?: string;
+    amt: string;
+    status?: Bsv20Status;
+  
 };
+
 
 export interface Ticker extends BSV20 {
   accounts: number;
@@ -505,14 +524,28 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       setFetchBsv20Status(FetchStatus.Loading);
       try {
         const offset = (page - 1) * ORDS_PER_PAGE;
+
+        const q = {
+          limit: ORDS_PER_PAGE,
+          offset,
+          sort: sortBy,
+          dir,
+        };
+        
+
+        console.log("Searching for BSV20 inscriptions", { q})
+
+        // example
+        //           `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {type: 'collection'}})).toString('base64')}`
+        
         // Available values : pct_minted, available, tick, max, height
         const { promise } = http.customFetch<any>(
-          `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sortBy}&dir=${dir}`
+          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({insc: {words: ['bsv20']}})).toString('base64')}`
         );
 
         const results = await promise;
         setFetchBsv20Status(FetchStatus.Success);
-
+console.log({results})
         setBsv20s(results);
       } catch (e) {
         setFetchBsv20Status(FetchStatus.Error);

@@ -1,5 +1,4 @@
 import { FetchStatus, toastErrorProps, toastProps } from "@/components/pages";
-import { MAPI_HOST, WOC_HOST } from "@/pages/_app";
 import { addressFromWif } from "@/utils/address";
 import { customFetch } from "@/utils/httpClient";
 import { randomKeys } from "@/utils/keys";
@@ -126,6 +125,15 @@ export type BroadcastResponsePayload = {
   txid: string;
 };
 
+type BSV20Counts = {
+  confirmed: number;
+  pending: number;
+}
+
+type BSV20Balance = {
+  tick: string, all:  BSV20Counts, listed: BSV20Counts
+}
+
 type ContextValue = {
   bsv20Activity: BSV20[] | undefined;
   getBsv20Activity: (
@@ -134,8 +142,8 @@ type ContextValue = {
     sort?: boolean | undefined
   ) => Promise<BSV20[]>;
   fetchBsv20ActivityStatus: FetchStatus;
-  bsv20Balances: { [tick: string]: number } | undefined;
-  getBsv20Balances: (address: string) => Promise<{ [tick: string]: number }>;
+  bsv20Balances: BSV20Balance[] | undefined;
+  getBsv20Balances: (address: string) => Promise<BSV20Balance[]>;
   fetchBsv20sStatus: FetchStatus;
   artifacts: Inscription2[] | undefined;
   backupFile: File | undefined;
@@ -233,7 +241,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     undefined
   );
   const [bsv20Balances, setBsv20Balances] = useState<
-    { [key: string]: number } | undefined
+    BSV20Balance[] | undefined
   >(undefined);
   const [bsv20Activity, setBsv20Activity] = useState<BSV20[] | undefined>(
     undefined
@@ -516,11 +524,11 @@ const WalletProvider: React.FC<Props> = (props) => {
   );
 
   const getBsv20Balances = useCallback(
-    async (address: string): Promise<{ [tick: string]: number }> => {
+    async (address: string): Promise<BSV20Balance[]> => {
       setFetchBsv20sStatus(FetchStatus.Loading);
       try {
         const r = await fetch(`${API_HOST}/api/bsv20/${address}/balance`);
-        const balances = (await r.json()) as { [tick: string]: number };
+        const balances = (await r.json()) as BSV20Balance[];
 
         setFetchBsv20sStatus(FetchStatus.Success);
 
@@ -548,12 +556,12 @@ const WalletProvider: React.FC<Props> = (props) => {
         const r = await fetch(
           `${API_HOST}/api/txos/address/${address}/unspent?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&status=all&bsv20=true`
         );
-        const utxos = (await r.json()) as BSV20[];
+        const utxos = (await r.json()) as [{ data: { bsv20: BSV20}}];
 
         setFetchBsv20sStatus(FetchStatus.Success);
-
-        setBsv20Activity(utxos);
-        return utxos;
+        const bsv20s = utxos.map((u) => u.data.bsv20)
+        setBsv20Activity(bsv20s);
+        return bsv20s;
       } catch (e) {
         setFetchBsv20sStatus(FetchStatus.Error);
         throw e;

@@ -1,5 +1,5 @@
 import Tabs, { Tab } from "@/components/tabs";
-import { useOrdinals } from "@/context/ordinals";
+import { Bsv20Status, useOrdinals } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
@@ -30,17 +30,23 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
 
   const activity = useMemo(() => {
     return bsv20Activity?.sort((a, b) => {
+      if (!a && !!b) {
+        return 1;
+      }
+      if (!!a && !b) {
+        return -1;
+      }
       // pending to the top
-      if (a.valid === null && b.valid !== null) {
+      if (a.status!==Bsv20Status.Valid && b.status===Bsv20Status.Valid) {
         return -1;
       }
-      if (a.height! < b.height!) {
-        return -1;
-      }
+      // if (a.height! < b.height!) {
+      //   return -1;
+      // }
       // same block, use index
-      if (a.height === b.height) {
-        return parseInt(a.idx) > parseInt(b.idx) ? -1 : 1;
-      }
+      // if (a.height === b.height) {
+      //   return parseInt(a.idx) > parseInt(b.idx) ? -1 : 1;
+      // }
       return 1;
     });
   }, [bsv20Activity]);
@@ -57,11 +63,15 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
 
   const filteredActivity = useMemo(() => {
     if (!showInvalid) {
-      return activity?.filter((a) => a.valid !== false);
+      return activity?.filter((a) => a.status !== Bsv20Status.Invalid);
     }
     return activity;
   }, [activity, showInvalid]);
 
+  // log filteredActivity
+  useEffect(() => {
+    console.log({ filteredActivity });
+  }, [filteredActivity]);
   const pagination = useMemo(() => {
     return (
       <div className="text-center h-full flex items-center justify-center">
@@ -99,6 +109,11 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
       </div>
     );
   }, [router, page]);
+
+  // log bsv20 balances
+useEffect(() => {
+  console.log({ bsv20Balances });
+}, [bsv20Balances]);
 
   return (
     <>
@@ -153,16 +168,16 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
                 <div className="text-[#777] font-semibold">Ticker</div>
                 <div className="text-[#777] font-semibold">Balance</div>
                 {bsv20Balances &&
-                  Object.entries(bsv20Balances).map(
-                    ([ticker, balance], idx) => (
-                      <React.Fragment key={`${ticker}-${idx}`}>
+                  bsv20Balances.map(
+                    ({tick, all, listed}, idx) => (
+                      <React.Fragment key={`${tick}-${idx}`}>
                         <div
                           className="cursor-pointer hover:text-blue-400 transition"
-                          onClick={() => Router.push(`/market/bsv20/${ticker}`)}
+                          onClick={() => Router.push(`/market/bsv20/${tick}`)}
                         >
-                          {ticker}
+                          {tick}
                         </div>
-                        <div className="text-emerald-400">{balance}</div>
+                        <div className="text-emerald-400">{all.confirmed}</div>
                       </React.Fragment>
                     )
                   )}
@@ -209,19 +224,19 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
                     <div>{bsv20.op} </div>
                     <div>{bsv20.amt} </div>
                     <div className="text-right">
-                      {bsv20.valid === null ? (
-                        <a href={`https://whatsonchain.com/tx/${bsv20.txid}`}>
+                      {bsv20.status === Bsv20Status.Pending === null ? (
+                        <a href={`https://whatsonchain.com/tx/${bsv20.id}`}>
                           [-]
                         </a>
-                      ) : bsv20.valid ? (
+                      ) : bsv20.status === Bsv20Status.Valid ? (
                         "[✓]"
                       ) : (
                         "[✗]"
                       )}
                     </div>
-                    {bsv20.valid === false && (
+                    {bsv20.status === Bsv20Status.Invalid && (
                       <div className="text-red-500 col-span-4">
-                        Reason: {bsv20.reason}
+                        Reason: {bsv20.status}
                       </div>
                     )}
                   </React.Fragment>

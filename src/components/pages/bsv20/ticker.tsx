@@ -1,6 +1,7 @@
 import Tabs, { MarketTab } from "@/components/pages/market/tabs";
 import { API_HOST, Ticker } from "@/context/ordinals";
 import { useWallet } from "@/context/wallet";
+import { find } from "lodash";
 import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import { useSearchParams } from "next/navigation";
@@ -51,7 +52,7 @@ const TickerPage: React.FC<PageProps> = ({}) => {
 
   const amtOwned = useMemo(() => {
     // return balance from bsv20Balances[ticker.tick]
-    return bsv20Balances && ticker.tick ? bsv20Balances[ticker.tick] : 0;
+    return bsv20Balances && ticker.tick ? find(bsv20Balances, (t) => t.tick === ticker.tick)?.tick : 0;
   }, [bsv20Balances, ticker]);
 
   useEffect(() => {

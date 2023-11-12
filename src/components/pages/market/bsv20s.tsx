@@ -306,9 +306,9 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
                   <div className="hidden md:block w-full bg-[#151515] rounded-full h-1 position absolute bottom-0 right-0">
                     <div
                       className={`${pctColor(
-                        bsv20.pctMinted
+                        parseInt(bsv20.pct_minted || "0")
                       )} h-1 rounded-full`}
-                      style={{ width: `${bsv20.pctMinted}%` }}
+                      style={{ width: `${bsv20.pct_minted || 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -319,8 +319,12 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
                 </div>
                 <div className="col-span-12 block md:hidden w-full bg-[#151515] rounded-full h-1 mb-4">
                   <div
-                    className={`${pctColor(bsv20.pctMinted)} h-1 rounded-full`}
-                    style={{ width: `${bsv20.pctMinted}%` }}
+                    className={`${pctColor(
+                      parseInt(bsv20.pct_minted || "0") || 0
+                    )} h-1 rounded-full`}
+                    style={{
+                      width: `${parseInt(bsv20.pct_minted || "0") || 0}%`,
+                    }}
                   ></div>
                 </div>
               </React.Fragment>
