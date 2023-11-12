@@ -59,7 +59,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
             } else {
               // try to get by ticker, and check the limit
               const bsv20TickResult = await fetch(
-                `${API_HOST}/api/bsv20/${resultText.tick}`
+                `${API_HOST}/api/bsv20/tick/${resultText.tick}`
               );
               if (bsv20Result.status === 200) {
                 const bsv20TickResultJson =

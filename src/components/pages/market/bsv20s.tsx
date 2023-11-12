@@ -127,7 +127,7 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
   }, [dir, sortBy, currentPage]);
 
   const findTicker = useCallback(async () => {
-    const resp = await fetch(`${API_HOST}/api/bsv20/${ticker}`);
+    const resp = await fetch(`${API_HOST}/api/bsv20/tick/${ticker}`);
     if (resp.status === 200) {
       Router.push(`/market/bsv20/${ticker}`);
     } else if (resp.status === 404) {

@@ -35,7 +35,7 @@ const TickerPage: React.FC<PageProps> = ({}) => {
       try {
         setFetchTickerStatus(FetchStatus.Loading);
         const resp = await fetch(
-          `${API_HOST}/api/bsv20/${encodeURIComponent(t)}`
+          `${API_HOST}/api/bsv20/tick/${encodeURIComponent(t)}`
         );
 
         const tickerDetails = (await resp.json()) as Ticker;
