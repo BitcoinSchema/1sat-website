@@ -384,7 +384,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
         <div className="p-4 flex w-full md:flex-row flex-col mx-auto max-w-6xl justify-center">
           <div className="text-center h-full flex flex-row items-center justify-center">
-            {artifact && !artifact.file?.type && (
+            {artifact && !artifact.origin?.data?.insc?.file?.type && (
               <div
                 key={artifact.txid}
                 className="bg-[#111] rounded p-2 w-72 h-73 flex items-center justify-center font-mono"
