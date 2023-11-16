@@ -68,7 +68,7 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
             to={
               onClick
                 ? undefined
-                : a.num !== undefined
+                : a.origin?.num !== undefined
                 ? `/inscription/${a.origin?.num}?page=${currentPage}`
                 : `/tx/${a.txid}_${a.vout}`
             }

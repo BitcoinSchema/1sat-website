@@ -107,7 +107,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
         const listing = await promise;
         setFetchListingStatus(FetchStatus.Success);
         // if this is a listing, set the listing
-        if (listing.listing) {
+        if (!!listing.data?.list) {
           setOrdListing(listing);
         } else {
           setOrdListing(undefined);
@@ -126,7 +126,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   }, [
     inscriptionId,
     artifact?.origin,
-    artifact?.num,
+    artifact?.origin?.num,
     fetchListingStatus,
     setOrdListing,
   ]);
@@ -257,8 +257,8 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       }
     };
     // if this is a collectionItem, look up the collection
-    if (artifact?.MAP?.subType === SubType.CollectionItem) {
-      const collectionId = (artifact?.MAP?.subTypeData as any)?.collectionId;
+    if (artifact?.data?.map?.subType === SubType.CollectionItem) {
+      const collectionId = (artifact?.data.map?.subTypeData as any)?.collectionId;
       if (collectionId) {
         fire(collectionId);
 
@@ -334,10 +334,10 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       collectionStats &&
       artifact &&
       collectionStats.SIGMA &&
-      artifact.SIGMA
+      artifact.data?.sigma
     ) {
       const collectionAddress = head(collectionStats.SIGMA)?.address;
-      const artifactAddress = head(artifact.SIGMA)?.address;
+      const artifactAddress = head(artifact.data?.sigma)?.address;
       return (
         !!collectionAddress &&
         !!artifactAddress &&
@@ -360,7 +360,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
         }}
         contentType={artifact.origin?.data?.insc?.file?.type}
         origin={artifact.origin?.outpoint || ""}
-        num={artifact.num}
+        num={artifact.origin?.num}
         height={artifact.height}
         clickToZoom={true}
       />
@@ -414,25 +414,25 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 </div>
               )}
             </div>
-            {artifact?.SIGMA &&
-              artifact?.SIGMA?.length > 0 &&
-              !artifact.SIGMA[0]?.valid && (
+            {artifact?.data?.sigma &&
+              artifact?.data.sigma?.length > 0 &&
+              !artifact.data.sigma[0]?.valid && (
                 <div className="my-2 bg-red-800 text-white p-2 rounded">
                   Invalid Signature
                 </div>
               )}
-            {artifact?.MAP?.subType && artifact?.MAP?.subTypeData && (
+            {artifact?.data?.map?.subType && artifact?.data.map?.subTypeData && (
               <div
                 className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 my-4 md:my-0 md:mb-2 cursor-pointer hover:bg-[#222]"
                 onClick={() =>
                   Router.push(
                     `/collection/${
-                      (artifact?.MAP?.subTypeData as any).collectionId
+                      (artifact?.data?.map?.subTypeData as any).collectionId
                     }`
                   )
                 }
               >
-                {renderSubTypeItem(artifact?.MAP)}
+                {renderSubTypeItem(artifact?.data.map)}
               </div>
             )}
             {collectionStats?.SIGMA && collectionSigMatches && (
@@ -458,7 +458,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
                 <div className="flex justify-between items-center mb-2">
                   <div>Price</div>
-                  <div>{toBitcoin(ordListing?.price || 0)} BSV</div>
+                  <div>{toBitcoin(ordListing?.data?.list?.price || 0)} BSV</div>
                 </div>
                 <div className="flex items-center mb-2">
                   <div
@@ -529,7 +529,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     Send
                   </button>
                 </div>
-                {ordUtxo && !ordUtxo.listing && (
+                {ordUtxo && !ordUtxo.data?.list && (
                   <div className="flex justify-between items-center mt-4">
                     <div>List for Sale</div>
                     <div
@@ -542,7 +542,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                     </div>
                   </div>
                 )}
-                {ordUtxo && ordUtxo.listing && (
+                {ordUtxo && !!ordUtxo.data?.list && (
                   <div className="flex justify-between items-center mt-4">
                     <div>Cancel Listing</div>
                     <div
@@ -574,8 +574,8 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                 </div>
               </div>
             }
-            {artifact?.MAP &&
-              Object.entries(artifact.MAP)
+            {artifact?.data?.map &&
+              Object.entries(artifact.data.map)
                 .filter(
                   ([k, v]) =>
                     k !== "cmd" &&
@@ -633,11 +633,11 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           </div>
         </div>
       </div>
-      {ordListing?.outpoint && showBuy && ordListing?.price !== undefined && (
+      {ordListing?.outpoint && showBuy && ordListing?.data?.list?.price !== undefined && (
         <BuyArtifactModal
           outPoint={ordListing.outpoint}
           onClose={() => setShowBuy(false)}
-          price={ordListing.price}
+          price={ordListing?.data?.list?.price}
           content={content}
         />
       )}

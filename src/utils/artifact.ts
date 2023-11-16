@@ -11,11 +11,14 @@ export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
       if (response.status !== 404) {
         const blob = await response.blob();
         const buff = await response.arrayBuffer();
-        artifact.file = {
+        const f = {
           hash: Hash.sha_256(new Uint8Array(buff)).to_hex(),
           size: blob.size,
           type: blob.type,
         };
+        if(artifact.origin?.data?.insc?.file) {
+          artifact.origin.data.insc.file = f;
+        }
       }
       resolve(artifact);
     } catch (e) {

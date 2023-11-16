@@ -83,7 +83,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     };
     if (
       fetchInscriptionsStatus === FetchStatus.Idle &&
-      randomNumber !== artifact?.num
+      randomNumber !== artifact?.origin?.num
     ) {
       fire(randomNumber);
     }
@@ -127,7 +127,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
             <div className="mx-auto max-w-5xl">
               {artifact && (
                 <Artifact
-                  num={artifact?.num}
+                  num={artifact?.origin?.num}
                   origin={
                     artifact.origin?.outpoint ||
                     ` ${artifact?.txid}_${artifact?.vout}`

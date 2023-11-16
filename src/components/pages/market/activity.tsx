@@ -102,14 +102,14 @@ const ActivityPage: React.FC<PageProps> = ({}) => {
                   key={l.origin?.outpoint || `${l.txid}_${l.vout}`}
                   origin={l.origin?.outpoint || `${l.txid}_${l.vout}`}
                   contentType={l.origin?.data?.insc?.file?.type}
-                  num={l.num}
+                  num={l.origin?.num}
                   classNames={{
                     wrapper: "overflow-hidden mb-2",
                   }}
                   txid={l.txid}
-                  price={l.price || 0}
+                  price={l.data?.list?.price || 0}
                   height={l.height}
-                  isListing={l.listing}
+                  isListing={!!l.data?.list}
                   outPoint={l.outpoint}
                 />
               </div>

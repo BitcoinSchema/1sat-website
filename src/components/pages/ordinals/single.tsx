@@ -64,7 +64,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                   </div>
                 </div>
 
-                {!artifact.listing && (
+                {!artifact.data?.list && (
                   <div className="flex justify-between items-center mt-4">
                     <div>List for Sale</div>
                     <div
@@ -79,7 +79,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
                     </div>
                   </div>
                 )}
-                {artifact.listing && (
+                {artifact.data?.list && (
                   <div className="flex justify-between items-center mt-4">
                     <div>Cancel Listing</div>
                     <div
@@ -110,8 +110,8 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
         to={artifact ? `/inscription/${artifact.origin?.num}` : "#"}
         origin={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
         src={artifact ? `${ORDFS}/${artifact.origin}` : ""}
-        num={artifact?.num}
-        contentType={artifact?.file?.type}
+        num={artifact?.origin?.num}
+        contentType={artifact?.data?.insc?.file?.type}
         height={artifact?.height}
       />
       <div className="ml-0 md:ml-4 w-full max-w-sm">{adminControls}</div>

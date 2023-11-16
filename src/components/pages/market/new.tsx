@@ -221,7 +221,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
       console.log({ ordUtxo });
       // do not set the item if it is a listing
       if (ordUtxo) {
-        if (!ordUtxo.listing) {
+        if (!ordUtxo.data?.list) {
           setSelectedItem(ordUtxo);
         } else {
           toast.error("This item is already listed", toastErrorProps);

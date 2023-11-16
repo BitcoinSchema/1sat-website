@@ -339,19 +339,20 @@ const WalletProvider: React.FC<Props> = (props) => {
         // };
         toast.success("Ordinal Recieved!", toastProps);
         setOrdUtxos([
-          {
-            satoshis: e.satoshis,
-            txid: e.txid,
-            // id: parseInt(e.id),
-            vout: e.vout,
-            data: { insc: e.file },
-            origin: e.origin,
-            height: e.height,
-            outpoint: e.outpoint,
-            listing: e.listing,
-            num: e.num,
-            spend: e.spend,
-          } as OrdUtxo,
+          // {
+          //   satoshis: e.satoshis,
+          //   txid: e.txid,
+          //   // id: parseInt(e.id),
+          //   vout: e.vout,
+          //   data: { insc: e.file },
+          //   origin: e.origin,
+          //   height: e.height,
+          //   outpoint: e.outpoint,
+          //   listing: e.listing,
+          //   num: e.num,
+          //   spend: e.spend,
+          // } as OrdUtxo,
+          ...e,
           ...filteredOrdUtxos,
         ]);
       } else {

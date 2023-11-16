@@ -232,8 +232,8 @@ console.log("1111",{c})
                       height={artifact.height}
                       to={`/inscription/${artifact.origin?.num}`}
                       clickToZoom={false}
-                      price={artifact.price ? artifact.price : undefined}
-                      isListing={artifact.listing}
+                      price={artifact.data?.list ? artifact.data.list.price : undefined}
+                      isListing={!!artifact.data?.list}
                     />
                   )}
                 </div>
