@@ -268,6 +268,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         target={to ? "_self" : undefined}
         href={to}
         onClick={(e: any) => {
+          debugger
           if (!to) {
             e.stopPropagation();
             e.preventDefault();

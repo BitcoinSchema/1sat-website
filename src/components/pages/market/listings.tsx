@@ -179,6 +179,7 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   sigma={l.origin?.data?.sigma}
                   clickToZoom={false}
                   onClick={() => {
+                    debugger
                     router.push(`/inscription/${l.origin?.num}`);
                   }}
                 />

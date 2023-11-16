@@ -31,16 +31,16 @@ import { ORDS_PER_PAGE, PendingTransaction, useWallet } from "../wallet";
 export const API_HOST = `https://v3.ordinals.gorillapool.io`;
 export const ORDFS = `https://ordfs.network`;
 
-type MarketResponse = {
-  txid: string;
-  vout: number;
-  height: number;
-  idx: number;
-  price: number;
-  payout: string;
-  script: string;
-  origin: string;
-};
+// type MarketResponse = {
+//   txid: string;
+//   vout: number;
+//   height: number;
+//   idx: number;
+//   price: number;
+//   payout: string;
+//   script: string;
+//   origin: string;
+// };
 
 export const enum SortBy {
   PC = "pct_minted",
@@ -106,16 +106,16 @@ export interface OrdUtxo extends Utxo {
   height: number;
   idx: number;
   data?: TxoData;
-  file?: GPFile;
+  //file?: GPFile;
   // origin?: string;
   // outpoint: string;
-  listing: boolean;
-  price?: number;
-  SIGMA?: SIGMA[];
-  num: number | undefined;
-  MAP?: any; // MAP
+  // listing: boolean;
+  // price?: number;
+  // SIGMA?: SIGMA[];
+  // num: number | undefined;
+  // MAP?: any; // MAP
   // payout?: string; // base64 encoded == moved to data.list.payout
-  lock: string;
+  // lock: string;
 }
 
 // {"vin":0,"valid":true,"address":"18z9RxyXLzNLsJa5WsheDiqBhSrgf9qEr3","algorithm":"BSM","signature":"HxEudhvOxqPMC867Y7sZ2/LUxT8srQw9zlQiINLaJhRiA4QFBCVnj9IKJglAgZuM8ncTT/zXcWS9h9PUkF61hHQ="}
@@ -388,17 +388,15 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
 
   const blockedListings = useMemo(() => {
     return (listings || []).filter(
-      (l) =>
-        lockBlacklist.includes(l.lock) ||
-        txidBlacklist.includes(l.txid) ||
-        (l.SIGMA && l.SIGMA.some((s) => sigmaBlacklist.includes(s.address)))
+      (l) => txidBlacklist.includes(l.txid) ||
+        (l.origin?.data?.sigma && l.origin.data.sigma.some((s) => sigmaBlacklist.includes(s.address)))
     );
   }, [listings]);
 
   const suspiciousListings = useMemo(() => {
     return (listings || []).filter(
       (l) =>
-        l && l.SIGMA && l.SIGMA.some((s) => sigmaGreylist.includes(s.address))
+        l && l.origin?.data?.sigma && l.origin?.data?.sigma.some((s) => sigmaGreylist.includes(s.address))
     );
   }, [listings]);
 
@@ -641,6 +639,11 @@ console.log({results})
           file: i.origin?.data?.insc?.file,
           origin: i.origin?.outpoint,
           num: i.origin?.num,
+          outpoint: i.outpoint,
+          accSats: i.accSats,
+          script: i.script,
+          height: i.height,
+          idx: i.idx,
         } as OrdUtxo;
       });
     },
@@ -679,7 +682,7 @@ console.log({results})
 
       const cancelTx = new Transaction(1, 0);
 
-      const { promise } = http.customFetch<MarketResponse>(
+      const { promise } = http.customFetch<OrdUtxo>(
         `${API_HOST}/api/market/${listingUtxo.outpoint}`
       );
 
@@ -773,11 +776,13 @@ console.log({results})
 
       const purchaseTx = new Transaction(1, 0);
 
-      const { promise } = http.customFetch<MarketResponse>(
-        `${API_HOST}/api/market/${outPoint}`
+      const { promise } = http.customFetch<OrdUtxo>(
+        `${API_HOST}/api/txos/${outPoint}?script=true`
       );
 
-      const { script, payout, vout, txid, price } = await promise;
+      const { script, data, vout, txid } = await promise;
+      const { payout, price } = data!.list!;
+
       console.log(
         { script, payout, vout, txid, price },
         sumBy(fundingUtxos, "satoshis")
@@ -1081,9 +1086,7 @@ const handleInscribing = async (
   }
 };
 
-const lockBlacklist = [
-  "23ce2a1ce41a8a3bbc1f2390e84e70303d9d1e160ef5a9cb00906e7932facdd6", // same guy as 1AFyyfCgx1UtDy1jb9nsXmCFHK6jrnYN2J I think
-];
+
 
 const sigmaBlacklist = [
   "1AFyyfCgx1UtDy1jb9nsXmCFHK6jrnYN2J", // malicious html inscriptions c23a4c99d83d00dffe83bd7453e552ded916c0ed4f5236561c0620959c8b03e7 (his ord address?) funding address is   1HfS57RPC5oSoUMrxHgMwMvJRxJ6oah1Vd
