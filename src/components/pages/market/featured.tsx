@@ -1,5 +1,5 @@
 import Artifact from "@/components/artifact";
-import { API_HOST } from "@/context/ordinals";
+import { API_HOST, OrdUtxo } from "@/context/ordinals";
 import { customFetch } from "@/utils/httpClient";
 import { groupBy, map } from "lodash";
 import React, { useEffect, useMemo, useState } from "react";
@@ -77,7 +77,7 @@ export type Collection = {
 
 interface GroupedCollection {
   name: string;
-  collections: Collection[];
+  collections: OrdUtxo[];
 }
 
 const FeaturedCollections: React.FC = () => {
@@ -86,32 +86,49 @@ const FeaturedCollections: React.FC = () => {
   );
 
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [collectionsNew, setCollectionsNew] = useState<OrdUtxo[]>([]);
 
   const groupedCollections: GroupedCollection[] = useMemo(() => {
     const grouped = groupBy(
-      collections
+      collectionsNew
         .filter((f) => {
           return (
-            f.MAP.subType === KnownSubType.Collection &&
-            !blacklist.some((o) => o === f.origin)
+            f.data?.map?.subType === KnownSubType.Collection &&
+            !blacklist.some((o) => o === f.origin?.outpoint)
           );
         })
         .sort((a, b) => (a.height < b.height ? -1 : 1)),
-      "MAP.name"
-    ) as Record<string, Collection[]>;
+      "data.map.name"
+    ) as Record<string, OrdUtxo[]>;
     return map(grouped, (value, key) => ({ name: key, collections: value }));
-  }, [collections]);
+  }, [collectionsNew]);
+
+  // const groupedCollections: GroupedCollection[] = useMemo(() => {
+  //   const grouped = groupBy(
+  //     collections
+  //       .filter((f) => {
+  //         return (
+  //           f.MAP.subType === KnownSubType.Collection &&
+  //           !blacklist.some((o) => o === f.origin)
+  //         );
+  //       })
+  //       .sort((a, b) => (a.height < b.height ? -1 : 1)),
+  //     "MAP.name"
+  //   ) as Record<string, Collection[]>;
+  //   return map(grouped, (value, key) => ({ name: key, collections: value }));
+  // }, [collections]);
 
   useEffect(() => {
     const fire = async () => {
       try {
         setFetchFeaturedStatus(FetchStatus.Loading);
-        const { promise } = customFetch<Collection[]>(
-          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {type: 'collection'}})).toString('base64')}`
+        const { promise } = customFetch<OrdUtxo[]>(
+          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {subType: 'collection'}})).toString('base64')}`
         );
 
         const collections = await promise;
-        setCollections(collections.concat(ancientCollections));
+        // setCollections(collections.concat(ancientCollections));
+        setCollectionsNew(collections);
         setFetchFeaturedStatus(FetchStatus.Success);
       } catch (error) {
         console.log(error);
@@ -132,13 +149,13 @@ const FeaturedCollections: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {group.collections.map((item) => (
                 <Artifact
-                  key={item.origin}
-                  origin={item.origin}
+                  key={item.origin?.outpoint}
+                  origin={item.origin?.outpoint}
                   outPoint={item.outpoint}
-                  contentType={item.file.type}
-                  num={item.num}
-                  to={`/collection/${item.origin}`}
-                  src={item.MAP.previewUrl}
+                  contentType={item.data?.insc?.file.type}
+                  num={item.origin?.num}
+                  to={`/collection/${item.origin?.outpoint}`}
+                  src={item.data?.map?.previewUrl}
                   onClick={() => {}}
                   txid={item.txid}
                   height={item.height}
@@ -161,6 +178,13 @@ type Featured = {
 }[];
 
 const blacklist: string[] = [
+  "8a3ab4c01498bef667f56e7b99fe24cadb33034257d96e245e6159d5aed75f8b_0",
+  "c0ba0af258e0769a16232e002b2ac583f0aef403c4b3ac7e1b4344254ad423b6_0",
+  "a94ff4a8fe3fa458f7a60d670af16d2c4abd2da098e4073a0953b0ff3ce8500a_0",
+  "f74da8388df894f0c4d6d24ad43a71b80d27239588c6c03228c19b7df0bea1b6_0",
+  "cbe5a33e9d1734bcd19a584d3322af4f37694f813cf7c059674bca5f6b749f48_0",
+  "c60164eb39a33008dbe58108d39811159a48acc394a0dea9b9f0b7c36be9ab42_0",
+  "4b42916c3395475ff13ed938ad6c224206c517796509dc77a1ea49bb3cbf9847_0",
   "5841c60743e22319eaba12e84525b3a425b3b4818cd026cf0d83d65515ffceaf_0",
   "15d73722f6e362106344af7fda987dcfd2b977464026175fd654671aaf9ec21d_0",
   "4c7d7b0f864aff615005721e6ec1fa09dcb25fd9330cdd739c24584f6bd5983e_0",
