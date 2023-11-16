@@ -52,7 +52,7 @@ const TickerPage: React.FC<PageProps> = ({}) => {
 
   const amtOwned = useMemo(() => {
     // return balance from bsv20Balances[ticker.tick]
-    return bsv20Balances && ticker.tick ? find(bsv20Balances, (t) => t.tick === ticker.tick)?.tick : 0;
+    return bsv20Balances && ticker.tick ? find(bsv20Balances, (t) => t.tick === ticker.tick)?.all : {confirmed: 0, pending: 0};
   }, [bsv20Balances, ticker]);
 
   useEffect(() => {
@@ -97,7 +97,10 @@ const TickerPage: React.FC<PageProps> = ({}) => {
         <div className="font-semibold text-2xl">{ticker?.tick}</div>
         <div></div>
         <div>Owned</div>
-        <div>{amtOwned}</div>
+        <div>{amtOwned?.confirmed || 0}</div>
+
+        <div>Pending</div>
+        <div>{amtOwned?.pending || 0}</div>
 
         <div>Supply</div>
         <div>
