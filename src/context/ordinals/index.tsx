@@ -537,14 +537,39 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
         //           `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {type: 'collection'}})).toString('base64')}`
         
         // Available values : pct_minted, available, tick, max, height
-        const { promise } = http.customFetch<any>(
-          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({insc: {words: ['bsv20']}})).toString('base64')}`
+        const { promise } = http.customFetch<OrdUtxo[]>(
+          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({bsv20: {op: "deploy", status: Bsv20Status.Valid}})).toString('base64')}`
         );
 
         const results = await promise;
         setFetchBsv20Status(FetchStatus.Success);
 console.log({results})
-        setBsv20s(results);
+
+// now get each of the tickers in the list
+        // const tickers = await Promise.all(results.map(async (r: any) => {
+        //   const { promise } = http.customFetch<any>(
+        //     `${API_HOST}/api/bsv20/tick/${encodeURIComponent(r.origin.)}`
+        //   );
+        //   return await promise;
+        // }));
+
+        // console.log({tickers})
+        const items = results.map((b) => {
+          return {
+            ...b.data?.insc?.json,
+            ...b.origin?.data?.bsv20,
+            txid: b.txid,
+            vout: b.vout,
+            height: b.height,
+            idx: b.idx,
+            available: b.origin?.data?.bsv20?.available,
+            pct_minted: b.origin?.data?.bsv20?.pct_minted,
+            pending: b.origin?.data?.bsv20?.pending,
+            reason: b.origin?.data?.bsv20?.reason,
+          } as BSV20
+        });
+
+        setBsv20s(items);
       } catch (e) {
         setFetchBsv20Status(FetchStatus.Error);
         console.error("failed to get listings", e);

@@ -232,6 +232,11 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
     }
   };
 
+  // log bsv20s
+  useEffect(() => {
+    console.log({ bsv20s });
+  }, [bsv20s]);
+
   return (
     <div>
       <Tabs currentTab={Tab.Market} />
@@ -284,7 +289,7 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
           <hr className="bg-[#333] border-0 h-[1px] my-4 col-span-12" />
           {bsv20s?.map((bsv20, index) => {
             return parseInt(bsv20.max || "0") > 0 ? (
-              <React.Fragment key={`${bsv20.tick}-${index}`}>
+              <React.Fragment key={`tick-${bsv20.tick}-${index}`}>
                 <div
                   className="col-span-2 px-2 w-24 font-semibold cursor-pointer hover:text-blue-500 transition"
                   onClick={() => Router.push(`/market/bsv20/${bsv20.tick}`)}

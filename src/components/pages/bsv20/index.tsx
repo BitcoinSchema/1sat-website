@@ -170,7 +170,7 @@ useEffect(() => {
                 {bsv20Balances &&
                   bsv20Balances.map(
                     ({tick, all, listed}, idx) => (
-                      <React.Fragment key={`${tick}-${idx}`}>
+                      <React.Fragment key={`bal-${tick}-${idx}`}>
                         <div
                           className="cursor-pointer hover:text-blue-400 transition"
                           onClick={() => Router.push(`/market/bsv20/${tick}`)}
@@ -214,7 +214,7 @@ useEffect(() => {
                   Valid
                 </div>
                 {filteredActivity?.map((bsv20, index) => (
-                  <React.Fragment key={`${bsv20.tick}-${index}`}>
+                  <React.Fragment key={`act-${bsv20.tick}-${index}`}>
                     <div
                       className="flex items-center cursor-pointer hover:text-blue-400 transition"
                       onClick={() => Router.push(`/market/bsv20/${bsv20.tick}`)}
