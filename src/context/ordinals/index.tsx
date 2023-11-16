@@ -523,22 +523,14 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       try {
         const offset = (page - 1) * ORDS_PER_PAGE;
 
-        const q = {
-          limit: ORDS_PER_PAGE,
-          offset,
-          sort: sortBy,
-          dir,
-        };
-        
-
-        console.log("Searching for BSV20 inscriptions", { q})
+        console.log("Searching for BSV20 inscriptions", { offset })
 
         // example
         //           `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {type: 'collection'}})).toString('base64')}`
         
         // Available values : pct_minted, available, tick, max, height
-        const { promise } = http.customFetch<OrdUtxo[]>(
-          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({bsv20: {op: "deploy", status: Bsv20Status.Valid}})).toString('base64')}`
+        const { promise } = http.customFetch<BSV20[]>(
+          `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sortBy}&dir=${dir}`
         );
 
         const results = await promise;
@@ -554,22 +546,9 @@ console.log({results})
         // }));
 
         // console.log({tickers})
-        const items = results.map((b) => {
-          return {
-            ...b.data?.insc?.json,
-            ...b.origin?.data?.bsv20,
-            txid: b.txid,
-            vout: b.vout,
-            height: b.height,
-            idx: b.idx,
-            available: b.origin?.data?.bsv20?.available,
-            pct_minted: b.origin?.data?.bsv20?.pct_minted,
-            pending: b.origin?.data?.bsv20?.pending,
-            reason: b.origin?.data?.bsv20?.reason,
-          } as BSV20
-        });
+ 
 
-        setBsv20s(items);
+        setBsv20s(results);
       } catch (e) {
         setFetchBsv20Status(FetchStatus.Error);
         console.error("failed to get listings", e);
