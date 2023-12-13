@@ -28,7 +28,7 @@ import * as http from "../../utils/httpClient";
 import { useBitsocket } from "../bitsocket";
 import { ORDS_PER_PAGE, PendingTransaction, useWallet } from "../wallet";
 
-export const API_HOST = `https://v3.ordinals.gorillapool.io`;
+export const API_HOST = `https://ordinals.gorillapool.io`;
 export const ORDFS = `https://ordfs.network`;
 
 // type MarketResponse = {
@@ -77,7 +77,7 @@ export class TxoData {
     price: number;
     payout: string;
   };
-  bsv20?: BSV20
+  bsv20?: BSV20;
 }
 
 export interface Claim {
@@ -143,32 +143,28 @@ export type BSV20 = {
   // reason?: string;
   // pctMinted: number;
 
+  txid?: string;
+  vout?: 0;
+  height?: 792954;
+  idx?: 23726;
 
-  
-    txid?:string,
-    vout?: 0,
-    height?: 792954,
-    idx?: 23726,
-    
-    max?: string,
-    lim?:string,
-    dec?: number,
-    supply?: string,
-    
-    available?: string,
-    pct_minted?: string,
-    reason?: null,
-    pending?: string,
-  
-    id?: string;
-    p: string;
-    op: string;
-    tick?: string;
-    amt: string;
-    status?: Bsv20Status;
-  
+  max?: string;
+  lim?: string;
+  dec?: number;
+  supply?: string;
+
+  available?: string;
+  pct_minted?: string;
+  reason?: null;
+  pending?: string;
+
+  id?: string;
+  p: string;
+  op: string;
+  tick?: string;
+  amt: string;
+  status?: Bsv20Status;
 };
-
 
 export interface Ticker extends BSV20 {
   accounts: number;
@@ -381,22 +377,27 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       (l) =>
         !txidBlacklist.includes(l.txid) &&
         l.origin?.data?.insc?.file.hash &&
-        !fileHashBlacklist.includes(l.origin?.data!.insc.file.hash) && 
-        (!l.origin.data.sigma || !l.origin.data.sigma.some((s) => sigmaBlacklist.includes(s.address)))
+        !fileHashBlacklist.includes(l.origin?.data!.insc.file.hash) &&
+        (!l.origin.data.sigma ||
+          !l.origin.data.sigma.some((s) => sigmaBlacklist.includes(s.address)))
     );
   }, [listings]);
 
   const blockedListings = useMemo(() => {
     return (listings || []).filter(
-      (l) => txidBlacklist.includes(l.txid) ||
-        (l.origin?.data?.sigma && l.origin.data.sigma.some((s) => sigmaBlacklist.includes(s.address)))
+      (l) =>
+        txidBlacklist.includes(l.txid) ||
+        (l.origin?.data?.sigma &&
+          l.origin.data.sigma.some((s) => sigmaBlacklist.includes(s.address)))
     );
   }, [listings]);
 
   const suspiciousListings = useMemo(() => {
     return (listings || []).filter(
       (l) =>
-        l && l.origin?.data?.sigma && l.origin?.data?.sigma.some((s) => sigmaGreylist.includes(s.address))
+        l &&
+        l.origin?.data?.sigma &&
+        l.origin?.data?.sigma.some((s) => sigmaGreylist.includes(s.address))
     );
   }, [listings]);
 
@@ -523,11 +524,11 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
       try {
         const offset = (page - 1) * ORDS_PER_PAGE;
 
-        console.log("Searching for BSV20 inscriptions", { offset })
+        console.log("Searching for BSV20 inscriptions", { offset });
 
         // example
         //           `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {type: 'collection'}})).toString('base64')}`
-        
+
         // Available values : pct_minted, available, tick, max, height
         const { promise } = http.customFetch<BSV20[]>(
           `${API_HOST}/api/bsv20?limit=${ORDS_PER_PAGE}&offset=${offset}&sort=${sortBy}&dir=${dir}`
@@ -535,9 +536,9 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
 
         const results = await promise;
         setFetchBsv20Status(FetchStatus.Success);
-console.log({results})
+        console.log({ results });
 
-// now get each of the tickers in the list
+        // now get each of the tickers in the list
         // const tickers = await Promise.all(results.map(async (r: any) => {
         //   const { promise } = http.customFetch<any>(
         //     `${API_HOST}/api/bsv20/tick/${encodeURIComponent(r.origin.)}`
@@ -546,7 +547,6 @@ console.log({results})
         // }));
 
         // console.log({tickers})
- 
 
         setBsv20s(results);
       } catch (e) {
@@ -571,9 +571,9 @@ console.log({results})
       try {
         const r = await fetch(`${API_HOST}/api/inscriptions/${suffix}`);
         const results = await r.json();
-        const inscriptions = Array.isArray(results) ?
-          results as OrdUtxo[] :
-          [results as OrdUtxo];
+        const inscriptions = Array.isArray(results)
+          ? (results as OrdUtxo[])
+          : [results as OrdUtxo];
         // const inscriptions = await r.json()) as OrdUtxo[];
         setFetchInscriptionsStatus(FetchStatus.Success);
         // let utxo = res.find((u: any) => u.value > 1);
@@ -1089,8 +1089,6 @@ const handleInscribing = async (
     throw e;
   }
 };
-
-
 
 const sigmaBlacklist = [
   "1AFyyfCgx1UtDy1jb9nsXmCFHK6jrnYN2J", // malicious html inscriptions c23a4c99d83d00dffe83bd7453e552ded916c0ed4f5236561c0620959c8b03e7 (his ord address?) funding address is   1HfS57RPC5oSoUMrxHgMwMvJRxJ6oah1Vd

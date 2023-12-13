@@ -11,6 +11,17 @@ import WalletTabs, { WalletTab } from "../wallet/tabs";
 
 interface PageProps extends WithRouterProps {}
 
+const textStatus = (status: Bsv20Status) => {
+  switch (status) {
+    case Bsv20Status.Invalid:
+      return "Invalid";
+    case Bsv20Status.Pending:
+      return "Pending";
+    case Bsv20Status.Valid:
+      return "Valid";
+  }
+};
+
 const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
   const {
     payPk,
@@ -37,7 +48,7 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
         return -1;
       }
       // pending to the top
-      if (a.status!==Bsv20Status.Valid && b.status===Bsv20Status.Valid) {
+      if (a.status !== Bsv20Status.Valid && b.status === Bsv20Status.Valid) {
         return -1;
       }
       // if (a.height! < b.height!) {
@@ -111,9 +122,9 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
   }, [router, page]);
 
   // log bsv20 balances
-useEffect(() => {
-  console.log({ bsv20Balances });
-}, [bsv20Balances]);
+  useEffect(() => {
+    console.log({ bsv20Balances });
+  }, [bsv20Balances]);
 
   return (
     <>
@@ -168,19 +179,17 @@ useEffect(() => {
                 <div className="text-[#777] font-semibold">Ticker</div>
                 <div className="text-[#777] font-semibold">Balance</div>
                 {bsv20Balances &&
-                  bsv20Balances.map(
-                    ({tick, all, listed}, idx) => (
-                      <React.Fragment key={`bal-${tick}-${idx}`}>
-                        <div
-                          className="cursor-pointer hover:text-blue-400 transition"
-                          onClick={() => Router.push(`/market/bsv20/${tick}`)}
-                        >
-                          {tick}
-                        </div>
-                        <div className="text-emerald-400">{all.confirmed}</div>
-                      </React.Fragment>
-                    )
-                  )}
+                  bsv20Balances.map(({ tick, all, listed }, idx) => (
+                    <React.Fragment key={`bal-${tick}-${idx}`}>
+                      <div
+                        className="cursor-pointer hover:text-blue-400 transition"
+                        onClick={() => Router.push(`/market/bsv20/${tick}`)}
+                      >
+                        {tick}
+                      </div>
+                      <div className="text-emerald-400">{all.confirmed}</div>
+                    </React.Fragment>
+                  ))}
               </div>
             </div>
 
@@ -224,7 +233,7 @@ useEffect(() => {
                     <div>{bsv20.op} </div>
                     <div>{bsv20.amt} </div>
                     <div className="text-right">
-                      {bsv20.status === Bsv20Status.Pending === null ? (
+                      {bsv20.status === Bsv20Status.Pending ? (
                         <a href={`https://whatsonchain.com/tx/${bsv20.id}`}>
                           [-]
                         </a>
@@ -236,7 +245,7 @@ useEffect(() => {
                     </div>
                     {bsv20.status === Bsv20Status.Invalid && (
                       <div className="text-red-500 col-span-4">
-                        Reason: {bsv20.status}
+                        Reason: {textStatus(bsv20.status)}
                       </div>
                     )}
                   </React.Fragment>

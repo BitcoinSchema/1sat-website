@@ -24,7 +24,7 @@ export default function Document() {
       <link rel="preconnect" href="https://fonts.gstatic.com"></link>
       <link rel="preconnect" href="https://webserver.tonicpow.com"></link>
       <link rel="preconnect" href="https://ordfs.network"></link>
-      <link rel="preconnect" href="https://v3.ordinals.gorillapool.io"></link>
+      <link rel="preconnect" href="https://ordinals.gorillapool.io"></link>
       <meta name="twitter:card" content="summary" />
       <meta name="twitter:creator" content="@1SatOrdinals" />
       <meta

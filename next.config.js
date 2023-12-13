@@ -16,7 +16,7 @@ const nextConfig = {
   //     // Rewrite everything to `pages/index`
   //     {
   //       source: "/api/:path*",
-  //       destination: `https://v3.ordinals.gorillapool.io/api/:path*`,
+  //       destination: `https://ordinals.gorillapool.io/api/:path*`,
   //     },
   //   ];
   // },

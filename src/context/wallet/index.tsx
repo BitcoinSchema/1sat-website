@@ -128,11 +128,13 @@ export type BroadcastResponsePayload = {
 type BSV20Counts = {
   confirmed: number;
   pending: number;
-}
+};
 
 type BSV20Balance = {
-  tick: string, all:  BSV20Counts, listed: BSV20Counts
-}
+  tick: string;
+  all: BSV20Counts;
+  listed: BSV20Counts;
+};
 
 type ContextValue = {
   bsv20Activity: BSV20[] | undefined;
@@ -178,8 +180,8 @@ type ContextValue = {
   setBackupFile: (backupFile: File) => void;
   setCurrentTxId: (txid: string) => void;
   setFetchOrdinalUtxosStatus: (status: FetchStatus) => void;
-  setFetchUtxoByOriginStatus: (status: FetchStatus) => void;
-  fetchUtxoByOriginStatus: FetchStatus;
+  setFetchUtxoByOutpointStatus: (status: FetchStatus) => void;
+  fetchUtxoByOutpointStatus: FetchStatus;
   passphrase: string | undefined;
   setPassphrase: (phrase: string) => void;
   setShowEnterPassphrase: (show: EncryptDecrypt | undefined) => void;
@@ -198,7 +200,7 @@ type ContextValue = {
   broadcastPendingTx: (
     tx: PendingTransaction
   ) => Promise<BroadcastResponsePayload | void>;
-  getUtxoByOrigin: (origin: string) => Promise<OrdUtxo | undefined>;
+  getUtxoByOutpoint: (origin: string) => Promise<OrdUtxo | undefined>;
 };
 
 const WalletContext = createContext<ContextValue | undefined>(undefined);
@@ -250,7 +252,7 @@ const WalletProvider: React.FC<Props> = (props) => {
 
   const [fetchOrdinalUtxosStatus, setFetchOrdinalUtxosStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
-  const [fetchUtxoByOriginStatus, setFetchUtxoByOriginStatus] =
+  const [fetchUtxoByOutpointStatus, setFetchUtxoByOutpointStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
   const [fetchBsv20sStatus, setFetchBsv20sStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -408,15 +410,16 @@ const WalletProvider: React.FC<Props> = (props) => {
     }
   }, [setOrdPk, setPayPk, backupFile]);
 
-  const getUtxoByOrigin = useCallback(
-    async (origin: string): Promise<OrdUtxo> => {
-      setFetchUtxoByOriginStatus(FetchStatus.Loading);
+  const getUtxoByOutpoint = useCallback(
+    async (outpoint: string): Promise<OrdUtxo> => {
+      setFetchUtxoByOutpointStatus(FetchStatus.Loading);
       try {
         const { promise } = customFetch<OrdUtxo>(
-          `${API_HOST}/api/utxos/origin/${origin}`
+          `${API_HOST}/api/txos/${outpoint}?script=true`
         );
         const ordUtxo = await promise;
-        setFetchUtxoByOriginStatus(FetchStatus.Success);
+        console.log({ ordUtxo });
+        setFetchUtxoByOutpointStatus(FetchStatus.Success);
 
         ordUtxo.script = Script.from_bytes(
           Buffer.from(ordUtxo.script, "base64")
@@ -424,11 +427,11 @@ const WalletProvider: React.FC<Props> = (props) => {
 
         return ordUtxo;
       } catch (e) {
-        setFetchUtxoByOriginStatus(FetchStatus.Error);
+        setFetchUtxoByOutpointStatus(FetchStatus.Error);
         throw e;
       }
     },
-    [setFetchUtxoByOriginStatus]
+    [setFetchUtxoByOutpointStatus]
   );
 
   const getOrdinalUTXOs = useCallback(
@@ -557,10 +560,10 @@ const WalletProvider: React.FC<Props> = (props) => {
         const r = await fetch(
           `${API_HOST}/api/txos/address/${address}/unspent?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}&status=all&bsv20=true`
         );
-        const utxos = (await r.json()) as [{ data: { bsv20: BSV20}}];
+        const utxos = (await r.json()) as [{ data: { bsv20: BSV20 } }];
 
         setFetchBsv20sStatus(FetchStatus.Success);
-        const bsv20s = utxos.map((u) => u.data.bsv20)
+        const bsv20s = utxos.map((u) => u.data.bsv20);
         setBsv20Activity(bsv20s);
         return bsv20s;
       } catch (e) {
@@ -921,7 +924,9 @@ const WalletProvider: React.FC<Props> = (props) => {
 
     console.log({ pendingTransaction });
     setBroadcastStatus(FetchStatus.Loading);
-    const rawtx = Buffer.from(pendingTransaction.rawTx, "hex").toString('base64');
+    const rawtx = Buffer.from(pendingTransaction.rawTx, "hex").toString(
+      "base64"
+    );
     const response = await fetch(`${API_HOST}/api/tx`, {
       method: "POST",
       headers: {
@@ -983,11 +988,8 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
       return;
     }
-    const { message } = await response.json()
-    toast.error(
-      "Failed to broadcast " + message,
-      toastErrorProps
-    );
+    const { message } = await response.json();
+    toast.error("Failed to broadcast " + message, toastErrorProps);
 
     setBroadcastStatus(FetchStatus.Error);
   }, [
@@ -1146,9 +1148,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       setCreatedUtxos,
       broadcastPendingTx,
       broadcastStatus,
-      getUtxoByOrigin,
-      setFetchUtxoByOriginStatus,
-      fetchUtxoByOriginStatus,
+      getUtxoByOutpoint,
+      setFetchUtxoByOutpointStatus,
+      fetchUtxoByOutpointStatus,
       passphrase,
       encryptedBackup,
       setEncryptedBackup,
@@ -1202,9 +1204,9 @@ const WalletProvider: React.FC<Props> = (props) => {
       setFundingUtxos,
       broadcastPendingTx,
       broadcastStatus,
-      getUtxoByOrigin,
-      setFetchUtxoByOriginStatus,
-      fetchUtxoByOriginStatus,
+      getUtxoByOutpoint,
+      setFetchUtxoByOutpointStatus,
+      fetchUtxoByOutpointStatus,
       passphrase,
       encryptedBackup,
       setEncryptedBackup,

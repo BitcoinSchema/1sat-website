@@ -55,31 +55,34 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
 
   return (
     <div>
+      {ordUtxos?.length === 0 && <div>You have no ordinals</div>}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 mb-4">
-        {ordUtxos?.map((a) => (
-          <Artifact
-            onClick={() => 
-              onClick && onClick(a.origin?.outpoint || `${a.txid}_${a.vout}`)
-            }
-            key={a.origin?.outpoint}
-            origin={a.origin?.outpoint}
-            contentType={a.origin?.data?.insc?.file?.type}
-            num={a.origin?.num}
-            to={
-              onClick
-                ? undefined
-                : a.origin?.num !== undefined
-                ? `/inscription/${a.origin?.num}?page=${currentPage}`
-                : `/tx/${a.txid}_${a.vout}`
-            }
-            classNames={{
-              wrapper: "max-w-72 max-h-72 overflow-hidden mb-2",
-            }}
-            txid={a.txid}
-            height={a.height}
-            isListing={!!a.data?.list}
-          />
-        ))}
+        {ordUtxos?.map((a) => {
+          return (
+            <Artifact
+              onClick={() =>
+                onClick && onClick(a.origin?.outpoint || `${a.txid}_${a.vout}`)
+              }
+              key={a.origin?.outpoint || `${a.txid}_${a.vout}`}
+              origin={a.origin?.outpoint}
+              contentType={a.origin?.data?.insc?.file?.type}
+              num={a.origin?.num}
+              to={
+                onClick
+                  ? undefined
+                  : a.origin?.num !== undefined
+                  ? `/inscription/${a.origin?.num}?page=${currentPage}`
+                  : `/tx/${a.txid}_${a.vout}`
+              }
+              classNames={{
+                wrapper: "max-w-72 max-h-72 overflow-hidden mb-2",
+              }}
+              txid={a.txid}
+              height={a.height}
+              isListing={!!a.data?.list}
+            />
+          );
+        })}
       </div>
       {pagination}
     </div>

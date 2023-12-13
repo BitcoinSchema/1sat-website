@@ -39,9 +39,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
         setJson(resultText);
 
         if (type === ArtifactType.BSV20) {
-          const bsv20Result = await fetch(
-            `${API_HOST}/api/txos/${origin}`
-          );
+          const bsv20Result = await fetch(`${API_HOST}/api/txos/${origin}`);
           if (bsv20Result.status === 200) {
             const bsv20ResultJson = await bsv20Result.json();
             setFetchBsv20Status(FetchStatus.Success);
@@ -127,20 +125,24 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
       >
         {JSON.stringify(json, null, 2)}
       </pre>
-      {type === ArtifactType.BSV20 && bsv20 && bsv20.status !== Bsv20Status.Valid && (
-        <div
-          className={`rounded bg-black bg-opacity-75 absolute bottom-0 p-2 md:p-4 ${
-            bsv20.status === Bsv20Status.Pending ? "text-yellow-400" : "text-red-400"
-          } left-0 font-semibold w-full flex items-center justify-center text-sm`}
-        >
-          <IoMdWarning className="mr-2 w-8" />{" "}
-          {`${
-             bsv20.status === Bsv20Status.Pending
-              ? "PENDING VALIDATION"
-              : "INVALID BSV-20 INSCRIPTION!"
-          }`}
-        </div>
-      )}
+      {type === ArtifactType.BSV20 &&
+        bsv20 &&
+        bsv20.status !== Bsv20Status.Valid && (
+          <div
+            className={`rounded bg-black bg-opacity-75 absolute bottom-0 p-2 md:p-4 ${
+              bsv20.status === Bsv20Status.Pending
+                ? "text-yellow-400"
+                : "text-red-400"
+            } left-0 font-semibold w-full flex items-center justify-center text-sm`}
+          >
+            <IoMdWarning className="mr-2 w-8" />{" "}
+            {`${
+              bsv20.status === Bsv20Status.Pending
+                ? "PENDING VALIDATION"
+                : "INVALID BSV-20 INSCRIPTION!"
+            }`}
+          </div>
+        )}
     </div>
   ) : (
     <LoaderIcon className="mx-auto" />

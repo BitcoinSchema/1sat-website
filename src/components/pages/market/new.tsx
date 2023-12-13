@@ -49,7 +49,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     payPk,
     ordPk,
     getRawTxById,
-    getUtxoByOrigin,
+    getUtxoByOutpoint,
     setPendingTransaction,
   } = useWallet();
   const [showSelectItem, setShowSelectItem] = useState<boolean>();
@@ -176,7 +176,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     const paymentPk = PrivateKey.from_wif(payPk);
     const ordinalPk = PrivateKey.from_wif(ordPk);
 
-    const ordUtxo = await getUtxoByOrigin(selectedItem.origin.outpoint);
+    const ordUtxo = await getUtxoByOutpoint(selectedItem.origin.outpoint);
     if (!ordUtxo) {
       // TODO: show error
       return;
@@ -205,7 +205,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     payPk,
     ordPk,
     ordAddress,
-    getUtxoByOrigin,
+    getUtxoByOutpoint,
   ]);
 
   const clickSelectItem = useCallback(() => {
@@ -216,7 +216,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
     async (outpoint: string) => {
       console.log("Clicked", outpoint);
       //     const items = await fetchOrdinal(outpoint);
-      const ordUtxo = await getUtxoByOrigin(outpoint);
+      const ordUtxo = await getUtxoByOutpoint(outpoint);
 
       console.log({ ordUtxo });
       // do not set the item if it is a listing
@@ -232,7 +232,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
       setShowSelectItem(false);
       setOutpoint(outpoint);
     },
-    [setOutpoint, getUtxoByOrigin, setShowSelectItem]
+    [setOutpoint, getUtxoByOutpoint, setShowSelectItem]
   );
 
   const artifact = useMemo(() => {
@@ -277,7 +277,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
             {!outpoint && (
               <div
                 onClick={clickSelectItem}
-                className="text-blue-400 hover:text-blue-500 transition font-semibold cursor-pointer p-2 flex items-center justify-center w-full h-64 border rounded-lg border-[#333] border-dashed hover:bg-[#1a1a1a] transition mx-auto"
+                className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer p-2 flex items-center justify-center w-full h-64 border rounded-lg border-[#333] border-dashed hover:bg-[#1a1a1a] transition mx-auto"
               >
                 <TbClick className="text-2xl mr-2" /> Select an Item
               </div>
