@@ -242,9 +242,6 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
       <Tabs currentTab={Tab.Market} />
 
       <MarketTabs currentTab={MarketTab.BSV20} />
-      <h1 className="text-center mt-2 mb-6 text-4xl text-yellow-600 font-mono font-semibold">
-        BSV-20 (Fungible Tokens)
-      </h1>
 
       <div className="flex items-center mb-6 px-4 md:max-w-lg md:mx-auto">
         <input
