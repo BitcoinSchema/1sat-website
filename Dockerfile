@@ -8,13 +8,13 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN npm install --frozen-lockfile
 
 # Copy the rest of the application's source code
 COPY . .
 
 # Build the application
-RUN yarn build
+RUN num run build
 
 # Stage 2: Serve the application using Nginx
 FROM nginx:alpine
