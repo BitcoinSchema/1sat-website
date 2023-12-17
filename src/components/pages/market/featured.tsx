@@ -85,7 +85,6 @@ const FeaturedCollections: React.FC = () => {
     FetchStatus.Idle
   );
 
-  const [collections, setCollections] = useState<Collection[]>([]);
   const [collectionsNew, setCollectionsNew] = useState<OrdUtxo[]>([]);
 
   const groupedCollections: GroupedCollection[] = useMemo(() => {
@@ -123,7 +122,9 @@ const FeaturedCollections: React.FC = () => {
       try {
         setFetchFeaturedStatus(FetchStatus.Loading);
         const { promise } = customFetch<OrdUtxo[]>(
-          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {subType: 'collection'}})).toString('base64')}`
+          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(
+            JSON.stringify({ map: { subType: "collection" } })
+          ).toString("base64")}`
         );
 
         const collections = await promise;

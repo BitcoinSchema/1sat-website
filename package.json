@@ -73,7 +73,8 @@
     "@emotion/babel-plugin": "^11.10.6",
     "babel-plugin-macros": "^3.1.0",
     "fs": "^0.0.1-security",
-    "replace-module-webpack-plugin": "^1.0.0"
+    "replace-module-webpack-plugin": "^1.0.0",
+    "serve": "^14.2.1"
   },
   "babelMacros": {
     "twin": {
