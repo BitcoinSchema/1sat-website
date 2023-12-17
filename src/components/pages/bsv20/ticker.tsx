@@ -52,7 +52,9 @@ const TickerPage: React.FC<PageProps> = ({}) => {
 
   const amtOwned = useMemo(() => {
     // return balance from bsv20Balances[ticker.tick]
-    return bsv20Balances && ticker.tick ? find(bsv20Balances, (t) => t.tick === ticker.tick)?.all : {confirmed: 0, pending: 0};
+    return bsv20Balances && ticker.tick
+      ? find(bsv20Balances, (t) => t.tick === ticker.tick)?.all
+      : { confirmed: 0, pending: 0 };
   }, [bsv20Balances, ticker]);
 
   useEffect(() => {
@@ -71,7 +73,6 @@ const TickerPage: React.FC<PageProps> = ({}) => {
   // available count
   // pct minted
 
-  console.log({ mintedOut });
   return (
     <>
       {" "}
@@ -93,43 +94,72 @@ const TickerPage: React.FC<PageProps> = ({}) => {
         // }
         // showIndicator={fetchBsv20sStatus !== FetchStatus.Loading}
       />
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-        <div className="font-semibold text-2xl">{ticker?.tick}</div>
-        <div></div>
-        <div>Owned</div>
-        <div>{amtOwned?.confirmed || 0}</div>
-
-        <div>Pending</div>
-        <div>{amtOwned?.pending || 0}</div>
-
-        <div>Supply</div>
-        <div>
-          {ticker?.supply} / {ticker?.max}
+      {!ticker.included && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="font-semibold text-2xl">{ticker?.tick}</div>
+          <div></div>
+          <div>Max Supply</div>
+          <div>{ticker?.max}</div>
+          <div>Mint Limit</div>
+          <div>{ticker?.lim}</div>
         </div>
-        <div>Mint Limit</div>
-        <div>{ticker?.lim}</div>
+      )}
+      {ticker.included && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="font-semibold text-2xl">{ticker?.tick}</div>
+          <div></div>
 
-        <div>Accounts</div>
-        <div>{ticker?.accounts}</div>
-      </div>
+          <div>Owned</div>
+          <div>{amtOwned?.confirmed || 0}</div>
+
+          <div>Pending</div>
+          <div>{amtOwned?.pending || 0}</div>
+
+          <div>Supply</div>
+          <div>
+            {ticker?.supply} / {ticker?.max}
+          </div>
+          <div>Mint Limit</div>
+          <div>{ticker?.lim}</div>
+
+          <div>Accounts</div>
+          <div>{ticker?.accounts}</div>
+        </div>
+      )}
+      {!ticker.included && (
+        <div className="bg-blue-100 text-blue-800 p-2 rounded my-2 max-w-md">
+          This ticker is not included in the Ordinals index. You can contribute
+          to the indexing fund below (soonTm).
+        </div>
+      )}
       <br />
-      {parseInt(ticker.supply || "0") < parseInt(ticker.max || "0") && (
-        <div
-          onClick={(e) => {
-            if (mintedOut) {
-              e.preventDefault();
-              return;
-            }
-            Router.push(`/inscribe?tab=bsv20&tick=${tick}&op=mint`);
-          }}
-          className="cursor-pointer hover:bg-emerald-500 transition p-2 rounded bg-emerald-600 text-white font-semibold"
-        >
-          {`Mint ${tick}`}
-        </div>
-      )}
-      {parseInt(ticker.supply || "0") >= parseInt(ticker.max || "0") && (
-        <div className="text-red-400 bg-[#111] rounded p-2">Minted Out</div>
-      )}
+      <div className="flex items-center gap-2">
+        {ticker.included &&
+          parseInt(ticker.supply || "0") < parseInt(ticker.max || "0") && (
+            <div
+              onClick={(e) => {
+                if (mintedOut) {
+                  e.preventDefault();
+                  return;
+                }
+                Router.push(`/inscribe?tab=bsv20&tick=${tick}&op=mint`);
+              }}
+              className="cursor-pointer hover:bg-emerald-500 transition p-2 rounded bg-emerald-600 text-white font-semibold"
+            >
+              {`Mint ${tick}`}
+            </div>
+          )}
+        {ticker.included &&
+          parseInt(ticker.supply || "0") >= parseInt(ticker.max || "0") && (
+            <div className="text-red-400 bg-[#111] rounded p-2">Minted Out</div>
+          )}
+        {
+          !ticker.included && "&nbsp;"
+          // <div className="cursor-pointer hover:bg-emerald-500 transition p-2 rounded bg-emerald-600 text-white font-semibold">
+          //   {`Index ${tick}`}
+          // </div>
+        }
+      </div>
     </>
   );
 };

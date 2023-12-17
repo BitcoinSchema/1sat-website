@@ -25,9 +25,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
     tick: string;
     op: string;
   };
+
   const { fetchStatsStatus, stats, inscribeUtf8 } = useOrdinals();
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
-
   const [selectedActionType, setSelectedActionType] = useState<ActionType>(
     ActionType.Mint
   );
@@ -51,7 +51,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
   const [ticker, setTicker] = useState<string>(tick);
 
-  const { bsv20Balances, getUTXOs, ordAddress, payPk, changeAddress } =
+  const { usdRate, bsv20Balances, getUTXOs, ordAddress, payPk, changeAddress } =
     useWallet();
 
   useEffect(() => {
@@ -161,9 +161,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
   const inSync = useMemo(() => {
     return (
+      stats?.latest &&
       fetchStatsStatus !== FetchStatus.Loading &&
-      stats &&
-      stats.settled + 6 >= stats.latest
+      stats["bsv20-deploy"] >= stats.latest
     );
   }, [fetchStatsStatus, stats]);
 
@@ -355,9 +355,41 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       !tickerAvailable ||
       !ticker?.length ||
       inscribeStatus === FetchStatus.Loading ||
-      fetchTickerStatus === FetchStatus.Loading
+      fetchTickerStatus === FetchStatus.Loading ||
+      (!!limit && maxSupply < limit)
     );
-  }, [inscribeStatus, tickerAvailable, ticker?.length, fetchTickerStatus]);
+  }, [
+    inscribeStatus,
+    tickerAvailable,
+    ticker?.length,
+    fetchTickerStatus,
+    limit,
+    maxSupply,
+  ]);
+
+  const listingFee = useMemo(() => {
+    console.log({ usdRate });
+    const minFee = 10000;
+    const baseFee = 50000;
+    if (!usdRate) {
+      return minFee;
+    }
+    return selectedBsv20
+      ? calculateIndexingFee(
+          baseFee,
+          BigInt(selectedBsv20.max || "0"),
+          parseInt(selectedBsv20.lim || "0"),
+          minFee,
+          usdRate
+        )
+      : calculateIndexingFee(
+          baseFee,
+          BigInt(maxSupply),
+          parseInt(limit || "0"),
+          minFee,
+          usdRate
+        );
+  }, [maxSupply, limit, selectedBsv20, usdRate]);
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -554,23 +586,35 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       )}
 
       {selectedActionType === ActionType.Deploy && showOptionalFields && (
-        <div className="my-2">
-          <label className="block mb-4">
-            <div className="my-2 flex items-center justify-between">
-              Decimal Precision
-            </div>
-            <input
-              className="text-white w-full rounded p-2"
-              type="number"
-              min={0}
-              max={18}
-              value={decimals}
-              onChange={changeDecimals}
-            />
+        <>
+          <div className="my-2">
+            <label className="block mb-4">
+              <div className="my-2 flex items-center justify-between">
+                Decimal Precision
+              </div>
+              <input
+                className="text-white w-full rounded p-2"
+                type="number"
+                min={0}
+                max={18}
+                value={decimals}
+                onChange={changeDecimals}
+              />
+            </label>
+          </div>
+        </>
+      )}
+      {selectedActionType === ActionType.Deploy && (
+        <div className="my-2 flex items-center justify-between mb-4">
+          <label className="block w-full">
+            Due to BSV&apos;s massive scale not all BSV20 deployements are not
+            indexed until a service fee is paid. This helps bring minting
+            incentives in line with BSVs insanely low network fees, and keeps
+            this survice running reliably. The Listing Fee for this deployent
+            will be {`($${listingFee})`}
           </label>
         </div>
       )}
-
       {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
       <button
         disabled={submitDisabled}
@@ -588,3 +632,22 @@ export default InscribeBsv20;
 
 const maxMaxSupply = BigInt("18446744073709551615");
 const bulkEnabled = false;
+
+const calculateIndexingFee = (
+  baseFee: number,
+  supply: bigint,
+  mintLimit: number,
+  minFee: number,
+  usdRate: number
+) => {
+  if (!mintLimit) {
+    // prevents division by zero and assumes highest price
+    mintLimit = 1;
+  }
+  const totalTransactions = supply / BigInt(mintLimit);
+  const totalFee = BigInt(baseFee) * totalTransactions;
+  if (totalFee > BigInt(minFee)) {
+    return (Number(totalFee) / usdRate).toFixed(2);
+  }
+  return (minFee / usdRate).toFixed(2);
+};

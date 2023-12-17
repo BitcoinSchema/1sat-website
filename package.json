@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "serve": "serve out -p $PORT",
     "deploy": "yarn build && firebase deploy"
   },
   "dependencies": {

@@ -104,7 +104,7 @@ const BSV20Page: React.FC<PageProps> = ({}) => {
                     ? `/market/bsv20/?page=${
                         currentPage + 1
                       }&sortBy=${sortBy}&dir=${dir}`
-                    : `/market/bsv20/?page=2&sortBy=${sortBy}&dir=${dir}`
+                    : `/market/bsv20/?page=2&sortBy=${sortBy}&dir=${dir}&included=true`
                 )
               }
             >

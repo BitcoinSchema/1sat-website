@@ -6,7 +6,7 @@ import { WithRouterProps } from "next/dist/client/with-router";
 import Head from "next/head";
 import Image from "next/image";
 import Router from "next/router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import * as S from "./styles";
 
 import { getRandomInt } from "@/utils/number";
@@ -61,24 +61,33 @@ const HomePage: React.FC<PageProps> = ({}) => {
   }, [numMinted, fetchCountStatus]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      console.log("This will be called every 12 seconds");
-      if (numMinted) {
-        setRandomNumber(getRandomInt(0, numMinted));
-        setFetchInscriptionsStatus(FetchStatus.Idle);
-      }
-    }, 12000);
-    return () => clearInterval(interval);
+    // const interval = setInterval(() => {
+    console.log("This will be called every 12 seconds");
+    if (numMinted) {
+      const rando = getRandomInt(0, numMinted);
+      setRandomNumber(rando);
+      setFetchInscriptionsStatus(FetchStatus.Idle);
+      // window.location.href = `https://1satordinals.com?inscriptionId=${rando}`;
+    }
+    // }, 12000);
+    // return () => clearInterval(interval);
   }, [numMinted, setRandomNumber, setFetchInscriptionsStatus]);
+
+  const currentArtifactId = useMemo(() => {
+    return artifact?.txid;
+  }, [artifact?.txid]);
 
   useEffect(() => {
     const fire = async (iid: number) => {
       const art = await getArtifactByInscriptionId(iid);
 
-      if (art) {
-        //         console.log("FILLING", { art });
+      if (art && art.origin?.data?.insc?.file?.type.startsWith("image")) {
+        console.log("FILLING", { art });
         // const art2 = await fillContentType(art);
         setArtifact(art);
+      } else {
+        // try another random number
+        // fire(getRandomInt(0, numMinted));
       }
     };
     if (
@@ -93,7 +102,32 @@ const HomePage: React.FC<PageProps> = ({}) => {
     artifact,
     getArtifactByInscriptionId,
     setArtifact,
+    numMinted,
+    currentArtifactId,
   ]);
+
+  console.log({ artifact, currentArtifactId });
+
+  const renderArtifact = useMemo(() => {
+    return (
+      artifact &&
+      artifact.txid === currentArtifactId && (
+        <Artifact
+          num={artifact?.origin?.num}
+          origin={
+            artifact.origin?.outpoint || ` ${artifact?.txid}_${artifact?.vout}`
+          }
+          contentType={artifact.data?.insc?.file.type}
+          classNames={{
+            wrapper: "min-w-96",
+            media: "max-h-96 max-w-96",
+          }}
+          to={`/inscription/${artifact?.origin?.outpoint}`}
+          height={artifact.height}
+        />
+      )
+    );
+  }, [artifact, currentArtifactId]);
 
   return (
     <>
@@ -125,22 +159,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
               Inscriptions Made
             </h2>
             <div className="mx-auto max-w-5xl">
-              {artifact && (
-                <Artifact
-                  num={artifact?.origin?.num}
-                  origin={
-                    artifact.origin?.outpoint ||
-                    ` ${artifact?.txid}_${artifact?.vout}`
-                  }
-                  contentType={artifact.data?.insc?.file.type}
-                  classNames={{
-                    wrapper: "min-w-96",
-                    media: "max-h-96 max-w-96",
-                  }}
-                  to={`/inscription/${artifact?.origin?.outpoint}`}
-                  height={artifact.height}
-                />
-              )}
+              {renderArtifact}
               {!artifact && (
                 <div className="max-w-[600px] text-yellow-400 font-mono">
                   <div className="cursor-pointer mb-8 w-full">

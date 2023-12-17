@@ -563,7 +563,7 @@ const WalletProvider: React.FC<Props> = (props) => {
         const utxos = (await r.json()) as [{ data: { bsv20: BSV20 } }];
 
         setFetchBsv20sStatus(FetchStatus.Success);
-        const bsv20s = utxos.map((u) => u.data.bsv20);
+        const bsv20s = utxos?.map((u) => u.data.bsv20);
         setBsv20Activity(bsv20s);
         return bsv20s;
       } catch (e) {

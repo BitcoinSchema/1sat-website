@@ -63,12 +63,12 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
   }, [bsv20Activity]);
 
   useEffect(() => {
-    if (stats && stats.settled !== lastSettled) {
+    if (stats && stats["bsv20-deploy"] !== lastSettled) {
       // TODO: When indexer resets this is LOUD
-      // crowl someone went back the beginning
+      // crawl someone went back the beginning
       // as it flys through blocks with no matching txs
       // setFetchBsv20sStatus(FetchStatus.Idle);
-      setLastSettled(stats.settled);
+      setLastSettled(stats["bsv20-deploy"]);
     }
   }, [lastSettled, stats]);
 

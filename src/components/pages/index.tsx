@@ -111,9 +111,7 @@ const Layout: React.FC<Props> = ({ children }) => {
       try {
         setFetchBlockHeadersStatus(FetchStatus.Loading);
         const resp = await fetch(
-          `https://junglebus.gorillapool.io/v1/block_header/list/${
-            stats!.settled - 6
-          }`
+          `https://junglebus.gorillapool.io/v1/block_header/list/${stats!.ord}`
         );
         setFetchBlockHeadersStatus(FetchStatus.Success);
         const data = await resp.json();
@@ -259,8 +257,8 @@ const Layout: React.FC<Props> = ({ children }) => {
   return (
     <div className="min-h-[100vh] min-w-[100vw] flex flex-col justify-between text-yellow-400 font-mono">
       {fetchStatsStatus !== FetchStatus.Loading &&
-        stats &&
-        stats.settled + 6 < stats.latest && (
+        stats?.latest &&
+        stats.ord < stats.latest && (
           <div className="rounded bg-[#111] p-2 mb-8 w-full">
             <div className=" mx-auto max-w-lg">
               <div
@@ -355,20 +353,31 @@ const Layout: React.FC<Props> = ({ children }) => {
               </div>
             ))}
 
-            {stats && (
+            {stats?.latest && (
               <div className="col-span-10 mt-4 text-[#777]">
                 <h1 className="font-seminbold text-lg text-[#777]">
                   1Sat API Status
                 </h1>
                 <div className="text-yellow-400 mb-2">
-                  {stats.latest - stats.settled - 6} block
-                  {stats.latest - stats.settled - 6 > 1 ? "s" : ""} behind
+                  {stats.latest && stats.latest - stats.ord} block
+                  {stats.latest && stats.latest - stats.ord > 1 ? "s" : ""}{" "}
+                  behind
                 </div>
                 Latest: {stats.latest}
                 <br />
-                Synced: {stats.indexed}
+                Ordinals: {stats.ord}
                 <br />
-                Settled: {stats.settled}
+                Market Listings: {stats.market}
+                <br />
+                Market Spends: {stats.market_spends}
+                <br />
+                OPNS: {stats.opns}
+                <br />
+                BSV20V2: {stats.bsv20v2}
+                <br />
+                BSV20: {stats["bsv20-deploy"]}
+                <br />
+                Locks: {stats.locks}
               </div>
             )}
           </div>

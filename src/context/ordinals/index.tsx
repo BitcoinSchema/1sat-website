@@ -168,12 +168,18 @@ export type BSV20 = {
 
 export interface Ticker extends BSV20 {
   accounts: number;
+  included: boolean;
 }
 
 type Stats = {
-  settled: number;
-  indexed: number;
-  latest: number;
+  ord: number;
+  latest?: number;
+  "bsv20-deploy": number;
+  bsv20v2: number;
+  locks: number;
+  opns: number;
+  market: number;
+  market_spends: number;
 };
 
 export interface Inscription {
@@ -293,10 +299,10 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   }, [lastSettledEvent]);
 
   useEffect(() => {
-    if (lastSettledBlock > 0 && lastSettledBlock !== stats?.settled) {
+    if (lastSettledBlock > 0 && lastSettledBlock !== stats?.ord) {
       const newStats = {
         ...stats,
-        settled: lastSettledBlock,
+        ord: lastSettledBlock,
       } as Stats;
       setStats(newStats);
     }
@@ -313,7 +319,9 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
 
     const resp2 = await fetch(`${API_HOST}/api/stats`);
     try {
-      const s = (await resp2.json()) as { settled: number; indexed: number };
+      // {"settled":822461,"market":822866,"ord":822866,"bsv20v2":822866,"bsv20-deploy":822866,"locks":822866,"market_spends":822866,"opns":822866}
+      const s = (await resp2.json()) as Stats;
+
       setStats({ ...s, latest: chainInfo.blocks });
       setFetchStatsStatus(FetchStatus.Success);
     } catch (e) {

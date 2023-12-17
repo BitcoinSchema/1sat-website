@@ -50,10 +50,10 @@ export const createChangeOutput = (
 };
 
 export const fetchOrdinal = async (outpoint: string) => {
-  const item = await customFetch<OrdUtxo>(
+  const { promise } = customFetch<OrdUtxo>(
     `${API_HOST}/api/inscriptions/${outpoint}/latest`
   );
-  return item;
+  return await promise;
 };
 
 export const SAT_FEE_PER_BYTE = 0.065;
