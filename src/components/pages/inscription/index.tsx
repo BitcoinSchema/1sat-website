@@ -139,7 +139,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   }, [ordListing, artifact]);
 
   const ordUtxo = useMemo(() => {
-    return ordUtxos?.find((o) => o.origin?.num === parseInt(inscriptionId as string));
+    return ordUtxos?.find(
+      (o) => o.origin?.num === parseInt(inscriptionId as string)
+    );
   }, [inscriptionId, ordUtxos]);
 
   const pagination = useMemo(() => {
@@ -218,9 +220,11 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       //   head(artifact.file!.type.split(";"))
       // );
       if (
-        (head(artifact.origin?.data?.insc?.file!.type.split(";")) === "text/plain" &&
+        (head(artifact.origin?.data?.insc?.file!.type.split(";")) ===
+          "text/plain" &&
           (artifact.height || 0) > 793000) ||
-        head(artifact.origin?.data?.insc?.file!.type.split(";")) === "application/bsv-20"
+        head(artifact.origin?.data?.insc?.file!.type.split(";")) ===
+          "application/bsv-20"
       ) {
         return true;
       }
@@ -258,7 +262,8 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     };
     // if this is a collectionItem, look up the collection
     if (artifact?.data?.map?.subType === SubType.CollectionItem) {
-      const collectionId = (artifact?.data.map?.subTypeData as any)?.collectionId;
+      const collectionId = (artifact?.data.map?.subTypeData as any)
+        ?.collectionId;
       if (collectionId) {
         fire(collectionId);
 
@@ -326,7 +331,10 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
   }, [artifact, ordUtxo]);
 
   const ownsInscription = useMemo(() => {
-    return artifact && ordUtxos?.some((o) => o.origin === artifact.origin);
+    return (
+      artifact &&
+      ordUtxos?.some((o) => o.origin?.outpoint === artifact.origin?.outpoint)
+    );
   }, [artifact, ordUtxos]);
 
   const collectionSigMatches = useMemo(() => {
@@ -421,20 +429,21 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
                   Invalid Signature
                 </div>
               )}
-            {artifact?.data?.map?.subType && artifact?.data.map?.subTypeData && (
-              <div
-                className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 my-4 md:my-0 md:mb-2 cursor-pointer hover:bg-[#222]"
-                onClick={() =>
-                  Router.push(
-                    `/collection/${
-                      (artifact?.data?.map?.subTypeData as any).collectionId
-                    }`
-                  )
-                }
-              >
-                {renderSubTypeItem(artifact?.data.map)}
-              </div>
-            )}
+            {artifact?.data?.map?.subType &&
+              artifact?.data.map?.subTypeData && (
+                <div
+                  className="bg-[#111] mx-auto rounded max-w-2xl break-words text-sm p-2 my-4 md:my-0 md:mb-2 cursor-pointer hover:bg-[#222]"
+                  onClick={() =>
+                    Router.push(
+                      `/collection/${
+                        (artifact?.data?.map?.subTypeData as any).collectionId
+                      }`
+                    )
+                  }
+                >
+                  {renderSubTypeItem(artifact?.data.map)}
+                </div>
+              )}
             {collectionStats?.SIGMA && collectionSigMatches && (
               <div className="bg-[#111] rounded max-w-2xl break-words text-sm p-4 md:my-2 w-full">
                 <div className="flex items-center mb-2">
@@ -633,14 +642,16 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
           </div>
         </div>
       </div>
-      {ordListing?.outpoint && showBuy && ordListing?.data?.list?.price !== undefined && (
-        <BuyArtifactModal
-          outPoint={ordListing.outpoint}
-          onClose={() => setShowBuy(false)}
-          price={ordListing?.data?.list?.price}
-          content={content}
-        />
-      )}
+      {ordListing?.outpoint &&
+        showBuy &&
+        ordListing?.data?.list?.price !== undefined && (
+          <BuyArtifactModal
+            outPoint={ordListing.outpoint}
+            onClose={() => setShowBuy(false)}
+            price={ordListing?.data?.list?.price}
+            content={content}
+          />
+        )}
     </>
   );
 };

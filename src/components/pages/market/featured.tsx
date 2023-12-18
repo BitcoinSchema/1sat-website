@@ -102,21 +102,6 @@ const FeaturedCollections: React.FC = () => {
     return map(grouped, (value, key) => ({ name: key, collections: value }));
   }, [collectionsNew]);
 
-  // const groupedCollections: GroupedCollection[] = useMemo(() => {
-  //   const grouped = groupBy(
-  //     collections
-  //       .filter((f) => {
-  //         return (
-  //           f.MAP.subType === KnownSubType.Collection &&
-  //           !blacklist.some((o) => o === f.origin)
-  //         );
-  //       })
-  //       .sort((a, b) => (a.height < b.height ? -1 : 1)),
-  //     "MAP.name"
-  //   ) as Record<string, Collection[]>;
-  //   return map(grouped, (value, key) => ({ name: key, collections: value }));
-  // }, [collections]);
-
   useEffect(() => {
     const fire = async () => {
       try {
