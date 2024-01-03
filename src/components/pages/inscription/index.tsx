@@ -48,7 +48,9 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
     useWallet();
 
   const searchParams = useSearchParams();
-  const inscriptionId = searchParams.get("inscriptionId");
+  const inscriptionId = decodeURIComponent(
+    searchParams.get("inscriptionId") || ""
+  );
 
   const { getBmapTxById } = useBitcoinSchema();
   const {
@@ -60,7 +62,7 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
 
   useEffect(() => {
     console.log({ inscriptionId });
-    const fire = async (iid: number) => {
+    const fire = async (iid: string) => {
       try {
         setFetchDataStatus(FetchStatus.Loading);
         const art = await getArtifactByInscriptionId(iid);
@@ -87,9 +89,8 @@ const InscriptionPage: React.FC<PageProps> = ({}) => {
       }
     };
     if (inscriptionId && typeof inscriptionId === "string") {
-      const id = parseInt(inscriptionId);
-      if (id >= 0) {
-        fire(id);
+      if (inscriptionId.length > 0) {
+        fire(inscriptionId);
       }
     }
   }, [getBmapTxById, inscriptionId, getArtifactByInscriptionId]);

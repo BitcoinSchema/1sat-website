@@ -1,4 +1,4 @@
-import { API_HOST, BSV20, Bsv20Status, ORDFS } from "@/context/ordinals";
+import { API_HOST, BSV20, Bsv20Status, LRC20, ORDFS } from "@/context/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
@@ -20,6 +20,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
 }) => {
   const [json, setJson] = useState<JSON | any>(j);
   const [bsv20, setBsv20] = useState<Partial<BSV20> | undefined>();
+  const [lrc20, setLrc20] = useState<Partial<LRC20> | undefined>(undefined);
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -38,60 +39,66 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
         setFetchTextStatus(FetchStatus.Success);
         setJson(resultText);
 
-        if (type === ArtifactType.BSV20) {
-          const bsv20Result = await fetch(`${API_HOST}/api/txos/${origin}`);
-          if (bsv20Result.status === 200) {
-            const bsv20ResultJson = await bsv20Result.json();
+        if (type === ArtifactType.LRC20 || type === ArtifactType.BSV20) {
+          const txResult = await fetch(`${API_HOST}/api/txos/${origin}`);
+          if (txResult.status === 200) {
+            const txJson = await txResult.json();
             setFetchBsv20Status(FetchStatus.Success);
-            setBsv20(bsv20ResultJson);
+            if (type === ArtifactType.LRC20) {
+              setLrc20(txJson);
+            } else if (type === ArtifactType.BSV20) {
+              setBsv20(txJson);
+            }
           } else {
-            // if we already know the ticker limit dont fetch it again
-            if (limCache.has(resultText.tick)) {
-              let limit = limCache.get(resultText.tick);
-              setBsv20({
-                status:
-                  resultText.op === "mint" && limit! > parseInt(resultText.amt)
-                    ? Bsv20Status.Valid
-                    : Bsv20Status.Invalid,
-              });
-            } else {
-              // try to get by ticker, and check the limit
-              const bsv20TickResult = await fetch(
-                `${API_HOST}/api/bsv20/tick/${resultText.tick}`
-              );
-              if (bsv20Result.status === 200) {
-                const bsv20TickResultJson =
-                  (await bsv20TickResult.json()) as BSV20;
-                console.log({ bsv20TickResultJson });
-                if (bsv20TickResultJson.lim) {
-                  const newLimCache = new Map(limCache);
-                  newLimCache.set(
-                    resultText.tick.toLowercase(),
-                    parseInt(bsv20TickResultJson.lim)
-                  );
-                  console.log(
-                    "cached ticker limit",
-                    resultText.tick.toLowercase(),
-                    bsv20TickResultJson.lim
-                  );
-                  setLimCache(newLimCache);
-                }
-
+            if (type === ArtifactType.BSV20) {
+              // if we already know the ticker limit dont fetch it again
+              if (limCache.has(resultText.tick)) {
+                let limit = limCache.get(resultText.tick);
                 setBsv20({
-                  valid:
+                  status:
                     resultText.op === "mint" &&
-                    bsv20TickResultJson &&
-                    bsv20TickResultJson.lim &&
-                    bsv20TickResultJson.lim > resultText.amt
+                    limit! > parseInt(resultText.amt)
                       ? Bsv20Status.Valid
                       : Bsv20Status.Invalid,
-                } as Partial<BSV20>);
+                });
               } else {
-                setBsv20({ valid: Bsv20Status.Pending } as Partial<BSV20>);
+                // try to get by ticker, and check the limit
+                const bsv20TickResult = await fetch(
+                  `${API_HOST}/api/bsv20/tick/${resultText.tick}`
+                );
+                if (txResult.status === 200) {
+                  const bsv20TickResultJson =
+                    (await bsv20TickResult.json()) as BSV20;
+                  console.log({ bsv20TickResultJson });
+                  if (bsv20TickResultJson.lim) {
+                    const newLimCache = new Map(limCache);
+                    newLimCache.set(
+                      resultText.tick.toLowercase(),
+                      parseInt(bsv20TickResultJson.lim)
+                    );
+                    console.log(
+                      "cached ticker limit",
+                      resultText.tick.toLowercase(),
+                      bsv20TickResultJson.lim
+                    );
+                    setLimCache(newLimCache);
+                  }
+
+                  setBsv20({
+                    valid:
+                      resultText.op === "mint" &&
+                      bsv20TickResultJson &&
+                      bsv20TickResultJson.lim &&
+                      bsv20TickResultJson.lim > resultText.amt
+                        ? Bsv20Status.Valid
+                        : Bsv20Status.Invalid,
+                  } as Partial<BSV20>);
+                } else {
+                  setBsv20({ valid: Bsv20Status.Pending } as Partial<BSV20>);
+                }
+                setFetchBsv20Status(FetchStatus.Success);
               }
             }
-
-            setFetchBsv20Status(FetchStatus.Success);
           }
         }
       } catch (e) {
@@ -119,7 +126,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
   return fetchTextStatus === FetchStatus.Success ? (
     <div className="relative w-full h-full flex">
       <pre
-        className={`flex items-center justify-center w-full h-full transition  ${
+        className={`overflow-hidden max-h-96 flex items-center justify-start w-full h-full transition text-xs  ${
           className ? className : ""
         }`}
       >
@@ -139,7 +146,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
             {`${
               bsv20.status === Bsv20Status.Pending
                 ? "PENDING VALIDATION"
-                : "INVALID BSV-20 INSCRIPTION!"
+                : "INVALID BSV20"
             }`}
           </div>
         )}

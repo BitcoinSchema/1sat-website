@@ -368,9 +368,6 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
   ]);
 
   const listingFee = useMemo(() => {
-    console.log({ usdRate });
-    const minFee = 10000;
-    const baseFee = 50000;
     if (!usdRate) {
       return minFee;
     }
@@ -378,19 +375,22 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       ? calculateIndexingFee(
           baseFee,
           BigInt(selectedBsv20.max || "0"),
-          parseInt(selectedBsv20.lim || "0"),
+          parseInt(selectedBsv20.lim || selectedBsv20.max || "0"),
           minFee,
           usdRate
         )
       : calculateIndexingFee(
           baseFee,
           BigInt(maxSupply),
-          parseInt(limit || "0"),
+          parseInt(limit || maxSupply || "0"),
           minFee,
           usdRate
         );
   }, [maxSupply, limit, selectedBsv20, usdRate]);
 
+  useEffect(() => {
+    console.log({ listingFee });
+  }, [listingFee]);
   return (
     <div className="w-full max-w-lg mx-auto">
       <select
@@ -604,7 +604,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
           </div>
         </>
       )}
-      {selectedActionType === ActionType.Deploy && (
+      {/* {selectedActionType === ActionType.Deploy && (
         <div className="my-2 flex items-center justify-between mb-4">
           <label className="block w-full">
             Due to BSV&apos;s massive scale not all BSV20 deployements are not
@@ -614,7 +614,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
             will be {`($${listingFee})`}
           </label>
         </div>
-      )}
+      )} */}
       {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
       <button
         disabled={submitDisabled}
@@ -633,7 +633,7 @@ export default InscribeBsv20;
 const maxMaxSupply = BigInt("18446744073709551615");
 const bulkEnabled = false;
 
-const calculateIndexingFee = (
+export const calculateIndexingFee = (
   baseFee: number,
   supply: bigint,
   mintLimit: number,
@@ -651,3 +651,5 @@ const calculateIndexingFee = (
   }
   return (minFee / usdRate).toFixed(2);
 };
+export const minFee = 100000000; // 1BSV
+export const baseFee = 50;

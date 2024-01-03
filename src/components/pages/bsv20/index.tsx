@@ -30,6 +30,7 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
     setFetchBsv20sStatus,
     bsv20Balances,
     bsv20Activity,
+    bsv20ArchiveActivity,
   } = useWallet();
   const router = useRouter();
   const { stats, fetchStatsStatus } = useOrdinals();
@@ -62,6 +63,29 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
     });
   }, [bsv20Activity]);
 
+  const archiveActivity = useMemo(() => {
+    return bsv20ArchiveActivity?.sort((a, b) => {
+      if (!a && !!b) {
+        return 1;
+      }
+      if (!!a && !b) {
+        return -1;
+      }
+      // pending to the top
+      if (a.status !== Bsv20Status.Valid && b.status === Bsv20Status.Valid) {
+        return -1;
+      }
+      // if (a.height! < b.height!) {
+      //   return -1;
+      // }
+      // same block, use index
+      // if (a.height === b.height) {
+      //   return parseInt(a.idx) > parseInt(b.idx) ? -1 : 1;
+      // }
+      return 1;
+    });
+  }, [bsv20ArchiveActivity]);
+
   useEffect(() => {
     if (stats && stats["bsv20-deploy"] !== lastSettled) {
       // TODO: When indexer resets this is LOUD
@@ -72,6 +96,13 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
     }
   }, [lastSettled, stats]);
 
+  const archivedActivity = useMemo(() => {
+    if (!showInvalid) {
+      return archiveActivity?.filter((a) => a.status !== Bsv20Status.Invalid);
+    }
+    return archiveActivity;
+  }, [archiveActivity, showInvalid]);
+
   const filteredActivity = useMemo(() => {
     if (!showInvalid) {
       return activity?.filter((a) => a.status !== Bsv20Status.Invalid);
@@ -81,8 +112,9 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
 
   // log filteredActivity
   useEffect(() => {
-    console.log({ filteredActivity });
-  }, [filteredActivity]);
+    console.log({ filteredActivity, archiveActivity });
+  }, [filteredActivity, archiveActivity]);
+
   const pagination = useMemo(() => {
     return (
       <div className="text-center h-full flex items-center justify-center">
@@ -223,6 +255,67 @@ const Bsv20WalletPage: React.FC<PageProps> = ({}) => {
                   Valid
                 </div>
                 {filteredActivity?.map((bsv20, index) => (
+                  <React.Fragment key={`act-${bsv20.tick}-${index}`}>
+                    <div
+                      className="flex items-center cursor-pointer hover:text-blue-400 transition"
+                      onClick={() => Router.push(`/market/bsv20/${bsv20.tick}`)}
+                    >
+                      {bsv20.tick}
+                    </div>
+                    <div>{bsv20.op} </div>
+                    <div>{bsv20.amt} </div>
+                    <div className="text-right">
+                      {bsv20.status === Bsv20Status.Pending ? (
+                        <a href={`https://whatsonchain.com/tx/${bsv20.id}`}>
+                          [-]
+                        </a>
+                      ) : bsv20.status === Bsv20Status.Valid ? (
+                        "[✓]"
+                      ) : (
+                        "[✗]"
+                      )}
+                    </div>
+                    {bsv20.status === Bsv20Status.Invalid && (
+                      <div className="text-red-500 col-span-4">
+                        Reason: {textStatus(bsv20.status)}
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="max-w-md flex">{pagination}</div>
+            </div>
+
+            <div className="md:ml-4">
+              <h1 className="text-lg mb-4 flex items-center justify-between">
+                <div>Old Activity</div>
+                <div className="text-sm text-[#555]">
+                  <label className="cursor-pointer hover:text-[#777] transition">
+                    Show Invalid{" "}
+                    <input
+                      checked={showInvalid}
+                      type="checkbox"
+                      className="ml-2 transition"
+                      onChange={(e) => {
+                        console.log({ cehcked: e.target.checked });
+                        setShowInvalid(!showInvalid);
+                      }}
+                    />
+                  </label>
+                </div>
+              </h1>
+              <div className="my-2 w-full text-sm grid grid-cols-4 p-4 gap-x-4 gap-y-2">
+                <div className="font-semibold text-[#777] text-base">
+                  Ticker
+                </div>
+                <div className="font-semibold text-[#777] text-base">Op</div>
+                <div className="font-semibold text-[#777] text-base">
+                  Amount
+                </div>
+                <div className="font-semibold text-[#777] text-base text-right">
+                  Valid
+                </div>
+                {archivedActivity?.map((bsv20, index) => (
                   <React.Fragment key={`act-${bsv20.tick}-${index}`}>
                     <div
                       className="flex items-center cursor-pointer hover:text-blue-400 transition"

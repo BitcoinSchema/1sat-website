@@ -28,7 +28,7 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 import { useBitsocket } from "../bitsocket";
-import { API_HOST, BSV20, OrdUtxo } from "../ordinals";
+import { API_HOST, BSV20, BSV20TXO, OrdUtxo } from "../ordinals";
 import { useRates } from "../rates";
 import { useStorage } from "../storage";
 import { handleTransferring } from "./transfer";
@@ -137,13 +137,20 @@ type BSV20Balance = {
 };
 
 type ContextValue = {
-  bsv20Activity: BSV20[] | undefined;
+  bsv20Activity: BSV20TXO[] | undefined;
   getBsv20Activity: (
     address: string,
     page?: number | undefined,
     sort?: boolean | undefined
-  ) => Promise<BSV20[]>;
+  ) => Promise<BSV20TXO[]>;
   fetchBsv20ActivityStatus: FetchStatus;
+  bsv20ArchiveActivity: BSV20[] | undefined;
+  getBsv20ArchiveActivity: (
+    address: string,
+    page?: number | undefined,
+    sort?: boolean | undefined
+  ) => Promise<BSV20[]>;
+  fetchBsv20ArchiveActivityStatus: FetchStatus;
   bsv20Balances: BSV20Balance[] | undefined;
   getBsv20Balances: (address: string) => Promise<BSV20Balance[]>;
   fetchBsv20sStatus: FetchStatus;
@@ -245,7 +252,10 @@ const WalletProvider: React.FC<Props> = (props) => {
   const [bsv20Balances, setBsv20Balances] = useState<
     BSV20Balance[] | undefined
   >(undefined);
-  const [bsv20Activity, setBsv20Activity] = useState<BSV20[] | undefined>(
+  const [bsv20ArchiveActivity, setBsv20ArchiveActivity] = useState<
+    BSV20[] | undefined
+  >(undefined);
+  const [bsv20Activity, setBsv20Activity] = useState<BSV20TXO[] | undefined>(
     undefined
   );
   const [ordUtxos, setOrdUtxos] = useState<OrdUtxo[] | undefined>(undefined);
@@ -258,6 +268,8 @@ const WalletProvider: React.FC<Props> = (props) => {
     FetchStatus.Idle
   );
   const [fetchBsv20ActivityStatus, setFetchBsv20ActivityStatus] =
+    useState<FetchStatus>(FetchStatus.Idle);
+  const [fetchBsv20ArchiveActivityStatus, setFetchBsv20ArchiveActivityStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
   const [payPk, setPayPk] = useLocalStorage<string | undefined>(
@@ -551,8 +563,34 @@ const WalletProvider: React.FC<Props> = (props) => {
       address: string,
       page: number = 1,
       sort: boolean = false
+    ): Promise<BSV20TXO[]> => {
+      setFetchBsv20ActivityStatus(FetchStatus.Loading);
+      const offset = (page - 1) * ORDS_PER_PAGE;
+      const direction = sort ? "ASC" : "DESC";
+
+      try {
+        const r = await fetch(
+          `${API_HOST}/api/bsv20/${address}/unspent?limit=${ORDS_PER_PAGE}&offset=${offset}&dir=${direction}`
+        );
+        const utxos = (await r.json()) as BSV20TXO[];
+        console.log({ utxos });
+        setFetchBsv20ActivityStatus(FetchStatus.Success);
+        setBsv20Activity(utxos);
+        return utxos;
+      } catch (e) {
+        setFetchBsv20ActivityStatus(FetchStatus.Error);
+        throw e;
+      }
+    },
+    [setFetchBsv20ActivityStatus, setBsv20Activity]
+  );
+  const getBsv20ArchiveActivity = useCallback(
+    async (
+      address: string,
+      page: number = 1,
+      sort: boolean = false
     ): Promise<BSV20[]> => {
-      setFetchBsv20sStatus(FetchStatus.Loading);
+      setFetchBsv20ArchiveActivityStatus(FetchStatus.Loading);
       const offset = (page - 1) * ORDS_PER_PAGE;
       const direction = sort ? "ASC" : "DESC";
 
@@ -562,22 +600,23 @@ const WalletProvider: React.FC<Props> = (props) => {
         );
         const utxos = (await r.json()) as [{ data: { bsv20: BSV20 } }];
 
-        setFetchBsv20sStatus(FetchStatus.Success);
+        setFetchBsv20ArchiveActivityStatus(FetchStatus.Success);
         const bsv20s = utxos?.map((u) => u.data.bsv20);
-        setBsv20Activity(bsv20s);
+        setBsv20ArchiveActivity(bsv20s);
         return bsv20s;
       } catch (e) {
-        setFetchBsv20sStatus(FetchStatus.Error);
+        setFetchBsv20ArchiveActivityStatus(FetchStatus.Error);
         throw e;
       }
     },
-    [setFetchBsv20sStatus, setBsv20Activity]
+    [setFetchBsv20ArchiveActivityStatus, setBsv20ArchiveActivity]
   );
 
   useEffect(() => {
     const fire = async (a: string) => {
       await getBsv20Balances(a);
       await getBsv20Activity(a, currentPage, currentSort === 1);
+      await getBsv20ArchiveActivity(a, currentPage, currentSort === 1);
     };
     if (ordAddress && fetchBsv20sStatus === FetchStatus.Idle) {
       fire(ordAddress);
@@ -587,6 +626,7 @@ const WalletProvider: React.FC<Props> = (props) => {
     currentPage,
     getBsv20Balances,
     getBsv20Activity,
+    getBsv20ArchiveActivity,
     ordAddress,
     fetchBsv20sStatus,
   ]);
@@ -732,6 +772,11 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
 
       const fundingUtxo = head(fundingUtxos);
+      if (!fundingUtxo) {
+        // toast
+        toast(`No funding UTXOs`, toastErrorProps);
+        return;
+      }
       if (fundingUtxo && !fundingUtxo.script) {
         const fundingRawTx = await getRawTxById(fundingUtxo.txid);
         const tx = Transaction.from_hex(fundingRawTx);
@@ -743,7 +788,7 @@ const WalletProvider: React.FC<Props> = (props) => {
       }
 
       const address = toOrdAddress;
-      const satsPerByteFee = 0.125;
+      const satsPerByteFee = 0.09;
       let pendingTransaction: PendingTransaction;
       // const { payPk, ordPk, address, ordUtxo, fundingUtxo, satsPerByteFee } =
       // req.body;
@@ -1108,112 +1153,118 @@ const WalletProvider: React.FC<Props> = (props) => {
       backupFile,
       backupKeys,
       balance,
+      broadcastCache,
+      broadcastPendingTx,
+      broadcastStatus,
+      bsv20Activity,
+      bsv20ArchiveActivity,
+      bsv20Balances,
       changeAddress,
+      createdUtxos: createdUtxos || [],
       currentTxId,
       deleteKeys,
       downloadPendingTx,
-      bsv20Balances,
-      getBsv20Balances,
-      bsv20Activity,
-      getBsv20Activity,
+      encryptedBackup,
       fetchBsv20ActivityStatus,
+      fetchBsv20ArchiveActivityStatus,
       fetchBsv20sStatus,
       fetchOrdinalUtxosStatus,
+      fetchUtxoByOutpointStatus,
       fetchUtxosStatus,
       fundingUtxos,
       generateKeys,
+      generateStatus,
+      getBsv20Activity,
+      getBsv20ArchiveActivity,
+      getBsv20Balances,
       getOrdinalUTXOs,
       getRawTxById,
+      getUtxoByOutpoint,
       getUTXOs,
       initialized,
       ordAddress,
       ordPk,
       ordUtxos,
+      passphrase,
       payPk,
       pendingTransaction,
       reset,
       send: sendWasm,
       setBackupFile,
-      setFetchBsv20sStatus,
-      setCurrentTxId,
-      setFetchOrdinalUtxosStatus,
-      setOrdUtxos,
-      setPendingTransaction,
-      transfer,
-      usdRate,
-      broadcastCache,
       setBroadcastCache,
-      createdUtxos: createdUtxos || [],
-      setFundingUtxos,
       setCreatedUtxos,
-      broadcastPendingTx,
-      broadcastStatus,
-      getUtxoByOutpoint,
-      setFetchUtxoByOutpointStatus,
-      fetchUtxoByOutpointStatus,
-      passphrase,
-      encryptedBackup,
+      setCurrentTxId,
       setEncryptedBackup,
-      generateStatus,
+      setFetchBsv20sStatus,
+      setFetchOrdinalUtxosStatus,
+      setFetchUtxoByOutpointStatus,
+      setFundingUtxos,
+      setOrdUtxos,
       setPassphrase,
+      setPendingTransaction,
       setShowEnterPassphrase,
       showEnterPassphrase,
+      transfer,
+      usdRate,
     }),
     [
-      bsv20Activity,
-      getBsv20Activity,
-      fetchBsv20ActivityStatus,
       artifacts,
       backupFile,
       backupKeys,
       balance,
+      broadcastCache,
+      broadcastPendingTx,
+      broadcastStatus,
+      bsv20Activity,
+      bsv20ArchiveActivity,
+      bsv20Balances,
       changeAddress,
+      createdUtxos,
       currentTxId,
       deleteKeys,
       downloadPendingTx,
-      bsv20Balances,
-      getBsv20Balances,
-      setFetchBsv20sStatus,
+      encryptedBackup,
+      fetchBsv20ActivityStatus,
+      fetchBsv20ArchiveActivityStatus,
       fetchBsv20sStatus,
       fetchOrdinalUtxosStatus,
+      fetchUtxoByOutpointStatus,
       fetchUtxosStatus,
       fundingUtxos,
       generateKeys,
+      generateStatus,
+      getBsv20Activity,
+      getBsv20ArchiveActivity,
+      getBsv20Balances,
       getOrdinalUTXOs,
       getRawTxById,
+      getUtxoByOutpoint,
       getUTXOs,
       initialized,
       ordAddress,
       ordPk,
       ordUtxos,
+      passphrase,
       payPk,
       pendingTransaction,
       reset,
       sendWasm,
       setBackupFile,
-      setCurrentTxId,
-      setFetchOrdinalUtxosStatus,
-      setOrdUtxos,
-      setPendingTransaction,
-      transfer,
-      usdRate,
-      broadcastCache,
       setBroadcastCache,
-      createdUtxos,
       setCreatedUtxos,
-      setFundingUtxos,
-      broadcastPendingTx,
-      broadcastStatus,
-      getUtxoByOutpoint,
-      setFetchUtxoByOutpointStatus,
-      fetchUtxoByOutpointStatus,
-      passphrase,
-      encryptedBackup,
+      setCurrentTxId,
       setEncryptedBackup,
-      generateStatus,
+      setFetchBsv20sStatus,
+      setFetchOrdinalUtxosStatus,
+      setFetchUtxoByOutpointStatus,
+      setFundingUtxos,
+      setOrdUtxos,
       setPassphrase,
+      setPendingTransaction,
       setShowEnterPassphrase,
       showEnterPassphrase,
+      transfer,
+      usdRate,
     ]
   );
 

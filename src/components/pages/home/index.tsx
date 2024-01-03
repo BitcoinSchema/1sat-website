@@ -30,13 +30,13 @@ const HomePage: React.FC<PageProps> = ({}) => {
     FetchStatus.Idle
   );
 
-  const [randomNumber, setRandomNumber] = useState<number>(
-    getRandomInt(getRandomInt(0, 300000), numMinted)
+  const [randomNumber, setRandomNumber] = useState<string>(
+    `${getRandomInt(getRandomInt(0, 300000), numMinted)}:0:0`
   );
 
   useEffect(() => {
     if (!randomNumber) {
-      setRandomNumber(getRandomInt(0, numMinted));
+      setRandomNumber(`${getRandomInt(0, numMinted)}:0:0`);
     }
   }, [randomNumber, numMinted, setRandomNumber]);
 
@@ -65,7 +65,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     console.log("This will be called every 12 seconds");
     if (numMinted) {
       const rando = getRandomInt(0, numMinted);
-      setRandomNumber(rando);
+      setRandomNumber(`${rando}:0:0`);
       setFetchInscriptionsStatus(FetchStatus.Idle);
       // window.location.href = `https://1satordinals.com?inscriptionId=${rando}`;
     }
@@ -78,7 +78,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
   }, [artifact?.txid]);
 
   useEffect(() => {
-    const fire = async (iid: number) => {
+    const fire = async (iid: string) => {
       const art = await getArtifactByInscriptionId(iid);
 
       if (art && art.origin?.data?.insc?.file?.type.startsWith("image")) {
@@ -92,7 +92,7 @@ const HomePage: React.FC<PageProps> = ({}) => {
     };
     if (
       fetchInscriptionsStatus === FetchStatus.Idle &&
-      randomNumber !== artifact?.origin?.num
+      randomNumber !== `${artifact?.origin?.num}:0:0`
     ) {
       fire(randomNumber);
     }

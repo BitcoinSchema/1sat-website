@@ -353,6 +353,7 @@ const NewListingPage: React.FC<PageProps> = ({}) => {
           )}
           {outpoint && (
             <Artifact
+              protocol={artifact?.data?.insc?.json?.p}
               outPoint={outpoint as string}
               origin={artifact?.origin?.outpoint}
               contentType="image/png"

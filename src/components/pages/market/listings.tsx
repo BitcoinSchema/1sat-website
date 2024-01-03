@@ -12,7 +12,6 @@ interface PageProps extends WithRouterProps {}
 export const enum SortListingsBy {
   Price = "price",
   Recent = "recent",
-  Num = "num",
 }
 
 const ListingsPage: React.FC<PageProps> = ({}) => {
@@ -130,14 +129,6 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
     }
   }, [sortBy, dir]);
 
-  const sortNum = useCallback(() => {
-    if (sortBy === SortListingsBy.Num) {
-      setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
-    } else {
-      setSortBy(SortListingsBy.Num);
-    }
-  }, [sortBy, dir]);
-
   const sortRecent = useCallback(() => {
     if (sortBy === SortListingsBy.Recent) {
       setDir(dir === Dir.ASC ? Dir.DESC : Dir.ASC);
@@ -179,7 +170,9 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
                   sigma={l.origin?.data?.sigma}
                   clickToZoom={false}
                   onClick={() => {
-                    router.push(`/inscription/${l.origin?.num}`);
+                    router.push(
+                      `/inscription/${encodeURIComponent(l.origin?.num || "")}`
+                    );
                   }}
                 />
               </div>
@@ -196,15 +189,6 @@ const ListingsPage: React.FC<PageProps> = ({}) => {
               >
                 <div className="mb-4">Sort By</div>
 
-                <div
-                  onClick={() => {
-                    setShowSort(false);
-                    sortNum();
-                  }}
-                  className="mb-4 p-2 cursor-pointer rounded text-black font-semibold transition bg-yellow-500 hover:bg-yellow-600"
-                >
-                  Inscription Number
-                </div>
                 <div
                   onClick={() => {
                     setShowSort(false);

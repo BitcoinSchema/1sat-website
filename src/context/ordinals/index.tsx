@@ -127,7 +127,37 @@ export type SIGMA = {
   signature: string;
 };
 
-export type BSV20 = {
+type BaseType = {
+  txid?: string;
+  vout?: 0;
+  height?: 792954;
+  idx?: 23726;
+};
+
+export interface LRC20 extends BaseType {
+  op: string;
+  id: string;
+  amt: number;
+  p: "lrc-20";
+}
+
+export interface BSV20TXO extends BaseType {
+  amt: string;
+  tick: string;
+  price: string;
+  pricePer: string;
+  pricePerUnit: string;
+  spend: string;
+  owner: string;
+  op: string;
+  payout: string | null;
+  outpoint: string;
+  reason: string | null;
+  listing: boolean;
+  id: string;
+  status: Bsv20Status;
+}
+export interface BSV20 extends BaseType {
   // idx: string;
   // p: string;
   // op: string;
@@ -142,11 +172,6 @@ export type BSV20 = {
   // txid?: string;
   // reason?: string;
   // pctMinted: number;
-
-  txid?: string;
-  vout?: 0;
-  height?: 792954;
-  idx?: 23726;
 
   max?: string;
   lim?: string;
@@ -164,11 +189,16 @@ export type BSV20 = {
   tick?: string;
   amt: string;
   status?: Bsv20Status;
-};
+}
 
 export interface Ticker extends BSV20 {
   accounts: number;
   included: boolean;
+  fundAddress: string;
+  fundBalance: string;
+  fundTotal: string;
+  fundUsed: string;
+  pendingOps: string;
 }
 
 type Stats = {
@@ -213,7 +243,7 @@ type ContextValue = {
   getArtifactsByOrigin: (txid: string) => Promise<OrdUtxo[]>;
   getArtifactByOrigin: (txid: string) => Promise<OrdUtxo>;
   getArtifactByInscriptionId: (
-    inscriptionId: number
+    inscriptionId: string
   ) => Promise<OrdUtxo | undefined>;
   fetchStatsStatus: FetchStatus;
   stats?: Stats | undefined;
@@ -614,7 +644,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const getInscriptionByInscriptionId = useCallback(
-    async (inscriptionId: number): Promise<OrdUtxo> => {
+    async (inscriptionId: string): Promise<OrdUtxo> => {
       setFetchInscriptionsStatus(FetchStatus.Loading);
       try {
         const r = await fetch(`${API_HOST}/api/origins/num/${inscriptionId}`);
@@ -663,7 +693,7 @@ export const OrdinalsProvider: React.FC<Props> = (props) => {
   );
 
   const getArtifactByInscriptionId = useCallback(
-    async (inscriptionId: number): Promise<OrdUtxo | undefined> => {
+    async (inscriptionId: string): Promise<OrdUtxo | undefined> => {
       return await getInscriptionByInscriptionId(inscriptionId);
     },
     [getInscriptionByInscriptionId]

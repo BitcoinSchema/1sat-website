@@ -31,7 +31,6 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
   const [fetchCollectionStatus, setFetchCollectionStatus] =
     useState<FetchStatus>(FetchStatus.Idle);
 
-
   // TODO: Implement infinite scroll
   const setCollectionFromCollectionId = useCallback(
     async (keyName: string = "ColectionId", collectionId: string) => {
@@ -54,9 +53,8 @@ const CollectionPage: React.FC<PageProps> = ({}) => {
             }),
           }
         );
-        
+
         const c = await promise;
-console.log("1111",{c})
         setCollection(c);
         setFetchCollectionStatus(FetchStatus.Success);
       } catch (error) {
@@ -99,7 +97,11 @@ console.log("1111",{c})
       try {
         setFetchCollectionStatus(FetchStatus.Loading);
         const { promise } = customFetch<Item[]>(
-          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(JSON.stringify({map: {subItemData: {collectionId: cid}}})).toString('base64')}`
+          `${API_HOST}/api/inscriptions/search?q=${Buffer.from(
+            JSON.stringify({
+              map: { subTypeData: { collectionId: cid } },
+            })
+          ).toString("base64")}`
         );
         const c = await promise;
         if (c.length > 0) {
@@ -113,7 +115,7 @@ console.log("1111",{c})
             | undefined;
 
           setIsAncient(true);
-          console.log("!!!!",{c})
+          console.log("!!!!", { c });
           if (c?.MAP.collectionID) {
             await setCollectionFromCollectionId(
               "collectionID",
@@ -139,6 +141,7 @@ console.log("1111",{c})
       typeof collectionId === "string" &&
       fetchCollectionStatus === FetchStatus.Idle
     ) {
+      console.log("FIRE", collectionId);
       fire(collectionId);
     }
   }, [
@@ -230,9 +233,15 @@ console.log("1111",{c})
                       origin={artifact.origin?.outpoint || ""}
                       num={artifact.origin?.num}
                       height={artifact.height}
-                      to={`/inscription/${artifact.origin?.num}`}
+                      to={`/inscription/${encodeURIComponent(
+                        artifact.origin?.num || ""
+                      )}`}
                       clickToZoom={false}
-                      price={artifact.data?.list ? artifact.data.list.price : undefined}
+                      price={
+                        artifact.data?.list
+                          ? artifact.data.list.price
+                          : undefined
+                      }
                       isListing={!!artifact.data?.list}
                     />
                   )}

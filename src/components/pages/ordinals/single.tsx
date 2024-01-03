@@ -18,7 +18,7 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
   useEffect(() => console.log({ artifact }), [artifact]);
 
   const isBsv20 = useMemo(() => {
-    return !!artifact.data?.bsv20
+    return !!artifact.data?.bsv20;
   }, [artifact]);
 
   useEffect(() => {
@@ -107,7 +107,11 @@ const Ordinal: React.FC<OrdinalProps> = ({ artifact }) => {
   return (
     <div className="flex md:flex-row flex-col justify-between items-start w-full">
       <Artifact
-        to={artifact ? `/inscription/${artifact.origin?.num}` : "#"}
+        to={
+          artifact
+            ? `/inscription/${encodeURIComponent(artifact.origin?.num || "")}`
+            : "#"
+        }
         origin={artifact ? `${artifact.txid}_${artifact.vout}` : undefined}
         src={artifact ? `${ORDFS}/${artifact.origin}` : ""}
         num={artifact?.origin?.num}

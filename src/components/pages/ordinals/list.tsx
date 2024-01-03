@@ -60,9 +60,7 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
         {ordUtxos?.map((a) => {
           return (
             <Artifact
-              onClick={() =>
-                onClick && onClick(a.origin?.outpoint || `${a.txid}_${a.vout}`)
-              }
+              onClick={() => onClick && onClick(`${a.txid}_${a.vout}`)}
               key={a.origin?.outpoint || `${a.txid}_${a.vout}`}
               origin={a.origin?.outpoint}
               contentType={a.origin?.data?.insc?.file?.type}
@@ -71,7 +69,9 @@ const Ordinals: React.FC<Props> = ({ onClick, currentPage = 1 }) => {
                 onClick
                   ? undefined
                   : a.origin?.num !== undefined
-                  ? `/inscription/${a.origin?.num}?page=${currentPage}`
+                  ? `/inscription/${encodeURIComponent(
+                      a.origin?.num || ""
+                    )}?page=${currentPage}`
                   : `/tx/${a.txid}_${a.vout}`
               }
               classNames={{

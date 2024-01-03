@@ -7,7 +7,10 @@ import Head from "next/head";
 import { useSearchParams } from "next/navigation";
 import Router from "next/router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { FaQuestionCircle } from "react-icons/fa";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import { FetchStatus } from "..";
+import { baseFee, calculateIndexingFee, minFee } from "../inscribe/bsv20";
 
 interface PageProps extends WithRouterProps {}
 
@@ -19,6 +22,7 @@ const TickerPage: React.FC<PageProps> = ({}) => {
     fetchBsv20sStatus,
     setFetchBsv20sStatus,
     bsv20Balances,
+    usdRate,
     bsv20Activity,
   } = useWallet();
 
@@ -73,9 +77,55 @@ const TickerPage: React.FC<PageProps> = ({}) => {
   // available count
   // pct minted
 
+  const fundTicker = useMemo(() => {
+    return (
+      <div className="my-2 bg-[#111] p-4">
+        <h3 className="text-lg text-center my-2 font-semibold">
+          Indexing Fund
+        </h3>
+        {/* <QRCodeSVG
+          value={ticker.fundAddress || ""}
+          className="my-4 w-full h-full"
+          includeMargin={true}
+        /> */}
+
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          {/* <div>Indexing Fund Address</div>
+          <div className="text-right text-xs">{ticker.fundAddress}</div> */}
+          {!ticker.included && (
+            <>
+              <div>
+                Listing Price{" "}
+                <div
+                  className="tooltip"
+                  data-tip={`This fee covers including ${ticker.tick} on 1satordinals.com. All pending actions must also be funded in addition to the listing fee before balances can be fully determined.`}
+                >
+                  <FaQuestionCircle className="inline" />
+                </div>
+              </div>
+              <div className="text-right">
+                $
+                {calculateIndexingFee(
+                  baseFee,
+                  BigInt(ticker.supply || "0"),
+                  parseInt(ticker.lim || "0"),
+                  minFee,
+                  usdRate || 0
+                )}
+              </div>
+            </>
+          )}
+          <div>Balance</div>
+          <div className="text-right">{ticker.fundBalance}</div>
+          <div>Used</div>
+          <div className="text-right">{ticker.fundUsed}</div>
+        </div>
+      </div>
+    );
+  }, [ticker, usdRate]);
+
   return (
     <>
-      {" "}
       <Head>
         <title>1SatOrdinals.com - BSV20 Ticker</title>
         <meta
@@ -95,46 +145,61 @@ const TickerPage: React.FC<PageProps> = ({}) => {
         // showIndicator={fetchBsv20sStatus !== FetchStatus.Loading}
       />
       {!ticker.included && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 w-full max-w-lg">
           <div className="font-semibold text-2xl">{ticker?.tick}</div>
           <div></div>
           <div>Max Supply</div>
-          <div>{ticker?.max}</div>
+          <div className="text-right">{ticker?.max}</div>
           <div>Mint Limit</div>
-          <div>{ticker?.lim}</div>
+          <div className="text-right">{ticker?.lim}</div>
         </div>
       )}
       {ticker.included && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 w-full max-w-lg">
           <div className="font-semibold text-2xl">{ticker?.tick}</div>
-          <div></div>
+          <div>&nbsp;</div>
 
           <div>Owned</div>
-          <div>{amtOwned?.confirmed || 0}</div>
+          <div className="text-right">{amtOwned?.confirmed || 0}</div>
 
           <div>Pending</div>
-          <div>{amtOwned?.pending || 0}</div>
+          <div className="text-right">{amtOwned?.pending || 0}</div>
 
           <div>Supply</div>
-          <div>
+          <div className="text-right">
             {ticker?.supply} / {ticker?.max}
           </div>
           <div>Mint Limit</div>
-          <div>{ticker?.lim}</div>
+          <div className="text-right">{ticker?.lim}</div>
 
           <div>Accounts</div>
-          <div>{ticker?.accounts}</div>
+          <div className="text-right">{ticker?.accounts}</div>
         </div>
       )}
       {!ticker.included && (
-        <div className="bg-blue-100 text-blue-800 p-2 rounded my-2 max-w-md">
-          This ticker is not included in the Ordinals index. You can contribute
-          to the indexing fund below (soonTm).
+        <div className="max-w-lg">
+          <div className="bg-blue-100 text-blue-800 p-2 rounded my-4 w-full">
+            This ticker is not included in the Ordinals index. You can
+            contribute to the indexing fund below. Once included in the index,
+            gas will still be required to maintain its status.
+          </div>
+          {fundTicker}
         </div>
       )}
-      <br />
+      {ticker.included && parseInt(ticker.pendingOps || "0") > 0 && (
+        <>
+          <div className="max-w-lg my-2 bg-warning text-warning-content p-2 rounded">
+            Need payment for {ticker.pendingOps} unindexed actions:{" "}
+            {toBitcoin(parseInt(ticker.pendingOps || "0") * 1000)} BSV. Balances
+            are not updated in real time, but will be show once included in a
+            block.
+          </div>
+          {fundTicker}
+        </>
+      )}
       <div className="flex items-center gap-2">
         {ticker.included &&
+          parseInt(ticker.pendingOps || "0") === 0 &&
           parseInt(ticker.supply || "0") < parseInt(ticker.max || "0") && (
             <div
               onClick={(e) => {
@@ -149,16 +214,11 @@ const TickerPage: React.FC<PageProps> = ({}) => {
               {`Mint ${tick}`}
             </div>
           )}
+
         {ticker.included &&
           parseInt(ticker.supply || "0") >= parseInt(ticker.max || "0") && (
             <div className="text-red-400 bg-[#111] rounded p-2">Minted Out</div>
           )}
-        {
-          !ticker.included && "&nbsp;"
-          // <div className="cursor-pointer hover:bg-emerald-500 transition p-2 rounded bg-emerald-600 text-white font-semibold">
-          //   {`Index ${tick}`}
-          // </div>
-        }
       </div>
     </>
   );

@@ -2681,15 +2681,20 @@ browserslist@^4.21.5, browserslist@^4.21.9:
     node-releases "^2.0.12"
     update-browserslist-db "^1.0.11"
 
-bsv-wasm-web@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/bsv-wasm-web/-/bsv-wasm-web-2.0.1.tgz#7c2f72243a973913f08fe2c3591b07bdb6b30639"
-  integrity sha512-UtqJHb259c5ZtuDLU9N4XDklldUiY1jhVIq6ih2l7Y+p8OUgRzYVkvHg2ftGQ0MHr0UePKjszP99CBGEAkLQMw==
+bsv-wasm-web@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/bsv-wasm-web/-/bsv-wasm-web-2.1.1.tgz#13f16a9a0439c248e2e4326be34ef8da930084c8"
+  integrity sha512-S5MHM9q7inOyNX+ksb0cvakOkTayO1Jg3Reae8bRuBU5PV9hlhubRcsprMb2lzhCA9kMx6CzYOjn9tG8iluqVw==
 
 bsv-wasm@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/bsv-wasm/-/bsv-wasm-2.0.1.tgz#cacca07dc4bd38c025de62b5a7b18c78006f4a56"
   integrity sha512-+6omHGJxC4I72IdYByKClKPtf6sTSbkO4t2brkMOaE23P10E5SlviAlENp1EpLnq9eDxm+WUsmJDIlMmMAxQpg==
+
+bsv-wasm@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/bsv-wasm/-/bsv-wasm-2.1.1.tgz#122f7e912aee9e59053e9ef633922d50c8a5081e"
+  integrity sha512-ZbOWT81xIRSr5RR2P6rylo3J0/wKcBfbH3hozs7UG7IemjLwo9l+g4rw5M39VB9ko4jfVGQcE2/fbiJOAyrCmA==
 
 buffer-equal@0.0.1:
   version "0.0.1"
@@ -2912,6 +2917,14 @@ css-color-keywords@^1.0.0:
   resolved "https://registry.yarnpkg.com/css-color-keywords/-/css-color-keywords-1.0.0.tgz#fea2616dc676b2962686b3af8dbdbe180b244e05"
   integrity sha512-FyyrDHZKEjXDpNJYvVsV960FiqQyXc/LlYmsxl2BcdMb2WPx0OGRVgTg55rPSyLSNMqP52R9r8geSp7apN3Ofg==
 
+css-selector-tokenizer@^0.8:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/css-selector-tokenizer/-/css-selector-tokenizer-0.8.0.tgz#88267ef6238e64f2215ea2764b3e2cf498b845dd"
+  integrity sha512-Jd6Ig3/pe62/qe5SBPTN8h8LeUg/pT4lLgtavPf7updwwHpvFzxvOQBHYj2LZDMjUnBzgvIUSjRcf6oT5HzHFg==
+  dependencies:
+    cssesc "^3.0.0"
+    fastparse "^1.1.2"
+
 css-to-react-native@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/css-to-react-native/-/css-to-react-native-3.2.0.tgz#cdd8099f71024e149e4f6fe17a7d46ecd55f1e32"
@@ -2931,10 +2944,25 @@ csstype@^3.0.2, csstype@^3.1.2:
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.1.2.tgz#1d4bf9d572f11c14031f0436e1c10bc1f571f50b"
   integrity sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==
 
+culori@^3:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/culori/-/culori-3.3.0.tgz#e33530adbd124d53bd6550394397e695eaaed739"
+  integrity sha512-pHJg+jbuFsCjz9iclQBqyL3B2HLCBF71BwVNujUYEvCeQMvV97R59MNK3R2+jgJ3a1fcZgI9B3vYgz8lzr/BFQ==
+
 cycled@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/cycled/-/cycled-1.2.0.tgz#dde6d9d58b0b14d02c8138c8f55be416a6595baf"
   integrity sha512-/BOOCEohSBflVHHtY/wUc1F6YDYPqyVs/A837gDoq4H1pm72nU/yChyGt91V4ML+MbbAmHs8uo2l1yJkkTIUdg==
+
+daisyui@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/daisyui/-/daisyui-4.5.0.tgz#8fe5198fba6788adeac78786d2d10296241278a7"
+  integrity sha512-RWQCPQ0vBUaxGy768O7Ku8SRQgwdoto1lDzuKeVOcMtYghuSbUY7NoPoMK+k8JH4s1J02OvpNAgtB9MeKpZIwg==
+  dependencies:
+    css-selector-tokenizer "^0.8"
+    culori "^3"
+    picocolors "^1"
+    postcss-js "^4"
 
 damerau-levenshtein@^1.0.8:
   version "1.0.8"
@@ -3066,11 +3094,6 @@ dom-walk@^0.1.0:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/dom-walk/-/dom-walk-0.1.2.tgz#0c548bef048f4d1f2a97249002236060daa3fd84"
   integrity sha512-6QvTW9mrGeIegrFXdtQi9pk7O/nSK6lSdXW2eqUspN5LWD7UTji2Fqw5V2YLjBpHEoU9Xl/eUWNpDeZvoyOv2w==
-
-dotenv@^16.0.3:
-  version "16.3.1"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.3.1.tgz#369034de7d7e5b120972693352a3bf112172cc3e"
-  integrity sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==
 
 duplexer2@^0.1.2:
   version "0.1.4"
@@ -3482,6 +3505,11 @@ fast-levenshtein@^2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==
+
+fastparse@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/fastparse/-/fastparse-1.1.2.tgz#91728c5a5942eced8531283c79441ee4122c35a9"
+  integrity sha512-483XLLxTVIwWK3QTrMGRqUfUpoOs/0hbQrl2oz4J0pAcm3A3bu84wxTFqGqkJzewCLdME38xJLJAxBABfQT8sQ==
 
 fastq@^1.6.0:
   version "1.15.0"
@@ -4232,14 +4260,13 @@ jpeg-js@^0.4.0, jpeg-js@^0.4.2:
   resolved "https://registry.yarnpkg.com/jpeg-js/-/jpeg-js-0.4.4.tgz#a9f1c6f1f9f0fa80cdb3484ed9635054d28936aa"
   integrity sha512-WZzeDOEtTOBK4Mdsar0IqEU5sMr3vSV2RqkAIzUEV2BHnUfKGyswWFPFwK5EeDo93K3FohSHbLAjj0s1Wzd+dg==
 
-js-1sat-ord@^0.0.32:
-  version "0.0.32"
-  resolved "https://registry.yarnpkg.com/js-1sat-ord/-/js-1sat-ord-0.0.32.tgz#b439235a783ac73ea5a33c46e7013dca31520559"
-  integrity sha512-HptPW9GI1s0A+dajUksrO4QLRGe0/iYlQCBqpMh5EY/wNgPVMamCzFXNxh39+kVPWCreqHiAVrSN72VM+FwQiA==
+js-1sat-ord@^0.0.35:
+  version "0.0.35"
+  resolved "https://registry.yarnpkg.com/js-1sat-ord/-/js-1sat-ord-0.0.35.tgz#c93be5abd44015ed5b3167df947a40f84cff84c4"
+  integrity sha512-c5igaLhY8i/Yj4bNKp/7KVEdwV0bhM7DmS2ma6aMNC2/uihnzwde5skFGBOELZVU9AwQ2xnIsecybzr+bg27WQ==
   dependencies:
-    bsv-wasm "^2.0.1"
-    dotenv "^16.0.3"
-    sigma-protocol "^0.0.7"
+    bsv-wasm "^2.1.1"
+    sigma-protocol "^0.0.10"
 
 js-sdsl@^4.1.4:
   version "4.4.1"
@@ -5140,7 +5167,7 @@ phin@^2.9.1:
   resolved "https://registry.yarnpkg.com/phin/-/phin-2.9.3.tgz#f9b6ac10a035636fb65dfc576aaaa17b8743125c"
   integrity sha512-CzFr90qM24ju5f88quFC/6qohjC144rehe5n6DH900lgXmUe86+xCKc10ev56gRKC4/BkHUoG4uSiQgBiIXwDA==
 
-picocolors@^1.0.0:
+picocolors@^1, picocolors@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/picocolors/-/picocolors-1.0.0.tgz#cb5bdc74ff3f51892236eaf79d68bc44564ab81c"
   integrity sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==
@@ -5195,7 +5222,7 @@ postcss-import@^15.1.0:
     read-cache "^1.0.0"
     resolve "^1.1.7"
 
-postcss-js@^4.0.1:
+postcss-js@^4, postcss-js@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/postcss-js/-/postcss-js-4.0.1.tgz#61598186f3703bab052f1c4f7d805f3991bee9d2"
   integrity sha512-dDLF8pEO191hJMtlHFPRa8xsizHaM82MLfNkUHdUtVEV3tgTp5oj+8qbEqYM57SLfc74KSbw//4SeJma2LRVIw==
@@ -5732,6 +5759,14 @@ side-channel@^1.0.4:
     call-bind "^1.0.0"
     get-intrinsic "^1.0.2"
     object-inspect "^1.9.0"
+
+sigma-protocol@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/sigma-protocol/-/sigma-protocol-0.0.10.tgz#4493825e52e72bd471116e251e09a0f5706b9174"
+  integrity sha512-CT2u++7l363l5NkYprqtZL3hYjnYtoVnr4IzZq9jj0MJ54vuHydmSupGhpZ+Oc4rJeE359sljE1xxEla6tpMOQ==
+  dependencies:
+    "@types/jest" "^29.5.1"
+    bsv-wasm "^2.1.1"
 
 sigma-protocol@^0.0.7:
   version "0.0.7"

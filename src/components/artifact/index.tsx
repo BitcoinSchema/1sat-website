@@ -32,11 +32,13 @@ export enum ArtifactType {
   JSON,
   BSV20,
   OPNS,
+  LRC20,
 }
 
 type ArtifactProps = {
   outPoint?: string; // can be left out when previewing inscription not on chain yet
   contentType?: string;
+  protocol?: string;
   num?: number;
   height?: number;
   classNames?: { wrapper?: string; media?: string };
@@ -68,6 +70,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   clickToZoom,
   sigma,
   showFooter = true,
+  protocol,
 }) => {
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading
@@ -90,8 +93,6 @@ const Artifact: React.FC<ArtifactProps> = ({
       artifactType = ArtifactType.Model;
     } else if (t === "application/javascript") {
       artifactType = ArtifactType.Javascript;
-    } else if (t === "application/json") {
-      artifactType = ArtifactType.JSON;
     } else if (t === "text/plain") {
       artifactType = ArtifactType.Text;
     } else if (t === "text/markdown") {
@@ -100,13 +101,17 @@ const Artifact: React.FC<ArtifactProps> = ({
       artifactType = ArtifactType.HTML;
     } else if (t === "application/bsv-20") {
       artifactType = ArtifactType.BSV20;
+    } else if (t === "application/lrc-20" || protocol === "lrc-20") {
+      artifactType = ArtifactType.LRC20;
     } else if (t === "application/op-ns") {
       artifactType = ArtifactType.OPNS;
+    } else if (t === "application/json") {
+      artifactType = ArtifactType.JSON;
     } else if (t?.startsWith("image")) {
       artifactType = ArtifactType.Image;
     }
     return artifactType;
-  }, [contentType]);
+  }, [contentType, protocol]);
 
   // const isBsv20 = useMemo(() => {
   //   if (type === ArtifactType.BSV20) {
@@ -171,9 +176,11 @@ const Artifact: React.FC<ArtifactProps> = ({
           }
         />
       )
-    ) : type === ArtifactType.BSV20 || type === ArtifactType.JSON ? (
+    ) : type === ArtifactType.BSV20 ||
+      type === ArtifactType.JSON ||
+      type === ArtifactType.LRC20 ? (
       <div
-        className={`h-full p-4 ${classNames?.wrapper || ""} ${
+        className={`h-full w-full p-4 ${classNames?.wrapper || ""} ${
           classNames?.media || ""
         }`}
       >
@@ -292,7 +299,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         )}
         {/* TODO: Show indicator when more than one isncription */}
         {showFooter === true && num !== undefined && (
-          <div className="absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
+          <div className="text-xs absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
             <div
               className={`rounded bg-[#222] p-2 text-[#aaa] ${
                 onClick && outPoint ? "cursor-pointer" : ""
