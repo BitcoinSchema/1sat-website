@@ -15,6 +15,7 @@ export interface MarketPageProps {
   selectedAssetType?: AssetType;
   title?: string;
   showTabs?: boolean;
+  id?: string;
 }
 
 const MarketPage: React.FC<MarketPageProps> = (props) => {
@@ -25,14 +26,14 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
     showTabs = true;
   }
 
-  const Listings = () => {
+  const Listings = ({ id }: { id?: string}) => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
         return <OrdinalListings listings={props.imageListings!} />;
       case AssetType.BSV20:
-        return <TokenMarket type={AssetType.BSV20} />;
+        return <TokenMarket type={AssetType.BSV20} id={id} />;
       case AssetType.BSV20V2:
-        return <TokenMarket type={AssetType.BSV20V2} />;
+        return <TokenMarket type={AssetType.BSV20V2} id={id} />;
       case AssetType.LRC20:
         return (
           <LRC20Listings

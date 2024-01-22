@@ -78,6 +78,7 @@ export interface OrdUtxo extends Utxo {
   height: number;
   idx: number;
   data?: TxoData;
+  sale: boolean;
 }
 
 export type Inventory = {

@@ -2,6 +2,7 @@
 
 import { ordAddress } from "@/signals/wallet/address";
 import { setPendingTxs } from "@/signals/wallet/client";
+import { Listing } from "@/types/bsv20";
 import { OrdUtxo } from "@/types/ordinals";
 // import { useOrdinals } from "@/context/ordinals";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -13,9 +14,10 @@ import { toBitcoin } from "satoshi-bitcoin-ts";
 
 interface BuyArtifactModalProps {
   onClose: () => void;
-  listing: OrdUtxo;
+  listing: OrdUtxo | Listing;
   price: number;
   content: React.ReactNode;
+  showLicense: boolean;
 }
 
 const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
@@ -23,6 +25,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
   listing,
   price,
   content,
+  showLicense,
 }) => {
   // const { buyArtifact } = useOrdinals();
   useSignals();
@@ -47,9 +50,12 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     );
     purchaseTx.add_output(buyerOutput);
 
+    const ordPayout = (listing as OrdUtxo).data?.list?.payout;
+    const listingPayout = (listing as Listing).payout;
+    
     // output 1
     const payOutput = TxOut.from_hex(
-      Buffer.from(listing.data?.list?.payout!, "base64").toString("hex")
+      Buffer.from(listingPayout || ordPayout!, "base64").toString("hex")
     );
     purchaseTx.add_output(payOutput);
   
@@ -78,10 +84,10 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative w-full h-64 md:h-96 overflow-hidden">
+        <div className="relative w-full h-64 md:h-96 overflow-hidden modal-content">
           {content}
         </div>
-        <div className="rounded mb-4 p-2 text-xs text-[#777]">
+        {showLicense && <div className="rounded mb-4 p-2 text-xs text-[#777]">
           <h1>License</h1>
           <IoMdWarning className="inline-block mr-2" />
           You are about to purchase this inscription, granting you ownership and
@@ -89,8 +95,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           license to any artwork or IP that may be depicted here and no rights
           are transferred to the purchaser unless specified explicitly within
           the transaction itself.
-        </div>
-        <form onSubmit={buyArtifact}>
+        </div>}
+        <form onSubmit={buyArtifact} className="modal-action">
           <button className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
             Buy - {price && price > 0 ? toBitcoin(price) : 0} BSV
           </button>

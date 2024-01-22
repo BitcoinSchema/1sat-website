@@ -4,7 +4,6 @@ import { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
 const Search = async ({ params }: { params: { term: string } })  => {
-
   // &q=${btoa(JSON.stringify({
   //   insc: {
   //     json: {

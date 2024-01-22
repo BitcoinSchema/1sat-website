@@ -31,17 +31,18 @@ const Bsv20List = async ({
     
 
   let listings: BSV20TXO[] = [];
-  if (type === AssetType.BSV20V2) {
-    const urlTokens = `${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=0&dir=DESC&status=all&bsv20=true`;
+  if (type === AssetType.BSV20) {
+    const urlTokens = `${API_HOST}/api/bsv20/${address}/unspent?limit=${resultsPerPage}&offset=0&dir=asc&type=v1`;
     const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
     listings = await promiseBsv20;
   } else {
-    const urlV2Tokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
+    const urlV2Tokens = `${API_HOST}/api/bsv20/${address}/unspent?limit=${resultsPerPage}&offset=0&dir=asc&type=v2`;
     const { promise: promiseBsv20v2 } =
       http.customFetch<BSV20TXO[]>(urlV2Tokens);
     listings = await promiseBsv20v2;
   }
 
+  console.log({listings})
   return (
     <tbody className="overflow-auto">
       {listings

@@ -1,13 +1,16 @@
 "use client";
 
+import { API_HOST } from "@/constants";
 import {
+  bsv20Balances,
   bsvWasmReady,
   ordPk,
   payPk,
   pendingTxs,
   utxos,
 } from "@/signals/wallet";
-import { fundingAddress } from "@/signals/wallet/address";
+import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { BSV20Balance } from "@/types/bsv20";
 import { WocUtxo } from "@/types/common";
 import { PendingTransaction } from "@/types/preview";
 import { useLocalStorage } from "@/utils/storage";
@@ -18,6 +21,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { FaWallet } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-bitcoin-ts";
+import { useCopyToClipboard } from "usehooks-ts";
 import * as http from "../../utils/httpClient";
 import DepositModal from "../modal/deposit";
 import WithdrawalModal from "../modal/withdrawal";
@@ -28,6 +32,9 @@ const Wallet: React.FC = () => {
   const [localOrdPk, setLocalOrdPk] = useLocalStorage<string>("1satok");
   const showDepositModal = useSignal(false);
   const showWithdrawalModal = useSignal(false);
+
+  const [value, copy] = useCopyToClipboard();
+
   // useEffect needed so that we can use localStorage
   useEffect(() => {
     if (bsvWasmReady) {
@@ -49,11 +56,32 @@ const Wallet: React.FC = () => {
     return utxos.value.reduce((acc, utxo) => acc + utxo.satoshis, 0);
   });
 
+  
+  effect(() => {
+    const address = ordAddress.value;
+    const fire = async () => {
+      bsv20Balances.value = [];
+      try {
+        const { promise } = http.customFetch<BSV20Balance[]>(
+          `${API_HOST}/api/bsv20/${address}/balance`
+        );
+        const u = await promise;
+        bsv20Balances.value = u;
+        
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    if (address && !bsv20Balances.value) {
+      fire();
+    }
+  })
   effect(() => {
     const address = fundingAddress.value;
     const fire = async () => {
+      utxos.value = [];
       try {
-        utxos.value = [];
         const { promise } = http.customFetch<WocUtxo[]>(
           `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
         );
@@ -106,23 +134,23 @@ const Wallet: React.FC = () => {
             {toBitcoin(balance.value)} <span className="text-lg">BSV</span>
           </div>
         </div>
-    
-          <div className="flex gap-2 justify-center items-center">
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={() => (showDepositModal.value = true)}
-            >
-              Deposit
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={() => (showWithdrawalModal.value = true)}
-            >
-              Withdraw
-            </button>
-          </div>
-          <div className="divider" />
-        
+
+        <div className="flex gap-2 justify-center items-center">
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => (showDepositModal.value = true)}
+          >
+            Deposit
+          </button>
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => (showWithdrawalModal.value = true)}
+          >
+            Withdraw
+          </button>
+        </div>
+        <div className="divider" />
+
         <ul className="p-0">
           <li>
             <Link href="/wallet">Inventory</Link>
@@ -145,10 +173,18 @@ const Wallet: React.FC = () => {
           </li>
           <div className="divider" />
           <li>
-            <Link href="#">Copy Funding Address</Link>
+            <div onClick={() => {copy(fundingAddress.value || "")}}>
+              Copy Funding Address
+            </div>
           </li>
-          <li>
-            <Link href="#">Copy Ordinals Address</Link>
+          <li
+            onClick={ (e) => {
+              e.preventDefault();
+              copy(ordAddress.value || "");
+              console.log("Copied", ordAddress.value);
+            }}
+          >
+            <div>Copy Ordinals Address</div>
           </li>
         </ul>
       </div>

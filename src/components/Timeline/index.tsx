@@ -31,7 +31,7 @@ const Timeline = ({ history, listing, spends }: Props) => {
               {toBitcoin(h.data?.list?.price)} BSV
             </Link>
           );
-        } else if (h.data?.insc?.file) {
+        } else if (h.data?.insc?.file && !h.spend?.length) {
           text = (
             <>
               Minted by{" "}
@@ -43,14 +43,14 @@ const Timeline = ({ history, listing, spends }: Props) => {
               </Link>
             </>
           );
-        } else if (h.spend) {
+        } else if (h.spend?.length) {
           const spentListing = spends.find((s) => s.txid === h.spend);
           console.log({ spentListing });
           text = (
             <Link
               href={`https://whatsonchain.com/tx/${h.spend}`}
               target="_blank"
-            >{`Bought / cancelled`}</Link>
+            >{spentListing?.sale ? `Bought`: `cancelled`}</Link>
           );
         }
         const wocUrl = `https://whatsonchain.com/tx/${h.txid}`;

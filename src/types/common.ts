@@ -1,8 +1,8 @@
 export type BaseTxo = {
-  txid?: string;
-  vout?: 0;
-  height?: 792954;
-  idx?: 23726;
+  txid: string;
+  vout: number;
+  height: number;
+  idx: number;
 };
 
 export type GPFile = {

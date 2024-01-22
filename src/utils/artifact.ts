@@ -70,7 +70,7 @@ export const getArtifactType = (txo: OrdUtxo, latest: boolean): ArtifactType => 
 
 export const displayName = (txo: OrdUtxo, latest: boolean): string | undefined => {
   const type = getArtifactType(txo, latest);
-
+console.log({txo})
   switch (type) {
     case ArtifactType.Audio:
     case ArtifactType.Video:

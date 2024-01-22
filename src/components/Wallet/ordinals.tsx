@@ -27,7 +27,7 @@ const WalletOrdinals = () => {
 
 export default WalletOrdinals;
 
-const getOrdUtxos = async (ordUtxos: Signal<OrdUtxo[] | null>) => {
+export const getOrdUtxos = async (ordUtxos: Signal<OrdUtxo[] | null>) => {
   ordUtxos.value = [];
   const { promise } = http.customFetch<OrdUtxo[]>(
     `${API_HOST}/api/txos/address/${ordAddress.value}/unspent?limit=${resultsPerPage}&offset=0&dir=DESC&status=all&bsv20=true`

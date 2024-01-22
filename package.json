@@ -11,8 +11,10 @@
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
+    "@headlessui/tailwindcss": "^0.2.0",
     "@linaria/core": "^6.0.0",
     "@preact/signals-react": "^2.0.0",
+    "@tremor/react": "^3.13.1",
     "@types/lodash": "^4.14.202",
     "blurhash": "^2.0.5",
     "bsv-wasm-web": "^2.1.1",

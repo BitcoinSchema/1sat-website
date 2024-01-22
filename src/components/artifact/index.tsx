@@ -192,7 +192,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           classNames?.media || ""
         }`}
       >
-        <JsonArtifact origin={origin} type={type} mini={(size || 300) < 300} />
+        <JsonArtifact artifact={artifact} origin={origin} type={type} mini={(size || 300) < 300} />
       </div>
     ) : type === ArtifactType.Text || type === ArtifactType.OPNS ? (
       <div className={`w-full flex items-center justify-center p-2 h-full`}>
@@ -281,19 +281,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         )}
       </div>
     );
-  }, [
-    src,
-    type,
-    origin,
-    classNames,
-    outPoint,
-    clickToZoom,
-    showZoom,
-    priority,
-    size,
-    num,
-    sizes,
-  ]);
+  }, [src, type, origin, classNames, outPoint, size, clickToZoom, artifact, showZoom, priority, num, sizes]);
 
   return (
     <React.Fragment>
@@ -348,7 +336,7 @@ const Artifact: React.FC<ArtifactProps> = ({
             <div
               className={` ${
                 price !== undefined &&
-                type !== ArtifactType.BSV20 &&
+                // type !== ArtifactType.BSV20 &&
                 !(height && type === ArtifactType.Text && height >= 793000)
                   ? "cursor-pointer hover:bg-emerald-600 text-white"
                   : ""
@@ -359,7 +347,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                   !(
                     price !== undefined &&
                     isListing &&
-                    type !== ArtifactType.BSV20 &&
+                    // type !== ArtifactType.BSV20 &&
                     !(height && type === ArtifactType.Text && height >= 793000)
                   )
                 ) {
@@ -396,8 +384,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           listing={artifact}
           onClose={() => setShowBuy(false)}
           price={price}
-          content={content}
-        />
+          content={content} showLicense={true} />
       )}
     </React.Fragment>
   );
