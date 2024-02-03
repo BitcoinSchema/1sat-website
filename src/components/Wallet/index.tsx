@@ -14,6 +14,7 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { loadKeysFromBackupFiles } from "@/signals/wallet/client";
 import { BSV20Balance } from "@/types/bsv20";
 import { ChainInfo, IndexerStats } from "@/types/common";
 import { PendingTransaction } from "@/types/preview";
@@ -23,6 +24,7 @@ import { computed, effect } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import init from "bsv-wasm-web";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect } from "react";
 import toast from "react-hot-toast";
 import { FaCopy, FaWallet } from "react-icons/fa6";
@@ -35,6 +37,7 @@ let initAttempted = false;
 
 const Wallet: React.FC = () => {
   useSignals();
+  const router = useRouter();
   const [localPayPk, setLocalPayPk] = useLocalStorage<string>("1satfk");
   const [localOrdPk, setLocalOrdPk] = useLocalStorage<string>("1satok");
   const showDepositModal = useSignal(false);
@@ -138,7 +141,8 @@ const Wallet: React.FC = () => {
     if (e.target.files) {
       console.log("handleFileChange called", e.target.files[0]);
       backupFile.value = e.target.files[0];
-      // router?.push("/wallet");
+      await loadKeysFromBackupFiles();
+      router?.push("/wallet");
     }
   };
 
