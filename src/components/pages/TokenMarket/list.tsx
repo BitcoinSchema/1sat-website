@@ -14,6 +14,7 @@ export interface Holder {
 }
 
 export type MarketData = {
+  accounts: number;
   tick?: string;
   id: string;
   sym?: string;

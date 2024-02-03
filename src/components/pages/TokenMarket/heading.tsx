@@ -162,7 +162,7 @@ const TickerHeading = ({
         </td>
         <td className="break-normal text-right w-96 hover:text-info transition">
           <Link href={`/holders/${type}/${ticker.tick}`}>
-            {(ticker.holders || []).length}
+            {(ticker.accounts || 0).toLocaleString()}
           </Link>
         </td>
       </tr>
