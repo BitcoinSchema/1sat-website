@@ -19,9 +19,9 @@ export const setOrdPk = (pk: string) => {
 };
 
 export const loadKeysFromBackupFiles = (): Promise<void> => {
-  return new Promise((resolve, eject) => {
+  return new Promise((resolve, reject) => {
     if (!backupFile?.value) {
-      return resolve()
+      return reject()
     }
     // load data from backupFile.value which is a File
     const f = new FileReader();
@@ -34,7 +34,7 @@ export const loadKeysFromBackupFiles = (): Promise<void> => {
     };
     f.onerror = (e) => {
       console.error(e);
-      return eject(e);
+      return reject(e);
     }
     f.readAsText(backupFile.value);
   })
