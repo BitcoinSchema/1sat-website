@@ -1,120 +1,153 @@
 "use client";
 
-import Image from 'next/image';
-import { FC, useEffect, useState } from 'react';
-import { MarketData } from './list'; // Ensure the import path is correct
+import { Signal, computed } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
+import { AreaChart, ScatterChart } from "@tremor/react";
+import { FC, useMemo } from "react";
+import { MarketData } from "./list";
+import ListingForm from "./listingForm";
+import { listings, sales } from "./signals";
+
+export const enum ChartStyle {
+  Bubble = "bubble",
+  Line = "line",
+}
+
+export const enum DataCategory {
+  Sales = "sales",
+  Listings = "listings",
+}
 
 interface ChartProps {
-  marketData: MarketData;
-  dataCategory: 'sales' | 'listings';
-  chartStyle: 'bubble' | 'line';
+  dataCategory: DataCategory;
+  chartStyle: ChartStyle;
+  currentHeight: number;
+  showListingForm?: Signal<boolean>;
+  ticker: Partial<MarketData>;
 }
+const TremorChartComponent: FC<ChartProps> = ({
+  dataCategory,
+  chartStyle,
+  currentHeight,
+  showListingForm,
+  ticker,
+}) => {
+  useSignals();
 
-interface AggregatedData {
-  x: number; // Block height
-  y: number; // Average price per token in satoshi
-  count: number; // Number of sales or listings
-}
+  // const data = computed(() => {
+  //   if (dataCategory === DataCategory.Listings) {
+  //     return listings.value;
+  //    } else if (dataCategory === DataCategory.Sales) {
+  //     return sales.value;
+  //   }
+  //   return [];
+  // })
+  
 
-const ChartComponent: FC<ChartProps> = ({ marketData, dataCategory, chartStyle }) => {
-  const [chartUrl, setChartUrl] = useState<string>('');
-
-  useEffect(() => {
-    if (!marketData[dataCategory]) {
-      return
+  // Prepare the dataset
+  const dataset = computed(() => {
+    const data = dataCategory === DataCategory.Listings ? listings.value : sales.value;
+    if (!data) {
+      return [];
     }
-    // Sort the data by block height
-    const sortedData = [...marketData[dataCategory]!].sort((a, b) => a.height! - b.height!);
-
-    // Aggregate data by block height with weighted average
-    const aggregatedData: Record<number, { totalAmount: number; totalPrice: number; count: number }> = {};
-
-    sortedData.forEach(item => {
-      const blockHeight = item.height!;
-      const amount = parseFloat(item.amt); // Assuming 'amt' is a string that can be converted to a number
-      const price = parseFloat(item.pricePer);
-      const totalPrice = amount * price;
-
-      if (!aggregatedData[blockHeight]) {
-        aggregatedData[blockHeight] = { totalAmount: 0, totalPrice: 0, count: 0 };
+    // Extract raw data and sort by block height
+    const rawData = [...data].sort(
+      (a, b) => {
+        if (a.height === 0) {
+        
+          -1
+        }
+        if (b.height === 0) {
+          return 1
+        }
+          
+        return a.height > b.height ? -1 : 1;
       }
+    );
 
-      aggregatedData[blockHeight].totalAmount += amount;
-      aggregatedData[blockHeight].totalPrice += totalPrice;
-      aggregatedData[blockHeight].count += 1;
+
+    // Group data by height and calculate mean price and total amount
+    const groupedData = rawData.reduce((acc, item) => {
+      const height = item.height!;
+      if (!acc[height]) {
+        acc[height] = { price: 0, amt: 0, count: 0 };
+      }
+      acc[height].price += parseFloat(item.pricePer) * parseFloat(item.amt);
+      acc[height].amt += parseFloat(item.amt);
+      acc[height].count += 1;
+      return acc;
+    }, {} as Record<number, { price: number; amt: number; count: number }>);
+
+    // Create final data array
+    const finalData = Object.entries(groupedData).map(([height, data]) => {
+      const averagePrice = data.price / data.amt;
+      return {
+        height: parseInt(height),
+        price: averagePrice,
+        amt: data.amt, // Use total amount for bubble size in scatter chart
+      };
     });
 
-    const finalData = Object.entries(aggregatedData).map(([x, { totalAmount, totalPrice }]) => ({
-      x: parseInt(x),
-      y: totalPrice / totalAmount // calculate the weighted average price
-    }));
-
-    let chartConfig: any; // Use 'any' or define a type for your chart config
-    const options = {
-      legend: { display: false },
-      scales: {
-        x: {
-          type: 'linear',
-          title: { display: true, text: 'Block Height' },
-        },
-        y: {
-          title: { display: true, text: 'Price per Token (sats)' },
-          ticks: { callback: (value: number) => value.toLocaleString() }
-        },
-      },
-    };
-
-    if (chartStyle === 'line') {
-      chartConfig = {
-        type: 'scatter',
-        data: {
-          datasets: [{
-            label: dataCategory,
-            data: finalData,
-            showLine: true,
-            lineTension: 0,
-            borderColor: '#ffc933',
-            backgroundColor: 'transparent',
-            pointBackgroundColor: '#cf33ff',
-            fill: false
-          }]
-        },
-        options
-      };
-    } else if (chartStyle === 'bubble') {
-      // Prepare the bubble data with radius
-      const bubbleData = finalData.map(item => ({
-        ...item,
-        r: Math.sqrt(aggregatedData[item.x].count) * 3 // example radius calculation
-      }));
-
-      chartConfig = {
-        type: 'bubble',
-        data: {
-          datasets: [{
-            label: dataCategory.charAt(0).toUpperCase() + dataCategory.slice(1),
-            data: bubbleData,
-            backgroundColor: 'rgba(255, 208, 52, 0.5)',
-            borderColor: '#ffc933',
-            borderWidth: 1
-          }]
-        },
-        options
-      };
+    const lastHeight = finalData[finalData.length - 1]?.height || 0;
+    const lastPrice = finalData[finalData.length - 1]?.price || 0;
+    if (lastHeight < currentHeight) {
+      finalData.push({
+        height: currentHeight,
+        price: lastPrice,
+        amt: 0,
+      })
     }
 
-    // Encode the configuration for the URL
-    const encodedChartConfig = encodeURIComponent(JSON.stringify(chartConfig));
-    const quickChartUrl = `https://quickchart.io/chart?c=${encodedChartConfig}`;
-    setChartUrl(quickChartUrl);
+    return finalData;
+  });
 
-  }, [marketData, dataCategory, chartStyle]);
+  // Define categories for the chart based on dataCategory
+  const categories = useMemo(() => [dataCategory], [dataCategory]);
 
+
+  // Render the chart using the Chart component from @tremor/react
   return (
-    <div>
-      {chartUrl && <Image src={chartUrl} alt={`${dataCategory} ${chartStyle} Chart`} />}
-    </div>
+    <>
+     
+        {chartStyle === "bubble" ? (
+          showListingForm?.value ? (
+            <ListingForm
+              dataset={dataset.value}
+              ticker={ticker}
+              onClose={() => {
+                console.log("close");
+                showListingForm.value = false;
+              }}
+            ></ListingForm>
+          ) : (
+            <ScatterChart
+              className="w-full h-60"
+              data={dataset.value}
+              colors={["orange-400", "orange-500", "teal-400", "orange-300", "emerald-400", "purple-400", "pink-400", "yellow-400", "red-200", "gray-200", "indigo-200", "rose-200", "teal-200", "blue-200", "green-200", "purple-200", "pink-200", "yellow-200", "red-200", "gray-200"]}
+              showLegend={false}
+              allowDecimals={true}
+              x={"height"}
+              category={"amt"}
+              y={"price"}
+              size={"amt"}
+              minXValue={dataset.value.length ? dataset.value[0].height : 0}
+            />
+          )
+        ) : (
+          <AreaChart
+            className="w-full h-60"
+            data={dataset.value}
+            index="height"
+            categories={["price"]}
+            colors={["orange-400"]}
+            showLegend={false}
+            connectNulls={true}
+            allowDecimals={true}
+          />
+        )}
+    
+    </>
   );
 };
 
-export default ChartComponent;
+export default TremorChartComponent;

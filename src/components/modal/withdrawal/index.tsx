@@ -1,26 +1,154 @@
 "use client";
 
-import { utxos } from "@/signals/wallet";
+import { payPk, pendingTxs, utxos } from "@/signals/wallet";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
+import { P2PKHAddress, PrivateKey, Script, SigHash, Transaction, TxIn, TxOut } from "bsv-wasm-web";
+import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import toast from "react-hot-toast";
 import { toBitcoin, toSatoshi } from "satoshi-bitcoin-ts";
 
 interface DespotModalProps {
   onClose: () => void;
+  amount?: number;
+  address?: string;
 }
 
-const WithdrawalModal: React.FC<DespotModalProps> = ({ onClose }) => {
+const WithdrawalModal: React.FC<DespotModalProps> = ({ amount: amt, address: addr, onClose }) => {
   useSignals()
+  const router = useRouter();
   // use signal for amount and address
-  const amount = useSignal("0");
-  const address = useSignal("");
+  const amount = useSignal(amt?.toString() || "0");
+  const address = useSignal(addr || "");
   const balance = computed(() => {
     if (!utxos.value) {
       return 0;
     }
     return utxos.value.reduce((acc, utxo) => acc + utxo.satoshis, 0);
   });
+
+  const setAmountToBalance = useCallback(() => {
+    amount.value = `${toBitcoin(balance.value)}`;
+    console.log(amount.value);
+  }, [amount, balance]);
+
+
+  const send = useCallback(
+    async (address: string, satoshis: number) => {
+      if (!payPk.value) {
+        return;
+      }
+
+      if (!address?.startsWith("1")) {
+        console.error("inivalid receive address");
+        return;
+      }
+      toast(`Sending to ${address}`, {
+        style: {
+          background: "#333",
+          color: "#fff",
+        },
+      });
+
+      const feeSats = 20;
+      const satsNeeded = satoshis + feeSats;
+      const paymentPk = PrivateKey.from_wif(payPk.value);
+      const tx = new Transaction(1, 0);
+
+      // Outputs
+      let inputValue = 0;
+      for (let u of utxos.value || []) {
+        inputValue += u.satoshis;
+        if (inputValue >= satsNeeded) {
+          break;
+        }
+      }
+      const satsIn = inputValue;
+      
+      const change = satsIn - satoshis - feeSats;
+      console.log({ feeSats, satsIn, satoshis, change });
+      tx.add_output(
+        new TxOut(
+          BigInt(satoshis),
+          P2PKHAddress.from_string(address).get_locking_script()
+        )
+      );
+
+      // add change output
+      if (change > 0) {
+        tx.add_output(
+          new TxOut(
+            BigInt(change),
+            P2PKHAddress.from_pubkey(PrivateKey.from_wif(payPk.value).to_public_key()).get_locking_script()
+          )
+        );
+      }
+
+      // build txins from our UTXOs
+      let idx = 0;
+      let totalSats = 0
+      for (let u of utxos.value || []) {
+        console.log({ u });
+        const inx = new TxIn(
+          Buffer.from(u.txid, "hex"),
+          u.vout,
+          Script.from_asm_string("")
+        );
+        console.log({ inx });
+        inx.set_satoshis(BigInt(u.satoshis));
+        tx.add_input(inx);
+
+        const sig = tx.sign(
+          paymentPk,
+          SigHash.InputOutputs,
+          idx,
+          Script.from_asm_string(u.script),
+          BigInt(u.satoshis)
+        );
+
+        console.log({ sig: sig.to_hex() });
+
+        // const s = Script.from_asm_string(u.script);
+        // inx.set_unlocking_script(
+        //   P2PKHAddress.from_string(changeAddress || "").get_unlocking_script(
+        //     paymentPk.to_public_key(),
+        //     sig
+        //   )
+        // );
+
+        inx.set_unlocking_script(
+          Script.from_asm_string(
+            `${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`
+          )
+        );
+
+        tx.set_input(idx, inx);
+        idx++;
+
+        totalSats += u.satoshis
+        if (satsNeeded <= totalSats) {
+          break;
+        }
+      }
+
+      const rawTx = tx.to_hex();
+      // const { rawTx, fee, size, numInputs, numOutputs } = resp;
+
+      pendingTxs.value = [{
+        rawTx,
+        size: Math.ceil(rawTx.length / 2),
+        fee: 20,
+        numInputs: tx.get_ninputs(),
+        numOutputs: tx.get_noutputs(),
+        txid: tx.get_id_hex(),
+        inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
+      }]
+
+      router.push("/preview");
+    },
+    [router]
+  );
 
   const submit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,14 +160,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ onClose }) => {
       return;
     }
     console.log(amount.value, address.value);
-  }, [amount, address, balance]);
-
-  const setAmountToBalance = useCallback(() => {
-    amount.value = `${toBitcoin(balance.value)}`;
-    console.log(amount.value);
-  }, [amount, balance]);
-
-
+    send(address.value, toSatoshi(amount.value));
+  }, [amount.value, address.value, balance.value, send]);
 
   return (
     <div
@@ -53,13 +175,14 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ onClose }) => {
         <div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
         <form onSubmit={submit}>
         <div className="flex justify-between">
-          <div className="text-lg font-semibold">Withdrawal</div>
+          <div className="text-lg font-semibold">Withdraw</div>
           <div
             className="text-xs cursor-pointer text-[#aaa]"
             onClick={setAmountToBalance}
           >
             Balance: {toBitcoin(balance.value)} BSV
           </div>
+     
         </div>
 
         <div className="flex flex-col w-full">
@@ -84,6 +207,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ onClose }) => {
             type="text"
             placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
             className="input input-bordered w-full"
+            value={address.value}
             onChange={(e) => {
               address.value = e.target.value;
             }}

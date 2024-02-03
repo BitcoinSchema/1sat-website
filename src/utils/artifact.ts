@@ -2,7 +2,7 @@
 import { ArtifactType } from "@/components/artifact";
 import { ORDFS } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
-import { Hash } from "bsv-wasm";
+import { Hash } from "bsv-wasm-web";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
   const origin = artifact.origin?.outpoint || `${artifact.txid}_${artifact.vout}`;

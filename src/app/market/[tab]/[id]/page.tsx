@@ -6,17 +6,19 @@ import { redirect } from "next/navigation";
 
 const Market = async ({ params }: { params: { tab: AssetType, id: string } }) => {
   // hit the details request
-  const urlImages = `https://1sat-api-production.up.railway.app/market/${params.tab}/${params.id}`;
+
+  switch (params.tab) {
+    case AssetType.Ordinals:
+        const urlImages = `https://1sat-api-production.up.railway.app/market/${params.tab}/${params.id}`;
   const { promise } = http.customFetch(urlImages);
   const marketData = await promise;
   console.log(marketData);
-  switch (params.tab) {
-    case AssetType.Ordinals:
       // TODO: redirect to outpoint page
       redirect(`/outpoint/${params.id}`);
     case AssetType.BSV20:
       return (
         <MarketPage
+
           selectedAssetType={AssetType.BSV20}
           id={params.id}
         />

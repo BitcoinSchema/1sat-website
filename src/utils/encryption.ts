@@ -1,4 +1,4 @@
-import { AES, AESAlgorithms, Hash, KDF, PBKDF2Hashes } from "bsv-wasm";
+import { AES, AESAlgorithms, Hash, KDF, PBKDF2Hashes } from "bsv-wasm-web";
 
 export const encryptData = (
   data: Uint8Array,

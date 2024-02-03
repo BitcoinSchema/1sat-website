@@ -1,7 +1,9 @@
 import Footer from "@/components/Footer/footer";
 import Header from "@/components/header";
+import { toastProps } from "@/constants";
 import type { Metadata } from "next";
 import { Inter, Ubuntu, Ubuntu_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,11 +35,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+
+      <link rel="icon" href="/favicon.ico" />
+      </head>
+
       <body className={`flex flex-col h-100vh ${inter.className}`}>
         <Header ubuntu={ubuntu} />
         {/* <Tabs className={`absolute md:relative m-0 md:my-8 bottom-0 left-0 w-full md:w-fit mx-auto ${ubuntuMono.className}`} /> */}
         {children}
         <Footer />
+        <Toaster position="bottom-left" reverseOrder={false} toastOptions={toastProps} />
       </body>
     </html>
   );

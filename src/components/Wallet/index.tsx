@@ -2,29 +2,36 @@
 
 import { API_HOST } from "@/constants";
 import {
+  backupFile,
   bsv20Balances,
   bsvWasmReady,
+  chainInfo,
+  indexers,
   ordPk,
   payPk,
   pendingTxs,
+  usdRate,
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { BSV20Balance } from "@/types/bsv20";
-import { WocUtxo } from "@/types/common";
+import { ChainInfo, IndexerStats } from "@/types/common";
 import { PendingTransaction } from "@/types/preview";
+import { getUtxos } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
 import { computed, effect } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import init, { P2PKHAddress } from "bsv-wasm-web";
+import init from "bsv-wasm-web";
 import Link from "next/link";
-import { useEffect } from "react";
-import { FaWallet } from "react-icons/fa6";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { ChangeEvent, useEffect } from "react";
+import toast from "react-hot-toast";
+import { FaCopy, FaWallet } from "react-icons/fa6";
+import { toBitcoin, toSatoshi } from "satoshi-bitcoin-ts";
 import { useCopyToClipboard } from "usehooks-ts";
 import * as http from "../../utils/httpClient";
 import DepositModal from "../modal/deposit";
 import WithdrawalModal from "../modal/withdrawal";
+let initAttempted = false;
 
 const Wallet: React.FC = () => {
   useSignals();
@@ -37,17 +44,17 @@ const Wallet: React.FC = () => {
 
   // useEffect needed so that we can use localStorage
   useEffect(() => {
-    if (bsvWasmReady) {
+    if (bsvWasmReady.value) {
       payPk.value = localPayPk || null;
       ordPk.value = localOrdPk || null;
 
-      const localTxsStr = localStorage?.getItem("1satpt");
+      const localTxsStr = localStorage.getItem("1satpt");
       const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
       if (localTxs) {
         pendingTxs.value = localTxs as PendingTransaction[];
       }
     }
-  }, [bsvWasmReady]);
+  }, [bsvWasmReady.value]);
 
   const balance = computed(() => {
     if (!utxos.value) {
@@ -56,7 +63,6 @@ const Wallet: React.FC = () => {
     return utxos.value.reduce((acc, utxo) => acc + utxo.satoshis, 0);
   });
 
-  
   effect(() => {
     const address = ordAddress.value;
     const fire = async () => {
@@ -66,56 +72,88 @@ const Wallet: React.FC = () => {
           `${API_HOST}/api/bsv20/${address}/balance`
         );
         const u = await promise;
-        bsv20Balances.value = u;
-        
-      } catch (e) {
-        console.log(e);
-      }
-    };
-
-    if (address && !bsv20Balances.value) {
-      fire();
-    }
-  })
-  effect(() => {
-    const address = fundingAddress.value;
-    const fire = async () => {
-      utxos.value = [];
-      try {
-        const { promise } = http.customFetch<WocUtxo[]>(
-          `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
-        );
-        const u = await promise;
-
-        utxos.value = u.map((u: WocUtxo) => {
-          return {
-            satoshis: u.value,
-            txid: u.tx_hash,
-            vout: u.tx_pos,
-            script: P2PKHAddress.from_string(address!)
-              .get_locking_script()
-              .to_asm_string(),
-          };
+        bsv20Balances.value = u.sort((a, b) => {
+          return b.all.confirmed + b.all.pending >
+            a.all.confirmed + a.all.pending
+            ? 1
+            : -1;
         });
+
+        const statusUrl = `https://1sat-api-production.up.railway.app/status`;
+        const { promise: promiseStatus } = http.customFetch<{
+          exchangeRate: number;
+          chainInfo: ChainInfo;
+          indexers: IndexerStats;
+        }>(statusUrl);
+        const { chainInfo: info, exchangeRate, indexers: indx } = await promiseStatus;
+        console.log({ info, exchangeRate, indexers });
+        chainInfo.value = info;
+        usdRate.value = toSatoshi(1) / exchangeRate;
+        indexers.value = indx
       } catch (e) {
         console.log(e);
       }
     };
 
-    if (address && !utxos.value) {
+    if (bsvWasmReady.value && address && !bsv20Balances.value) {
       fire();
     }
   });
+
+  useEffect(() => {
+    const fire = async (a: string) => {
+      utxos.value = [];
+      utxos.value = await getUtxos(a);
+    };
+    
+    if (bsvWasmReady.value && fundingAddress && !utxos.value) {
+      const address = fundingAddress.value;
+      if (address) {
+        fire(address);
+      }
+    }
+  }, [bsvWasmReady.value, fundingAddress.value, utxos.value]);
 
   effect(() => {
     const fire = async () => {
       await init();
       bsvWasmReady.value = true;
     };
-    if (bsvWasmReady.value === false) {
+    if (!initAttempted && bsvWasmReady.value === false) {
+      initAttempted = true;
       fire();
     }
   });
+
+  const importKeys = () => {
+    if (!backupFile.value) {
+      const el = document.getElementById("backupFile");
+      el?.click();
+      return;
+    }
+    console.log({ backupFile });
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      console.log("handleFileChange called", e.target.files[0]);
+      backupFile.value = e.target.files[0];
+      // router?.push("/wallet");
+    }
+  };
+
+  const backupKeys = (e?: any) => {
+    var dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(
+        JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value })
+      );
+
+    const clicker = document.createElement("a");
+    clicker.setAttribute("href", dataStr);
+    clicker.setAttribute("download", "1sat.json");
+    clicker.click();
+  };
 
   return (
     <div className="dropdown dropdown-end">
@@ -149,42 +187,49 @@ const Wallet: React.FC = () => {
             Withdraw
           </button>
         </div>
-        <div className="divider" />
+        <div className="divider">Inventory</div>
 
         <ul className="p-0">
-          <li>
-            <Link href="/wallet">Inventory</Link>
-          </li>
           <li className="ml-2">
             <Link href="/wallet/ordinals">Ordinals</Link>
           </li>
           <li className="ml-2">
-            <Link href="/wallet/bsv20">BSV20 (Open Mint)</Link>
+            <Link href="/wallet/bsv20">BSV20</Link>
           </li>
           <li className="ml-2">
-            <Link href="/wallet/bsv20">BSV20 V2 (Issued)</Link>
+            <Link href="/wallet/bsv20v2">BSV21</Link>
           </li>
-          <div className="divider" />
+          <div className="divider">Keys</div>
           <li>
-            <Link href="/wallet/keys/import">Import Keys</Link>
+            <button onClick={importKeys}>Import Keys</button>
           </li>
           <li>
-            <Link href="/wallet/keys/export">Export Keys</Link>
+            <button onClick={backupKeys}>Export Keys</button>
           </li>
-          <div className="divider" />
+          <div className="divider">Addresses</div>
           <li>
-            <div onClick={() => {copy(fundingAddress.value || "")}}>
-              Copy Funding Address
-            </div>
+            <button
+              className={`flex items-center justify-between w-full`}
+              onClick={() => {
+                copy(fundingAddress.value || "");
+                toast.success("Copied Funding Address");
+              }}
+            >
+              Bitcoin SV Address <FaCopy className="text-[#333]" />
+            </button>
           </li>
-          <li
-            onClick={ (e) => {
-              e.preventDefault();
-              copy(ordAddress.value || "");
-              console.log("Copied", ordAddress.value);
-            }}
-          >
-            <div>Copy Ordinals Address</div>
+          <li>
+            <button
+              className={`flex items-center justify-between w-full`}
+              onClick={(e) => {
+                e.preventDefault();
+                copy(ordAddress.value || "");
+                console.log("Copied", ordAddress.value);
+                toast.success("Copied Ordinals Address");
+              }}
+            >
+              Ordinals Address <FaCopy className="text-[#333]" />
+            </button>
           </li>
         </ul>
       </div>
@@ -194,8 +239,16 @@ const Wallet: React.FC = () => {
       {showWithdrawalModal.value && (
         <WithdrawalModal onClose={() => (showWithdrawalModal.value = false)} />
       )}
+      <input
+        accept=".json"
+        className="hidden"
+        id="backupFile"
+        onChange={handleFileChange}
+        type="file"
+      />
     </div>
   );
 };
 
 export default Wallet;
+

@@ -41,9 +41,10 @@ export interface BSV20TXO extends BaseTxo {
   status: Bsv20Status;
   sym: string;
   icon: string;
+  script: string;
 }
 
-export interface TxoData {
+export interface TxoData extends BaseTxo {
   types?: string[];
   insc?: Inscription;
   map?: { [key: string]: any };

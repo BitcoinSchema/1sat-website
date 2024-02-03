@@ -40,7 +40,7 @@ export enum ArtifactType {
 }
 
 type ArtifactProps = {
-  artifact: OrdUtxo;
+  artifact: Partial<OrdUtxo>;
   classNames?: { wrapper?: string; media?: string };
   to?: string;
   src?: string;
@@ -114,7 +114,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   );
 
   const type = useMemo(() => {
-    return getArtifactType(artifact, latest);
+    return getArtifactType(artifact as OrdUtxo, latest);
   }, [artifact, latest]);
 
   // const isBsv20 = useMemo(() => {
@@ -381,7 +381,7 @@ const Artifact: React.FC<ArtifactProps> = ({
       )}
       {outPoint && showBuy && price !== undefined && (
         <BuyArtifactModal
-          listing={artifact}
+          listing={artifact as OrdUtxo}
           onClose={() => setShowBuy(false)}
           price={price}
           content={content} showLicense={true} />

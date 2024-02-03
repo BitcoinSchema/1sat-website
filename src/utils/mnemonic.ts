@@ -1,4 +1,4 @@
-import { Hash } from "bsv-wasm";
+import { Hash } from "bsv-wasm-web";
 import { randomBytes } from "crypto";
 import { bip39words } from "./bip39words";
 

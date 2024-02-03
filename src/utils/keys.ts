@@ -5,7 +5,7 @@ import {
   P2PKHAddress,
   PrivateKey,
   PublicKey,
-} from "bsv-wasm";
+} from "bsv-wasm-web";
 import toast from "react-hot-toast";
 import { generateMnemonic } from "./mnemonic";
 

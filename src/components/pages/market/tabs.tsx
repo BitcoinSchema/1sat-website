@@ -5,7 +5,7 @@ import Link from "next/link";
 
 const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
   return (
-    <div role="tablist" className="tabs tabs-lifted ml-4 gap-2 w-64">
+    <div role="tablist" className="tabs tabs-lg tabs-lifted ml-4 gap-2 w-64">
       <Link
         href={`/market/${AssetType.Ordinals}`}
         role="tab"
@@ -36,7 +36,7 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
         }`}
         aria-label="BSV20V2"
       >
-        BSV20v2
+        BSV21
       </Link>
     </div>
   );

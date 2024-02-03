@@ -12,7 +12,7 @@ const Header = ({ ubuntu }: { ubuntu: any }) => {
           <div className="px-2 min-w-12">
             <Link
               className={`text-2xl flex items-center font-medium ${ubuntu.className}`}
-              href="/listings/ordinals"
+              href="/"
             >
               <Image
                 style={{

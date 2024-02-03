@@ -1,7 +1,7 @@
-import OutpointTimeline from "@/components/pages/outpoint/timeline";
+import { redirect } from 'next/navigation';
 
 const Outpoint = async ({ params }: { params: { outpoint: string } })  => {
-  return <OutpointTimeline outpoint={params.outpoint} />
+  redirect(`/outpoint/${params.outpoint}/timeline`)
 };
 
 export default Outpoint;

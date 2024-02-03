@@ -9,13 +9,42 @@ interface Props {
 }
 
 const OutpointToken = async ({ outpoint }: Props) => {
-  const url = `${API_HOST}/api/inscriptions/${outpoint}`;
-  const { promise } = http.customFetch<OrdUtxo>(url);
-  const artifact = await promise;
-      return (
-    <OutpointPage artifact={artifact} outpoint={outpoint} content={<div><h1>Token</h1></div>} activeTab={OutpointTab.Token} />
-  );
+  let artifact: OrdUtxo | undefined;
+  let bsv20: OrdUtxo | undefined;
+  try {
+    const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
+    const { promise } = http.customFetch<OrdUtxo>(url);
+    artifact = await promise;
+  } catch (e) {
+    console.log(e);
+  }
 
+  try {
+    const url = `${API_HOST}/api/inscriptions/${outpoint}`;
+    const { promise } = http.customFetch<OrdUtxo>(url);
+    bsv20 = await promise;
+  } catch (e) {
+    console.log(e);
+  }
+
+  const content =
+    artifact && artifact.data?.bsv20 ? (
+      <div>
+        <div>Token</div>
+      </div>
+    ) : (
+      <div>Not a token</div>
+    );
+
+  return (
+    <OutpointPage
+      artifact={artifact || bsv20!}
+      outpoint={outpoint}
+      content={content}
+      activeTab={OutpointTab.Token}
+    />
+  );
+  return;
 };
 
 export default OutpointToken;

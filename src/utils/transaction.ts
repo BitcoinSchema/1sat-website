@@ -1,5 +1,6 @@
 import { API_HOST } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
+import { customFetch } from "@/utils/httpClient";
 import {
   P2PKHAddress,
   PrivateKey,
@@ -10,7 +11,6 @@ import {
   TxOut,
 } from "bsv-wasm-web";
 import { Utxo } from "js-1sat-ord";
-import { customFetch } from "./httpClient";
 
 export const signPayment = (
   tx: Transaction,
@@ -19,9 +19,9 @@ export const signPayment = (
   paymentUtxo: Utxo,
   utxoIn: TxIn
 ) => {
-  const sig2 = tx.sign(
+ const sig2 = tx.sign(
     paymentPK,
-    SigHash.ALL | SigHash.FORKID,
+     SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
     inputIdx,
     Script.from_asm_string(paymentUtxo.script),
     BigInt(paymentUtxo.satoshis)
@@ -39,14 +39,22 @@ export const createChangeOutput = (
   changeAddress: string,
   paymentSatoshis: number
 ) => {
+
+  // get total satoshis out
+  const outs = tx.get_noutputs();
+  let totalSatoshisOut: bigint = 0n;
+  for (let i = 0; i < outs; i++) {
+    const out = tx.get_output(i);
+    totalSatoshisOut += out?.get_satoshis() || BigInt(0);
+  }
   const changeaddr = P2PKHAddress.from_string(changeAddress);
   const changeScript = changeaddr.get_locking_script();
   const emptyOut = new TxOut(BigInt(1), changeScript);
   const fee = Math.ceil(
     SAT_FEE_PER_BYTE * (tx.get_size() + emptyOut.to_bytes().byteLength)
   );
-  const change = paymentSatoshis - fee;
-  const changeOut = new TxOut(BigInt(change), changeScript);
+  const change = BigInt(paymentSatoshis) - totalSatoshisOut - BigInt(fee);
+  const changeOut = new TxOut(change, changeScript);
   return changeOut;
 };
 

@@ -9,7 +9,7 @@ const List = async ({
   type: AssetType.BSV20 | AssetType.BSV20V2;
 }) => {
   let listings: BSV20TXO[] = [];
-  if (type === AssetType.BSV20V2) {
+  if (type === AssetType.BSV20) {
     const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
     const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
     listings = await promiseBsv20;

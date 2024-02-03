@@ -1,14 +1,23 @@
 "use client";
 
-import { pendingTxs } from "@/signals/wallet";
+import { API_HOST, toastProps } from "@/constants";
+import { pendingTxs, usdRate } from "@/signals/wallet";
+import { fundingAddress } from "@/signals/wallet/address";
 import { PendingTransaction } from "@/types/preview";
 import { formatBytes } from "@/utils/bytes";
+import * as http from "@/utils/httpClient";
 import { computed, effect } from "@preact/signals-react";
-import { useSignal } from "@preact/signals-react/runtime";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { P2PKHAddress, Transaction } from "bsv-wasm";
 import { head } from "lodash";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 
-const TxPreview = () => {
+const PreviewPage = () => {
+  useSignals();
+  const router = useRouter();
   const txs = useSignal<PendingTransaction[] | null>(pendingTxs.value);
   const pendingTx = useSignal<PendingTransaction | null>(
     head(txs.value) || null
@@ -28,6 +37,76 @@ const TxPreview = () => {
     return feeUsd.toFixed(2);
   });
 
+  const broadcast = async () => {
+    const tx = pendingTx.value;
+    if (!tx) {
+      return;
+    }
+    const rawtx = Buffer.from(tx.rawTx, "hex").toString("base64");
+    const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
+      method: "POST",
+      body: JSON.stringify({
+        rawtx,
+      }),
+    });
+    await promise;
+
+    toast.success("Transaction broadcasted.", toastProps);
+    pendingTxs.value =
+      pendingTxs.value?.filter((t) => t.txid !== tx.txid) || [];
+
+    router.back();
+  };
+
+  const change = computed(() => {
+    if (!pendingTx.value?.numOutputs) {
+      return 0n;
+    }
+    const tx = Transaction.from_hex(pendingTx.value?.rawTx);
+    // find the output going back to the fundingAddress
+    // iterate pendingTx.value?.numOutputs times
+    let totalChange = 0n;
+    for (let i = 0; i < pendingTx.value?.numOutputs; i++) {
+      const out = tx.get_output(i);
+      const pubKeyHash = out
+        ?.get_script_pub_key()
+        .to_asm_string()
+        .split(" ")[2]!;
+
+        if (pubKeyHash.length !== 40) {
+          continue
+        }
+     
+      const address = P2PKHAddress.from_pubkey_hash(
+        Buffer.from(pubKeyHash, "hex")
+      ).to_string();
+      if (address === fundingAddress.value) {
+        totalChange += out?.get_satoshis()!;
+      }
+    }
+    return totalChange;
+  });
+
+  const usdPrice = computed(() => {
+    if (!pendingTx.value?.rawTx || !usdRate.value) {
+      return null;
+    }
+
+    const tx = Transaction.from_hex(pendingTx.value.rawTx);
+    const numOutputs = pendingTx.value.numOutputs;
+    let totalOut = 0n;
+    for (let i = 0; i < numOutputs; i++) {
+      const out = tx.get_output(i)!;
+      totalOut += out.get_satoshis()!;
+    }
+    const cost = Number(totalOut - change.value);
+    return (cost / usdRate.value).toFixed(2);
+  });
+
+  useEffect(() => {
+    console.log({ usdPrice: usdPrice.value, change: change.value });
+  }, [usdPrice.value, change.value]);
+
   const content = computed(() => (
     <>
       <h1 className="text-center text-2xl">
@@ -35,9 +114,9 @@ const TxPreview = () => {
           pendingTx.value?.numOutputs === 1
             ? "Refund"
             : pendingTx.value?.numOutputs === 2 &&
-              pendingTx.value?.numInputs === 2
-            ? "Transfer"
-            : "Inscription"
+                pendingTx.value?.numInputs === 2
+              ? "Transfer"
+              : "Inscription"
         }
 Preview`}
       </h1>
@@ -121,6 +200,12 @@ Preview`}
               </div>
             )}
           </div>
+          <div className="p-2 items-center justify-center gap-2">
+            <div className="btn btn-warning w-full" onClick={broadcast}>
+              Broadcast ${usdPrice}
+            </div>
+            <div className=""></div>
+          </div>
         </div>
       </div>
     </>
@@ -129,4 +214,4 @@ Preview`}
   return content;
 };
 
-export default TxPreview;
+export default PreviewPage;

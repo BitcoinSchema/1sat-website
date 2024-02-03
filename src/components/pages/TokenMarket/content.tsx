@@ -1,65 +1,185 @@
 "use client";
 
 import BuyArtifactModal from "@/components/modal/buyArtifact";
+import CancelListingModal from "@/components/modal/cancelListing";
+import { API_HOST, AssetType } from "@/constants";
+import { bsv20Balances, chainInfo } from "@/signals/wallet";
+import { ordAddress } from "@/signals/wallet/address";
+import { Listing } from "@/types/bsv20";
+import { BSV20TXO } from "@/types/ordinals";
+import * as http from "@/utils/httpClient";
+import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { useInView } from "framer-motion";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { toBitcoin } from "satoshi-bitcoin-ts";
-import TremorChartComponent from "./chart2";
+import TremorChartComponent, { ChartStyle, DataCategory } from "./chart";
 import { MarketData } from "./list";
+import { listings, sales } from "./signals";
 
-const TickerContent = ({ ticker, currentHeight, show }: { ticker: MarketData, currentHeight: number, show: boolean }) => {
+const TickerContent = ({
+  ticker,
+  show,
+  type,
+}: {
+  ticker: MarketData;
+  show: boolean;
+  type: AssetType.BSV20 | AssetType.BSV20V2;
+}) => {
   useSignals();
+  const ref = useRef(null);
+  const isInView = useInView(ref);
+  const newOffset = useSignal(0);
+  const reachedEndOfListings = useSignal(false);
+
+  const currentHeight = computed(() => {
+    return chainInfo.value?.blocks || 0;
+  });
+
+  useEffect(() => {
+    if (ticker && ticker.listings) {
+      listings.value = (ticker.listings || []) as Listing[];
+    }
+    if (ticker && ticker.sales) {
+      sales.value = (ticker.sales || []) as BSV20TXO[];
+    }
+  }, [ticker]);
+
+  useEffect(() => {
+    let nextPageOfListings: Listing[] = [];
+
+    const fire = async (id: string) => {
+      newOffset.value += 20;
+      let urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&tick=${id}`;
+      if (type === AssetType.BSV20V2) {
+        urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&id=${id}`;
+      }
+      const { promise: promiseBsv20v1Market } =
+        http.customFetch<Listing[]>(urlMarket);
+      nextPageOfListings = await promiseBsv20v1Market;
+
+      if (nextPageOfListings.length > 0) {
+        // For some reason this would return some items the same id from the first call so we filter them out
+        listings.value = [
+          ...(listings.value || []),
+          ...nextPageOfListings.filter(
+            (l) => !listings.value?.some((l2) => l2.txid === l.txid)
+          ),
+        ];
+      } else {
+        reachedEndOfListings.value = true;
+      }
+    };
+
+    if (
+      type === AssetType.BSV20 &&
+      isInView &&
+      ticker.tick &&
+      !reachedEndOfListings.value
+    ) {
+      // const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
+      // const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
+      // listings = await promiseBsv20;
+      fire(ticker.tick);
+    } else if (
+      type === AssetType.BSV20V2 &&
+      isInView &&
+      ticker.id &&
+      !reachedEndOfListings.value
+    ) {
+      console.log({ isInView, ticker });
+      fire(ticker.id);
+    }
+  }, [isInView, newOffset, reachedEndOfListings, ticker, type]);
 
   const showBuy = useSignal<string | null>(null);
+  const showCancel = useSignal<string | null>(null);
 
+  const ownsTicker = computed(() => {
+    return bsv20Balances.value?.some((b) => {
+      // TODO: Fix for v2
+      return b.tick === ticker.tick || b.sym === ticker.tick;
+    });
+  });
+
+  // state for closing the listing form to return to chart
+  const showListingForm = useSignal(ownsTicker.value || false);
   return (
-    <tr className={`transition ${show ? "bg-base-200" : "hidden"}`}>
-      <td colSpan={3} className="align-top">
-        <TremorChartComponent
-          marketData={ticker}
-          dataCategory={"listings"}
-          chartStyle="bubble"
-          currentHeight={currentHeight}
-        />
-        <div className="font-semibold mt-4 text-base-content/75 flex justify-between text-lg font-mono">
-          <div>Listings</div>
-          <div>View All</div>
-        </div>
-        <div className="divider my-1" />
-        {ticker.listings?.map((listing) => {
-          return (
-            <div
-              className="flex w-full justify-between"
-              key={`${listing.txid}`}
-            >
-              <Link
-                href={`/outpoint/${listing.txid}_${listing.vout}`}
-                className="flex flex-col py-1"
+    show && (
+      <tr className={`transition bg-base-200`}>
+        <td colSpan={3} className="align-top">
+          <TremorChartComponent
+            ticker={ticker}
+            dataCategory={DataCategory.Listings}
+            chartStyle={ChartStyle.Bubble}
+            currentHeight={currentHeight.value}
+            showListingForm={showListingForm}
+          />
+          <div className="font-semibold mt-4 text-base-content/75 flex justify-between text-lg font-mono">
+            <div>Listings</div>
+            {ownsTicker.value && (
+              <div
+                className="btn btn-sm"
+                onClick={() => {
+                  showListingForm.value = !showListingForm.value;
+                }}
+              >
+                {showListingForm.value === false
+                  ? "Add Listing"
+                  : "Scatter Chart"}
+              </div>
+            )}
+          </div>
+          <div className="divider my-1" />
+          {listings.value?.map((listing) => {
+            const qty = parseInt(listing.amt) / 10 ** ticker.dec;
+            const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
+            const pricePer = (parseFloat(listing.price) / qty).toFixed(2);
+            const myListing = listing.owner === ordAddress.value;
+            return (
+              <div
+                className="flex w-full justify-between"
                 key={`${listing.txid}-${listing.vout}-${listing.height}`}
               >
-                <span className="text-secondary-content/75">{`${(
-                  parseInt(listing.amt) /
-                  10 ** ticker.dec
-                ).toLocaleString()} ${ticker.tick}`}</span>
-                <span className="text-accent text-xs">
-                  {listing.pricePer} sat/token
-                </span>
-              </Link>
-              <div className="py-1">
-                <button
-                  className="ml-2 btn btn-outline hover:btn-primary transition btn-xs"
-                  onClick={() => {
-                    console.log({ listing });
-                    showBuy.value = listing.txid || null;
-                  }}
+                <Link
+                  href={`/outpoint/${listing.txid}_${listing.vout}`}
+                  className="flex flex-col py-1"
                 >
-                  {toBitcoin(listing.price)} BSV
-                </button>
-                {show &&
-                  showBuy.value === listing.txid && (
-                    <BuyArtifactModal
+                  <span className="text-secondary-content/75">{qtyStr}</span>
+                  <span className="text-accent text-xs">
+                    {pricePer} sat/token
+                  </span>
+                </Link>
+                <div className="py-1">
+                  <button
+                    className={`ml-2 btn btn-outline hover:btn-primary transition btn-xs ${myListing ? "btn-primary" : ""}`}
+                    onClick={() => {
+                      console.log({ listing });
+                      if (!myListing) {
+                        showBuy.value = listing.txid || null;
+                      } else {
+                        showCancel.value = listing.txid || null;
+                      }
+                    }}
+                  >
+                    {toBitcoin(listing.price)} BSV
+                  </button>
+                  {showCancel.value === listing.txid && (
+                    <CancelListingModal
+                    className="w-full"
                       listing={listing}
-                      onClose={() => showBuy.value = null}
+                      onClose={() => {
+                        showCancel.value = null;
+                      }}
+                      indexerAddress={""}
+                    />
+                  )}
+                  {show && showBuy.value === listing.txid && (
+                    <BuyArtifactModal
+                      indexerAddress={ticker.fundAddress}
+                      listing={listing}
+                      onClose={() => (showBuy.value = null)}
                       price={parseInt(listing.price)}
                       showLicense={false}
                       content={
@@ -74,60 +194,66 @@ const TickerContent = ({ ticker, currentHeight, show }: { ticker: MarketData, cu
                           <span className="text-base-content/75">
                             Status: {listing.status}
                           </span>
-                          <Link href={`/outpoint/${listing.txid}_${listing.vout}`} className="text-sm flex items-center my-2">Listing Details</Link>
-                          
+                          <Link
+                            href={`/outpoint/${listing.txid}_${listing.vout}`}
+                            className="text-sm flex items-center my-2"
+                          >
+                            Listing Details
+                          </Link>
                         </div>
                       }
                     />
                   )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </td>
-      <td colSpan={2} className="align-top">
-        <TremorChartComponent
-          marketData={ticker}
-          dataCategory={"sales"}
-          chartStyle="line"
-          currentHeight={currentHeight}
-        />
-        <div className="font-semibold mt-4 text-base-content/75 flex justify-between text-lg font-mono">
-          <div>Recent Sales</div>
-          <div>View All</div>
-        </div>
-        <div className="divider my-1" />
-        {/* {ticker.sales?.map((sale) => {
-          return (
-            <div
-              className="flex w-full justify-between"
-              key={`${sale.txid}-${sale.vout}-${sale.height}`}
-            >
-              <Link
-                href={`/outpoint/${sale.txid}`}
-                className="flex flex-col py-1"
+            );
+          })}
+          <div ref={ref} />
+        </td>
+        <td colSpan={2} className="align-top">
+          <TremorChartComponent
+            ticker={ticker}
+            dataCategory={DataCategory.Sales}
+            chartStyle={ChartStyle.Line}
+            currentHeight={currentHeight.value}
+          />
+          <div className="font-semibold mt-4 text-base-content/75 flex justify-between text-lg font-mono">
+            <div>Recent Sales</div>
+            <div>View All</div>
+          </div>
+          <div className="divider my-1" />
+          {sales.value?.map((sale) => {
+            return (
+              <div
+                className="flex w-full justify-between"
+                key={`${sale.txid}-${sale.vout}-${sale.height}`}
               >
-                <span className="text-secondary-content/75">
-                  {(parseInt(sale.amt) / 10 ** ticker.dec).toLocaleString()}{" "}
-                  {ticker.tick}
-                </span>
-                <span className="text-accent text-xs">
-                  {sale.pricePer} / token
-                </span>
-              </Link>
-              <div className="py-1">
-                <button
-                  disabled
-                  className="btn btn-xs btn-outline btn-secondary pointer-events-none"
+                <Link
+                  href={`/outpoint/${sale.txid}`}
+                  className="flex flex-col py-1"
                 >
-                  {toBitcoin(sale.price)} BSV
-                </button>
+                  <span className="text-secondary-content/75">
+                    {(parseInt(sale.amt) / 10 ** ticker.dec).toLocaleString()}{" "}
+                    {ticker.tick}
+                  </span>
+                  <span className="text-accent text-xs">
+                    {sale.pricePer} / token
+                  </span>
+                </Link>
+                <div className="py-1">
+                  <button
+                    disabled
+                    className="btn btn-xs btn-outline btn-secondary pointer-events-none"
+                  >
+                    {toBitcoin(sale.price)} BSV
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })} */}
-      </td>
-    </tr>
+            );
+          })}
+        </td>
+      </tr>
+    )
   );
 };
 

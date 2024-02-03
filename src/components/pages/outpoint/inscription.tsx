@@ -1,3 +1,4 @@
+import JsonTable from "@/components/jsonTable";
 import { API_HOST } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
@@ -19,7 +20,11 @@ const OutpointInscription = async ({ outpoint }: Props) => {
       artifact={artifact}
       content={
         <div>
-          <h1>Inscription</h1>
+          Inscription
+          <JsonTable data={artifact.origin?.data?.insc} />
+
+          Metadata
+          <JsonTable data={artifact.origin?.data?.map} />
         </div>
       }
     />

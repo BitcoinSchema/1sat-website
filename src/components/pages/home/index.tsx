@@ -17,7 +17,7 @@ const HomePage: React.FC<HomePageProps> = async () => {
               <SlideshowLoader />
             </Suspense>
             <Link
-              href="/listings"
+              href="/market"
               className="btn btn-lg btn-primary  font-bold mt-4"
             >
               Start Collecting

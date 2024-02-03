@@ -1,9 +1,7 @@
-import TxPreview from "./tx";
+import PreviewPage from "@/components/pages/preview";
 
 const Preview = () => {
-
-  
-  return <TxPreview />;
+  return <PreviewPage />;
 };
 
 export default Preview;

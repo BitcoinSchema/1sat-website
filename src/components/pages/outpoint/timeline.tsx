@@ -10,24 +10,40 @@ interface Props {
 }
 
 const OutpointTimeline = async ({ outpoint }: Props) => {
+  let listing: OrdUtxo;
+  let history: OrdUtxo[] = [];
+  let spends: OrdUtxo[] = [];
+
   const url = `${API_HOST}/api/inscriptions/${outpoint}`;
   const { promise } = http.customFetch<OrdUtxo>(url);
-  const listing = await promise;
+  listing = await promise;
 
-  const urlHistory = `${API_HOST}/api/inscriptions/${listing.origin?.outpoint}/history`;
-  const { promise: promiseHistory } = http.customFetch<OrdUtxo[]>(urlHistory);
-  const history = await promiseHistory;
+  if (listing.origin?.outpoint) {
+    const urlHistory = `${API_HOST}/api/inscriptions/${listing.origin?.outpoint}/history`;
+    const { promise: promiseHistory } = http.customFetch<OrdUtxo[]>(urlHistory);
+    history = await promiseHistory;
 
-  const spendOutpoints = history.filter((h) => h.spend).map((h) => h.outpoint);
-  const urlSpends = `${API_HOST}/api/txos/outpoints`;
-  const { promise: promiseSpends } = http.customFetch<OrdUtxo[]>(urlSpends, {
-    method: "POST",
-    body: JSON.stringify(spendOutpoints),
-  });
-  const spends = await promiseSpends;
+    const spendOutpoints = history
+      .filter((h) => h.spend)
+      .map((h) => h.outpoint);
+    const urlSpends = `${API_HOST}/api/txos/outpoints`;
+    const { promise: promiseSpends } = http.customFetch<OrdUtxo[]>(urlSpends, {
+      method: "POST",
+      body: JSON.stringify(spendOutpoints),
+    });
+    spends = await promiseSpends;
+  }
+
   return (
-    <OutpointPage artifact={listing} history={history} spends={spends} outpoint={outpoint} content={<Timeline history={history} spends={spends} listing={listing} />} activeTab={OutpointTab.Timeline} />
+    <OutpointPage
+      artifact={listing}
+      history={history}
+      spends={spends}
+      outpoint={outpoint}
+      content={<Timeline history={history} spends={spends} listing={listing} />}
+      activeTab={OutpointTab.Timeline}
+    />
   );
-}
+};
 
 export default OutpointTimeline;

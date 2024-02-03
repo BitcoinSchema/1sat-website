@@ -24,3 +24,31 @@ export type WocUtxo = {
   tx_pos: number;
   value: number;
 };
+
+export interface IndexerStats {
+  "bsv20-deploy": number,
+  "bsv20": number,
+  "market-spends": number,
+  "locks": number,
+  "opns": number,
+  "market": number,
+  "ord": number
+}
+
+export type ChainInfo = {
+  chain: string;
+  blocks: number;
+  headers: number;
+  bestblockhash: string;
+  difficulty: number;
+  mediantime: number;
+  verificationprogress: number;
+  pruned: boolean;
+  chainwork: string;
+};
+
+export const enum OutpointTab {
+  Timeline = "timeline",
+  Inscription = "inscription",
+  Token = "token",
+}

@@ -46,7 +46,7 @@ const ListingsTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
         }`}
         aria-label="BSV20V2"
       >
-        BSV20v2
+        BSV21
       </Link>
     </div>
   );

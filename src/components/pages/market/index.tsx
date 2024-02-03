@@ -29,11 +29,11 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
   const Listings = ({ id }: { id?: string}) => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
-        return <OrdinalListings listings={props.imageListings!} />;
+        return <><OrdinalListings listings={props.imageListings!} /></>;
       case AssetType.BSV20:
-        return <TokenMarket type={AssetType.BSV20} id={id} />;
+        return <TokenMarket type={AssetType.BSV20} id={props.id} />;
       case AssetType.BSV20V2:
-        return <TokenMarket type={AssetType.BSV20V2} id={id} />;
+        return <TokenMarket type={AssetType.BSV20V2} id={props.id} />;
       case AssetType.LRC20:
         return (
           <LRC20Listings
@@ -51,6 +51,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
       {props.title && (
         <div className="text-3xl font-bold mb-4">{props.title}</div>
       )}
+      {/* {selectedAssetType === AssetType.Ordinals && <FeaturedCollections />} */}
       {showTabs && (
         <div className="flex">
           <MarketTabs
@@ -59,7 +60,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         </div>
       )}
       <div className="tab-content block bg-base-100 border-base-300 rounded-box p-2 md:p-6">
-        <Listings />
+        <Listings id={props.id} />
       </div>
     </div>
   );

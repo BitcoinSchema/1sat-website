@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
 const Market = async () => {
-  redirect("/listings/ordinals");
+  redirect("/market/ordinals");
 };
 export default Market;

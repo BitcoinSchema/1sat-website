@@ -1,17 +1,15 @@
 "use client"
 
-import { ordAddress } from "@/signals/wallet/address";
 import Link from "next/link";
-import { FaGithub } from "react-icons/fa6";
-import OrdAddress from "../ordAddress";
+import { FaBook } from "react-icons/fa6";
 
 const Footer = () => {
-  return (<>
-    <Link href="https://github.com/bitcoinschema/1sat-website" className="font-mono text-sm my-6 flex items-center justify-center w-full h-24">
-      <FaGithub className="mr-2 w-4 h-4" /> Fork Me
+  return (<div className=" my-6 w-full h-24">
+    <Link href="https://docs.1satordinals.com" className="font-mono flex items-center justify-center text-sm max-w-fit mx-auto">
+      <FaBook className="mr-2 w-4 h-4" /> Protocol Docs
     </Link>
-    {ordAddress && (<div><OrdAddress /></div>)}
-  </>
+    {/* {ordAddress && (<div><OrdAddress /></div>)} */}
+  </div>
   );
 };
 

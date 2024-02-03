@@ -1,8 +1,7 @@
+import InscribePage from "@/components/pages/inscribe";
+import { Suspense } from "react";
+
 const Inscribe = () => {
-  return (
-    <div>
-      <h1>Inscribe</h1>
-    </div>
-  );
+  return <Suspense><InscribePage /></Suspense>;
 };
 export default Inscribe;

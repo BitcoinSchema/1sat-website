@@ -1,7 +1,7 @@
 import { Bsv20Status } from "@/constants";
-import { BaseTxo } from "./common";
+import { OrdUtxo } from "./ordinals";
 
-export interface BSV20 extends BaseTxo {
+export interface BSV20 extends OrdUtxo {
   max?: string;
   lim?: string;
   dec?: number;
@@ -19,13 +19,12 @@ export interface BSV20 extends BaseTxo {
 }
 
 export interface Ticker extends BSV20 {
-  accounts: number;
   included: boolean;
   fundAddress: string;
   fundBalance: string;
   fundTotal: string;
   fundUsed: string;
-  pendingOps: string;
+  pendingOps: number;
 }
 export interface Listing extends BSV20 {
   price: string;

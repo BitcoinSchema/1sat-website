@@ -1,26 +1,148 @@
 import OutpointInscription from "@/components/pages/outpoint/inscription";
 import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
+import DisplayIO from "@/components/transaction";
+import { OutpointTab } from "@/types/common";
+import { Transaction } from "@bsv/sdk";
+import Link from "next/link";
+import { Suspense } from "react";
 
-export const enum OutpointTab {
-  Timeline = "timeline",
-  Inscription = "inscription",
-  Token = "token",
-}
+type OutpointParams = {
+  outpoint: string;
+  tab: string;
+};
 
-const Outpoint = async ({
-  params,
-}: {
-  params: { outpoint: string; tab: string };
-}) => {
-  switch (params.tab as OutpointTab) {
-    case OutpointTab.Timeline:
-      return <OutpointTimeline outpoint={params.outpoint} />;
-    case OutpointTab.Inscription:
-      return <OutpointInscription outpoint={params.outpoint} />;
-    case OutpointTab.Token:
-      return <OutpointToken outpoint={params.outpoint} />;
+export type IODisplay = {
+  address: string;
+  index: number;
+  txid: string;
+  amount: bigint;
+};
+
+export type InputOutpoint = {
+  script: string;
+  satoshis: bigint;
+  txid: string;
+  vout: number;
+};
+
+const Outpoint = async ({ params }: { params: OutpointParams }) => {
+
+  // get tx details
+  const txid = params.outpoint.split("_")[0];
+  const response = await fetch(
+    `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
+  );
+  const rawTx = await response.text();
+  {
+    /* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
   }
+
+  // parse the raw tx
+  const tx = Transaction.fromHex(rawTx);
+  let inputOutpoints: InputOutpoint[] = [];
+  for (let input of tx.inputs) {
+    console.log("TXID:", input.sourceTXID);
+    // fetch each one
+    const spentOutpointResponse = await fetch(
+      `https://junglebus.gorillapool.io/v1/txo/get/${input.sourceTXID}_${input.sourceOutputIndex}`,
+      {
+        headers: {
+          Accept: "application/octet-stream",
+        },
+      }
+    );
+    const res = await spentOutpointResponse.arrayBuffer();
+    const { script, satoshis } = parseOutput(res);
+    
+    console.log({ script, satoshis, txid: input.sourceTXID!, vout: input.sourceOutputIndex });
+    // const s = Script.fromHex(script).toASM();
+    inputOutpoints.push({ script, satoshis, txid: input.sourceTXID!, vout: input.sourceOutputIndex });
+  }
+
+  const spendResponse = await fetch(
+    `https://junglebus.gorillapool.io/v1/txo/spend/${params.outpoint}`,
+    {
+      headers: {
+        Accept: "application/octet-stream",
+      },
+    }
+  );
+
+  // if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
+  const buffer = await spendResponse.arrayBuffer();
+  if (!buffer.byteLength) {
+    console.log("not spent");
+  }
+  const spendTxid = Buffer.from(buffer).toString("hex");
+  console.log({ spendTxid });
+
+  const content = () => {
+    const outpoint = params.outpoint;
+    const tab = params.tab as OutpointTab;
+    switch (tab as OutpointTab) {
+      case OutpointTab.Timeline:
+        return <OutpointTimeline outpoint={outpoint} />;
+      case OutpointTab.Inscription:
+        return <OutpointInscription outpoint={outpoint} />;
+      case OutpointTab.Token:
+        return <OutpointToken outpoint={outpoint} />;
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="mb-4">
+        <h1 className="text-[#aaa] text-xl">Transaction</h1>
+        <Link
+          className="text-xs font-mono text-[#555]"
+          href={`https://whatsonchain.com/tx/${txid}`}
+          target="_blank"
+        >
+          {params.outpoint.split("_")[0]}
+        </Link>
+      </div>
+      <Suspense fallback={<p>Loading...</p>}>
+        <DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} />
+      </Suspense>
+      {content()}
+    </div>
+  );
 };
 
 export default Outpoint;
+
+
+function parseVarInt(hex: string): [number, string] {
+  let len = 1;
+  let value = parseInt(hex.substring(0, 2), 16);
+
+  if (value < 0xfd) {
+      return [value, hex.substring(2)];
+  } else if (value === 0xfd) {
+      len = 3;
+  } else if (value === 0xfe) {
+      len = 5;
+  } else {
+      len = 9;
+  }
+
+  value = parseInt(hex.substring(2, len * 2), 16);
+  return [value, hex.substring(len * 2)];
+}
+
+function parseOutput(output: ArrayBuffer): { satoshis: bigint, script: string } {
+  // Extract the amount (8 bytes) and convert from little-endian format
+  const view = new DataView(output);
+  const satoshis = view.getBigUint64(0, true); // true for little-endian
+
+  // Convert the rest of the buffer to hex and extract the script
+  const hex = Buffer.from(output.slice(8)).toString('hex');
+  const [scriptLength, remainingHex] = parseVarInt(hex);
+  const script = remainingHex.substring(0, scriptLength * 2);
+
+  return {
+      satoshis: satoshis,
+      script: script
+  };
+}
