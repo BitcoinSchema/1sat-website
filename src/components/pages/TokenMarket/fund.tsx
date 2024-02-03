@@ -32,15 +32,31 @@ const Fund = ({ ticker }: { ticker: any }) => {
       <div className="grid grid-cols-2 gap-x-4 gap-y-1">
         <div>Indexing Fund Address</div>
         <div className="text-right text-xs">{ticker.fundAddress}</div>
-        {!ticker.included && (
+        {!ticker.included && indexingFeeUsd.value.length > 0 && (
           <>
+            <div>
+              Pending Operations{" "}
+              <div
+                className="tooltip"
+                data-tip="Number of actions not yet indexed. Pending actions must be processed before balances can be fully determined. "
+              >
+                <FaQuestionCircle className="inline" />
+              </div>
+            </div>
+            <div className="text-right">
+              {ticker.pendingOps.toLocaleString()}
+            </div>
+            <div>Fee Rate <div className="tooltip" data-tip="Payment required per action">
+              <FaQuestionCircle className="inline" />
+            </div></div>
+            <div className="text-right">1000 sat</div>
             <div>
               Listing Price{" "}
               <div
                 className="tooltip"
                 data-tip={`This fee covers including ${
                   ticker.tick || ticker.sym
-                } on 1satordinals.com. All pending actions must also be funded in addition to the listing fee before balances can be fully determined.`}
+                } on 1satordinals.com. Listing fee will be used to process pending actions.`}
               >
                 <FaQuestionCircle className="inline" />
               </div>
