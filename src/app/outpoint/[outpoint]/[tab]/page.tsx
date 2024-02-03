@@ -3,7 +3,7 @@ import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
 import { OutpointTab } from "@/types/common";
-import { Transaction } from "@bsv/sdk";
+import { Transaction } from "bsv-wasm";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -39,13 +39,16 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
   }
 
   // parse the raw tx
-  const tx = Transaction.fromHex(rawTx);
+  const tx = Transaction.from_hex(rawTx);
   let inputOutpoints: InputOutpoint[] = [];
-  for (let input of tx.inputs) {
-    console.log("TXID:", input.sourceTXID);
+  const numInputs = tx.get_ninputs();
+  for (let i = 0; i < numInputs; i++) {
+    const input = tx.get_input(i);
+    const txid = input?.get_prev_tx_id_hex()!;
+    const vout = input?.get_vout()!;
     // fetch each one
     const spentOutpointResponse = await fetch(
-      `https://junglebus.gorillapool.io/v1/txo/get/${input.sourceTXID}_${input.sourceOutputIndex}`,
+      `https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`,
       {
         headers: {
           Accept: "application/octet-stream",
@@ -55,9 +58,9 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
     const res = await spentOutpointResponse.arrayBuffer();
     const { script, satoshis } = parseOutput(res);
     
-    console.log({ script, satoshis, txid: input.sourceTXID!, vout: input.sourceOutputIndex });
+    console.log({ script, satoshis, txid, vout });
     // const s = Script.fromHex(script).toASM();
-    inputOutpoints.push({ script, satoshis, txid: input.sourceTXID!, vout: input.sourceOutputIndex });
+    inputOutpoints.push({ script, satoshis, txid, vout });
   }
 
   const spendResponse = await fetch(

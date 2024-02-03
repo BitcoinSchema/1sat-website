@@ -153,8 +153,13 @@ const nextConfig = {
               from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
               to: currentDirectory + "/.next/server/chunks/bsv_wasm_bg.wasm",
             },
+            {
+              // This should not be necessary
+              from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
+              to: currentDirectory + "/.next/server/app/outpoint/[outpoint]/[tab]/bsv_wasm_bg.wasm",
+            },
           ],
-        })
+        }),
       );
     } else {
       config.resolve.fallback = {

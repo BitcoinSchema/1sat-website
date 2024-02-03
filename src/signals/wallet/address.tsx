@@ -8,6 +8,7 @@ export const fundingAddress = computed(() => {
   if (!wif || !ready) {
     return null;
   }
+  
   const pubkey = PrivateKey.from_wif(wif).to_public_key();
   return P2PKHAddress.from_pubkey(pubkey).to_string();
 });
