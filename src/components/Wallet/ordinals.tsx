@@ -34,7 +34,6 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
     };
     
     if (
-      !ordUtxos.value &&
       ordAddress.value &&
       isInView &&
       !reachedEndOfListings.value
