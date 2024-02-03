@@ -10,7 +10,7 @@ import {
   payPk,
   pendingTxs,
   usdRate,
-  utxos
+  utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { loadKeysFromBackupFiles } from "@/signals/wallet/client";
@@ -46,10 +46,9 @@ const Wallet: React.FC = () => {
 
   // useEffect needed so that we can use localStorage
   useEffect(() => {
-    if (bsvWasmReady.value) {
-      payPk.value = localPayPk || null;
-      ordPk.value = localOrdPk || null;
-
+    if (bsvWasmReady.value && localPayPk && localOrdPk) {
+      payPk.value = localPayPk
+      ordPk.value = localOrdPk
       const localTxsStr = localStorage.getItem("1satpt");
       const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
       if (localTxs) {

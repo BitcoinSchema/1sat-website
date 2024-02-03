@@ -25,7 +25,7 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
     }
     const f = new FileReader();
     f.onload = (e) => {
-      const backup = JSON.parse(e.target?.result as string);
+      const backup = JSON.parse(e.target?.result as string) as { payPk: string, ordPk: string, pendingTxs: PendingTransaction[] | null };
       console.log({backup})
       setPayPk(backup.payPk);
       setOrdPk(backup.ordPk);
