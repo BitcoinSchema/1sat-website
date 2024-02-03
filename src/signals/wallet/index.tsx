@@ -24,5 +24,4 @@ export const walletTab = signal<AssetType>(AssetType.Ordinals);
 export const usdRate = signal<number>(0);
 export const indexers = signal<IndexerStats | null>(null);
 export const chainInfo = signal<ChainInfo | null>(null);
-export const backupFile = signal<File | null>(null);
 export const inscribeOptions = signal<InscribeOptions | null>(null);

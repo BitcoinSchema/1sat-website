@@ -2,7 +2,6 @@
 
 import { API_HOST } from "@/constants";
 import {
-  backupFile,
   bsv20Balances,
   bsvWasmReady,
   chainInfo,
@@ -11,7 +10,7 @@ import {
   payPk,
   pendingTxs,
   usdRate,
-  utxos,
+  utxos
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { loadKeysFromBackupFiles } from "@/signals/wallet/client";
@@ -88,11 +87,15 @@ const Wallet: React.FC = () => {
           chainInfo: ChainInfo;
           indexers: IndexerStats;
         }>(statusUrl);
-        const { chainInfo: info, exchangeRate, indexers: indx } = await promiseStatus;
+        const {
+          chainInfo: info,
+          exchangeRate,
+          indexers: indx,
+        } = await promiseStatus;
         console.log({ info, exchangeRate, indexers });
         chainInfo.value = info;
         usdRate.value = toSatoshi(1) / exchangeRate;
-        indexers.value = indx
+        indexers.value = indx;
       } catch (e) {
         console.log(e);
       }
@@ -108,7 +111,7 @@ const Wallet: React.FC = () => {
       utxos.value = [];
       utxos.value = await getUtxos(a);
     };
-    
+
     if (bsvWasmReady.value && fundingAddress && !utxos.value) {
       const address = fundingAddress.value;
       if (address) {
@@ -129,19 +132,16 @@ const Wallet: React.FC = () => {
   });
 
   const importKeys = () => {
-    if (!backupFile.value) {
-      const el = document.getElementById("backupFile");
-      el?.click();
-      return;
-    }
-    console.log({ backupFile });
+    const el = document.getElementById("backupFile");
+    el?.click();
+    return;
   };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       console.log("handleFileChange called", e.target.files[0]);
-      backupFile.value = e.target.files[0];
-      await loadKeysFromBackupFiles();
+
+      await loadKeysFromBackupFiles(e.target.files[0]);
       router?.push("/wallet");
     }
   };
@@ -255,4 +255,3 @@ const Wallet: React.FC = () => {
 };
 
 export default Wallet;
-

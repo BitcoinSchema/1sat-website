@@ -1,7 +1,7 @@
 "use client"
 
 import { PendingTransaction } from "@/types/preview";
-import { backupFile, ordPk, payPk, pendingTxs } from ".";
+import { ordPk, payPk, pendingTxs } from ".";
 
 export const setPendingTxs = (txs: PendingTransaction[]) => {
   pendingTxs.value = [...txs]
@@ -18,12 +18,11 @@ export const setOrdPk = (pk: string) => {
   localStorage.setItem("1satok", JSON.stringify(pk));
 };
 
-export const loadKeysFromBackupFiles = (): Promise<void> => {
+export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
   return new Promise((resolve, reject) => {
-    if (!backupFile?.value) {
+    if (!backupFile) {
       return reject()
     }
-    // load data from backupFile.value which is a File
     const f = new FileReader();
     f.onload = (e) => {
       const backup = JSON.parse(e.target?.result as string);
@@ -36,6 +35,6 @@ export const loadKeysFromBackupFiles = (): Promise<void> => {
       console.error(e);
       return reject(e);
     }
-    f.readAsText(backupFile.value);
+    f.readAsText(backupFile);
   })
 }
