@@ -23,7 +23,7 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
     const fire = async () => {
       nextOffset.value = nextOffset.value + resultsPerPage;
       const { promise } = http.customFetch<OrdUtxo[]>(
-        `${API_HOST}/api/txos/address/${addressProp || ordAddress.value}/unspent?limit=${resultsPerPage}&offset=${offset}&dir=DESC&status=all&bsv20=false`
+        `${API_HOST}/api/txos/address/${addressProp || ordAddress.value}/unspent?limit=${resultsPerPage}&offset=${nextOffset.value}&dir=DESC&status=all&bsv20=false`
       );
       const u = await promise;
       if (u.length > 0) {
