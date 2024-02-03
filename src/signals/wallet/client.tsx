@@ -27,8 +27,8 @@ export const loadKeysFromBackupFiles = (): Promise<void> => {
     const f = new FileReader();
     f.onload = (e) => {
       const backup = JSON.parse(e.target?.result as string);
-      payPk.value = backup.payPk;
-      ordPk.value = backup.ordPk;
+      setPayPk(backup.payPk);
+      setOrdPk(backup.ordPk);
       return resolve();
     };
     f.onerror = (e) => {
