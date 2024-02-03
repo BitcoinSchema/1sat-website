@@ -197,7 +197,7 @@ const Bsv20List = ({
         <div className="text-[#777] font-semibold">Ticker</div>
         <div className="text-[#777] font-semibold">Balance</div>
         {confirmedBalances &&
-          confirmedBalances.value?.map(({ tick, all, sym, id }, idx) => (
+          confirmedBalances.value?.map(({ tick, all, sym, id, dec }, idx) => (
             <React.Fragment key={`bal-${tick}-${idx}`}>
               <div
                 className="cursor-pointer hover:text-blue-400 transition"
@@ -213,7 +213,7 @@ const Bsv20List = ({
                 className="text-emerald-400"
                 onClick={() => (showSendModal.value = true)}
               >
-                {all.confirmed}
+                {all.confirmed / 10 ** dec}
               </div>
               {showSendModal.value && (
                 <TransferBsv20Modal
@@ -236,7 +236,7 @@ const Bsv20List = ({
         <div className="text-[#777] font-semibold">Ticker</div>
         <div className="text-[#777] font-semibold">Balance</div>
         {pendingBalances &&
-          pendingBalances.value?.map(({ tick, all, sym, id }, idx) => (
+          pendingBalances.value?.map(({ tick, all, sym, id, dec }, idx) => (
             <React.Fragment key={`bal-${tick}-${idx}`}>
               <div
                 className="cursor-pointer hover:text-blue-400 transition"
@@ -248,7 +248,7 @@ const Bsv20List = ({
               >
                 {tick || sym}
               </div>
-              <div className="text-emerald-400">{all.pending}</div>
+              <div className="text-emerald-400">{all.pending / 10 ** dec}</div>
             </React.Fragment>
           ))}
       </div>
@@ -261,7 +261,7 @@ const Bsv20List = ({
         <div className="text-[#777] font-semibold">Ticker</div>
         <div className="text-[#777] font-semibold">Balance</div>
         {listingBalances &&
-          listingBalances.value?.map(({ tick, all, sym, id, listed }, idx) => (
+          listingBalances.value?.map(({ tick, all, sym, id, listed, dec }, idx) => (
             <React.Fragment key={`bal-${tick}-${idx}`}>
               <div
                 className="cursor-pointer hover:text-blue-400 transition"
@@ -273,7 +273,7 @@ const Bsv20List = ({
               >
                 {tick || sym}
               </div>
-              <div className="text-emerald-400">{listed.confirmed}</div>
+              <div className="text-emerald-400">{listed.confirmed /  10 ** dec}</div>
             </React.Fragment>
           ))}
       </div>
@@ -296,7 +296,7 @@ const Bsv20List = ({
             >
               {tick}
             </Link>
-            <div className="text-emerald-400">{amount / 10}</div>
+            <div className="text-emerald-400 tooltip" data-tip="[ ! ] This balance does not consider decimals">{amount}</div>
           </React.Fragment>
         ))}
       </div>

@@ -168,6 +168,7 @@ debugger
         tx.add_output(changeInscOut);
       }
 
+      let totalSatsIn = 0;
       // payment Inputs
       for (const utxo of paymentUtxos.sort((a, b) => {
         return a.satoshis > b.satoshis ? -1 : 1;
@@ -182,8 +183,8 @@ debugger
 
         utxoIn = signPayment(tx, paymentPk, i, utxo, utxoIn);
         tx.set_input(i, utxoIn);
-        i++;
-        // TODO: support more than 1 input
+        totalSatsIn += utxo.satoshis;
+        i++;        
         break;
       }
 
@@ -243,11 +244,10 @@ debugger
         tx.add_output(indexerFeeOutput);
       }
 
-      // TODO: pass in payment inputs total
       const changeOut = createChangeOutput(
         tx,
         changeAddress,
-        paymentUtxos[0].satoshis
+        totalSatsIn,
       );
       tx.add_output(changeOut);
 
