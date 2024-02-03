@@ -128,7 +128,7 @@ const Bsv20List = ({
     if (address && isInView && !reachedEndOfListings.value) {
       fire();
     }
-  }, [holdings, isInView, newOffset, reachedEndOfListings, type]);
+  }, [addressProp, holdings, isInView, newOffset, reachedEndOfListings, type]);
 
   const balances = computed(() => {
     return (addressProp ? addressBalances.value : bsv20Balances.value)?.filter(
