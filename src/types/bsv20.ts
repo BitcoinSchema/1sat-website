@@ -14,6 +14,7 @@ export interface BSV20 extends OrdUtxo {
   p: string;
   op: string;
   tick?: string;
+  sym?: string;
   amt: string;
   status?: Bsv20Status;
 }

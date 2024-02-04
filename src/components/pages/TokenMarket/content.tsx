@@ -187,7 +187,7 @@ const TickerContent = ({
                           <span className="text-xl text-secondary-content/75">{`${(
                             parseInt(listing.amt) /
                             10 ** ticker.dec
-                          ).toLocaleString()} ${ticker.tick}`}</span>
+                          ).toLocaleString()} ${ticker.tick || ticker.sym}`}</span>
                           <span className="texl-base text-accent text-xs my-1">
                             {listing.pricePer} sat/token
                           </span>

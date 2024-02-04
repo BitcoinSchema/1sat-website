@@ -103,14 +103,14 @@ const TickerHeading = ({
     const mintedOut = parseInt(ticker.supply!) === parseInt(ticker.max!);
     return (
       <>
-        <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
+        {type === AssetType.BSV20 && <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
           <button
             disabled={!ticker.included || (mintedOut && type === AssetType.BSV20)}
             className="btn btn-sm btn-accent mr-4"
           >
             Mint {ticker.tick}
           </button>
-        </Link>
+        </Link>}
         <div data-tip="Circulating Supply" className="tooltip">
           {text}
         </div>
