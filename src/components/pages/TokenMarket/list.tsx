@@ -134,6 +134,7 @@ const List = async ({
   return (
     <tbody className="overflow-auto">
       {marketData.map((ticker, idx) => {
+        
         // calculate pct change based on sales
 
         //           <div tabindex="0" class="collapse bg-base-200">
