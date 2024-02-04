@@ -1,7 +1,7 @@
 import { Bsv20Status } from "@/constants";
 
-const extraSatBuffer = 10000; // 10ksat
-export const minFee = 10000000 + extraSatBuffer; // .1 BSV
+// const extraSatBuffer = 10000; // 10ksat
+export const minFee = 10000000; // + extraSatBuffer; // .1 BSV
 export const baseFee = 50;
 
 export const textStatus = (status: Bsv20Status) => {

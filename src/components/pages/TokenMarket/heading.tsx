@@ -96,23 +96,26 @@ const TickerHeading = ({
 
   const supplyContent = computed(() => {
     const totalSupply = ticker.supply || ticker.amt;
-    let text = `Circulating Supply ${totalSupply}`;
+    let text = `${parseInt(totalSupply!)?.toLocaleString()} `;
     if (type === AssetType.BSV20) {
-      text += `/ ${ticker.max}`;
+      text += `/ ${parseInt(ticker.max!)?.toLocaleString()}`;
     }
     const mintedOut = parseInt(ticker.supply!) === parseInt(ticker.max!);
-    if (ticker.included && !mintedOut && type === AssetType.BSV20) {
-      return (
-        <>
-          <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
-            <button className="btn btn-sm btn-accent mr-4">Mint {ticker.tick}</button>
-          </Link>
+    return (
+      <>
+        <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
+          <button
+            disabled={!ticker.included || (mintedOut && type === AssetType.BSV20)}
+            className="btn btn-sm btn-accent mr-4"
+          >
+            Mint {ticker.tick}
+          </button>
+        </Link>
+        <div data-tip="Circulating Supply" className="tooltip">
           {text}
-        </>
-      );
-    } else {
-      return <div>{text}</div>;
-    }
+        </div>
+      </>
+    );
   });
 
   return (
@@ -161,7 +164,7 @@ const TickerHeading = ({
           <br />
         </td>
         <td className="break-normal text-right w-96 hover:text-info transition">
-          <Link href={`/holders/${type}/${ticker.tick}`}>
+          <Link href={`/holders/${type}/${ticker.tick || ticker.id}`}>
             {(ticker.accounts || 0).toLocaleString()}
           </Link>
         </td>
@@ -188,37 +191,36 @@ const TickerHeading = ({
           </td>
         </tr>
       )}
-      {ticker.pendingOps > 0 ||
-        (!paidUp.value && (
-          <tr className="group text-warning bg-warning-content">
-            <td className="" colSpan={4}>
-              <div
-                className="tooltip tooltip-right"
-                data-tip={`${ticker.pendingOps} pending operations`}
-              >
-                Needs {bsvNeeded} BSV
-              </div>
-            </td>
-            <td className="transition cursor-pointer text-right">
-              <button
-                className="btn btn-warning btn-sm"
-                onClick={openPaymentModal}
-              >
-                Fund {ticker.tick || ticker.sym}
-              </button>
-              {showPaymentModal.value && (
-                <WithdrawalModal
-                  address={ticker.fundAddress}
-                  amount={bsvNeeded.value}
-                  onClose={() => {
-                    console.log("close modal");
-                    showPaymentModal.value = false;
-                  }}
-                />
-              )}
-            </td>
-          </tr>
-        ))}
+      {(ticker.pendingOps > 0 || !paidUp.value) && (
+        <tr className="group text-warning bg-warning-content">
+          <td className="" colSpan={4}>
+            <div
+              className="tooltip tooltip-right"
+              data-tip={`${ticker.pendingOps} pending operations`}
+            >
+              Needs {bsvNeeded} BSV
+            </div>
+          </td>
+          <td className="transition cursor-pointer text-right">
+            <button
+              className="btn btn-warning btn-sm"
+              onClick={openPaymentModal}
+            >
+              Fund {ticker.tick || ticker.sym}
+            </button>
+            {showPaymentModal.value && (
+              <WithdrawalModal
+                address={ticker.fundAddress}
+                amount={bsvNeeded.value}
+                onClose={() => {
+                  console.log("close modal");
+                  showPaymentModal.value = false;
+                }}
+              />
+            )}
+          </td>
+        </tr>
+      )}
     </>
   );
 };

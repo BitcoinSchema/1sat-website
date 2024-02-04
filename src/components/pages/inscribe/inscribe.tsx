@@ -5,6 +5,7 @@ import { PendingTransaction } from "@/types/preview";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo } from "react";
 import InscribeBsv20 from "./bsv20";
+import InscribeBsv21 from "./bsv21";
 import InscribeCollection from "./collection";
 import InscribeHtml from "./html";
 import InscribeImage from "./image";
@@ -50,6 +51,9 @@ const Inscribe: React.FC<InscribeProps> = ({ className, tab }) => {
         )}
         {selectedTab === InscriptionTab.BSV20 && (
           <InscribeBsv20 inscribedCallback={inscribedCallback} />
+        )}
+        {selectedTab === InscriptionTab.BSV21 && (
+          <InscribeBsv21 inscribedCallback={inscribedCallback} />
         )}
         {selectedTab === InscriptionTab.Collection && (
           <InscribeCollection inscribedCallback={inscribedCallback} />

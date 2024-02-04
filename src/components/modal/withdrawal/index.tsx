@@ -1,5 +1,6 @@
 "use client";
 
+import { toastErrorProps } from "@/constants";
 import { payPk, pendingTxs, utxos } from "@/signals/wallet";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -156,7 +157,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ amount: amt, address: add
       return;
     }
     if (toSatoshi(amount.value) > balance.value) {
-      console.error("Not enough Bitcoin");
+      toast.error("Not enough Bitcoin!", toastErrorProps);
       return;
     }
     console.log(amount.value, address.value);

@@ -31,6 +31,8 @@ enum ActionType {
   Deploy = "deploy",
 }
 
+const top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"]
+
 interface InscribeBsv20Props {
   inscribedCallback: (pendingTx: PendingTransaction) => void;
 }

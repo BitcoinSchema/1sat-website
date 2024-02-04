@@ -11,6 +11,7 @@ interface Props {
 export enum InscriptionTab {
   Image = "image",
   BSV20 = "bsv20",
+  BSV21 = "bsv21",
   SNS = "sns",
   Text = "text",
   HTML = "html",
@@ -72,6 +73,17 @@ const InscriptionTabs: React.FC<Props> = ({
           }
         >
           BSV-20
+        </div>
+      </Link>
+      <Link href={`/inscribe?tab=bsv21`} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV21 ? 'tab-active' : ''}`}>
+        <div
+          onClick={(e: any) =>
+            currentTab === InscriptionTab.BSV21 && onClickSelected
+              ? onClickSelected(e)
+              : () => {}
+          }
+        >
+          BSV-21
         </div>
       </Link>
       {/* <div
