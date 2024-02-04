@@ -208,6 +208,11 @@ const TickerContent = ({
               </div>
             );
           })}
+          {listings.value?.length === 0 && (
+            <div className="text-center text-base-content/75">
+              No listings found
+            </div>
+          )}
           <div ref={ref} />
         </td>
         <td colSpan={2} className="align-top">
@@ -251,6 +256,11 @@ const TickerContent = ({
               </div>
             );
           })}
+          {sales.value?.length === 0 && (
+            <div className="text-center text-base-content/75">
+              No sales found
+            </div>
+          )}
         </td>
       </tr>
     )
