@@ -1,5 +1,6 @@
 "use client";
 
+import { P2PKHInputSize, feeRate, indexerBuyFee, marketAddress, marketRate, minimumMarketFee } from "@/constants";
 import { payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { setPendingTxs } from "@/signals/wallet/client";
@@ -88,7 +89,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     );
     purchaseTx.add_output(dummyMarketFeeOutput);
 
-    // OMFG this has to be "InputOutput" and then second time is InputOutputs
+    // this has to be "InputOutput" and then second time is InputOutputs
     let preimage = purchaseTx.sighash_preimage(
       SigHash.InputOutput,
       0,
@@ -402,15 +403,10 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
 export default BuyArtifactModal;
 
-const calculateFee = (numPaymentUtxos: number, purchaseTx: Transaction) => {
+export const calculateFee = (numPaymentUtxos: number, purchaseTx: Transaction) => {
   const byteSize = Math.ceil(
     P2PKHInputSize * numPaymentUtxos + purchaseTx.to_bytes().byteLength
   );
-  return Math.ceil(byteSize * 0.05);
+  return Math.ceil(byteSize * feeRate);
 };
 
-const marketAddress = `15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z`;
-const minimumMarketFee = 10000;
-const marketRate = 0.04;
-const P2PKHInputSize = 148;
-const indexerBuyFee = 1000; // 1000 sats for a purchase

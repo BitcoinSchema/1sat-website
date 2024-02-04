@@ -172,7 +172,7 @@ const TickerContent = ({
                       onClose={() => {
                         showCancel.value = null;
                       }}
-                      indexerAddress={""}
+                      indexerAddress={ticker.fundAddress}
                     />
                   )}
                   {show && showBuy.value === listing.txid && (
