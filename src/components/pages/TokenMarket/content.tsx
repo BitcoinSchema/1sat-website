@@ -50,11 +50,14 @@ const TickerContent = ({
     let nextPageOfListings: Listing[] = [];
 
     const fire = async (id: string) => {
-      newOffset.value += 20;
+      if (newOffset.value === 0) {
+        listings.value = [];
+      }
       let urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&tick=${id}`;
       if (type === AssetType.BSV20V2) {
         urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&id=${id}`;
       }
+      newOffset.value += 20;
       const { promise: promiseBsv20v1Market } =
         http.customFetch<Listing[]>(urlMarket);
       nextPageOfListings = await promiseBsv20v1Market;
