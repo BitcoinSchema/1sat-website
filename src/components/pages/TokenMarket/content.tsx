@@ -77,7 +77,7 @@ const TickerContent = ({
 
     if (
       type === AssetType.BSV20 &&
-      isInView &&
+      (isInView || newOffset.value === 0) &&
       ticker.tick &&
       !reachedEndOfListings.value
     ) {
