@@ -93,15 +93,17 @@ const List = async ({
     }
     const { promise: promiseBsv20v1Market } =
       http.customFetch<MarketData[]>(urlV1Market);
-    marketData = (await promiseBsv20v1Market).sort((a, b) => {
-      if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
-        return 1;
-      }
-      if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
-        return -1;
-      }
-      return a.marketCap > b.marketCap ? -1 : 1;
-    });
+    marketData = (await promiseBsv20v1Market)
+    // .sort((a, b) => {
+      
+    //   // if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
+    //   //   return 1;
+    //   // }
+    //   // if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
+    //   //   return -1;
+    //   // }
+    //   // return a.marketCap > b.marketCap ? -1 : 1;
+    // });
   } else {
     // aggregated market data from the API
     let urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21`;
