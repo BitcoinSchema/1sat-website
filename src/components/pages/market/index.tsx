@@ -32,8 +32,8 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         return <><OrdinalListings listings={props.imageListings!} /></>;
       case AssetType.BSV20:
         return <TokenMarket type={AssetType.BSV20} id={props.id} />;
-      case AssetType.BSV20V2:
-        return <TokenMarket type={AssetType.BSV20V2} id={props.id} />;
+      case AssetType.BSV21:
+        return <TokenMarket type={AssetType.BSV21} id={props.id} />;
       case AssetType.LRC20:
         return (
           <LRC20Listings

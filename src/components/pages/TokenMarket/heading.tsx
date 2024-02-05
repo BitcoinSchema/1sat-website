@@ -89,8 +89,9 @@ const TickerHeading = ({
   const bsvNeeded = computed(() => {
     const satoshis = Math.max(
       minFee - Number(ticker.fundTotal),
-      ticker.pendingOps * 1000
+      (ticker.pendingOps || 0) * 1000
     );
+    console.log({ satoshis, minFee, fundTotal: ticker.fundTotal, pendingOps: ticker.pendingOps });
     return toBitcoin(satoshis);
   });
 
@@ -137,7 +138,7 @@ const TickerHeading = ({
       >
         <th className="truncase text-ellipsis">
           <div className="flex items-center">
-            {type === AssetType.BSV20V2 && (
+            {type === AssetType.BSV21 && (
               <IconWithFallback
                 icon={ticker.icon || null}
                 alt={ticker.sym || ""}

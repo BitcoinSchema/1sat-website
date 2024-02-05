@@ -31,8 +31,8 @@ const ListingsPage: React.FC<ListingsPageProps> = (props) => {
         return <OrdinalListings listings={props.imageListings!} />;
       case AssetType.BSV20:
         return <TokenListings type={AssetType.BSV20} />;
-      case AssetType.BSV20V2:
-        return <TokenListings type={AssetType.BSV20V2} />;
+      case AssetType.BSV21:
+        return <TokenListings type={AssetType.BSV21} />;
       case AssetType.LRC20:
         return (
           <LRC20Listings

@@ -62,7 +62,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
   const [selectedBsv20, setSelectedBsv20] = useState<Ticker>();
   const [limit, setLimit] = useState<string | undefined>("1337");
   const [maxSupply, setMaxSupply] = useState<string>("21000000");
-  const [decimals, setDecimals] = useState<number>(18);
+  const [decimals, setDecimals] = useState<number | undefined>();
   const [amount, setAmount] = useState<string>();
   const [mintError, setMintError] = useState<string>();
   const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
@@ -223,7 +223,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
   const changeDecimals = useCallback(
     (e: any) => {
-      setDecimals(parseInt(e.target.value));
+      setDecimals(e.target.valuye ? parseInt(e.target.value) : undefined);
     },
     [setDecimals]
   );
@@ -273,7 +273,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
             inscription.max = maxSupply;
 
             // optional fields
-            if (decimals !== 18) {
+            if (decimals !== undefined) {
               inscription.dec = decimals;
             }
             if (limit) inscription.lim = limit;
@@ -617,6 +617,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                 min={0}
                 max={18}
                 value={decimals}
+                placeholder={defaultDec.toString()}
                 onChange={changeDecimals}
               />
             </label>
@@ -655,3 +656,5 @@ const bulkEnabled = false;
 
 export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
+
+const defaultDec = 8

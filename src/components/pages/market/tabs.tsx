@@ -29,12 +29,12 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
       </Link>
 
       <Link
-        href={`/market/${AssetType.BSV20V2}`}
+        href={`/market/${AssetType.BSV21}`}
         role="tab"
         className={`tab ${
-          selectedTab === AssetType.BSV20V2 ? "tab-active" : ""
+          selectedTab === AssetType.BSV21 ? "tab-active" : ""
         }`}
-        aria-label="BSV20V2"
+        aria-label="BSV21"
       >
         BSV21
       </Link>

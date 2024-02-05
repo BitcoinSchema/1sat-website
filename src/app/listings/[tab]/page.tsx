@@ -21,7 +21,7 @@ const Listings = async ({ params }: { params: { tab: AssetType } }) => {
           selectedAssetType={AssetType.BSV20}
         />
       );
-    case AssetType.BSV20V2:
+    case AssetType.BSV21:
       const urlV2Tokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
       const { promise: promiseBsv20v2 } =
         http.customFetch<BSV20TXO[]>(urlV2Tokens);
@@ -29,7 +29,7 @@ const Listings = async ({ params }: { params: { tab: AssetType } }) => {
       return (
         <ListingsPage
           tokenListingsv2={tokenListingsv2}
-          selectedAssetType={AssetType.BSV20V2}
+          selectedAssetType={AssetType.BSV21}
         />
       );
     case AssetType.LRC20:

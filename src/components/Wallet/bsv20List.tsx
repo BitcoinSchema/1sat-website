@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import TransferBsv20Modal from "../modal/transferBsv20";
-import Tabs from "./tabs";
+import WalletTabs from "./tabs";
 
 const enum BalanceTab {
   Confirmed,
@@ -27,7 +27,7 @@ const Bsv20List = ({
   type,
   address: addressProp,
 }: {
-  type: AssetType.BSV20 | AssetType.BSV20V2;
+  type: AssetType.BSV20 | AssetType.BSV21;
   address?: string;
 }) => {
   useSignals();
@@ -378,7 +378,7 @@ const Bsv20List = ({
   return (
     <div className="overflow-x-auto">
       <div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
-        <Tabs type={type} address={addressProp} />
+        <WalletTabs type={type} address={addressProp} />
         <div className="tab-content bg-base-100 border-base-300 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
           <div className="mb-4">{contentTabs.value}</div>
           <div className="md:mx-6">

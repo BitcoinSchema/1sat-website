@@ -8,7 +8,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import { useEffect, useRef } from "react";
 import OrdinalListings from "../OrdinalListings";
-import Tabs from "./tabs";
+import WalletTabs from "./tabs";
 
 const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
   // get unspent ordAddress
@@ -44,7 +44,7 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
-      <Tabs type={AssetType.Ordinals} address={addressProp} />
+      <WalletTabs type={AssetType.Ordinals} address={addressProp} />
       <div className="tab-content block bg-base-100 border-base-300 rounded-box p-2 md:p-6 w-[95vw] md:w-[64rem]">
         {ordUtxos.value && <OrdinalListings listings={ordUtxos.value} />}
       </div>

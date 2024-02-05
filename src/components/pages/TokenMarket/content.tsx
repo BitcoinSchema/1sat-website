@@ -25,7 +25,7 @@ const TickerContent = ({
 }: {
   ticker: MarketData;
   show: boolean;
-  type: AssetType.BSV20 | AssetType.BSV20V2;
+  type: AssetType.BSV20 | AssetType.BSV21;
 }) => {
   useSignals();
   const ref = useRef(null);
@@ -54,7 +54,7 @@ const TickerContent = ({
         listings.value = [];
       }
       let urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&tick=${id}`;
-      if (type === AssetType.BSV20V2) {
+      if (type === AssetType.BSV21) {
         urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&id=${id}`;
       }
       newOffset.value += 20;
@@ -86,7 +86,7 @@ const TickerContent = ({
       // listings = await promiseBsv20;
       fire(ticker.tick);
     } else if (
-      type === AssetType.BSV20V2 &&
+      type === AssetType.BSV21 &&
       (isInView || newOffset.value === 0) && // fire the first time
       ticker.id &&
       !reachedEndOfListings.value

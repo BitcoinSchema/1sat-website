@@ -53,7 +53,7 @@ export enum FetchStatus {
 export enum AssetType {
   Ordinals="ordinals",
   BSV20="bsv20",
-  BSV20V2="bsv20v2",
+  BSV21="bsv21",
   LRC20="lrc20",
 }
 

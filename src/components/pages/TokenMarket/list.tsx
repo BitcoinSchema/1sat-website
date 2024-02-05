@@ -76,7 +76,7 @@ const List = async ({
   type,
   id,
 }: {
-  type: AssetType.BSV20 | AssetType.BSV20V2;
+  type: AssetType.BSV20 | AssetType.BSV21;
   id?: string;
 }) => {
   // get the current block height
@@ -152,7 +152,7 @@ const List = async ({
           type === AssetType.BSV20 &&
           ticker.tick?.toLowerCase() === id?.toLowerCase();
         const showBsv20v2Content =
-          type === AssetType.BSV20V2 &&
+          type === AssetType.BSV21 &&
           ticker.id.toLowerCase() === id?.toLowerCase();
         return (
           <React.Fragment key={`${ticker.tick}-${idx}`}>

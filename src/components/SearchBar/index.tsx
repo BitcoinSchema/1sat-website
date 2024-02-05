@@ -13,7 +13,7 @@ type Autofill = {
   tick: string;
   id: string;
   icon?: string;
-  type: AssetType.BSV20 | AssetType.BSV20V2;
+  type: AssetType.BSV20 | AssetType.BSV21;
 };
 
 // signal has to be in a React.FC

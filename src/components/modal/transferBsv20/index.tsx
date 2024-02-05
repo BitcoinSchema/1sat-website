@@ -201,7 +201,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
                 className="text-xs cursor-pointer text-[#aaa]"
                 onClick={setAmountToBalance}
               >
-                Balance: {balance} {type === AssetType.BSV20V2 ? id : sym}
+                Balance: {balance} {type === AssetType.BSV21 ? id : sym}
               </div>
             </div>
 

@@ -22,10 +22,10 @@ const Market = async ({ params }: { params: { tab: AssetType, id: string } }) =>
           id={params.id}
         />
       );
-    case AssetType.BSV20V2:
+    case AssetType.BSV21:
       return (
         <MarketPage
-          selectedAssetType={AssetType.BSV20V2}
+          selectedAssetType={AssetType.BSV21}
           id={params.id}
         />
       );

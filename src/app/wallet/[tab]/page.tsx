@@ -5,7 +5,7 @@ import { AssetType } from "@/constants";
 const WalletPage = async ({ params }: { params: { tab: AssetType } }) => {
   return (
     <div className="mx-auto">
-      {params.tab === AssetType.BSV20 || params.tab === AssetType.BSV20V2 ? <WalletBsv20 type={params.tab} /> : <WalletOrdinals />}
+      {params.tab === AssetType.BSV20 || params.tab === AssetType.BSV21 ? <WalletBsv20 type={params.tab} /> : <WalletOrdinals />}
     </div>
   );
 

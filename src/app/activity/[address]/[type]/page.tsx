@@ -6,7 +6,7 @@ const AddressPage = ({ params }: { params: { address: string, type: AssetType } 
   return (
     <div className="mx-auto">
       <h1 className="text-3xl font-bold mb-4">Address: {params.address}</h1>
-      {params.type === AssetType.BSV20 || params.type === AssetType.BSV20V2 ? <WalletBsv20 address={params.address} type={params.type} /> : <WalletOrdinals address={params.address} />}
+      {params.type === AssetType.BSV20 || params.type === AssetType.BSV21 ? <WalletBsv20 address={params.address} type={params.type} /> : <WalletOrdinals address={params.address} />}
     </div>
   );
 };

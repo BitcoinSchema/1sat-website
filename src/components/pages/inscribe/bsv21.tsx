@@ -3,7 +3,7 @@
 import { FetchStatus } from "@/constants";
 import { chainInfo, indexers, payPk, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { BSV20, Ticker } from "@/types/bsv20";
+import { BSV20 } from "@/types/bsv20";
 import { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
@@ -41,10 +41,9 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
-  const [selectedBsv20, setSelectedBsv20] = useState<Ticker>();
   const [limit, setLimit] = useState<string | undefined>("1337");
   const [maxSupply, setMaxSupply] = useState<string>("21000000");
-  const [decimals, setDecimals] = useState<number>(18);
+  const [decimals, setDecimals] = useState<number | undefined>();
   const [amount, setAmount] = useState<string>();
   const [mintError, setMintError] = useState<string>();
   const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
@@ -97,11 +96,7 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
     );
   });
 
-  const tickerNote = useMemo(() => {
-    return inSync.value
-      ? "1-4 Characters"
-      : "Syncing. May already be deployed.";
-  }, [inSync.value]);
+  
 
   const totalTokens = useMemo(() => {
     return iterations * parseInt(amount || "0");
@@ -116,7 +111,7 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
   const changeDecimals = useCallback(
     (e: any) => {
-      setDecimals(parseInt(e.target.value));
+      setDecimals(e.target.value ? parseInt(e.target.value) : undefined);
     },
     [setDecimals]
   );
@@ -154,49 +149,22 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
           return;
         }
 
-        inscription.tick = ticker;
-        inscription.max = maxSupply;
+        inscription.sym = ticker;
+        inscription.amt = maxSupply;
 
         // optional fields
-        if (decimals !== 18) {
+        if (decimals !== undefined) {
           inscription.dec = decimals;
         }
-        if (limit) inscription.lim = limit;
-        else if (
-          !confirm(
-            "Warning: Token will have no mint limit. This means all tokens can be minted at once. Are you sure this is what you want?"
-          )
-        ) {
-          setInscribeStatus(FetchStatus.Idle);
-          return;
-        }
-
-        // case ActionType.Mint:
-        //   if (
-        //     !amount ||
-        //     parseInt(amount) == 0 ||
-        //     BigInt(amount) > maxMaxSupply ||
-        //     !selectedBsv20
-        //   ) {
-        //     alert(
-        //       `Max supply must be a positive integer less than or equal to ${
-        //         maxMaxSupply - BigInt(1)
-        //       }`
-        //     );
-        //     return;
-        //   }
-        //   inscription.tick = selectedBsv20.tick;
-        //   inscription.amt = amount;
-        // default:
-        //   break;
-
+       
         const text = JSON.stringify(inscription);
         const payments = [
-          {
-            to: selectedBsv20?.fundAddress!,
-            amount: 1000n,
-          },
-        ];
+          // {
+          //   to: selectedBsv20.fundAddress,
+          //   amount: 1000n,
+          // },
+        ] as { to: string; amount: bigint }[];
+
         const pendingTx = await inscribeUtf8(
           text,
           "application/bsv-20",
@@ -217,7 +185,7 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
         return;
       }
     },
-    [inscribedCallback, decimals, limit, maxSupply, selectedBsv20, ticker]
+    [inscribedCallback, decimals, limit, maxSupply, ticker]
   );
 
   const bulkInscribe = useCallback(async () => {
@@ -263,35 +231,32 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       !ticker?.length ||
       inscribeStatus === FetchStatus.Loading ||
       fetchTickerStatus === FetchStatus.Loading ||
-      (!!limit && maxSupply < limit)
+      !maxSupply
     );
-  }, [inscribeStatus, ticker?.length, fetchTickerStatus, limit, maxSupply]);
+  }, [inscribeStatus, ticker?.length, fetchTickerStatus, maxSupply]);
 
   const listingFee = useMemo(() => {
     if (!usdRate.value) {
       return minFee;
     }
-    return selectedBsv20
-      ? calculateIndexingFee(usdRate.value)
-      : calculateIndexingFee(usdRate.value);
-  }, [selectedBsv20]);
+    return  calculateIndexingFee(usdRate.value);
+  }, [usdRate]);
 
   return (
     <div className="w-full max-w-lg mx-auto">
       <div className="text-white w-full p-2 rounded my-2 cursor-pointer">
-        Deploy New Ticker
+        Deploy New Token
       </div>
       <div className="my-2">
         <label className="block mb-4">
           {/* TODO: Autofill */}
           <div className="flex items-center justify-between my-2">
-            Ticker <span className="text-[#555]">{tickerNote}</span>
+            Symbol <span className="text-[#555]">{`Not required to be unique`}</span>
           </div>
           <div className="relative">
             <input
-              className="text-white w-full rounded p-2 uppercase"
-              maxLength={4}
-              pattern="^\S+$"
+              className="text-white w-full rounded p-2"
+              maxLength={255}
               onKeyDown={(event) => {
                 if (event.key === " " || event.key === "Enter") {
                   event.preventDefault();
@@ -319,7 +284,7 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
           <input
             pattern="\d+"
             type="text"
-            className="text-white w-full rounded p-2 uppercase"
+            className="text-white w-full rounded p-2"
             onChange={changeMaxSupply}
             value={maxSupply}
           />
@@ -348,6 +313,7 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                 min={0}
                 max={18}
                 value={decimals}
+                placeholder={defaultDec.toString()}
                 onChange={changeDecimals}
               />
             </label>
@@ -379,3 +345,5 @@ const bulkEnabled = false;
 
 export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
+
+const defaultDec = 8

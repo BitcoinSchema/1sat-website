@@ -6,7 +6,7 @@ import { toBitcoin } from "satoshi-bitcoin-ts";
 const List = async ({
   type,
 }: {
-  type: AssetType.BSV20 | AssetType.BSV20V2;
+  type: AssetType.BSV20 | AssetType.BSV21;
 }) => {
   let listings: BSV20TXO[] = [];
   if (type === AssetType.BSV20) {
