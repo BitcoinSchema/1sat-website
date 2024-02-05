@@ -4,7 +4,7 @@ import TokenListingSkeleton from "../skeletons/listing/Token";
 import List from "./list";
 
 interface TokenListingsProps {
-  type: AssetType.BSV20 | AssetType.BSV20V2;
+  type: AssetType.BSV20 | AssetType.BSV21;
 }
 
 const TokenListings: React.FC<TokenListingsProps> = async ({ type }) => {

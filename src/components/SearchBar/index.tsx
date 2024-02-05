@@ -32,7 +32,7 @@ const SearchBar: React.FC = () => {
         //   return;
         // }
         // if (knownV2Tickers.value.includes(searchTerm.value.toLocaleUpperCase())) {
-        //   router.push(`/market/bsv20v2/${searchTerm.value.toLocaleUpperCase()}`);
+        //   router.push(`/market/bsv21/${searchTerm.value.toLocaleUpperCase()}`);
         //   return;
         // }
       }

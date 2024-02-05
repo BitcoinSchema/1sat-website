@@ -44,6 +44,7 @@ export interface BSV20TXO extends BaseTxo {
   script: string;
 }
 
+
 export interface TxoData extends BaseTxo {
   types?: string[];
   insc?: Inscription;
@@ -85,5 +86,5 @@ export interface OrdUtxo extends Utxo {
 export type Inventory = {
   ordinals: OrdUtxo[],
   bsv20: BSV20TXO[],
-  bsv20v2: BSV20TXO[]
+  bsv21: BSV20TXO[]
 }

@@ -103,19 +103,14 @@ const List = async ({
       return a.marketCap > b.marketCap ? -1 : 1;
     });
   } else {
-    // const urlV2Tokens = `${API_HOST}/api/bsv20/v2?sort=fund_total&dir=desc&limit=20&offset=0&included=true`;
-    // const { promise: promiseBsv20v2 } =
-    //   http.customFetch<BSV20TXO[]>(urlV2Tokens);
-    // listings = await promiseBsv20v2;
-
     // aggregated market data from the API
-    let urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv20v2`;
+    let urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21`;
     if (id) {
-      urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv20v2/${id}`;
+      urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21/${id}`;
     }
-    const { promise: promiseBsv20v2Market } =
+    const { promise: promiseBsv21Market } =
       http.customFetch<MarketData[]>(urlV2Market);
-    marketData = (await promiseBsv20v2Market).sort((a, b) => {
+    marketData = (await promiseBsv21Market).sort((a, b) => {
       if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
         return 1;
       }
@@ -151,13 +146,13 @@ const List = async ({
         const showBsv20Content =
           type === AssetType.BSV20 &&
           ticker.tick?.toLowerCase() === id?.toLowerCase();
-        const showBsv20v2Content =
+        const showBsv21Content =
           type === AssetType.BSV21 &&
           ticker.id.toLowerCase() === id?.toLowerCase();
         return (
           <React.Fragment key={`${ticker.tick}-${idx}`}>
             <TickerHeading ticker={ticker} id={id} type={type} />
-            {ticker.included && (showBsv20Content || showBsv20v2Content) && (
+            {ticker.included && (showBsv20Content || showBsv21Content) && (
               <TickerContent ticker={ticker} show={true} type={type} />
             )}
             {!ticker.included && (
