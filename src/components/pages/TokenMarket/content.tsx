@@ -87,7 +87,7 @@ const TickerContent = ({
       fire(ticker.tick);
     } else if (
       type === AssetType.BSV20V2 &&
-      isInView &&
+      (isInView || newOffset.value === 0) && // fire the first time
       ticker.id &&
       !reachedEndOfListings.value
     ) {
