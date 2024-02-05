@@ -168,7 +168,7 @@ const Wallet: React.FC = () => {
         <FaWallet />
       </div>
 
-      <div className="dropdown-content z-[1] menu shadow bg-base-100 rounded-box w-64">
+      <div className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64">
         <div className="text-center mb-2">
           <div>Balance</div>
           <div className="text-2xl font-mono">
