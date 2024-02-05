@@ -15,9 +15,9 @@ const List = async ({
     listings = await promiseBsv20;
   } else {
     const urlV2Tokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
-    const { promise: promiseBsv20v2 } =
+    const { promise: promiseBsv21 } =
       http.customFetch<BSV20TXO[]>(urlV2Tokens);
-    listings = await promiseBsv20v2;
+    listings = await promiseBsv21;
   }
 
   return (

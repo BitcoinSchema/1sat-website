@@ -200,7 +200,7 @@ const Wallet: React.FC = () => {
             <Link href="/wallet/bsv20">BSV20</Link>
           </li>
           <li className="ml-2">
-            <Link href="/wallet/bsv20v2">BSV21</Link>
+            <Link href="/wallet/bsv21">BSV21</Link>
           </li>
           <div className="divider">Keys</div>
           <li>

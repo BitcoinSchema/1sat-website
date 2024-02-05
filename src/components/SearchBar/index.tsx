@@ -22,20 +22,22 @@ const SearchBar: React.FC = () => {
   const searchTerm = useSignal("");
   const router = useRouter();
   const autofillValues = useSignal<Autofill[] | null>(null);
-const lastTerm = useSignal("");
+  const lastTerm = useSignal("");
   const subForm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // if (searchTerm.value.length > 0) {
-    //   if (knownV1Tickers.value.includes(searchTerm.value.toLocaleUpperCase())) {
-    //     router.push(`/market/bsv20/${searchTerm.value.toLocaleUpperCase()}`);
-    //     return;
-    //   }
-    //   if (knownV2Tickers.value.includes(searchTerm.value.toLocaleUpperCase())) {
-    //     router.push(`/market/bsv20v2/${searchTerm.value.toLocaleUpperCase()}`);
-    //     return;
-    //   }
-    //   router.push(`/search/${searchTerm.value}`);
-    // }
+    if (searchTerm.value.length > 0) {
+      if (searchTerm.value.length <= 4) {
+        // if (knownV1Tickers.value.includes(searchTerm.value.toLocaleUpperCase())) {
+        //   router.push(`/market/bsv20/${searchTerm.value.toLocaleUpperCase()}`);
+        //   return;
+        // }
+        // if (knownV2Tickers.value.includes(searchTerm.value.toLocaleUpperCase())) {
+        //   router.push(`/market/bsv20v2/${searchTerm.value.toLocaleUpperCase()}`);
+        //   return;
+        // }
+      }
+      router.push(`/search/${searchTerm.value}`);
+    }
   };
 
   effect(() => {

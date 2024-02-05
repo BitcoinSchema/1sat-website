@@ -113,9 +113,9 @@ const Bsv20List = ({
         }
       } else {
         const urlV2Tokens = `${API_HOST}/api/bsv20/${address}/unspent?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v2`;
-        const { promise: promiseBsv20v2 } =
+        const { promise: promiseBsv21 } =
           http.customFetch<BSV20TXO[]>(urlV2Tokens);
-        const newResults = await promiseBsv20v2;
+        const newResults = await promiseBsv21;
         if (newResults.length > 0) {
           holdings.value = (holdings.value || []).concat(newResults);
           console.log("newLength", holdings.value.length);
@@ -154,7 +154,7 @@ const Bsv20List = ({
             onClick={() =>
               router.push(
                 `/market/${
-                  bsv20.tick ? "bsv20/" + bsv20.tick : "bsv20v2/" + bsv20.id
+                  bsv20.tick ? "bsv20/" + bsv20.tick : "bsv21/" + bsv20.id
                 }`
               )
             }
@@ -203,7 +203,7 @@ const Bsv20List = ({
                 className="cursor-pointer hover:text-blue-400 transition"
                 onClick={() =>
                   router.push(
-                    `/market/${id ? "bsv20v2/" + id : "bsv20/" + tick}`
+                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick}`
                   )
                 }
               >
@@ -242,7 +242,7 @@ const Bsv20List = ({
                 className="cursor-pointer hover:text-blue-400 transition"
                 onClick={() =>
                   router.push(
-                    `/market/${id ? "bsv20v2/" + id : "bsv20/" + tick}`
+                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick}`
                   )
                 }
               >
@@ -267,7 +267,7 @@ const Bsv20List = ({
                 className="cursor-pointer hover:text-blue-400 transition"
                 onClick={() =>
                   router.push(
-                    `/market/${id ? "bsv20v2/" + id : "bsv20/" + tick}`
+                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick}`
                   )
                 }
               >

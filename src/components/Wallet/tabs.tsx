@@ -33,7 +33,7 @@ const WalletTabs = ({
             BSV20
           </Link>
           <Link
-            href={address ? `/activity/${address}/bsv20v2` : `/wallet/bsv20v2`}
+            href={address ? `/activity/${address}/bsv21` : `/wallet/bsv21`}
             role="tab"
             className={`tab ${type === AssetType.BSV21 ? "tab-active" : ""}`}
           >
