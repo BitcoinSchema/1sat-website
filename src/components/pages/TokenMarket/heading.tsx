@@ -92,7 +92,12 @@ const TickerHeading = ({
       minFee - Number(ticker.fundTotal),
       (ticker.pendingOps || 0) * 1000
     );
-    console.log({ satoshis, minFee, fundTotal: ticker.fundTotal, pendingOps: ticker.pendingOps });
+    console.log({
+      satoshis,
+      minFee,
+      fundTotal: ticker.fundTotal,
+      pendingOps: ticker.pendingOps,
+    });
     return toBitcoin(satoshis);
   });
 
@@ -105,14 +110,18 @@ const TickerHeading = ({
     const mintedOut = parseInt(ticker.supply!) === parseInt(ticker.max!);
     return (
       <>
-        {type === AssetType.BSV20 && <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
-          <button
-            disabled={!ticker.included || (mintedOut && type === AssetType.BSV20)}
-            className="btn btn-sm btn-accent mr-4"
-          >
-            Mint {ticker.tick}
-          </button>
-        </Link>}
+        {type === AssetType.BSV20 && (
+          <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
+            <button
+              disabled={
+                !ticker.included || (mintedOut && type === AssetType.BSV20)
+              }
+              className="btn btn-sm btn-accent mr-4"
+            >
+              Mint {ticker.tick}
+            </button>
+          </Link>
+        )}
         <div data-tip="Circulating Supply" className="tooltip">
           {text}
         </div>
@@ -145,7 +154,11 @@ const TickerHeading = ({
                 alt={ticker.sym || ""}
               />
             )}
-            <FaHashtag className="mr-1 m-3 h-3" /> {ticker.num} {ticker.tick || ticker.sym}
+            <div className="whitespace-nowrap items-end content-end text-right mr-4">
+              <FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
+              {ticker.num}
+            </div>
+            <span className="text-4xl">{ticker.tick || ticker.sym}</span>
           </div>
         </th>
         <td>
@@ -154,7 +167,7 @@ const TickerHeading = ({
         </td>
         <td>
           <span
-            className={`ml-2 ${
+            className={`ml-2 text-xl ${
               ticker.pctChange > 0 ? "text-emerald-400" : "text-orange-700"
             }`}
           >
