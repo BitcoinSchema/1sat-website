@@ -37,6 +37,7 @@ export type MarketData = {
   txid: string;
   vout: number;
   amt?: string;
+  num: number;
 };
 
 // https://ordinals.gorillapool.io/api/bsv20/id/8677c7600eab310f7e5fbbdfc139cc4b168f4d079185facb868ebb2a80728ff1_0?refresh=false
@@ -112,39 +113,21 @@ const List = async ({
     }
     const { promise: promiseBsv21Market } =
       http.customFetch<MarketData[]>(urlV2Market);
-    marketData = (await promiseBsv21Market).sort((a, b) => {
-      if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
-        return 1;
-      }
-      if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
-        return -1;
-      }
-      return a.marketCap > b.marketCap ? -1 : 1;
-    });
+    marketData = (await promiseBsv21Market)
+    // .sort((a, b) => {
+    //   if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
+    //     return 1;
+    //   }
+    //   if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
+    //     return -1;
+    //   }
+    //   return a.marketCap > b.marketCap ? -1 : 1;
+    // });
   }
   console.log({ marketData });
-
-  // exchange rate is price of 1 BSV in dollars, we need price of 1 dollar in BSV
-  // eg 70.02
-  // we need something like 1459380
-
   return (
     <tbody className="overflow-auto">
       {marketData.map((ticker, idx) => {
-        
-        // calculate pct change based on sales
-
-        //           <div tabindex="0" class="collapse bg-base-200">
-        //   <div class="collapse-title text-xl font-medium">
-        //     Focus me to see content
-        //   </div>
-        //   <div class="collapse-content">
-        //     <p>tabindex="0" attribute is necessary to make the div focusable</p>
-        //   </div>
-        // </div>
-
-        // TODO: Make this work for v2
-
         const showBsv20Content =
           type === AssetType.BSV20 &&
           ticker.tick?.toLowerCase() === id?.toLowerCase();

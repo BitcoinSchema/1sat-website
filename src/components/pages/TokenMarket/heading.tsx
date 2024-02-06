@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { FaExternalLinkAlt } from "react-icons/fa";
+import { FaHashtag } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import { MarketData } from "./list";
 
@@ -144,7 +145,7 @@ const TickerHeading = ({
                 alt={ticker.sym || ""}
               />
             )}
-            {ticker.tick || ticker.sym}
+            <FaHashtag className="mr-1 m-3 h-3" /> {ticker.num} {ticker.tick || ticker.sym}
           </div>
         </th>
         <td>
