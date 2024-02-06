@@ -319,7 +319,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
           "application/bsv-20",
           utxo,
           undefined,
-          payments
+          selectedActionType === ActionType.Deploy ? [] : payments
         );
 
         setInscribeStatus(FetchStatus.Success);
