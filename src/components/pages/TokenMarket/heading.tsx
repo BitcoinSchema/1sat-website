@@ -154,10 +154,10 @@ const TickerHeading = ({
                 alt={ticker.sym || ""}
               />
             )}
-            <div className="whitespace-nowrap items-end content-end text-right mr-4">
+            {ticker.num && <div className="whitespace-nowrap items-end content-end text-right mr-4">
               <FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
               {ticker.num}
-            </div>
+            </div>}
             <span className="text-4xl">{ticker.tick || ticker.sym}</span>
           </div>
         </th>
