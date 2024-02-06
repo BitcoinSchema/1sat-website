@@ -3,6 +3,8 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
 import { AssetType } from "@/constants";
+import { fundingAddress } from "@/signals/wallet/address";
+import { getUtxos } from "@/utils/address";
 import { minFee } from "@/utils/bsv20";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
@@ -78,11 +80,14 @@ const TickerHeading = ({
   // balance can be negative indicating a funding deficit
   // in this case fundUsed will be greater than fundTotal
 
-  const openPaymentModal = (e: any) => {
+  const openPaymentModal = async (e: any) => {
     e.stopPropagation();
     e.preventDefault();
     // open modal
     showPaymentModal.value = true;
+    if (fundingAddress.value) {
+      await getUtxos(fundingAddress.value);
+    }
   };
 
   const paidUp = computed(() => bsvNeeded.value <= 0);
@@ -154,10 +159,12 @@ const TickerHeading = ({
                 alt={ticker.sym || ""}
               />
             )}
-            {ticker.num && <div className="whitespace-nowrap items-end content-end text-right mr-4">
-              <FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
-              {ticker.num}
-            </div>}
+            {ticker.num && (
+              <div className="whitespace-nowrap items-end content-end text-right mr-4">
+                <FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
+                {ticker.num}
+              </div>
+            )}
             <span className="text-4xl">{ticker.tick || ticker.sym}</span>
           </div>
         </th>
