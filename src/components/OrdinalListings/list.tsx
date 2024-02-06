@@ -78,7 +78,7 @@ const List = async ({ listings, collectionIds }: Props) => {
   };
 
   return (
-    <tbody>
+    <tbody className="h-full">
       {listings.map((listing, idx) => {
         const size = 100;
 

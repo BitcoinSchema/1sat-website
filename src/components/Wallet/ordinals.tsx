@@ -14,6 +14,7 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
   // get unspent ordAddress
   useSignals();
   const ordUtxos = useSignal<OrdUtxo[] | null>(null);
+  const init = useSignal(false)
   const nextOffset = useSignal(0);
   const reachedEndOfListings = useSignal(false);
   const ref = useRef(null);
@@ -21,10 +22,10 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
 
   useEffect(() => {
     const fire = async () => {
-      nextOffset.value = nextOffset.value + resultsPerPage;
       const { promise } = http.customFetch<OrdUtxo[]>(
         `${API_HOST}/api/txos/address/${addressProp || ordAddress.value}/unspent?limit=${resultsPerPage}&offset=${nextOffset.value}&dir=DESC&status=all&bsv20=false`
       );
+      nextOffset.value += resultsPerPage;
       const u = await promise;
       if (u.length > 0) {
         ordUtxos.value = (ordUtxos.value || []).concat(...u);
@@ -32,15 +33,13 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
         reachedEndOfListings.value = true;
       }
     };
-    
-    if (
-      ordAddress.value &&
-      isInView &&
-      !reachedEndOfListings.value
-    ) {
+
+    if (ordAddress.value && (!init.value || isInView && !reachedEndOfListings.value)) {
+      init.value = true;
       fire();
     }
-  }, [isInView, ordUtxos, nextOffset, reachedEndOfListings, addressProp]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addressProp, isInView, reachedEndOfListings, init, ordAddress]);
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
@@ -48,7 +47,7 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
       <div className="tab-content block bg-base-100 border-base-300 rounded-box p-2 md:p-6 w-[95vw] md:w-[64rem]">
         {ordUtxos.value && <OrdinalListings listings={ordUtxos.value} />}
       </div>
-      <div ref={ref} className="w-full h-1" />
+      {!reachedEndOfListings.value && <div ref={ref} className="w-full h-1" />}
     </div>
   );
 };

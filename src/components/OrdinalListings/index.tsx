@@ -18,7 +18,7 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings }) => {
   }, [] as string[]);
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full">
       <table className="table font-mono" cellSpacing={10}>
         <thead>
           <tr>
@@ -33,7 +33,7 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings }) => {
             <th className="px-0 w-8"></th>
           </tr>
         </thead>
-        <Suspense fallback={<OrdinalListingSkeleton />}>
+        <Suspense fallback={<OrdinalListingSkeleton iterations={listings.length} />}>
           <List listings={listings} collectionIds={collectionIds} />
         </Suspense>
       </table>

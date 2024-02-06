@@ -22,10 +22,8 @@ const SkeletonItem = () => (
   </div>
 );
 
-const iterations = 10;
-
-const OrdinalListingSkeleton = () => (
-  <tbody>
+const OrdinalListingSkeleton = ({ iterations }: { iterations?: number }) => (
+  <tbody className="h-full">
     <tr>
       <td colSpan={5} className="py-0 px-3 mb-4">
         {[...Array(iterations)].map((_, i) => (
