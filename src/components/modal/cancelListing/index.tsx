@@ -1,9 +1,26 @@
-import { indexerBuyFee } from "@/constants";
-import { bsvWasmReady, ordPk, payPk, utxos } from "@/signals/wallet";
+import { API_HOST, indexerBuyFee, toastProps } from "@/constants";
+import {
+  bsvWasmReady,
+  ordPk,
+  payPk,
+  pendingTxs,
+  utxos,
+} from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { Listing } from "@/types/bsv20";
-import { P2PKHAddress, PrivateKey, Script, SigHash, Transaction, TxIn, TxOut } from "bsv-wasm-web";
+import { PendingTransaction } from "@/types/preview";
+import * as http from "@/utils/httpClient";
+import {
+  P2PKHAddress,
+  PrivateKey,
+  Script,
+  SigHash,
+  Transaction,
+  TxIn,
+  TxOut,
+} from "bsv-wasm-web";
 import { Utxo, buildInscription } from "js-1sat-ord";
+import toast from "react-hot-toast";
 import { calculateFee } from "../buyArtifact";
 
 interface CancelListingModalProps {
@@ -19,8 +36,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
   indexerAddress,
   className,
 }) => {
-
-  const cancelListing =   async (e: any) => {
+  const cancelListing = async (e: any) => {
     if (!bsvWasmReady.value) {
       console.log("bsv wasm not ready");
       return;
@@ -79,8 +95,8 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     );
     cancelTx.add_output(dummyChangeOutput);
 
-     // output 1 indexer fee
-     if (indexerAddress) {
+    // output 1 indexer fee
+    if (indexerAddress) {
       const indexerFeeOutput = new TxOut(
         BigInt(indexerBuyFee),
         P2PKHAddress.from_string(indexerAddress).get_locking_script()
@@ -136,7 +152,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       PrivateKey.from_wif(ordPk.value!),
       SigHash.InputOutputs,
       0,
-      Script.from_bytes(Buffer.from(listing.script,"base64")),
+      Script.from_bytes(Buffer.from(listing.script, "base64")),
       BigInt(1)
     );
 
@@ -171,9 +187,34 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       idx++;
     }
 
-    console.log(cancelTx.to_hex());
+    const pendingTx = {
+      rawTx: cancelTx.to_hex(),
+      txid: cancelTx.get_id_hex(),
+    } as PendingTransaction;
+    pendingTxs.value = [pendingTx];
+    console.log("pending tx", pendingTx);
+    await broadcast(pendingTx);
+    onClose();
   };
 
+  const broadcast = async ({ rawTx, txid }: Partial<PendingTransaction>) => {
+    if (!rawTx || !txid) {
+      return;
+    }
+    const rawtx = Buffer.from(rawTx, "hex").toString("base64");
+    const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
+      method: "POST",
+      body: JSON.stringify({
+        rawtx,
+      }),
+    });
+    await promise;
+
+    toast.success("Transaction broadcasted.", toastProps);
+    pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+
+    // router.back();
+  };
 
   return (
     // <div className={`w-full max-w-3xl mx-auto ${className ? className : ""}`}>
@@ -202,20 +243,18 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       <div className="modal-box">
         <h3 className="font-bold text-lg">Cancel Listing</h3>
         <p className="py-4">
-          Are you sure you want to cancel the listing for {listing.tick || listing.sym}?
+          Are you sure you want to cancel the listing for{" "}
+          {listing.tick || listing.sym}?
         </p>
-          <form method="dialog">
-        <div className="modal-action">
+        <form method="dialog">
+          <div className="modal-action">
             {/* if there is a button in form, it will close the modal */}
             <button className="btn">Close</button>
-            <button
-              className="btn btn-error"
-              onClick={cancelListing}
-            >
+            <button className="btn btn-error" onClick={cancelListing}>
               Cancel Listing
             </button>
-        </div>
-          </form>
+          </div>
+        </form>
       </div>
     </dialog>
   );
