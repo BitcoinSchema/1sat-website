@@ -197,24 +197,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     onClose();
   };
 
-  const broadcast = async ({ rawTx, txid }: Partial<PendingTransaction>) => {
-    if (!rawTx || !txid) {
-      return;
-    }
-    const rawtx = Buffer.from(rawTx, "hex").toString("base64");
-    const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
-      method: "POST",
-      body: JSON.stringify({
-        rawtx,
-      }),
-    });
-    await promise;
-
-    toast.success("Transaction broadcasted.", toastProps);
-    pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
-
-    // router.back();
-  };
+  
 
   return (
     // <div className={`w-full max-w-3xl mx-auto ${className ? className : ""}`}>
@@ -261,3 +244,20 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 };
 
 export default CancelListingModal;
+
+export const broadcast = async ({ rawTx, txid }: Partial<PendingTransaction>) => {
+  if (!rawTx || !txid) {
+    return;
+  }
+  const rawtx = Buffer.from(rawTx, "hex").toString("base64");
+  const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
+    method: "POST",
+    body: JSON.stringify({
+      rawtx,
+    }),
+  });
+  await promise;
+
+  toast.success("Transaction broadcasted.", toastProps);
+  pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+};

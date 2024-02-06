@@ -41,7 +41,7 @@ const Bsv20List = ({
   const holdings = useSignal<BSV20TXO[] | null>(null);
   const addressBalances = useSignal<BSV20Balance[] | null>(null);
 
-  const showSendModal = useSignal(false);
+  const showSendModal = useSignal<string | undefined>(undefined);
 
   // get unspent ordAddress
   const bsv20s = useSignal<OrdUtxo[] | null>(null);
@@ -211,16 +211,17 @@ const Bsv20List = ({
               </div>
               <div
                 className="text-emerald-400"
-                onClick={() => (showSendModal.value = true)}
+                onClick={() => (showSendModal.value = (tick || id))}
               >
                 {all.confirmed / 10 ** dec}
               </div>
-              {showSendModal.value && (
+              {showSendModal.value  === (tick || id) && (
                 <TransferBsv20Modal
-                  onClose={() => (showSendModal.value = false)}
-                  type={AssetType.BSV20}
+                  onClose={() => (showSendModal.value = undefined)}
+                  type={type}
                   id={(tick || id)!}
-                  balance={all.confirmed}
+                  dec={dec}
+                  balance={all.confirmed / 10 ** dec}
                   sym={sym}
                 />
               )}
