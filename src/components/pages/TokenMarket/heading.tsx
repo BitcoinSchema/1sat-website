@@ -3,8 +3,9 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
 import { AssetType } from "@/constants";
-import { fundingAddress } from "@/signals/wallet/address";
-import { getUtxos } from "@/utils/address";
+import { ordUtxos, utxos } from "@/signals/wallet";
+import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { minFee } from "@/utils/bsv20";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
@@ -85,8 +86,10 @@ const TickerHeading = ({
     e.preventDefault();
     // open modal
     showPaymentModal.value = true;
-    if (fundingAddress.value) {
-      await getUtxos(fundingAddress.value);
+    if (fundingAddress.value && ordAddress.value) {
+      let bsv20Utxos = await getBsv20Utxos(ordAddress.value, 0, id);
+      ordUtxos.value = (ordUtxos.value || []).concat(bsv20Utxos);
+      utxos.value = await getUtxos(fundingAddress.value);
     }
   };
 

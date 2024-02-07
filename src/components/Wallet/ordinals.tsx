@@ -1,9 +1,9 @@
 "use client";
 
-import { API_HOST, AssetType, resultsPerPage } from "@/constants";
+import { AssetType, resultsPerPage } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
 import { OrdUtxo } from "@/types/ordinals";
-import * as http from "@/utils/httpClient";
+import { getOrdUtxos } from "@/utils/address";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import { useEffect, useRef } from "react";
@@ -22,11 +22,9 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
 
   useEffect(() => {
     const fire = async () => {
-      const { promise } = http.customFetch<OrdUtxo[]>(
-        `${API_HOST}/api/txos/address/${addressProp || ordAddress.value}/unspent?limit=${resultsPerPage}&offset=${nextOffset.value}&dir=DESC&status=all&bsv20=false`
-      );
+      const u = await getOrdUtxos(addressProp || ordAddress.value!, nextOffset.value);
       nextOffset.value += resultsPerPage;
-      const u = await promise;
+
       if (u.length > 0) {
         ordUtxos.value = (ordUtxos.value || []).concat(...u);
       } else {
