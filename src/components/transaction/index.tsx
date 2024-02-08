@@ -6,9 +6,10 @@ import { useSignals } from "@preact/signals-react/runtime";
 import init, { P2PKHAddress, PublicKey, Transaction } from "bsv-wasm-web";
 import Link from "next/link";
 import React from "react";
-import { FaChevronDown, FaChevronRight, FaHashtag } from "react-icons/fa6";
+import { FaHashtag } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import JDenticon from "../JDenticon";
+import { showDetails } from "../pages/outpoint/heading";
 
 interface DisplayIOProps {
   rawtx: string;
@@ -20,12 +21,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
   useSignals();
   let ioIns = useSignal<IODisplay[] | null>(null);
   let ioOuts = useSignal<IODisplay[] | null>(null);
-  const showDetails = useSignal(false);
   const attempted = useSignal(false);
-
-  const toggleDetails = () => {
-    showDetails.value = !showDetails.value;
-  };
 
   effect(() => {
     const fire = async () => {
@@ -66,10 +62,8 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
             amount: BigInt(0),
           });
           continue;
-        }
-
-        // Look for p2pkh output
-        if (outScript.startsWith("OP_DUP OP_HASH160")) {
+        } else if (outScript.startsWith("OP_DUP OP_HASH160")) {
+          // Look for p2pkh output
           const pubKeyHash = outScript.split(" ")[2];
 
           const address = P2PKHAddress.from_pubkey_hash(
@@ -80,6 +74,14 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
           const txid = tx.get_id_hex();
           const amount = output.get_satoshis();
           ioOuts.value.push({ address, index, txid, amount });
+        } else {
+          const amount = output.get_satoshis();
+          ioOuts.value.push({
+            address: "",
+            index: i,
+            txid: tx.get_id_hex(),
+            amount,
+          });
         }
       }
     };
@@ -104,14 +106,20 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
                 </span>
               </div>
               <div className="flex flex-col w-full">
-                <Link className="text-xs flex items-center" href={`/activity/${io.address}/ordinals`}>
+                <Link
+                  className="text-xs flex items-center"
+                  href={`/activity/${io.address}/ordinals`}
+                >
                   <JDenticon
                     hashOrValue={io.address}
                     className="w-6 h-6 mr-2"
                   />
                   {io.address}
                 </Link>
-                <Link className="text-xs text-[#555]" href={`/outpoint/${io.txid}_${io.index}`}>
+                <Link
+                  className="text-xs text-[#555]"
+                  href={`/outpoint/${io.txid}_${io.index}`}
+                >
                   via {truncate(io.txid)} [{io.index}]
                 </Link>
               </div>
@@ -141,7 +149,10 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
                 </span>
               </div>
               <div className="flex flex-col w-full">
-                <Link className="text-xs flex items-center" href={`/activity/${io.address}/ordinals`}>
+                <Link
+                  className="text-xs flex items-center"
+                  href={`/activity/${io.address}/ordinals`}
+                >
                   <JDenticon
                     hashOrValue={io.address}
                     className="w-6 h-6 mr-2"
@@ -184,18 +195,6 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 
   return (
     <>
-      {
-        <div className=" cursor-pointer hover:text-blue-400 flex justify-end w-full text-sm text-blue-500">
-          <div className="flex items-center w-24" onClick={toggleDetails}>
-            {!showDetails.value ? (
-              <FaChevronRight className="mr-2" />
-            ) : (
-              <FaChevronDown className="mr-2" />
-            )}
-            Tx Details
-          </div>
-        </div>
-      }
       <div className="cursor-pointer flex w-full rounded gap-4 mb-4">
         {showDetails.value && details}
       </div>

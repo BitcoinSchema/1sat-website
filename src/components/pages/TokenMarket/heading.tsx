@@ -118,7 +118,7 @@ const TickerHeading = ({
     const mintedOut = parseInt(ticker.supply!) === parseInt(ticker.max!);
     return (
       <>
-        {type === AssetType.BSV20 && (
+        {type === AssetType.BSV20 && paidUp.value && (
           <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
             <button
               disabled={

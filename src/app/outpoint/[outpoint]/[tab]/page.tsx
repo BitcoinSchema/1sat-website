@@ -1,10 +1,10 @@
+import OutpointHeading from "@/components/pages/outpoint/heading";
 import OutpointInscription from "@/components/pages/outpoint/inscription";
 import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
 import { OutpointTab } from "@/types/common";
 import { Transaction } from "bsv-wasm";
-import Link from "next/link";
 import { Suspense } from "react";
 
 type OutpointParams = {
@@ -27,7 +27,6 @@ export type InputOutpoint = {
 };
 
 const Outpoint = async ({ params }: { params: OutpointParams }) => {
-
   // get tx details
   const txid = params.outpoint.split("_")[0];
   const response = await fetch(
@@ -57,7 +56,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
     );
     const res = await spentOutpointResponse.arrayBuffer();
     const { script, satoshis } = parseOutput(res);
-    
+
     console.log({ script, satoshis, txid, vout });
     // const s = Script.fromHex(script).toASM();
     inputOutpoints.push({ script, satoshis, txid, vout });
@@ -93,20 +92,17 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
     }
   };
 
+
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-4">
-        <h1 className="text-[#aaa] text-xl">Transaction</h1>
-        <Link
-          className="text-xs font-mono text-[#555]"
-          href={`https://whatsonchain.com/tx/${txid}`}
-          target="_blank"
-        >
-          {params.outpoint.split("_")[0]}
-        </Link>
+    <div className="max-w-6xl mx-auto w-full">
+      <div className="flex">
+        <OutpointHeading outpoint={params.outpoint} />
       </div>
       <Suspense fallback={<p>Loading...</p>}>
-        <DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} />
+        <DisplayIO
+          rawtx={rawTx}
+          inputOutpoints={inputOutpoints}
+        />
       </Suspense>
       {content()}
     </div>
@@ -115,37 +111,39 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 
 export default Outpoint;
 
-
 function parseVarInt(hex: string): [number, string] {
   let len = 1;
   let value = parseInt(hex.substring(0, 2), 16);
 
   if (value < 0xfd) {
-      return [value, hex.substring(2)];
+    return [value, hex.substring(2)];
   } else if (value === 0xfd) {
-      len = 3;
+    len = 3;
   } else if (value === 0xfe) {
-      len = 5;
+    len = 5;
   } else {
-      len = 9;
+    len = 9;
   }
 
   value = parseInt(hex.substring(2, len * 2), 16);
   return [value, hex.substring(len * 2)];
 }
 
-function parseOutput(output: ArrayBuffer): { satoshis: bigint, script: string } {
+function parseOutput(output: ArrayBuffer): {
+  satoshis: bigint;
+  script: string;
+} {
   // Extract the amount (8 bytes) and convert from little-endian format
   const view = new DataView(output);
   const satoshis = view.getBigUint64(0, true); // true for little-endian
 
   // Convert the rest of the buffer to hex and extract the script
-  const hex = Buffer.from(output.slice(8)).toString('hex');
+  const hex = Buffer.from(output.slice(8)).toString("hex");
   const [scriptLength, remainingHex] = parseVarInt(hex);
   const script = remainingHex.substring(0, scriptLength * 2);
 
   return {
-      satoshis: satoshis,
-      script: script
+    satoshis: satoshis,
+    script: script,
   };
 }

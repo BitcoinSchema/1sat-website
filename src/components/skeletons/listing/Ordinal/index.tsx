@@ -23,7 +23,7 @@ const SkeletonItem = () => (
 );
 
 const OrdinalListingSkeleton = ({ iterations }: { iterations?: number }) => (
-  <tbody className="h-full">
+  <tbody className="w-full max-w-5xl mx-auto h-full">
     <tr>
       <td colSpan={5} className="py-0 px-3 mb-4">
         {[...Array(iterations)].map((_, i) => (

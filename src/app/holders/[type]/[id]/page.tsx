@@ -39,7 +39,7 @@ const Page = async ({
     });
 
   return (
-    <div className="mx-auto flex flex-col max-w-5xl">
+    <div className="mx-auto flex flex-col max-w-5xl w-full">
       <h1 className="text-xl">{params.id}</h1>
       <div className="w-full">
         {(holders || [])?.map((h) => (
