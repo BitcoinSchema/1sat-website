@@ -3,6 +3,7 @@ import Header from "@/components/header";
 import { toastProps } from "@/constants";
 import type { Metadata } from "next";
 import { Inter, Ubuntu, Ubuntu_Mono } from "next/font/google";
+import Script from "next/script";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
@@ -36,7 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-
+      <Script
+        async
+        strategy="afterInteractive"
+        type="module"
+        src="https://unpkg.com/@google/model-viewer@^2.1.1/dist/model-viewer.min.js"
+        defer
+      />
       <link rel="icon" href="/favicon.ico" />
       </head>
 

@@ -217,7 +217,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           e.stopPropagation();
         }}
       >
-        <Model src={src} />
+        <Model src={src} size={size} />
       </div>
     ) : type === ArtifactType.MarkDown ? (
       <div
@@ -296,6 +296,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         }`}
         target={to ? "_self" : undefined}
         href={to || "#"}
+        draggable={false}
         onClick={(e: any) => {
           if (!to) {
             e.stopPropagation();
