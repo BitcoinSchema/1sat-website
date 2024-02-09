@@ -14,9 +14,9 @@ const Timeline = ({ history, listing, spends }: Props) => {
   return (
     <ul className="timeline timeline-vertical">
       {history.reverse().map((h, idx) => {
-        let text;
-        let positionClass = `${idx % 2 === 0 ? 'timeline-start' : 'timeline-end'} timeline-box`;
-        let positionClass2 = `${idx % 2 === 1 ? 'timeline-start' : 'timeline-end'} timeline-box`;
+        let text = <>Unknown</>;
+        const positionClass = `${idx % 2 === 0 ? 'timeline-start' : 'timeline-end'} timeline-box`;
+        const positionClass2 = `${idx % 2 === 1 ? 'timeline-start' : 'timeline-end'} timeline-box`;
         if (h.data?.list?.price) {
           text = (
             <Link

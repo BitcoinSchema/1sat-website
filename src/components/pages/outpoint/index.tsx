@@ -68,9 +68,9 @@ const OutpointPage = async ({
           classNames={{ wrapper: "w-full md:w-1/2" }}
           showListingTag={true}
         />
-        <div className="divider"></div>
+        <div className="divider" />
         <div className="w-full md:w-1/2 mx-auto">
-          <OutpointTabs activeTab={activeTab} outpoint={outpoint} />
+          <OutpointTabs activeTab={activeTab} outpoint={outpoint} hasToken={!!artifact.origin?.data?.bsv20} />
           {content}
         </div>
       </div>

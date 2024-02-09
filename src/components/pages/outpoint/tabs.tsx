@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const enum OutpointTab {
+export enum OutpointTab {
   Timeline = "timeline",
   Inscription = "inscription",
   Token = "token",
@@ -10,20 +10,21 @@ export const enum OutpointTab {
 interface Props {
   outpoint: string;
   activeTab: OutpointTab
+  hasToken: boolean;
 }
 
-const OutpointTabs = ({ outpoint, activeTab }: Props) => {
+const OutpointTabs = ({ outpoint, activeTab, hasToken }: Props) => {
   return (
-    <div role="tablist" className={`tabs tabs-bordered mb-4`}>
+    <div role="tablist" className={"tabs tabs-bordered mb-4"}>
       <Link role="tab" href={`/outpoint/${outpoint}/timeline`} className={`tab ${activeTab === OutpointTab.Timeline ? 'tab-active' : ''}`}>
         Timeline
       </Link>
       <Link role="tab" href={`/outpoint/${outpoint}/inscription`} className={`tab ${activeTab === OutpointTab.Inscription ? 'tab-active' : ''}`}>
-        Inscription
+        Inscription Details
       </Link>
-      <Link role="tab" href={`/outpoint/${outpoint}/token`}className={`tab ${activeTab === OutpointTab.Token ? 'tab-active' : ''}`}>
+      {hasToken && <Link role="tab" href={`/outpoint/${outpoint}/token`}className={`tab ${activeTab === OutpointTab.Token ? 'tab-active' : ''}`}>
         Token
-      </Link>
+      </Link>}
     </div>
   );
 };
