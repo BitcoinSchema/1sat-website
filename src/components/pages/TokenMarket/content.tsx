@@ -6,6 +6,7 @@ import { API_HOST, AssetType } from "@/constants";
 import { bsv20Balances, chainInfo } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import { Listing } from "@/types/bsv20";
+import { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
@@ -91,7 +92,7 @@ const TickerContent = ({
   }, [isInView, newOffset, reachedEndOfListings, ticker, type]);
 
   useEffect(() => {
-    let nextPageOfSales: Listing[] = [];
+    let nextPageOfSales: BSV20TXO[] = [];
 
     const fire = async (id: string) => {
       if (newSalesOffset.value === 0) {
@@ -103,7 +104,7 @@ const TickerContent = ({
       }
       newSalesOffset.value += 20;
       const { promise: promiseBsv20v1Market } =
-        http.customFetch<Listing[]>(urlMarket);
+        http.customFetch<BSV20TXO[]>(urlMarket);
       nextPageOfSales = await promiseBsv20v1Market;
 
       if (nextPageOfSales.length > 0) {
