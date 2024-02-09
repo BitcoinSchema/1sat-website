@@ -6,7 +6,6 @@ import { API_HOST, AssetType } from "@/constants";
 import { bsv20Balances, chainInfo } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import { Listing } from "@/types/bsv20";
-import { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
@@ -29,22 +28,17 @@ const TickerContent = ({
 }) => {
   useSignals();
   const ref = useRef(null);
+  const salesRef = useRef(null);
   const isInView = useInView(ref);
+  const salesInView = useInView(ref);
   const newOffset = useSignal(0);
+  const newSalesOffset = useSignal(0);
   const reachedEndOfListings = useSignal(false);
+  const reachedEndOfSales = useSignal(false);
 
   const currentHeight = computed(() => {
     return chainInfo.value?.blocks || 0;
   });
-
-  useEffect(() => {
-    if (ticker && ticker.listings) {
-      listings.value = (ticker.listings || []) as Listing[];
-    }
-    if (ticker && ticker.sales) {
-      sales.value = (ticker.sales || []) as BSV20TXO[];
-    }
-  }, [ticker]);
 
   useEffect(() => {
     let nextPageOfListings: Listing[] = [];
@@ -96,6 +90,52 @@ const TickerContent = ({
     }
   }, [isInView, newOffset, reachedEndOfListings, ticker, type]);
 
+  useEffect(() => {
+    let nextPageOfSales: Listing[] = [];
+
+    const fire = async (id: string) => {
+      if (newSalesOffset.value === 0) {
+        sales.value = [];
+      }
+      let urlMarket = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=${newSalesOffset.value}&tick=${id}&pending=true`;
+      if (type === AssetType.BSV21) {
+        urlMarket = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=${newSalesOffset.value}&id=${id}&pending=true`;
+      }
+      newSalesOffset.value += 20;
+      const { promise: promiseBsv20v1Market } =
+        http.customFetch<Listing[]>(urlMarket);
+      nextPageOfSales = await promiseBsv20v1Market;
+
+      if (nextPageOfSales.length > 0) {
+        // For some reason this would return some items the same id from the first call so we filter them out
+        sales.value = [
+          ...(sales.value || []),
+          ...nextPageOfSales.filter(
+            (l) => !sales.value?.some((l2) => l2.txid === l.txid)
+          ),
+        ];
+      } else {
+        reachedEndOfSales.value = true;
+      }
+    };
+
+    if (
+      type === AssetType.BSV20 &&
+      (salesInView || newSalesOffset.value === 0) &&
+      ticker.tick &&
+      !reachedEndOfSales.value
+    ) {
+      fire(ticker.tick);
+    } else if (
+      type === AssetType.BSV21 &&
+      (salesInView || newSalesOffset.value === 0) && // fire the first time
+      ticker.id &&
+      !reachedEndOfSales.value
+    ) {
+      fire(ticker.id);
+    }
+  }, [salesInView, newSalesOffset, reachedEndOfSales, ticker, type]);
+
   const showBuy = useSignal<string | null>(null);
   const showCancel = useSignal<string | null>(null);
 
@@ -110,7 +150,7 @@ const TickerContent = ({
   const showListingForm = useSignal(ownsTicker.value || false);
   return (
     show && (
-      <tr className={`transition bg-base-200`}>
+      <tr className={"transition bg-base-200"}>
         <td colSpan={3} className="align-top">
           <TremorChartComponent
             ticker={ticker}
@@ -156,6 +196,7 @@ const TickerContent = ({
                 </Link>
                 <div className="py-1">
                   <button
+                    type="button"
                     className={`ml-2 btn btn-outline hover:btn-primary transition btn-xs ${myListing ? "btn-primary" : ""}`}
                     onClick={() => {
                       console.log({ listing });
@@ -170,7 +211,7 @@ const TickerContent = ({
                   </button>
                   {showCancel.value === listing.txid && (
                     <CancelListingModal
-                    className="w-full"
+                      className="w-full"
                       listing={listing}
                       onClose={() => {
                         showCancel.value = null;
@@ -182,7 +223,9 @@ const TickerContent = ({
                     <BuyArtifactModal
                       indexerAddress={ticker.fundAddress}
                       listing={listing}
-                      onClose={() => (showBuy.value = null)}
+                      onClose={() => {
+                        showBuy.value = null;
+                      }}
                       price={parseInt(listing.price)}
                       showLicense={false}
                       content={
@@ -250,6 +293,7 @@ const TickerContent = ({
                 </Link>
                 <div className="py-1">
                   <button
+                    type="button"
                     disabled
                     className="btn btn-xs btn-outline btn-secondary pointer-events-none"
                   >
@@ -264,6 +308,7 @@ const TickerContent = ({
               No sales found
             </div>
           )}
+          <div ref={salesRef} />
         </td>
       </tr>
     )

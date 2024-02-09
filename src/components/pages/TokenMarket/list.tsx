@@ -1,6 +1,4 @@
 import { AssetType } from "@/constants";
-import { Listing } from "@/types/bsv20";
-import { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import React from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
@@ -22,8 +20,6 @@ export type MarketData = {
   marketCap: string;
   holders: Holder[];
   dec: number;
-  listings?: Listing[];
-  sales?: BSV20TXO[];
   pctChange: number;
   fundAddress: string;
   fundTotal: string;
@@ -88,7 +84,7 @@ const List = async ({
     // const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
     // const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
     // listings = await promiseBsv20;
-    let urlV1Market = `https://1sat-api-production.up.railway.app/market/bsv20`;
+    let urlV1Market = "https://1sat-api-production.up.railway.app/market/bsv20";
     if (id) {
       urlV1Market = `https://1sat-api-production.up.railway.app/market/bsv20/${id}`;
     }
@@ -145,7 +141,7 @@ const List = async ({
                   <div className="max-w-lg mx-auto">
                     <div className="bg-warning/50 text-warning-content p-2 rounded my-4 w-full flex items-center">
                       <FaExclamationTriangle className="mr-2 text-warning" />
-                      {`This ticker is not currently listed.`}
+                      {"This ticker is not currently listed."}
                     </div>
                     <Fund ticker={ticker} />
                   </div>
