@@ -35,9 +35,6 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
     queryKey: ["ordinals", address],
     queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
-      if (lastPageParam === 0) {
-        return lastPageParam + 1;
-      }
       if (lastPage.length === resultsPerPage) {
         return lastPageParam + 1;
       }

@@ -288,7 +288,7 @@ const Bsv20List = ({
           <div className="text-[#777] font-semibold">No unindexed tokens</div>
         )}
         {Object.entries(unindexBalances.value).map(([tick, amount], idx) => (
-          <React.Fragment key={`unindexed-${tick}-${idx}`}>
+          <React.Fragment key={`bal-unindexed-${tick}`}>
             <Link
               href={`/market/${type}/${tick}`}
               className="cursor-pointer hover:text-blue-400 transition"
