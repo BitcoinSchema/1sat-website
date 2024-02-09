@@ -109,7 +109,6 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
           break;
         }
       }
-      debugger;
       if (amounts > sendAmount) {
         // build change inscription
         const changeInscription = {

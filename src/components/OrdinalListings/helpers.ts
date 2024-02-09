@@ -39,14 +39,15 @@ export const getOrdUtxos = async ({
     url = `${API_HOST}/api/market?limit=${resultsPerPage}&offset=${offset}&dir=DESC`;
   }
   const res = await fetch(url);
-  return res.json();
+  return res.json() as Promise<OrdUtxo[]>;
 };
 
-export const getCollectionIds = async (ids: string[]) => {
-  const url = `${API_HOST}/api/txos/outpoints?script=false`;
+export const getOutpoints = async (ids: string[], script: boolean) => {
+  const url = `${API_HOST}/api/txos/outpoints?script=${script}`;
   console.log("almost", url, "with", ids);
   const uniqueIds = uniq(ids);
   console.log("hitting", url, "with", uniqueIds);
+  debugger
   const res = await fetch(url, {
     method: "POST",
     headers: {

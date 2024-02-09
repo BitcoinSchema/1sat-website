@@ -10,7 +10,7 @@ import { useInView } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { FiLoader } from "react-icons/fi";
 import Ordinals from "../ordinals";
-import { checkOutpointFormat, getCollectionIds, getOrdUtxos } from "./helpers";
+import { checkOutpointFormat, getOrdUtxos, getOutpoints } from "./helpers";
 
 interface Props {
   address: string;
@@ -78,7 +78,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
 
   const { data: collectionData } = useQuery({
     queryKey: ["collections", collectionIds.value?.length > 0],
-    queryFn: () => getCollectionIds(collectionIds.value),
+    queryFn: () => getOutpoints(collectionIds.value),
   });
 
   const collections = useSignal(collectionData || []);

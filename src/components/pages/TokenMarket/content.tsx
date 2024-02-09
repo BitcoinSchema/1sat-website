@@ -227,7 +227,7 @@ const TickerContent = ({
                       onClose={() => {
                         showBuy.value = null;
                       }}
-                      price={parseInt(listing.price)}
+                      price={BigInt(listing.price)}
                       showLicense={false}
                       content={
                         <div className="w-full h-full rounded border border-secondary flex flex-col items-center justify-center">

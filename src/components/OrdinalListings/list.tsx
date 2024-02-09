@@ -15,7 +15,7 @@ import Artifact from "../artifact";
 import BuyBtn from "./buy";
 import {
   checkOutpointFormat,
-  getCollectionIds,
+  getOutpoints,
   listingCollection,
   listingName,
   mintNumber,
@@ -42,7 +42,7 @@ const List = ({ listings, refProp }: Props) => {
       "collections",
       collectionIds.value && collectionIds.value?.length > 0,
     ],
-    queryFn: () => getCollectionIds(collectionIds.value!),
+    queryFn: () => getOutpoints(collectionIds.value!),
   });
 
   const collections = useSignal(collectionData || []);
@@ -116,7 +116,7 @@ const List = ({ listings, refProp }: Props) => {
                 </td>
                 <td className="p-0 text-xs md:text-sm hidden md:table-cell">
                   {listing?.data?.list?.price ? (
-                    <BuyBtn price={price} listing={listing} />
+                    <BuyBtn satoshis={BigInt(listing.data.list.price)} listing={listing} />
                   ) : (
                     ""
                   )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { getOutpoints } from "@/components/OrdinalListings/helpers";
 import { P2PKHInputSize, feeRate, indexerBuyFee, marketAddress, marketRate, minimumMarketFee } from "@/constants";
 import { payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
@@ -24,7 +25,7 @@ import { toBitcoin } from "satoshi-bitcoin-ts";
 interface BuyArtifactModalProps {
   onClose: () => void;
   listing: Listing | OrdUtxo;
-  price: number;
+  price: bigint;
   content: React.ReactNode;
   showLicense: boolean;
   indexerAddress?: string;
@@ -42,7 +43,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
   useSignals();
   const router = useRouter();
 
-  const buyArtifact = useCallback(() => {
+  const buyArtifact = useCallback(async () => {
     // create a transaction that will purchase the artifact, once funded
     const purchaseTx = new Transaction(1, 0);
 
@@ -63,6 +64,13 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     const ordPayout = (listing as OrdUtxo).data?.list?.payout;
     const listingPayout = (listing as Listing).payout;
     const listingScript = (listing as Listing).script;
+    if (!listing.script) {
+      const results = await getOutpoints([listing.outpoint], true);
+      if (results?.[0]) {
+        listing.script = results[0].script;
+      }
+    }
+    const ordScript = (listing as OrdUtxo).script;
 
     // output 1
     const payOutput = TxOut.from_hex(
@@ -90,17 +98,16 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     purchaseTx.add_output(dummyMarketFeeOutput);
 
     // this has to be "InputOutput" and then second time is InputOutputs
-    let preimage = purchaseTx.sighash_preimage(
+    const preimage = purchaseTx.sighash_preimage(
       SigHash.InputOutput,
       0,
-      Script.from_bytes(Buffer.from(listingScript, "base64")),
+      Script.from_bytes(Buffer.from(listingScript || ordScript, "base64")),
       BigInt(1) //TODO: use amount from listing
     );
 
     listingInput.set_unlocking_script(
       Script.from_asm_string(
-        `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
-          .get_output(2)!
+        `${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx.get_output(2)!
           .to_hex()}${purchaseTx.get_output(3)!.to_hex()} ${Buffer.from(
           preimage
         ).toString("hex")} OP_0`
@@ -109,7 +116,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     purchaseTx.set_input(0, listingInput);
 
     // calculate market fee
-    let marketFee = price * marketRate;
+    let marketFee = Number(price) * marketRate;
     if (marketFee === 0) {
       marketFee = minimumMarketFee;
     }
@@ -117,22 +124,22 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     // Calculate the network fee
     // account for funding input and market output (not added to tx yet)
     let paymentUtxos: Utxo[] = [];
-    let satsCollected = 0;
+    let satsCollected = 0n;
     // initialize fee and satsNeeded (updated with each added payment utxo)
     let fee = calculateFee(1, purchaseTx);
-    let satsNeeded = fee + price + marketFee;
+    let satsNeeded = BigInt(fee) + price + BigInt(marketFee)
     // collect the required utxos
     const sortedFundingUtxos = utxos.value!.sort((a, b) =>
       a.satoshis > b.satoshis ? -1 : 1
     );
     for (let utxo of sortedFundingUtxos) {
       if (satsCollected < satsNeeded) {
-        satsCollected += utxo.satoshis;
+        satsCollected += BigInt(utxo.satoshis);
         paymentUtxos.push(utxo);
 
         // if we had to add additional
         fee = calculateFee(paymentUtxos.length, purchaseTx);
-        satsNeeded = fee + price + marketFee;
+        satsNeeded = BigInt(fee) + price + BigInt(marketFee);
       }
     }
 
@@ -295,7 +302,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
     purchaseTx.set_output(2, changeOutput);
 
-    // add output 3 - market fee
+    // TODO: add output 3 - market fee
     // const marketFeeOutput = new TxOut(
     //   BigInt(marketFee),
     //   P2PKHAddress.from_string(marketAddress).get_locking_script()
@@ -392,8 +399,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           onSubmit={isBsv20Listing ? buyBsv20 : buyArtifact}
           className="modal-action"
         >
-          <button className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
-            Buy - {price && price > 0 ? toBitcoin(price) : 0} BSV
+          <button type="submit" className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
+            Buy - {price && price > 0 ? toBitcoin(price.toString()) : 0} BSV
           </button>
         </form>
       </div>

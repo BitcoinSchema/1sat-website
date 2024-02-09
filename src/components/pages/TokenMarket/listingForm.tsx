@@ -141,7 +141,6 @@ const ListingForm = ({
           break;
         }
       }
-debugger
       if (amounts > sendAmount) {
         // build change inscription
         const changeInscription = {
@@ -219,7 +218,6 @@ debugger
         fileB64,
         "application/bsv-20"
       );
-      debugger;
       const transferInscription = insc
         .to_asm_string()
         .split(" ")

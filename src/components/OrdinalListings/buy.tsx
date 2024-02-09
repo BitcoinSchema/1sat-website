@@ -2,15 +2,16 @@
 
 import { OrdUtxo } from "@/types/ordinals";
 import { useSignal } from "@preact/signals-react";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import Artifact from "../artifact";
 import BuyArtifactModal from "../modal/buyArtifact";
 
 interface Props {
-  price: string;
+  satoshis: bigint;
   listing: OrdUtxo;
 }
 
-const BuyBtn = ({ price, listing }: Props) => {
+const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
   const showBuy = useSignal(false);
 
   const clickBuy = () => {
@@ -39,11 +40,11 @@ const BuyBtn = ({ price, listing }: Props) => {
   return (
     <>
       <button type="button" className="btn" onClick={clickBuy}>
-        {price}
+        {toBitcoin(satoshis.toString())} BSV
       </button>
       {showBuy.value && <BuyArtifactModal
         listing={listing}
-        price={parseInt(price)}
+        price={satoshis}
         onClose={close}
         content={content}
         showLicense={false}

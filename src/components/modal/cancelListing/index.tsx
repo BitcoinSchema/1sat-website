@@ -168,7 +168,6 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     let idx = 1;
     for (let u of paymentUtxos) {
       const inx = cancelTx.get_input(idx)!;
-      debugger;
       const sig = cancelTx.sign(
         PrivateKey.from_wif(payPk.value!),
         SigHash.InputOutputs,

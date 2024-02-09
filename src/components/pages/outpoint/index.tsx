@@ -62,14 +62,14 @@ const OutpointPage = async ({
       <div className="flex flex-col md:flex-row gap-4">
         <Artifact
           artifact={artifact}
-          size={600}
+          size={400}
           sizes={"100vw"}
           glow={true}
-          classNames={{ wrapper: "w-full md:w-1/2" }}
+          classNames={{ wrapper: `w-full ${activeTab === OutpointTab.Inscription ? 'md:w-2/3' : ''}` }}
           showListingTag={true}
         />
         <div className="divider" />
-        <div className="w-full md:w-1/2 mx-auto">
+        <div className={`w-full ${activeTab === OutpointTab.Inscription ? 'md:w-1/3' : ''} mx-auto`}>
           <OutpointTabs activeTab={activeTab} outpoint={outpoint} hasToken={!!artifact.origin?.data?.bsv20} />
           {content}
         </div>

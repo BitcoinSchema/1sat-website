@@ -413,7 +413,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         <BuyArtifactModal
           listing={artifact as OrdUtxo}
           onClose={() => setShowBuy(false)}
-          price={price}
+          price={BigInt(price)}
           content={content}
           showLicense={true}
         />
