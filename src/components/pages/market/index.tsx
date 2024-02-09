@@ -1,5 +1,5 @@
 import LRC20Listings from "@/components/LRC20Listings";
-import OrdinalListings from "@/components/OrdinalListings";
+import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import { AssetType } from "@/constants";
 import { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import TokenMarket from "../TokenMarket";
@@ -29,7 +29,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
   const Listings = ({ id }: { id?: string}) => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
-        return <><OrdinalListings listings={props.imageListings!} /></>;
+        return <><OrdinalListings listings={props.imageListings!} mode={OrdViewMode.List} /></>;
       case AssetType.BSV20:
         return <TokenMarket type={AssetType.BSV20} id={props.id} />;
       case AssetType.BSV21:

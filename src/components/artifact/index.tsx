@@ -7,6 +7,7 @@ import { toBase64 } from "@/utils/string";
 import { head } from "lodash";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import React, { useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
@@ -203,7 +204,15 @@ const Artifact: React.FC<ArtifactProps> = ({
         />
       </div>
     ) : type === ArtifactType.Model ? (
-      <div
+      <>
+              <Script
+          async
+          strategy="afterInteractive"
+          type="module"
+          src="https://unpkg.com/@google/model-viewer@^2.1.1/dist/model-viewer.min.js"
+          defer
+        />
+         <div
         className={`w-full h-[50vh] ${classNames?.wrapper || ""} ${
           classNames?.media || ""
         }`}
@@ -219,6 +228,8 @@ const Artifact: React.FC<ArtifactProps> = ({
       >
         <Model src={src} size={size} />
       </div>
+      </>
+     
     ) : type === ArtifactType.MarkDown ? (
       <div
         className={`h-full p-4 ${classNames?.wrapper || ""} ${

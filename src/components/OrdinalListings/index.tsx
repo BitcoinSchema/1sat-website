@@ -2,19 +2,29 @@ import { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { Suspense } from "react";
 import OrdinalListingSkeleton from "../skeletons/listing/Ordinal";
-import List from "./list";
+import View from "./view";
+
+export enum OrdViewMode {
+  Grid = "grid",
+  List = "list",
+}
 
 interface OrdinalListingsProps {
   listings?: OrdUtxo[];
   address?: string;
+  mode: OrdViewMode
 }
 
-const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings, address }: OrdinalListingsProps) => {
-    return (
+const OrdinalListings: React.FC<OrdinalListingsProps> = ({
+  listings,
+  address,
+  mode,
+}: OrdinalListingsProps) => {
+  return (
     <div className="w-full h-full">
       <table className="table font-mono" cellSpacing={10}>
-        <thead>
-          <tr>
+         {mode === OrdViewMode.List && (<thead>
+         <tr>
             <th className="px-0 w-[100px]">Ordinal</th>
             <th className="px-0 flex w-full pl-4">Name</th>
             <th className="px-0 md:pr-8 hidden md:table-cell max-w-[100px]">
@@ -23,11 +33,11 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings, address }: 
             <th className="px-0 hidden md:table-cell md:w-36">
               <Link href="#">Price</Link>
             </th>
-            <th className="px-0 w-8"></th>
+            <th className="px-0 w-8">&nbsp;</th>
           </tr>
-        </thead>
+        </thead>)}
         <Suspense fallback={<OrdinalListingSkeleton iterations={30} />}>
-          <List address={address} listings={listings} />
+          <View listings={listings} address={address} mode={mode} />
         </Suspense>
       </table>
     </div>
@@ -35,4 +45,3 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings, address }: 
 };
 
 export default OrdinalListings;
-
