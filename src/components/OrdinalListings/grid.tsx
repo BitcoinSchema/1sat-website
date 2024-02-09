@@ -133,9 +133,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
               <div ref={ref} className="col-span-full flex justify-center py-4">
                 {hasNextPage ? (
                   <FiLoader className="animate-spin" />
-                ) : (
-                  <p>No more items to load</p>
-                )}
+                ) : null}
               </div>
             </div>
           </td>
