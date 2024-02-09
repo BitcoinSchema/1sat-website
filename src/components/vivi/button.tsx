@@ -36,7 +36,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
         handleInputChange(e);
       }
     },
-    [formRef, handleInputChange]
+    [handleInputChange]
   );
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
 
       handleSubmit(e, options);
     }
-  }, [input]);
+  }, [formRef, handleSubmit, input]);
 
   const handleRecording = () => {
     if (!isRecording) {
@@ -100,6 +100,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
   return (
     <div>
       <button
+        type="button"
         className={`btn btn-ghost btn-primary ${className}`}
         onClick={handleRecording}
       >
@@ -120,7 +121,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
           onSubmit={(e) => {
             handleSubmit(e, options);
           }}
-        ></form>
+        />
       </div>
     </div>
   );
