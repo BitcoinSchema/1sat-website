@@ -12,6 +12,7 @@ import { uniq } from "lodash";
 import Link from "next/link";
 import { useCallback, useEffect, useRef } from "react";
 import { FaChevronRight } from "react-icons/fa6";
+import { FiLoader } from "react-icons/fi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import JDenticon from "../JDenticon";
 import Artifact from "../artifact";
@@ -111,8 +112,8 @@ const List = ({ address: addressProp, listings: listingsProp }: Props) => {
 
   const mintNumber = (listing: OrdUtxo, collection: any) => {
     const listingData = listing?.origin?.data?.map;
-    let mintNumber: string = listingData?.subTypeData?.mintNumber;
-    let qty = collection?.subTypeData?.quantity;
+    const mintNumber: string = listingData?.subTypeData?.mintNumber;
+    const qty = collection?.subTypeData?.quantity;
     if (!qty || !mintNumber) {
       return null;
     }
@@ -135,11 +136,12 @@ const List = ({ address: addressProp, listings: listingsProp }: Props) => {
           listing?.origin?.data?.map?.app ||
           "Unknown Name"
         );
-      case "text/html":
+      case "text/html": {
         // extract the title from the html
         const html = listing?.origin?.data?.insc?.text;
         const title = html?.match(/<title>(.*)<\/title>/)?.[1];
         return title || listing?.origin.num;
+      }
       case "text/json":
         return listing?.origin?.data?.insc.text || listing?.origin.num;
       case "text/plain":
@@ -196,10 +198,10 @@ const List = ({ address: addressProp, listings: listingsProp }: Props) => {
                     <div className="flex items-center gap-4 text-neutral-content/25">
                       {listing?.origin?.num}
                     </div>
-                    <div className={`block md:hidden`}>{price}</div>
+                    <div className={"block md:hidden"}>{price}</div>
                   </div>
                 </td>
-                <td className={`p-0 hidden md:table-cell w-10`}>
+                <td className={"p-0 hidden md:table-cell w-10"}>
                   <Link href={`/signer/${listing?.owner}`}>
                     <div
                       className="tooltip"
@@ -229,8 +231,8 @@ const List = ({ address: addressProp, listings: listingsProp }: Props) => {
           );
         })}
         <tr>
-          <td>
-            <div ref={ref} className="w-full h-1" />
+          <td className="text-center" colSpan={5}>
+            <div ref={ref} className="flex items-center justify-center"><FiLoader className="animate animate-spin" /></div>
           </td>
         </tr>
       </tbody>
@@ -249,7 +251,7 @@ const checkOutpointFormat = (outpoint: string) => {
   if (split[0].length !== 64) {
     return false;
   }
-  if (isNaN(parseInt(split[1]))) {
+  if (Number.isNaN(parseInt(split[1]))) {
     return false;
   }
   return true;
