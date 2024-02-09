@@ -42,7 +42,7 @@ const List = ({ listings, refProp }: Props) => {
       "collections",
       collectionIds.value && collectionIds.value?.length > 0,
     ],
-    queryFn: () => getOutpoints(collectionIds.value!),
+    queryFn: () => getOutpoints(collectionIds.value!, false),
   });
 
   const collections = useSignal(collectionData || []);

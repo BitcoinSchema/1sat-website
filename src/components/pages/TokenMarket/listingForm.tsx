@@ -52,9 +52,9 @@ const ListingForm = ({
     if (dataset && !listingPrice.value) {
       // populate the form data
       listingPrice.value = "0";
-      dataset.forEach((d) => {
+      for (const d of dataset) {
         listingPrice.value = d.price?.toString() || "0";
-      });
+      }
     }
   }, [dataset, listingPrice]);
 
@@ -104,7 +104,7 @@ const ListingForm = ({
       ordAddress: string,
       payoutAddress: string,
       satoshisPayout: number,
-      indexerAddress: string,
+      indexerAddress: string
     ): Promise<PendingTransaction> => {
       if (!bsvWasmReady.value) {
         throw new Error("bsv wasm not ready");
@@ -183,7 +183,7 @@ const ListingForm = ({
         utxoIn = signPayment(tx, paymentPk, i, utxo, utxoIn);
         tx.set_input(i, utxoIn);
         totalSatsIn += utxo.satoshis;
-        i++;        
+        i++;
         break;
       }
 
@@ -242,11 +242,7 @@ const ListingForm = ({
         tx.add_output(indexerFeeOutput);
       }
 
-      const changeOut = createChangeOutput(
-        tx,
-        changeAddress,
-        totalSatsIn,
-      );
+      const changeOut = createChangeOutput(tx, changeAddress, totalSatsIn);
       tx.add_output(changeOut);
 
       return {
@@ -294,7 +290,7 @@ const ListingForm = ({
         console.log({ url });
         const { promise } = http.customFetch<BSV20TXO[]>(url);
 
-        const u = (await promise).filter((u) => u.listing === false);        
+        const u = (await promise).filter((u) => u.listing === false);
         const satoshisPayout = Math.ceil(
           parseFloat(listingPrice.value!) * parseFloat(listingAmount.value!)
         );
@@ -352,7 +348,7 @@ const ListingForm = ({
             ? `(-${pendingListedBalance.value / 10 ** dec.value} pending)`
             : ""}
         </div>
-  
+
         <div className="form-control w-full">
           <label className="label">
             <span className="label-text">Price per token</span>

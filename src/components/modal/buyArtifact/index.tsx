@@ -232,9 +232,9 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
     // output 3 - marketFee
     // calculate market fee
-    let marketFee = price * marketRate;
-    if (marketFee === 0) {
-      marketFee = minimumMarketFee;
+    let marketFee = price * BigInt(marketRate);
+    if (marketFee === 0n) {
+      marketFee = BigInt(minimumMarketFee);
     }
     const marketFeeOutput = new TxOut(
       BigInt(marketFee),
@@ -273,7 +273,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     // Calculate the network fee
     // account for funding input and market output (not added to tx yet)
     let paymentUtxos: Utxo[] = [];
-    let satsCollected = 0;
+    let satsCollected = 0n;
     // initialize fee and satsNeeded (updated with each added payment utxo)
     let fee = calculateFee(1, purchaseTx);
     let satsNeeded = fee + price + marketFee;
@@ -283,12 +283,12 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     );
     for (let utxo of sortedFundingUtxos) {
       if (satsCollected < satsNeeded) {
-        satsCollected += utxo.satoshis;
+        satsCollected += BigInt(utxo.satoshis);
         paymentUtxos.push(utxo);
 
         // if we had to add additional
         fee = calculateFee(paymentUtxos.length, purchaseTx);
-        satsNeeded = fee + price + marketFee + indexerBuyFee;
+        satsNeeded = fee + price + marketFee + BigInt(indexerBuyFee);
       }
     }
 
@@ -414,6 +414,6 @@ export const calculateFee = (numPaymentUtxos: number, purchaseTx: Transaction) =
   const byteSize = Math.ceil(
     P2PKHInputSize * numPaymentUtxos + purchaseTx.to_bytes().byteLength
   );
-  return Math.ceil(byteSize * feeRate);
+  return BigInt(Math.ceil(byteSize * feeRate));
 };
 

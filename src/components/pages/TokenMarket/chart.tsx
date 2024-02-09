@@ -118,7 +118,7 @@ const TremorChartComponent: FC<ChartProps> = ({
                 console.log("close");
                 showListingForm.value = false;
               }}
-            ></ListingForm>
+            />
           ) : (
             <ScatterChart
               className="w-full h-60"

@@ -35,7 +35,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
     queryKey: ["ordinals", address],
     queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
-      if (lastPage.length === resultsPerPage) {
+      if (lastPage?.length === resultsPerPage) {
         return lastPageParam + 1;
       }
       return undefined;
@@ -49,9 +49,12 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
     if (data) {
       const pageData = data.pages[data.pages.length - 1];
       if (pageData !== undefined) {
-        ordUtxos.value = data.pages.reduce((acc, val) => acc.concat(val), []);
-        console.log("Reduced", ordUtxos.value);
-        listings.value = ordUtxos.value || [];
+        // ordUtxos.value = data.pages.reduce((acc, val) => acc.concat(val), []);
+        const u = data.pages.reduce((acc, val) => (acc || []).concat(val || []), []);
+        if (u) {
+          ordUtxos.value = u;
+          listings.value = ordUtxos.value || [];
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,7 +81,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
 
   const { data: collectionData } = useQuery({
     queryKey: ["collections", collectionIds.value?.length > 0],
-    queryFn: () => getOutpoints(collectionIds.value),
+    queryFn: () => getOutpoints(collectionIds.value, false),
   });
 
   const collections = useSignal(collectionData || []);

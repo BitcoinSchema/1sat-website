@@ -115,14 +115,14 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     const sortedFundingUtxos = utxos.value!.sort((a, b) =>
       a.satoshis > b.satoshis ? -1 : 1
     );
-    for (let utxo of sortedFundingUtxos) {
+    for (const utxo of sortedFundingUtxos) {
       if (satsCollected < satsNeeded) {
         satsCollected += utxo.satoshis;
         paymentUtxos.push(utxo);
 
         // if we had to add additional
         fee = calculateFee(paymentUtxos.length, cancelTx);
-        satsNeeded = fee + indexerBuyFee;
+        satsNeeded = fee + BigInt(indexerBuyFee);
       }
     }
 
@@ -138,7 +138,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     }
 
     // Replace dummy change output
-    const changeAmt = satsCollected - satsNeeded;
+    const changeAmt = BigInt(satsCollected) - satsNeeded;
 
     const changeOutput = new TxOut(
       BigInt(changeAmt),
@@ -166,7 +166,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
     // sign the funding inputs
     let idx = 1;
-    for (let u of paymentUtxos) {
+    for (const u of paymentUtxos) {
       const inx = cancelTx.get_input(idx)!;
       const sig = cancelTx.sign(
         PrivateKey.from_wif(payPk.value!),
@@ -231,8 +231,8 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
         <form method="dialog">
           <div className="modal-action">
             {/* if there is a button in form, it will close the modal */}
-            <button className="btn">Close</button>
-            <button className="btn btn-error" onClick={cancelListing}>
+            <button type="button" className="btn">Close</button>
+            <button type="button" className="btn btn-error" onClick={cancelListing}>
               Cancel Listing
             </button>
           </div>
@@ -249,7 +249,7 @@ export const broadcast = async ({ rawTx, txid }: Partial<PendingTransaction>) =>
     return;
   }
   const rawtx = Buffer.from(rawTx, "hex").toString("base64");
-  const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
+  const { promise } = http.customFetch(`${API_HOST}/api/tx`, {
     method: "POST",
     body: JSON.stringify({
       rawtx,

@@ -43,7 +43,7 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
       if (lastPageParam === 0) {
         return lastPageParam + 1;
       }
-      if (lastPage.length === resultsPerPage) {
+      if (lastPage?.length === resultsPerPage) {
         return lastPageParam + 1;
       }
       return undefined;
@@ -63,8 +63,11 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
     if (data) {
       const pageData = data.pages[data.pages.length - 1];
       if (pageData !== undefined) {
-        ordUtxos.value = data.pages.reduce((acc, val) => acc.concat(val), []);
-        listings.value = ordUtxos.value || [];
+        const u = data.pages.reduce((acc, val) => (acc || []).concat(val || []), []);
+        if (u) {
+          ordUtxos.value = u;
+          listings.value = ordUtxos.value || [];
+        }
       }
     }
   }, [data, listings]);
