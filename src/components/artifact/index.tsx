@@ -5,7 +5,6 @@ import { OrdUtxo, SIGMA } from "@/types/ordinals";
 import { getArtifactType } from "@/utils/artifact";
 import { toBase64 } from "@/utils/string";
 import { head } from "lodash";
-import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import React, { useMemo, useState } from "react";
@@ -13,6 +12,7 @@ import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-bitcoin-ts";
+import ImageWithFallback from "../ImageWithFallback";
 import BuyArtifactModal from "../modal/buyArtifact";
 import Model from "../model";
 import Tooltip from "../tooltip";
@@ -193,7 +193,12 @@ const Artifact: React.FC<ArtifactProps> = ({
           classNames?.media || ""
         }`}
       >
-        <JsonArtifact artifact={artifact} origin={origin} type={type} mini={(size || 300) < 300} />
+        <JsonArtifact
+          artifact={artifact}
+          origin={origin}
+          type={type}
+          mini={(size || 300) < 300}
+        />
       </div>
     ) : type === ArtifactType.Text || type === ArtifactType.OPNS ? (
       <div className={`w-full flex items-center justify-center p-2 h-full`}>
@@ -205,31 +210,30 @@ const Artifact: React.FC<ArtifactProps> = ({
       </div>
     ) : type === ArtifactType.Model ? (
       <>
-              <Script
+        <Script
           async
           strategy="afterInteractive"
           type="module"
           src="https://unpkg.com/@google/model-viewer@^2.1.1/dist/model-viewer.min.js"
           defer
         />
-         <div
-        className={`w-full h-[50vh] ${classNames?.wrapper || ""} ${
-          classNames?.media || ""
-        }`}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onAuxClick={(e) => {
-          console.log("middle click");
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-      >
-        <Model src={src} size={size} />
-      </div>
+        <div
+          className={`w-full h-[50vh] ${classNames?.wrapper || ""} ${
+            classNames?.media || ""
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onAuxClick={(e) => {
+            console.log("middle click");
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <Model src={src} size={size} />
+        </div>
       </>
-     
     ) : type === ArtifactType.MarkDown ? (
       <div
         className={`h-full p-4 ${classNames?.wrapper || ""} ${
@@ -252,8 +256,8 @@ const Artifact: React.FC<ArtifactProps> = ({
           showZoom ? "h-auto" : "h-full"
         }`}
       >
-        {src !== "" && src != undefined && (
-          <Image
+        {src !== "" && src !== undefined && (
+          <ImageWithFallback
             width={size || 0}
             height={size || 0}
             priority={priority || false}
@@ -271,11 +275,12 @@ const Artifact: React.FC<ArtifactProps> = ({
               src.startsWith("data:")
                 ? src
                 : showZoom
-                ? `https://res.cloudinary.com/tonicpow/image/fetch/f_auto/${src}`
-                : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,g_center,h_${
-                    size || 300
-                  },w_${size || 300}/f_auto/${src}`
+                  ? `https://res.cloudinary.com/tonicpow/image/fetch/f_auto/${src}`
+                  : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,g_center,h_${
+                      size || 300
+                    },w_${size || 300}/f_auto/${src}`
             }
+            
             id={`artifact_${outPoint || origin}_image`}
             alt={`Inscription${num ? " #" + num : ""}`}
             placeholder="blur"
@@ -292,7 +297,20 @@ const Artifact: React.FC<ArtifactProps> = ({
         )}
       </div>
     );
-  }, [src, type, origin, classNames, outPoint, size, clickToZoom, artifact, showZoom, priority, num, sizes]);
+  }, [
+    src,
+    type,
+    origin,
+    classNames,
+    outPoint,
+    size,
+    clickToZoom,
+    artifact,
+    showZoom,
+    priority,
+    num,
+    sizes,
+  ]);
 
   return (
     <React.Fragment>
@@ -396,7 +414,9 @@ const Artifact: React.FC<ArtifactProps> = ({
           listing={artifact as OrdUtxo}
           onClose={() => setShowBuy(false)}
           price={price}
-          content={content} showLicense={true} />
+          content={content}
+          showLicense={true}
+        />
       )}
     </React.Fragment>
   );

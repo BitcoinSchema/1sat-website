@@ -1,6 +1,10 @@
+"use client"
+
 import { AssetType } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
-import { Signal } from "@preact/signals-react";
+import { computed } from "@preact/signals-react";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { MutableRefObject } from "react";
 import { FaChevronRight } from "react-icons/fa6";
@@ -9,14 +13,35 @@ import { toBitcoin } from "satoshi-bitcoin-ts";
 import JDenticon from "../JDenticon";
 import Artifact from "../artifact";
 import BuyBtn from "./buy";
-import { listingCollection, listingName, mintNumber } from "./helpers";
+import { checkOutpointFormat, getCollectionIds, listingCollection, listingName, mintNumber } from "./helpers";
 interface Props {
   listings?: OrdUtxo[];
-  collections: Signal<OrdUtxo[]>;
   refProp: MutableRefObject<null>;
 }
 
-const List = ({ listings, collections, refProp }: Props) => {
+const List = ({ listings, refProp }: Props) => {
+useSignals();
+  const collectionIds = computed(() =>
+    listings?.reduce((i, v) => {
+      const cid = v.origin?.data?.map?.subTypeData?.collectionId;
+      if (cid && checkOutpointFormat(cid)) {
+        i.push(cid);
+      }
+      return i;
+    }, [] as string[])
+  );
+
+
+
+  const { data: collectionData } = useQuery({
+    queryKey: ["collections", collectionIds.value && collectionIds.value?.length > 0],
+    queryFn: () => getCollectionIds(collectionIds.value!),
+  });
+
+  const collections = useSignal(collectionData || []);
+  console.log({ collectionIds: collectionIds.value, collections: collections.value });
+
+
   return (
     listings && (
       <tbody className="h-full">

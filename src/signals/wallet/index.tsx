@@ -12,9 +12,9 @@ export type InscribeOptions ={
   op: string;
 };
 
-export let payPk = signal<string | null>(null);
-export let ordPk = signal<string | null>(null);
-export let pendingTxs = signal<PendingTransaction[] | null>(null);
+export const payPk = signal<string | null>(null);
+export const ordPk = signal<string | null>(null);
+export const pendingTxs = signal<PendingTransaction[] | null>(null);
 export const bsvWasmReady = signal<boolean>(false);
 export const utxos = signal<Utxo[] | null>(null);
 export const ordUtxos = signal<OrdUtxo[] | null>(null);
