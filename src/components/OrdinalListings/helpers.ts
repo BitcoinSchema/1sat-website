@@ -1,6 +1,13 @@
 import { API_HOST, resultsPerPage } from "@/constants";
+import { Collection } from "@/types/collection";
 import { OrdUtxo } from "@/types/ordinals";
+import { Signal } from "@preact/signals-react";
 import { uniq } from "lodash";
+
+interface GroupedCollection {
+  name: string;
+  collections: Collection[];
+}
 
 export const checkOutpointFormat = (outpoint: string) => {
   // ensure txid_vout format
@@ -21,19 +28,23 @@ export const getOrdUtxos = async ({
   address,
   pageParam,
 }: {
-  address: string;
+  address?: string;
   pageParam: number;
 }) => {
   if (!address) return;
   console.log("getOrdUtxos called", address, pageParam);
   const offset = resultsPerPage * pageParam;
-  const url = `${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${offset}&dir=DESC&status=all&bsv20=false`;
+  let url = `${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${offset}&dir=DESC&status=all&bsv20=false`;
+  if (!address) {
+    url = `${API_HOST}/api/market?limit=${resultsPerPage}&offset=${offset}&dir=DESC`;
+  }
   const res = await fetch(url);
   return res.json();
 };
 
 export const getCollectionIds = async (ids: string[]) => {
   const url = `${API_HOST}/api/txos/outpoints?script=false`;
+  console.log("almost", url, "with", ids);
   const uniqueIds = uniq(ids);
   console.log("hitting", url, "with", uniqueIds);
   const res = await fetch(url, {
@@ -85,14 +96,14 @@ export const listingName = (listing: OrdUtxo) => {
   }
 };
 
-export const listingCollection = (listing: OrdUtxo, collections: any) => {
+export const listingCollection = (listing: OrdUtxo, collections: Signal<OrdUtxo[]>) => {
     if (listing?.origin?.data?.map) {
       const collectionId = listing?.origin.data.map.subTypeData?.collectionId;
       if (!collectionId) {
         return null;
       }
       const collection = collections.value.find(
-        (c: OrdUtxo) => c.outpoint === collectionId
+        (c) => c.outpoint === collectionId
       )?.origin?.data?.map;
       if (collection) {
         return collection;

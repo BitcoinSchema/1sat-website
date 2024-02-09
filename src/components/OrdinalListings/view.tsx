@@ -15,7 +15,7 @@ import { checkOutpointFormat, getCollectionIds, getOrdUtxos } from "./helpers";
 import List from "./list";
 
 interface ViewProps {
-  address: string;
+  address?: string;
   listings?: OrdUtxo[];
   mode: OrdViewMode
 }
@@ -27,6 +27,7 @@ const View = ({ address, listings: listingsProp, mode}: ViewProps) => {
 
   const listings = useSignal<OrdUtxo[]>(listingsProp || []);
 
+  // if address is not set this is just showing listings
   console.log({ address, listingsProp, listings });
   const {
     data,
@@ -94,15 +95,14 @@ const View = ({ address, listings: listingsProp, mode}: ViewProps) => {
   });
 
   const collections = useSignal(collectionData || []);
-  console.log({ collections: collections.value });
+  console.log({ collectionIds: collectionIds.value, collections: collections.value });
 
-  if (mode === OrdViewMode.Grid) {
+  if (mode === OrdViewMode.Grid && address) {
     return <GridList listings={listings.value} address={address} />;
   }
 
   return (
     <List
-      address={address}
       listings={listings.value}
       collections={collections}
       refProp={ref}

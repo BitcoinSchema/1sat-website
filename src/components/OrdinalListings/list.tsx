@@ -1,7 +1,6 @@
-"use client";
-
 import { AssetType } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
+import { Signal } from "@preact/signals-react";
 import Link from "next/link";
 import { MutableRefObject } from "react";
 import { FaChevronRight } from "react-icons/fa6";
@@ -9,17 +8,15 @@ import { FiLoader } from "react-icons/fi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import JDenticon from "../JDenticon";
 import Artifact from "../artifact";
+import BuyBtn from "./buy";
 import { listingCollection, listingName, mintNumber } from "./helpers";
 interface Props {
-  address: string;
   listings?: OrdUtxo[];
-  collections: any;
-  refProp:MutableRefObject<null>
+  collections: Signal<OrdUtxo[]>;
+  refProp: MutableRefObject<null>;
 }
 
-const List = ({ address, listings, collections, refProp }: Props) => { 
-
-
+const List = ({ listings, collections, refProp }: Props) => {
   return (
     listings && (
       <tbody className="h-full">
@@ -85,12 +82,11 @@ const List = ({ address, listings, collections, refProp }: Props) => {
                 </td>
                 <td className="p-0 text-xs md:text-sm hidden md:table-cell">
                   {listing?.data?.list?.price ? (
-                    <button type="button" className="btn">
-                      {price}
-                    </button>
+                    <BuyBtn price={price} listing={listing} />
                   ) : (
                     ""
                   )}
+            
                 </td>
                 <td className="p-0 md:table-cell hidden text-center w-8">
                   <Link
