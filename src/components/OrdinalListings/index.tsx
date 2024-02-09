@@ -11,7 +11,7 @@ export enum OrdViewMode {
 
 interface OrdinalListingsProps {
   listings?: OrdUtxo[];
-  address?: string;
+  address: string;
   mode: OrdViewMode
 }
 
