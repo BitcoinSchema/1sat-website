@@ -49,6 +49,9 @@ export const getCollectionIds = async (ids: string[]) => {
   console.log("hitting", url, "with", uniqueIds);
   const res = await fetch(url, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(uniqueIds),
   });
   const json = (await res.json()) as OrdUtxo[];

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { AssetType } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
@@ -13,14 +13,20 @@ import { toBitcoin } from "satoshi-bitcoin-ts";
 import JDenticon from "../JDenticon";
 import Artifact from "../artifact";
 import BuyBtn from "./buy";
-import { checkOutpointFormat, getCollectionIds, listingCollection, listingName, mintNumber } from "./helpers";
+import {
+  checkOutpointFormat,
+  getCollectionIds,
+  listingCollection,
+  listingName,
+  mintNumber,
+} from "./helpers";
 interface Props {
   listings?: OrdUtxo[];
   refProp: MutableRefObject<null>;
 }
 
 const List = ({ listings, refProp }: Props) => {
-useSignals();
+  useSignals();
   const collectionIds = computed(() =>
     listings?.reduce((i, v) => {
       const cid = v.origin?.data?.map?.subTypeData?.collectionId;
@@ -31,16 +37,19 @@ useSignals();
     }, [] as string[])
   );
 
-
-
-  const { data: collectionData } = useQuery({
-    queryKey: ["collections", collectionIds.value && collectionIds.value?.length > 0],
+  const { data: collectionData, isFetching } = useQuery({
+    queryKey: [
+      "collections",
+      collectionIds.value && collectionIds.value?.length > 0,
+    ],
     queryFn: () => getCollectionIds(collectionIds.value!),
   });
 
   const collections = useSignal(collectionData || []);
-  console.log({ collectionIds: collectionIds.value, collections: collections.value });
-
+  console.log({
+    collectionIds: collectionIds.value,
+    collections: collections.value,
+  });
 
   return (
     listings && (
@@ -111,7 +120,6 @@ useSignals();
                   ) : (
                     ""
                   )}
-            
                 </td>
                 <td className="p-0 md:table-cell hidden text-center w-8">
                   <Link
@@ -128,7 +136,7 @@ useSignals();
         <tr>
           <td className="text-center" colSpan={5}>
             <div ref={refProp} className="flex items-center justify-center">
-              <FiLoader className="animate animate-spin" />
+              {isFetching && <FiLoader className="animate animate-spin" />}
             </div>
           </td>
         </tr>
