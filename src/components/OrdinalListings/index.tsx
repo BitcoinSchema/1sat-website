@@ -5,19 +5,12 @@ import OrdinalListingSkeleton from "../skeletons/listing/Ordinal";
 import List from "./list";
 
 interface OrdinalListingsProps {
-  listings: OrdUtxo[];
+  listings?: OrdUtxo[];
+  address?: string;
 }
 
-const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings }) => {
-  const collectionIds = listings.reduce((i, v) => {
-    const cid = v.origin?.data?.map?.subTypeData?.collectionId;
-    if (cid && checkOutpointFormat(cid)) {
-      i.push(cid);
-    }
-    return i;
-  }, [] as string[]);
-
-  return (
+const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings, address }: OrdinalListingsProps) => {
+    return (
     <div className="w-full h-full">
       <table className="table font-mono" cellSpacing={10}>
         <thead>
@@ -33,8 +26,8 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings }) => {
             <th className="px-0 w-8"></th>
           </tr>
         </thead>
-        <Suspense fallback={<OrdinalListingSkeleton iterations={listings.length} />}>
-          <List listings={listings} collectionIds={collectionIds} />
+        <Suspense fallback={<OrdinalListingSkeleton iterations={30} />}>
+          <List address={address} listings={listings} />
         </Suspense>
       </table>
     </div>
@@ -43,17 +36,3 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({ listings }) => {
 
 export default OrdinalListings;
 
-const checkOutpointFormat = (outpoint: string) => {
-  // ensure txid_vout format
-  const split = outpoint.split("_");
-  if (split.length !== 2) {
-    return false;
-  }
-  if (split[0].length !== 64) {
-    return false;
-  }
-  if (isNaN(parseInt(split[1]))) {
-    return false;
-  }
-  return true;
-};

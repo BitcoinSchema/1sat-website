@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 const Market = async ({ params }: { params: { tab: AssetType, id: string } }) => {
   // hit the details request
 
+  const tickOrId = decodeURIComponent(params.id);
   switch (params.tab) {
     case AssetType.Ordinals:
       //       const urlImages = `https://1sat-api-production.up.railway.app/market/${params.tab}/${params.id}`;
@@ -19,14 +20,14 @@ const Market = async ({ params }: { params: { tab: AssetType, id: string } }) =>
       return (
         <MarketPage
           selectedAssetType={AssetType.BSV20}
-          id={params.id}
+          id={tickOrId}
         />
       );
     case AssetType.BSV21:
       return (
         <MarketPage
           selectedAssetType={AssetType.BSV21}
-          id={params.id}
+          id={tickOrId}
         />
       );
     case AssetType.LRC20:

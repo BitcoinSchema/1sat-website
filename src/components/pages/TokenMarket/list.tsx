@@ -124,16 +124,15 @@ const List = async ({
     //   return a.marketCap > b.marketCap ? -1 : 1;
     // });
   }
-  console.log({ marketData });
   return (
     <tbody className="overflow-auto">
       {marketData.map((ticker, idx) => {
         const showBsv20Content =
-          type === AssetType.BSV20 &&
-          ticker.tick?.toLowerCase() === id?.toLowerCase();
+        type === AssetType.BSV20 &&
+        ticker.tick?.toLowerCase() === id?.toLowerCase();
         const showBsv21Content =
-          type === AssetType.BSV21 &&
-          ticker.id.toLowerCase() === id?.toLowerCase();
+        type === AssetType.BSV21 &&
+        ticker.id.toLowerCase() === id?.toLowerCase();
         return (
           <React.Fragment key={`${ticker.tick}-${idx}`}>
             <TickerHeading ticker={ticker} id={id} type={type} />

@@ -28,7 +28,7 @@ const ListingsPage: React.FC<ListingsPageProps> = (props) => {
   const Listings = () => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
-        return <OrdinalListings listings={props.imageListings!} />;
+        return <OrdinalListings listings={props.imageListings} />;
       case AssetType.BSV20:
         return <TokenListings type={AssetType.BSV20} />;
       case AssetType.BSV21:
