@@ -16,11 +16,11 @@ import { FaChevronRight } from "react-icons/fa6";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import WalletTabs from "./tabs";
 
-const enum BalanceTab {
-  Confirmed,
-  Pending,
-  Listed,
-  Unindexed,
+enum BalanceTab {
+  Confirmed = 0,
+  Pending = 1,
+  Listed = 2,
+  Unindexed = 3,
 }
 
 const Bsv20List = ({
@@ -84,16 +84,19 @@ const Bsv20List = ({
 
   const unindexBalances = computed(
     () =>
-      bsv20s.value?.reduce((acc, utxo) => {
-        if (utxo.data?.bsv20?.tick) {
-          if (acc[utxo.data.bsv20.tick]) {
-            acc[utxo.data.bsv20.tick] += parseInt(utxo.data.bsv20.amt);
-          } else {
-            acc[utxo.data.bsv20.tick] = parseInt(utxo.data.bsv20.amt);
+      bsv20s.value?.reduce(
+        (acc, utxo) => {
+          if (utxo.data?.bsv20?.tick) {
+            if (acc[utxo.data.bsv20.tick]) {
+              acc[utxo.data.bsv20.tick] += parseInt(utxo.data.bsv20.amt);
+            } else {
+              acc[utxo.data.bsv20.tick] = parseInt(utxo.data.bsv20.amt);
+            }
           }
-        }
-        return acc;
-      }, {} as { [key: string]: number }) || {}
+          return acc;
+        },
+        {} as { [key: string]: number }
+      ) || {}
   );
 
   useEffect(() => {
@@ -196,37 +199,34 @@ const Bsv20List = ({
       <div className="grid grid-cols-2 gap-3 bg-[#222] p-4 rounded mb-4">
         <div className="text-[#777] font-semibold">Ticker</div>
         <div className="text-[#777] font-semibold">Balance</div>
-        {confirmedBalances &&
-          confirmedBalances.value?.map(({ tick, all, sym, id, dec }, idx) => (
-            <React.Fragment key={`bal-${tick}-${idx}`}>
-              <div
-                className="cursor-pointer hover:text-blue-400 transition"
-                onClick={() =>
-                  router.push(
-                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick}`
-                  )
-                }
-              >
-                {tick || sym}
-              </div>
-              <div
-                className="text-emerald-400"
-                onClick={() => (showSendModal.value = (tick || id))}
-              >
-                {all.confirmed / 10 ** dec}
-              </div>
-              {showSendModal.value  === (tick || id) && (
-                <TransferBsv20Modal
-                  onClose={() => (showSendModal.value = undefined)}
-                  type={type}
-                  id={(tick || id)!}
-                  dec={dec}
-                  balance={all.confirmed / 10 ** dec}
-                  sym={sym}
-                />
-              )}
-            </React.Fragment>
-          ))}
+        {confirmedBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => (
+          <React.Fragment key={`bal-confirmed-${tick}`}>
+            <div
+              className="cursor-pointer hover:text-blue-400 transition"
+              onClick={() =>
+                router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
+              }
+            >
+              {tick || sym}
+            </div>
+            <div
+              className="text-emerald-400"
+              onClick={() => (showSendModal.value = tick || id)}
+            >
+              {all.confirmed / 10 ** dec}
+            </div>
+            {showSendModal.value === (tick || id) && (
+              <TransferBsv20Modal
+                onClose={() => (showSendModal.value = undefined)}
+                type={type}
+                id={(tick || id)!}
+                dec={dec}
+                balance={all.confirmed / 10 ** dec}
+                sym={sym}
+              />
+            )}
+          </React.Fragment>
+        ))}
       </div>
     );
   });
@@ -236,22 +236,19 @@ const Bsv20List = ({
       <div className="grid grid-cols-2 gap-3 bg-[#222] p-4 rounded mb-4">
         <div className="text-[#777] font-semibold">Ticker</div>
         <div className="text-[#777] font-semibold">Balance</div>
-        {pendingBalances &&
-          pendingBalances.value?.map(({ tick, all, sym, id, dec }, idx) => (
-            <React.Fragment key={`bal-${tick}-${idx}`}>
-              <div
-                className="cursor-pointer hover:text-blue-400 transition"
-                onClick={() =>
-                  router.push(
-                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick}`
-                  )
-                }
-              >
-                {tick || sym}
-              </div>
-              <div className="text-emerald-400">{all.pending / 10 ** dec}</div>
-            </React.Fragment>
-          ))}
+        {pendingBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => (
+          <React.Fragment key={`bal-pending-${tick}`}>
+            <div
+              className="cursor-pointer hover:text-blue-400 transition"
+              onClick={() =>
+                router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
+              }
+            >
+              {tick || sym}
+            </div>
+            <div className="text-emerald-400">{all.pending / 10 ** dec}</div>
+          </React.Fragment>
+        ))}
       </div>
     );
   });
@@ -261,22 +258,23 @@ const Bsv20List = ({
       <div className="grid grid-cols-2 gap-3 bg-[#222] p-4 rounded mb-4">
         <div className="text-[#777] font-semibold">Ticker</div>
         <div className="text-[#777] font-semibold">Balance</div>
-        {listingBalances &&
-          listingBalances.value?.map(({ tick, all, sym, id, listed, dec }, idx) => (
-            <React.Fragment key={`bal-${tick}-${idx}`}>
+        {listingBalances?.value?.map(
+          ({ tick, all, sym, id, listed, dec }, idx) => (
+            <React.Fragment key={`bal-listed-${tick}`}>
               <div
                 className="cursor-pointer hover:text-blue-400 transition"
                 onClick={() =>
-                  router.push(
-                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick}`
-                  )
+                  router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
                 }
               >
                 {tick || sym}
               </div>
-              <div className="text-emerald-400">{listed.confirmed /  10 ** dec}</div>
+              <div className="text-emerald-400">
+                {listed.confirmed / 10 ** dec}
+              </div>
             </React.Fragment>
-          ))}
+          )
+        )}
       </div>
     );
   });
@@ -297,7 +295,12 @@ const Bsv20List = ({
             >
               {tick}
             </Link>
-            <div className="text-emerald-400 tooltip" data-tip="[ ! ] This balance does not consider decimals">{amount}</div>
+            <div
+              className="text-emerald-400 tooltip"
+              data-tip="[ ! ] This balance does not consider decimals"
+            >
+              {amount}
+            </div>
           </React.Fragment>
         ))}
       </div>
@@ -385,7 +388,7 @@ const Bsv20List = ({
           <div className="md:mx-6">
             <h1 className="mb-4 flex items-center justify-between">
               <div className="text-2xl">{type.toUpperCase()} Outputs</div>
-              <div className="text-sm text-[#555]"></div>
+              <div className="text-sm text-[#555]" />
             </h1>
             <div className="my-2 w-full text-sm grid grid-cols-6 p-4 gap-x-4 gap-y-2 min-w-md bg-[#111]">
               <div className="font-semibold text-accent text-base">Height</div>
@@ -393,9 +396,9 @@ const Bsv20List = ({
               <div className="font-semibold text-[#777] text-base">Op</div>
               <div className="font-semibold text-[#777] text-base">Amount</div>
               <div className="font-semibold text-[#777] text-base">Price</div>
-              <div className=""></div>
+              <div className="" />
               {activity}
-              <div ref={ref}></div>
+              <div ref={ref} />
             </div>
           </div>
         </div>
