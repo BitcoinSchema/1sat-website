@@ -319,7 +319,7 @@ const Bsv20List = ({
           />
           <div
             role="tabpanel"
-            className="tab-content bg-base-100 border-base-300 rounded-box border-0 mt-4"
+            className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
           >
             {confirmedContent.value}
           </div>
@@ -335,7 +335,7 @@ const Bsv20List = ({
           />
           <div
             role="tabpanel"
-            className="tab-content bg-base-100 border-base-300 rounded-box border-0 mt-4"
+            className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
           >
             {pendingContent.value}
           </div>
@@ -351,7 +351,7 @@ const Bsv20List = ({
           />
           <div
             role="tabpanel"
-            className="tab-content bg-base-100 border-base-300 rounded-box border-0 mt-4"
+            className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
           >
             {listedContent.value}
           </div>
@@ -367,7 +367,7 @@ const Bsv20List = ({
           />
           <div
             role="tabpanel"
-            className="tab-content bg-base-100 border-base-300 rounded-box border-0 mt-4"
+            className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
           >
             {unindexedContent.value}
           </div>
@@ -380,7 +380,7 @@ const Bsv20List = ({
     <div className="overflow-x-auto">
       <div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
         <WalletTabs type={type} address={addressProp} />
-        <div className="tab-content bg-base-100 border-base-300 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
+        <div className="tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
           <div className="mb-4">{contentTabs.value}</div>
           <div className="md:mx-6">
             <h1 className="mb-4 flex items-center justify-between">

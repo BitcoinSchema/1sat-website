@@ -21,21 +21,21 @@ const WalletTabs = ({
             href={
               address ? `/activity/${address}/ordinals` : `/wallet/ordinals`
             }
-            className={`tab  ${type === AssetType.Ordinals ? "tab-active" : ""}`}
+            className={`tab border-base-200 ${type === AssetType.Ordinals ? "tab-active" : ""}`}
           >
             Ordinals
           </Link>
           <Link
             role="tab"
             href={address ? `/activity/${address}/bsv20` : `/wallet/bsv20`}
-            className={`tab  ${type === AssetType.BSV20 ? "tab-active" : ""}`}
+            className={`tab border-base-200 ${type === AssetType.BSV20 ? "tab-active" : ""}`}
           >
             BSV20
           </Link>
           <Link
             href={address ? `/activity/${address}/bsv21` : `/wallet/bsv21`}
             role="tab"
-            className={`tab ${type === AssetType.BSV21 ? "tab-active" : ""}`}
+            className={`tab border-base-200 ${type === AssetType.BSV21 ? "tab-active" : ""}`}
           >
             BSV21
           </Link>

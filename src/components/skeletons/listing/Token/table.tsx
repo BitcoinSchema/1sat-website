@@ -18,12 +18,16 @@ const SkeletonItem = () => (
 
 const iterations = 20;
 
-const TokenListingSkeleton = () => (
-  <div className="py-0 px-3 mb-4 w-full">
-    {[...Array(iterations)].map((_, i) => (
-      <SkeletonItem key={i} />
-    ))}
-  </div>
+const TokenListingSkeletonTable = () => (
+  <tbody className="w-full max-w-5xl mx-auto">
+    <tr className="w-full">
+      <td colSpan={5} className="py-0 px-3 mb-4 w-full">
+        {[...Array(iterations)].map((_, i) => (
+          <SkeletonItem key={i} />
+        ))}
+      </td>
+    </tr>
+  </tbody>
 );
 
-export default TokenListingSkeleton;
+export default TokenListingSkeletonTable;

@@ -59,7 +59,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
           />
         </div>
       )}
-      <div className="tab-content block bg-base-100 border-base-300 rounded-box p-2 md:p-6">
+      <div className="tab-content block bg-base-100 border-base-200 rounded-box p-2 md:p-6">
         <Listings id={props.id} />
       </div>
     </div>
