@@ -1,8 +1,8 @@
 
-export const ORDFS = `https://ordfs.network`;
-export const API_HOST = `https://ordinals.gorillapool.io`;
+export const ORDFS = "https://ordfs.network";
+export const API_HOST = "https://ordinals.gorillapool.io";
 
-export const enum SortBy {
+export enum SortBy {
   PC = "pct_minted",
   Available = "available",
   Tick = "tick",
@@ -10,7 +10,7 @@ export const enum SortBy {
   Height = "height",
 }
 
-export const enum Dir {
+export enum Dir {
   ASC = "asc",
   DESC = "desc",
 }
@@ -44,10 +44,10 @@ export const toastErrorProps = {
 };
 
 export enum FetchStatus {
-  Idle,
-  Loading,
-  Success,
-  Error,
+  Idle = 0,
+  Loading = 1,
+  Success = 2,
+  Error = 3,
 }
 
 export enum AssetType {
@@ -58,7 +58,7 @@ export enum AssetType {
 }
 
 // Constants
-export const marketAddress = `15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z`;
+export const marketAddress = "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z";
 export const minimumMarketFee = 10000;
 export const marketRate = 0.04;
 export const P2PKHInputSize = 148;
