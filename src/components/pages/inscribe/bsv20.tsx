@@ -707,7 +707,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                   <input
                     onChange={changeIterations}
                     value={iterations}
-                    max={maxIterations}
+                    max={maxIterations + 1}
                     type="range"
                     min={1}
                     className="range"
@@ -736,7 +736,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                             !inSync.value && indexers.value && chainInfo.value
                               ? "The index is not caught up. These tokens may have already been minted."
                               : selectedBsv20?.included
-                                ? ""
+                                ? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
                                 : "This ticker is not included in the index. These tokens may have already been minted."
                           }
                         >
@@ -864,6 +864,7 @@ const defaultDec = 8;
 const bulkMintingTicker = "OPL";
 const bulkMintingTickerMaxSupply = 21000000;
 const iterationFee = 100;
+
 // Function to calculate the tier number based on balance
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
   if (balance <= 0) return 0;
@@ -899,5 +900,5 @@ const tierMax = (balance: number, max: number) => {
 
   // Map tier number to max iterations
   const iterations = [1, 10, 100, 1000, 10000];
-  return Math.min(iterations[tierNum - 1], max)
+  return iterations[tierNum - 1] > max ? max : Math.max(iterations[tierNum - 1], max)
 };

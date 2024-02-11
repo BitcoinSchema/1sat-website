@@ -2,7 +2,8 @@ import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Image from "next/image";
 import Link from "next/link";
 import SearchBar from "../SearchBar";
-import Wallet from "../Wallet";
+import Wallet from "../Wallet/menu";
+import MarketMenu from "../marketMenu";
 
 const Header = ({ ubuntu }: { ubuntu: any }) => {
   return (
@@ -30,6 +31,7 @@ const Header = ({ ubuntu }: { ubuntu: any }) => {
         </div>
         <SearchBar />
         <div className="navbar-end">
+          <MarketMenu />
           <Wallet />
         </div>
       </div>

@@ -68,7 +68,6 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ amount: amt, address: add
       const satsIn = inputValue;
       
       const change = satsIn - satoshis - feeSats;
-      console.log({ feeSats, satsIn, satoshis, change });
       tx.add_output(
         new TxOut(
           BigInt(satoshis),
@@ -89,7 +88,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ amount: amt, address: add
       // build txins from our UTXOs
       let idx = 0;
       let totalSats = 0
-      for (let u of utxos.value || []) {
+      for (const u of utxos.value || []) {
         console.log({ u });
         const inx = new TxIn(
           Buffer.from(u.txid, "hex"),

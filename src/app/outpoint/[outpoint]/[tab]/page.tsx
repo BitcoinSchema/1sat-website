@@ -57,7 +57,6 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
     const res = await spentOutpointResponse.arrayBuffer();
     const { script, satoshis } = parseOutput(res);
 
-    console.log({ script, satoshis, txid, vout });
     // const s = Script.fromHex(script).toASM();
     inputOutpoints.push({ script, satoshis, txid, vout });
   }
