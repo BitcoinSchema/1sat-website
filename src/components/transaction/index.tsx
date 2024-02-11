@@ -1,9 +1,10 @@
 "use client";
 
 import { IODisplay, InputOutpoint } from "@/app/outpoint/[outpoint]/[tab]/page";
+import { bsvWasmReady } from "@/signals/wallet";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import init, { P2PKHAddress, PublicKey, Transaction } from "bsv-wasm-web";
+import { P2PKHAddress, PublicKey, Transaction } from "bsv-wasm-web";
 import Link from "next/link";
 import React from "react";
 import { FaHashtag } from "react-icons/fa6";
@@ -25,7 +26,9 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 
   effect(() => {
     const fire = async () => {
-      await init();
+      if (!bsvWasmReady.value) {
+       throw new Error("bsv-wasm not ready");
+      }
       console.log({ rawtx });
       const tx = Transaction.from_hex(rawtx);
 

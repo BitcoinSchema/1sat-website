@@ -7,6 +7,7 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { Listing } from "@/types/bsv20";
 import { OrdUtxo } from "@/types/ordinals";
+import { Utxo } from "@/utils/js-1sat-ord";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
   P2PKHAddress,
@@ -17,11 +18,11 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo, buildInscription } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { IoMdWarning } from "react-icons/io";
 import { toBitcoin } from "satoshi-bitcoin-ts";
+import { buildInscriptionSafe } from "../airdrop";
 interface BuyArtifactModalProps {
   onClose: () => void;
   listing: Listing | OrdUtxo;
@@ -201,8 +202,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
       "base64"
     );
     // build an inscription output for the token transfer
-    const inscriptionScript = buildInscription(
-      ordinalsAddress,
+    const inscriptionScript = buildInscriptionSafe(
+      ordAddress.value!,
       inscriptionB64,
       "application/bsv-20"
     );

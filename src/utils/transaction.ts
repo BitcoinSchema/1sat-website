@@ -1,6 +1,7 @@
 import { API_HOST } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
 import { customFetch } from "@/utils/httpClient";
+import { Utxo } from "@/utils/js-1sat-ord";
 import {
   P2PKHAddress,
   PrivateKey,
@@ -10,7 +11,6 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo } from "js-1sat-ord";
 
 export const signPayment = (
   tx: Transaction,

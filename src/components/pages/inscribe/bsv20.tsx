@@ -1,28 +1,35 @@
 "use client";
 
-import { API_HOST, FetchStatus } from "@/constants";
+import { API_HOST, FetchStatus, toastErrorProps } from "@/constants";
 import {
   bsv20Balances,
   chainInfo,
   indexers,
   payPk,
+  pendingTxs,
   usdRate,
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { BSV20, Ticker } from "@/types/bsv20";
-import { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import { inscribeUtf8 } from "@/utils/inscribe";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { Utxo } from "js-1sat-ord";
+import "buffer";
+import { Payment, Utxo } from "js-1sat-ord";
 import { debounce, head } from "lodash";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckmarkIcon, ErrorIcon } from "react-hot-toast";
-import { IoMdWarning } from "react-icons/io";
+import toast, { ErrorIcon } from "react-hot-toast";
+import {
+  FaCheckCircle,
+  FaExclamationCircle,
+  FaExclamationTriangle,
+  FaInfoCircle,
+} from "react-icons/fa";
 import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { InscriptionTab } from "./tabs";
 
@@ -30,11 +37,8 @@ enum ActionType {
   Mint = "mint",
   Deploy = "deploy",
 }
-
-const top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"]
-
 interface InscribeBsv20Props {
-  inscribedCallback: (pendingTx: PendingTransaction) => void;
+  inscribedCallback: () => void;
 }
 
 const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
@@ -171,23 +175,23 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
     [setSelectedActionType, ticker, checkTicker]
   );
 
-  const changeIterations = useCallback(
-    (e: any) => {
-      console.log("changing iterations to", e.target.value);
+  const changeIterations: React.ChangeEventHandler<HTMLInputElement> =
+    useCallback((e) => {
+      // check the value is not more than the max
+      if (parseInt(e.target.value) > parseInt(e.target.max)) {
+        toast.error(`Max iterations is ${e.target.max}`);
+        return;
+      }
       setIterations(parseInt(e.target.value));
-    },
-    [setIterations]
-  );
+    }, []);
 
   const inSync = computed(() => {
     if (!indexers.value || !chainInfo.value) {
       return false;
     }
-
-    console.log({ indexers: indexers.value, chainInfo: chainInfo.value });
     return (
       indexers.value["bsv20-deploy"] >= chainInfo.value?.blocks &&
-      indexers.value["bsv20"] >= chainInfo.value?.blocks
+      indexers.value.bsv20 + 6 >= chainInfo.value?.blocks
     );
   });
 
@@ -195,7 +199,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
     return tickerAvailable === false
       ? selectedActionType === ActionType.Deploy
         ? ticker === ""
-          ? `¯\\_(ツ)_/¯`
+          ? "¯\\_(ツ)_/¯"
           : "Ticker Unavailable"
         : mintError
       : inSync.value
@@ -203,7 +207,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
         : selectedActionType === ActionType.Deploy
           ? "Syncing. May already be deployed."
           : "Syncing. May be minted out.";
-  }, [ticker, mintError, selectedActionType, tickerAvailable]);
+  }, [tickerAvailable, selectedActionType, ticker, mintError, inSync.value]);
 
   const totalTokens = useMemo(() => {
     return iterations * parseInt(amount || "0");
@@ -245,11 +249,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
   );
 
   const inscribeBsv20 = useCallback(
-    async (utxo: Utxo) => {
+    async (sortedUtxos: Utxo[]) => {
       if (!ticker || ticker?.length === 0) {
         return;
       }
-
       setInscribeStatus(FetchStatus.Loading);
 
       try {
@@ -260,11 +263,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
         switch (selectedActionType) {
           case ActionType.Deploy:
-            if (parseInt(maxSupply) == 0 || BigInt(maxSupply) > maxMaxSupply) {
-              alert(
+            if (parseInt(maxSupply) === 0 || BigInt(maxSupply) > maxMaxSupply) {
+              toast.error(
                 `Invalid input: please enter a number less than or equal to ${
                   maxMaxSupply - BigInt(1)
-                }`
+                }`,
+                toastErrorProps
               );
               return;
             }
@@ -294,43 +298,47 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
               BigInt(amount) > maxMaxSupply ||
               !selectedBsv20
             ) {
-              alert(
+              toast.error(
                 `Max supply must be a positive integer less than or equal to ${
                   maxMaxSupply - BigInt(1)
-                }`
+                }`,
+                toastErrorProps
               );
               return;
             }
             inscription.tick = selectedBsv20.tick;
             inscription.amt = amount;
+
           default:
             break;
         }
 
         const text = JSON.stringify(inscription);
-        const payments = [
-          {
-            to: selectedBsv20?.fundAddress!,
-            amount: 1000n,
-          },
-        ];
+        const address = selectedBsv20?.fundAddress;
+        const payments: Payment[] = [];
+        if (address) {
+          payments.push({
+            to: address,
+            amount: 1000n * BigInt(iterations),
+          });
+        }
         const pendingTx = await inscribeUtf8(
           text,
           "application/bsv-20",
-          utxo,
-          undefined,
-          selectedActionType === ActionType.Deploy ? [] : payments
+          sortedUtxos,
+          iterations,
+          selectedActionType === ActionType.Deploy
+            ? ([] as Payment[])
+            : payments
         );
 
+        pendingTxs.value = [pendingTx];
         setInscribeStatus(FetchStatus.Success);
-
-        if (pendingTx) {
-          inscribedCallback(pendingTx);
-        }
+        inscribedCallback();
       } catch (error) {
         setInscribeStatus(FetchStatus.Error);
 
-        alert("Invalid max supply: please enter a number. " + error);
+        toast.error(`Failed to inscribe: ${error}`, toastErrorProps);
         return;
       }
     },
@@ -343,6 +351,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       selectedActionType,
       selectedBsv20,
       ticker,
+      iterations,
     ]
   );
 
@@ -351,20 +360,29 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       return;
     }
 
-    for (let i = 0; i < iterations; i++) {
-      await getUtxos(fundingAddress.value);
-      const sortedUtxos = utxos.value?.sort((a, b) =>
-        a.satoshis > b.satoshis ? -1 : 1
-      );
-      const u = head(sortedUtxos);
-      if (!u) {
-        console.log("no utxo");
-        return;
-      }
+    toast.success("Bulk inscribing! This may take a while.");
 
-      return await inscribeBsv20(u);
+    // while (iterations > 0) {
+    await getUtxos(fundingAddress.value);
+    const sortedUtxos = utxos.value?.sort((a, b) =>
+      a.satoshis > b.satoshis ? -1 : 1
+    );
+    if (!sortedUtxos) {
+      console.log("no utxos");
+      return;
     }
-  }, [iterations, inscribeBsv20]);
+    // const u = head(sortedUtxos);
+    // if (!u) {
+    //   console.log("no utxos");
+    //   return;
+    // }
+
+    await inscribeBsv20(sortedUtxos);
+    // setIterations(iterations - 1);
+    // sleep for a second
+    // await new Promise((resolve) => setTimeout(resolve, 1000));
+    // }
+  }, [inscribeBsv20]);
 
   const clickInscribe = useCallback(async () => {
     if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
@@ -381,7 +399,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       return;
     }
 
-    return await inscribeBsv20(u);
+    return await inscribeBsv20([u]);
   }, [inscribeBsv20]);
 
   const submitDisabled = useMemo(() => {
@@ -408,7 +426,116 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
     return selectedBsv20
       ? calculateIndexingFee(usdRate.value)
       : calculateIndexingFee(usdRate.value);
-  }, [maxSupply, limit, selectedBsv20]);
+  }, [selectedBsv20]);
+
+  // maxIterations is based on the amount of confirmed OPL the user holds
+  const maxIterations = useMemo(() => {
+    if (!selectedBsv20) {
+      return 0;
+    }
+    // how much is already minted
+    if (!selectedBsv20.supply || !selectedBsv20.max) {
+      return 0;
+    }
+    const supply = parseInt(selectedBsv20.supply);
+    const confirmedOplBalance = bsv20Balances.value?.find(
+      (b) => b.tick?.toUpperCase() === bulkMintingTicker
+    )?.all.confirmed;
+    if (!confirmedOplBalance) {
+      toast.error(`You need ${bulkMintingTicker} to mint ${ticker}`);
+      return 0;
+    }
+    const displayOplBalance = selectedBsv20.dec
+      ? confirmedOplBalance / 10 ** selectedBsv20.dec
+      : confirmedOplBalance;
+    if (!amount || amount === "0") {
+      return 0;
+    }
+    let max = selectedBsv20.max || "0";
+    if (!selectedBsv20.max && selectedBsv20.supply) {
+      max = selectedBsv20.supply;
+    }
+    const remainingSupply = parseInt(max) - supply;
+    const organicMax = Math.ceil(remainingSupply / parseInt(amount));
+
+    console.log({ organicMax, displayOplBalance });
+
+    return tierMax(displayOplBalance, organicMax);
+  }, [selectedBsv20, amount, ticker]);
+
+  const step = useMemo(() => {
+    // when max iterations is huge we want to increase the step
+    // we want to do this proportionally to the max iterations
+    if (maxIterations > 100000) {
+      return maxIterations / 10000;
+    }
+    if (maxIterations > 10000) {
+      return maxIterations / 1000;
+    }
+    if (maxIterations > 1000) {
+      return maxIterations / 100;
+    }
+    return 1;
+  }, [maxIterations]);
+
+  const spacers = useMemo(() => {
+    // based on number of steps in maxIterations
+    const spacers = [
+      // <span className="pointer-events-none" key={"init-tick"}>
+      //   |
+      // </span>,
+    ];
+    for (let i = 0; i < maxIterations; i += step) {
+      spacers.push(<span key={i} className="pointer-events-none" >|</span>);
+    }
+    return spacers;
+  }, [maxIterations, step]);
+
+  const newSupply = useMemo(() => {
+    if (
+      !totalTokens ||
+      selectedBsv20?.supply === undefined ||
+      selectedBsv20?.max === undefined ||
+      selectedBsv20?.dec === undefined
+    ) {
+      return 0;
+    }
+
+    const supply = parseInt(selectedBsv20.supply);
+    const max = parseInt(selectedBsv20.max);
+    const newTokens = supply / 10 ** selectedBsv20.dec + totalTokens;
+    if (newTokens > max) {
+      return max;
+    }
+    return newTokens;
+  }, [selectedBsv20, totalTokens]);
+
+  const iterationFeeUsd = useMemo(() => {
+    if (!usdRate.value) {
+      return 0;
+    }
+    return ((iterationFee * iterations) / usdRate.value).toFixed(2);
+  }, [iterations]);
+
+  const currentTier = useMemo(() => {
+    if (!bsv20Balances.value) {
+      return 0;
+    }
+    const balance = bsv20Balances.value?.find(
+      (b) => b.tick?.toUpperCase() === bulkMintingTicker
+    )?.all.confirmed;
+    if (!balance) {
+      return 0;
+    }
+    return tierMaxNum(balance);
+  }, [bsv20Balances.value]);
+
+  // return the icons depending on tier num
+  const stars = useMemo(() => {
+    return Array.from({ length: currentTier }, (_, index) => (
+      <RiMagicFill key={`balance-star-${index + 1}`} />
+    ));
+  }, [currentTier]);
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -424,7 +551,15 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
         <label className="block mb-4">
           {/* TODO: Autofill */}
           <div className="flex items-center justify-between my-2">
-            Ticker <span className="text-[#555]">{tickerNote}</span>
+            Ticker{" "}
+            {chainInfo.value && indexers.value && (
+              <span
+                className="text-[#555] hover:text-warning text-sm tooltip transition"
+                data-tip={`Latest block: ${chainInfo.value.blocks}, BSV20 Deploy: ${indexers.value["bsv20-deploy"]} BSV20 Mint: ${indexers.value.bsv20}`}
+              >
+                {tickerNote}
+              </span>
+            )}
           </div>
           <div className="relative">
             <input
@@ -447,15 +582,19 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
               }}
             />
 
-            {tickerAvailable === true && !inSync && (
+            {tickerAvailable === true && !inSync.value && (
               <div className="absolute right-0 bottom-0 mb-2 mr-2">
-                <IoMdWarning />
+                <FaExclamationTriangle className="w-5 h-5 text-warning" />
               </div>
             )}
 
-            {tickerAvailable === true && inSync && (
+            {tickerAvailable === true && inSync.value && (
               <div className="absolute right-0 bottom-0 mb-2 mr-2">
-                <CheckmarkIcon />
+                {selectedBsv20?.included ? (
+                  <FaCheckCircle className="w-5 h-5 text-success" />
+                ) : (
+                  <FaCheckCircle className="w-5 h-5 text-warning" />
+                )}
               </div>
             )}
             {tickerAvailable === false && (
@@ -489,21 +628,23 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
               <div className="my-2 flex justify-between items-center">
                 Amount{" "}
                 {selectedBsv20 && (
-                  <span
-                    className="text-[#555] cursor-pointer transition hover:text-[#777]"
-                    onClick={() => {
-                      setAmount(
-                        selectedBsv20?.lim && selectedBsv20.lim !== "0"
-                          ? selectedBsv20.lim
-                          : selectedBsv20.max
-                      );
-                    }}
-                  >
-                    Max:{" "}
-                    {selectedBsv20?.lim && selectedBsv20.lim !== "0"
-                      ? selectedBsv20.lim
-                      : selectedBsv20?.max}
-                  </span>
+                  <button type="button" className="btn btn-sm">
+                    <span
+                      className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
+                      onClick={() => {
+                        setAmount(
+                          selectedBsv20?.lim && selectedBsv20.lim !== "0"
+                            ? selectedBsv20.lim
+                            : selectedBsv20.max
+                        );
+                      }}
+                    >
+                      Max:{" "}
+                      {selectedBsv20?.lim && selectedBsv20.lim !== "0"
+                        ? selectedBsv20.lim
+                        : selectedBsv20?.max}
+                    </span>
+                  </button>
                 )}
               </div>
 
@@ -525,47 +666,109 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
               />
             </label>
           </div>
+          {bulkEnabled && <div className="divider">Bulk Minting</div>}
           {bulkEnabled && (
             <div>
-              {bsv20Balances.value &&
-                !Object.keys(bsv20Balances.value)?.some(
-                  (b) => b.toUpperCase() === "BULK"
-                ) && (
-                  <div className="p-2 bg-[#111] my-2 rounded">
-                    Acquire{" "}
-                    <span
-                      className="font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
-                      onClick={() => {
-                        router.push("/inscribe?tab=bsv20&tick=BULK&op=mint");
-                      }}
-                    >
-                      BULK
-                    </span>{" "}
-                    to enable bulk minting.
-                  </div>
-                )}
+              {!bsv20Balances.value?.some(
+                (b) =>
+                  b.tick?.toUpperCase() === bulkMintingTicker &&
+                  b.all.confirmed > 0
+              ) && (
+                <div className="p-2 bg-[#111] my-2 rounded">
+                  Acquire{" "}
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  <span
+                    data-tip={`Tier ${currentTier}/5`}
+                    className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
+                    onClick={() => {
+                      router.push(
+                        `/inscribe?tab=bsv20&tick=${bulkMintingTicker}&op=mint`
+                      );
+                    }}
+                  >
+                    {bulkMintingTicker}
+                  </span>{" "}
+                  to enable bulk minting.
+                </div>
+              )}
               {bulkEnabled && (
                 <label className="block mb-4">
                   <div className="my-2 flex justify-between items-center">
-                    <div>Iterations</div>
-                    <div className="opacity-75 text-purple-400 font-mono flex items-center">
-                      <RiMagicFill className="mr-2" />
-                      BULK
+                    <div>{iterations} Iterations</div>
+                    <div
+                      className="tooltip opacity-75 text-purple-400 font-mono flex items-center"
+                      data-tip={`Tier ${currentTier}/5`}
+                    >
+                      {stars}
+                      <div className="mx-1" />
+                      {bulkMintingTicker}
                     </div>
                   </div>
                   <input
-                    className="text-white w-full rounded p-2"
-                    type="text"
                     onChange={changeIterations}
                     value={iterations}
-                    max={30}
+                    max={maxIterations}
+                    type="range"
+                    min={1}
+                    className="range"
+                    step={step}
                   />
+                  <div className="w-full flex justify-between text-xs px-2 text-primary/25">
+                    {spacers}
+                  </div>
                 </label>
               )}
               {/* TODO: Display accurately at end of supply */}
               {bulkEnabled && amount && ticker && (
-                <div className="bg-[#111] text-[#555] rounded p-2">
-                  You will recieve {totalTokens} {ticker.toUpperCase()}
+                <>
+                  <div className="bg-[#111] text-[#555] rounded p-2 font-mono text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="w-1/2">Bulk Inscription Fee:</div>
+                      <div className="w-1/2 text-right">${iterationFeeUsd}</div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="w-1/2">
+                        You will recieve
+                        <span
+                          className="tooltip text-warning"
+                          data-tip={
+                            !inSync.value && indexers.value && chainInfo.value
+                              ? "The index is not caught up. These tokens may have already been minted."
+                              : selectedBsv20?.included
+                                ? ""
+                                : "This ticker is not included in the index. These tokens may have already been minted."
+                          }
+                        >
+                          <FaInfoCircle className="ml-2" />
+                        </span>
+                      </div>
+                      <div className="w-1/2 text-right">
+                        {(totalTokens > newSupply
+                          ? newSupply
+                          : totalTokens
+                        ).toLocaleString()}{" "}
+                        {ticker.toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="w-1/2">New Supply</div>
+                      <div className="w-1/2 text-right">
+                        {newSupply} / {selectedBsv20?.max}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              {selectedBsv20 && !selectedBsv20?.included && (
+                <div className="p-2 bg-[#111] my-2 rounded text-warning font-mono">
+                  <Link href={`/market/bsv20/${selectedBsv20?.tick}`}>
+                    <FaExclamationCircle className="w-5 h-5 mr-2 inline-flex opacity-50 mb-1" />
+                    {selectedBsv20?.tick} is not live. Minted supply may be
+                    inaccurate. Fund {selectedBsv20?.tick} first to be sure you
+                    aren&apos;t over-minting. There is no gaurentee you will
+                    recieve valid tokens in this state!
+                  </Link>
                 </div>
               )}
             </div>
@@ -652,9 +855,49 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 export default InscribeBsv20;
 
 const maxMaxSupply = BigInt("18446744073709551615");
-const bulkEnabled = false;
+const bulkEnabled = true;
 
 export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
 
-const defaultDec = 8
+const defaultDec = 8;
+const bulkMintingTicker = "OPL";
+const bulkMintingTickerMaxSupply = 21000000;
+const iterationFee = 100;
+// Function to calculate the tier number based on balance
+const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
+  if (balance <= 0) return 0;
+
+  // Calculate balance as a percentage of max supply
+  const pct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
+
+  // Define tier thresholds as percentages of max supply
+  const tierThresholds = [
+    (1000 / bulkMintingTickerMaxSupply) * 100,
+    (10000 / bulkMintingTickerMaxSupply) * 100,
+    (100000 / bulkMintingTickerMaxSupply) * 100,
+    (1000000 / bulkMintingTickerMaxSupply) * 100,
+    (10000000 / bulkMintingTickerMaxSupply) * 100,
+  ];
+
+  // Find the tier based on the percentage thresholds
+  for (let tier = 1; tier <= tierThresholds.length; tier++) {
+    if (pct <= tierThresholds[tier - 1]) return tier;
+  }
+  return tierThresholds.length; // Return highest tier if balance exceeds all thresholds
+};
+
+// Returns the tier number 1-5
+const tierMaxNum = (balance: number) => {
+  return calculateTier(balance, bulkMintingTickerMaxSupply);
+};
+
+// Returns the capped max iterations for a given feature token balance
+const tierMax = (balance: number, max: number) => {
+  const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
+  if (tierNum === 0) return 0; // Handle case where balance <= 0
+
+  // Map tier number to max iterations
+  const iterations = [1, 10, 100, 1000, 10000];
+  return Math.min(iterations[tierNum - 1], max)
+};

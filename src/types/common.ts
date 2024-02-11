@@ -27,12 +27,12 @@ export type WocUtxo = {
 
 export interface IndexerStats {
   "bsv20-deploy": number,
-  "bsv20": number,
+  bsv20: number,
   "market-spends": number,
-  "locks": number,
-  "opns": number,
-  "market": number,
-  "ord": number
+  locks: number,
+  opns: number,
+  market: number,
+  ord: number
 }
 
 export type ChainInfo = {

@@ -12,7 +12,8 @@ import { useInView } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
-import { FaChevronRight } from "react-icons/fa6";
+import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
+import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import WalletTabs from "./tabs";
 
@@ -40,6 +41,7 @@ const Bsv20List = ({
   const router = useRouter();
   const holdings = useSignal<BSV20TXO[] | null>(null);
   const addressBalances = useSignal<BSV20Balance[] | null>(null);
+  const showAirdrop = useSignal<string | undefined>(undefined);
 
   const showSendModal = useSignal<string | undefined>(undefined);
 
@@ -196,37 +198,63 @@ const Bsv20List = ({
 
   const confirmedContent = computed(() => {
     return (
-      <div className="grid grid-cols-2 gap-3 bg-[#222] p-4 rounded mb-4">
+      <div className="grid grid-cols-3 gap-3 bg-[#222] p-4 w-full rounded mb-4">
         <div className="text-[#777] font-semibold">Ticker</div>
-        <div className="text-[#777] font-semibold">Balance</div>
-        {confirmedBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => (
-          <React.Fragment key={`bal-confirmed-${tick}`}>
-            <div
-              className="cursor-pointer hover:text-blue-400 transition"
-              onClick={() =>
-                router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
-              }
-            >
-              {tick || sym}
-            </div>
-            <div
-              className="text-emerald-400"
-              onClick={() => (showSendModal.value = tick || id)}
-            >
-              {all.confirmed / 10 ** dec}
-            </div>
-            {showSendModal.value === (tick || id) && (
-              <TransferBsv20Modal
-                onClose={() => (showSendModal.value = undefined)}
-                type={type}
-                id={(tick || id)!}
-                dec={dec}
-                balance={all.confirmed / 10 ** dec}
-                sym={sym}
-              />
-            )}
-          </React.Fragment>
-        ))}
+        <div className="text-[#777] font-semibold text-right">Balance</div>
+        <div className="w-8" />
+        {confirmedBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => {
+          // TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
+          const supply = 21000000;
+          return (
+            <React.Fragment key={`bal-confirmed-${tick}`}>
+              <div
+                className="cursor-pointer hover:text-blue-400 transition"
+                onClick={() =>
+                  router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
+                }
+              >
+                {tick || sym}
+              </div>
+              <div
+                className="text-emerald-400 text-right font-mono"
+                onClick={() => (showSendModal.value = tick || id)}
+              >
+                {(all.confirmed / 10 ** dec).toLocaleString()}
+              </div>
+              <div className="text-right">
+                {(all.confirmed / 10 ** dec) > 10000 ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-sm w-fit"
+                      onClick={() => {
+                        showAirdrop.value = tick || id;
+                      }}
+                    >
+                      <FaParachuteBox className="w-8" />
+                    </button>
+                    {((tick && showAirdrop.value === tick) ||
+                      (id && showAirdrop.value === id)) && (
+                      <AirdropTokensModal onClose={() => { showAirdrop.value = tick || id }} type={AssetType.BSV20} dec={dec} id={(tick || id)!} balance={all.confirmed} />
+                    )}
+                  </>
+                ) : (
+                  <></>
+                )}
+              </div>
+              {showSendModal.value === (tick || id) && (
+                <TransferBsv20Modal
+                  onClose={() => (showSendModal.value = undefined)}
+                  type={type}
+                  id={(tick || id)!}
+                  dec={dec}
+                  balance={all.confirmed / 10 ** dec}
+                  sym={sym}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
     );
   });

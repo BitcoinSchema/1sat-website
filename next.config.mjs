@@ -98,8 +98,9 @@
 // }
 
 /** @type {import('next').NextConfig} */
+
 import CopyPlugin from "copy-webpack-plugin";
-import WebpackPluginReplaceNpm from "replace-module-webpack-plugin";
+import ReplaceModuleWebpackPlugin from "replace-module-webpack-plugin";
 const nextConfig = {
   reactStrictMode: true,
   images: {
@@ -130,7 +131,7 @@ const nextConfig = {
       },
     ],
   },
-  webpack: function (config, { isServer }) {
+  webpack: (config, { isServer }) => {
     if (isServer) {
       // get the current working directory
       const currentDirectory = process.cwd();
@@ -141,22 +142,31 @@ const nextConfig = {
             {
               from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
               to:
-                currentDirectory +
-                "/.next/server/vendor-chunks/bsv_wasm_bg.wasm",
+                `${currentDirectory}/.next/server/vendor-chunks/bsv_wasm_bg.wasm`,
             },
             {
               from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-              to: currentDirectory + "/.next/server/app/bsv_wasm_bg.wasm",
-            },
-            {
-              // This should not be necessary
-              from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-              to: currentDirectory + "/.next/server/chunks/bsv_wasm_bg.wasm",
+              to: `${currentDirectory}/.next/server/app/bsv_wasm_bg.wasm`,
             },
             {
               // This should not be necessary
               from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-              to: currentDirectory + "/.next/server/app/outpoint/[outpoint]/[tab]/bsv_wasm_bg.wasm",
+              to: `${currentDirectory}/.next/server/chunks/bsv_wasm_bg.wasm`,
+            },
+            {
+              // This should not be necessary
+              from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
+              to: `${currentDirectory}/.next/server/app/outpoint/[outpoint]/[tab]/bsv_wasm_bg.wasm`,
+            },
+            {
+              // This should not be necessary
+              from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
+              to: `${currentDirectory}/.next/server/app/preview/bsv_wasm_bg.wasm`,
+            },
+            {
+              // This should not be necessary
+              from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
+              to: `${currentDirectory}/.next/server/app/inscribe/bsv_wasm_bg.wasm`,
             },
           ],
         }),
@@ -174,8 +184,13 @@ const nextConfig = {
         net: false,
         process: "process/browser",
       };
+      config.experiments = {
+        asyncWebAssembly: true,
+        syncWebAssembly: true,
+        layers: true,
+      }
       config.plugins.push(
-        new WebpackPluginReplaceNpm({
+        new ReplaceModuleWebpackPlugin({
           rules: [
             {
               originModule: "bsv-wasm",

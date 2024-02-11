@@ -8,7 +8,7 @@ import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
 import { computed, effect } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import { P2PKHAddress, Transaction } from "bsv-wasm";
+import { P2PKHAddress, Transaction } from "bsv-wasm-web";
 import { head } from "lodash";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

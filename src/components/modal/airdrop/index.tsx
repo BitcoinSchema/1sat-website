@@ -1,5 +1,6 @@
 "use client";
 
+import { Holder } from "@/components/pages/TokenMarket/list";
 import { API_HOST, AssetType, toastErrorProps } from "@/constants";
 import {
   bsvWasmReady,
@@ -29,7 +30,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
-import { buildInscriptionSafe } from "../airdrop";
 
 interface TransferModalProps {
   onClose: () => void;
@@ -42,7 +42,7 @@ interface TransferModalProps {
   sym?: string;
 }
 
-const TransferBsv20Modal: React.FC<TransferModalProps> = ({
+const AirdropTokensModal: React.FC<TransferModalProps> = ({
   type,
   balance,
   sym,
@@ -57,13 +57,14 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
   // use signal for amount and address
   const amount = useSignal(amt?.toString() || "0");
   const address = useSignal(addr || "");
+  const destinationTickers = useSignal("");
 
   const setAmountToBalance = useCallback(() => {
     amount.value = balance.toString();
     console.log(amount.value);
   }, [amount, balance]);
 
-  const transferBsv20 = useCallback(
+  const airdropBsv20 = useCallback(
     async (
       sendAmount: number,
       paymentUtxos: Utxo[],
@@ -110,12 +111,36 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
           break;
         }
       }
+
+      const destinations = address.value.split(",").map((a) => a.trim());
+      const tickerDestinations = destinationTickers.value
+        .split(",")
+        .map((a) => a.trim());
+      // resolve ticker holders
+      let tickerHolders: string[] = [];
+      for (const t of tickerDestinations) {
+        let tickerHoldersUrl = `${API_HOST}/api/bsv20/tick/${t}/holders`;
+        if (type === AssetType.BSV21) {
+          tickerHoldersUrl = `${API_HOST}/api/bsv20/id/${t}/holders`;
+        }
+        const { promise } = http.customFetch<Holder[]>(tickerHoldersUrl);
+        const holders = await promise;
+        tickerHolders = (tickerHolders || []).concat(
+          holders.map((h) => h.address)
+        );
+      }
+
+      destinations.push(...tickerHolders);
+
+      const amountEach = Math.floor(sendAmount / destinations.length);
+      const remainder = sendAmount % destinations.length;
+      
       if (amounts > sendAmount) {
         // build change inscription
         const changeInscription = {
           p: "bsv-20",
           op: "transfer",
-          amt: (amounts - sendAmount).toString(),
+          amt: (amounts - sendAmount + remainder).toString(),
         } as any;
         if (ticker.tick) {
           changeInscription.tick = ticker.tick;
@@ -156,42 +181,46 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         break;
       }
 
-      const inscription = {
-        p: "bsv-20",
-        op: "transfer",
-        amt: sendAmount.toString(),
-      } as any;
-      if (ticker.tick) {
-        inscription.tick = ticker.tick;
-      } else if (ticker.id) {
-        inscription.id = ticker.id;
-      }
+    
+      // build up the transfers
+      for (const dest of destinations) {
+        const inscription = {
+          p: "bsv-20",
+          op: "transfer",
+          amt: amountEach.toString(),
+        } as any;
+        if (ticker.tick) {
+          inscription.tick = ticker.tick;
+        } else if (ticker.id) {
+          inscription.id = ticker.id;
+        }
 
-      const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
-        "base64"
-      );
-      const insc = buildInscriptionSafe(
-        P2PKHAddress.from_string(payoutAddress),
-        fileB64,
-        "application/bsv-20"
-      );
-
-      let satOut = new TxOut(BigInt(1), insc);
-      tx.add_output(satOut);
-
-      const indexerAddress = ticker.fundAddress;
-      // output 4 indexer fee
-      if (indexerAddress) {
-        const indexerFeeOutput = new TxOut(
-          BigInt(2000), // 1000 * 2 inscriptions
-          P2PKHAddress.from_string(indexerAddress).get_locking_script()
+        const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
+          "base64"
         );
-        tx.add_output(indexerFeeOutput);
-      }
+        const insc = buildInscriptionSafe(
+          P2PKHAddress.from_string(dest),
+          fileB64,
+          "application/bsv-20"
+        );
 
+        let satOut = new TxOut(BigInt(1), insc);
+        tx.add_output(satOut);
+
+        const indexerAddress = ticker.fundAddress;
+        // output 4 indexer fee
+        if (indexerAddress) {
+          const indexerFeeOutput = new TxOut(
+            BigInt(2000), // 1000 * 2 inscriptions
+            P2PKHAddress.from_string(indexerAddress).get_locking_script()
+          );
+          tx.add_output(indexerFeeOutput);
+        }
+      }
       const changeOut = createChangeOutput(tx, changeAddress, totalSatsIn);
       tx.add_output(changeOut);
 
+      console.log({ RawTx: tx.to_hex(), Size: tx.get_size() })
       return {
         rawTx: tx.to_hex(),
         size: tx.get_size(),
@@ -203,7 +232,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         marketFee: 0,
       };
     },
-    []
+    [address.value, destinationTickers.value, type]
   );
 
   const submit = useCallback(
@@ -225,7 +254,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         `${API_HOST}/api/bsv20/${type === AssetType.BSV20 ? "tick" : "id"}/${id}`
       );
       const ticker = await promiseTickerDetails;
-      const transferTx = await transferBsv20(
+      const transferTx = await airdropBsv20(
         amt,
         utxos.value!,
         tokenUtxos,
@@ -239,7 +268,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
       pendingTxs.value = [transferTx];
       router.push("/preview");
     },
-    [amount.value, address.value, balance, dec, type, id, transferBsv20, router]
+    [amount.value, address.value, balance, dec, type, id, airdropBsv20, router]
   );
 
   return (
@@ -254,9 +283,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         <div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
           <form onSubmit={submit}>
             <div className="flex justify-between">
-              <div className="text-lg font-semibold">
-                Transfer {type} {id}
-              </div>
+              <div className="text-lg font-semibold">Airdrop {id}</div>
               <div
                 className="text-xs cursor-pointer text-[#aaa]"
                 onClick={setAmountToBalance}
@@ -287,7 +314,21 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
             </div>
             <div className="flex flex-col mt-4">
               <label className="text-sm font-semibold text-[#aaa] mb-2">
-                Address
+                Destination Tickers (comma separated list)
+              </label>
+              <input
+                type="text"
+                placeholder="RUG, PEPE, LOVE, SHGR"
+                className="input input-bordered w-full"
+                value={destinationTickers.value}
+                onChange={(e) => {
+                  destinationTickers.value = e.target.value;
+                }}
+              />
+            </div>
+            <div className="flex flex-col mt-4">
+              <label className="text-sm font-semibold text-[#aaa] mb-2">
+                Addresses (comma separated list)
               </label>
               <input
                 type="text"
@@ -311,4 +352,40 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
   );
 };
 
-export default TransferBsv20Modal;
+export default AirdropTokensModal;
+
+
+export const buildInscriptionSafe = (
+  destinationAddress: P2PKHAddress | string,
+  b64File?: string | undefined,
+  mediaType?: string | undefined,
+): Script => {
+  let ordAsm = "";
+  // This can be omitted for reinscriptions that just update metadata
+  if (b64File !== undefined && mediaType !== undefined) {
+    const ordHex = toHex("ord");
+    const fsBuffer = Buffer.from(b64File, "base64");
+    const fireShardHex = fsBuffer.toString("hex");
+    const fireShardMediaType = toHex(mediaType);
+    ordAsm = `OP_0 OP_IF ${ordHex} OP_1 ${fireShardMediaType} OP_0 ${fireShardHex} OP_ENDIF`;
+  }
+
+  let address: P2PKHAddress;
+  // normalize destinationAddress
+  if (typeof destinationAddress === "string") {
+    address = P2PKHAddress.from_string(destinationAddress);
+  } else {
+    address = destinationAddress;
+  }
+  // Create ordinal output and inscription in a single output
+  const inscriptionAsm = `${address
+    .get_locking_script()
+    .to_asm_string()}${ordAsm ? ` ${ordAsm}` : ""}`;
+
+  return Script.from_asm_string(inscriptionAsm);
+};
+
+const toHex = (str: string): string => {
+  return Buffer.from(str, "utf8").toString("hex");
+}
+

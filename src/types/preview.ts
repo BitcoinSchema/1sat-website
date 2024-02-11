@@ -1,4 +1,4 @@
-
+import { MAP } from "@/utils/js-1sat-ord";
 export type PendingTransaction = {
   rawTx: string;
   size: number;
@@ -11,5 +11,5 @@ export type PendingTransaction = {
   price?: number;
   marketFee?: number;
   iterations?: number;
-  metadata?: any; // MAP;
+  metadata?: MAP;
 };

@@ -47,8 +47,8 @@ const Wallet: React.FC = () => {
   // useEffect needed so that we can use localStorage
   useEffect(() => {
     if (bsvWasmReady.value && localPayPk && localOrdPk) {
-      payPk.value = localPayPk
-      ordPk.value = localOrdPk
+      payPk.value = localPayPk;
+      ordPk.value = localOrdPk;
       const localTxsStr = localStorage.getItem("1satpt");
       const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
       if (localTxs) {
