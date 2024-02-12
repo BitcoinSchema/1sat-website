@@ -1,57 +1,67 @@
 "use client";
 
 import { backupKeys } from "@/components/Wallet/menu";
-import { clearKeys } from "@/signals/wallet/client";
+import { showDepositModal } from "@/signals/wallet";
+import { clearKeys, setOrdPk, setPayPk } from "@/signals/wallet/client";
+import { useRouter } from "next/navigation";
+import { useEffectOnce } from "usehooks-ts";
 
 const CreateWalletModal = ({
-  open,
-  close,
+	open,
+	close,
+	keys,
 }: {
-  open: boolean;
-  close: (signOut?: boolean) => void;
+	open: boolean;
+	close: (signOut?: boolean) => void;
+	keys: { payPk: string; ordPk: string };
 }) => {
-  return (
-    <dialog
-      id="delete_wallet_modal"
-      className={`modal ${open ? "modal-open" : ""}`}
-    >
-      <div className="modal-box">
-        <h3 className="font-bold text-lg">Are you sure?</h3>
-        <p className="py-4">
-          This will clear your keys from this browser. Only do this if
-          you&apos;re exported your keys already.
-        </p>
-        <form method="dialog">
-          <div className="modal-action">
-            <button
-              className="btn"
-              type="button"
-              onClick={() => {
-                close();
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              className="btn btn-error"
-              type="button"
-              onClick={() => {
-                clearKeys();
-                close(true);
-              }}
-            >
-              Sign Out
-            </button>
-            {/* if there is a button in form, it will close the modal */}
+	const router = useRouter();
 
-            <button className="btn btn-secondary" type="button" onClick={backupKeys}>
-              Export Keys
-            </button>
-          </div>
-        </form>
-      </div>
-    </dialog>
-  );
+	const backup = () => {
+		setPayPk(keys.payPk);
+		setOrdPk(keys.ordPk);
+		backupKeys();
+		router.push("/wallet/ordinals");
+    showDepositModal.value = true
+	};
+
+	useEffectOnce(() => {
+	});
+
+	return (
+		<dialog
+			id="delete_wallet_modal"
+			className={`modal ${open ? "modal-open" : ""}`}
+		>
+			<div className="modal-box">
+				<h3 className="font-bold text-lg">Create New Wallet</h3>
+				<div className="p-2 rounded my-2">
+					Secure your wallet backup file to get started.
+				</div>
+				<form method="dialog">
+					<div className="modal-action">
+						<button
+							className="btn"
+							type="button"
+							onClick={() => {
+								clearKeys();
+								router.back();
+							}}
+						>
+							Cancel
+						</button>
+						<button
+							className="btn btn-secondary"
+							type="button"
+							onClick={backup}
+						>
+							Save Wallet
+						</button>
+					</div>
+				</form>
+			</div>
+		</dialog>
+	);
 };
 
 export default CreateWalletModal;

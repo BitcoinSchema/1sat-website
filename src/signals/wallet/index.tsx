@@ -25,3 +25,5 @@ export const usdRate = signal<number>(0);
 export const indexers = signal<IndexerStats | null>(null);
 export const chainInfo = signal<ChainInfo | null>(null);
 export const inscribeOptions = signal<InscribeOptions | null>(null);
+
+export const showDepositModal = signal<boolean>(false);

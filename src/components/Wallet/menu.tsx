@@ -9,6 +9,7 @@ import {
   ordPk,
   payPk,
   pendingTxs,
+  showDepositModal,
   usdRate,
   utxos,
 } from "@/signals/wallet";
@@ -40,7 +41,6 @@ const WalletMenu: React.FC = () => {
   const router = useRouter();
   const [localPayPk, setLocalPayPk] = useLocalStorage<string>("1satfk");
   const [localOrdPk, setLocalOrdPk] = useLocalStorage<string>("1satok");
-  const showDepositModal = useSignal(false);
   const showWithdrawalModal = useSignal(false);
 
   const [value, copy] = useCopyToClipboard();

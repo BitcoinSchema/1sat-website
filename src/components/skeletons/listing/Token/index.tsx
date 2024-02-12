@@ -13,10 +13,9 @@ const SkeletonItem = () => (
       <div className="table-cell w-full pr-4">
         <div className="skeleton h-6 w-48" />
       </div>
-      <div className="table-cell w-full text-right pr-4 ">
+      <div className="table-cell w-full text-right pr-4">
         <div className="skeleton h-6 w-12" />
       </div>
-
       <div className="table-cell text-right ">
         <div className="skeleton h-6 w-24" />
       </div>
