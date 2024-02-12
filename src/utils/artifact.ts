@@ -33,11 +33,15 @@ export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
 };
 
 export const getArtifactType = (txo: OrdUtxo, latest: boolean): ArtifactType => {
-  let artifactType
+  let artifactType: ArtifactType = ArtifactType.Unknown
   const t = latest
   ? txo?.data?.insc?.file.type
   : txo?.origin?.data?.insc?.file.type || "image/png";
+  console.log("TYPE", t)
   const protocol = txo.origin?.data?.insc?.json?.p;
+  if (!t) {
+    return artifactType
+  }
   if (t?.startsWith("audio")) {
     artifactType = ArtifactType.Audio;
   } else if (t?.startsWith("video")) {
@@ -65,7 +69,7 @@ export const getArtifactType = (txo: OrdUtxo, latest: boolean): ArtifactType => 
   } else if (t?.startsWith("image")) {
     artifactType = ArtifactType.Image;
   }
-  return artifactType || ArtifactType.Unknown;
+  return artifactType
 }
 
 export const displayName = (txo: OrdUtxo, latest: boolean): string | undefined => {
@@ -82,7 +86,7 @@ console.log({txo})
     case ArtifactType.HTML:
       const html = !latest ? txo.origin?.data?.insc?.text : txo.data?.insc?.text;
       const title = html?.match(/<title>(.*)<\/title>/)?.[1];
-      return title ||  txo.origin?.num;
+      return title || txo.origin?.num;
     case ArtifactType.JSON:
       return latest ? txo.data?.insc?.text || txo.origin?.num : txo.origin?.data?.insc?.text || txo.origin?.num;
     case ArtifactType.BSV20:

@@ -7,7 +7,7 @@ import { toBase64 } from "@/utils/string";
 import { head } from "lodash";
 import Link from "next/link";
 import Script from "next/script";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
@@ -24,20 +24,20 @@ import TextArtifact from "./text";
 import VideoArtifact from "./video";
 
 export enum ArtifactType {
-  Audio,
-  Image,
-  Model,
-  PDF,
-  Video,
-  Javascript,
-  HTML,
-  MarkDown,
-  Text,
-  JSON,
-  BSV20,
-  OPNS,
-  Unknown,
-  LRC20,
+  Audio=0,
+  Image = 1,
+  Model = 2,
+  PDF = 3,
+  Video = 4,
+  Javascript = 5,
+  HTML = 6,
+  MarkDown = 7,
+  Text = 8,
+  JSON = 9,
+  BSV20 = 10,
+  OPNS = 11,
+  Unknown = 12,
+  LRC20 = 13,
 }
 
 type ArtifactProps = {
@@ -118,6 +118,8 @@ const Artifact: React.FC<ArtifactProps> = ({
     return getArtifactType(artifact as OrdUtxo, latest);
   }, [artifact, latest]);
 
+  useEffect(() => {
+    console.log({type})}, [type])
   // const isBsv20 = useMemo(() => {
   //   if (type === ArtifactType.BSV20) {
   //     return true;
@@ -319,14 +321,14 @@ const Artifact: React.FC<ArtifactProps> = ({
         className={`${showFooter ? "pb-[65px]" : ""} ${
           glow ? "glow" : ""
         } flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${
-          to ? "cursor-pointer" : ""
+          to ? "cursor-pointer" : "cursor-default"
         } block transition mx-auto ${
           classNames?.wrapper ? classNames.wrapper : ""
         }`}
         target={to ? "_self" : undefined}
         href={to || "#"}
         draggable={false}
-        onClick={(e: any) => {
+        onClick={(e) => {
           if (!to) {
             e.stopPropagation();
             e.preventDefault();
@@ -352,7 +354,8 @@ const Artifact: React.FC<ArtifactProps> = ({
         {/* TODO: Show indicator when more than one isncription */}
         {showFooter === true && num !== undefined && (
           <div className="text-xs absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
-            <div
+            <button
+              type="button"
               className={`rounded bg-[#222] p-2 text-[#aaa] ${
                 onClick && (outPoint || origin) ? "cursor-pointer" : ""
               }`}
@@ -361,9 +364,9 @@ const Artifact: React.FC<ArtifactProps> = ({
               }
             >
               #{num}
-            </div>
+            </button>
             <div className={`hidden md:block`}>&nbsp;</div>
-            <div
+            <button type="button"
               className={` ${
                 price !== undefined &&
                 // type !== ArtifactType.BSV20 &&
@@ -394,7 +397,7 @@ const Artifact: React.FC<ArtifactProps> = ({
               // }}
             >
               {price !== undefined ? `${toBitcoin(price)} BSV` : contentType}
-            </div>
+            </button>
           </div>
         )}
       </Link>

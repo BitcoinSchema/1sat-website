@@ -19,7 +19,7 @@ const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
     <div className="flex flex-col items-center justify-center w-full h-full max-w-5xl">
       <WalletTabs type={AssetType.Ordinals} address={addressProp} />
       <div className="w-full md:w-[64rem] min-h-[80vh] tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
-        <OrdinalListings address={ordAddress.value} mode={OrdViewMode.Grid} />
+        <OrdinalListings address={addressProp || ordAddress.value} mode={OrdViewMode.Grid} />
       </div>
     </div>
     </div>

@@ -109,7 +109,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 								</Link>
 								<div className="flex flex-col w-full">
 									<Link
-										className="text-xs flex items-center"
+										className="text-xs w-fit flex items-center"
 										href={`/activity/${io.address}/ordinals`}
 									>
 										<JDenticon
@@ -119,7 +119,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 										{io.address}
 									</Link>
 									<Link
-										className="text-xs text-[#555]"
+										className="text-xs w-fit text-[#555]"
 										href={`/outpoint/${io.txid}_${io.index}`}
 									>
 										via {truncate(io.txid)} [{io.index}]
@@ -153,7 +153,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 							</Link>
 							<div className="flex flex-col w-full">
 								<Link
-									className="text-xs flex items-center"
+									className="text-xs flex w-fit items-center"
 									href={`/activity/${io.address}/ordinals`}
 								>
 									<JDenticon
@@ -163,7 +163,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 									{io.address}
 								</Link>
 								<Link
-									className="text-xs  text-[#555]"
+									className="text-xs w-fit text-[#555]"
 									href={`/outpoint/${io.txid}_${io.index}`}
 								>
 									Spend {truncate(io.txid)} [{io.index}]
@@ -209,7 +209,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 
 	return (
 		<>
-			<div className="cursor-pointer flex w-full rounded gap-4 mb-4">
+			<div className="flex w-full rounded gap-4 mb-4">
 				{showDetails.value && details.value}
 			</div>
 		</>
