@@ -5,7 +5,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa6";
 
-export const showDetails = new Signal<boolean>(false);
+export const showDetails = new Signal<boolean>(true);
 
 const OutpointHeading = ({ outpoint }: { outpoint: string }) => {
   useSignals();

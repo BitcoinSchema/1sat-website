@@ -218,7 +218,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           defer
         />
         <div
-          className={`w-full h-[50vh] ${classNames?.wrapper || ""} ${
+          className={`w-full ${classNames?.wrapper || ""} ${
             classNames?.media || ""
           }`}
           onClick={(e) => {

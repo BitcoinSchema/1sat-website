@@ -8,74 +8,90 @@ import { Noto_Serif } from "next/font/google";
 import OutpointTabs, { OutpointTab } from "./tabs";
 
 const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
+	style: "italic",
+	weight: ["400", "700"],
+	subsets: ["latin"],
 });
 
 interface Props {
-  artifact: OrdUtxo;
-  listing?: Listing;
-  history?: OrdUtxo[];
-  spends?: OrdUtxo[];
-  outpoint: string;
-  content: JSX.Element;
-  activeTab: OutpointTab;
+	artifact: OrdUtxo;
+	listing?: Listing;
+	history?: OrdUtxo[];
+	spends?: OrdUtxo[];
+	outpoint: string;
+	content: JSX.Element;
+	activeTab: OutpointTab;
 }
 
 const OutpointPage = async ({
-  artifact,
-  listing,
-  history,
-  spends,
-  outpoint,
-  content,
-  activeTab,
+	artifact,
+	listing,
+	history,
+	spends,
+	outpoint,
+	content,
+	activeTab,
 }: Props) => {
-  // I1 - Ordinal
-  // I2 - Funding
-  // O1 - Ordinal destination
-  // O2 - Payment to lister
-  // O3 - Market Fee
-  // O4 - Change
-  if (artifact && artifact.data?.list && !artifact.script) {
-    const { promise } = http.customFetch<OrdUtxo>(
-      `${API_HOST}/api/txos/${artifact.outpoint}?script=true`
-    );
+	// I1 - Ordinal
+	// I2 - Funding
+	// O1 - Ordinal destination
+	// O2 - Payment to lister
+	// O3 - Market Fee
+	// O4 - Change
+	if (artifact?.data?.list && !artifact.script) {
+		const { promise } = http.customFetch<OrdUtxo>(
+			`${API_HOST}/api/txos/${artifact.outpoint}?script=true`,
+		);
 
-    const { script } = await promise;
-    artifact.script = script;
-  }
+		const { script } = await promise;
+		artifact.script = script;
+	}
 
-  // if (
-  //   (price === 0 ? minimumMarketFee + price : price * 1.04) >=
-  //   sumBy(fundingUtxos, "satoshis") + P2PKHInputSize * fundingUtxos.length
-  // ) {
-  //   toast.error("Not enough Bitcoin!", toastErrorProps);
-  // }
+	// if (
+	//   (price === 0 ? minimumMarketFee + price : price * 1.04) >=
+	//   sumBy(fundingUtxos, "satoshis") + P2PKHInputSize * fundingUtxos.length
+	// ) {
+	//   toast.error("Not enough Bitcoin!", toastErrorProps);
+	// }
 
-  return (
-    <div className="mx-auto flex flex-col p-2 md:p-0">
-      <h2 className={`text-2xl mb-4  ${notoSerif.className}`}>
-        {displayName(artifact, false)}
-      </h2>
-      <div className="flex flex-col md:flex-row gap-4">
-        <Artifact
-          artifact={artifact}
-          size={400}
-          sizes={"100vw"}
-          glow={true}
-          classNames={{ wrapper: `w-full ${activeTab === OutpointTab.Inscription ? 'md:w-2/3' : ''}` }}
-          showListingTag={true}
-        />
-        <div className="divider" />
-        <div className={`w-full ${activeTab === OutpointTab.Inscription ? 'md:w-1/3' : ''} mx-auto`}>
-          <OutpointTabs activeTab={activeTab} outpoint={outpoint} hasToken={!!artifact.origin?.data?.bsv20} />
-          {content}
-        </div>
-      </div>
-    </div>
-  );
+	return (
+		<div className="mx-auto flex flex-col p-2 md:p-0 min-h-64">
+			{artifact?.origin?.data?.insc && (
+				<>
+					<h2 className={`text-2xl mb-4  ${notoSerif.className}`}>
+						{displayName(artifact, false)}
+					</h2>
+					<div className="flex flex-col md:flex-row gap-4">
+						<Artifact
+							artifact={artifact}
+							size={400}
+							sizes={"100vw"}
+							glow={true}
+							classNames={{
+								wrapper: `w-full ${
+									activeTab === OutpointTab.Inscription ? "md:w-2/3" : ""
+								}`,
+							}}
+							showListingTag={true}
+						/>
+						<div className="divider" />
+						<div
+							className={`w-full ${
+								activeTab === OutpointTab.Inscription ? "md:w-1/3" : ""
+							} mx-auto`}
+						>
+							<OutpointTabs
+								activeTab={activeTab}
+								outpoint={outpoint}
+								hasToken={!!artifact.origin?.data?.bsv20}
+							/>
+							{content}
+						</div>
+					</div>
+				</>
+			)}
+		</div>
+	);
 };
 
 export default OutpointPage;

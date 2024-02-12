@@ -7,8 +7,8 @@ type Props = {
 };
 const Ordinals: React.FC<Props> = ({ artifacts, onClick }) => {
   return (
-    <div>
-      {artifacts?.length === 0 && <div>You have no ordinals</div>}
+    <>
+      {artifacts?.length === 0 && <div className="grid mb-4">You have no ordinals</div>}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 mb-4">
         {artifacts?.map((a) => {
           return (
@@ -27,7 +27,7 @@ const Ordinals: React.FC<Props> = ({ artifacts, onClick }) => {
           );
         })}
       </div>
-    </div>
+    </>
   );
 };
 
