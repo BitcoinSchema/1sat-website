@@ -1,6 +1,6 @@
 "use client";
 
-import { API_HOST, FetchStatus, toastErrorProps } from "@/constants";
+import { API_HOST, FetchStatus, feeRate, toastErrorProps } from "@/constants";
 import {
   bsv20Balances,
   chainInfo,
@@ -15,6 +15,7 @@ import { BSV20, Ticker } from "@/types/bsv20";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import { inscribeUtf8 } from "@/utils/inscribe";
+import { P2PKH_FULL_INPUT_SIZE } from "@/utils/js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import "buffer";
@@ -330,7 +331,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				if (address) {
 					payments.push({
 						to: address,
-						amount: 1000n * BigInt(iterations),
+						amount: BigInt(iterationFee) * BigInt(iterations),
 					});
 				}
 				const pendingTx = await inscribeUtf8(
@@ -544,6 +545,13 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		return ((iterationFee * iterations) / usdRate.value).toFixed(2);
 	}, [iterations]);
 
+  const networkFeeUsd = useMemo(() => {
+    if (!usdRate.value) {
+      return 0;
+    }
+    return (((bytesPerIteration * iterations * feeRate) + (P2PKH_FULL_INPUT_SIZE * 4)) / usdRate.value).toFixed(2);
+  }, [iterations]);
+  
 	const canEnableBulk = useMemo(
 		() =>
 			confirmedOplBalance
@@ -772,6 +780,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 										<div className="w-1/2">Bulk Indexing Fee:</div>
 										<div className="w-1/2 text-right">${iterationFeeUsd}</div>
 									</div>
+									<div className="flex items-center justify-between">
+										<div className="w-1/2">Est Network Fee:</div>
+										<div className="w-1/2 text-right">${networkFeeUsd}</div>
+									</div>
 
 									<div className="flex items-center justify-between">
 										<div className="w-1/2">
@@ -894,7 +906,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
 				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
 			>
-				Preview
+				Preview {selectedActionType === ActionType.Deploy ? "Deployment" : "Mint"}
 			</button>
 		</div>
 	);
@@ -910,7 +922,7 @@ export const baseFee = 50;
 const defaultDec = 8;
 const bulkMintingTicker = "OPL";
 const bulkMintingTickerMaxSupply = 21000000;
-const iterationFee = 1 // 1000;
+export const iterationFee = 1000;
 
 // Function to calculate the tier number based on balance
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
@@ -966,3 +978,6 @@ const calculateSpacers = (maxIterations: number, steps: number) => {
 		);
 	});
 };
+
+
+const bytesPerIteration = 40;

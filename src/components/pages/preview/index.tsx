@@ -36,7 +36,8 @@ const PreviewPage = () => {
 			return null;
 		}
 		const fee = pendingTx.value.fee;
-		const feeUsd = fee / 100000000 / 100000000;
+		// const feeUsd = fee / 100000000 / 100000000;
+    const feeUsd = fee / usdRate.value;
 		return feeUsd.toFixed(2);
 	});
 
@@ -149,7 +150,7 @@ Preview`}
 						</div>
 						<div className="flex justify-between">
 							<div>Network Fee USD</div>
-							<div>{feeUsd}</div>
+							<div>${feeUsd}</div>
 						</div>
 						{pendingTx.value?.fee && (
 							<div className="flex justify-between">

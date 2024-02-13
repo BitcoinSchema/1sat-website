@@ -11,6 +11,7 @@ import { FaSpinner } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import JDenticon from "../JDenticon";
+import { iterationFee } from "../pages/inscribe/bsv20";
 import { showDetails } from "../pages/outpoint/heading";
 
 interface DisplayIOProps {
@@ -126,7 +127,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 									</Link>
 								</div>
 								<div className="text-xs text-nowrap absolute bottom-0 right-0 text-red-400">
-									{sats > 1000n
+									{sats > BigInt(iterationFee)
 										? `${toBitcoin(sats.toString())} BSV`
 										: `${sats} sats`}
 								</div>
@@ -170,7 +171,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 								</Link>
 							</div>
 							<div className="text-xs text-nowrap absolute bottom-0 right-0 text-emerald-400">
-								{sats > 1000n
+								{sats > BigInt(iterationFee)
 									? `${toBitcoin(sats.toString())} BSV`
 									: `${sats} sats`}
 							</div>
