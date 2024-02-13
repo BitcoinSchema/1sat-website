@@ -961,7 +961,7 @@ export const baseFee = 50;
 
 const defaultDec = 8;
 const bulkMintingTicker = "EGG";
-const bulkMintingTickerMaxSupply = 2180000000;
+const bulkMintingTickerMaxSupply = 21000000;
 export const iterationFee = 1000;
 
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
