@@ -14,7 +14,7 @@ const WalletTabs = ({
       <div className="flex-1">
         <div
           role="tablist"
-          className={`tabs tabs-lg max-w-[300px] tabs-lifted`}
+          className={`tabs md:tabs-lg max-w-[300px] tabs-lifted`}
         >
           <Link
             role="tab"

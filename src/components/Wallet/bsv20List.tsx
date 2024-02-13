@@ -349,7 +349,7 @@ const Bsv20List = ({
 	const contentTabs = computed(() => {
 		return (
 			<div className="mb-4">
-				<div role="tablist" className="tabs tabs-lg tabs-bordered">
+				<div role="tablist" className="tabs md:tabs-lg tabs-bordered">
 					<input
 						type="radio"
 						name="balanceTabs"
@@ -419,7 +419,7 @@ const Bsv20List = ({
 	});
 
 	return (
-		<div className="overflow-x-auto">
+		<div className="overflow-x-auto max-w-screen">
 			<div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
 				<WalletTabs type={type} address={addressProp} />
 				<div className="tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
