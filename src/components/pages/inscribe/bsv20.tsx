@@ -273,12 +273,15 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				// round to nearest multiple of amount
 				if (floored > parseInt(amount) && floored % parseInt(amount) !== 0) {
 					floored -= floored % parseInt(amount);
-					console.log({ floored, amount });
 				}
 
 				iter.push(floored);
 			}
-			return iter[tierNum - 1] > max ? max : Math.min(iter[tierNum - 1], max);
+			const m = iter[tierNum - 1] > max ? max : Math.min(iter[tierNum - 1], max);
+      if (m < 10 ) {
+        return 10
+      }
+      return m;
 		},
 		[amount],
 	);
@@ -522,7 +525,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
-	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount]);
+
+	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, tierMax]);
 
 	const step = useMemo(() => {
 		if (!confirmedOplBalance) {
@@ -980,7 +984,7 @@ const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
 
 // Returns the tier number 1-5
 const tierMaxNum = (balance: number) => {
-	return calculateTier(balance, bulkMintingTickerMaxSupply);
+	return calculateTier(balance, bulkMintingTickerMaxSupply)
 };
 
 const calculateSpacers = (maxIterations: number, steps: number) => {
