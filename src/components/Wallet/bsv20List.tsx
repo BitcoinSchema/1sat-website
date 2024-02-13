@@ -63,6 +63,7 @@ const Bsv20List = ({
 				holdings.value?.every((h) => h.tick !== u.data?.bsv20?.tick),
 			);
 			console.log({ u });
+      bsv20s.value = u;
 
 			if (address !== ordAddress.value) {
 				// not viewing own address
