@@ -15,9 +15,11 @@ import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { FaCopy } from "react-icons/fa";
 import { toBitcoin } from "satoshi-bitcoin-ts";
+import { useCopyToClipboard } from "usehooks-ts";
 
 const PreviewPage = () => {
 	useSignals();
+	const [value, copy] = useCopyToClipboard();
 	const router = useRouter();
 	const txs = useSignal<PendingTransaction[] | null>(pendingTxs.value);
 	const pendingTx = useSignal<PendingTransaction | null>(
@@ -122,21 +124,10 @@ const PreviewPage = () => {
 Preview`}
 			</h1>
 			<div className="text-center text-[#aaa] mt-2">Broadcast to finalize.</div>
-			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden text-teal-700 mt-4 mb-8 relative">
-				{/* <div className="opacity-50 select-none text-center">
-
-          <textarea className="textarea-ghost w-full h-full p-2 overflow-hidden" rows={8} value={pendingTx.value?.rawTx} readOnly />
-				</div> */}
-        
-				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
-					<div className="font-semibold text-center text-sm text-[#aaa] mb-2 py-2">
-						Transaction ID
-					</div>
-					<div className="rounded-full bg-[#222] border flex items-center justify-center text-center text-[9px] md:text-[11px] text-[#aaa] border-[#333] my-2 py-2 relative">
-						{pendingTx.value?.txid} <FaCopy className="absolute right-0 mr-2" />
-					</div>
+			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden  mt-4 mb-8 relative">
+        				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
 					<div className="px-2">
-						<div className="flex justify-between mt-4">
+						<div className="flex justify-between">
 							<div>{pendingTx.value?.numInputs} Inputs</div>
 							<div>{pendingTx.value?.numOutputs} Outputs</div>
 						</div>
@@ -210,7 +201,7 @@ Preview`}
 							<>
 								<div className="divider">Indexing</div>
 								<div className="flex justify-between">
-									<div>Iterations</div> <div>{pendingTx.value.iterations}</div>
+									<div>Operations</div> <div>{pendingTx.value.iterations}</div>
 								</div>
 								<div className="flex justify-between">
 									<div>Indexing Fee</div>{" "}
@@ -219,7 +210,36 @@ Preview`}
 							</>
 						)}
 					</div>
-					<div className="p-2 items-center justify-center gap-2">
+          <div className="divider" />
+          <div className="mx-auto text-center text-teal-700 mb-2">{pendingTx.value?.txid}</div>
+
+					<div className="flex gap-2 items-center justify-between mb-8">
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+						<div
+							className="cursor-pointer w-full rounded bg-[#222] border flex items-center justify-center text-center text-[9px] md:text-[11px] text-[#aaa] border-[#333] py-2 relative"
+							onClick={async () => {
+								if (pendingTx.value?.txid) {
+									toast.success("Copied txid", toastProps);
+									await copy(pendingTx.value.txid);
+								}
+							}}
+						>
+							TxID <FaCopy className="absolute right-0 mr-2" />
+						</div>
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+						<div
+							className="cursor-pointer w-full rounded bg-[#222] border flex items-center justify-center text-center text-[9px] md:text-[11px] text-[#aaa] border-[#333] py-2 relative"
+							onClick={async () => {
+								if (pendingTx.value?.rawTx) {
+									toast.success("Copied Raw TX", toastProps);
+									await copy(pendingTx.value.rawTx);
+								}
+							}}
+						>
+							Raw TX <FaCopy className="absolute right-0 mr-2" />
+						</div>
+					</div>
+					<div className="items-center justify-center gap-2">
 						<div className="btn btn-warning w-full" onClick={broadcast}>
 							Broadcast ${usdPrice}
 						</div>

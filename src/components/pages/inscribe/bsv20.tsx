@@ -910,7 +910,7 @@ export const baseFee = 50;
 const defaultDec = 8;
 const bulkMintingTicker = "OPL";
 const bulkMintingTickerMaxSupply = 21000000;
-const iterationFee = 1000;
+const iterationFee = 1 // 1000;
 
 // Function to calculate the tier number based on balance
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
