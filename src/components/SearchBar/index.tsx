@@ -81,7 +81,7 @@ const SearchBar: React.FC = () => {
 
   return (
     <form className="navbar-center relative" onSubmit={subForm}>
-      <div className="group gap-2 w-72 md:w-96 relative">
+      <div className="group gap-2 w-48 md:w-96 relative">
         <input
           type="text"
           placeholder={"Search"}

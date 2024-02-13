@@ -23,7 +23,7 @@ const MarketMenu: React.FC = () => {
 
 	return (
 		<>
-			<div className="dropdown dropdown-end">
+			<div className="hidden md:block dropdown dropdown-end">
 				<div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
 					1 BSV = <span className="text-emerald-300/50">${exchangeRate.value.toFixed(2)}</span>
 				</div>
