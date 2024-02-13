@@ -579,6 +579,25 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		));
 	}, [currentTier]);
 
+  const acquireText = useMemo(() => {
+    // return Acquire{" "}
+    // {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+    // {<span
+    //   data-tip={`Tier ${currentTier}/5`}
+    //   className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
+    //   onClick={() => {
+    //     router.push(
+    //       `/inscribe?tab=bsv20&tick=${bulkMintingTicker}&op=mint`,
+    //     );
+    //   }}
+    // >
+    //   {bulkMintingTicker}
+    // </span>}{" "}
+    // to enable bulk minting.
+
+    return confirmedOplBalance && tierMaxNum(confirmedOplBalance) > 0 ? "Bulk Minting Enabled" :`Acquire ${bulkMintingTicker} to enable bulk minting`;
+  }, [confirmedOplBalance]);
+  
 	return (
 		<div className="w-full max-w-lg mx-auto">
 			<select
@@ -715,20 +734,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					<div>
 						<div className="p-2 bg-[#111] my-2 rounded flex items-center justify-between">
 							<div>
-								Acquire{" "}
-								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-								{<span
-									data-tip={`Tier ${currentTier}/5`}
-									className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
-									onClick={() => {
-										router.push(
-											`/inscribe?tab=bsv20&tick=${bulkMintingTicker}&op=mint`,
-										);
-									}}
-								>
-									{bulkMintingTicker}
-								</span>}{" "}
-								to enable bulk minting.
+								{acquireText}
 							</div>
 							<input
 								type="checkbox"
@@ -760,7 +766,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								<input
 									onChange={changeIterations}
 									value={iterations}
-									max={maxIterations + 1}
+									max={maxIterations + step}
 									type="range"
 									min={1}
 									className="range"
@@ -920,30 +926,32 @@ export const baseFee = 50;
 
 const defaultDec = 8;
 const bulkMintingTicker = "$POO";
-const bulkMintingTickerMaxSupply = 21000000;
+const bulkMintingTickerMaxSupply = 2180000000;
 export const iterationFee = 1000;
 
-// Function to calculate the tier number based on balance
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
-	if (balance <= 0) return 0;
+  if (balance <= 0) return 0;
 
-	// Calculate balance as a percentage of max supply
-	const pct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
+  // Calculate balance as a percentage of max supply
+  const balancePct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
 
-	// Define tier thresholds as percentages of max supply
-	const tierThresholds = [
-		(1000 / bulkMintingTickerMaxSupply) * 100,
-		(10000 / bulkMintingTickerMaxSupply) * 100,
-		(100000 / bulkMintingTickerMaxSupply) * 100,
-		(1000000 / bulkMintingTickerMaxSupply) * 100,
-		(10000000 / bulkMintingTickerMaxSupply) * 100,
-	];
+  // Define tier thresholds as percentages of max supply
+  // Assuming tiers are at 0.05%, 0.1%, 0.5%, 1%, 5% of max supply
+  const tierThresholds = [
+      0.001, // Tier 1 at 0.05% of max supply
+      0.01,  // Tier 2 at 0.1% of max supply
+      0.5,  // Tier 3 at 0.5% of max supply
+      1,    // Tier 4 at 1% of max supply
+      2.5     // Tier 5 at 5% of max supply
+  ];
 
-	// Find the tier based on the percentage thresholds
-	for (let tier = 1; tier <= tierThresholds.length; tier++) {
-		if (pct <= tierThresholds[tier - 1]) return tier;
-	}
-	return tierThresholds.length; // Return highest tier if balance exceeds all thresholds
+  console.log({ balancePct, tierThresholds });
+
+  // Find the tier based on the percentage thresholds
+  for (let tier = 1; tier <= tierThresholds.length; tier++) {
+      if (balancePct <= tierThresholds[tier - 1]) return tier;
+  }
+  return tierThresholds.length + 1; // Return one above the highest tier if balancePct exceeds all thresholds
 };
 
 // Returns the tier number 1-5
