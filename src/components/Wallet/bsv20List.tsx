@@ -242,8 +242,8 @@ const Bsv20List = ({
 												dec={dec}
 												id={(tick || id)!}
 												open={
-													(tick && showAirdrop.value === tick) ||
-													(id && showAirdrop.value === id)
+													(!!tick && showAirdrop.value === tick) ||
+													(!!id && showAirdrop.value === id)
 												}
 												balance={all.confirmed}
 											/>

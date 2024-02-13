@@ -206,7 +206,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					: "Ticker Unavailable"
 				: mintError
 			: inSync.value
-			  ? selectedBsv20?.pendingOps > 0
+			  ? selectedBsv20?.pendingOps && selectedBsv20?.pendingOps > 0
 					? `${selectedBsv20?.pendingOps} Pending Ops`
 					: "1-4 Characters"
 			  : selectedActionType === ActionType.Deploy
@@ -481,9 +481,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			toast.error(`You need ${bulkMintingTicker} to bulk mint ${ticker}`);
 			return 0;
 		}
-		const displayOplBalance = selectedBsv20.dec
+		const displayOplBalance = confirmedOplBalance ? selectedBsv20.dec
 			? confirmedOplBalance / 10 ** selectedBsv20.dec
-			: confirmedOplBalance;
+			: confirmedOplBalance : 0;
 		if (!amount || amount === "0") {
 			return 0;
 		}
@@ -497,7 +497,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
-	}, [selectedBsv20, amount, ticker, confirmedOplBalance]);
+	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, ticker]);
 
 	const step = useMemo(() => {
 		// when max iterations is huge we want to increase the step
