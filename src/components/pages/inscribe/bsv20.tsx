@@ -697,7 +697,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								className="text-white w-full rounded p-2"
 								type="number"
 								min={1}
-								max={selectedBsv20?.lim}
+								max={maxIterations}
 								onChange={changeAmount}
 								value={amount}
 								onFocus={(event) =>
@@ -717,7 +717,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							<div>
 								Acquire{" "}
 								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-								<span
+								{<span
 									data-tip={`Tier ${currentTier}/5`}
 									className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
 									onClick={() => {
@@ -727,7 +727,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 									}}
 								>
 									{bulkMintingTicker}
-								</span>{" "}
+								</span>}{" "}
 								to enable bulk minting.
 							</div>
 							<input
