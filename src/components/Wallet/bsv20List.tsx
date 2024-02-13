@@ -159,7 +159,7 @@ const Bsv20List = ({
 						onClick={() =>
 							router.push(
 								`/market/${
-									bsv20.tick ? "bsv20/" + bsv20.tick : "bsv21/" + bsv20.id
+									bsv20.tick ? `bsv20/${bsv20.tick}` : `bsv21/${bsv20.id}`
 								}`,
 							)
 						}
