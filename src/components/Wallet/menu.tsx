@@ -5,6 +5,7 @@ import {
   bsv20Balances,
   bsvWasmReady,
   chainInfo,
+  exchangeRate,
   indexers,
   ordPk,
   payPk,
@@ -89,12 +90,13 @@ const WalletMenu: React.FC = () => {
         }>(statusUrl);
         const {
           chainInfo: info,
-          exchangeRate,
+          exchangeRate: er,
           indexers: indx,
         } = await promiseStatus;
         console.log({ info, exchangeRate, indexers });
         chainInfo.value = info;
-        usdRate.value = toSatoshi(1) / exchangeRate;
+        usdRate.value = toSatoshi(1) / er;
+        exchangeRate.value = er;
         indexers.value = indx;
       } catch (e) {
         console.log(e);

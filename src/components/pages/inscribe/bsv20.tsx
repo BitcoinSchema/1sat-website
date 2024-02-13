@@ -26,6 +26,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { ErrorIcon } from "react-hot-toast";
 import {
   FaCheckCircle,
+  FaClock,
   FaExclamationCircle,
   FaExclamationTriangle,
   FaInfoCircle,
@@ -34,828 +35,874 @@ import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { InscriptionTab } from "./tabs";
 
 enum ActionType {
-  Mint = "mint",
-  Deploy = "deploy",
+	Mint = "mint",
+	Deploy = "deploy",
 }
 interface InscribeBsv20Props {
-  inscribedCallback: () => void;
+	inscribedCallback: () => void;
 }
 
 const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
-  useSignals();
-  const router = useRouter();
-  const params = useSearchParams();
-  // const { tab, tick, op } = params.query as { tab: string; tick: string; op: string };
-  const tab = params.get("tab") as InscriptionTab;
-  const tick = params.get("tick");
-  const op = params.get("op");
+	useSignals();
+	const router = useRouter();
+	const params = useSearchParams();
+	// const { tab, tick, op } = params.query as { tab: string; tick: string; op: string };
+	const tab = params.get("tab") as InscriptionTab;
+	const tick = params.get("tick");
+	const op = params.get("op");
 
-  const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
-  const [selectedActionType, setSelectedActionType] = useState<ActionType>(
-    ActionType.Mint
-  );
-  const [tickerAvailable, setTickerAvailable] = useState<boolean | undefined>(
-    undefined
-  );
-  const [fetchTickerStatus, setFetchTickerStatus] = useState<FetchStatus>(
-    FetchStatus.Idle
-  );
-  const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
-    FetchStatus.Idle
-  );
-  const [selectedBsv20, setSelectedBsv20] = useState<Ticker>();
-  const [limit, setLimit] = useState<string | undefined>("1337");
-  const [maxSupply, setMaxSupply] = useState<string>("21000000");
-  const [decimals, setDecimals] = useState<number | undefined>();
-  const [amount, setAmount] = useState<string>();
-  const [mintError, setMintError] = useState<string>();
-  const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
-  const [iterations, setIterations] = useState<number>(1);
+	const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
+	const [selectedActionType, setSelectedActionType] = useState<ActionType>(
+		ActionType.Mint,
+	);
+	const [tickerAvailable, setTickerAvailable] = useState<boolean | undefined>(
+		undefined,
+	);
+	const [fetchTickerStatus, setFetchTickerStatus] = useState<FetchStatus>(
+		FetchStatus.Idle,
+	);
+	const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
+		FetchStatus.Idle,
+	);
+	const [selectedBsv20, setSelectedBsv20] = useState<Ticker>();
+	const [limit, setLimit] = useState<string | undefined>("1337");
+	const [maxSupply, setMaxSupply] = useState<string>("21000000");
+	const [decimals, setDecimals] = useState<number | undefined>();
+	const [amount, setAmount] = useState<string>();
+	const [mintError, setMintError] = useState<string>();
+	const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
+	const [iterations, setIterations] = useState<number>(1);
+	const [bulkEnabled, setBulkEnabled] = useState<boolean>(false);
+	const [ticker, setTicker] = useState<string | null>(tick);
 
-  const [ticker, setTicker] = useState<string | null>(tick);
+	useEffect(() => {
+		if (op) {
+			setSelectedActionType(op as ActionType);
+		}
+	}, [selectedActionType, op]);
 
-  useEffect(() => {
-    if (op) {
-      setSelectedActionType(op as ActionType);
-    }
-  }, [selectedActionType, op]);
+	useEffect(() => {
+		if (tick) {
+			setTicker(tick);
+		}
+	}, [setTicker, tick]);
 
-  useEffect(() => {
-    if (tick) {
-      setTicker(tick);
-    }
-  }, [setTicker, tick]);
+	const toggleOptionalFields = useCallback(() => {
+		setShowOptionalFields(!showOptionalFields);
+	}, [showOptionalFields]);
 
-  const toggleOptionalFields = useCallback(() => {
-    setShowOptionalFields(!showOptionalFields);
-  }, [showOptionalFields]);
+	const changeTicker = useCallback(
+		(e: any) => {
+			setAmount(undefined);
+			setTicker(e.target.value);
+			if (mintError) setMintError(undefined);
+		},
+		[setTicker, mintError, setAmount],
+	);
 
-  const changeTicker = useCallback(
-    (e: any) => {
-      setTicker(e.target.value);
-      if (mintError) setMintError(undefined);
-    },
-    [setTicker, mintError]
-  );
+	const checkTicker = useCallback(
+		async (tick: string, expectExist: boolean, event?: any) => {
+			if (!tick || tick.length === 0) {
+				setTickerAvailable(false);
+				return;
+			}
+			try {
+				setFetchTickerStatus(FetchStatus.Loading);
+				const resp = await fetch(`${API_HOST}/api/bsv20/tick/${tick}`);
 
-  const checkTicker = useCallback(
-    async (tick: string, expectExist: boolean, event?: any) => {
-      if (!tick || tick.length === 0) {
-        setTickerAvailable(false);
-        return;
-      }
-      try {
-        setFetchTickerStatus(FetchStatus.Loading);
-        const resp = await fetch(`${API_HOST}/api/bsv20/tick/${tick}`);
+				if (resp.status === 200) {
+					if (!expectExist) {
+						// prevent form from submitting
+						event.preventDefault();
+						setTickerAvailable(false);
+					} else if (expectExist) {
+						const bsv20 = (await resp.json()) as Ticker;
 
-        if (resp.status === 200) {
-          if (!expectExist) {
-            // prevent form from submitting
-            event.preventDefault();
-            setTickerAvailable(false);
-          } else if (expectExist) {
-            const bsv20 = (await resp.json()) as Ticker;
+						console.log(
+							"selected BSV20",
+							{ bsv20 },
+							parseInt(bsv20.supply!) < parseInt(bsv20.max!),
+						);
+						setSelectedBsv20(bsv20);
+						if (
+							!!bsv20 &&
+							bsv20.max !== undefined &&
+							bsv20.supply !== undefined &&
+							parseInt(bsv20.supply) < parseInt(bsv20.max) &&
+							bsv20.pendingOps === 0
+						) {
+							setTickerAvailable(true);
+						} else if (bsv20.pendingOps > 0) {
+							setTickerAvailable(true);
+							setMintError("May be minted out");
+						} else {
+							setTickerAvailable(false);
+							setMintError("Minted Out");
+						}
+					}
+				} else if (resp.status === 404) {
+					console.log("ticker not found", tick, "expectExist", expectExist);
+					if (expectExist) {
+						setTickerAvailable(false);
+						setSelectedBsv20(undefined);
+					} else {
+						setTickerAvailable(true);
+					}
+				}
+				setFetchTickerStatus(FetchStatus.Success);
+			} catch (e) {
+				console.error({ e });
+				setFetchTickerStatus(FetchStatus.Error);
+			}
+		},
+		[setSelectedBsv20, setTickerAvailable, setFetchTickerStatus],
+	);
 
-            console.log(
-              "selected BSV20",
-              { bsv20 },
-              parseInt(bsv20.supply!) < parseInt(bsv20.max!)
-            );
-            setSelectedBsv20(bsv20);
-            if (
-              !!bsv20 &&
-              bsv20.max !== undefined &&
-              bsv20.supply !== undefined &&
-              parseInt(bsv20.supply) < parseInt(bsv20.max) &&
-              bsv20.pendingOps === 0
-            ) {
-              setTickerAvailable(true);
-            } else if (bsv20.pendingOps > 0) {
-              setTickerAvailable(true);
-              setMintError("May be minted out");
-            } else {
-              setTickerAvailable(false);
-              setMintError("Minted Out");
-            }
-          }
-        } else if (resp.status === 404) {
-          console.log("ticker not found", tick, "expectExist", expectExist);
-          if (expectExist) {
-            setTickerAvailable(false);
-            setSelectedBsv20(undefined);
-          } else {
-            setTickerAvailable(true);
-          }
-        }
-        setFetchTickerStatus(FetchStatus.Success);
-      } catch (e) {
-        console.error({ e });
-        setFetchTickerStatus(FetchStatus.Error);
-      }
-    },
-    [setSelectedBsv20, setTickerAvailable, setFetchTickerStatus]
-  );
+	const changeMaxSupply = useCallback(
+		(e: any) => {
+			setMaxSupply(e.target.value);
+		},
+		[setMaxSupply],
+	);
 
-  const changeMaxSupply = useCallback(
-    (e: any) => {
-      setMaxSupply(e.target.value);
-    },
-    [setMaxSupply]
-  );
+	const changeSelectedActionType = useCallback(
+		async (e: any) => {
+			console.log({ val: e.target.value });
+			const actionType = e.target.value.toLowerCase() as ActionType;
+			setSelectedActionType(actionType);
+			if (ticker) {
+				await checkTicker(ticker, actionType === ActionType.Mint);
+			}
+		},
+		[setSelectedActionType, ticker, checkTicker],
+	);
 
-  const changeSelectedActionType = useCallback(
-    async (e: any) => {
-      console.log({ val: e.target.value });
-      const actionType = e.target.value.toLowerCase() as ActionType;
-      setSelectedActionType(actionType);
-      if (ticker) {
-        await checkTicker(ticker, actionType === ActionType.Mint);
-      }
-    },
-    [setSelectedActionType, ticker, checkTicker]
-  );
+	const changeIterations: React.ChangeEventHandler<HTMLInputElement> =
+		useCallback((e) => {
+			// check the value is not more than the max
+			if (parseInt(e.target.value) > parseInt(e.target.max)) {
+				toast.error(`Max iterations is ${e.target.max}`);
+				return;
+			}
+			setIterations(parseInt(e.target.value));
+		}, []);
 
-  const changeIterations: React.ChangeEventHandler<HTMLInputElement> =
-    useCallback((e) => {
-      // check the value is not more than the max
-      if (parseInt(e.target.value) > parseInt(e.target.max)) {
-        toast.error(`Max iterations is ${e.target.max}`);
-        return;
-      }
-      setIterations(parseInt(e.target.value));
-    }, []);
+	const inSync = computed(() => {
+		if (!indexers.value || !chainInfo.value) {
+			return false;
+		}
+		return (
+			indexers.value["bsv20-deploy"] >= chainInfo.value?.blocks &&
+			indexers.value.bsv20 + 6 >= chainInfo.value?.blocks
+		);
+	});
 
-  const inSync = computed(() => {
-    if (!indexers.value || !chainInfo.value) {
-      return false;
-    }
-    return (
-      indexers.value["bsv20-deploy"] >= chainInfo.value?.blocks &&
-      indexers.value.bsv20 + 6 >= chainInfo.value?.blocks
-    );
-  });
+	const tickerNote = useMemo(() => {
+		return tickerAvailable === false
+			? selectedActionType === ActionType.Deploy
+				? ticker === ""
+					? "¯\\_(ツ)_/¯"
+					: "Ticker Unavailable"
+				: mintError
+			: inSync.value
+			  ? selectedBsv20?.pendingOps > 0
+					? `${selectedBsv20?.pendingOps} Pending Ops`
+					: "1-4 Characters"
+			  : selectedActionType === ActionType.Deploy
+				  ? "Syncing. May already be deployed."
+				  : "Syncing. May be minted out.";
+	}, [
+		tickerAvailable,
+		selectedActionType,
+		ticker,
+		mintError,
+		inSync.value,
+		selectedBsv20,
+	]);
 
-  const tickerNote = useMemo(() => {
-    return tickerAvailable === false
-      ? selectedActionType === ActionType.Deploy
-        ? ticker === ""
-          ? "¯\\_(ツ)_/¯"
-          : "Ticker Unavailable"
-        : mintError
-      : inSync.value
-        ? "1-4 Characters"
-        : selectedActionType === ActionType.Deploy
-          ? "Syncing. May already be deployed."
-          : "Syncing. May be minted out.";
-  }, [tickerAvailable, selectedActionType, ticker, mintError, inSync.value]);
+	const totalTokens = useMemo(() => {
+		return iterations * parseInt(amount || "0");
+	}, [amount, iterations]);
 
-  const totalTokens = useMemo(() => {
-    return iterations * parseInt(amount || "0");
-  }, [amount, iterations]);
+	// Define the debounced function outside of the render method
+	const debouncedCheckTicker = debounce(async (event, expectExist) => {
+		await checkTicker(event.target.value, expectExist, event);
+	}, 300); // This is a common debounce time. Adjust as needed.
 
-  // Define the debounced function outside of the render method
-  const debouncedCheckTicker = debounce(async (event, expectExist) => {
-    await checkTicker(event.target.value, expectExist, event);
-  }, 300); // This is a common debounce time. Adjust as needed.
+	const changeLimit = useCallback(
+		(e: any) => {
+			setLimit(e.target.value);
+		},
+		[setLimit],
+	);
 
-  const changeLimit = useCallback(
-    (e: any) => {
-      setLimit(e.target.value);
-    },
-    [setLimit]
-  );
+	const changeDecimals = useCallback(
+		(e: any) => {
+			setDecimals(e.target.valuye ? parseInt(e.target.value) : undefined);
+		},
+		[setDecimals],
+	);
 
-  const changeDecimals = useCallback(
-    (e: any) => {
-      setDecimals(e.target.valuye ? parseInt(e.target.value) : undefined);
-    },
-    [setDecimals]
-  );
+	const changeAmount = useCallback(
+		(e: any) => {
+			if (selectedActionType === ActionType.Mint && selectedBsv20?.lim) {
+				if (parseInt(e.target.value) <= parseInt(selectedBsv20.lim)) {
+					setAmount(e.target.value);
+				}
+				return;
+			}
+			// exclude 0
+			if (parseInt(e.target.value) !== 0) {
+				setAmount(e.target.value);
+			}
+		},
+		[selectedBsv20, selectedActionType, setAmount],
+	);
 
-  const changeAmount = useCallback(
-    (e: any) => {
-      if (selectedActionType === ActionType.Mint && selectedBsv20?.lim) {
-        if (parseInt(e.target.value) <= parseInt(selectedBsv20.lim)) {
-          setAmount(e.target.value);
-        }
-        return;
-      }
-      // exclude 0
-      if (parseInt(e.target.value) !== 0) {
-        setAmount(e.target.value);
-      }
-    },
-    [selectedBsv20, selectedActionType, setAmount]
-  );
+	const inscribeBsv20 = useCallback(
+		async (sortedUtxos: Utxo[]) => {
+			if (!ticker || ticker?.length === 0) {
+				return;
+			}
+			setInscribeStatus(FetchStatus.Loading);
 
-  const inscribeBsv20 = useCallback(
-    async (sortedUtxos: Utxo[]) => {
-      if (!ticker || ticker?.length === 0) {
-        return;
-      }
-      setInscribeStatus(FetchStatus.Loading);
+			try {
+				let inscription = {
+					p: "bsv-20",
+					op: selectedActionType,
+				} as BSV20;
 
-      try {
-        let inscription = {
-          p: "bsv-20",
-          op: selectedActionType,
-        } as BSV20;
+				switch (selectedActionType) {
+					case ActionType.Deploy:
+						if (parseInt(maxSupply) === 0 || BigInt(maxSupply) > maxMaxSupply) {
+							toast.error(
+								`Invalid input: please enter a number less than or equal to ${
+									maxMaxSupply - BigInt(1)
+								}`,
+								toastErrorProps,
+							);
+							return;
+						}
 
-        switch (selectedActionType) {
-          case ActionType.Deploy:
-            if (parseInt(maxSupply) === 0 || BigInt(maxSupply) > maxMaxSupply) {
-              toast.error(
-                `Invalid input: please enter a number less than or equal to ${
-                  maxMaxSupply - BigInt(1)
-                }`,
-                toastErrorProps
-              );
-              return;
-            }
+						inscription.tick = ticker;
+						inscription.max = maxSupply;
 
-            inscription.tick = ticker;
-            inscription.max = maxSupply;
+						// optional fields
+						if (decimals !== undefined) {
+							inscription.dec = decimals;
+						}
+						if (limit) inscription.lim = limit;
+						else if (
+							!confirm(
+								"Warning: Token will have no mint limit. This means all tokens can be minted at once. Are you sure this is what you want?",
+							)
+						) {
+							setInscribeStatus(FetchStatus.Idle);
+							return;
+						}
 
-            // optional fields
-            if (decimals !== undefined) {
-              inscription.dec = decimals;
-            }
-            if (limit) inscription.lim = limit;
-            else if (
-              !confirm(
-                "Warning: Token will have no mint limit. This means all tokens can be minted at once. Are you sure this is what you want?"
-              )
-            ) {
-              setInscribeStatus(FetchStatus.Idle);
-              return;
-            }
+						break;
+					case ActionType.Mint:
+						if (
+							!amount ||
+							parseInt(amount) == 0 ||
+							BigInt(amount) > maxMaxSupply ||
+							!selectedBsv20
+						) {
+							toast.error(
+								`Max supply must be a positive integer less than or equal to ${
+									maxMaxSupply - BigInt(1)
+								}`,
+								toastErrorProps,
+							);
+							return;
+						}
+						inscription.tick = selectedBsv20.tick;
+						inscription.amt = amount;
 
-            break;
-          case ActionType.Mint:
-            if (
-              !amount ||
-              parseInt(amount) == 0 ||
-              BigInt(amount) > maxMaxSupply ||
-              !selectedBsv20
-            ) {
-              toast.error(
-                `Max supply must be a positive integer less than or equal to ${
-                  maxMaxSupply - BigInt(1)
-                }`,
-                toastErrorProps
-              );
-              return;
-            }
-            inscription.tick = selectedBsv20.tick;
-            inscription.amt = amount;
+					default:
+						break;
+				}
 
-          default:
-            break;
-        }
+				const text = JSON.stringify(inscription);
+				const address = selectedBsv20?.fundAddress;
+				const payments: Payment[] = [];
+				if (address) {
+					payments.push({
+						to: address,
+						amount: 1000n * BigInt(iterations),
+					});
+				}
+				const pendingTx = await inscribeUtf8(
+					text,
+					"application/bsv-20",
+					sortedUtxos,
+					iterations,
+					selectedActionType === ActionType.Deploy
+						? ([] as Payment[])
+						: payments,
+				);
 
-        const text = JSON.stringify(inscription);
-        const address = selectedBsv20?.fundAddress;
-        const payments: Payment[] = [];
-        if (address) {
-          payments.push({
-            to: address,
-            amount: 1000n * BigInt(iterations),
-          });
-        }
-        const pendingTx = await inscribeUtf8(
-          text,
-          "application/bsv-20",
-          sortedUtxos,
-          iterations,
-          selectedActionType === ActionType.Deploy
-            ? ([] as Payment[])
-            : payments
-        );
+				pendingTxs.value = [pendingTx];
+				setInscribeStatus(FetchStatus.Success);
+				inscribedCallback();
+			} catch (error) {
+				setInscribeStatus(FetchStatus.Error);
 
-        pendingTxs.value = [pendingTx];
-        setInscribeStatus(FetchStatus.Success);
-        inscribedCallback();
-      } catch (error) {
-        setInscribeStatus(FetchStatus.Error);
+				toast.error(`Failed to inscribe: ${error}`, toastErrorProps);
+				return;
+			}
+		},
+		[
+			inscribedCallback,
+			amount,
+			decimals,
+			limit,
+			maxSupply,
+			selectedActionType,
+			selectedBsv20,
+			ticker,
+			iterations,
+		],
+	);
 
-        toast.error(`Failed to inscribe: ${error}`, toastErrorProps);
-        return;
-      }
-    },
-    [
-      inscribedCallback,
-      amount,
-      decimals,
-      limit,
-      maxSupply,
-      selectedActionType,
-      selectedBsv20,
-      ticker,
-      iterations,
-    ]
-  );
+	const bulkInscribe = useCallback(async () => {
+		if (!payPk || !ordAddress || !fundingAddress.value) {
+			return;
+		}
 
-  const bulkInscribe = useCallback(async () => {
-    if (!payPk || !ordAddress || !fundingAddress.value) {
-      return;
-    }
+		toast.success("Bulk inscribing! This may take a while.");
 
-    toast.success("Bulk inscribing! This may take a while.");
+		// while (iterations > 0) {
+		await getUtxos(fundingAddress.value);
+		const sortedUtxos = utxos.value?.sort((a, b) =>
+			a.satoshis > b.satoshis ? -1 : 1,
+		);
+		if (!sortedUtxos) {
+			console.log("no utxos");
+			return;
+		}
+		// const u = head(sortedUtxos);
+		// if (!u) {
+		//   console.log("no utxos");
+		//   return;
+		// }
 
-    // while (iterations > 0) {
-    await getUtxos(fundingAddress.value);
-    const sortedUtxos = utxos.value?.sort((a, b) =>
-      a.satoshis > b.satoshis ? -1 : 1
-    );
-    if (!sortedUtxos) {
-      console.log("no utxos");
-      return;
-    }
-    // const u = head(sortedUtxos);
-    // if (!u) {
-    //   console.log("no utxos");
-    //   return;
-    // }
+		await inscribeBsv20(sortedUtxos);
+		// setIterations(iterations - 1);
+		// sleep for a second
+		// await new Promise((resolve) => setTimeout(resolve, 1000));
+		// }
+	}, [inscribeBsv20]);
 
-    await inscribeBsv20(sortedUtxos);
-    // setIterations(iterations - 1);
-    // sleep for a second
-    // await new Promise((resolve) => setTimeout(resolve, 1000));
-    // }
-  }, [inscribeBsv20]);
+	const clickInscribe = useCallback(async () => {
+		if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
+			return;
+		}
 
-  const clickInscribe = useCallback(async () => {
-    if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
-      return;
-    }
+		const utxos = await getUtxos(fundingAddress.value);
+		const sortedUtxos = utxos.sort((a, b) =>
+			a.satoshis > b.satoshis ? -1 : 1,
+		);
+		const u = head(sortedUtxos);
+		if (!u) {
+			console.log("no utxo");
+			return;
+		}
 
-    const utxos = await getUtxos(fundingAddress.value);
-    const sortedUtxos = utxos.sort((a, b) =>
-      a.satoshis > b.satoshis ? -1 : 1
-    );
-    const u = head(sortedUtxos);
-    if (!u) {
-      console.log("no utxo");
-      return;
-    }
+		return await inscribeBsv20([u]);
+	}, [inscribeBsv20]);
 
-    return await inscribeBsv20([u]);
-  }, [inscribeBsv20]);
+	useEffect(() => {
+		console.log({
+			tickerAvailable,
+			len: ticker?.length,
+			inscribeStatus,
+			fetchTickerStatus,
+			limit,
+			maxSupply,
+		});
+	}, [
+		fetchTickerStatus,
+		inscribeStatus,
+		limit,
+		maxSupply,
+		ticker?.length,
+		tickerAvailable,
+	]);
 
-  const submitDisabled = useMemo(() => {
-    return (
-      !tickerAvailable ||
-      !ticker?.length ||
-      inscribeStatus === FetchStatus.Loading ||
-      fetchTickerStatus === FetchStatus.Loading ||
-      (!!limit && maxSupply < limit)
-    );
-  }, [
-    inscribeStatus,
-    tickerAvailable,
-    ticker?.length,
-    fetchTickerStatus,
-    limit,
-    maxSupply,
-  ]);
+	const submitDisabled = useMemo(() => {
+		return (
+			!tickerAvailable ||
+			!ticker?.length ||
+			inscribeStatus === FetchStatus.Loading ||
+			fetchTickerStatus === FetchStatus.Loading ||
+			(!!limit && maxSupply < limit)
+		);
+	}, [
+		inscribeStatus,
+		tickerAvailable,
+		ticker?.length,
+		fetchTickerStatus,
+		limit,
+		maxSupply,
+	]);
 
-  const listingFee = useMemo(() => {
-    if (!usdRate.value) {
-      return minFee;
-    }
-    return selectedBsv20
-      ? calculateIndexingFee(usdRate.value)
-      : calculateIndexingFee(usdRate.value);
-  }, [selectedBsv20]);
+	const listingFee = useMemo(() => {
+		if (!usdRate.value) {
+			return minFee;
+		}
+		return selectedBsv20
+			? calculateIndexingFee(usdRate.value)
+			: calculateIndexingFee(usdRate.value);
+	}, [selectedBsv20]);
 
-  // maxIterations is based on the amount of confirmed OPL the user holds
-  const maxIterations = useMemo(() => {
-    if (!selectedBsv20) {
-      return 0;
-    }
-    // how much is already minted
-    if (!selectedBsv20.supply || !selectedBsv20.max) {
-      return 0;
-    }
-    const supply = parseInt(selectedBsv20.supply);
-    const confirmedOplBalance = bsv20Balances.value?.find(
-      (b) => b.tick?.toUpperCase() === bulkMintingTicker
-    )?.all.confirmed;
-    if (!confirmedOplBalance) {
-      toast.error(`You need ${bulkMintingTicker} to mint ${ticker}`);
-      return 0;
-    }
-    const displayOplBalance = selectedBsv20.dec
-      ? confirmedOplBalance / 10 ** selectedBsv20.dec
-      : confirmedOplBalance;
-    if (!amount || amount === "0") {
-      return 0;
-    }
-    let max = selectedBsv20.max || "0";
-    if (!selectedBsv20.max && selectedBsv20.supply) {
-      max = selectedBsv20.supply;
-    }
-    const remainingSupply = parseInt(max) - supply;
-    const organicMax = Math.ceil(remainingSupply / parseInt(amount));
+	const confirmedOplBalance = useMemo(
+		() =>
+			bsv20Balances.value?.find(
+				(b) => b.tick?.toUpperCase() === bulkMintingTicker,
+			)?.all.confirmed,
+		[bsv20Balances.value],
+	);
 
-    console.log({ organicMax, displayOplBalance });
+	// maxIterations is based on the amount of confirmed OPL the user holds
+	const maxIterations = useMemo(() => {
+		if (!selectedBsv20) {
+			return 0;
+		}
+		// how much is already minted
+		if (!selectedBsv20.supply || !selectedBsv20.max) {
+			return 0;
+		}
+		const supply = parseInt(selectedBsv20.supply);
 
-    return tierMax(displayOplBalance, organicMax);
-  }, [selectedBsv20, amount, ticker]);
+		if (bulkEnabled && !confirmedOplBalance) {
+			toast.error(`You need ${bulkMintingTicker} to bulk mint ${ticker}`);
+			return 0;
+		}
+		const displayOplBalance = selectedBsv20.dec
+			? confirmedOplBalance / 10 ** selectedBsv20.dec
+			: confirmedOplBalance;
+		if (!amount || amount === "0") {
+			return 0;
+		}
+		let max = selectedBsv20.max || "0";
+		if (!selectedBsv20.max && selectedBsv20.supply) {
+			max = selectedBsv20.supply;
+		}
+		const remainingSupply = parseInt(max) - supply;
+		const organicMax = Math.ceil(remainingSupply / parseInt(amount));
 
-  const step = useMemo(() => {
-    // when max iterations is huge we want to increase the step
-    // we want to do this proportionally to the max iterations
-    if (maxIterations > 100000) {
-      return maxIterations / 10000;
-    }
-    if (maxIterations > 10000) {
-      return maxIterations / 1000;
-    }
-    if (maxIterations > 1000) {
-      return maxIterations / 100;
-    }
-    return 1;
-  }, [maxIterations]);
+		console.log({ organicMax, displayOplBalance });
 
-  const spacers = useMemo(() => {
-    // based on number of steps in maxIterations
-    const spacers = [
-      // <span className="pointer-events-none" key={"init-tick"}>
-      //   |
-      // </span>,
-    ];
-    for (let i = 0; i < maxIterations; i += step) {
-      spacers.push(<span key={i} className="pointer-events-none" >|</span>);
-    }
-    return spacers;
-  }, [maxIterations, step]);
+		return tierMax(displayOplBalance, organicMax);
+	}, [selectedBsv20, amount, ticker, confirmedOplBalance]);
 
-  const newSupply = useMemo(() => {
-    if (
-      !totalTokens ||
-      selectedBsv20?.supply === undefined ||
-      selectedBsv20?.max === undefined ||
-      selectedBsv20?.dec === undefined
-    ) {
-      return 0;
-    }
+	const step = useMemo(() => {
+		// when max iterations is huge we want to increase the step
+		// we want to do this proportionally to the max iterations
+		if (maxIterations > 100000) {
+			return Math.ceil(maxIterations / 10000);
+		}
+		if (maxIterations > 10000) {
+			return Math.ceil(maxIterations / 1000);
+		}
+		if (maxIterations > 1000) {
+			return Math.ceil(maxIterations / 100);
+		}
+		return 1;
+	}, [maxIterations]);
 
-    const supply = parseInt(selectedBsv20.supply);
-    const max = parseInt(selectedBsv20.max);
-    const newTokens = supply / 10 ** selectedBsv20.dec + totalTokens;
-    if (newTokens > max) {
-      return max;
-    }
-    return newTokens;
-  }, [selectedBsv20, totalTokens]);
+	const spacers = useMemo(
+		() => calculateSpacers(maxIterations, step),
+		[maxIterations, step],
+	);
 
-  const iterationFeeUsd = useMemo(() => {
-    if (!usdRate.value) {
-      return 0;
-    }
-    return ((iterationFee * iterations) / usdRate.value).toFixed(2);
-  }, [iterations]);
+	const newSupply = useMemo(() => {
+		if (
+			!totalTokens ||
+			selectedBsv20?.supply === undefined ||
+			selectedBsv20?.max === undefined ||
+			selectedBsv20?.dec === undefined
+		) {
+			return 0;
+		}
 
-  const currentTier = useMemo(() => {
-    if (!bsv20Balances.value) {
-      return 0;
-    }
-    const balance = bsv20Balances.value?.find(
-      (b) => b.tick?.toUpperCase() === bulkMintingTicker
-    )?.all.confirmed;
-    if (!balance) {
-      return 0;
-    }
-    return tierMaxNum(balance);
-  }, [bsv20Balances.value]);
+		const supply = parseInt(selectedBsv20.supply);
+		const max = parseInt(selectedBsv20.max);
+		const newTokens = supply / 10 ** selectedBsv20.dec + totalTokens;
+		if (newTokens > max) {
+			return max;
+		}
+		return newTokens;
+	}, [selectedBsv20, totalTokens]);
 
-  // return the icons depending on tier num
-  const stars = useMemo(() => {
-    return Array.from({ length: currentTier }, (_, index) => (
-      <RiMagicFill key={`balance-star-${index + 1}`} />
-    ));
-  }, [currentTier]);
+	const iterationFeeUsd = useMemo(() => {
+		if (!usdRate.value) {
+			return 0;
+		}
+		return ((iterationFee * iterations) / usdRate.value).toFixed(2);
+	}, [iterations]);
 
-  return (
-    <div className="w-full max-w-lg mx-auto">
-      <select
-        className="text-white w-full p-2 rounded my-2 cursor-pointer"
-        value={selectedActionType}
-        onChange={changeSelectedActionType}
-      >
-        <option value={ActionType.Deploy}>Deploy New Ticker</option>
-        <option value={ActionType.Mint}>Mint Existing Ticker</option>
-      </select>
-      <div className="my-2">
-        <label className="block mb-4">
-          {/* TODO: Autofill */}
-          <div className="flex items-center justify-between my-2">
-            Ticker{" "}
-            {chainInfo.value && indexers.value && (
-              <span
-                className="text-[#555] hover:text-warning text-sm tooltip transition"
-                data-tip={`Latest block: ${chainInfo.value.blocks}, BSV20 Deploy: ${indexers.value["bsv20-deploy"]} BSV20 Mint: ${indexers.value.bsv20}`}
-              >
-                {tickerNote}
-              </span>
-            )}
-          </div>
-          <div className="relative">
-            <input
-              className="text-white w-full rounded p-2 uppercase"
-              maxLength={4}
-              pattern="^\S+$"
-              onKeyDown={(event) => {
-                if (event.key === " " || event.key === "Enter") {
-                  event.preventDefault();
-                  return;
-                }
-              }}
-              value={ticker || ""}
-              onChange={(event) => {
-                changeTicker(event);
-                debouncedCheckTicker(
-                  event,
-                  selectedActionType === ActionType.Mint
-                );
-              }}
-            />
+	const canEnableBulk = useMemo(
+		() =>
+			confirmedOplBalance
+				? confirmedOplBalance > 0 && maxIterations > 0
+				: false,
+		[maxIterations, confirmedOplBalance],
+	);
 
-            {tickerAvailable === true && !inSync.value && (
-              <div className="absolute right-0 bottom-0 mb-2 mr-2">
-                <FaExclamationTriangle className="w-5 h-5 text-warning" />
-              </div>
-            )}
+	const currentTier = useMemo(() => {
+		if (!bsv20Balances.value) {
+			return 0;
+		}
+		const balance = bsv20Balances.value?.find(
+			(b) => b.tick?.toUpperCase() === bulkMintingTicker,
+		)?.all.confirmed;
+		if (!balance) {
+			return 0;
+		}
+		return tierMaxNum(balance);
+	}, [bsv20Balances.value]);
 
-            {tickerAvailable === true && inSync.value && (
-              <div className="absolute right-0 bottom-0 mb-2 mr-2">
-                {selectedBsv20?.included ? (
-                  <FaCheckCircle className="w-5 h-5 text-success" />
-                ) : (
-                  <FaCheckCircle className="w-5 h-5 text-warning" />
-                )}
-              </div>
-            )}
-            {tickerAvailable === false && (
-              <div className="absolute right-0 bottom-0 mb-2 mr-2">
-                <ErrorIcon />
-              </div>
-            )}
-          </div>
-        </label>
-      </div>
+	// return the icons depending on tier num
+	const stars = useMemo(() => {
+		return Array.from({ length: currentTier }, (_, index) => (
+			<RiMagicFill key={`balance-star-${index + 1}`} />
+		));
+	}, [currentTier]);
 
-      {selectedActionType === ActionType.Deploy && (
-        <div className="my-2">
-          <label className="block mb-4">
-            <div className="my-2">Max Supply</div>
-            <input
-              pattern="\d+"
-              type="text"
-              className="text-white w-full rounded p-2 uppercase"
-              onChange={changeMaxSupply}
-              value={maxSupply}
-            />
-          </label>
-        </div>
-      )}
+	return (
+		<div className="w-full max-w-lg mx-auto">
+			<select
+				className="text-white w-full p-2 rounded my-2 cursor-pointer"
+				value={selectedActionType}
+				onChange={changeSelectedActionType}
+			>
+				<option value={ActionType.Deploy}>Deploy New Ticker</option>
+				<option value={ActionType.Mint}>Mint Existing Ticker</option>
+			</select>
+			<div className="my-2">
+				<label className="block mb-4">
+					{/* TODO: Autofill */}
+					<div className="flex items-center justify-between my-2">
+						Ticker{" "}
+						{chainInfo.value && indexers.value && (
+							<span
+								className="text-[#555] hover:text-warning text-sm tooltip transition"
+								data-tip={`Latest block: ${chainInfo.value.blocks} BSV20 Deploy: ${indexers.value["bsv20-deploy"]} BSV20 Mint: ${indexers.value.bsv20} ${selectedBsv20?.tick} Pending Ops: ${selectedBsv20?.pendingOps}`}
+							>
+								{tickerNote}
+							</span>
+						)}
+					</div>
+					<div className="relative">
+						<input
+							className="text-white w-full rounded p-2 uppercase"
+							maxLength={4}
+							pattern="^\S+$"
+							onKeyDown={(event) => {
+								if (event.key === " " || event.key === "Enter") {
+									event.preventDefault();
+									return;
+								}
+							}}
+							value={ticker || ""}
+							onChange={(event) => {
+								changeTicker(event);
+								debouncedCheckTicker(
+									event,
+									selectedActionType === ActionType.Mint,
+								);
+							}}
+						/>
 
-      {selectedActionType === ActionType.Mint && (
-        <React.Fragment>
-          <div className="my-2">
-            <label className="block mb-4">
-              <div className="my-2 flex justify-between items-center">
-                Amount{" "}
-                {selectedBsv20 && (
-                  <button type="button" className="btn btn-sm">
-                    <span
-                      className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
-                      onClick={() => {
-                        setAmount(
-                          selectedBsv20?.lim && selectedBsv20.lim !== "0"
-                            ? selectedBsv20.lim
-                            : selectedBsv20.max
-                        );
-                      }}
-                    >
-                      Max:{" "}
-                      {selectedBsv20?.lim && selectedBsv20.lim !== "0"
-                        ? selectedBsv20.lim
-                        : selectedBsv20?.max}
-                    </span>
-                  </button>
-                )}
-              </div>
+						{tickerAvailable === true && !inSync.value && (
+							<div className="absolute right-0 bottom-0 mb-2 mr-2">
+								<FaExclamationTriangle className="w-5 h-5 text-warning" />
+							</div>
+						)}
 
-              <input
-                disabled={!!mintError}
-                className="text-white w-full rounded p-2"
-                type="number"
-                min={1}
-                max={selectedBsv20?.lim}
-                onChange={changeAmount}
-                value={amount}
-                onFocus={(event) =>
-                  checkTicker(
-                    ticker || "",
-                    selectedActionType === ActionType.Mint,
-                    event
-                  )
-                }
-              />
-            </label>
-          </div>
-          {bulkEnabled && <div className="divider">Bulk Minting</div>}
-          {bulkEnabled && (
-            <div>
-              {!bsv20Balances.value?.some(
-                (b) =>
-                  b.tick?.toUpperCase() === bulkMintingTicker &&
-                  b.all.confirmed > 0
-              ) && (
-                <div className="p-2 bg-[#111] my-2 rounded">
-                  Acquire{" "}
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                  <span
-                    data-tip={`Tier ${currentTier}/5`}
-                    className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
-                    onClick={() => {
-                      router.push(
-                        `/inscribe?tab=bsv20&tick=${bulkMintingTicker}&op=mint`
-                      );
-                    }}
-                  >
-                    {bulkMintingTicker}
-                  </span>{" "}
-                  to enable bulk minting.
-                </div>
-              )}
-              {bulkEnabled && (
-                <label className="block mb-4">
-                  <div className="my-2 flex justify-between items-center">
-                    <div>{iterations} Iterations</div>
-                    <div
-                      className="tooltip opacity-75 text-purple-400 font-mono flex items-center"
-                      data-tip={`Tier ${currentTier}/5`}
-                    >
-                      {stars}
-                      <div className="mx-1" />
-                      {bulkMintingTicker}
-                    </div>
-                  </div>
-                  <input
-                    onChange={changeIterations}
-                    value={iterations}
-                    max={maxIterations + 1}
-                    type="range"
-                    min={1}
-                    className="range"
-                    step={step}
-                  />
-                  <div className="w-full flex justify-between text-xs px-2 text-primary/25">
-                    {spacers}
-                  </div>
-                </label>
-              )}
-              {/* TODO: Display accurately at end of supply */}
-              {bulkEnabled && amount && ticker && (
-                <>
-                  <div className="bg-[#111] text-[#555] rounded p-2 font-mono text-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="w-1/2">Bulk Inscription Fee:</div>
-                      <div className="w-1/2 text-right">${iterationFeeUsd}</div>
-                    </div>
+						{tickerAvailable === true && inSync.value && (
+							<div className="absolute right-0 bottom-0 mb-2 mr-2">
+								{selectedBsv20?.included ? (
+									<FaCheckCircle className="w-5 h-5 text-success" />
+								) : selectedBsv20?.pendingOps && selectedBsv20?.pendingOps > 0 ? (
+									<FaClock className="w-5 h-5 text-warning" />
+								) : (
+									<FaCheckCircle className="w-5 h-5 text-warning" />
+								)}
+							</div>
+						)}
+						{tickerAvailable === false && (
+							<div className="absolute right-0 bottom-0 mb-2 mr-2">
+								<ErrorIcon />
+							</div>
+						)}
+					</div>
+				</label>
+			</div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="w-1/2">
-                        You will recieve
-                        <span
-                          className="tooltip text-warning"
-                          data-tip={
-                            !inSync.value && indexers.value && chainInfo.value
-                              ? "The index is not caught up. These tokens may have already been minted."
-                              : selectedBsv20?.included
-                                ? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
-                                : "This ticker is not included in the index. These tokens may have already been minted."
-                          }
-                        >
-                          <FaInfoCircle className="ml-2" />
-                        </span>
-                      </div>
-                      <div className="w-1/2 text-right">
-                        {(totalTokens > newSupply
-                          ? newSupply
-                          : totalTokens
-                        ).toLocaleString()}{" "}
-                        {ticker.toUpperCase()}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="w-1/2">New Supply</div>
-                      <div className="w-1/2 text-right">
-                        {newSupply} / {selectedBsv20?.max}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-              {selectedBsv20 && !selectedBsv20?.included && (
-                <div className="p-2 bg-[#111] my-2 rounded text-warning font-mono">
-                  <Link href={`/market/bsv20/${selectedBsv20?.tick}`}>
-                    <FaExclamationCircle className="w-5 h-5 mr-2 inline-flex opacity-50 mb-1" />
-                    {selectedBsv20?.tick} is not live. Minted supply may be
-                    inaccurate. Fund {selectedBsv20?.tick} first to be sure you
-                    aren&apos;t over-minting. There is no gaurentee you will
-                    recieve valid tokens in this state!
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </React.Fragment>
-      )}
+			{selectedActionType === ActionType.Deploy && (
+				<div className="my-2">
+					<label className="block mb-4">
+						<div className="my-2">Max Supply</div>
+						<input
+							pattern="\d+"
+							type="text"
+							className="text-white w-full rounded p-2 uppercase"
+							onChange={changeMaxSupply}
+							value={maxSupply}
+						/>
+					</label>
+				</div>
+			)}
 
-      {selectedActionType === ActionType.Deploy && (
-        <div className="my-2">
-          <label className="block mb-4">
-            <div className="flex items-center justify-between my-2">
-              Limit Per Mint <span className="text-[#555]">Optional</span>
-            </div>
-            <input
-              className="text-white w-full rounded p-2"
-              type="string"
-              value={limit}
-              pattern="^\S+$"
-              onKeyDown={(event) => {
-                if (event.key === " " || event.key === "Enter") {
-                  event.preventDefault();
-                }
-              }}
-              onChange={changeLimit}
-            />
-          </label>
-        </div>
-      )}
+			{selectedActionType === ActionType.Mint && (
+				<React.Fragment>
+					<div className="my-2">
+						<label className="block mb-4">
+							<div className="my-2 flex justify-between items-center">
+								Amount{" "}
+								{selectedBsv20 && (
+									<button type="button" className="btn btn-sm">
+										<span
+											className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
+											onClick={() => {
+												setAmount(
+													selectedBsv20?.lim && selectedBsv20.lim !== "0"
+														? selectedBsv20.lim
+														: selectedBsv20.max,
+												);
+											}}
+										>
+											Max:{" "}
+											{selectedBsv20?.lim && selectedBsv20.lim !== "0"
+												? selectedBsv20.lim
+												: selectedBsv20?.max}
+										</span>
+									</button>
+								)}
+							</div>
 
-      {selectedActionType === ActionType.Deploy && !showOptionalFields && (
-        <div
-          className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
-          onClick={toggleOptionalFields}
-        >
-          <RiSettings2Fill className="mr-2" /> More Options
-        </div>
-      )}
+							<input
+								disabled={!!mintError}
+								className="text-white w-full rounded p-2"
+								type="number"
+								min={1}
+								max={selectedBsv20?.lim}
+								onChange={changeAmount}
+								value={amount}
+								onFocus={(event) =>
+									checkTicker(
+										ticker || "",
+										selectedActionType === ActionType.Mint,
+										event,
+									)
+								}
+							/>
+						</label>
+					</div>
+					<div className="divider">Bulk Minting</div>
 
-      {selectedActionType === ActionType.Deploy && showOptionalFields && (
-        <>
-          <div className="my-2">
-            <label className="block mb-4">
-              <div className="my-2 flex items-center justify-between">
-                Decimal Precision
-              </div>
-              <input
-                className="text-white w-full rounded p-2"
-                type="number"
-                min={0}
-                max={18}
-                value={decimals}
-                placeholder={defaultDec.toString()}
-                onChange={changeDecimals}
-              />
-            </label>
-          </div>
-        </>
-      )}
-      {selectedActionType === ActionType.Deploy && (
-        <div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
-          <label className="block w-full">
-            While BSV20 deployements themselves are indexed immediately, mints
-            against them are indexed once an initial listing fee is paid. This
-            helps bring minting incentives in line with BSVs insanely low
-            network fees, and keeps this survice running reliably. The Listing
-            Fee for this deployent will be ${`${listingFee}`}. This can be paid
-            later.
-          </label>
-        </div>
-      )}
-      {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
-      <button
-        disabled={submitDisabled}
-        type="submit"
-        onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
-        className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
-      >
-        Preview
-      </button>
-    </div>
-  );
+					<div>
+						<div className="p-2 bg-[#111] my-2 rounded flex items-center justify-between">
+							<div>
+								Acquire{" "}
+								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+								<span
+									data-tip={`Tier ${currentTier}/5`}
+									className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
+									onClick={() => {
+										router.push(
+											`/inscribe?tab=bsv20&tick=${bulkMintingTicker}&op=mint`,
+										);
+									}}
+								>
+									{bulkMintingTicker}
+								</span>{" "}
+								to enable bulk minting.
+							</div>
+							<input
+								type="checkbox"
+								className="toggle"
+								checked={bulkEnabled}
+								disabled={!canEnableBulk}
+								onClick={() => {
+									if (bulkEnabled) {
+										setIterations(1);
+									}
+									setBulkEnabled(!bulkEnabled);
+								}}
+							/>
+						</div>
+
+						{bulkEnabled && (
+							<label className="block mb-4">
+								<div className="my-2 flex justify-between items-center">
+									<div>{iterations} Iterations</div>
+									<div
+										className="tooltip opacity-75 text-purple-400 font-mono flex items-center"
+										data-tip={`Tier ${currentTier}/5`}
+									>
+										{stars}
+										<div className="mx-1" />
+										{bulkMintingTicker}
+									</div>
+								</div>
+								<input
+									onChange={changeIterations}
+									value={iterations}
+									max={maxIterations + 1}
+									type="range"
+									min={1}
+									className="range"
+									step={maxIterations / step}
+								/>
+								<div className="w-full flex justify-between text-xs px-2 text-primary/25">
+									{spacers}
+								</div>
+							</label>
+						)}
+						{/* TODO: Display accurately at end of supply */}
+						{bulkEnabled && amount && ticker && (
+							<>
+								<div className="bg-[#111] text-[#555] rounded p-2 font-mono text-sm">
+									<div className="flex items-center justify-between">
+										<div className="w-1/2">Bulk Indexing Fee:</div>
+										<div className="w-1/2 text-right">${iterationFeeUsd}</div>
+									</div>
+
+									<div className="flex items-center justify-between">
+										<div className="w-1/2">
+											You will recieve
+											<span
+												className="tooltip text-warning"
+												data-tip={
+													!inSync.value && indexers.value && chainInfo.value
+														? "The index is not caught up. These tokens may have already been minted."
+														: selectedBsv20?.included
+														  ? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
+														  : `This ticker is not included in the index${selectedBsv20?.pendingOps && selectedBsv20.pendingOps > 0 ? ` and has ${selectedBsv20.pendingOps} operations in line ahead of this mint` : ''}. These tokens may have already been minted.`
+												}
+											>
+												<FaInfoCircle className="ml-2" />
+											</span>
+										</div>
+										<div className="w-1/2 text-right">
+											{(totalTokens > newSupply
+												? newSupply
+												: totalTokens
+											).toLocaleString()}{" "}
+											{ticker.toUpperCase()}
+										</div>
+									</div>
+									<div className="flex items-center justify-between">
+										<div className="w-1/2">New Supply</div>
+										<div className="w-1/2 text-right">
+											{newSupply} / {selectedBsv20?.max}
+										</div>
+									</div>
+								</div>
+							</>
+						)}
+						{selectedBsv20 && !selectedBsv20?.included && (
+							<>
+								<div className="divider">Ticker Status</div>
+								<div className="p-2 bg-[#111] my-2 rounded text-warning font-mono">
+									<Link href={`/market/bsv20/${selectedBsv20?.tick}`}>
+										<FaExclamationCircle className="w-5 h-5 mr-2 inline-flex opacity-50 mb-1" />
+										{selectedBsv20?.tick} is not live. Minted supply may be
+										inaccurate. Fund {selectedBsv20?.tick} first to be sure you
+										aren&apos;t over-minting. There is no gaurentee you will
+										recieve valid tokens in this state!
+									</Link>
+								</div>
+							</>
+						)}
+					</div>
+				</React.Fragment>
+			)}
+
+			{selectedActionType === ActionType.Deploy && (
+				<div className="my-2">
+					<label className="block mb-4">
+						<div className="flex items-center justify-between my-2">
+							Limit Per Mint <span className="text-[#555]">Optional</span>
+						</div>
+						<input
+							className="text-white w-full rounded p-2"
+							type="string"
+							value={limit}
+							pattern="^\S+$"
+							onKeyDown={(event) => {
+								if (event.key === " " || event.key === "Enter") {
+									event.preventDefault();
+								}
+							}}
+							onChange={changeLimit}
+						/>
+					</label>
+				</div>
+			)}
+
+			{selectedActionType === ActionType.Deploy && !showOptionalFields && (
+				<div
+					className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
+					onClick={toggleOptionalFields}
+				>
+					<RiSettings2Fill className="mr-2" /> More Options
+				</div>
+			)}
+
+			{selectedActionType === ActionType.Deploy && showOptionalFields && (
+				<>
+					<div className="my-2">
+						<label className="block mb-4">
+							<div className="my-2 flex items-center justify-between">
+								Decimal Precision
+							</div>
+							<input
+								className="text-white w-full rounded p-2"
+								type="number"
+								min={0}
+								max={18}
+								value={decimals}
+								placeholder={defaultDec.toString()}
+								onChange={changeDecimals}
+							/>
+						</label>
+					</div>
+				</>
+			)}
+			{selectedActionType === ActionType.Deploy && (
+				<div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
+					<label className="block w-full">
+						While BSV20 deployements themselves are indexed immediately, mints
+						against them are indexed once an initial listing fee is paid. This
+						helps bring minting incentives in line with BSVs insanely low
+						network fees, and keeps this survice running reliably. The Listing
+						Fee for this deployent will be ${`${listingFee}`}. This can be paid
+						later.
+					</label>
+				</div>
+			)}
+			{preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
+			<button
+				disabled={submitDisabled}
+				type="submit"
+				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
+				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
+			>
+				Preview
+			</button>
+		</div>
+	);
 };
 
 export default InscribeBsv20;
 
 const maxMaxSupply = BigInt("18446744073709551615");
-const bulkEnabled = true;
 
 export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
@@ -863,42 +910,59 @@ export const baseFee = 50;
 const defaultDec = 8;
 const bulkMintingTicker = "OPL";
 const bulkMintingTickerMaxSupply = 21000000;
-const iterationFee = 100;
+const iterationFee = 1000;
 
 // Function to calculate the tier number based on balance
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
-  if (balance <= 0) return 0;
+	if (balance <= 0) return 0;
 
-  // Calculate balance as a percentage of max supply
-  const pct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
+	// Calculate balance as a percentage of max supply
+	const pct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
 
-  // Define tier thresholds as percentages of max supply
-  const tierThresholds = [
-    (1000 / bulkMintingTickerMaxSupply) * 100,
-    (10000 / bulkMintingTickerMaxSupply) * 100,
-    (100000 / bulkMintingTickerMaxSupply) * 100,
-    (1000000 / bulkMintingTickerMaxSupply) * 100,
-    (10000000 / bulkMintingTickerMaxSupply) * 100,
-  ];
+	// Define tier thresholds as percentages of max supply
+	const tierThresholds = [
+		(1000 / bulkMintingTickerMaxSupply) * 100,
+		(10000 / bulkMintingTickerMaxSupply) * 100,
+		(100000 / bulkMintingTickerMaxSupply) * 100,
+		(1000000 / bulkMintingTickerMaxSupply) * 100,
+		(10000000 / bulkMintingTickerMaxSupply) * 100,
+	];
 
-  // Find the tier based on the percentage thresholds
-  for (let tier = 1; tier <= tierThresholds.length; tier++) {
-    if (pct <= tierThresholds[tier - 1]) return tier;
-  }
-  return tierThresholds.length; // Return highest tier if balance exceeds all thresholds
+	// Find the tier based on the percentage thresholds
+	for (let tier = 1; tier <= tierThresholds.length; tier++) {
+		if (pct <= tierThresholds[tier - 1]) return tier;
+	}
+	return tierThresholds.length; // Return highest tier if balance exceeds all thresholds
 };
 
 // Returns the tier number 1-5
 const tierMaxNum = (balance: number) => {
-  return calculateTier(balance, bulkMintingTickerMaxSupply);
+	return calculateTier(balance, bulkMintingTickerMaxSupply);
 };
 
 // Returns the capped max iterations for a given feature token balance
 const tierMax = (balance: number, max: number) => {
-  const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
-  if (tierNum === 0) return 0; // Handle case where balance <= 0
+	const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
+	if (tierNum === 0) return 0; // Handle case where balance <= 0
 
-  // Map tier number to max iterations
-  const iterations = [1, 10, 100, 1000, 10000];
-  return iterations[tierNum - 1] > max ? max : Math.max(iterations[tierNum - 1], max)
+	// Map tier number to max iterations
+	const iterations = [1, 10, 100, 1000, 10000];
+	return iterations[tierNum - 1] > max
+		? max
+		: Math.max(iterations[tierNum - 1], max);
+};
+
+const calculateSpacers = (maxIterations: number, steps: number) => {
+	console.log({ maxIterations, steps });
+	// Calculate the number of spacers
+	// const numSpacers = Math.floor(maxIterations / step);
+
+	// Create an array of spacers
+	return Array.from({ length: steps }, (_, index) => {
+		return (
+			<span key={`spacer-${index + 1}`} className="pointer-events-none">
+				|
+			</span>
+		);
+	});
 };
