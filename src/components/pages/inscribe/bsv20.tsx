@@ -1007,7 +1007,7 @@ const bytesPerIteration = 40;
 const tierThresholds = [
 	0.001, // Tier 1 at 0.05% of max supply
 	0.01, // Tier 2 at 0.1% of max supply
-	0.5, // Tier 3 at 0.5% of max supply
-	1, // Tier 4 at 1% of max supply
-	2.5, // Tier 5 at 5% of max supply
+	0.025, // Tier 3 at 0.5% of max supply
+	0.05, // Tier 4 at 1% of max supply
+	0.1, // Tier 5 at 5% of max supply
 ];
