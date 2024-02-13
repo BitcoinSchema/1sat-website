@@ -8,11 +8,8 @@ import {
   TxOut,
 } from "bsv-wasm";
 import { Buffer } from "buffer";
-import * as dotenv from "dotenv";
 import { AuthToken, Sigma } from "sigma-protocol";
 import { toHex } from "../strings";
-
-dotenv.config();
 
 interface Signer extends Object {}
 

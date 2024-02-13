@@ -31,7 +31,6 @@
     "copy-webpack-plugin": "^12.0.2",
     "critters": "^0.0.20",
     "daisyui": "^4.5.0",
-    "dotenv": "^16.4.4",
     "formidable": "^3.5.1",
     "formidable-serverless": "^1.1.1",
     "framer-motion": "^10.18.0",
