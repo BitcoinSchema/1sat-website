@@ -1,5 +1,5 @@
 import { Bsv20Status } from "@/constants";
-import { Utxo } from "js-1sat-ord";
+import { Utxo } from "@/utils/js-1sat-ord";
 import { BSV20 } from "./bsv20";
 import { BaseTxo, GPFile } from "./common";
 

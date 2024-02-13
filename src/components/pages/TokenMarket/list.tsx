@@ -103,7 +103,7 @@ const List = async ({
     });
   } else {
     // aggregated market data from the API
-    let urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21`;
+    let urlV2Market = "https://1sat-api-production.up.railway.app/market/bsv21";
     if (id) {
       urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21/${id}`;
     }

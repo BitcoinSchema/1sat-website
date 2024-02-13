@@ -7,6 +7,7 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { Listing } from "@/types/bsv20";
 import { OrdUtxo } from "@/types/ordinals";
+import { Utxo } from "@/utils/js-1sat-ord";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
   P2PKHAddress,
@@ -17,11 +18,12 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo, buildInscription } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { toBitcoin } from "satoshi-bitcoin-ts";
+import { buildInscriptionSafe } from "../airdrop";
 interface BuyArtifactModalProps {
   onClose: () => void;
   listing: Listing | OrdUtxo;
@@ -195,14 +197,15 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     } else if ((listing as Listing).id) {
       inscription.id = (listing as Listing).id;
     } else {
+      toast.error("Invalid BSV20 listing");
       throw new Error("Invalid BSV20 listing");
     }
     const inscriptionB64 = Buffer.from(JSON.stringify(inscription)).toString(
       "base64"
     );
     // build an inscription output for the token transfer
-    const inscriptionScript = buildInscription(
-      ordinalsAddress,
+    const inscriptionScript = buildInscriptionSafe(
+      ordAddress.value!,
       inscriptionB64,
       "application/bsv-20"
     );
@@ -232,9 +235,9 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
     // output 3 - marketFee
     // calculate market fee
-    let marketFee = price * BigInt(marketRate);
-    if (marketFee === 0n) {
-      marketFee = BigInt(minimumMarketFee);
+    let marketFee = Number(price) * marketRate;
+    if (marketFee === 0) {
+      marketFee = minimumMarketFee;
     }
     const marketFeeOutput = new TxOut(
       BigInt(marketFee),
@@ -276,7 +279,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     let satsCollected = 0n;
     // initialize fee and satsNeeded (updated with each added payment utxo)
     let fee = calculateFee(1, purchaseTx);
-    let satsNeeded = fee + price + marketFee;
+    let satsNeeded = Number(fee) + Number(price) + marketFee;
     // collect the required utxos
     const sortedFundingUtxos = utxos.value!.sort((a, b) =>
       a.satoshis > b.satoshis ? -1 : 1
@@ -288,12 +291,12 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
         // if we had to add additional
         fee = calculateFee(paymentUtxos.length, purchaseTx);
-        satsNeeded = fee + price + marketFee + BigInt(indexerBuyFee);
+        satsNeeded = Number(fee) + Number(price) + marketFee + indexerBuyFee;
       }
     }
 
     // Replace dummy change output
-    const changeAmt = satsCollected - satsNeeded;
+    const changeAmt = satsCollected - BigInt(satsNeeded);
 
     const changeOutput = new TxOut(
       BigInt(changeAmt),

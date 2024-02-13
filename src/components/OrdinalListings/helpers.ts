@@ -47,7 +47,7 @@ export const getOutpoints = async (ids: string[], script: boolean) => {
   console.log("almost", url, "with", ids);
   const uniqueIds = uniq(ids);
   console.log("hitting", url, "with", uniqueIds);
-  debugger
+
   const res = await fetch(url, {
     method: "POST",
     headers: {

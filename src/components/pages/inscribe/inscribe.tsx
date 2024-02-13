@@ -1,7 +1,6 @@
 
 "use client"
 
-import { PendingTransaction } from "@/types/preview";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo } from "react";
 import InscribeBsv20 from "./bsv20";
@@ -27,8 +26,7 @@ const Inscribe: React.FC<InscribeProps> = ({ className, tab }) => {
     return InscriptionTab.Image;
   }, [tab]);
 
-  const inscribedCallback = useCallback((pendingTx: PendingTransaction) => {
-    console.log("Inscribed", pendingTx);
+  const inscribedCallback = useCallback(() => {
     router.push("/preview");
   }, [router]);
 

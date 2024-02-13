@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
 import { PendingTransaction } from "@/types/preview";
-import { ordPk, payPk, pendingTxs } from ".";
+import { bsv20Balances, bsv20Utxos, ordPk, payPk, pendingTxs, utxos } from ".";
 
 export const setPendingTxs = (txs: PendingTransaction[]) => {
-  pendingTxs.value = [...txs]
+  pendingTxs.value = [...txs];
   localStorage.setItem("1satpt", JSON.stringify(txs));
-}
+};
 
 export const setPayPk = (pk: string) => {
   payPk.value = pk;
@@ -21,12 +21,16 @@ export const setOrdPk = (pk: string) => {
 export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (!backupFile) {
-      return reject()
+      return reject();
     }
     const f = new FileReader();
     f.onload = (e) => {
-      const backup = JSON.parse(e.target?.result as string) as { payPk: string, ordPk: string, pendingTxs: PendingTransaction[] | null };
-      console.log({backup})
+      const backup = JSON.parse(e.target?.result as string) as {
+        payPk: string;
+        ordPk: string;
+        pendingTxs: PendingTransaction[] | null;
+      };
+      console.log({ backup });
       setPayPk(backup.payPk);
       setOrdPk(backup.ordPk);
       return resolve();
@@ -34,7 +38,19 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
     f.onerror = (e) => {
       console.error(e);
       return reject(e);
-    }
+    };
     f.readAsText(backupFile);
-  })
-}
+  });
+};
+
+export const clearKeys = () => {
+  payPk.value = null;
+  ordPk.value = null;
+  pendingTxs.value = null;
+  utxos.value = null;
+  bsv20Utxos.value = null;
+  bsv20Balances.value = null;
+  localStorage.removeItem("1satfk");
+  localStorage.removeItem("1satok");
+  localStorage.removeItem("1satpt");
+};

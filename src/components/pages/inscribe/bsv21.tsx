@@ -1,30 +1,30 @@
 "use client";
 
-import { FetchStatus } from "@/constants";
-import { chainInfo, indexers, payPk, usdRate, utxos } from "@/signals/wallet";
+import { FetchStatus, toastErrorProps } from "@/constants";
+import { chainInfo, indexers, payPk, pendingTxs, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { BSV20 } from "@/types/bsv20";
-import { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import { inscribeUtf8 } from "@/utils/inscribe";
+import { Utxo } from "@/utils/js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { RiSettings2Fill } from "react-icons/ri";
 import { InscriptionTab } from "./tabs";
 
 const top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"];
 
-interface InscribeBsv20Props {
-  inscribedCallback: (pendingTx: PendingTransaction) => void;
+interface InscribeBsv21Props {
+  inscribedCallback: () => void;
 }
 
-const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
+const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
   useSignals();
   const router = useRouter();
   const params = useSearchParams();
@@ -176,16 +176,17 @@ const InscribeBsv21: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
         setInscribeStatus(FetchStatus.Success);
 
         if (pendingTx) {
-          inscribedCallback(pendingTx);
+          pendingTxs.value = [pendingTx];
+          inscribedCallback();
         }
       } catch (error) {
         setInscribeStatus(FetchStatus.Error);
 
-        alert("Invalid max supply: please enter a number. " + error);
+        toast.error(`Failed to inscribe ${error}`, toastErrorProps);
         return;
       }
     },
-    [inscribedCallback, decimals, limit, maxSupply, ticker]
+    [inscribedCallback, decimals, maxSupply, ticker]
   );
 
   const bulkInscribe = useCallback(async () => {

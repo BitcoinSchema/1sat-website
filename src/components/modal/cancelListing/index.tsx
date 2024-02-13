@@ -10,6 +10,7 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { Listing } from "@/types/bsv20";
 import { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
+import { Utxo } from "@/utils/js-1sat-ord";
 import {
   P2PKHAddress,
   PrivateKey,
@@ -19,8 +20,8 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo, buildInscription } from "js-1sat-ord";
 import toast from "react-hot-toast";
+import { buildInscriptionSafe } from "../airdrop";
 import { calculateFee } from "../buyArtifact";
 
 interface CancelListingModalProps {
@@ -76,7 +77,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       "base64"
     );
     // build an inscription output for the token transfer
-    const inscriptionScript = buildInscription(
+    const inscriptionScript = buildInscriptionSafe(
       ordinalsAddress,
       inscriptionB64,
       "application/bsv-20"

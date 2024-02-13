@@ -38,6 +38,11 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
       >
         BSV21
       </Link>
+      {/* <div className="flex-none">
+        <Link className="btn btn-sm btn-square btn-ghost" href={`/inscribe?tab=${selectedTab === AssetType.Ordinals ? 'image' : selectedTab}`}>
+          <FaPlus />
+        </Link>
+      </div> */}
     </div>
   );
 };

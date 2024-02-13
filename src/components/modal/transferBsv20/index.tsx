@@ -13,6 +13,7 @@ import { Ticker } from "@/types/bsv20";
 import { BSV20TXO } from "@/types/ordinals";
 import { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
+import { Utxo } from "@/utils/js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -25,10 +26,10 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo, buildInscription } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
+import { buildInscriptionSafe } from "../airdrop";
 
 interface TransferModalProps {
   onClose: () => void;
@@ -126,7 +127,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         const changeFileB64 = Buffer.from(
           JSON.stringify(changeInscription)
         ).toString("base64");
-        const changeInsc = buildInscription(
+        const changeInsc = buildInscriptionSafe(
           P2PKHAddress.from_string(ordAddress),
           changeFileB64,
           "application/bsv-20"
@@ -169,7 +170,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
       const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
         "base64"
       );
-      const insc = buildInscription(
+      const insc = buildInscriptionSafe(
         P2PKHAddress.from_string(payoutAddress),
         fileB64,
         "application/bsv-20"

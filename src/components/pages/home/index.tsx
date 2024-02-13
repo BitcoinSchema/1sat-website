@@ -27,21 +27,21 @@ const HomePage: React.FC<HomePageProps> = async () => {
             <div className="flex mx-auto max-w-fit gap-4">
               <Link
                 href="/market/ordinals"
-                className="flex flex-col btn btn-lg btn-primary  font-bold mt-4"
+                className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
               >
                 Ordinals
                 <span className="font-normal text-xs text-neutral/50">Art</span>
               </Link>
               <Link
                 href="/market/bsv20"
-                className="flex flex-col btn btn-lg btn-primary  font-bold mt-4"
+                className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
               >
                 BSV20
                 <span className="font-normal text-xs text-neutral/50">Degen</span>
               </Link>
               <Link
                 href="/market/bsv21"
-                className="flex flex-col btn btn-lg btn-primary  font-bold mt-4"
+                className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
               >
                 BSV21
                 <span className="font-normal text-xs text-neutral/50">Pro</span>

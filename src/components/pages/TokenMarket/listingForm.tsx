@@ -1,5 +1,6 @@
 "use client";
 
+import { buildInscriptionSafe } from "@/components/modal/airdrop";
 import { API_HOST, oLockPrefix, oLockSuffix } from "@/constants";
 import {
   bsv20Balances,
@@ -13,6 +14,7 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { BSV20TXO } from "@/types/ordinals";
 import { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
+import { Utxo } from "@/utils/js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -25,7 +27,6 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
-import { Utxo, buildInscription } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { MarketData } from "./list";
@@ -158,7 +159,7 @@ const ListingForm = ({
         const changeFileB64 = Buffer.from(
           JSON.stringify(changeInscription)
         ).toString("base64");
-        const changeInsc = buildInscription(
+        const changeInsc = buildInscriptionSafe(
           P2PKHAddress.from_string(ordAddress),
           changeFileB64,
           "application/bsv-20"
@@ -213,8 +214,8 @@ const ListingForm = ({
       const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
         "base64"
       );
-      const insc = buildInscription(
-        destinationAddress,
+      const insc = buildInscriptionSafe(
+        destinationAddress.to_string(),
         fileB64,
         "application/bsv-20"
       );
@@ -390,7 +391,8 @@ const ListingForm = ({
         </div>
         <div className="modal-action">
           <button
-            className={`btn btn-sm btn-primary`}
+            type="button"
+            className={"btn btn-sm btn-primary"}
             disabled={listDisabled.value}
             onClick={submit}
           >

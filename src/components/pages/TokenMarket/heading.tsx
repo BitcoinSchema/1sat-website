@@ -98,11 +98,12 @@ const TickerHeading = ({
   const bsvNeeded = computed(() => {
     const satoshis = Math.max(
       minFee - Number(ticker.fundTotal),
-      (ticker.pendingOps || 0) * 1000
+      ((ticker.pendingOps || 0) * 1000 - parseInt(ticker.fundBalance))
     );
     console.log({
       satoshis,
       minFee,
+      fundBalance: ticker.fundBalance,
       fundTotal: ticker.fundTotal,
       pendingOps: ticker.pendingOps,
     });
@@ -116,15 +117,16 @@ const TickerHeading = ({
       text += `/ ${parseInt(ticker.max!)?.toLocaleString()}`;
     }
     const mintedOut = parseInt(ticker.supply!) === parseInt(ticker.max!);
+    const btnDisabled = !ticker.included || paidUp.value
+
     return (
       <>
-        {type === AssetType.BSV20 && paidUp.value && (
-          <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}>
+        {type === AssetType.BSV20 && !(mintedOut && type === AssetType.BSV20) && (
+          <Link href={`/inscribe?tab=bsv20&tick=${ticker.tick}`} className={btnDisabled? "cursor-default": ""}>
             <button
-              disabled={
-                !ticker.included || (mintedOut && type === AssetType.BSV20)
-              }
-              className="btn btn-sm btn-accent mr-4"
+              type="button"
+              disabled={btnDisabled}
+              className={"btn btn-sm btn-accent mr-4"}
             >
               Mint {ticker.tick}
             </button>

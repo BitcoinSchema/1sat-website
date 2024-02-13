@@ -1,21 +1,22 @@
 "use client"
 
 import { FetchStatus } from "@/constants";
-import { payPk } from "@/signals/wallet";
+import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { inscribeUtf8 } from "@/utils/inscribe";
+import { Utxo } from "@/utils/js-1sat-ord";
 import { toBase64 } from "@/utils/string";
-import { Utxo } from "js-1sat-ord";
+import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface InscribeHtmlProps {
-  inscribedCallback: (pendingTx: PendingTransaction) => void;
+  inscribedCallback: () => void;
 }
 
 const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
+  useSignals();
   const [text, setText] = useState<string>();
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -61,7 +62,8 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
         setInscribeStatus(FetchStatus.Success);
 
         if (pendingTx) {
-          inscribedCallback(pendingTx);
+          pendingTxs.value = [pendingTx];
+          inscribedCallback();
         }
       } catch (e) {
         console.log(e);

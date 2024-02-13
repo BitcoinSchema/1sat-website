@@ -1,22 +1,25 @@
+"use client"
+
 import Artifact from "@/components/artifact";
 import { FetchStatus } from "@/constants";
-import { payPk } from "@/signals/wallet";
+import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { OrdUtxo, TxoData } from "@/types/ordinals";
-import { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
+import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
 
 interface InscribeImageProps {
-  inscribedCallback: (pendingTx: PendingTransaction) => void;
+  inscribedCallback: () => void;
 }
 
 const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
+  useSignals();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 
@@ -58,7 +61,8 @@ const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
 
     const pendingTx = await inscribeFile(u, selectedFile);
     if (pendingTx) {
-      inscribedCallback(pendingTx);
+      pendingTxs.value = [pendingTx];
+      inscribedCallback();
     }
   }, [inscribedCallback, selectedFile]);
 
