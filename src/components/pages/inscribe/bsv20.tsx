@@ -258,6 +258,30 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		},
 		[selectedBsv20, selectedActionType, setAmount],
 	);
+	// Returns the capped max iterations for a given feature token balance
+	const tierMax = useCallback(
+		(balance: number, max: number) => {
+			const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
+			if (!amount || tierNum === 0) return 0; // Handle case where balance <= 0
+
+			// Map tier number to max iterations
+			const iter = [];
+			// tiers as pct of supply
+			for (let i = 0; i < 5; i++) {
+				let floored = Math.floor((tierThresholds[i] * max));
+        console.log({ floored, amount });
+				// round to nearest multiple of amount
+				if (floored > parseInt(amount) && floored % parseInt(amount) !== 0) {
+					floored -= floored % parseInt(amount);
+					console.log({ floored, amount });
+				}
+
+				iter.push(floored);
+			}
+			return iter[tierNum - 1] > max ? max : Math.min(iter[tierNum - 1], max);
+		},
+		[amount],
+	);
 
 	const inscribeBsv20 = useCallback(
 		async (sortedUtxos: Utxo[]) => {
@@ -477,12 +501,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		const supply = parseInt(selectedBsv20.supply);
 
 		if (bulkEnabled && !confirmedOplBalance) {
-			toast.error(`You need ${bulkMintingTicker} to bulk mint ${ticker}`);
+			// toast.error(`You need ${bulkMintingTicker} to bulk mint ${ticker}`);
 			return 0;
 		}
-		const displayOplBalance = confirmedOplBalance ? selectedBsv20.dec
-			? confirmedOplBalance / 10 ** selectedBsv20.dec
-			: confirmedOplBalance : 0;
+		const displayOplBalance = confirmedOplBalance
+			? selectedBsv20.dec
+				? confirmedOplBalance / 10 ** selectedBsv20.dec
+				: confirmedOplBalance
+			: 0;
 		if (!amount || amount === "0") {
 			return 0;
 		}
@@ -496,22 +522,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
-	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, ticker]);
+	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount]);
 
 	const step = useMemo(() => {
+		if (!confirmedOplBalance) {
+			return 1;
+		}
 		// when max iterations is huge we want to increase the step
 		// we want to do this proportionally to the max iterations
-		if (maxIterations > 100000) {
-			return Math.ceil(maxIterations / 10000);
-		}
-		if (maxIterations > 10000) {
-			return Math.ceil(maxIterations / 1000);
-		}
-		if (maxIterations > 1000) {
-			return Math.ceil(maxIterations / 100);
-		}
-		return 1;
-	}, [maxIterations]);
+		return Math.ceil(maxIterations / tierMaxNum(confirmedOplBalance));
+	}, [maxIterations, confirmedOplBalance]);
 
 	const spacers = useMemo(
 		() => calculateSpacers(maxIterations, step),
@@ -544,13 +564,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		return ((iterationFee * iterations) / usdRate.value).toFixed(2);
 	}, [iterations]);
 
-  const networkFeeUsd = useMemo(() => {
-    if (!usdRate.value) {
-      return 0;
-    }
-    return (((bytesPerIteration * iterations * feeRate) + (P2PKH_FULL_INPUT_SIZE * 4)) / usdRate.value).toFixed(2);
-  }, [iterations]);
-  
+	const networkFeeUsd = useMemo(() => {
+		if (!usdRate.value) {
+			return 0;
+		}
+		return (
+			(bytesPerIteration * iterations * feeRate + P2PKH_FULL_INPUT_SIZE * 4) /
+			usdRate.value
+		).toFixed(2);
+	}, [iterations]);
+
 	const canEnableBulk = useMemo(
 		() =>
 			confirmedOplBalance
@@ -579,25 +602,27 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		));
 	}, [currentTier]);
 
-  const acquireText = useMemo(() => {
-    // return Acquire{" "}
-    // {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-    // {<span
-    //   data-tip={`Tier ${currentTier}/5`}
-    //   className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
-    //   onClick={() => {
-    //     router.push(
-    //       `/inscribe?tab=bsv20&tick=${bulkMintingTicker}&op=mint`,
-    //     );
-    //   }}
-    // >
-    //   {bulkMintingTicker}
-    // </span>}{" "}
-    // to enable bulk minting.
+	const acquireText = useMemo(() => {
+		// return Acquire{" "}
+		// {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+		// {<span
+		//   data-tip={`Tier ${currentTier}/5`}
+		//   className="tooltip font-mono text-blue-400 hover:text-blue-500 cursor-pointer"
+		//   onClick={() => {
+		//     router.push(
+		//       `/inscribe?tab=bsv20&tick=${bulkMintingTicker}&op=mint`,
+		//     );
+		//   }}
+		// >
+		//   {bulkMintingTicker}
+		// </span>}{" "}
+		// to enable bulk minting.
 
-    return confirmedOplBalance && tierMaxNum(confirmedOplBalance) > 0 ? "Bulk Minting Enabled" :`Acquire ${bulkMintingTicker} to enable bulk minting`;
-  }, [confirmedOplBalance]);
-  
+		return confirmedOplBalance && tierMaxNum(confirmedOplBalance) > 0
+			? "Bulk Minting Enabled"
+			: `Acquire ${bulkMintingTicker} to enable bulk minting`;
+	}, [confirmedOplBalance]);
+
 	return (
 		<div className="w-full max-w-lg mx-auto">
 			<select
@@ -653,7 +678,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							<div className="absolute right-0 bottom-0 mb-2 mr-2">
 								{selectedBsv20?.included ? (
 									<FaCheckCircle className="w-5 h-5 text-success" />
-								) : selectedBsv20?.pendingOps && selectedBsv20?.pendingOps > 0 ? (
+								) : selectedBsv20?.pendingOps &&
+								  selectedBsv20?.pendingOps > 0 ? (
 									<FaClock className="w-5 h-5 text-warning" />
 								) : (
 									<FaCheckCircle className="w-5 h-5 text-warning" />
@@ -716,9 +742,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								className="text-white w-full rounded p-2"
 								type="number"
 								min={1}
-								max={maxIterations}
+								max={maxIterations + 1}
 								onChange={changeAmount}
 								value={amount}
+								step={step}
 								onFocus={(event) =>
 									checkTicker(
 										ticker || "",
@@ -733,9 +760,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 					<div>
 						<div className="p-2 bg-[#111] my-2 rounded flex items-center justify-between">
-							<div>
-								{acquireText}
-							</div>
+							<div>{acquireText}</div>
 							<input
 								type="checkbox"
 								className="toggle"
@@ -800,7 +825,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 														? "The index is not caught up. These tokens may have already been minted."
 														: selectedBsv20?.included
 														  ? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
-														  : `This ticker is not included in the index${selectedBsv20?.pendingOps && selectedBsv20.pendingOps > 0 ? ` and has ${selectedBsv20.pendingOps} operations in line ahead of this mint` : ''}. These tokens may have already been minted.`
+														  : `This ticker is not included in the index${
+																	selectedBsv20?.pendingOps &&
+																	selectedBsv20.pendingOps > 0
+																		? ` and has ${selectedBsv20.pendingOps} operations in line ahead of this mint`
+																		: ""
+															  }. These tokens may have already been minted.`
 												}
 											>
 												<FaInfoCircle className="ml-2" />
@@ -911,7 +941,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
 				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
 			>
-				Preview {selectedActionType === ActionType.Deploy ? "Deployment" : "Mint"}
+				Preview{" "}
+				{selectedActionType === ActionType.Deploy ? "Deployment" : "Mint"}
 			</button>
 		</div>
 	);
@@ -930,45 +961,26 @@ const bulkMintingTickerMaxSupply = 2180000000;
 export const iterationFee = 1000;
 
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
-  if (balance <= 0) return 0;
+	if (balance <= 0) return 0;
 
-  // Calculate balance as a percentage of max supply
-  const balancePct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
+	// Calculate balance as a percentage of max supply
+	const balancePct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
 
-  // Define tier thresholds as percentages of max supply
-  // Assuming tiers are at 0.05%, 0.1%, 0.5%, 1%, 5% of max supply
-  const tierThresholds = [
-      0.001, // Tier 1 at 0.05% of max supply
-      0.01,  // Tier 2 at 0.1% of max supply
-      0.5,  // Tier 3 at 0.5% of max supply
-      1,    // Tier 4 at 1% of max supply
-      2.5     // Tier 5 at 5% of max supply
-  ];
+	// Define tier thresholds as percentages of max supply
+	// Assuming tiers are at 0.05%, 0.1%, 0.5%, 1%, 5% of max supply
 
-  console.log({ balancePct, tierThresholds });
+	console.log({ balancePct, tierThresholds });
 
-  // Find the tier based on the percentage thresholds
-  for (let tier = 1; tier <= tierThresholds.length; tier++) {
-      if (balancePct <= tierThresholds[tier - 1]) return tier;
-  }
-  return tierThresholds.length + 1; // Return one above the highest tier if balancePct exceeds all thresholds
+	// Find the tier based on the percentage thresholds
+	for (let tier = 1; tier <= tierThresholds.length; tier++) {
+		if (balancePct <= tierThresholds[tier - 1]) return tier;
+	}
+	return tierThresholds.length + 1; // Return one above the highest tier if balancePct exceeds all thresholds
 };
 
 // Returns the tier number 1-5
 const tierMaxNum = (balance: number) => {
 	return calculateTier(balance, bulkMintingTickerMaxSupply);
-};
-
-// Returns the capped max iterations for a given feature token balance
-const tierMax = (balance: number, max: number) => {
-	const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
-	if (tierNum === 0) return 0; // Handle case where balance <= 0
-
-	// Map tier number to max iterations
-	const iterations = [1, 10, 100, 1000, 10000];
-	return iterations[tierNum - 1] > max
-		? max
-		: Math.max(iterations[tierNum - 1], max);
 };
 
 const calculateSpacers = (maxIterations: number, steps: number) => {
@@ -977,7 +989,7 @@ const calculateSpacers = (maxIterations: number, steps: number) => {
 	// const numSpacers = Math.floor(maxIterations / step);
 
 	// Create an array of spacers
-	return Array.from({ length: steps }, (_, index) => {
+	return Array.from({ length: steps+1 }, (_, index) => {
 		return (
 			<span key={`spacer-${index + 1}`} className="pointer-events-none">
 				|
@@ -986,5 +998,12 @@ const calculateSpacers = (maxIterations: number, steps: number) => {
 	});
 };
 
-
 const bytesPerIteration = 40;
+
+const tierThresholds = [
+	0.001, // Tier 1 at 0.05% of max supply
+	0.01, // Tier 2 at 0.1% of max supply
+	0.5, // Tier 3 at 0.5% of max supply
+	1, // Tier 4 at 1% of max supply
+	2.5, // Tier 5 at 5% of max supply
+];
