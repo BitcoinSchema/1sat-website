@@ -1,6 +1,6 @@
 "use client";
 
-import { API_HOST, toastProps } from "@/constants";
+import { API_HOST, FetchStatus, toastProps } from "@/constants";
 import { pendingTxs, usdRate } from "@/signals/wallet";
 import { fundingAddress } from "@/signals/wallet/address";
 import { PendingTransaction } from "@/types/preview";
@@ -11,7 +11,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { P2PKHAddress, Transaction } from "bsv-wasm-web";
 import { head } from "lodash";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaCopy } from "react-icons/fa";
 import { toBitcoin } from "satoshi-bitcoin-ts";
@@ -37,30 +37,39 @@ const PreviewPage = () => {
 		}
 		const fee = pendingTx.value.fee;
 		// const feeUsd = fee / 100000000 / 100000000;
-    const feeUsd = fee / usdRate.value;
+		const feeUsd = fee / usdRate.value;
 		return feeUsd.toFixed(2);
 	});
 
-	const broadcast = async () => {
+	const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
+		FetchStatus.Idle,
+	);
+	const broadcast = useCallback(async () => {
 		const tx = pendingTx.value;
 		if (!tx) {
 			return;
 		}
+		setBroadcastStatus(FetchStatus.Loading);
 		const rawtx = Buffer.from(tx.rawTx, "hex").toString("base64");
-		const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
-			method: "POST",
-			body: JSON.stringify({
-				rawtx,
-			}),
-		});
-		await promise;
+		try {
+			const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
+				method: "POST",
+				body: JSON.stringify({
+					rawtx,
+				}),
+			});
+			await promise;
+			setBroadcastStatus(FetchStatus.Success);
 
-		toast.success("Transaction broadcasted.", toastProps);
-		pendingTxs.value =
-			pendingTxs.value?.filter((t) => t.txid !== tx.txid) || [];
+			toast.success("Transaction broadcasted.", toastProps);
+			pendingTxs.value =
+				pendingTxs.value?.filter((t) => t.txid !== tx.txid) || [];
 
-		router.back();
-	};
+			router.back();
+		} catch {
+			setBroadcastStatus(FetchStatus.Error);
+		}
+	}, [pendingTx.value, router, setBroadcastStatus]);
 
 	const change = computed(() => {
 		if (!pendingTx.value?.numOutputs) {
@@ -126,7 +135,7 @@ Preview`}
 			</h1>
 			<div className="text-center text-[#aaa] mt-2">Broadcast to finalize.</div>
 			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden  mt-4 mb-8 relative">
-        				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
+				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
 					<div className="px-2">
 						<div className="flex justify-between">
 							<div>{pendingTx.value?.numInputs} Inputs</div>
@@ -211,8 +220,10 @@ Preview`}
 							</>
 						)}
 					</div>
-          <div className="divider" />
-          <div className="mx-auto text-center text-teal-700 mb-2">{pendingTx.value?.txid}</div>
+					<div className="divider" />
+					<div className="mx-auto text-center text-teal-700 mb-2">
+						{pendingTx.value?.txid}
+					</div>
 
 					<div className="flex gap-2 items-center justify-between mb-8">
 						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
@@ -241,9 +252,9 @@ Preview`}
 						</div>
 					</div>
 					<div className="items-center justify-center gap-2">
-						<div className="btn btn-warning w-full" onClick={broadcast}>
-							Broadcast ${usdPrice}
-						</div>
+						<button type="button" className="btn btn-warning w-full" onClick={broadcast} disabled={broadcastStatus === FetchStatus.Loading}>
+							{broadcastStatus === FetchStatus.Loading ? "Broadcasting..." : `Broadcast ${usdPrice}` }
+						</button>
 					</div>
 				</div>
 			</div>

@@ -32,6 +32,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
+import { useLocalStorage } from "usehooks-ts";
 import { InscriptionTab } from "./tabs";
 
 enum ActionType {
@@ -72,7 +73,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	const [mintError, setMintError] = useState<string>();
 	const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
 	const [iterations, setIterations] = useState<number>(1);
-	const [bulkEnabled, setBulkEnabled] = useState<boolean>(false);
+	const [bulkEnabled, setBulkEnabled] = useLocalStorage("bulkEnabled", false);
 	const [ticker, setTicker] = useState<string | null>(tick);
 
 	useEffect(() => {
@@ -132,8 +133,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							bsv20.pendingOps === 0
 						) {
 							setTickerAvailable(true);
+              setAmount(bsv20.lim);
 						} else if (bsv20.pendingOps > 0) {
-							setTickerAvailable(true);
+              setTickerAvailable(true);
+              setAmount(bsv20.lim);
 							setMintError("May be minted out");
 						} else {
 							setTickerAvailable(false);
@@ -268,8 +271,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			const iter = [];
 			// tiers as pct of supply
 			for (let i = 0; i < 5; i++) {
-				let floored = Math.floor((tierThresholds[i] * max));
-        console.log({ floored, amount });
+				let floored = Math.floor(tierThresholds[i] * max);
+				console.log({ floored, amount });
 				// round to nearest multiple of amount
 				if (floored > parseInt(amount) && floored % parseInt(amount) !== 0) {
 					floored -= floored % parseInt(amount);
@@ -277,11 +280,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 				iter.push(floored);
 			}
-			const m = iter[tierNum - 1] > max ? max : Math.min(iter[tierNum - 1], max);
-      if (m < 10 ) {
-        return 10
-      }
-      return m;
+			const m =
+				iter[tierNum - 1] > max ? max : Math.min(iter[tierNum - 1], max);
+			if (m < 10) {
+				return 10;
+			}
+			return m;
 		},
 		[amount],
 	);
@@ -398,7 +402,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			return;
 		}
 
-		toast.success("Bulk inscribing! This may take a while.");
+		toast.success("Bulk inscribing...");
 
 		// while (iterations > 0) {
 		await getUtxos(fundingAddress.value);
@@ -504,7 +508,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		const supply = parseInt(selectedBsv20.supply);
 
 		if (bulkEnabled && !confirmedOplBalance) {
-			// toast.error(`You need ${bulkMintingTicker} to bulk mint ${ticker}`);
+			toast.error(`You need ${bulkMintingTicker} to bulk mint ${ticker}`);
 			return 0;
 		}
 		const displayOplBalance = confirmedOplBalance
@@ -525,7 +529,6 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
-
 	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, tierMax]);
 
 	const step = useMemo(() => {
@@ -578,12 +581,11 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		).toFixed(2);
 	}, [iterations]);
 
+	// confirmedOplBalance && tierMaxNum(confirmedOplBalance) > 0
+
 	const canEnableBulk = useMemo(
-		() =>
-			confirmedOplBalance
-				? confirmedOplBalance > 0 && maxIterations > 0
-				: false,
-		[maxIterations, confirmedOplBalance],
+		() => (confirmedOplBalance ? confirmedOplBalance > 0 : false),
+		[confirmedOplBalance],
 	);
 
 	const currentTier = useMemo(() => {
@@ -623,7 +625,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		// to enable bulk minting.
 
 		return confirmedOplBalance && tierMaxNum(confirmedOplBalance) > 0
-			? "Bulk Minting Enabled"
+			? `${confirmedOplBalance} ${bulkMintingTicker} available`
 			: `Acquire ${bulkMintingTicker} to enable bulk minting`;
 	}, [confirmedOplBalance]);
 
@@ -782,7 +784,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						{bulkEnabled && (
 							<label className="block mb-4">
 								<div className="my-2 flex justify-between items-center">
-									<div>{iterations} Iterations</div>
+									<div className="font-mono text-primary/50">{iterations}𝒙</div>
 									<div
 										className="tooltip opacity-75 text-purple-400 font-mono flex items-center"
 										data-tip={`Tier ${currentTier}/5`}
@@ -960,15 +962,15 @@ export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
 
 const defaultDec = 8;
-const bulkMintingTicker = "EGG";
-const bulkMintingTickerMaxSupply = 21000000;
+const bulkMintingTicker = "PEPE";
+const bulkMintingTickerMaxSupply = 420690000;
 export const iterationFee = 1000;
 
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
 	if (balance <= 0) return 0;
 
 	// Calculate balance as a percentage of max supply
-	const balancePct = (balance / bulkMintingTickerMaxSupply) * 100; // As percentage
+	const balancePct = (balance * 100) / bulkMintingTickerMaxSupply; // As percentage
 
 	// Define tier thresholds as percentages of max supply
 	// Assuming tiers are at 0.05%, 0.1%, 0.5%, 1%, 5% of max supply
@@ -976,15 +978,15 @@ const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
 	console.log({ balancePct, tierThresholds });
 
 	// Find the tier based on the percentage thresholds
-	for (let tier = 1; tier <= tierThresholds.length; tier++) {
-		if (balancePct <= tierThresholds[tier - 1]) return tier;
+	for (let tier = 0; tier <= tierThresholds.length; tier++) {
+		if (balancePct >= tierThresholds[tier - 1]) return tier;
 	}
-	return tierThresholds.length + 1; // Return one above the highest tier if balancePct exceeds all thresholds
+	return tierThresholds.length;
 };
 
 // Returns the tier number 1-5
 const tierMaxNum = (balance: number) => {
-	return calculateTier(balance, bulkMintingTickerMaxSupply)
+	return calculateTier(balance, bulkMintingTickerMaxSupply);
 };
 
 const calculateSpacers = (maxIterations: number, steps: number) => {
@@ -993,21 +995,21 @@ const calculateSpacers = (maxIterations: number, steps: number) => {
 	// const numSpacers = Math.floor(maxIterations / step);
 
 	// Create an array of spacers
-	return Array.from({ length: steps+1 }, (_, index) => {
+	return Array.from({ length: steps }, (_, index) => {
 		return (
 			<span key={`spacer-${index + 1}`} className="pointer-events-none">
 				|
 			</span>
 		);
-	});
+	}).slice(0, 10); // max out at 10 marks for display purposes
 };
 
 const bytesPerIteration = 40;
 
 const tierThresholds = [
-	0.001, // Tier 1 at 0.05% of max supply
-	0.01, // Tier 2 at 0.1% of max supply
-	0.025, // Tier 3 at 0.5% of max supply
-	0.05, // Tier 4 at 1% of max supply
-	0.1, // Tier 5 at 5% of max supply
+	0.001, // Tier 1
+	0.01, // Tier 2
+	0.025, // Tier 3
+	0.05, // Tier 4
+	0.1, // Tier 5
 ];
