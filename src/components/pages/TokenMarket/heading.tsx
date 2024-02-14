@@ -111,7 +111,7 @@ const TickerHeading = ({
   });
 
   const supplyContent = computed(() => {
-    const totalSupply = ticker.supply || ticker.amt;
+    const totalSupply = parseInt(ticker.supply || ticker.amt || "0") / 10 ** ticker.dec;
     let text = `${parseInt(totalSupply!)?.toLocaleString()} `;
     if (type === AssetType.BSV20) {
       text += `/ ${parseInt(ticker.max!)?.toLocaleString()}`;

@@ -49,8 +49,9 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ amount: amt, address: add
         style: {
           background: "#333",
           color: "#fff",
-        },
-      });
+          fontSize: "0.8rem",
+        }});
+     
 
       const feeSats = 20;
       const satsNeeded = satoshis + feeSats;
@@ -59,7 +60,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({ amount: amt, address: add
 
       // Outputs
       let inputValue = 0;
-      for (let u of utxos.value || []) {
+      for (const u of utxos.value || []) {
         inputValue += u.satoshis;
         if (inputValue >= satsNeeded) {
           break;
