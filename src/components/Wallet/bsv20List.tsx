@@ -71,7 +71,7 @@ const Bsv20List = ({
 				},
 				body: JSON.stringify({ ids }),
 			});
-			const results = await result.json() as OrdUtxo[];
+			const results = await result.json() as MarketData[];
 
 			console.log("POST TEST", { results });
       tickerDetails.value = results;
