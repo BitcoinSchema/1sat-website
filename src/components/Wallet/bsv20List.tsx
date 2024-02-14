@@ -337,7 +337,7 @@ const Bsv20List = ({
 						</Link>
 						<div
 							className="text-emerald-400 tooltip"
-							data-tip="[ ! ] This balance does not consider decimals"
+							data-tip={`[ ! ] This balance does not consider decimals.`}
 						>
 							{amount}
 						</div>

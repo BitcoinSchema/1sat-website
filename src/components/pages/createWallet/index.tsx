@@ -12,6 +12,7 @@ const CreateWalletPage = ({
 	ordPk: ordPkProp,
 }: { payPk: string; ordPk: string }) => {
   useSignals();
+  const originalKey = payPk.value
 	const router = useRouter();
 	const open = useSignal(true);
 	const close = useCallback(
@@ -29,7 +30,7 @@ const CreateWalletPage = ({
   if (!bsvWasmReady.value) {
     return <div>Loading</div>
   }
-	if (payPk.value) {
+	if (originalKey) {
 		console.log({ payPk: payPk.value });
 		return (
 			<div>

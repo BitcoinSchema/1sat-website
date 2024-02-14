@@ -133,10 +133,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							bsv20.pendingOps === 0
 						) {
 							setTickerAvailable(true);
-              setAmount(bsv20.lim);
+							setAmount(bsv20.lim);
 						} else if (bsv20.pendingOps > 0) {
-              setTickerAvailable(true);
-              setAmount(bsv20.lim);
+							setTickerAvailable(true);
+							setAmount(bsv20.lim);
 							setMintError("May be minted out");
 						} else {
 							setTickerAvailable(false);
@@ -262,33 +262,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		[selectedBsv20, selectedActionType, setAmount],
 	);
 	// Returns the capped max iterations for a given feature token balance
-	const tierMax = useCallback(
-		(balance: number, max: number) => {
-			const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
-			if (!amount || tierNum === 0) return 0; // Handle case where balance <= 0
+	const tierMax = useCallback((balance: number, organicMax: number) => {
+		const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
+		if (tierNum === 0) return 0; // Handle case where balance <= 0
 
-			// Map tier number to max iterations
-			const iter = [];
-			// tiers as pct of supply
-			for (let i = 0; i < 5; i++) {
-				let floored = Math.floor(tierThresholds[i] * max);
-				console.log({ floored, amount });
-				// round to nearest multiple of amount
-				if (floored > parseInt(amount) && floored % parseInt(amount) !== 0) {
-					floored -= floored % parseInt(amount);
-				}
+		const tierThresholds = [0.01, 0.1, 0.25, 0.5, 1];
+		const tier = Math.floor(organicMax * tierThresholds[tierNum - 1]);
 
-				iter.push(floored);
-			}
-			const m =
-				iter[tierNum - 1] > max ? max : Math.min(iter[tierNum - 1], max);
-			if (m < 10) {
-				return 10;
-			}
-			return m;
-		},
-		[amount],
-	);
+		// max - supply / amount
+		return Math.min(organicMax, tier);
+	}, []);
 
 	const inscribeBsv20 = useCallback(
 		async (sortedUtxos: Utxo[]) => {
@@ -468,7 +451,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			!ticker?.length ||
 			inscribeStatus === FetchStatus.Loading ||
 			fetchTickerStatus === FetchStatus.Loading ||
-			(!!limit && maxSupply < limit)
+			(!!limit && !!maxSupply && parseInt(maxSupply) < parseInt(limit))
 		);
 	}, [
 		inscribeStatus,
@@ -498,15 +481,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	// maxIterations is based on the amount of confirmed OPL the user holds
 	const maxIterations = useMemo(() => {
-		if (!selectedBsv20) {
+		if (!selectedBsv20 || !selectedBsv20.max || !selectedBsv20.available) {
 			return 0;
 		}
-		// how much is already minted
-		if (!selectedBsv20.supply || !selectedBsv20.max) {
+		if (!amount || amount === "0") {
 			return 0;
 		}
-		const supply = parseInt(selectedBsv20.supply);
-
 		if (bulkEnabled && !confirmedOplBalance) {
 			toast.error(`You need ${bulkMintingTicker} to bulk mint ${ticker}`);
 			return 0;
@@ -516,29 +496,33 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				? confirmedOplBalance / 10 ** selectedBsv20.dec
 				: confirmedOplBalance
 			: 0;
-		if (!amount || amount === "0") {
-			return 0;
+
+		let max = parseInt(selectedBsv20.max || "0");
+		if (selectedBsv20.available) {
+			max = parseInt(selectedBsv20.available);
 		}
-		let max = selectedBsv20.max || "0";
-		if (!selectedBsv20.max && selectedBsv20.supply) {
-			max = selectedBsv20.supply;
-		}
-		const remainingSupply = parseInt(max) - supply;
-		const organicMax = Math.ceil(remainingSupply / parseInt(amount));
+
+		const organicMax = Math.ceil(max / parseInt(amount));
 
 		console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
-	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, tierMax]);
-
+	}, [
+		selectedBsv20,
+		bulkEnabled,
+		confirmedOplBalance,
+		amount,
+		tierMax,
+		ticker,
+	]);
+	const remainder = useMemo(() => maxIterations % 10, [maxIterations]);
 	const step = useMemo(() => {
 		if (!confirmedOplBalance) {
 			return 1;
 		}
-		// when max iterations is huge we want to increase the step
-		// we want to do this proportionally to the max iterations
-		return Math.ceil(maxIterations / tierMaxNum(confirmedOplBalance));
-	}, [maxIterations, confirmedOplBalance]);
+    return  (maxIterations - remainder) / 10
+;
+	}, [maxIterations, confirmedOplBalance, remainder]);
 
 	const spacers = useMemo(
 		() => calculateSpacers(maxIterations, step),
@@ -748,10 +732,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								className="text-white w-full rounded p-2"
 								type="number"
 								min={1}
-								max={maxIterations + 1}
+								max={selectedBsv20?.lim}
 								onChange={changeAmount}
 								value={amount}
-								step={step}
+								step={step + parseInt(amount || "0") - 1}
 								onFocus={(event) =>
 									checkTicker(
 										ticker || "",
@@ -797,23 +781,22 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								<input
 									onChange={changeIterations}
 									value={iterations}
-									max={maxIterations + step}
+									max={maxIterations}
 									type="range"
 									min={1}
 									className="range"
-									step={maxIterations / step}
+									step={step}
 								/>
 								<div className="w-full flex justify-between text-xs px-2 text-primary/25">
 									{spacers}
 								</div>
 							</label>
 						)}
-						{/* TODO: Display accurately at end of supply */}
 						{bulkEnabled && amount && ticker && (
 							<>
 								<div className="bg-[#111] text-[#555] rounded p-2 font-mono text-sm">
 									<div className="flex items-center justify-between">
-										<div className="w-1/2">Bulk Indexing Fee:</div>
+										<div className="w-1/2">Indexing Fee:</div>
 										<div className="w-1/2 text-right">${iterationFeeUsd}</div>
 									</div>
 									<div className="flex items-center justify-between">
@@ -962,8 +945,8 @@ export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
 
 const defaultDec = 8;
-const bulkMintingTicker = "EGG";
-const bulkMintingTickerMaxSupply = 21000000;
+const bulkMintingTicker = "PEPE";
+const bulkMintingTickerMaxSupply = 420690000;
 export const iterationFee = 1000;
 
 const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
