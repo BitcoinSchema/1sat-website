@@ -9,12 +9,15 @@ import * as http from "@/utils/httpClient";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
+import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
+import { FaHashtag } from "react-icons/fa";
 import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
+import { MarketData } from "../pages/TokenMarket/list";
 import WalletTabs from "./tabs";
 
 enum BalanceTab {
@@ -47,6 +50,37 @@ const Bsv20List = ({
 
 	// get unspent ordAddress
 	const bsv20s = useSignal<OrdUtxo[] | null>(null);
+  const tickerDetails = useSignal<MarketData[] | null>(null);
+
+	effect(() => {
+		const fire = async () => {
+      
+			const url = "https://1sat-api-production.up.railway.app/ticker/num";
+      const unindexed = bsv20s.value?.map((u) => u.origin?.data?.bsv20?.tick as string) || [];
+      const fromBalances = bsv20Balances.value?.map((b) => b.tick as string) || []
+      const finalArray = unindexed.concat(fromBalances) || []
+      console.log({finalArray})
+			const ids = uniq(finalArray);
+      if (!ids.length) return;
+
+      tickerDetails.value = [];
+			const result = await fetch(url, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ ids }),
+			});
+			const results = await result.json() as OrdUtxo[];
+
+			console.log("POST TEST", { results });
+      tickerDetails.value = results;
+		};
+
+		if (bsv20s.value !== null && tickerDetails.value === null) {
+			fire();
+		}
+	});
 	effect(() => {
 		const address = addressProp || ordAddress.value;
 		// get unindexed tickers
@@ -63,7 +97,7 @@ const Bsv20List = ({
 				holdings.value?.every((h) => h.tick !== u.data?.bsv20?.tick),
 			);
 			console.log({ u });
-      bsv20s.value = u;
+			bsv20s.value = u;
 
 			if (address !== ordAddress.value) {
 				// not viewing own address
@@ -205,16 +239,17 @@ const Bsv20List = ({
 				<div className="w-8" />
 				{confirmedBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => {
 					// TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
-					const supply = 21000000;
+          const deets = find(tickerDetails.value, (t) => t.tick === tick);
+					const supply = deets?.supply || deets?.amt;
 					return (
 						<React.Fragment key={`bal-confirmed-${tick}`}>
 							<div
-								className="cursor-pointer hover:text-blue-400 transition"
+								className="cursor-pointer hover:text-blue-400 transition flex items-center"
 								onClick={() =>
 									router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
 								}
 							>
-								{tick || sym}
+								{tick || sym} <div className="text-[#555] items-center ml-2 md:flex hidden"><FaHashtag className="w-3 h-3 mr-1" />{deets?.num || ""}</div>
 							</div>
 							<div
 								className="text-emerald-400 text-right font-mono"
@@ -223,7 +258,8 @@ const Bsv20List = ({
 								{(all.confirmed / 10 ** dec).toLocaleString()}
 							</div>
 							<div className="text-right">
-								{addressProp === ordAddress.value && all.confirmed / 10 ** dec > 10000 ? (
+								{addressProp === ordAddress.value &&
+								all.confirmed / 10 ** dec > 10000 ? (
 									<>
 										<button
 											type="button"
@@ -327,25 +363,27 @@ const Bsv20List = ({
 				{bsv20s && bsv20s.value?.length === 0 && (
 					<div className="text-[#777] font-semibold">No unindexed tokens</div>
 				)}
-				{Object.entries(unindexBalances.value).filter((t) => {
-          // return type === AssetType.BSV20 ? tick : id;
-          return true
-        }).map(([tick, amount], idx) => (
-					<React.Fragment key={`bal-unindexed-${tick}`}>
-						<Link
-							href={`/market/${type}/${tick}`}
-							className="cursor-pointer hover:text-blue-400 transition"
-						>
-							{tick}
-						</Link>
-						<div
-							className="text-emerald-400 tooltip"
-							data-tip={`[ ! ] This balance does not consider decimals.`}
-						>
-							{amount}
-						</div>
-					</React.Fragment>
-				))}
+				{Object.entries(unindexBalances.value)
+					.filter((t) => {
+						// return type === AssetType.BSV20 ? tick : id;
+						return true;
+					})
+					.map(([tick, amount], idx) => (
+						<React.Fragment key={`bal-unindexed-${tick}`}>
+							<Link
+								href={`/market/${type}/${tick}`}
+								className="cursor-pointer hover:text-blue-400 transition"
+							>
+								{tick}
+							</Link>
+							<div
+								className="text-emerald-400 tooltip"
+								data-tip={`[ ! ] This balance does not consider decimals.`}
+							>
+								{amount}
+							</div>
+						</React.Fragment>
+					))}
 			</div>
 		);
 	});
