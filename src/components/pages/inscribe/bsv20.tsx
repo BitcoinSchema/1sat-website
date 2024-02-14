@@ -978,7 +978,7 @@ const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
 	console.log({ balancePct, tierThresholds });
 
 	// Find the tier based on the percentage thresholds
-	for (let tier = 0; tier <= tierThresholds.length; tier++) {
+	for (let tier = 5; tier > 0; tier--) {
 		if (balancePct >= tierThresholds[tier - 1]) return tier;
 	}
 	return tierThresholds.length;
