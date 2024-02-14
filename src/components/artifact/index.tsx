@@ -24,7 +24,7 @@ import TextArtifact from "./text";
 import VideoArtifact from "./video";
 
 export enum ArtifactType {
-  Audio=0,
+  All=0,
   Image = 1,
   Model = 2,
   PDF = 3,
@@ -38,7 +38,25 @@ export enum ArtifactType {
   OPNS = 11,
   Unknown = 12,
   LRC20 = 13,
+  Audio = 14,
 }
+
+// maps ArtifactType to a typical content type string
+export const artifactTypeMap = new Map<ArtifactType, string>([
+  [ArtifactType.Audio, "audio/"],
+  [ArtifactType.Image, "image/"],
+  [ArtifactType.Model, "model/"],
+  [ArtifactType.PDF, "application/pdf"],
+  [ArtifactType.Video, "video/"],
+  [ArtifactType.Javascript, "application/javascript"],
+  [ArtifactType.HTML, "text/html"],
+  [ArtifactType.MarkDown, "text/markdown"],
+  [ArtifactType.Text, "text/plain"],
+  [ArtifactType.JSON, "application/json"],
+  [ArtifactType.BSV20, "application/bsv-20"],
+  [ArtifactType.OPNS, "application/op-ns"],
+  [ArtifactType.LRC20, "application/lrc-20"],
+]);
 
 type ArtifactProps = {
   artifact: Partial<OrdUtxo>;

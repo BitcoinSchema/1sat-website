@@ -9,6 +9,7 @@ import { useInView } from "framer-motion";
 import { useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { OrdViewMode } from ".";
+import { selectedType } from "../Wallet/filter";
 import GridList from "./grid";
 import { getOrdUtxos } from "./helpers";
 import List from "./list";
@@ -23,11 +24,11 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
   useSignals();
   const ref = useRef(null);
   const isInView = useInView(ref);
-
   const listings = useSignal<OrdUtxo[]>(listingsProp || []);
 
   // if address is not set this is just showing listings
   console.log({ address, listingsProp, listings });
+
   const {
     data,
     error,
@@ -37,8 +38,8 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
-    queryKey: ["ordinals", address],
-    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam }),
+    queryKey: ["ordinals", address, selectedType.value],
+    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam, selectedType: selectedType.value || undefined }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
       if (lastPageParam === 0) {
         return lastPageParam + 1;

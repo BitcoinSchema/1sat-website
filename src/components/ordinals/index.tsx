@@ -1,5 +1,6 @@
 import Artifact from "@/components/artifact";
 import { OrdUtxo } from "@/types/ordinals";
+import None from "./none";
 
 type Props = {
   onClick?: (outPoint: string) => void;
@@ -8,7 +9,7 @@ type Props = {
 const Ordinals: React.FC<Props> = ({ artifacts, onClick }) => {
   return (
     <>
-      {artifacts?.length === 0 && <div className="grid mb-4">You have no ordinals</div>}
+      {artifacts?.length === 0 && <None />}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 mb-4">
         {artifacts?.map((a) => {
           return (
