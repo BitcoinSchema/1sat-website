@@ -324,7 +324,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
               </label>
               <input
                 type="text"
-                placeholder="RUG, PEPE, LOVE, SHGR"
+                placeholder="RUG, PEPE, EGG, LOVE, SHGR"
                 className="input input-bordered w-full"
                 value={destinationTickers.value}
                 onChange={(e) => {
