@@ -37,7 +37,7 @@ const Page = async ({
 				...h,
 				amt: parseInt(h.amt) / 10 ** (details.dec || 0),
 				pct: details.supply
-					? (parseInt(h.amt) / parseInt(details.supply)) * 100
+					? (parseInt(h.amt) / parseInt(details.supply || details.amt)) * 100
 					: 0,
 			};
 		});
