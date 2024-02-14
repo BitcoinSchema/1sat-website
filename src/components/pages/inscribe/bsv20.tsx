@@ -210,7 +210,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			: inSync.value
 			  ? selectedBsv20?.pendingOps && selectedBsv20?.pendingOps > 0
 					? `${selectedBsv20?.pendingOps} Pending Ops`
-					: "1-4 Characters"
+					: selectedBsv20?.pending
+					  ? `Pending Supply ${selectedBsv20.pending}`
+					  : "1-4 Characters"
 			  : selectedActionType === ActionType.Deploy
 				  ? "Syncing. May already be deployed."
 				  : "Syncing. May be minted out.";
@@ -499,7 +501,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 		let max = parseInt(selectedBsv20.max || "0");
 		if (selectedBsv20.available) {
-			max = parseInt(selectedBsv20.available);
+			max =
+				parseInt(selectedBsv20.available) -
+				parseInt(selectedBsv20.pending || "0");
 		}
 
 		const organicMax = Math.ceil(max / parseInt(amount));
@@ -520,8 +524,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		if (!confirmedOplBalance) {
 			return 1;
 		}
-    return  (maxIterations - remainder) / 10
-;
+		return (maxIterations - remainder) / 10;
 	}, [maxIterations, confirmedOplBalance, remainder]);
 
 	const spacers = useMemo(
@@ -545,7 +548,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		if (newTokens > max) {
 			return max;
 		}
-		return newTokens;
+    const pending = selectedBsv20.pending ? parseInt(selectedBsv20.pending) : 0;
+    const pendingAdjusted = pending * 10 ** selectedBsv20.dec;
+		return newTokens + pendingAdjusted;
 	}, [selectedBsv20, totalTokens]);
 
 	const iterationFeeUsd = useMemo(() => {
@@ -833,6 +838,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 											{ticker.toUpperCase()}
 										</div>
 									</div>
+
+									<div className="flex items-center justify-between">
+										<div className="w-1/2">Pending Supply</div>
+										<div className="w-1/2 text-right">
+											{selectedBsv20?.pending ? selectedBsv20.pending : 0}
+										</div>
+									</div>
+
 									<div className="flex items-center justify-between">
 										<div className="w-1/2">New Supply</div>
 										<div className="w-1/2 text-right">
@@ -945,7 +958,7 @@ export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
 
 const defaultDec = 8;
-const bulkMintingTicker = "EGG";
+const bulkMintingTicker = "MULE";
 const bulkMintingTickerMaxSupply = 21000000;
 export const iterationFee = 1000;
 
