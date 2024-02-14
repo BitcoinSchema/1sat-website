@@ -33,18 +33,22 @@ const Page = async ({
 			return parseInt(a.amt) > parseInt(b.amt) ? -1 : 1;
 		})
 		.map((h) => {
-      const supply = details.supply|| details.amt;
+			const supply = details.supply || details.amt;
 			return {
 				...h,
 				amt: parseInt(h.amt) / 10 ** (details.dec || 0),
-				pct: supply
-					? (parseInt(h.amt) / parseInt(supply)) * 100
-					: 0,
+				pct: supply ? (parseInt(h.amt) / parseInt(supply)) * 100 : 0,
 			};
 		});
 	return (
 		<div className="mx-auto flex flex-col max-w-5xl w-full">
-			<h1 className="text-xl px-6">{params.id} Ownership Breakdown</h1>
+			<h1 className="text-xl px-6">
+				<Link href={`/market/${params.type}/${params.id}`}>{params.type === AssetType.BSV20 ? params.id : details.sym}</Link> Ownership
+				Breakdown
+			</h1>
+			{params.type === AssetType.BSV21 && (
+				<Link className="text-sm px-6" href={`/outpoint/${params.id}`}>ID: {params.id}</Link>
+			)}
 			<div className="divider" />
 			<div className="w-full">
 				<div className="grid grid-template-columns-3 p-6">
