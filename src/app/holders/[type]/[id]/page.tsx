@@ -33,11 +33,12 @@ const Page = async ({
 			return parseInt(a.amt) > parseInt(b.amt) ? -1 : 1;
 		})
 		.map((h) => {
+      const supply = details.supply|| details.amt;
 			return {
 				...h,
 				amt: parseInt(h.amt) / 10 ** (details.dec || 0),
-				pct: details.supply
-					? (parseInt(h.amt) / parseInt(details.supply || details.amt)) * 100
+				pct: supply
+					? (parseInt(h.amt) / parseInt(supply)) * 100
 					: 0,
 			};
 		});
