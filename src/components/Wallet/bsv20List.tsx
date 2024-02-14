@@ -328,7 +328,8 @@ const Bsv20List = ({
 					<div className="text-[#777] font-semibold">No unindexed tokens</div>
 				)}
 				{Object.entries(unindexBalances.value).filter((t) => {
-          return type === AssetType.BSV20 ? tick : id;
+          // return type === AssetType.BSV20 ? tick : id;
+          return true
         }).map(([tick, amount], idx) => (
 					<React.Fragment key={`bal-unindexed-${tick}`}>
 						<Link
