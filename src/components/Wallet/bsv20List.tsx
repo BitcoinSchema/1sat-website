@@ -327,7 +327,9 @@ const Bsv20List = ({
 				{bsv20s && bsv20s.value?.length === 0 && (
 					<div className="text-[#777] font-semibold">No unindexed tokens</div>
 				)}
-				{Object.entries(unindexBalances.value).map(([tick, amount], idx) => (
+				{Object.entries(unindexBalances.value).filter((t) => {
+          return type === AssetType.BSV20 ? true : false;
+        }).map(([tick, amount], idx) => (
 					<React.Fragment key={`bal-unindexed-${tick}`}>
 						<Link
 							href={`/market/${type}/${tick}`}
