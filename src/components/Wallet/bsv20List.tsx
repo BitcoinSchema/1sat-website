@@ -223,7 +223,7 @@ const Bsv20List = ({
 								{(all.confirmed / 10 ** dec).toLocaleString()}
 							</div>
 							<div className="text-right">
-								{all.confirmed / 10 ** dec > 10000 ? (
+								{addressProp === ordAddress.value && all.confirmed / 10 ** dec > 10000 ? (
 									<>
 										<button
 											type="button"
@@ -328,7 +328,7 @@ const Bsv20List = ({
 					<div className="text-[#777] font-semibold">No unindexed tokens</div>
 				)}
 				{Object.entries(unindexBalances.value).filter((t) => {
-          return type === AssetType.BSV20 ? true : false;
+          return type === AssetType.BSV20 ? tick : id;
         }).map(([tick, amount], idx) => (
 					<React.Fragment key={`bal-unindexed-${tick}`}>
 						<Link
