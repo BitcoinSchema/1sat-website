@@ -958,7 +958,7 @@ export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
 
 const defaultDec = 8;
-const bulkMintingTicker = "MULE";
+const bulkMintingTicker = "EGG";
 const bulkMintingTickerMaxSupply = 21000000;
 export const iterationFee = 1000;
 
