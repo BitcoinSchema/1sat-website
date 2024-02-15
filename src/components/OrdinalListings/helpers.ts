@@ -41,7 +41,7 @@ export const getOrdUtxos = async ({
 	if (!address) {
 		url = `${API_HOST}/api/market?limit=${resultsPerPage}&offset=${offset}&dir=DESC`;
 	}
-  if (selectedType && selectedType > 0) {
+  if (selectedType && selectedType > 0 && selectedType !== ArtifactType.All) {
     url += `&type=${artifactTypeMap.get(selectedType)}`;
   }
 	const res = await fetch(url);

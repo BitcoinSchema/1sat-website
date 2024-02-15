@@ -14,8 +14,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { FaHashtag } from "react-icons/fa";
-import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
-import AirdropTokensModal from "../modal/airdrop";
+import { FaChevronRight } from "react-icons/fa6";
+import { FiSend } from "react-icons/fi";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { MarketData } from "../pages/TokenMarket/list";
 import WalletTabs from "./tabs";
@@ -50,20 +50,21 @@ const Bsv20List = ({
 
 	// get unspent ordAddress
 	const bsv20s = useSignal<OrdUtxo[] | null>(null);
-  const tickerDetails = useSignal<MarketData[] | null>(null);
+	const tickerDetails = useSignal<MarketData[] | null>(null);
 
 	effect(() => {
 		const fire = async () => {
-      
 			const url = "https://1sat-api-production.up.railway.app/ticker/num";
-      const unindexed = bsv20s.value?.map((u) => u.origin?.data?.bsv20?.tick as string) || [];
-      const fromBalances = bsv20Balances.value?.map((b) => b.tick as string) || []
-      const finalArray = unindexed.concat(fromBalances) || []
-      console.log({finalArray})
+			const unindexed =
+				bsv20s.value?.map((u) => u.origin?.data?.bsv20?.tick as string) || [];
+			const fromBalances =
+				bsv20Balances.value?.map((b) => b.tick as string) || [];
+			const finalArray = unindexed.concat(fromBalances) || [];
+			console.log({ finalArray });
 			const ids = uniq(finalArray);
-      if (!ids.length) return;
+			if (!ids.length) return;
 
-      tickerDetails.value = [];
+			tickerDetails.value = [];
 			const result = await fetch(url, {
 				method: "POST",
 				headers: {
@@ -71,10 +72,10 @@ const Bsv20List = ({
 				},
 				body: JSON.stringify({ ids }),
 			});
-			const results = await result.json() as MarketData[];
+			const results = (await result.json()) as MarketData[];
 
 			console.log("POST TEST", { results });
-      tickerDetails.value = results;
+			tickerDetails.value = results;
 		};
 
 		if (bsv20s.value !== null && tickerDetails.value === null) {
@@ -239,7 +240,7 @@ const Bsv20List = ({
 				<div className="w-8" />
 				{confirmedBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => {
 					// TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
-          const deets = find(tickerDetails.value, (t) => t.tick === tick);
+					const deets = find(tickerDetails.value, (t) => t.tick === tick);
 					const supply = deets?.supply || deets?.amt;
 					return (
 						<React.Fragment key={`bal-confirmed-${tick}`}>
@@ -249,7 +250,11 @@ const Bsv20List = ({
 									router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
 								}
 							>
-								{tick || sym} <div className="text-[#555] items-center ml-2 md:flex hidden"><FaHashtag className="w-3 h-3 mr-1" />{deets?.num || ""}</div>
+								{tick || sym}{" "}
+								<div className="text-[#555] items-center ml-2 md:flex hidden">
+									<FaHashtag className="w-3 h-3 mr-1" />
+									{deets?.num || ""}
+								</div>
 							</div>
 							<div
 								className="text-emerald-400 text-right font-mono"
@@ -265,41 +270,26 @@ const Bsv20List = ({
 											type="button"
 											className="btn btn-sm w-fit"
 											onClick={() => {
-												showAirdrop.value = tick || id;
+												showSendModal.value = tick || id;
 											}}
 										>
-											<FaParachuteBox className="w-8" />
+											<FiSend className="w-8" />
 										</button>
-										{
-											<AirdropTokensModal
-												onClose={() => {
-													showAirdrop.value = undefined;
-												}}
-												type={AssetType.BSV20}
-												dec={dec}
+										{showSendModal.value === (tick || id) && (
+											<TransferBsv20Modal
+												onClose={() => (showSendModal.value = undefined)}
+												type={type}
 												id={(tick || id)!}
-												open={
-													(!!tick && showAirdrop.value === tick) ||
-													(!!id && showAirdrop.value === id)
-												}
-												balance={all.confirmed}
+												dec={dec}
+												balance={all.confirmed / 10 ** dec}
+												sym={sym}
 											/>
-										}
+										)}
 									</>
 								) : (
 									<></>
 								)}
 							</div>
-							{showSendModal.value === (tick || id) && (
-								<TransferBsv20Modal
-									onClose={() => (showSendModal.value = undefined)}
-									type={type}
-									id={(tick || id)!}
-									dec={dec}
-									balance={all.confirmed / 10 ** dec}
-									sym={sym}
-								/>
-							)}
 						</React.Fragment>
 					);
 				})}

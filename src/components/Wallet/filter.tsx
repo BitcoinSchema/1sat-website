@@ -17,7 +17,7 @@ const MenuItem = ({
 				onClick={() => changeType(type)}
 				className="hover:bg-primary-500 hover:text-white"
 			>
-				{Object.values(ArtifactType)[type]}
+				{type}
 			</button>
 		</li>
 	);
@@ -32,10 +32,10 @@ const Filter = () => {
 				{/* <FaChevronDown className="group-hover:opacity-0" /> */}
 			</div>
 			<ul className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-        {Object.entries(ArtifactType).filter(([key, value]) => {
-          return !Number.isNaN(Number(value)) && !excludeTypes.includes(value as ArtifactType);
-        }).map(([key, value]) => {
-          return <MenuItem key={key} type={value as ArtifactType} changeType={() => changeFilter(value as ArtifactType)} />
+        {Object.values(ArtifactType).filter((value) => {
+          return !excludeTypes.includes(value as ArtifactType);
+        }).map((value, key) => {
+          return <MenuItem key={`$filter-${value}`} type={value as ArtifactType} changeType={() => changeFilter(value as ArtifactType)} />
         })}
 			</ul>
 		</div>
@@ -47,7 +47,7 @@ export default Filter;
 export const selectedType = new Signal<ArtifactType | null>(null);
 export const changeFilter = (type: ArtifactType) => {
   const str = artifactTypeMap.get(type);
-  toast.success(`Filtering by ${Object.values(ArtifactType)[type]} ${str}`);
+  toast.success(`Filtering by ${type} ${str ? str : ''}`);
   selectedType.value = type;
 }
 

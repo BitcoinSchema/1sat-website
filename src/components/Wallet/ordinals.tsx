@@ -10,7 +10,7 @@ import WalletTabs from "./tabs";
 const WalletOrdinals = ({ address: addressProp }: { address?: string }) => {
   useSignals();
   if (!ordAddress.value) {
-    return <div className="mx-auto animate-spin"><FaSpinner /></div>
+    return <div className="mx-auto animate-spin w-fit"><FaSpinner /></div>
   }
 
   return (
