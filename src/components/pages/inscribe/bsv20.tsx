@@ -272,7 +272,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		const tier = Math.floor(organicMax * tierThresholds[tierNum - 1]);
 
 		// max - supply / amount
-		return Math.min(organicMax, tier);
+		return Math.min(Math.min(organicMax, tier), hardMax);
 	}, []);
 
 	const inscribeBsv20 = useCallback(
@@ -1009,3 +1009,6 @@ const tierThresholds = [
 	0.05, // Tier 4
 	0.1, // Tier 5
 ];
+
+// hard maximum number of iterations per mint
+const hardMax = 10000;
