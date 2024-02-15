@@ -35,7 +35,7 @@ const Filter = () => {
         {Object.values(ArtifactType).filter((value) => {
           return !excludeTypes.includes(value as ArtifactType);
         }).map((value, key) => {
-          return <MenuItem key={`$filter-${value}`} type={value as ArtifactType} changeType={() => changeFilter(value as ArtifactType)} />
+          return <MenuItem key={`$filter-${value}`} type={value as ArtifactType} changeType={() => changeFilter(value)} />
         })}
 			</ul>
 		</div>
@@ -48,7 +48,7 @@ export const selectedType = new Signal<ArtifactType | null>(null);
 export const changeFilter = (type: ArtifactType) => {
   const str = artifactTypeMap.get(type);
   toast.success(`Filtering by ${type} ${str ? str : ''}`);
-  selectedType.value = type === ArtifactType.All ? null : type;
+  selectedType.value = type;
 }
 
 const excludeTypes = [ArtifactType.BSV20];
