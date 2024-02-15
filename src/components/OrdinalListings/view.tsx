@@ -39,7 +39,7 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
     status,
   } = useInfiniteQuery({
     queryKey: ["ordinals", address, selectedType.value],
-    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam, selectedType: selectedType.value || undefined }),
+    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam, selectedType: selectedType.value }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
       if (lastPageParam === 0) {
         return lastPageParam + 1;
