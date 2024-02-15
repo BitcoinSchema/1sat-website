@@ -31,7 +31,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
   useEffect(() => {
     // init from localStorage when available and not already set
     if (!selectedType.value && !!selectedArtifactType) {
-      selectedType.value = selectedArtifactType || ArtifactType.All;
+      selectedType.value = selectedArtifactType || null;
     }
   }, [selectedArtifactType, selectedType]);
 
@@ -46,7 +46,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
     status,
   } = useInfiniteQuery({
     queryKey: ["ordinals", address, selectedType.value],
-    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam, selectedType: selectedType.value || undefined }),
+    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam, selectedType: selectedType.value }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
       if (lastPage?.length === resultsPerPage) {
         return lastPageParam + 1;
@@ -60,6 +60,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
   // set the ord utxos
   useEffect(() => {
     if (data) {
+      console.log("data", data) 
       const pageData = data.pages[data.pages.length - 1];
       if (pageData !== undefined) {
         // ordUtxos.value = data.pages.reduce((acc, val) => acc.concat(val), []);

@@ -6,12 +6,14 @@ interface ArtifactProps {
   onClick?: () => void;
   className?: string;
   mini?: boolean;
+  size?: number;
 }
 const HTMLArtifact: React.FC<ArtifactProps> = ({
   origin,
   onClick,
   className,
   mini = false,
+  size,
 }) => {
   return (
     <div
@@ -21,11 +23,12 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
       onClick={onClick}
     >
       {!mini && <iframe
-        className={`pointer-events-none w-full h-full bg-none overflow-hidden no-scrollbar`}
+        title="html artifact"
+        className={`pointer-events-none w-full h-full bg-none overflow-hidden no-scrollbar ${size ? `w-[${size}px] h-[${size}px]` : ""}`}
         src={`${ORDFS}/${origin}`}
         sandbox=" "
-        height="100%"
-        width="100%"
+        height={size || "100%"}
+        width={size || "100%"}
         scrolling="no"
       />}
       {mini && <TbFileTypeHtml className="mx-auto w-6 h-6" />}

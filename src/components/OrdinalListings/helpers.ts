@@ -32,7 +32,7 @@ export const getOrdUtxos = async ({
 }: {
 	address?: string;
 	pageParam: number;
-	selectedType?: ArtifactType;
+	selectedType: ArtifactType | null;
 }) => {
 	if (!address) return;
 	console.log("getOrdUtxos called", address, pageParam, selectedType);
@@ -41,7 +41,8 @@ export const getOrdUtxos = async ({
 	if (!address) {
 		url = `${API_HOST}/api/market?limit=${resultsPerPage}&offset=${offset}&dir=DESC`;
 	}
-  if (selectedType && selectedType.length > 0 && selectedType !== ArtifactType.All) {
+
+  if (selectedType && selectedType !== ArtifactType.All) {
     url += `&type=${artifactTypeMap.get(selectedType)}`;
   }
 	const res = await fetch(url);
@@ -49,10 +50,10 @@ export const getOrdUtxos = async ({
 	const json = res.json() as Promise<OrdUtxo[]>;
 	
 	const result = await json;
-	const final = selectedType
+	const final = selectedType !== ArtifactType.All
 		? result.filter((o) => {
 				return o.origin?.data?.insc?.file.type?.startsWith(
-					artifactTypeMap.get(selectedType) as string,
+					artifactTypeMap.get(selectedType as ArtifactType) as string,
 				);
 		  })
 		: result;

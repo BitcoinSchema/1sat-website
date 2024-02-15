@@ -10,7 +10,7 @@ const Ordinals: React.FC<Props> = ({ artifacts, onClick }) => {
   return (
     <>
       {artifacts?.length === 0 && <None />}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 mb-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4 mb-4 min-h-[300px]">
         {artifacts?.map((a) => {
           return (
             <Artifact

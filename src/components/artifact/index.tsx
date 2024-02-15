@@ -129,7 +129,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		() =>
 			`${
 				latest
-					? artifact?.height + ":" + artifact?.idx + ":" + artifact?.vout
+					? `${artifact?.height}:${artifact?.idx}:${artifact?.vout}`
 					: artifact?.origin?.num
 			}`,
 		[artifact, latest],
@@ -212,7 +212,8 @@ const Artifact: React.FC<ArtifactProps> = ({
 				<HTMLArtifact
 					mini={(size || 300) < 300}
 					origin={origin}
-					className={clickToZoom ? "cursor-pointer" : ""}
+					className={`${clickToZoom ? "cursor-pointer" : ""} h-full w-full`}
+          size={size}
 					onClick={
 						clickToZoom
 							? () => (showZoom ? setShowZoom(false) : setShowZoom(true))
@@ -236,7 +237,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 				/>
 			</div>
 		) : type === ArtifactType.Text || type === ArtifactType.OPNS ? (
-			<div className={`w-full flex items-center justify-center p-2 h-full`}>
+			<div className={"w-full flex items-center justify-center p-2 h-full"}>
 				<TextArtifact
 					origin={origin}
 					className="w-full"
