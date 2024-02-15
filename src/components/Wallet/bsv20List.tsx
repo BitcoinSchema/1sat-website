@@ -258,7 +258,7 @@ const Bsv20List = ({
 								{(all.confirmed / 10 ** dec).toLocaleString()}
 							</div>
 							<div className="text-right">
-								{addressProp === ordAddress.value &&
+								{(!addressProp || addressProp === ordAddress.value) &&
 								all.confirmed / 10 ** dec > 10000 ? (
 									<>
 										<button
