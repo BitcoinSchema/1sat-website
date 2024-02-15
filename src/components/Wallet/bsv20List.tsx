@@ -14,8 +14,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { FaHashtag } from "react-icons/fa";
-import { FaChevronRight } from "react-icons/fa6";
-import { FiSend } from "react-icons/fi";
+import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
+import { IoSend } from "react-icons/io5";
+import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { MarketData } from "../pages/TokenMarket/list";
 import WalletTabs from "./tabs";
@@ -262,33 +263,68 @@ const Bsv20List = ({
 							>
 								{(all.confirmed / 10 ** dec).toLocaleString()}
 							</div>
-							<div className="text-right">
-								{(!addressProp || addressProp === ordAddress.value) &&
-								all.confirmed / 10 ** dec > 10000 ? (
-									<>
-										<button
-											type="button"
-											className="btn btn-sm w-fit"
-											onClick={() => {
-												showSendModal.value = tick || id;
-											}}
-										>
-											<FiSend className="w-8" />
-										</button>
-										{showSendModal.value === (tick || id) && (
-											<TransferBsv20Modal
-												onClose={() => (showSendModal.value = undefined)}
-												type={type}
-												id={(tick || id)!}
-												dec={dec}
-												balance={all.confirmed / 10 ** dec}
-												sym={sym}
-											/>
-										)}
-									</>
-								) : (
-									<></>
-								)}
+							<div className="flex items-center gap-2">
+								<div className="text-right">
+									{(!addressProp || addressProp === ordAddress.value) &&
+									all.confirmed / 10 ** dec > 10000 ? (
+										<>
+											<button
+												type="button"
+												className="btn btn-xs w-fit"
+												onClick={() => {
+													showAirdrop.value = tick || id;
+												}}
+											>
+												<FaParachuteBox className="w-3" />
+											</button>
+											{
+												<AirdropTokensModal
+													onClose={() => {
+														showAirdrop.value = undefined;
+													}}
+													type={AssetType.BSV20}
+													dec={dec}
+													id={(tick || id)!}
+													open={
+														(!!tick && showAirdrop.value === tick) ||
+														(!!id && showAirdrop.value === id)
+													}
+													balance={all.confirmed}
+												/>
+											}
+										</>
+									) : (
+										<></>
+									)}
+								</div>
+								<div className="text-right">
+									{(!addressProp || addressProp === ordAddress.value) &&
+									all.confirmed / 10 ** dec > 10000 ? (
+										<>
+											<button
+												type="button"
+												className="btn btn-xs w-fit"
+												onClick={() => {
+													showSendModal.value = tick || id;
+												}}
+											>
+												<IoSend className="w-3" />
+											</button>
+											{showSendModal.value === (tick || id) && (
+												<TransferBsv20Modal
+													onClose={() => (showSendModal.value = undefined)}
+													type={type}
+													id={(tick || id)!}
+													dec={dec}
+													balance={all.confirmed / 10 ** dec}
+													sym={sym}
+												/>
+											)}
+										</>
+									) : (
+										<></>
+									)}
+								</div>
 							</div>
 						</React.Fragment>
 					);
