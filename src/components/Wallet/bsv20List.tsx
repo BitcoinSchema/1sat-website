@@ -60,9 +60,9 @@ const Bsv20List = ({
 				bsv20s.value?.map((u) => u.origin?.data?.bsv20?.tick as string) || [];
 			const fromBalances =
 				bsv20Balances.value?.map((b) => b.tick as string) || [];
-			const finalArray = unindexed.concat(fromBalances) || [];
+			const finalArray = (unindexed.concat(fromBalances) || []).filter((id) => !!id);
 			console.log({ finalArray });
-			const ids = uniq(finalArray).filter((id) => id !== null);
+			const ids = uniq(finalArray);
 			if (!ids.length) return;
 
 			tickerDetails.value = [];
