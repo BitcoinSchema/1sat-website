@@ -48,7 +48,7 @@ export const selectedType = new Signal<ArtifactType | null>(null);
 export const changeFilter = (type: ArtifactType) => {
   const str = artifactTypeMap.get(type);
   toast.success(`Filtering by ${type} ${str ? str : ''}`);
-  selectedType.value = type;
+  selectedType.value = type === ArtifactType.All ? null : type;
 }
 
 const excludeTypes = [ArtifactType.BSV20];
