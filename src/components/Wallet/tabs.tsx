@@ -49,7 +49,7 @@ const WalletTabs = ({
 				</div>
 			</div>
 			<div className="flex-none">
-				<Filter />
+				{type === AssetType.Ordinals && <Filter />}
 				<Link
 					className="btn btn-sm btn-square btn-ghost"
 					href={`/inscribe?tab=${type === AssetType.Ordinals ? "image" : type}`}

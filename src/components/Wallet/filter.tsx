@@ -33,7 +33,7 @@ const Filter = () => {
 			</div>
 			<ul className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
         {Object.entries(ArtifactType).filter(([key, value]) => {
-          return !Number.isNaN(Number(value));
+          return !Number.isNaN(Number(value)) && !excludeTypes.includes(value as ArtifactType);
         }).map(([key, value]) => {
           return <MenuItem key={key} type={value as ArtifactType} changeType={() => changeFilter(value as ArtifactType)} />
         })}
@@ -50,3 +50,5 @@ export const changeFilter = (type: ArtifactType) => {
   toast.success(`Filtering by ${Object.values(ArtifactType)[type]} ${str}`);
   selectedType.value = type;
 }
+
+const excludeTypes = [ArtifactType.BSV20];

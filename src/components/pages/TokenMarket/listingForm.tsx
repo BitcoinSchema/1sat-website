@@ -351,12 +351,13 @@ const ListingForm = ({
         </div>
 
         <div className="form-control w-full">
-          <label className="label">
+          <label className="label flex items-center justify-between">
             <span className="label-text">Price per token</span>
+            <span className="text-[#555]">Sats</span>
           </label>
           <input
             type="text"
-            placeholder="0.00"
+            placeholder="1000"
             className="input input-sm input-bordered"
             onChange={(e) => {
               listingPrice.value = e.target.value;
