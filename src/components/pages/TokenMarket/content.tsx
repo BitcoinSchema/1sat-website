@@ -2,7 +2,7 @@
 
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import CancelListingModal from "@/components/modal/cancelListing";
-import { API_HOST, AssetType } from "@/constants";
+import { API_HOST, AssetType, resultsPerPage } from "@/constants";
 import { bsv20Balances, chainInfo } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import { Listing } from "@/types/bsv20";
@@ -48,9 +48,9 @@ const TickerContent = ({
       if (newOffset.value === 0) {
         listings.value = [];
       }
-      let urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&tick=${id}`;
+      let urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=${resultsPerPage}&offset=${newOffset.value}&tick=${id}`;
       if (type === AssetType.BSV21) {
-        urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=${newOffset.value}&id=${id}`;
+        urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=${resultsPerPage}&offset=${newOffset.value}&id=${id}`;
       }
       newOffset.value += 20;
       const { promise: promiseBsv20v1Market } =
@@ -60,11 +60,13 @@ const TickerContent = ({
       if (nextPageOfListings.length > 0) {
         // For some reason this would return some items the same id from the first call so we filter them out
         listings.value = [
-          ...(listings.value || []),
-          ...nextPageOfListings.filter(
-            (l) => !listings.value?.some((l2) => l2.txid === l.txid)
+          ...(nextPageOfListings || []),
+          ...(listings.value || []).filter(
+            (l) => !nextPageOfListings?.some((l2) => l2.txid === l.txid)
           ),
-        ];
+        ].sort((a, b) => {
+          return parseInt(a.pricePer) < parseInt(b.pricePer) ? -1 : 1;
+        })
       } else {
         reachedEndOfListings.value = true;
       }

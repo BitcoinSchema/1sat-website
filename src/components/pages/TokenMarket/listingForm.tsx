@@ -308,6 +308,7 @@ const ListingForm = ({
           satoshisPayout,
           indexerAddress
         );
+       
         pendingTxs.value = [pendingTx];
         router.push("/preview");
       } catch (e) {

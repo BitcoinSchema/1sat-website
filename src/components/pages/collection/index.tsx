@@ -25,7 +25,7 @@ const CollectionPage = ({ stats, items, collection }: Props) => {
               size={600}
               sizes={"100vw"}
               priority={idx < 10}
-              showListingTag={item.data?.list?.price ? true : false}
+              showListingTag={!!item.data?.list?.price}
             />
           );
         })}

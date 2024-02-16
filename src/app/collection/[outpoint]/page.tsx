@@ -9,10 +9,11 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
   const { promise: promiseCollection } =
     http.customFetch<OrdUtxo>(collectionUrl);
   const collection = await promiseCollection;
+
   const collectionStatsUrl = `${API_HOST}/api/collections/${params.outpoint}/stats`;
   const { promise } = http.customFetch<CollectionStats>(collectionStatsUrl);
   const stats = (await promise) || [];
-
+  
   const q = {
     map: {
       subTypeData: {
@@ -20,13 +21,17 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
       },
     },
   };
-  const collectionItemsUrl = `${API_HOST}/api/inscriptions/search?q=${btoa(
+  const collectionItemsUrl = `${API_HOST}/api/inscriptions/search?limit=1000&q=${btoa(
     JSON.stringify(q)
-  )}`;
-  const { promise: promiseItems } =
+    )}`;
+    const { promise: promiseItems } =
     http.customFetch<OrdUtxo[]>(collectionItemsUrl);
-  const items = (await promiseItems) || [];
-  return <CollectionPage stats={stats} items={items} collection={collection} />;
+    const items = (await promiseItems) || [];
+    const collectionMarketUrl = `${API_HOST}/api/market?limit=1000&q=${btoa(JSON.stringify(q))}`;
+    const { promise: promiseMarket } = http.customFetch<OrdUtxo[]>(collectionMarketUrl);
+    const market = (await promiseMarket) || [];
+    const both = market.concat(items.filter((i) => !market.find((m) => m.outpoint === i.outpoint)));
+  return <CollectionPage stats={stats} items={both} collection={collection} />;
 };
 
 export default Collection;
