@@ -30,7 +30,7 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
     const collectionMarketUrl = `${API_HOST}/api/market?limit=1000&q=${btoa(JSON.stringify(q))}`;
     const { promise: promiseMarket } = http.customFetch<OrdUtxo[]>(collectionMarketUrl);
     const market = (await promiseMarket) || [];
-    const both = market.concat(items.filter((i) => !market.find((m) => m.outpoint === i.outpoint)));
+    const both = market.concat(items.filter((i) => !market.find((m) => m.origin?.outpoint === i.origin?.outpoint)));
   return <CollectionPage stats={stats} items={both} collection={collection} />;
 };
 
