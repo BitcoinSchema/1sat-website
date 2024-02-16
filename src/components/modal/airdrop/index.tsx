@@ -1,6 +1,7 @@
 "use client";
 
 import { Holder } from "@/components/pages/TokenMarket/list";
+import { Meteors } from "@/components/ui/meteors";
 import { API_HOST, AssetType, toastErrorProps } from "@/constants";
 import {
   bsvWasmReady,
@@ -306,7 +307,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                 type="number"
                 placeholder="0.00000000"
                 max={balance}
-                className="input input-bordered w-full"
+                className="z-20 input input-bordered w-full"
                 value={amount.value || "0"}
                 onChange={(e) => {
                   if (
@@ -325,7 +326,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
               <input
                 type="text"
                 placeholder="RUG, PEPE, EGG, LOVE, SHGR"
-                className="input input-bordered w-full"
+                className="z-20 input input-bordered w-full"
                 value={destinationTickers.value}
                 onChange={(e) => {
                   destinationTickers.value = e.target.value;
@@ -339,7 +340,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
               <input
                 type="text"
                 placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-                className="input input-bordered w-full"
+                className="z-20 input input-bordered w-full"
                 value={address.value}
                 onChange={(e) => {
                   address.value = e.target.value;
@@ -352,6 +353,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
               </button>
             </div>
           </form>
+          <Meteors number={20} />
         </div>
       </div>
     </dialog>
