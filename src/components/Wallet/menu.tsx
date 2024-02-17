@@ -15,7 +15,7 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { loadKeysFromBackupFiles } from "@/signals/wallet/client";
+import { loadKeysFromBackupFiles, setOrdPk, setPayPk } from "@/signals/wallet/client";
 import { BSV20Balance } from "@/types/bsv20";
 import { ChainInfo, IndexerStats } from "@/types/common";
 import { PendingTransaction } from "@/types/preview";
@@ -245,6 +245,10 @@ const WalletMenu: React.FC = () => {
                 </button>
               </li>
               <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
+                <Link href="/wallet/swap">Swap Keys</Link>
+              </li>
+              
+              <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/delete">Sign Out</Link>
               </li>
             </ul>
@@ -311,4 +315,17 @@ export const backupKeys = () => {
   clicker.setAttribute("href", dataStr);
   clicker.setAttribute("download", "1sat.json");
   clicker.click();
+};
+
+
+export const swapKeys = () => {
+  // swaps paypk with ordpk values
+  const tempPayPk = payPk.value;
+  const tempOrdPk = ordPk.value;
+  if (!tempPayPk || !tempOrdPk) {
+    return;
+  }
+  setOrdPk(tempPayPk);
+  setPayPk(tempOrdPk);
+  toast.success("Keys Swapped");
 };
