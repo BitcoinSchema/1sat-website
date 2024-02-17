@@ -13,22 +13,23 @@ const AddressPage = async ({ params }: { params: { address: string } }) => {
 	const historyUrl = `${API_HOST}/api/txos/address/${params.address}/history`;
 	const { promise } = http.customFetch<OrdUtxo[]>(historyUrl);
 	const history = await promise;
-	// fetch txos
-	const txosUrl = `${API_HOST}/api/txos/address/${params.address}/unspent`;
-	const { promise: txosPromise } = http.customFetch<OrdUtxo[]>(txosUrl);
-	const txos = await txosPromise;
 
-	// unindexed bsv20 txos
-	const bsv20txosUrl = `${API_HOST}/api/txos/address/${params.address}/unspent?bsv20=true`;
-	const { promise: bsv20TxosPromise } =
-		http.customFetch<OrdUtxo[]>(bsv20txosUrl);
-	const bsv20Txos = await bsv20TxosPromise;
+  // // fetch txos
+	// const txosUrl = `${API_HOST}/api/txos/address/${params.address}/unspent`;
+	// const { promise: txosPromise } = http.customFetch<OrdUtxo[]>(txosUrl);
+	// const txos = await txosPromise;
 
-	// bsv20s
-	const bsv20BalanceUrl = `${API_HOST}/api/bsv20/${params.address}/balance`;
-	const { promise: bsv20BalancePromise } =
-		http.customFetch<OrdUtxo[]>(bsv20BalanceUrl);
-	const bsv20Balance = await bsv20BalancePromise;
+	// // unindexed bsv20 txos
+	// const bsv20txosUrl = `${API_HOST}/api/txos/address/${params.address}/unspent?bsv20=true`;
+	// const { promise: bsv20TxosPromise } =
+	// 	http.customFetch<OrdUtxo[]>(bsv20txosUrl);
+	// const bsv20Txos = await bsv20TxosPromise;
+
+	// // bsv20s
+	// const bsv20BalanceUrl = `${API_HOST}/api/bsv20/${params.address}/balance`;
+	// const { promise: bsv20BalancePromise } =
+	// 	http.customFetch<OrdUtxo[]>(bsv20BalanceUrl);
+	// const bsv20Balance = await bsv20BalancePromise;
 
 	return (
 		<div className="mx-auto">
