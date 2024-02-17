@@ -25,7 +25,10 @@ const MarketMenu: React.FC = () => {
 		<>
 			<div className="hidden md:block dropdown dropdown-end">
 				<div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
-					1 BSV = <span className="text-emerald-300/50">${exchangeRate.value.toFixed(2)}</span>
+					1 BSV ={" "}
+					<span className="text-emerald-300/50">
+						${exchangeRate.value.toFixed(2)}
+					</span>
 				</div>
 			</div>
 			<div className="dropdown dropdown-end">
@@ -37,21 +40,21 @@ const MarketMenu: React.FC = () => {
 					<FaStore />
 				</div>
 
-				<div className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64">
-					<>
-						<ul className="p-0">
-							<li>
-								<Link href="/market/ordinals">Ordinals</Link>
-							</li>
-							<li>
-								<Link href="/market/bsv20">BSV20</Link>
-							</li>
-							<li>
-								<Link href="/market/bsv21">BSV21</Link>
-							</li>
-						</ul>
-					</>
-				</div>
+				<ul
+					// biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
+					tabIndex={0}
+					className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64"
+				>
+					<li>
+						<Link href="/market/ordinals">Ordinals</Link>
+					</li>
+					<li>
+						<Link href="/market/bsv20">BSV20</Link>
+					</li>
+					<li>
+						<Link href="/market/bsv21">BSV21</Link>
+					</li>
+				</ul>
 			</div>
 		</>
 	);

@@ -26,7 +26,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import init from "bsv-wasm-web";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useEffect } from "react";
+import { ChangeEvent, SyntheticEvent, useEffect } from "react";
 import toast from "react-hot-toast";
 import { FaFileImport, FaPlus } from "react-icons/fa";
 import { FaCopy, FaWallet } from "react-icons/fa6";
@@ -133,15 +133,13 @@ const WalletMenu: React.FC = () => {
     }
   });
 
-  const importKeys = () => {
+  const importKeys = (e: SyntheticEvent) => {
+    e.preventDefault();
     const el = document.getElementById("backupFile");
     el?.click();
     return;
   };
 
-  const createWallet = () => {
-    router?.push("/wallet/create");
-  };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -153,7 +151,7 @@ const WalletMenu: React.FC = () => {
   };
 
   return (
-    <div className="dropdown dropdown-end">
+    <ul className="dropdown dropdown-end">
       <div
         className="btn btn-ghost m-1 rounded relative"
         tabIndex={0}
@@ -162,9 +160,10 @@ const WalletMenu: React.FC = () => {
         <FaWallet />
       </div>
 
-      <div className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64">
+      {/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
+<ul tabIndex={0} className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64">
         {payPk.value && ordPk.value && (
-          <>
+          <div>
             <div className="text-center mb-2">
               <div className="text-[#555] text-lg">Balance</div>
               <div className="text-2xl font-mono my-2">
@@ -248,21 +247,17 @@ const WalletMenu: React.FC = () => {
               <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/delete">Sign Out</Link>
               </li>
-            </ul>{" "}
-          </>
+            </ul>
+          </div>
         )}
         {!payPk.value && !ordPk.value && (
           <>
             <ul className="p-0">
               <li>
-                <button
-                  type="button"
-                  onClick={createWallet}
-                  className="flex flex-row items-center justify-between w-full"
-                >
+                <Link href="/wallet/create" className="flex w-full flex-row items-center justify-between">
                   Create New Wallet
                   <FaPlus className="w-4 h-4" />
-                </button>
+                </Link>
               </li>
             </ul>
             <ul className="p-0">
@@ -279,7 +274,7 @@ const WalletMenu: React.FC = () => {
             </ul>
           </>
         )}
-      </div>
+      </ul>
       {showDepositModal.value && (
         <DepositModal
           onClose={() => {
@@ -301,7 +296,7 @@ const WalletMenu: React.FC = () => {
         onChange={handleFileChange}
         type="file"
       />
-    </div>
+    </ul>
   );
 };
 
