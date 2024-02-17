@@ -57,7 +57,7 @@ const AddressPage = async ({ params }: { params: { address: string } }) => {
 				<ul>
           {history.map((txo) => (
             <li key={txo.txid}>
-              <Link href={`/tx/${txo.outpoint}`}>{txo.outpoint}</Link>
+              <Link href={`/outpoint/${txo.outpoint}`}>{txo.outpoint}</Link>
             </li>
           ))}
         </ul>
