@@ -1,9 +1,9 @@
 "use client";
 
-import { resultsPerPage } from "@/constants";
+import { API_HOST, resultsPerPage } from "@/constants";
 import { ordUtxos } from "@/signals/wallet";
 import { OrdUtxo } from "@/types/ordinals";
-import { getMarketListings, getOutpoints } from "@/utils/address";
+import { getOutpoints } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -12,7 +12,7 @@ import { useInView } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { FiLoader } from "react-icons/fi";
 import { selectedType } from "../Wallet/filter";
-import { ArtifactType } from "../artifact";
+import { ArtifactType, artifactTypeMap } from "../artifact";
 import Ordinals from "../ordinals";
 import { checkOutpointFormat } from "./helpers";
 
@@ -47,7 +47,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
     status,
   } = useInfiniteQuery({
     queryKey: ["ordinals", address, selectedType.value],
-    queryFn: ({ pageParam }) => getMarketListings({ address, pageParam, selectedType: selectedType.value }),
+    queryFn: ({ pageParam }) => getWalletOrdUtxos({ address, pageParam, selectedType: selectedType.value }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
       if (lastPage?.length === resultsPerPage) {
         return lastPageParam + 1;
@@ -162,3 +162,35 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
 };
 
 export default GridList;
+
+export const getWalletOrdUtxos = async ({
+	address,
+	pageParam,
+	selectedType,
+}: {
+	address: string;
+	pageParam: number;
+	selectedType: ArtifactType | null;
+}) => {
+	if (!address) return;
+	console.log("getOrdUtxos called", address, pageParam, selectedType);
+	const offset = resultsPerPage * pageParam;
+	let url = `${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${offset}&dir=DESC&status=all&bsv20=false`;
+
+  if (selectedType && selectedType !== ArtifactType.All) {
+    url += `&type=${artifactTypeMap.get(selectedType)}`;
+  }
+	const res = await fetch(url);
+	// filter for the selected type
+	const json = res.json() as Promise<OrdUtxo[]>;
+	
+	const result = await json;
+	const final = selectedType !== ArtifactType.All
+		? result.filter((o) => {
+				return o.origin?.data?.insc?.file.type?.startsWith(
+					artifactTypeMap.get(selectedType as ArtifactType) as string,
+				);
+		  })
+		: result;
+	return final;
+};

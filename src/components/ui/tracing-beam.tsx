@@ -39,7 +39,7 @@ export const TracingBeam = ({
     return scrollYProgressVelocity.onChange((latestVelocity) => {
       setVelocity(latestVelocity);
     });
-  }, []);
+  }, [scrollYProgressVelocity]);
 
   const y1 = useSpring(
     useTransform(scrollYProgress, [0, 0.8], [50, svgHeight - velo * 500]),

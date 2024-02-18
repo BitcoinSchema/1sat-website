@@ -68,7 +68,7 @@ const OutpointPage = async ({
 							sizes={"100vw"}
 							glow={true}
 							classNames={{
-								wrapper: `w-full ${
+								wrapper: `${
 									activeTab === OutpointTab.Inscription ? "md:w-2/3" : ""
 								}`,
 							}}

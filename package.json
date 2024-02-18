@@ -55,6 +55,7 @@
     "styled-components": "^6.1.8",
     "tailwind-merge": "^2.2.1",
     "text-encoder-lite": "^2.0.0",
+    "three": "^0.161.0",
     "usehooks-ts": "^2.9.4",
     "uuid": "^9.0.1"
   },

@@ -1,12 +1,10 @@
 
-import { toastProps } from "@/constants";
 import {
   ExtendedPrivateKey,
   P2PKHAddress,
   PrivateKey,
   PublicKey,
 } from "bsv-wasm";
-import toast from "react-hot-toast";
 import { generateMnemonic } from "./mnemonic";
 
 export type WalletKeys = {
@@ -75,10 +73,11 @@ export const randomMnemonic: () => Promise<WalletKeys> = () => {
       if (ordAddress.to_string().startsWith("1s")) {
         ordPk = ordPrivKey.get_private_key().to_wif();
         found = true;
-        toast.success(
-          `Ord address found! Using child key ${i} for ordinals.`,
-          toastProps
-        );
+        console.log(`Ord address found! Using child key ${i} for ordinals.`);
+        // toast.success(
+        //   `Ord address found! Using child key ${i} for ordinals.`,
+        //   toastProps
+        // );
         resolve({
           mnemonic,
           payPk,

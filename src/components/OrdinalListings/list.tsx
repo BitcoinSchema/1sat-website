@@ -2,7 +2,8 @@
 
 import { AssetType, resultsPerPage } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
-import { getMarketListings, getOutpoints } from "@/utils/address";
+import { getOutpoints } from "@/utils/address";
+import { getMarketListings } from "@/utils/artifact";
 import { useLocalStorage } from "@/utils/storage";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";

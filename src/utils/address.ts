@@ -1,4 +1,3 @@
-import { ArtifactType, artifactTypeMap } from "@/components/artifact";
 import { API_HOST, resultsPerPage } from "@/constants";
 import { WocUtxo } from "@/types/common";
 import { OrdUtxo } from "@/types/ordinals";
@@ -55,37 +54,6 @@ export const getUtxos = async (address: string) => {
         .to_asm_string(),
     };
   });
-};
-
-
-export const getMarketListings = async ({
-	pageParam,
-	selectedType,
-}: {
-	pageParam: number;
-	selectedType: ArtifactType | null;
-}) => {
-	console.log("getOrdUtxos called", pageParam, selectedType);
-	const offset = resultsPerPage * pageParam;
-	let url = `${API_HOST}/api/market?limit=${resultsPerPage}&offset=${offset}&dir=DESC`;
-
-  if (selectedType && selectedType !== ArtifactType.All) {
-    url += `&type=${artifactTypeMap.get(selectedType)}`;
-  }
-  console.log("Using url", url);  
-	const res = await fetch(url);
-	// filter for the selected type
-	const json = res.json() as Promise<OrdUtxo[]>;
-	
-	const result = await json;
-	const final = selectedType !== ArtifactType.All
-		? result.filter((o) => {
-				return o.origin?.data?.insc?.file.type?.startsWith(
-					artifactTypeMap.get(selectedType as ArtifactType) as string,
-				);
-		  })
-		: result;
-	return final;
 };
 
 export const getOutpoints = async (ids: string[], script: boolean) => {

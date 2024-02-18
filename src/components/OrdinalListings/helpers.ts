@@ -25,7 +25,8 @@ export const checkOutpointFormat = (outpoint: string) => {
 	return true;
 };
 
-export const getOrdUtxos = async ({
+// TODO: this is a duplicate of two other requests mixed in one getOrdUtxos and getMarketListings used by ./view
+export const getOrdList = async ({
 	address,
 	pageParam,
 	selectedType,

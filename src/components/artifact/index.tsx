@@ -5,8 +5,8 @@ import { OrdUtxo, SIGMA } from "@/types/ordinals";
 import { getArtifactType } from "@/utils/artifact";
 import { toBase64 } from "@/utils/string";
 import { head } from "lodash";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import Script from "next/script";
 import React, { useEffect, useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
@@ -14,7 +14,6 @@ import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import ImageWithFallback from "../ImageWithFallback";
 import BuyArtifactModal from "../modal/buyArtifact";
-import Model from "../model";
 import Tooltip from "../tooltip";
 import AudioArtifact from "./audio";
 import HTMLArtifact from "./html";
@@ -22,6 +21,13 @@ import JsonArtifact from "./json";
 import MarkdownArtifact from "./markdown";
 import TextArtifact from "./text";
 import VideoArtifact from "./video";
+
+const Model = dynamic(
+  () => import('../model'),
+  {
+    ssr: false,
+  },
+);
 
 export enum ArtifactType {
 	All = "All",
@@ -246,20 +252,23 @@ const Artifact: React.FC<ArtifactProps> = ({
 			</div>
 		) : type === ArtifactType.Model ? (
 			<>
-				<Script
+				{/* <Script
 					async
 					strategy="afterInteractive"
 					type="module"
-					src="https://unpkg.com/@google/model-viewer@^2.1.1/dist/model-viewer.min.js"
+					src="https://unpkg.com/@google/model-viewer@^3.4.0/dist/model-viewer.min.js"
 					defer
-				/>
-				<div
+				/> */}
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+        <div
 					className={`w-full ${classNames?.wrapper || ""} ${
 						classNames?.media || ""
 					}`}
 					onClick={(e) => {
+            if (showFooter) {
 						e.preventDefault();
 						e.stopPropagation();
+            }
 					}}
 					onAuxClick={(e) => {
 						console.log("middle click");
