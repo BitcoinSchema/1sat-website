@@ -3,10 +3,7 @@ import React, { Suspense } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import SlideshowLoader from "./loader";
 
-export interface HomePageProps {}
-
-const HomePage: React.FC<HomePageProps> = async () => {
-  // every 30 seconds rotate the top artifact to the bottom
+const HomePage: React.FC = async () => {
   return (
     <>
       <main className="px-4 flex items-center justify-center h-full w-full min-h-[calc(100dvh-15rem+)]">

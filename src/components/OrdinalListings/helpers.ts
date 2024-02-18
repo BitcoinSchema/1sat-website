@@ -45,6 +45,7 @@ export const getOrdUtxos = async ({
   if (selectedType && selectedType !== ArtifactType.All) {
     url += `&type=${artifactTypeMap.get(selectedType)}`;
   }
+  console.log("Using url", url);  
 	const res = await fetch(url);
 	// filter for the selected type
 	const json = res.json() as Promise<OrdUtxo[]>;

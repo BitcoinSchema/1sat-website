@@ -1,21 +1,24 @@
 "use client";
 
-import { AssetType } from "@/constants";
+import { AssetType, resultsPerPage } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
+import { getMarketListings, getOutpoints } from "@/utils/address";
+import { useLocalStorage } from "@/utils/storage";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInView } from "framer-motion";
 import Link from "next/link";
-import { MutableRefObject } from "react";
+import { MutableRefObject, useEffect } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import { FiLoader } from "react-icons/fi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import JDenticon from "../JDenticon";
-import Artifact from "../artifact";
+import { selectedType } from "../Wallet/filter";
+import Artifact, { ArtifactType } from "../artifact";
 import BuyBtn from "./buy";
 import {
   checkOutpointFormat,
-  getOutpoints,
   listingCollection,
   listingName,
   mintNumber,
@@ -25,10 +28,69 @@ interface Props {
   refProp: MutableRefObject<null>;
 }
 
-const List = ({ listings, refProp }: Props) => {
+const List = ({ listings: listingsProp, refProp }: Props) => {
   useSignals();
+  const isInView = useInView(refProp);
+
+  const listings = useSignal<OrdUtxo[]>(listingsProp || []);
+
+  const [selectedArtifactType, setSelectedArtifactType] = useLocalStorage<ArtifactType>("1ssmartt", ArtifactType.All);
+
+  useEffect(() => {
+    // init from localStorage when available and not already set
+    if (!selectedType.value && !!selectedArtifactType) {
+      selectedType.value = selectedArtifactType || null;
+    }
+  }, [selectedArtifactType, selectedType]);
+
+const {
+  data,
+  error,
+  fetchNextPage,
+  hasNextPage,
+  isFetching,
+  isFetchingNextPage,
+  status,
+} = useInfiniteQuery({
+  queryKey: ["ordinals", selectedType.value],
+  queryFn: ({ pageParam }) => getMarketListings({ pageParam, selectedType: selectedType.value }),
+  getNextPageParam: (lastPage, pages, lastPageParam) => {
+    if (lastPage?.length === resultsPerPage) {
+      return lastPageParam + 1;
+    }
+    return undefined;
+  },
+  initialPageParam: 0,
+});
+
+
+  // set the ord utxos
+  useEffect(() => {
+    if (data) {
+      console.log("data", data) 
+      const pageData = data.pages[data.pages.length - 1];
+      if (pageData !== undefined) {
+        const u = data.pages.reduce((acc, val) => (acc || []).concat(val || []), []);
+        if (u) {
+          listings.value = u || [];
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, listings, data?.pages[data.pages.length - 1]]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    const newPageData = data?.pages[data.pages.length - 1];
+    if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
+      fetchNextPage();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInView]);
+
+
   const collectionIds = computed(() =>
-    listings?.reduce((i, v) => {
+    listings.value?.reduce((i, v) => {
       const cid = v.origin?.data?.map?.subTypeData?.collectionId;
       if (cid && checkOutpointFormat(cid)) {
         i.push(cid);
@@ -37,13 +99,16 @@ const List = ({ listings, refProp }: Props) => {
     }, [] as string[])
   );
 
-  const { data: collectionData, isFetching } = useQuery({
+  const { data: collectionData, isFetching: isFetchingCollections } = useQuery({
     queryKey: [
       "collections",
       collectionIds.value && collectionIds.value?.length > 0,
     ],
     queryFn: () => getOutpoints(collectionIds.value!, false),
   });
+
+  
+
 
   const collections = useSignal(collectionData || []);
   console.log({
@@ -52,9 +117,9 @@ const List = ({ listings, refProp }: Props) => {
   });
 
   return (
-    listings && (
+    listings.value && (
       <tbody className="h-full">
-        {listings.map((listing, idx) => {
+        {listings.value.map((listing, idx) => {
           const size = 100;
           const collection = listingCollection(listing, collections);
           const price = `${toBitcoin(

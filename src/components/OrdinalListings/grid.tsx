@@ -3,6 +3,7 @@
 import { resultsPerPage } from "@/constants";
 import { ordUtxos } from "@/signals/wallet";
 import { OrdUtxo } from "@/types/ordinals";
+import { getMarketListings, getOutpoints } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -13,7 +14,7 @@ import { FiLoader } from "react-icons/fi";
 import { selectedType } from "../Wallet/filter";
 import { ArtifactType } from "../artifact";
 import Ordinals from "../ordinals";
-import { checkOutpointFormat, getOrdUtxos, getOutpoints } from "./helpers";
+import { checkOutpointFormat } from "./helpers";
 
 interface Props {
   address: string;
@@ -46,7 +47,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
     status,
   } = useInfiniteQuery({
     queryKey: ["ordinals", address, selectedType.value],
-    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam, selectedType: selectedType.value }),
+    queryFn: ({ pageParam }) => getMarketListings({ address, pageParam, selectedType: selectedType.value }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
       if (lastPage?.length === resultsPerPage) {
         return lastPageParam + 1;
