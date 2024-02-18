@@ -30,7 +30,7 @@ const Market = async ({ params }: { params: { tab: AssetType, id: string } }) =>
           id={tickOrId}
         />
       );
-    case AssetType.LRC20:
+    case AssetType.LRC20: {
       const q = {
         insc: {
           json: {
@@ -66,6 +66,7 @@ const Market = async ({ params }: { params: { tab: AssetType, id: string } }) =>
           selectedAssetType={AssetType.LRC20}
         />
       );
+    }
     default:
       return null;
   }

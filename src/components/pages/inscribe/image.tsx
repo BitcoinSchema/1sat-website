@@ -248,6 +248,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
         <div>Add Metadata (optional)</div>
         <div>
           <button
+            type="button"
             className="bg-yellow-600 hover:bg-yellow-700 transition text-white p-1 rounded ml-2"
             onClick={() => {
               let key = "";

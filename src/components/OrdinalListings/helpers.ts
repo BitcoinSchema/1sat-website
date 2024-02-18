@@ -25,7 +25,8 @@ export const checkOutpointFormat = (outpoint: string) => {
 	return true;
 };
 
-export const getOrdUtxos = async ({
+// TODO: this is a duplicate of two other requests mixed in one getOrdUtxos and getMarketListings used by ./view
+export const getOrdList = async ({
 	address,
 	pageParam,
 	selectedType,
@@ -45,6 +46,7 @@ export const getOrdUtxos = async ({
   if (selectedType && selectedType !== ArtifactType.All) {
     url += `&type=${artifactTypeMap.get(selectedType)}`;
   }
+  console.log("Using url", url);  
 	const res = await fetch(url);
 	// filter for the selected type
 	const json = res.json() as Promise<OrdUtxo[]>;

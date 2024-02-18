@@ -42,7 +42,7 @@ export const createChangeOutput = (
 
   // get total satoshis out
   const outs = tx.get_noutputs();
-  let totalSatoshisOut: bigint = 0n;
+  let totalSatoshisOut = 0n;
   for (let i = 0; i < outs; i++) {
     const out = tx.get_output(i);
     totalSatoshisOut += out?.get_satoshis() || BigInt(0);

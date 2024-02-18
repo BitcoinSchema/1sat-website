@@ -2,6 +2,7 @@ import { API_HOST, resultsPerPage } from "@/constants";
 import { WocUtxo } from "@/types/common";
 import { OrdUtxo } from "@/types/ordinals";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
+import { uniq } from "lodash";
 import * as http from "./httpClient";
 
 export const addressFromWif = (payPk: string) => {
@@ -53,4 +54,21 @@ export const getUtxos = async (address: string) => {
         .to_asm_string(),
     };
   });
+};
+
+export const getOutpoints = async (ids: string[], script: boolean) => {
+	const url = `${API_HOST}/api/txos/outpoints?script=${script}`;
+	console.log("almost", url, "with", ids);
+	const uniqueIds = uniq(ids);
+	console.log("hitting", url, "with", uniqueIds);
+
+	const res = await fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(uniqueIds),
+	});
+	const json = (await res.json()) as OrdUtxo[];
+	return json;
 };

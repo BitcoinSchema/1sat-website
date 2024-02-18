@@ -92,12 +92,12 @@ const List = async ({
       http.customFetch<MarketData[]>(urlV1Market);
     marketData = (await promiseBsv20v1Market).sort((a, b) => {
       
-      // if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
-      //   return 1;
-      // }
-      // if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
-      //   return -1;
-      // }
+      if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
+        return 1;
+      }
+      if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
+        return -1;
+      }
       return a.num < b.num ? -1 : 1;
       // return a.marketCap > b.marketCap ? -1 : 1;
     });
@@ -110,16 +110,20 @@ const List = async ({
     const { promise: promiseBsv21Market } =
       http.customFetch<MarketData[]>(urlV2Market);
     marketData = (await promiseBsv21Market)
-    // .sort((a, b) => {
-    //   if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
-    //     return 1;
-    //   }
-    //   if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
-    //     return -1;
-    //   }
-    //   return a.marketCap > b.marketCap ? -1 : 1;
-    // });
+    .sort((a, b) => {
+      if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
+        return 1;
+      }
+      if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
+        return -1;
+      }
+      return a.marketCap > b.marketCap ? -1 : 1;
+    });
   }
+
+
+  // do the above, but with infinite query
+
   return (
     <tbody className="overflow-auto">
       {marketData.map((ticker, idx) => {

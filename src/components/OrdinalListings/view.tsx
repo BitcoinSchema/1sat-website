@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import { OrdViewMode } from ".";
 import { selectedType } from "../Wallet/filter";
 import GridList from "./grid";
-import { getOrdUtxos } from "./helpers";
+import { getOrdList } from "./helpers";
 import List from "./list";
 
 interface ViewProps {
@@ -39,7 +39,7 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
     status,
   } = useInfiniteQuery({
     queryKey: ["ordinals", address, selectedType.value],
-    queryFn: ({ pageParam }) => getOrdUtxos({ address, pageParam, selectedType: selectedType.value }),
+    queryFn: ({ pageParam }) => getOrdList({ address, pageParam, selectedType: selectedType.value }),
     getNextPageParam: (lastPage, pages, lastPageParam) => {
       if (lastPageParam === 0) {
         return lastPageParam + 1;
@@ -71,7 +71,7 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
         }
       }
     }
-  }, [data, listings]);
+  }, [data, data?.pages.length, listings]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
