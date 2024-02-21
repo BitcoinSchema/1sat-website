@@ -1,5 +1,5 @@
 import JDenticon from "@/components/JDenticon";
-import { AssetType } from "@/constants";
+import { API_HOST, AssetType } from "@/constants";
 import { BSV20 } from "@/types/bsv20";
 import Link from "next/link";
 import { NextRequest } from "next/server";
@@ -16,7 +16,17 @@ const Page = async ({
 }: {
 	params: { type: AssetType; id: string };
 }) => {
-	const { id, type, details, holders } = await getData(params.type, params.id);
+	const type = params.type;
+	const id = params.id;
+
+	const url =
+		type === AssetType.BSV20
+			? `${API_HOST}/api/bsv20/tick/${id}`
+			: `${API_HOST}/api/bsv20/id/${id}`;
+
+	const details = await getDetails(new NextRequest(url));
+
+	const holders = await getHolders(new NextRequest(`${url}/holders`), details);
 	return (
 		<div className="mx-auto flex flex-col max-w-5xl w-full">
 			<h1 className="text-xl px-6">
@@ -69,23 +79,20 @@ const Page = async ({
 
 export default Page;
 
-const getData = async (type: AssetType, id: string) => {
-	const res = await import("./data/route");
-  // empty nextRequest :(
-  const nextRequest = new NextRequest("");
+const getDetails = async (req: NextRequest) => {
+	const res = await import("./details/route");
+	return (await (await res.GET(req)).json()) as BSV20;
+};
+
+const getHolders = async (req: NextRequest, details: BSV20) => {
+	const res = await import("./holders/route");
 	const json = await (
-		await res.GET(nextRequest, {
+		await res.GET(req, {
 			params: {
-				type,
-				id,
+				details,
 			},
 		})
 	).json();
 
-	return json as {
-		holders: Holder[];
-		details: BSV20;
-		type: AssetType;
-		id: string;
-	};
-}
+	return json as Holder[];
+};
