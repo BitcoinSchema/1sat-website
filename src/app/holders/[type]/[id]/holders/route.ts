@@ -24,7 +24,7 @@ export async function POST(
 			? `${API_HOST}/api/bsv20/tick/${params.id}/holders`
 			: `${API_HOST}/api/bsv20/id/${params.id}/holders`;
 
-	const holdersResp = await fetch(url);
+	const holdersResp = await fetch(`${url}?limit=1000`);
 	const holdersJson = ((await holdersResp.json()) || []) as Holder[];
 
 	const holders = holdersJson
