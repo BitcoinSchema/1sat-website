@@ -3,7 +3,6 @@ import { API_HOST, AssetType } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { redirect } from "next/navigation";
-import React from "react";
 
 const Market = async ({ params }: { params: { tab: AssetType, id: string } }) => {
   // hit the details request

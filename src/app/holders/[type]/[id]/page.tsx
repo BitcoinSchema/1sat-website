@@ -24,9 +24,8 @@ const Page = async ({
 			? `${API_HOST}/api/bsv20/tick/${id}`
 			: `${API_HOST}/api/bsv20/id/${id}`;
 
-	const details = await getDetails(new NextRequest(url));
-
-	const holders = await getHolders(new NextRequest(`${url}/holders`), details);
+	const details = await getDetails(new NextRequest(url), type, id);
+	const holders = await getHolders(new NextRequest(`${url}/holders`), type, id, details);
 	return (
 		<div className="mx-auto flex flex-col max-w-5xl w-full">
 			<h1 className="text-xl px-6">
@@ -47,7 +46,7 @@ const Page = async ({
 					<div className="w-24 text-right">Holdings</div>
 					<div className="w-12 text-right">Ownership</div>
 					<div className="divider col-span-3" />
-					{(holders || []).map((h) => {
+					{((holders || []) as Holder[]).map((h) => {
 						const pctWidth = `${h.pct}%`;
 						return (
 							<React.Fragment key={`${id}-holder-${h.address}`}>
@@ -79,20 +78,29 @@ const Page = async ({
 
 export default Page;
 
-const getDetails = async (req: NextRequest) => {
+const getDetails = async (req: NextRequest, type: AssetType, id: string) => {
 	const res = await import("./details/route");
-	return (await (await res.GET(req)).json()) as BSV20;
+	const resp = await res.GET(req, {
+		params: {
+			type,
+			id,
+		},
+	});
+	const details = (await resp.json()) as BSV20;
+	return details;
 };
 
-const getHolders = async (req: NextRequest, details: BSV20) => {
+const getHolders = async (req: NextRequest, type: AssetType, id: string, details: BSV20) => {
 	const res = await import("./holders/route");
 	const json = await (
-		await res.GET(req, {
+		await res.POST(req, {
 			params: {
+        type,
+        id,
 				details,
 			},
 		})
 	).json();
 
-	return json as Holder[];
+	return json || ([] as Holder[]);
 };

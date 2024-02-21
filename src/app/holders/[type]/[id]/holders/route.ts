@@ -1,4 +1,5 @@
 import { Holder } from "@/components/pages/TokenMarket/list";
+import { API_HOST, AssetType } from "@/constants";
 import { BSV20 } from "@/types/bsv20";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -10,27 +11,30 @@ interface TickHolder {
 
 export const dynamic = "force-dynamic"; // defaults to auto
 
-export async function GET(request: NextRequest, {
+export async function POST(
+	request: NextRequest,
+	{
 		params,
 	}: {
-		params: { details: BSV20 };
+		params: { type: AssetType; id: string; details?: BSV20 };
 	},
 ) {
-  const details = params.details;
-	
-	// holders
-	const resHolders = await fetch(request.url, {
-		next: { revalidate: 60 }, // Revalidate every 60 seconds
-	});
-	const holdersResp = (await resHolders.json()) as Holder[];
-	const holders = holdersResp
-		.sort((a, b) => parseInt(b.amt) - parseInt(a.amt))
+	const url =
+		params.type === AssetType.BSV20
+			? `${API_HOST}/api/bsv20/tick/${params.id}/holders`
+			: `${API_HOST}/api/bsv20/id/${params.id}/holders`;
+
+	const holdersResp = await fetch(url);
+	const holdersJson = ((await holdersResp.json()) || []) as Holder[];
+
+	const holders = holdersJson
+		?.sort((a, b) => parseInt(b.amt) - parseInt(a.amt))
 		.map((h) => ({
 			...h,
-			amt: parseInt(h.amt) / 10 ** (details.dec || 0),
-			pct: details.supply
-				? (parseInt(h.amt) / parseInt(details.supply)) * 100
+			amt: parseInt(h.amt) / 10 ** (params.details?.dec || 0),
+			pct: params.details?.supply
+				? (parseInt(h.amt) / parseInt(params.details?.supply)) * 100
 				: 0,
 		})) as TickHolder[];
-	return NextResponse.json(holders);
+	return NextResponse.json(holders || []);
 }
