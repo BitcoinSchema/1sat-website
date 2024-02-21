@@ -2,6 +2,7 @@ import JDenticon from "@/components/JDenticon";
 import { AssetType } from "@/constants";
 import { BSV20 } from "@/types/bsv20";
 import Link from "next/link";
+import { NextRequest } from "next/server";
 import React from "react";
 
 interface Holder {
@@ -70,9 +71,10 @@ export default Page;
 
 const getData = async (type: AssetType, id: string) => {
 	const res = await import("./data/route");
-
+  // empty nextRequest :(
+  const nextRequest = new NextRequest("");
 	const json = await (
-		await res.GET(undefined, {
+		await res.GET(nextRequest, {
 			params: {
 				type,
 				id,
