@@ -90,7 +90,8 @@ const List = async ({
     }
     const { promise: promiseBsv20v1Market } =
       http.customFetch<MarketData[]>(urlV1Market);
-    marketData = (await promiseBsv20v1Market).sort((a, b) => {
+    marketData = (await promiseBsv20v1Market)
+    .sort((a, b) => {
       
       if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
         return 1;
