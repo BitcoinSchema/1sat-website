@@ -300,7 +300,7 @@ const TickerContent = ({
                     disabled
                     className="btn btn-xs btn-outline btn-secondary pointer-events-none"
                   >
-                    {toBitcoin(sale.price)} BSV
+                    {parseInt(sale.price) > 1000 ? `${toBitcoin(sale.price)} BSV` :`${sale.price} sat`}
                   </button>
                 </div>
               </div>
