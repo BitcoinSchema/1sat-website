@@ -26,6 +26,7 @@ const Page = async ({
 
 	const details = await getDetails(new NextRequest(url), type, id);
 	const holders = await getHolders(new NextRequest(`${url}/holders`), type, id, details);
+  const numHolders = (holders || []).length > 0 ? holders.length : 0;
 	return (
 		<div className="mx-auto flex flex-col max-w-5xl w-full">
 			<h1 className="text-xl px-6">
@@ -42,7 +43,7 @@ const Page = async ({
 			<div className="divider" />
 			<div className="w-full">
 				<div className="grid grid-template-columns-3 p-6">
-					<div className="">Address</div>
+					<div className="">Address ({numHolders === 100 ? '100+' : numHolders})</div>
 					<div className="w-24 text-right">Holdings</div>
 					<div className="w-12 text-right">Ownership</div>
 					<div className="divider col-span-3" />
