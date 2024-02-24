@@ -210,7 +210,7 @@ const TickerContent = ({
                       }
                     }}
                   >
-                    {toBitcoin(listing.price)} BSV
+                    {parseInt(listing.price) < 1000 ? `${listing.price} sat` : `${toBitcoin(listing.price)} BSV`}
                   </button>
                   {showCancel.value === listing.txid && (
                     <CancelListingModal
@@ -229,7 +229,7 @@ const TickerContent = ({
                       onClose={() => {
                         showBuy.value = null;
                       }}
-                      price={BigInt(listing.price)}
+                      price={BigInt(Math.ceil(parseInt(listing.price)))}
                       showLicense={false}
                       content={
                         <div className="w-full h-full rounded border border-secondary flex flex-col items-center justify-center">

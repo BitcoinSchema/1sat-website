@@ -439,7 +439,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 							//   setHoverPrice(false);
 							// }}
 						>
-							{price !== undefined ? `${toBitcoin(price)} BSV` : contentType}
+							{price !== undefined ? price > 1000 ? `${toBitcoin(price)} BSV` : `${price} sat` : contentType}
 						</button>
 					</div>
 				)}
@@ -459,7 +459,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 				<BuyArtifactModal
 					listing={artifact as OrdUtxo}
 					onClose={() => setShowBuy(false)}
-					price={BigInt(price)}
+					price={BigInt(Math.ceil(price))}
 					content={content}
 					showLicense={true}
 				/>

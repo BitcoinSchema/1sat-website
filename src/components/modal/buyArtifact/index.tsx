@@ -240,7 +240,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
       marketFee = minimumMarketFee;
     }
     const marketFeeOutput = new TxOut(
-      BigInt(marketFee),
+      BigInt(Math.ceil(marketFee)),
       P2PKHAddress.from_string(marketAddress).get_locking_script()
     );
     purchaseTx.add_output(marketFeeOutput);
@@ -296,7 +296,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     }
 
     // Replace dummy change output
-    const changeAmt = satsCollected - BigInt(satsNeeded);
+    const changeAmt = satsCollected - BigInt(Math.ceil(satsNeeded));
 
     const changeOutput = new TxOut(
       BigInt(changeAmt),
@@ -403,7 +403,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           className="modal-action"
         >
           <button type="submit" className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
-            Buy - {price && price > 0 ? toBitcoin(price.toString()) : 0} BSV
+            Buy - {price && price > 0 ? price > 1000 ? `${toBitcoin(price.toString())} BSV` : `${price} sat` : 0} BSV
           </button>
         </form>
       </div>
