@@ -179,7 +179,7 @@ const TickerHeading = ({
 					</div>
 				</th>
 				<td>
-					{parseInt(ticker.price).toLocaleString()}{" "}
+					{ticker.price.toLocaleString()}{" "}
 					<span className="text-accent">sat/token</span>
 				</td>
 				<td>
@@ -192,10 +192,7 @@ const TickerHeading = ({
 					</span>
 				</td>
 				<td className="w-full text-right">
-					{toBitcoin(
-						Math.floor(parseFloat(ticker.price) / 10 ** ticker.dec) *
-							parseInt(ticker.supply || ticker.amt || "0") || "0")?.toLocaleString()
-					}{" "}
+					{toBitcoin(Math.floor(ticker.marketCap / 10 ** ticker.dec)).toLocaleString()}{" "}
 					BSV
 					<br />
 				</td>

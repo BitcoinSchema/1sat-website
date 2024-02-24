@@ -16,8 +16,8 @@ export type MarketData = {
   tick?: string;
   id: string;
   sym?: string;
-  price: string;
-  marketCap: string;
+  price: number;
+  marketCap: number;
   holders: Holder[];
   dec: number;
   pctChange: number;
