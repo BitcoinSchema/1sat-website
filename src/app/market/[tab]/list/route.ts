@@ -27,7 +27,7 @@ export async function POST(
     const urlV1Market = "https://1sat-api-production.up.railway.app/market/bsv20";
 
     const promiseBsv20v1Market =     await fetch(urlV1Market);
-    marketData = (await promiseBsv20v1Market.json() as MarketData[])
+    marketData = ((await promiseBsv20v1Market.json() || []) as MarketData[])
     .sort((a, b) => {
       
       if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
@@ -44,7 +44,7 @@ export async function POST(
     const urlV2Market = "https://1sat-api-production.up.railway.app/market/bsv21";
 
     const promiseBsv21Market  =await fetch (urlV2Market);
-    marketData = (await promiseBsv21Market.json() as MarketData[])
+    marketData = ((await promiseBsv21Market.json() || []) as MarketData[])
     .sort((a, b) => {
       if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
         return 1;
