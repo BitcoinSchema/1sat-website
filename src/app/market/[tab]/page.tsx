@@ -69,3 +69,4 @@ const Market = async ({ params }: { params: { tab: AssetType } }) => {
   }
 };
 export default Market;
+
