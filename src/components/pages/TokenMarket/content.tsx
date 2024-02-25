@@ -65,7 +65,7 @@ const TickerContent = ({
             (l) => !nextPageOfListings?.some((l2) => l2.txid === l.txid)
           ),
         ].sort((a, b) => {
-          return parseInt(a.pricePer) < parseInt(b.pricePer) ? -1 : 1;
+          return parseFloat(a.pricePer) < parseFloat(b.pricePer) ? -1 : 1;
         })
       } else {
         reachedEndOfListings.value = true;
