@@ -15,7 +15,7 @@ export async function POST(
 	{
 		params,
 	}: {
-		params: { type: AssetType, id: string};
+		params: { type: AssetType, id?: string};
 	},
 ) {
   const { type } = params;

@@ -79,7 +79,7 @@ const List = async ({
 
   let marketData: MarketData[] = [];
   const url = `https://1sat-api-production.up.railway.app/market/${type}`;
-  marketData = await getMarketData(new NextRequest(url), type);
+  marketData = await getMarketData(new NextRequest(url), type, id);
 
   // get the current block height
 
@@ -166,12 +166,13 @@ const List = async ({
 
 export default List;
 
-const getMarketData = async (req: NextRequest, type: AssetType) => {
+const getMarketData = async (req: NextRequest, type: AssetType, id?: string) => {
 	const res = await import("../../../app/market/[tab]/list/route");
 	const json = await (
 		await res.POST(req, {
 			params: {
-        type
+        type,
+        id
 			},
 		})
 	).json();
