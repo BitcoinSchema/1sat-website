@@ -87,7 +87,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
   const collectionIds = computed(() =>
     listings.value.reduce((i, v) => {
       const cid = v.origin?.data?.map?.subTypeData?.collectionId;
-      if (cid && checkOutpointFormat(cid)) {
+      if (cid && checkOutpointFormat(cid) && shouldBeHidden(v)) {
         i.push(cid);
       }
       return i;
