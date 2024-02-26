@@ -17,6 +17,7 @@ export const shouldBeHidden = (listing: OrdUtxo) => {
     return true;
   }
 }
+
 export const checkOutpointFormat = (outpoint: string) => {
 	// ensure txid_vout format
 	const split = outpoint.split("_");

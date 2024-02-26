@@ -14,7 +14,7 @@ import { FiLoader } from "react-icons/fi";
 import { selectedType } from "../Wallet/filter";
 import { ArtifactType, artifactTypeMap } from "../artifact";
 import Ordinals from "../ordinals";
-import { checkOutpointFormat } from "./helpers";
+import { checkOutpointFormat, shouldBeHidden } from "./helpers";
 
 interface Props {
   address: string;
