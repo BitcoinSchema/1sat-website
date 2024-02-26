@@ -4,6 +4,7 @@ export enum OutpointTab {
   Timeline = "timeline",
   Inscription = "inscription",
   Token = "token",
+  Listing = "listing",
 }
   
 
@@ -11,9 +12,10 @@ interface Props {
   outpoint: string;
   activeTab: OutpointTab
   hasToken: boolean;
+  isListing: boolean;
 }
 
-const OutpointTabs = ({ outpoint, activeTab, hasToken }: Props) => {
+const OutpointTabs = ({ outpoint, activeTab, hasToken, isListing }: Props) => {
   return (
     <div role="tablist" className={"tabs tabs-bordered mb-4"}>
       <Link role="tab" href={`/outpoint/${outpoint}/timeline`} className={`tab ${activeTab === OutpointTab.Timeline ? 'tab-active' : ''}`}>
@@ -24,6 +26,9 @@ const OutpointTabs = ({ outpoint, activeTab, hasToken }: Props) => {
       </Link>
       {hasToken && <Link role="tab" href={`/outpoint/${outpoint}/token`}className={`tab ${activeTab === OutpointTab.Token ? 'tab-active' : ''}`}>
         Token
+      </Link>}
+      {isListing && <Link role="tab" href={`/outpoint/${outpoint}/listing`} className={`tab ${activeTab === OutpointTab.Listing ? 'tab-active' : ''}`}>
+        Listing
       </Link>}
     </div>
   );

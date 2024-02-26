@@ -47,8 +47,9 @@ export type ChainInfo = {
   chainwork: string;
 };
 
-export const enum OutpointTab {
+export enum OutpointTab {
   Timeline = "timeline",
   Inscription = "inscription",
   Token = "token",
+  Listing = "listing",
 }

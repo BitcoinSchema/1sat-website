@@ -61,33 +61,33 @@ const ListingForm = ({
 
   const confirmedBalance = computed(() => {
     return (
-      bsv20Balances.value?.find((b) => b.tick === ticker.tick)?.all.confirmed ||
+      bsv20Balances.value?.find((b) => (b.tick && b.tick === ticker.tick) || (b.id && b.id === ticker.id))?.all.confirmed ||
       0
     );
   });
 
   const pendingBalance = computed(() => {
     return (
-      bsv20Balances.value?.find((b) => b.tick === ticker.tick)?.all.pending || 0
+      bsv20Balances.value?.find((b) => (b.tick && b.tick === ticker.tick) || (b.id && b.id === ticker.id))?.all.pending || 0
     );
   });
 
   const listedBalance = computed(() => {
     return (
-      bsv20Balances.value?.find((b) => b.tick === ticker.tick)?.listed
+      bsv20Balances.value?.find((b) => (b.tick && b.tick === ticker.tick) || (b.id && b.id === ticker.id))?.listed
         .confirmed || 0
     );
   });
 
   const pendingListedBalance = computed(() => {
     return (
-      bsv20Balances.value?.find((b) => b.tick === ticker.tick)?.listed
+      bsv20Balances.value?.find((b) => (b.tick && b.tick === ticker.tick) || (b.id && b.id === ticker.id))?.listed
         .pending || 0
     );
   });
 
   const dec = computed(() => {
-    return bsv20Balances.value?.find((b) => b.tick === ticker.tick)?.dec || 0;
+    return bsv20Balances.value?.find((b) => (b.tick && b.tick === ticker.tick)  || (b.id && b.id === ticker.id))?.dec || 0;
   });
 
   useEffect(() => {
@@ -331,6 +331,8 @@ const ListingForm = ({
       listingPrice.value === "0" ||
       parseInt(listingAmount.value || "0") > (confirmedBalance.value || 0)
   );
+
+  
   return (
     <div className="h-60 w-full">
       <form>

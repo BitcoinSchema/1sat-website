@@ -1,5 +1,6 @@
 import OutpointHeading from "@/components/pages/outpoint/heading";
 import OutpointInscription from "@/components/pages/outpoint/inscription";
+import OutpointListing from "@/components/pages/outpoint/listing";
 import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
@@ -40,7 +41,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 
 	// parse the raw tx
 	const tx = Transaction.from_hex(rawTx);
-	let inputOutpoints: InputOutpoint[] = [];
+	const inputOutpoints: InputOutpoint[] = [];
 	const numInputs = tx.get_ninputs();
 	for (let i = 0; i < numInputs; i++) {
 		const input = tx.get_input(i);
@@ -89,6 +90,8 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 				return <OutpointInscription outpoint={outpoint} />;
 			case OutpointTab.Token:
 				return <OutpointToken outpoint={outpoint} />;
+        case OutpointTab.Listing:
+          return <OutpointListing outpoint={outpoint} />;
 		}
 	};
 

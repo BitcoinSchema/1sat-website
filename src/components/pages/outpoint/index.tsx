@@ -86,6 +86,7 @@ const OutpointPage = async ({
 								activeTab={activeTab}
 								outpoint={outpoint}
 								hasToken={!!artifact.origin?.data?.bsv20}
+                isListing={!!artifact.data?.list}
 							/>
 							{content}
 						</div>
