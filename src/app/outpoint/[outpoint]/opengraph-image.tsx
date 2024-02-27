@@ -15,12 +15,6 @@ export default async function Image({
 	params,
 }: { params: { outpoint: string } }) {
 
-    // Font
-    // const interSemiBold = fetch(
-    //   new URL('./Inter-SemiBold.ttf', import.meta.url)
-    // ).then((res) => res.arrayBuffer())
-
-
   const notoSerif = fetch(
     new URL('./NotoSerif-Italic.ttf', import.meta.url)
   ).then((res) => res.arrayBuffer())
@@ -32,7 +26,6 @@ export default async function Image({
   // If its an image type, use the image as the og:image
 	if (details.origin?.data?.insc?.file.type?.startsWith("image")) {
     const url = `${ORDFS}/${params.outpoint}`;
-    console.log({ url });
 		return new ImageResponse(
 			<img src={url} alt={alt} />,
       {
@@ -42,8 +35,6 @@ export default async function Image({
       }
 		);
 	}
-
-	console.log({ details, outpoint: params.outpoint });
 
   // Otherwise, generate a text image
 	return new ImageResponse(

@@ -119,12 +119,6 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "ordfs.network",
-        port: "",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
         hostname: "takeit-art-prod.s3.amazonaws.com",
         port: "",
         pathname: "/**",

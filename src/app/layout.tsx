@@ -21,10 +21,17 @@ const ubuntuMono = Ubuntu_Mono({
 	subsets: ["latin"],
 });
 
+const description = "A open token protocol in the spirit of BTC Ordinals with the cost efficiency and performance of Bitcoin SV.";
+
 export const metadata: Metadata = {
+	metadataBase: new URL("https://alpha.1satordinals.com"),
 	title: "1Sat Ordinals - Bitcoin SV",
-	description:
-		"A open token protocol in the spirit of BTC Ordinals with the cost efficiency and performance of Bitcoin SV.",
+	description,
+	twitter: {
+		card: "summary_large_image",
+		title: "1Sat Ordinals",
+		description,
+	},
 };
 
 // get pathname
