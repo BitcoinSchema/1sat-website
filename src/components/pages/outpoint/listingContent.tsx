@@ -10,6 +10,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	useSignals();
   const showCancelModal = useSignal(false);
+  const isOwner = artifact.owner === ordAddress.value;
 	return (
 		<div>
 			<div>Listing</div>
@@ -21,9 +22,9 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			<div>Price</div>
 			<div>{artifact.data?.list?.price}</div>
       
-      <button type="button" className="btn" onClick={() => {
+      {isOwner && <button type="button" className="btn" onClick={() => {
         showCancelModal.value = true;
-      }}>Cancel</button>
+      }}>Cancel</button>}
       {showCancelModal.value && <CancelListingModal onClose={
         () => {
           showCancelModal.value = false;
