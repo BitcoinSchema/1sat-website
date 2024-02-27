@@ -61,7 +61,7 @@ const Market = async ({ params }: { params: { tab: AssetType } }) => {
     //   default:
     //     return null;
     // }
-    return <NewListingPage />
+    return <NewListingPage type={params.tab} />;
 };
 export default Market;
 

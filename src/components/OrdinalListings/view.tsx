@@ -18,7 +18,7 @@ interface ViewProps {
   address?: string;
   listings?: OrdUtxo[];
   mode: OrdViewMode;
-  onClick: (outpoint: string) => Promise<void>;
+  onClick?: (outpoint: string) => Promise<void>;
 }
 
 const View = ({ address, listings: listingsProp, mode, onClick }: ViewProps) => {
