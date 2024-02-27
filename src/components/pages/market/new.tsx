@@ -15,6 +15,7 @@ import {
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { OrdUtxo } from "@/types/ordinals";
 import { PendingTransaction } from "@/types/preview";
+import { Utxo } from "@/utils/js-1sat-ord";
 import {
   createChangeOutput,
   fetchOrdinal,
@@ -29,9 +30,8 @@ import {
   Transaction,
   TxIn,
   TxOut,
-} from "bsv-wasm";
+} from "bsv-wasm-web";
 import { Buffer } from "buffer";
-import { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -128,7 +128,6 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 			// 	}
 			// }
 
-      debugger
 			// sign ordinal
 			const sig = tx.sign(
 				ordPk,
