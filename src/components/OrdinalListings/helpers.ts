@@ -10,13 +10,14 @@ interface GroupedCollection {
 	collections: Collection[];
 }
 
-export const shouldBeHidden = (listing: OrdUtxo) => {
-  if (listing.origin?.data?.bsv20 && !listing.data) {
-    // ignore "reciepts/remnants" from bsv20 transfers which are already accounted for in other outputs
-    // example: https://whatsonchain.com/tx/69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6
-    return true;
-  }
-}
+// api does this now
+// export const shouldBeHidden = (listing: OrdUtxo) => {
+//   if (listing.origin?.data?.bsv20 && !listing.data) {
+//     // ignore "reciepts/remnants" from bsv20 transfers which are already accounted for in other outputs
+//     // example: https://whatsonchain.com/tx/69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6
+//     return true;
+//   }
+// }
 
 export const checkOutpointFormat = (outpoint: string) => {
 	// ensure txid_vout format

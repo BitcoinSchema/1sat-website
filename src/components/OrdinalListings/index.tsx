@@ -13,12 +13,14 @@ interface OrdinalListingsProps {
 	listings?: OrdUtxo[];
 	address?: string;
 	mode: OrdViewMode;
+  onClick?: (outpoint: string) => Promise<void>;
 }
 
 const OrdinalListings: React.FC<OrdinalListingsProps> = ({
 	listings,
 	address,
 	mode,
+  onClick,
 }: OrdinalListingsProps) => {
 	return (
 		<div className="w-full h-full">
@@ -39,7 +41,7 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({
 					</thead>
 				)}
 				<Suspense fallback={<OrdinalListingSkeleton iterations={30} />}>
-					<View listings={listings} address={address} mode={mode} />
+					<View listings={listings} address={address} mode={mode} onClick={onClick} />
 				</Suspense>
 			</table>
 		</div>

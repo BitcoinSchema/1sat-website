@@ -14,14 +14,15 @@ import { FiLoader } from "react-icons/fi";
 import { selectedType } from "../Wallet/filter";
 import { ArtifactType, artifactTypeMap } from "../artifact";
 import Ordinals from "../ordinals";
-import { checkOutpointFormat, shouldBeHidden } from "./helpers";
+import { checkOutpointFormat } from "./helpers";
 
 interface Props {
   address: string;
   listings?: OrdUtxo[];
+  onClick?: (outpoint: string) => Promise<void>;
 }
 
-const GridList = ({ address, listings: listingsProp }: Props) => {
+const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
   useSignals();
   const ref = useRef(null);
   const isInView = useInView(ref);
@@ -87,7 +88,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
   const collectionIds = computed(() =>
     listings.value.reduce((i, v) => {
       const cid = v.origin?.data?.map?.subTypeData?.collectionId;
-      if (cid && checkOutpointFormat(cid) && shouldBeHidden(v)) {
+      if (cid && checkOutpointFormat(cid)) {
         i.push(cid);
       }
       return i;
@@ -109,7 +110,7 @@ const GridList = ({ address, listings: listingsProp }: Props) => {
         <tr>
           <td>
             <div className="">
-              <Ordinals artifacts={listings.value} />
+              <Ordinals artifacts={listings.value} onClick={onClick} />
 
               {/* {listings.value.map((listing) => {
                 const collection = listingCollection(listing, collections);

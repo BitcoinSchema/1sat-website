@@ -1,13 +1,15 @@
 "use client";
 
 import JDenticon from "@/components/JDenticon";
-import { ordAddress } from "@/signals/wallet/address";
+import CancelListingModal from "@/components/modal/cancelListing";
+import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { Listing } from "@/types/bsv20";
 import { OrdUtxo } from "@/types/ordinals";
-import { useSignals } from "@preact/signals-react/runtime";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	useSignals();
-
+  const showCancelModal = useSignal(false);
 	return (
 		<div>
 			<div>Listing</div>
@@ -18,7 +20,15 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			</div>
 			<div>Price</div>
 			<div>{artifact.data?.list?.price}</div>
-      <button type="button" className="btn">Cancel</button>
+      
+      <button type="button" className="btn" onClick={() => {
+        showCancelModal.value = true;
+      }}>Cancel</button>
+      {showCancelModal.value && <CancelListingModal onClose={
+        () => {
+          showCancelModal.value = false;
+        }
+      } listing={artifact as Listing} indexerAddress={fundingAddress.value || ""} />}
 		</div>
 	);
 };

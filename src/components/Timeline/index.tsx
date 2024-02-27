@@ -50,7 +50,7 @@ const Timeline = ({ history, listing, spends }: Props) => {
             <Link
               href={`https://whatsonchain.com/tx/${h.spend}`}
               target="_blank"
-            >{spentListing?.sale ? `Bought`: `cancelled`}</Link>
+            >{spentListing?.sale ? "Bought": "cancelled"}</Link>
           );
         }
         const wocUrl = `https://whatsonchain.com/tx/${h.txid}`;

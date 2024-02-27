@@ -2,9 +2,11 @@
 
 import { AssetType } from "@/constants";
 import Link from "next/link";
+import { FaPlus } from "react-icons/fa";
 
 const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
   return (
+    <div className="flex w-full items-center justify-between">
     <div role="tablist" className="tabs tabs-lg tabs-lifted ml-4 gap-2 w-64">
       <Link
         href={`/market/${AssetType.Ordinals}`}
@@ -38,11 +40,12 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
       >
         BSV21
       </Link>
-      {/* <div className="flex-none">
-        <Link className="btn btn-sm btn-square btn-ghost" href={`/inscribe?tab=${selectedTab === AssetType.Ordinals ? 'image' : selectedTab}`}>
+      </div>
+      <div className="flex-none">
+        {selectedTab === AssetType.Ordinals && <Link className="btn btn-sm btn-square btn-ghost" href={`/market/${selectedTab}/new`}>
           <FaPlus />
-        </Link>
-      </div> */}
+        </Link>}
+      </div>
     </div>
   );
 };

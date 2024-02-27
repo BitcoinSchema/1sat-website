@@ -18,9 +18,10 @@ interface ViewProps {
   address?: string;
   listings?: OrdUtxo[];
   mode: OrdViewMode;
+  onClick: (outpoint: string) => Promise<void>;
 }
 
-const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
+const View = ({ address, listings: listingsProp, mode, onClick }: ViewProps) => {
   useSignals();
   const ref = useRef(null);
   const isInView = useInView(ref);
@@ -83,7 +84,7 @@ const View = ({ address, listings: listingsProp, mode }: ViewProps) => {
   }, [isInView]);
 
   if (mode === OrdViewMode.Grid && address) {
-    return <GridList listings={listings.value} address={address} />;
+    return <GridList listings={listings.value} address={address} onClick={onClick} />;
   }
 
   return <List listings={listings.value} refProp={ref} />;
