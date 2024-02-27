@@ -22,8 +22,8 @@ interface DisplayIOProps {
 const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 	// Return a React component that calls the add_one method on the wasm module
 	useSignals();
-	let ioIns = useSignal<IODisplay[] | null>(null);
-	let ioOuts = useSignal<IODisplay[] | null>(null);
+	const ioIns = useSignal<IODisplay[] | null>(null);
+	const ioOuts = useSignal<IODisplay[] | null>(null);
 	const attempted = useSignal(false);
 
 	effect(() => {
@@ -58,13 +58,14 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 					outScript.startsWith("OP_FALSE OP_RETURN")
 				) {
 					ioOuts.value.push({
-						address: "OP_RETURN",
+						script: "OP_RETURN",
 						index: i,
 						txid: tx.get_id_hex(),
 						amount: BigInt(0),
 					});
 					continue;
-				} else if (outScript.startsWith("OP_DUP OP_HASH160")) {
+				}
+				if (outScript.startsWith("OP_DUP OP_HASH160")) {
 					// Look for p2pkh output
 					const pubKeyHash = outScript.split(" ")[2];
 
@@ -78,8 +79,9 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 					ioOuts.value.push({ address, index, txid, amount });
 				} else {
 					const amount = output.get_satoshis();
+          
 					ioOuts.value.push({
-						address: "",
+            script: `Script: ${outScript.slice(0, 20)}...${outScript.slice(-20)}`,
 						index: i,
 						txid: tx.get_id_hex(),
 						amount,
@@ -102,7 +104,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 
 						return (
 							<li key={i} className="flex gap-2 justify-between my-2 relative">
-							<Link href={`/outpoint/${io.txid}_${io.index}`}>
+								<Link href={`/outpoint/${io.txid}_${io.index}`}>
 									<span className="text-xl font-mono flex items-center gap-1">
 										<FaHashtag />
 										{io.index}
@@ -117,7 +119,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 											hashOrValue={io.address}
 											className="w-6 h-6 mr-2"
 										/>
-										{io.address}
+										{io.address || io.script}
 									</Link>
 									<Link
 										className="text-xs w-fit text-[#555]"
@@ -157,11 +159,11 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 									className="text-xs flex w-fit items-center"
 									href={`/activity/${io.address}/ordinals`}
 								>
-									<JDenticon
+									{io.address && <JDenticon
 										hashOrValue={io.address}
 										className="w-6 h-6 mr-2"
-									/>
-									{io.address}
+									/>}
+									{io.address || io.script}
 								</Link>
 								<Link
 									className="text-xs w-fit text-[#555]"
@@ -221,5 +223,5 @@ export default DisplayIO;
 
 const truncate = (str: string) => {
 	// does this txid => "123456...9876ab"
-	return str.slice(0, 6) + "..." + str.slice(-6);
+	return `${str.slice(0, 6)}...${str.slice(-6)}`;
 };

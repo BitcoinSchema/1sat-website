@@ -16,7 +16,8 @@ type OutpointParams = {
 };
 
 export type IODisplay = {
-	address: string;
+	address?: string;
+  script?: string;
 	index: number;
 	txid: string;
 	amount: bigint;
