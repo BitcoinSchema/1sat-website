@@ -68,10 +68,12 @@ const OutpointPage = async ({
 							sizes={"100vw"}
 							glow={true}
 							classNames={{
-								wrapper: `${
+                media: "overflow-hidden",
+								wrapper: `overflow-hidden h-[550px] relative ${
 									// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-2/3"
                   "w-fit"
 								}`,
+
 							}}
 							showListingTag={true}
 						/>

@@ -80,7 +80,7 @@ export const artifactTypeMap = new Map<ArtifactType, string>([
 
 type ArtifactProps = {
 	artifact: Partial<OrdUtxo>;
-	classNames?: { wrapper?: string; media?: string };
+	classNames?: { wrapper?: string; media?: string, footer?: string };
 	to?: string;
 	src?: string;
 	onClick?: (outPoint: string) => void;
@@ -242,8 +242,8 @@ const Artifact: React.FC<ArtifactProps> = ({
 					mini={(size || 300) < 300}
 				/>
 			</div>
-		) : type === ArtifactType.Text || type === ArtifactType.OPNS ? (
-			<div className={"w-full flex items-center justify-center p-2 h-full"}>
+		) : type === ArtifactType.Text || type === ArtifactType.OPNS || type === ArtifactType.Javascript ? (
+			<div className={`w-full flex items-center justify-center p-2 ${classNames?.wrapper ? classNames.wrapper : ""} ${classNames?.media ? classNames.media : ""}`}>
 				<TextArtifact
 					origin={origin}
 					className="w-full"
@@ -360,7 +360,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		<React.Fragment>
 			<Link
 				key={outPoint || origin}
-				className={`${showFooter ? "pb-[65px]" : ""} ${
+				className={`${showFooter ? `pb-[65px] ${classNames?.footer ? classNames.footer : ''}` : ""} ${
 					glow ? "glow" : ""
 				} flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${
 					to ? "cursor-pointer" : "cursor-default"

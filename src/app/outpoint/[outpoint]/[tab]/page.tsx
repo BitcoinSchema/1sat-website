@@ -6,6 +6,7 @@ import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
 import { OutpointTab } from "@/types/common";
 import { Transaction } from "bsv-wasm";
+import Head from "next/head";
 import { Suspense } from "react";
 import { FaSpinner } from "react-icons/fa";
 
@@ -90,21 +91,36 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 				return <OutpointInscription outpoint={outpoint} />;
 			case OutpointTab.Token:
 				return <OutpointToken outpoint={outpoint} />;
-        case OutpointTab.Listing:
-          return <OutpointListing outpoint={outpoint} />;
+			case OutpointTab.Listing:
+				return <OutpointListing outpoint={outpoint} />;
 		}
 	};
 
 	return (
-		<Suspense fallback={<div className="mx-auto h-full"><FaSpinner className="animate-spin" /></div>}>
-			<div className="max-w-6xl mx-auto w-full">
-				<div className="flex">
-					<OutpointHeading outpoint={params.outpoint} />
+		<>
+			<Head>
+				<meta property="og:image" content="<generated>" />
+				<meta property="og:image:alt" content={`Outpoint ${params.outpoint}`} />
+				<meta property="og:image:type" content="image/png" />
+				<meta property="og:image:width" content="1200" />
+				<meta property="og:image:height" content="630" />
+			</Head>
+			<Suspense
+				fallback={
+					<div className="mx-auto h-full">
+						<FaSpinner className="animate-spin" />
+					</div>
+				}
+			>
+				<div className="max-w-6xl mx-auto w-full">
+					<div className="flex">
+						<OutpointHeading outpoint={params.outpoint} />
+					</div>
+					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} />
+					{content()}
 				</div>
-				<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} />
-				{content()}
-			</div>
-		</Suspense>
+			</Suspense>
+		</>
 	);
 };
 

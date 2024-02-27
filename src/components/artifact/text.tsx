@@ -65,13 +65,13 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className, mini=fal
         mini={mini}
       />
     ) : mini ? (<FaPaperclip className="m-auto" />) : (
-      <pre
-        className={`flex items-center justify-center w-full h-full transition  ${
+      <code
+        className={`overflow-auto flex items-center justify-center w-full h-full transition  ${
           className ? className : ""
         }`}
       >
         {text}
-      </pre>
+      </code>
     )
   ) : (
     <LoaderIcon className="m-auto" />
