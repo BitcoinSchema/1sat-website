@@ -14,61 +14,79 @@ export const contentType = "image/png";
 export default async function Image({
 	params,
 }: { params: { outpoint: string } }) {
+	const notoSerif = fetch(
+		new URL("./NotoSerif-Italic.ttf", import.meta.url),
+	).then((res) => res.arrayBuffer());
 
-  const notoSerif = fetch(
-    new URL('./NotoSerif-Italic.ttf', import.meta.url)
-  ).then((res) => res.arrayBuffer())
-   
 	const details = await fetch(
 		`${API_HOST}/api/inscriptions/${params.outpoint}`,
 	).then((res) => res.json() as Promise<OrdUtxo>);
 
-  // If its an image type, use the image as the og:image
-	if (details.origin?.data?.insc?.file.type?.startsWith("image")) {
-    const url = `${ORDFS}/${params.outpoint}`;
-		return new ImageResponse(
-			<img src={url} alt={alt} />,
-      {
-        // For convenience, we can re-use the exported opengraph-image
-        // size config to also set the ImageResponse's width and height.
-        ...size       
-      }
-		);
-	}
-
-  // Otherwise, generate a text image
+	const isImageInscription =
+		details.origin?.data?.insc?.file.type?.startsWith("image");
+	const url = `${ORDFS}/${params.outpoint}`;
 	return new ImageResponse(
 		<div
 			style={{
 				fontSize: 48,
 				background: "black",
-        color: "white",
+				color: "white",
 				width: "100%",
 				height: "100%",
 				display: "flex",
 				alignItems: "center",
 				justifyContent: "center",
-        fontFamily: "Noto Serif",
+				fontFamily: "Noto Serif",
+				position: "relative",
 			}}
 		>
-			{details.origin?.data?.map?.name ||
+			{isImageInscription ? (
+				<img src={url} alt={alt} />
+			) : (
+				details.origin?.data?.map?.name ||
 				details.origin?.data?.bsv20?.tick ||
 				details.origin?.data?.bsv20?.sym ||
-        details.origin?.data?.insc?.json?.tick ||
-        details.origin?.data?.insc?.json?.p ||
-        details.origin?.data?.insc?.file.type ||
-				"Mystery Outpoint"}
+				details.origin?.data?.insc?.json?.tick ||
+				details.origin?.data?.insc?.json?.p ||
+				details.origin?.data?.insc?.file.type ||
+				"Mystery Outpoint"
+			)}
+			<div
+				style={{
+					display: "flex",
+					position: "absolute",
+					bottom: "10px",
+					right: "10px",
+					width: "50px",
+					height: "50px",
+				}}
+			>
+				<svg
+					width="100%"
+					height="100%"
+					viewBox="0 0 402 402"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<g>
+						<title>&nbsp;</title>
+						<circle cx="201" cy="201" r="201" fill="white" />
+						<circle cx="201" cy="201" r="151" fill="black" />
+						<circle cx="201" cy="201" r="121" fill="#F0BB00" />
+					</g>
+				</svg>
+			</div>
 		</div>,
 		{
 			...size,
-      fonts: [
-        {
-          name: 'Noto Serif',
-          data: await notoSerif,
-          style: 'italic',
-          weight: 400,
-        },
-      ],
+			fonts: [
+				{
+					name: "Noto Serif",
+					data: await notoSerif,
+					style: "italic",
+					weight: 400,
+				},
+			],
 		},
 	);
 }
