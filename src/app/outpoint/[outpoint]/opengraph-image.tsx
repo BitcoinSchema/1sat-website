@@ -55,10 +55,10 @@ export default async function Image({
 				style={{
 					display: "flex",
 					position: "absolute",
-					bottom: "10px",
-					right: "10px",
-					width: "50px",
-					height: "50px",
+					bottom: "20px",
+					right: "20px",
+					width: "75px",
+					height: "75px",
 				}}
 			>
 				<svg
