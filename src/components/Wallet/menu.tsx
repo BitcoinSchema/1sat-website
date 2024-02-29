@@ -244,10 +244,10 @@ const WalletMenu: React.FC = () => {
                   Export Keys
                 </button>
               </li>
-              <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
+              {/* <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/swap">Swap Keys</Link>
               </li>
-              
+               */}
               <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/delete">Sign Out</Link>
               </li>
