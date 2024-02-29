@@ -24,17 +24,30 @@ const OutpointInscription = async ({ outpoint }: Props) => {
 					<div>
 						{artifact.origin?.data?.insc && (
 							<div>
-								Inscription
-								<JsonTable data={artifact.origin?.data?.insc} />
+								<div className="my-4 text-xl text-[#555]">File</div>
+								<JsonTable data={artifact.origin?.data?.insc.file} />
+							</div>
+						)}
+						{artifact.origin?.data?.b && artifact.origin?.data?.b && (
+							<div>
+								<div className="my-4 text-xl text-[#555]">B File</div>
+								<JsonTable data={artifact.origin?.data?.b} />
+							</div>
+						)}
+						{artifact.origin?.data?.map && (
+							<div>
+								<div className="my-4 text-xl text-[#555]">Metadata</div>
+								<JsonTable data={artifact.origin?.data?.map} />
 							</div>
 						)}
 
-						{artifact.origin?.data?.map && 
-							<div>
-								Metadata
-								<JsonTable data={artifact.origin?.data?.map} />
-							</div>
-						}
+						{artifact.origin?.data?.sigma &&
+							artifact.origin?.data?.sigma.length > 0 && (
+								<div>
+									<div className="my-4 text-xl text-[#555]">Sigma Signature</div>
+									<JsonTable data={artifact.origin?.data?.sigma[0]} />
+								</div>
+							)}
 					</div>
 				}
 			/>

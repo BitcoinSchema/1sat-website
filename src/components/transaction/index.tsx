@@ -98,12 +98,12 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 	const inputs = computed(() => {
 		return (
 			ioIns.value && (
-				<ul className="border rounded p-2 border-[#1a1a1a] bg-[#111]">
-					{ioIns.value?.map((io, i) => {
+        <ul className="rounded py-1 px-3 bg-gradient-to-b from-[#010101] to-black">
+        {ioIns.value?.map((io, i) => {
 						const sats = inputOutpoints[io.index].satoshis;
 
 						return (
-							<li key={i} className="flex gap-2 justify-between my-2 relative">
+							<li key={i} className="flex gap-2 justify-between my-4 relative">
 								<Link href={`/outpoint/${io.txid}_${io.index}`}>
 									<span className="text-xl font-mono flex items-center gap-1">
 										<FaHashtag />
@@ -143,11 +143,12 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 
 	const outputs = computed(() => {
 		return (
-			<ul className="border rounded p-2 border-[#1a1a1a] bg-[#111]">
+      // tailwind gradient to black on bottom
+			<ul className="rounded py-1 px-3 bg-gradient-to-b from-[#010101] to-black">
 				{ioOuts.value?.map((io, i) => {
 					const sats = io.amount;
 					return (
-						<li key={i} className="flex gap-2 justify-between my-2 relative">
+						<li key={i} className="flex gap-2 justify-between my-4 relative">
 							<Link href={`/outpoint/${io.txid}_${io.index}`}>
 								<span className="text-xl font-mono flex items-center gap-1">
 									<FaHashtag />

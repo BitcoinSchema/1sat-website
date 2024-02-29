@@ -1,3 +1,4 @@
+import OutpointCollection from "@/components/pages/outpoint/collection";
 import OutpointHeading from "@/components/pages/outpoint/heading";
 import OutpointInscription from "@/components/pages/outpoint/inscription";
 import OutpointListing from "@/components/pages/outpoint/listing";
@@ -17,7 +18,7 @@ type OutpointParams = {
 
 export type IODisplay = {
 	address?: string;
-  script?: string;
+	script?: string;
 	index: number;
 	txid: string;
 	amount: bigint;
@@ -94,6 +95,8 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 				return <OutpointToken outpoint={outpoint} />;
 			case OutpointTab.Listing:
 				return <OutpointListing outpoint={outpoint} />;
+			case OutpointTab.Collection:
+				return <OutpointCollection outpoint={outpoint} />;
 		}
 	};
 

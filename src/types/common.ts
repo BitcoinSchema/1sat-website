@@ -52,4 +52,5 @@ export enum OutpointTab {
   Inscription = "inscription",
   Token = "token",
   Listing = "listing",
+  Collection = "collection",
 }

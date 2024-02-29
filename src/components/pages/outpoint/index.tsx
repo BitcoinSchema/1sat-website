@@ -89,6 +89,7 @@ const OutpointPage = async ({
 								outpoint={outpoint}
 								hasToken={!!artifact.origin?.data?.bsv20}
                 isListing={!!artifact.data?.list}
+                isCollection={artifact.origin?.data?.map?.subType === "collection" || artifact.origin?.data?.map?.subType === "collectionItem"}
 							/>
 							{content}
 						</div>
