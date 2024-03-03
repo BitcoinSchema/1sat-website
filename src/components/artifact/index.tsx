@@ -408,7 +408,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 						>
 							#{num}
 						</button>
-						<div className={`hidden md:block`}>&nbsp;</div>
+						<div className={"hidden md:block"}>&nbsp;</div>
 						<button
 							type="button"
 							className={` ${

@@ -1,10 +1,9 @@
-import { Bsv20Status, FetchStatus, ORDFS } from "@/constants";
+import { FetchStatus, ORDFS } from "@/constants";
 import { BSV20 } from "@/types/bsv20";
 import { LRC20 } from "@/types/ordinals";
 import React, { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FaCode } from "react-icons/fa6";
-import { IoMdWarning } from "react-icons/io";
 import { ArtifactType } from ".";
 
 type TextArtifactProps = {
@@ -97,7 +96,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
           <FaCode />
         </div>
       )}
-      {!mini &&
+      {/* {!mini &&
         type === ArtifactType.BSV20 &&
         bsv20 &&
         bsv20.status !== Bsv20Status.Valid && (
@@ -115,7 +114,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
                 : "INVALID BSV20"
             }`}
           </div>
-        )}
+        )} */}
     </div>
   ) : (
     <LoaderIcon className="mx-auto" />
