@@ -10,7 +10,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import Link from "next/link";
-import { MutableRefObject, useEffect } from "react";
+import { MutableRefObject, useEffect, useRef } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import { FiLoader } from "react-icons/fi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
@@ -27,11 +27,13 @@ import {
 interface Props {
   listings?: OrdUtxo[];
   refProp: MutableRefObject<null>;
+  address: string;
 }
 
-const List = ({ listings: listingsProp, refProp }: Props) => {
+const List = ({ listings: listingsProp, address }: Props) => {
   useSignals();
-  const isInView = useInView(refProp);
+  const ref = useRef(null);
+  const isInView = useInView(ref);
 
   const listings = useSignal<OrdUtxo[]>(listingsProp || []);
 
@@ -201,7 +203,7 @@ const {
         })}
         <tr>
           <td className="text-center" colSpan={5}>
-            <div ref={refProp} className="flex items-center justify-center">
+            <div ref={ref} className="flex items-center justify-center">
               {isFetching && <FiLoader className="animate animate-spin" />}
             </div>
           </td>

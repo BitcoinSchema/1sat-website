@@ -1,5 +1,6 @@
 "use client";
 
+import Filter from "@/components/Wallet/filter";
 import { AssetType } from "@/constants";
 import Link from "next/link";
 import { FaPlus } from "react-icons/fa";
@@ -42,6 +43,7 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
       </Link>
       </div>
       <div className="flex-none">
+        <Filter />
         {selectedTab === AssetType.Ordinals && <Link className="btn btn-sm btn-square btn-ghost" href={`/market/${selectedTab}/new`}>
           <FaPlus />
         </Link>}
