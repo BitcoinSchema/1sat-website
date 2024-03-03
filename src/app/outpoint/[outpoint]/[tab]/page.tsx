@@ -5,6 +5,7 @@ import OutpointListing from "@/components/pages/outpoint/listing";
 import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
+import { API_HOST } from "@/constants";
 import { OutpointTab } from "@/types/common";
 import { Transaction } from "bsv-wasm";
 import Head from "next/head";
@@ -33,7 +34,10 @@ export type InputOutpoint = {
 
 const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	// get tx details
-	const txid = params.outpoint.split("_")[0];
+	const parts = params.outpoint.split("_");
+  const txid = parts[0];
+  const vout = parts.length > 1 ? parts[1] : 0;
+  
 	const response = await fetch(
 		`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`,
 	);
@@ -66,15 +70,36 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		inputOutpoints.push({ script, satoshis, txid, vout });
 	}
 
+  const outputOutpoints: string[] = [];
+  const numOutputs = tx.get_noutputs();
+  for (let i = 0; i < numOutputs; i++) {
+    outputOutpoints.push(`${txid}_${i}`);
+  }
+
+  // check if outputs are spent
+  const outputSpendsResponse = await fetch(
+		`${API_HOST}/api/spends`,
+		{
+      method: "POST",
+			headers: {
+        "Content-Type": "application/json",
+				Accept: "application/json",
+			},
+      body: JSON.stringify(outputOutpoints),
+		},
+	);
+
+  const outputSpends = await outputSpendsResponse.json();
+  console.log({outputOutpoints, outputSpends});
+
 	const spendResponse = await fetch(
-		`https://junglebus.gorillapool.io/v1/txo/spend/${params.outpoint}`,
+		`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
 		{
 			headers: {
 				Accept: "application/octet-stream",
 			},
 		},
 	);
-
 	// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
 	const buffer = await spendResponse.arrayBuffer();
 	if (!buffer.byteLength) {
@@ -84,7 +109,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	console.log({ spendTxid });
 
 	const content = () => {
-		const outpoint = params.outpoint;
+		const outpoint = `${txid}_${vout}`;
 		const tab = params.tab as OutpointTab;
 		switch (tab as OutpointTab) {
 			case OutpointTab.Timeline:
@@ -104,7 +129,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		<>
 			<Head>
 				<meta property="og:image" content="<generated>" />
-				<meta property="og:image:alt" content={`Outpoint ${params.outpoint}`} />
+				<meta property="og:image:alt" content={`Outpoint ${txid}_${vout}`} />
 				<meta property="og:image:type" content="image/png" />
 				<meta property="og:image:width" content="1200" />
 				<meta property="og:image:height" content="630" />
@@ -118,9 +143,9 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 			>
 				<div className="max-w-6xl mx-auto w-full">
 					<div className="flex">
-						<OutpointHeading outpoint={params.outpoint} />
+						<OutpointHeading outpoint={`${txid}_${vout}`} />
 					</div>
-					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} />
+					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} outputSpends={outputSpends} />
 					{content()}
 				</div>
 			</Suspense>

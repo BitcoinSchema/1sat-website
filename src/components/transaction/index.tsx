@@ -17,9 +17,10 @@ import { showDetails } from "../pages/outpoint/heading";
 interface DisplayIOProps {
 	rawtx: string;
 	inputOutpoints: InputOutpoint[];
+  outputSpends: string[];
 }
 
-const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
+const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints, outputSpends }) => {
 	// Return a React component that calls the add_one method on the wasm module
 	useSignals();
 	const ioIns = useSignal<IODisplay[] | null>(null);
@@ -166,12 +167,12 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints }) => {
 									/>}
 									{io.address || io.script}
 								</Link>
-								<Link
+								{outputSpends[io.index] && <Link
 									className="text-xs w-fit text-[#555]"
-									href={`/outpoint/${io.txid}_${io.index}`}
+									href={`/outpoint/${outputSpends[io.index]}`}
 								>
-									Spend {truncate(io.txid)} [{io.index}]
-								</Link>
+									Spend {truncate(outputSpends[io.index])} [{io.index}]
+								</Link>}
 							</div>
 							<div className="text-xs text-nowrap absolute bottom-0 right-0 text-emerald-400">
 								{sats > BigInt(iterationFee)
