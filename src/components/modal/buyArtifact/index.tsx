@@ -403,7 +403,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           className="modal-action"
         >
           <button type="submit" className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
-            Buy - {price && price > 0 ? price > 1000 ? `${toBitcoin(price.toString())} BSV` : `${price} sat` : 0} BSV
+            Buy - {price && price > 0 ? price > 1000 ? `${toBitcoin(price.toString())} BSV` : `${price} sat` : 0}
           </button>
         </form>
       </div>

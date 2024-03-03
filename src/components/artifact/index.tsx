@@ -7,6 +7,7 @@ import { toBase64 } from "@/utils/string";
 import { head } from "lodash";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
@@ -111,6 +112,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 	latest = false,
 	showListingTag = true,
 }) => {
+  const router = useRouter();
 	const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
 		FetchStatus.Loading,
 	);
@@ -431,6 +433,10 @@ const Artifact: React.FC<ArtifactProps> = ({
 									return;
 								}
 								e.stopPropagation();
+                if (artifact.origin?.data?.bsv20) {
+                  router.push(artifact.origin?.data?.bsv20?.id ? `/market/bsv21/${artifact.origin?.data?.bsv20?.id}` :`/market/bsv20/${artifact.origin?.data?.bsv20?.tick}`);
+                  return
+                }
 								setShowBuy(true);
 							}}
 							// onMouseEnter={() => {
@@ -485,4 +491,4 @@ const shimmer = (w: number, h: number) => `
   <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
 </svg>`;
 
-const ItemContainerStyle = `flex items-center justify-center w-full h-full rounded`;
+const ItemContainerStyle = "flex items-center justify-center w-full h-full rounded";
