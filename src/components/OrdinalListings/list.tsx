@@ -10,7 +10,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import Link from "next/link";
-import { MutableRefObject, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import { FiLoader } from "react-icons/fi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
@@ -26,11 +26,11 @@ import {
 } from "./helpers";
 interface Props {
   listings?: OrdUtxo[];
-  refProp: MutableRefObject<null>;
-  address: string;
+  address?: string;
+  onClick?: (outpoint: string) => Promise<void>;
 }
 
-const List = ({ listings: listingsProp, address }: Props) => {
+const List = ({ listings: listingsProp, address, onClick }: Props) => {
   useSignals();
   const ref = useRef(null);
   const isInView = useInView(ref);
@@ -38,6 +38,8 @@ const List = ({ listings: listingsProp, address }: Props) => {
   const listings = useSignal<OrdUtxo[]>(listingsProp || []);
 
   const [selectedArtifactType, setSelectedArtifactType] = useLocalStorage<ArtifactType>("1ssmartt", ArtifactType.All);
+
+  // TODO: hook up address and onClick
 
   useEffect(() => {
     // init from localStorage when available and not already set
