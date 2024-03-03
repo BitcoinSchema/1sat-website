@@ -354,6 +354,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		priority,
 		num,
 		sizes,
+    showFooter
 	]);
 
 	return (

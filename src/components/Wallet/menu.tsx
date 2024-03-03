@@ -28,6 +28,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, SyntheticEvent, useEffect } from "react";
 import toast from "react-hot-toast";
+import { CgSpinner } from "react-icons/cg";
 import { FaFileImport, FaPlus } from "react-icons/fa";
 import { FaCopy, FaWallet } from "react-icons/fa6";
 import { toBitcoin, toSatoshi } from "satoshi-bitcoin-ts";
@@ -167,9 +168,9 @@ const WalletMenu: React.FC = () => {
             <div className="text-center mb-2">
               <div className="text-[#555] text-lg">Balance</div>
               <div className="text-2xl font-mono my-2">
-                {balance.value
+                {balance.value !== undefined && usdRate.value > 0
                   ? `$${(balance.value / usdRate.value).toFixed(2)}`
-                  : "$0.00"}<span className="text-xs ml-1">USD</span>
+                  : <CgSpinner className="animate-spin inline-flex w-4" />}<span className="text-xs ml-1">USD</span>
               </div>
               <div className="text-[#555] my-2">
                 {toBitcoin(balance.value)} <span className="text-xs">BSV</span>
@@ -185,6 +186,7 @@ const WalletMenu: React.FC = () => {
               </button>
               <button
                 type="button"
+                disabled={usdRate.value <= 0 || balance.value === 0} 
                 className="btn btn-sm btn-primary"
                 onClick={() => {showWithdrawalModal.value = true}}
               >
@@ -246,8 +248,7 @@ const WalletMenu: React.FC = () => {
               </li>
               {/* <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/swap">Swap Keys</Link>
-              </li>
-               */}
+              </li> */}
               <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/delete">Sign Out</Link>
               </li>

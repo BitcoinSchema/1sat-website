@@ -191,7 +191,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 
 		const ordUtxos = await getOutpoints([selectedItem.origin.outpoint], true);
 		if (!ordUtxos?.length) {
-			// TODO: show error
+			toast.error("Could not get item details.", toastErrorProps);
 			return;
 		}
 		const ordUtxo = head(ordUtxos);
@@ -201,6 +201,8 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 		);
 
 		if (!ordUtxo || !paymentUtxo || ordAddress.value !== ordUtxo.owner) {
+      console.log({ ordUtxo, paymentUtxo, ordAddress: ordAddress.value, owner: ordUtxo?.owner || "" });
+      toast.error("Missing requirement.", toastErrorProps);
 			return;
 		}
 

@@ -5,6 +5,7 @@ import { effect } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import init from "bsv-wasm-web";
 import Link from "next/link";
+import { CgSpinner } from "react-icons/cg";
 import { FaStore } from "react-icons/fa";
 let initAttempted = false;
 
@@ -24,12 +25,15 @@ const MarketMenu: React.FC = () => {
 	return (
 		<>
 			<div className="hidden md:block dropdown dropdown-end">
-				<div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
+				{exchangeRate.value > 0 && <div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
 					1 BSV ={" "}
 					<span className="text-emerald-300/50">
 						${exchangeRate.value.toFixed(2)}
 					</span>
-				</div>
+				</div>}
+        {!exchangeRate.value && <div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
+            <CgSpinner className="animate-spin" />
+        </div>          }
 			</div>
 			<div className="dropdown dropdown-end">
 				<div
