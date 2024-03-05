@@ -142,6 +142,11 @@ const ListingForm = ({
           break;
         }
       }
+      // make sure we have enough to cover the send amount
+      if (amounts < sendAmount) {
+        throw new Error("insufficient funds");
+      }
+      
       if (amounts > sendAmount) {
         // build change inscription
         const changeInscription = {
