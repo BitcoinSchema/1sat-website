@@ -279,6 +279,9 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
         </label>
       </div>
 
+<div>
+<input type="file" className="file-input w-full max-w-xs" />
+</div>
       <div className="my-2">
         <label className="block mb-4">
           <div className="my-2">Max Supply</div>
