@@ -1,7 +1,7 @@
 "use client";
 
 import { buildInscriptionSafe } from "@/components/modal/airdrop";
-import { API_HOST, oLockPrefix, oLockSuffix } from "@/constants";
+import { API_HOST, oLockPrefix, oLockSuffix, toastErrorProps } from "@/constants";
 import {
   bsv20Balances,
   bsvWasmReady,
@@ -29,6 +29,7 @@ import {
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
+import toast from "react-hot-toast";
 import { MarketData } from "./list";
 
 const ListingForm = ({
@@ -144,9 +145,10 @@ const ListingForm = ({
       }
       // make sure we have enough to cover the send amount
       if (amounts < sendAmount) {
+        toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
         throw new Error("insufficient funds");
       }
-      
+
       if (amounts > sendAmount) {
         // build change inscription
         const changeInscription = {

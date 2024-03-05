@@ -113,6 +113,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 
 			// make sure we have enough to cover the send amount
 			if (amounts < sendAmount) {
+        toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
 				throw new Error("insufficient funds");
 			}
 
