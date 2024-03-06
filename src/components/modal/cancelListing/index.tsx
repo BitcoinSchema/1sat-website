@@ -43,7 +43,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       return;
     }
     e.preventDefault();
-    console.log("cancel listing");
+    console.log("cancel bsv20 listing");
     if (!utxos || !payPk || !ordPk || !fundingAddress || !ordAddress || !indexerAddress) {
       return;
     }
@@ -210,6 +210,10 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
     const cancelTx = new Transaction(1, 0);
 
+    if (listing.id || listing.tick) {
+      throw new Error("BSV20 listing!");
+    }
+
     const cancelInput = new TxIn(
       Buffer.from(listing.txid, "hex"),
       listing.vout,
@@ -338,7 +342,8 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
             {/* if there is a button in form, it will close the modal */}
             <button type="button" className="btn" onClick={onClose}>Close</button>
             <button type="button" className="btn btn-error" onClick={(e) => {
-              if (listing.origin?.data?.map?.p === "bsv-20") {
+              console.log({listing})
+              if (listing.tick || listing.id) {
                 cancelBsv20Listing(e)
                 return
               }
