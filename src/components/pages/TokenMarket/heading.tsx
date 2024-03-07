@@ -89,7 +89,7 @@ const TickerHeading = ({
 		if (fundingAddress.value && ordAddress.value) {
 			let bsv20Utxos = await getBsv20Utxos(ordAddress.value, 0, id);
 			ordUtxos.value = (ordUtxos.value || []).concat(bsv20Utxos);
-			utxos.value = await getUtxos(fundingAddress.value);
+			utxos.value = await getUtxos(fundingAddress.value!);
 		}
 	};
 
