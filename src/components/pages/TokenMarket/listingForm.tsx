@@ -324,7 +324,7 @@ const ListingForm = ({
 				);
 				const indexerAddress = ticker.fundAddress!;
 				// refresh utxos
-				utxos.value = await getUtxos(fundingAddress.value);
+				utxos.value = await getUtxos(fundingAddress.value!);
 
 				const pendingTx = await listBsv20(
 					Math.ceil(parseFloat(listingAmount.value!) * 10 ** dec.value),
