@@ -31,7 +31,7 @@ const TickerContent = ({
   const ref = useRef(null);
   const salesRef = useRef(null);
   const isInView = useInView(ref);
-  const salesInView = useInView(ref);
+  const salesInView = useInView(salesRef);
   const newOffset = useSignal(0);
   const newSalesOffset = useSignal(0);
   const reachedEndOfListings = useSignal(false);
@@ -122,6 +122,9 @@ const TickerContent = ({
       }
     };
 
+    if (salesInView) {
+      console.log({salesInView})
+    }
     if (
       type === AssetType.BSV20 &&
       (salesInView || newSalesOffset.value === 0) &&
