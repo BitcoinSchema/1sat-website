@@ -36,7 +36,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	// get tx details
 	const parts = params.outpoint.split("_");
   const txid = parts[0];
-  const vout = parts.length > 1 ? parts[1] : 0;
+  const vout = parts.length > 1 ? parts[1] : "0";
   
 	const response = await fetch(
 		`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`,
@@ -145,7 +145,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 					<div className="flex">
 						<OutpointHeading outpoint={`${txid}_${vout}`} />
 					</div>
-					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} outputSpends={outputSpends} />
+					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} outputSpends={outputSpends} vout={parseInt(vout)}/>
 					{content()}
 				</div>
 			</Suspense>

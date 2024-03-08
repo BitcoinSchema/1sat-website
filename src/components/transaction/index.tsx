@@ -6,6 +6,7 @@ import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { P2PKHAddress, PublicKey, Transaction } from "bsv-wasm-web";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { FaSpinner } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
@@ -17,12 +18,19 @@ import { showDetails } from "../pages/outpoint/heading";
 interface DisplayIOProps {
 	rawtx: string;
 	inputOutpoints: InputOutpoint[];
-  outputSpends: string[];
+	outputSpends: string[];
+	vout: number;
 }
 
-const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints, outputSpends }) => {
+const DisplayIO: React.FC<DisplayIOProps> = ({
+	rawtx,
+	inputOutpoints,
+	outputSpends,
+	vout,
+}) => {
 	// Return a React component that calls the add_one method on the wasm module
 	useSignals();
+	const router = useRouter();
 	const ioIns = useSignal<IODisplay[] | null>(null);
 	const ioOuts = useSignal<IODisplay[] | null>(null);
 	const attempted = useSignal(false);
@@ -80,9 +88,11 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints, outputSpen
 					ioOuts.value.push({ address, index, txid, amount });
 				} else {
 					const amount = output.get_satoshis();
-          
+
 					ioOuts.value.push({
-            script: `Script: ${outScript.slice(0, 20)}...${outScript.slice(-20)}`,
+						script: `Script: ${outScript.slice(0, 20)}...${outScript.slice(
+							-20,
+						)}`,
 						index: i,
 						txid: tx.get_id_hex(),
 						amount,
@@ -99,37 +109,63 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints, outputSpen
 	const inputs = computed(() => {
 		return (
 			ioIns.value && (
-        <ul className="rounded py-1 px-3 bg-gradient-to-b from-[#010101] to-black">
-        {ioIns.value?.map((io, i) => {
+				<ul className="rounded py-1 px-3 bg-gradient-to-b from-[#010101] to-black">
+					{ioIns.value?.map((io, i) => {
 						const sats = inputOutpoints[io.index].satoshis;
-
+						const itemClass =
+							"cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative hover:bg-neutral/50";
 						return (
-							<li key={i} className="flex gap-2 justify-between my-4 relative">
-								<Link href={`/outpoint/${io.txid}_${io.index}`}>
-									<span className="text-xl font-mono flex items-center gap-1">
-										<FaHashtag />
-										{io.index}
-									</span>
-								</Link>
-								<div className="flex flex-col w-full">
-									<Link
-										className="text-xs w-fit flex items-center"
-										href={`/activity/${io.address}/ordinals`}
-									>
+							<li
+								key={i}
+								className={itemClass}
+								onClick={() => router.push(`/outpoint/${io.txid}_${io.index}`)}
+							>
+								<span className="text-xl font-mono flex items-center gap-1">
+									<FaHashtag />
+									{io.index}
+								</span>
+								<div className="flex w-full">
+									{io.address && (
 										<JDenticon
 											hashOrValue={io.address}
-											className="w-6 h-6 mr-2"
+											className="w-10 h-10 mr-2"
 										/>
-										{io.address || io.script}
-									</Link>
-									<Link
-										className="text-xs w-fit text-[#555]"
-										href={`/outpoint/${io.txid}_${io.index}`}
-									>
-										via {truncate(io.txid)} [{io.index}]
-									</Link>
+									)}
+									<div className="flex flex-col w-full">
+										<Link
+											className="text-xs flex w-fit items-center"
+											target={io.address ? "_blank" : ""}
+											href={
+												io.address
+													? `/activity/${io.address}/ordinals`
+													: `https://whatsonchain.com/tx/${io.txid}?output=${io.index}`
+											}
+										>
+											<button
+												type="button"
+												className={`${
+													io.address ? "text-base" : ""
+												} btn-outline ${
+													io.index === vout ? "text-white" : "text-white/50"
+												} rounded font-mono flex items-center px-1 gap-1`}
+											>
+												{io.address || io.script}
+											</button>
+										</Link>
+										<Link
+											className="text-xs w-fit text-[#555]"
+											href={`/outpoint/${io.txid}_${io.index}`}
+										>
+											<button
+												type="button"
+												className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
+											>
+												via {truncate(io.txid)} [{io.index}]
+											</button>
+										</Link>
+									</div>
 								</div>
-								<div className="text-xs text-nowrap absolute bottom-0 right-0 text-red-400">
+								<div className="text-xs font-mono text-nowrap absolute bottom-0 right-0 mb-2 mr-2 text-white/50">
 									{sats > BigInt(iterationFee)
 										? `${toBitcoin(sats.toString())} BSV`
 										: `${sats} sats`}
@@ -144,37 +180,71 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints, outputSpen
 
 	const outputs = computed(() => {
 		return (
-      // tailwind gradient to black on bottom
-			<ul className="rounded py-1 px-3 bg-gradient-to-b from-[#010101] to-black">
+			// tailwind gradient to black on bottom
+			<ul className="rounded bg-gradient-to-b from-[#010101] to-black">
 				{ioOuts.value?.map((io, i) => {
 					const sats = io.amount;
+					const itemClass = `cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative ${
+						vout === i ? "bg-neutral text-warning" : "hover:bg-neutral/50 "
+					}`;
 					return (
-						<li key={i} className="flex gap-2 justify-between my-4 relative">
-							<Link href={`/outpoint/${io.txid}_${io.index}`}>
-								<span className="text-xl font-mono flex items-center gap-1">
-									<FaHashtag />
-									{io.index}
-								</span>
-							</Link>
-							<div className="flex flex-col w-full">
-								<Link
-									className="text-xs flex w-fit items-center"
-									href={`/activity/${io.address}/ordinals`}
-								>
-									{io.address && <JDenticon
+						<li
+							key={i}
+							className={itemClass}
+							onClick={() => router.push(`/outpoint/${io.txid}_${io.index}`)}
+						>
+							<span
+								className={`text-xl font-mono flex items-center gap-1 ${
+									io.index === vout ? "" : ""
+								}`}
+							>
+								<FaHashtag />
+								{io.index}
+							</span>
+							<div className="flex w-full">
+								{io.address && (
+									<JDenticon
 										hashOrValue={io.address}
-										className="w-6 h-6 mr-2"
-									/>}
-									{io.address || io.script}
-								</Link>
-								{outputSpends[io.index] && <Link
-									className="text-xs w-fit text-[#555]"
-									href={`/outpoint/${outputSpends[io.index]}`}
-								>
-									Spend {truncate(outputSpends[io.index])} [{io.index}]
-								</Link>}
+										className="w-10 h-10 mr-2"
+									/>
+								)}
+								<div className="flex flex-col w-full">
+									<Link
+										className="text-xs flex w-fit items-center"
+										target={io.address ? "_blank" : ""}
+										href={
+											io.address
+												? `/activity/${io.address}/ordinals`
+												: `https://whatsonchain.com/tx/${io.txid}?output=${io.index}`
+										}
+									>
+										<button
+											type="button"
+											className={`${
+												io.address ? "text-base" : ""
+											} btn-outline ${
+												io.index === vout ? "text-white" : "text-white/50"
+											} rounded font-mono flex items-center px-1 gap-1`}
+										>
+											{io.address || io.script}
+										</button>
+									</Link>
+									{outputSpends[io.index] && (
+										<Link
+											className="text-xs w-fit text-[#555]"
+											href={`/outpoint/${outputSpends[io.index]}`}
+										>
+											<button
+												type="button"
+												className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
+											>
+												Spend {truncate(outputSpends[io.index])} [{io.index}]
+											</button>
+										</Link>
+									)}
+								</div>
 							</div>
-							<div className="text-xs text-nowrap absolute bottom-0 right-0 text-emerald-400">
+							<div className="text-xs font-mono text-nowrap absolute bottom-0 right-0 mb-2 mr-2 text-white/50">
 								{sats > BigInt(iterationFee)
 									? `${toBitcoin(sats.toString())} BSV`
 									: `${sats} sats`}
@@ -192,11 +262,11 @@ const DisplayIO: React.FC<DisplayIOProps> = ({ rawtx, inputOutpoints, outputSpen
 			outputs.value && (
 				<>
 					<div className="flex-1 w-1/2">
-						<h2 className="my-4 text-lg">Inputs</h2>
+						<h2 className="my-4 text-xl font-mono font-semibold">Inputs</h2>
 						{inputs}
 					</div>
 					<div className="flex-1 w-1/2">
-						<h2 className="my-4 text-lg">Outputs</h2>
+						<h2 className="my-4 text-xl font-mono font-semibold">Outputs</h2>
 						{outputs}
 					</div>
 				</>
