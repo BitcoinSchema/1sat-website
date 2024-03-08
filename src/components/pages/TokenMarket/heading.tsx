@@ -231,7 +231,7 @@ const TickerHeading = ({
 							className="tooltip tooltip-right"
 							data-tip={`${ticker.pendingOps} pending operations`}
 						>
-							{bsvNeeded.value > 0 ? "Needs {bsvNeeded} BSV" : "Funded. Processing..."}
+							{bsvNeeded.value > 0 ? `Needs ${bsvNeeded} BSV` : "Funded. Processing..."}
 						</div>
 					</td>
 					<td className="transition cursor-pointer text-right">
