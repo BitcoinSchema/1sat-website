@@ -231,11 +231,12 @@ const TickerHeading = ({
 							className="tooltip tooltip-right"
 							data-tip={`${ticker.pendingOps} pending operations`}
 						>
-							Needs {bsvNeeded} BSV
+							{bsvNeeded.value > 0 ? "Needs {bsvNeeded} BSV" : "Funded, but processing ops..."}
 						</div>
 					</td>
 					<td className="transition cursor-pointer text-right">
 						<button
+              type="button"
 							className="btn btn-warning btn-sm"
 							onClick={openPaymentModal}
 						>
@@ -244,7 +245,7 @@ const TickerHeading = ({
 						{showPaymentModal.value && (
 							<WithdrawalModal
 								address={ticker.fundAddress}
-								amount={bsvNeeded.value}
+								amount={bsvNeeded.value >= 0 ? bsvNeeded.value : 0}
 								onClose={() => {
 									console.log("close modal");
 									showPaymentModal.value = false;

@@ -242,7 +242,7 @@ console.log({balance:balance.value})
 							/>
 						</div>
 						<div className="modal-action">
-							<button className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
+							<button type="button" disabled={parseInt(amount.value || "0") > 0} className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
 								Send
 							</button>
 						</div>
