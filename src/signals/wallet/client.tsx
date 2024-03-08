@@ -45,9 +45,11 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
 			const backup = JSON.parse(e.target?.result as string) as {
 				payPk: string;
 				ordPk: string;
-				pendingTxs: PendingTransaction[] | null;
 			};
 			console.log({ backup });
+      
+      setPendingTxs([]);
+      utxos.value = null;
 			setPayPk(backup.payPk);
 			setOrdPk(backup.ordPk);
 			return resolve();
