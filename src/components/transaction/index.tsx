@@ -134,7 +134,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 									<div className="flex flex-col w-full">
 										<Link
 											className="text-xs flex w-fit items-center"
-											target={io.address ? "_blank" : ""}
+											target={!io.address ? "_blank" : ""}
 											href={
 												io.address
 													? `/activity/${io.address}/ordinals`
@@ -211,7 +211,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 								<div className="flex flex-col w-full">
 									<Link
 										className="text-xs flex w-fit items-center"
-										target={io.address ? "_blank" : ""}
+										target={!io.address ? "_blank" : ""}
 										href={
 											io.address
 												? `/activity/${io.address}/ordinals`
