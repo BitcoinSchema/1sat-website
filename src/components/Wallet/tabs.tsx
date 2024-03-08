@@ -15,12 +15,12 @@ const WalletTabs = ({
 			<div className="flex-1">
 				<div
 					role="tablist"
-					className={`tabs md:tabs-lg max-w-[300px] tabs-lifted`}
+					className={"tabs md:tabs-lg max-w-[300px] tabs-lifted"}
 				>
 					<Link
 						role="tab"
 						href={
-							address ? `/activity/${address}/ordinals` : `/wallet/ordinals`
+							address ? `/activity/${address}/ordinals` : "/wallet/ordinals"
 						}
 						className={`tab border-base-200 ${
 							type === AssetType.Ordinals ? "tab-active" : ""
@@ -30,7 +30,7 @@ const WalletTabs = ({
 					</Link>
 					<Link
 						role="tab"
-						href={address ? `/activity/${address}/bsv20` : `/wallet/bsv20`}
+						href={address ? `/activity/${address}/bsv20` : "/wallet/bsv20"}
 						className={`tab border-base-200 ${
 							type === AssetType.BSV20 ? "tab-active" : ""
 						}`}
@@ -38,7 +38,7 @@ const WalletTabs = ({
 						BSV20
 					</Link>
 					<Link
-						href={address ? `/activity/${address}/bsv21` : `/wallet/bsv21`}
+						href={address ? `/activity/${address}/bsv21` : "/wallet/bsv21"}
 						role="tab"
 						className={`tab border-base-200 ${
 							type === AssetType.BSV21 ? "tab-active" : ""

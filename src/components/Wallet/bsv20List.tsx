@@ -60,7 +60,9 @@ const Bsv20List = ({
 				bsv20s.value?.map((u) => u.origin?.data?.bsv20?.tick as string) || [];
 			const fromBalances =
 				bsv20Balances.value?.map((b) => b.tick as string) || [];
-			const finalArray = (unindexed.concat(fromBalances) || []).filter((id) => !!id);
+			const finalArray = (unindexed.concat(fromBalances) || []).filter(
+				(id) => !!id,
+			);
 			console.log({ finalArray });
 			const ids = uniq(finalArray);
 			if (!ids.length) return;
@@ -466,21 +468,23 @@ const Bsv20List = ({
 						{listedContent.value}
 					</div>
 
-					<input
-						type="radio"
-						name="balanceTabs"
-						role="tab"
-						className="tab mr-1"
-						aria-label="Unindexed"
-						checked={balanceTab.value === BalanceTab.Unindexed}
-						onChange={() => (balanceTab.value = BalanceTab.Unindexed)}
-					/>
-					<div
-						role="tabpanel"
-						className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
-					>
-						{unindexedContent.value}
-					</div>
+					{type === AssetType.BSV20 && <>
+							<input
+								type="radio"
+								name="balanceTabs"
+								role="tab"
+								className="tab mr-1"
+								aria-label="Unindexed"
+								checked={balanceTab.value === BalanceTab.Unindexed}
+								onChange={() => (balanceTab.value = BalanceTab.Unindexed)}
+							/>
+							<div
+								role="tabpanel"
+								className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
+							>
+								{unindexedContent.value}
+							</div>
+						</>}
 				</div>
 			</div>
 		);
