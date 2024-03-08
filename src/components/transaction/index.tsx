@@ -109,7 +109,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 	const inputs = computed(() => {
 		return (
 			ioIns.value && (
-				<ul className="rounded py-1 px-3 bg-gradient-to-b from-[#010101] to-black">
+				<ul className="rounded bg-gradient-to-b from-[#010101] to-black">
 					{ioIns.value?.map((io, i) => {
 						const sats = inputOutpoints[io.index].satoshis;
 						const itemClass =
