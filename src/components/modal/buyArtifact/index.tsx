@@ -7,6 +7,7 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { Listing } from "@/types/bsv20";
 import { OrdUtxo } from "@/types/ordinals";
+import { getUtxos } from "@/utils/address";
 import { Utxo } from "@/utils/js-1sat-ord";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
@@ -46,6 +47,11 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
   const router = useRouter();
 
   const buyArtifact = useCallback(async () => {
+
+    // get fresh utxos
+    const fundingUtxos = await getUtxos(fundingAddress.value!);
+    utxos.value = fundingUtxos;
+    
     // create a transaction that will purchase the artifact, once funded
     const purchaseTx = new Transaction(1, 0);
 
