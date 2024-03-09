@@ -276,7 +276,7 @@ const TickerContent = ({
           />
           <div className="font-semibold mt-4 text-base-content/75 flex justify-between text-lg font-mono">
             <div>Recent Sales</div>
-            <div>View All</div>
+            <div>&nbsp;</div>
           </div>
           <div className="divider my-1" />
           {sales.value?.map((sale) => {
