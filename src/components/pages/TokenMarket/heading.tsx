@@ -176,7 +176,7 @@ const TickerHeading = ({
 								{ticker.num}
 							</div>
 						)}
-						<span className="text-4xl">{ticker.tick || ticker.sym}</span>
+						<span className="text-4xl mr-4">{ticker.tick || ticker.sym}</span>
 					</div>
 				</th>
 				<td>
