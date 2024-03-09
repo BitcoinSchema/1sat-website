@@ -9,7 +9,6 @@ import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { minFee } from "@/utils/bsv20";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import { useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,11 +21,11 @@ import { MarketData } from "./list";
 type IconProps = {
 	alt: string;
 	icon: string | null;
+  className?: string;
 };
 
-const IconWithFallback: React.FC<IconProps> = (props) => {
+export const IconWithFallback: React.FC<IconProps> = (props) => {
 	const ref = useRef(null);
-	const isInView = useInView(ref);
 	const { icon, alt, ...rest } = props;
 	const imgSrc = useSignal(icon ? `https://ordfs.network/${icon}` : oneSatLogo);
 
@@ -44,7 +43,7 @@ const IconWithFallback: React.FC<IconProps> = (props) => {
 			}}
 			width={100}
 			height={100}
-			className={`opacity-0 mr-2 w-6 h-6 rounded-lg transition`}
+			className={`opacity-0 rounded-lg transition ${props.className ? props.className : ""}`}
 		/>
 	);
 };
@@ -167,6 +166,7 @@ const TickerHeading = ({
 							<IconWithFallback
 								icon={ticker.icon || null}
 								alt={ticker.sym || ""}
+                className="mr-2 w-6 h-6"
 							/>
 						)}
 						{ticker.num && (

@@ -9,6 +9,7 @@ import {
 } from "bsv-wasm";
 import { Buffer } from "buffer";
 import { AuthToken, Sigma } from "sigma-protocol";
+import { StringOrBufferArray } from "../inscribe";
 import { toHex } from "../strings";
 
 interface Signer extends Object {}
@@ -169,6 +170,171 @@ const createOrdinal = async (
 
   // add additional payments if any
   for (const p of additionalPayments) {
+    const satOut = new TxOut(
+      p.amount,
+      P2PKHAddress.from_string(p.to).get_locking_script()
+    );
+    tx.add_output(satOut);
+  }
+
+  // total the outputs
+  let totalOut = 0n;
+  const numOuts = tx.get_noutputs();
+  for (const i of Array(numOuts).keys()) {
+    totalOut += tx.get_output(i)?.get_satoshis() || 0n;
+  }
+
+  let totalSatsIn = 0n;
+  let satisfied = false;
+  for (const utxo of utxosArray) {
+    // Inputs
+    const utxoIn = new TxIn(
+      Buffer.from(utxo.txid, "hex"),
+      utxo.vout,
+      Script.from_asm_string("")
+    );
+    totalSatsIn += BigInt(utxo.satoshis);
+    tx.add_input(utxoIn);
+    if (totalSatsIn > totalOut) {
+      satisfied = true;
+      break;
+    }
+  }
+
+  console.log("on to the change", totalSatsIn, totalOut, satisfied);
+
+  // add change
+  const changeaddr = P2PKHAddress.from_string(changeAddress);
+  const changeScript = changeaddr.get_locking_script();
+  const fee = Math.ceil(
+    satPerByteFee *
+      (tx.get_size() + P2PKH_OUTPUT_SIZE + P2PKH_INPUT_SCRIPT_SIZE)
+  );
+  const change = totalSatsIn - totalOut - BigInt(fee);
+  if (change < 0) throw new Error("Inadequate satoshis for fee");
+  if (change > 0) {
+    const changeOut = new TxOut(BigInt(change), changeScript);
+    tx.add_output(changeOut);
+  }
+
+  console.log(
+    "On to sigma signing",
+    tx,
+    utxosArray,
+    paymentPk,
+    signer,
+    changeAddress,
+    fee
+  );
+  // sign tx if idKey or remote signer like starfish/tokenpass
+  const idKey = (signer as LocalSigner)?.idKey;
+  const keyHost = (signer as RemoteSigner)?.keyHost;
+  if (idKey) {
+    // input txids are available so sigma signature
+    // can be final before signing the tx
+    const sigma = new Sigma(tx);
+    const { signedTx } = sigma.sign(idKey);
+    tx = signedTx;
+  } else if (keyHost) {
+    const authToken = (signer as RemoteSigner)?.authToken;
+    const sigma = new Sigma(tx);
+    try {
+      const { signedTx } = await sigma.remoteSign(keyHost, authToken);
+      tx = signedTx;
+    } catch (e) {
+      console.log(e);
+      throw new Error(`Remote signing to ${keyHost} failed`);
+    }
+  }
+
+  console.log("Sign the payments", {
+    tx,
+    utxosArray,
+    paymentKey: paymentPk.to_wif(),
+    changeAddress,
+    fee,
+  });
+  const key = PrivateKey.from_wif(paymentPk.to_wif());
+  // sign all the inputs
+  let nInputs = tx.get_ninputs();
+  while (nInputs--) {
+    const utxoIn = tx.get_input(nInputs) as TxIn;
+    const utxo = utxosArray[nInputs];
+    const sig = tx.sign(
+      key,
+      SigHash.ALL | SigHash.FORKID,
+      0,
+      Script.from_asm_string(utxo.script),
+      BigInt(utxo.satoshis)
+    );
+
+    utxoIn.set_unlocking_script(
+      Script.from_asm_string(`${sig.to_hex()} ${key.to_public_key().to_hex()}`)
+    );
+
+    tx.set_input(0, utxoIn);
+  }
+
+  console.log("Created tx", { tx: tx.to_hex() });
+  return tx;
+};
+
+const createOrdinalWithData = async (
+  utxos: Utxo[] | Utxo,
+  destinationAddress: string,
+  paymentPk: PrivateKey,
+  changeAddress: string,
+  satPerByteFee: number,
+  inscriptions: Inscription[] | Inscription,
+  metaData: MAP | undefined,
+  signer: LocalSigner | RemoteSigner | undefined,
+  additionalPayments: Payment[],
+  data: StringOrBufferArray
+): Promise<Transaction> => {
+  console.log(
+    "Creating tx",
+    utxos,
+    destinationAddress,
+    paymentPk,
+    changeAddress,
+    satPerByteFee,
+    inscriptions,
+    metaData,
+    signer,
+    additionalPayments,
+    data
+  );
+  console.log("Ready", Transaction);
+  let tx = new Transaction(1, 0);
+  const utxosArray = Array.isArray(utxos) ? utxos : [utxos];
+  const inscriptionsArray = Array.isArray(inscriptions)
+    ? inscriptions
+    : [inscriptions];
+
+  for (const inscription of inscriptionsArray) {
+    // Outputs
+    const inscriptionScript = buildInscription(
+      P2PKHAddress.from_string(destinationAddress),
+      inscription.dataB64,
+      inscription.contentType,
+      metaData
+    );
+
+    const satOut = new TxOut(BigInt(1), inscriptionScript);
+    tx.add_output(satOut);
+  }
+
+  // add data outputs
+  const asmString = data.map((d) => (d instanceof Buffer ? d : Buffer.from(d)).toString("hex")).join(" ");
+  tx.add_output(
+    new TxOut(
+      BigInt(0),
+      Script.from_asm_string(`OP_0 OP_RETURN ${asmString}`)
+    )
+  );
+  
+  // add additional payments if any
+  for (const p of additionalPayments || []) {
     const satOut = new TxOut(
       p.amount,
       P2PKHAddress.from_string(p.to).get_locking_script()
@@ -443,4 +609,5 @@ export const P2PKH_INPUT_SCRIPT_SIZE = 107;
 export const P2PKH_FULL_INPUT_SIZE = 148;
 export const P2PKH_OUTPUT_SIZE = 34;
 
-export { buildInscription, createOrdinal, sendOrdinal, sendUtxos };
+export { buildInscription, createOrdinal, createOrdinalWithData, sendOrdinal, sendUtxos };
+

@@ -31,31 +31,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   const handleFileChange = useCallback(
     (event: any) => {
       const file = event.target.files[0] as File;
-      const knownImageTypes = [
-        "image/gif",
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/svg+xml",
-        "image/bmp",
-        "image/tiff",
-        "image/x-icon",
-        "image/vnd.microsoft.icon",
-        "image/vnd.wap.wbmp",
-        "image/heic",
-        "image/heif",
-        "image/avif",
-        "image/apng",
-        "image/jxl",
-        "image/jpg",
-        "image/jfif",
-        "image/pjpeg",
-        "image/pjp",
-      ];
-      const knownVideoTypes = ["video/mp4", "video/webm", "video/ogg"];
-
-      // TODO: Add more direct support for audio and video
-      const knownAudioTypes = ["audio/mpeg", "audio/ogg", "audio/wav"];
+      
       if (knownImageTypes.includes(file.type)) {
         setIsImage(true);
       } else if (knownVideoTypes.includes(file.type)) {
@@ -338,3 +314,30 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
 };
 
 export default InscribeImage;
+
+
+export const knownImageTypes = [
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/svg+xml",
+  "image/bmp",
+  "image/tiff",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+  "image/vnd.wap.wbmp",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+  "image/apng",
+  "image/jxl",
+  "image/jpg",
+  "image/jfif",
+  "image/pjpeg",
+  "image/pjp",
+];
+export const knownVideoTypes = ["video/mp4", "video/webm", "video/ogg"];
+
+// TODO: Add more direct support for audio and video
+export const knownAudioTypes = ["audio/mpeg", "audio/ogg", "audio/wav"];

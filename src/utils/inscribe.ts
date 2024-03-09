@@ -11,6 +11,7 @@ import {
   RemoteSigner,
   Utxo,
   createOrdinal,
+  createOrdinalWithData,
 } from "@/utils/js-1sat-ord";
 import { PrivateKey } from "bsv-wasm-web";
 import toast from "react-hot-toast";
@@ -88,6 +89,41 @@ export const handleBulkInscribing = (
       metadata, // optional metadata
       undefined,
       why, // payments
+    );
+    return tx;
+  } catch (e) {
+    throw e;
+  }
+};
+// same as handleBulkInscribing but with data
+export const handleBulkInscribingWithData = (
+  payPk: string,
+  inscriptions: Inscription[],
+  ordAddress: string,
+  changeAddress: string,
+  fundingUtxos: Utxo[],
+  metadata:  MAP | undefined,
+  payments: Payment[],
+  data: StringOrBufferArray,
+) => {
+  const why = payments
+  const paymentPk = PrivateKey.from_wif(payPk);
+
+  const signer = {
+    keyHost: "http://localhost:21000",
+  } as RemoteSigner;
+  try {
+    const tx = createOrdinalWithData(
+      fundingUtxos,
+      ordAddress,
+      paymentPk,
+      changeAddress,
+      0.05,
+      inscriptions,
+      metadata, // optional metadata
+      undefined,
+      why, // payments
+      data
     );
     return tx;
   } catch (e) {
@@ -179,6 +215,52 @@ export const inscribeUtf8 = async (
     utxos,
     undefined,
     why // payments
+  );
+  const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
+  const satsOut = Number(tx.satoshis_out());
+  const fee = satsIn - satsOut;
+  const result = {
+    rawTx: tx.to_hex(),
+    size: tx.get_size(),
+    fee,
+    numInputs: tx.get_ninputs(),
+    numOutputs: tx.get_noutputs(),
+    txid: tx.get_id_hex(),
+    inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
+    iterations,
+  } as PendingTransaction;
+  pendingTxs.value = [result];
+  return result;
+};
+export type StringOrBufferArray = (string | Buffer)[];
+
+export const inscribeUtf8WithData = async (
+  text: string,
+  contentType: string,
+  utxo: Utxo | Utxo[],
+  iterations: number | undefined,
+  payments: Payment[] | undefined,
+  data: StringOrBufferArray,
+) => {
+  const why = payments
+  const fileAsBase64 = Buffer.from(text).toString("base64");
+  // normalize utxo to array
+  const utxos = Array.isArray(utxo) ? utxo : [utxo];
+  // duplicate inscription * iterations and pass in the array
+  let num = iterations || 1;
+  const inscriptions: Inscription[] = [];
+  while (num--) {
+    inscriptions.push({ dataB64: fileAsBase64, contentType });
+  }
+  const tx = await handleBulkInscribingWithData(
+    payPk.value!,
+    inscriptions,
+    ordAddress.value!,
+    fundingAddress.value!,
+    utxos,
+    undefined,
+    why || [], // payments
+    data
   );
   const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
   const satsOut = Number(tx.satoshis_out());
