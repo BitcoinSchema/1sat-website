@@ -167,7 +167,7 @@ const TickerHeading = ({
 							<IconWithFallback
 								icon={ticker.icon || null}
 								alt={ticker.sym || ""}
-                className="mr-2 w-6 h-6"
+                className="mr-2 w-8 h-8"
 							/>
 						)}
 						{ticker.num && (
