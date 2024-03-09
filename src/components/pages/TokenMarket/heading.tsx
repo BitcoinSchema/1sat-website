@@ -27,8 +27,9 @@ type IconProps = {
 export const IconWithFallback: React.FC<IconProps> = (props) => {
 	const ref = useRef(null);
 	const { icon, alt, ...rest } = props;
-	const imgSrc = useSignal(icon ? `https://ordfs.network/${icon}` : oneSatLogo);
-
+  
+  const imgSrc = useSignal(icon ? `/api/sanitize?url=https://ordfs.network/${icon}` : oneSatLogo);
+  console.log({icon, imgSrc: imgSrc.value});
 	return (
 		<Image
 			{...rest}
@@ -86,7 +87,7 @@ const TickerHeading = ({
 		// open modal
 		showPaymentModal.value = true;
 		if (fundingAddress.value && ordAddress.value) {
-			let bsv20Utxos = await getBsv20Utxos(ordAddress.value, 0, id);
+			const bsv20Utxos = await getBsv20Utxos(ordAddress.value, 0, id);
 			ordUtxos.value = (ordUtxos.value || []).concat(bsv20Utxos);
 			utxos.value = await getUtxos(fundingAddress.value!);
 		}

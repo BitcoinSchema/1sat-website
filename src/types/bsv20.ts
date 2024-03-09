@@ -11,7 +11,6 @@ export interface BSV20 extends OrdUtxo {
   reason?: null;
   pending?: string;
   id?: string;
-  icon?: string;
   p: string;
   op: string;
   tick?: string;

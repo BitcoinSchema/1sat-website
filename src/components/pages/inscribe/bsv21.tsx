@@ -408,7 +408,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 									mintError ? "text-error" : "text-[#555]"
 								} text-sm`}
 							>
-								{mintError || "Max Size 100KB, Square Image, .png or .jpg"}
+								{mintError || "Max Size 100KB, Square Image"}
 							</div>
 						</div>
 					</div>
