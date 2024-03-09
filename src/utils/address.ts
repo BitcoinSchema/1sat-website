@@ -1,5 +1,4 @@
 import { API_HOST, resultsPerPage } from "@/constants";
-import { WocUtxo } from "@/types/common";
 import { OrdUtxo } from "@/types/ordinals";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { uniq } from "lodash";
@@ -39,16 +38,15 @@ export const getOrdUtxos = async (address: string, nextOffset: number) => {
 }
 
 export const getUtxos = async (address: string) => {
-  const { promise } = http.customFetch<WocUtxo[]>(
-    `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
+  const { promise } = http.customFetch<OrdUtxo[]>(
+    // `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
+    `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
   );
   const u = await promise;
 
-  return u.map((u: WocUtxo) => {
+  return u.map((u: OrdUtxo) => {
     return {
-      satoshis: u.value,
-      txid: u.tx_hash,
-      vout: u.tx_pos,
+      ...u,
       script: P2PKHAddress.from_string(address)
         .get_locking_script()
         .to_asm_string(),
