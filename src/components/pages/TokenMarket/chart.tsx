@@ -72,8 +72,9 @@ const TremorChartComponent: FC<ChartProps> = ({
       if (!acc[height]) {
         acc[height] = { price: 0, amt: 0, count: 0 };
       }
-      acc[height].price += parseFloat(item.pricePer) * parseFloat(item.amt);
-      acc[height].amt += parseFloat(item.amt);
+      const amt = ticker.dec ? parseFloat(item.amt) / 10 ** ticker.dec : parseFloat(item.amt);
+      acc[height].price += parseFloat(item.pricePer) * amt;
+      acc[height].amt += amt;
       acc[height].count += 1;
       return acc;
     }, {} as Record<number, { price: number; amt: number; count: number }>);
@@ -84,7 +85,7 @@ const TremorChartComponent: FC<ChartProps> = ({
       return {
         height: parseInt(height),
         price: averagePrice,
-        amt: data.amt, // Use total amount for bubble size in scatter chart
+        amt: data.amt,
       };
     });
 
