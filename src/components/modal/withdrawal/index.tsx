@@ -172,6 +172,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 	const submit = useCallback(
 		(e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
+      console.log({e})
 			if (!amount.value || !address.value) {
 				return;
 			}
@@ -242,7 +243,7 @@ console.log({balance:balance.value})
 							/>
 						</div>
 						<div className="modal-action">
-							<button type="button" disabled={parseInt(amount.value || "0") > 0} className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
+							<button type="button" disabled={parseFloat(amount.value || "0") === 0} className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:btn-disabled">
 								Send
 							</button>
 						</div>
