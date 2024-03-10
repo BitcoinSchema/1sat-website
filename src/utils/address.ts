@@ -40,7 +40,7 @@ export const getOrdUtxos = async (address: string, nextOffset: number) => {
 export const getUtxos = async (address: string) => {
   const { promise } = http.customFetch<OrdUtxo[]>(
     // `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
-    `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
+    `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false&origins=fals&refresh=true`
   );
   const u = await promise;
 
