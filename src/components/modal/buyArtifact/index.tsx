@@ -380,7 +380,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     router.push("/preview");
   }, [indexerAddress, listing, onClose, price, router]);
 
-  const isBsv20Listing = (listing as Listing).tick !== undefined;
+  const isBsv20Listing = (listing as Listing).tick !== undefined || (listing as Listing).id !== undefined;
   return (
     <div
       className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
