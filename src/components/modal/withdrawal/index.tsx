@@ -32,16 +32,19 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 }) => {
 	useSignals();
 	const router = useRouter();
-	
-  const amount = useSignal(amt?.toString() || "0");
+
+	const amount = useSignal(amt?.toString() || "0");
 	const address = useSignal(addr || "");
 
 	const balance = computed(() => {
 		if (!utxos.value) {
 			return 0;
 		}
-		const amt = utxos.value.reduce((acc, utxo) => (acc + (utxo.satoshis || 0)), 0);
-    return Number.isNaN(amt) ? 0 : amt;
+		const amt = utxos.value.reduce(
+			(acc, utxo) => acc + (utxo.satoshis || 0),
+			0,
+		);
+		return Number.isNaN(amt) ? 0 : amt;
 	});
 
 	const setAmountToBalance = useCallback(() => {
@@ -171,8 +174,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 
 	const submit = useCallback(
 		(e: React.FormEvent<HTMLFormElement>) => {
+			console.log({ e });
 			e.preventDefault();
-      console.log({e})
 			if (!amount.value || !address.value) {
 				return;
 			}
@@ -185,7 +188,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 		},
 		[amount.value, address.value, balance.value, send],
 	);
-console.log({balance:balance.value})
+
 	return (
 		<div
 			className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
@@ -204,7 +207,8 @@ console.log({balance:balance.value})
 									className="text-xs cursor-pointer text-[#aaa]"
 									onClick={setAmountToBalance}
 								>
-									Balance: {balance.value > 0 ? toBitcoin(balance.value) : 0} BSV
+									Balance: {balance.value > 0 ? toBitcoin(balance.value) : 0}{" "}
+									BSV
 								</div>
 							)}
 							{balance.value === undefined && (
@@ -243,7 +247,11 @@ console.log({balance:balance.value})
 							/>
 						</div>
 						<div className="modal-action">
-							<button type="button" disabled={parseFloat(amount.value || "0") === 0} className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:btn-disabled">
+							<button
+								type="submit"
+								disabled={Number.parseFloat(amount.value) <= 0 || !address.value}
+								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:btn-disabled diabled:hover:btn-disabled"
+							>
 								Send
 							</button>
 						</div>
