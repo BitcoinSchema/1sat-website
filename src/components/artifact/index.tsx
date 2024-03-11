@@ -138,7 +138,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 			`${
 				latest
 					? `${artifact?.height}:${artifact?.idx}:${artifact?.vout}`
-					: artifact?.origin?.num
+					:  artifact?.origin?.inum || artifact?.origin?.num
 			}`,
 		[artifact, latest],
 	);

@@ -65,6 +65,7 @@ type Origin = {
   num?: string;
   outpoint: string;
   map?: { [key: string]: any };
+  inum? :number;
 };
 
 export interface OrdUtxo extends Utxo {
