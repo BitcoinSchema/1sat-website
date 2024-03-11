@@ -349,7 +349,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
       const sig = purchaseTx.sign(
         paymentPk,
-        SigHash.InputsOutputs,
+        SigHash.InputOutputs,
         1 + idx,
         Script.from_asm_string(utxo.script),
         BigInt(utxo.satoshis)
