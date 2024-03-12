@@ -209,7 +209,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 		pendingTxs.value = [pendingTx];
 		console.log("pending tx", pendingTx);
 		await broadcast(pendingTx);
-		onClose();
+		onCancelled();
 	};
 
 	const cancelListing = async (e: any) => {
@@ -356,7 +356,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 		pendingTxs.value =
 			pendingTxs.value?.filter((t) => t.txid !== listing.txid) || [];
 		toast.success("Listing canceled.", toastProps);
-		onClose();
+		onCancelled();
 	};
 
 	return (

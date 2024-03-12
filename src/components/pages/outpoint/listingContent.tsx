@@ -40,6 +40,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					}}
           onCancelled={() => {
             console.log("listing cancelled")
+            showCancelModal.value = false;
           }}
 					listing={artifact as Listing}
 				/>

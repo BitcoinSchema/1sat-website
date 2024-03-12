@@ -223,6 +223,7 @@ const TickerContent = ({
                         showCancel.value = null;
                       }}
                       onCancelled={async () => {
+                        showCancel.value = null;
                         console.log("listing cancelled");
                         if (!listings.value) return;
                         listings.value = listings.value?.filter((l) => l.txid !== listing.txid);
