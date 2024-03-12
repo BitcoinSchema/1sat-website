@@ -1,3 +1,5 @@
+"use client"
+
 import { API_HOST, indexerBuyFee, toastProps } from "@/constants";
 import {
   bsvWasmReady,
@@ -7,11 +9,13 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { Listing } from "@/types/bsv20";
-import { PendingTransaction } from "@/types/preview";
+import type { Listing } from "@/types/bsv20";
+import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
-import { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "@/utils/js-1sat-ord";
+import { useSignal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
 import {
   P2PKHAddress,
   PrivateKey,
@@ -40,6 +44,8 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 	indexerAddress,
 	className,
 }) => {
+  useSignals();
+  const cancelling = useSignal(false);
 	const cancelBsv20Listing = async (e: any) => {
 		if (!bsvWasmReady.value) {
 			console.log("bsv wasm not ready");
@@ -50,12 +56,14 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 			console.log("funding address not set");
 			return;
 		}
-
+cancelling.value = true;
 		await getUtxos(fundingAddress.value);
 
 		e.preventDefault();
 		console.log("cancel bsv20 listing");
 		if (!utxos || !payPk || !ordPk || !ordAddress || !indexerAddress) {
+      cancelling.value = false;
+
 			return;
 		}
 
@@ -82,6 +90,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 		} else if ((listing as Listing).id) {
 			inscription.id = (listing as Listing).id;
 		} else {
+      cancelling.value = false;
 			throw new Error("Invalid BSV20 listing");
 		}
 		const inscriptionB64 = Buffer.from(JSON.stringify(inscription)).toString(
@@ -209,6 +218,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 		pendingTxs.value = [pendingTx];
 		console.log("pending tx", pendingTx);
 		await broadcast(pendingTx);
+    cancelling.value = false;
 		onCancelled();
 	};
 
@@ -222,19 +232,22 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 			console.log("funding address not set");
 			return;
 		}
-    
+    cancelling.value = true;
+
 		await getUtxos(fundingAddress.value);
 
 
 		e.preventDefault();
 		console.log("cancel listing");
 		if (!utxos || !payPk || !ordPk || !ordAddress) {
+      cancelling.value =false;
 			return;
 		}
 
 		const cancelTx = new Transaction(1, 0);
 
 		if (listing.id || listing.tick) {
+      cancelling.value = false;
 			throw new Error("BSV20 listing!");
 		}
 
@@ -356,6 +369,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 		pendingTxs.value =
 			pendingTxs.value?.filter((t) => t.txid !== listing.txid) || [];
 		toast.success("Listing canceled.", toastProps);
+    cancelling.value = false;
 		onCancelled();
 	};
 
@@ -375,6 +389,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 						</button>
 						<button
 							type="button"
+              disabled={cancelling.value}
 							className="btn btn-error"
 							onClick={async (e) => {
 								console.log({ listing });
