@@ -241,7 +241,7 @@ const Bsv20List = ({
 				<div className="text-[#777] font-semibold">Ticker</div>
 				<div className="text-[#777] font-semibold text-right">Balance</div>
 				<div className="w-8" />
-				{confirmedBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => {
+				{confirmedBalances?.value?.map(({ tick, all, sym, id, dec, listed }, idx) => {
 					// TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
 					const deets = find(tickerDetails.value, (t) => t.tick === tick);
 					const supply = deets?.supply || deets?.amt;
@@ -318,7 +318,7 @@ const Bsv20List = ({
 													type={type}
 													id={(tick || id)!}
 													dec={dec}
-													balance={all.confirmed / 10 ** dec}
+													balance={(all.confirmed - listed.confirmed) / 10 ** dec}
 													sym={sym}
 												/>
 											)}
