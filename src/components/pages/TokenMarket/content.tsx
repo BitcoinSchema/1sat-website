@@ -65,7 +65,7 @@ const TickerContent = ({
             (l) => !nextPageOfListings?.some((l2) => l2.txid === l.txid)
           ),
         ].sort((a, b) => {
-          return parseFloat(a.pricePer) < parseFloat(b.pricePer) ? -1 : 1;
+          return Number.parseFloat(a.pricePer) < Number.parseFloat(b.pricePer) ? -1 : 1;
         })
       } else {
         reachedEndOfListings.value = true;
@@ -182,9 +182,9 @@ const TickerContent = ({
           </div>
           <div className="divider my-1" />
           {listings.value?.map((listing) => {
-            const qty = parseInt(listing.amt) / 10 ** ticker.dec;
+            const qty = Number.parseInt(listing.amt) / 10 ** ticker.dec;
             const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
-            const pricePer = (parseFloat(listing.price) / qty).toFixed(2);
+            const pricePer = (Number.parseFloat(listing.price) / qty).toFixed(2);
             const myListing = listing.owner === ordAddress.value;
             return (
               <div
@@ -296,7 +296,7 @@ const TickerContent = ({
                   className="flex flex-col py-1"
                 >
                   <span className="text-secondary-content/75">
-                    {(parseInt(sale.amt) / 10 ** ticker.dec).toLocaleString()}{" "}
+                    {(Number.parseInt(sale.amt) / 10 ** ticker.dec).toLocaleString()}{" "}
                     {ticker.tick}
                   </span>
                   <span className="text-accent text-xs">
@@ -309,7 +309,7 @@ const TickerContent = ({
                     disabled
                     className="btn btn-xs btn-outline btn-secondary pointer-events-none"
                   >
-                    {parseInt(sale.price) > 1000 ? `${toBitcoin(sale.price)} BSV` :`${sale.price} sat`}
+                    {Number.parseInt(sale.price) > 1000 ? `${toBitcoin(sale.price)} BSV` :`${sale.price} sat`}
                   </button>
                 </div>
               </div>
