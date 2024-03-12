@@ -390,7 +390,7 @@ cancelling.value = true;
 						<button
 							type="button"
               disabled={cancelling.value}
-							className="btn btn-error"
+							className="btn btn-error disabled:btn-disabled"
 							onClick={async (e) => {
 								console.log({ listing });
 								if (listing.tick || listing.id) {
