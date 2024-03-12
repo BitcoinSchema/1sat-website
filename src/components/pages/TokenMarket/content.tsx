@@ -213,7 +213,7 @@ const TickerContent = ({
                       }
                     }}
                   >
-                    {parseInt(listing.price) < 1000 ? `${listing.price} sat` : `${toBitcoin(listing.price)} BSV`}
+                    {Number.parseInt(listing.price) < 1000 ? `${listing.price} sat` : `${toBitcoin(listing.price)} BSV`}
                   </button>
                   {showCancel.value === listing.txid && (
                     <CancelListingModal
@@ -221,6 +221,11 @@ const TickerContent = ({
                       listing={listing}
                       onClose={() => {
                         showCancel.value = null;
+                      }}
+                      onCancelled={async () => {
+                        console.log("listing cancelled");
+                        if (!listings.value) return;
+                        listings.value = listings.value?.filter((l) => l.txid !== listing.txid);
                       }}
                       indexerAddress={ticker.fundAddress}
                     />
@@ -232,12 +237,12 @@ const TickerContent = ({
                       onClose={() => {
                         showBuy.value = null;
                       }}
-                      price={BigInt(Math.ceil(parseInt(listing.price)))}
+                      price={BigInt(Math.ceil(Number.parseInt(listing.price)))}
                       showLicense={false}
                       content={
                         <div className="w-full h-full rounded border border-secondary flex flex-col items-center justify-center">
                           <span className="text-xl text-secondary-content/75">{`${(
-                            parseInt(listing.amt) /
+                            Number.parseInt(listing.amt) /
                             10 ** ticker.dec
                           ).toLocaleString()} ${ticker.tick || ticker.sym}`}</span>
                           <span className="texl-base text-accent text-xs my-1">

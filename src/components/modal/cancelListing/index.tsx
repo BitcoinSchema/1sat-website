@@ -9,6 +9,7 @@ import {
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { Listing } from "@/types/bsv20";
 import { PendingTransaction } from "@/types/preview";
+import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
 import { Utxo } from "@/utils/js-1sat-ord";
 import {
@@ -26,6 +27,7 @@ import { calculateFee } from "../buyArtifact";
 
 interface CancelListingModalProps {
 	onClose: () => void;
+	onCancelled: () => void;
 	listing: Listing;
 	indexerAddress?: string;
 	className?: string;
@@ -33,6 +35,7 @@ interface CancelListingModalProps {
 
 const CancelListingModal: React.FC<CancelListingModalProps> = ({
 	onClose,
+	onCancelled,
 	listing,
 	indexerAddress,
 	className,
@@ -42,16 +45,17 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 			console.log("bsv wasm not ready");
 			return;
 		}
+
+		if (!fundingAddress.value) {
+			console.log("funding address not set");
+			return;
+		}
+
+		await getUtxos(fundingAddress.value);
+
 		e.preventDefault();
 		console.log("cancel bsv20 listing");
-		if (
-			!utxos ||
-			!payPk ||
-			!ordPk ||
-			!fundingAddress ||
-			!ordAddress ||
-			!indexerAddress
-		) {
+		if (!utxos || !payPk || !ordPk || !ordAddress || !indexerAddress) {
 			return;
 		}
 
@@ -213,9 +217,18 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 			console.log("bsv wasm not ready");
 			return;
 		}
+
+    if (!fundingAddress.value) {
+			console.log("funding address not set");
+			return;
+		}
+    
+		await getUtxos(fundingAddress.value);
+
+
 		e.preventDefault();
 		console.log("cancel listing");
-		if (!utxos || !payPk || !ordPk || !fundingAddress || !ordAddress) {
+		if (!utxos || !payPk || !ordPk || !ordAddress) {
 			return;
 		}
 
@@ -340,6 +353,9 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 		pendingTxs.value = [pendingTx];
 		console.log("pending tx", pendingTx);
 		await broadcast(pendingTx);
+		pendingTxs.value =
+			pendingTxs.value?.filter((t) => t.txid !== listing.txid) || [];
+		toast.success("Listing canceled.", toastProps);
 		onClose();
 	};
 
@@ -360,13 +376,15 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 						<button
 							type="button"
 							className="btn btn-error"
-							onClick={(e) => {
+							onClick={async (e) => {
 								console.log({ listing });
 								if (listing.tick || listing.id) {
-									cancelBsv20Listing(e);
+									await cancelBsv20Listing(e);
+									onCancelled();
 									return;
 								}
-								cancelListing(e);
+								await cancelListing(e);
+								onCancelled();
 							}}
 						>
 							Cancel Listing
