@@ -1,6 +1,7 @@
 "use client";
 
 import { bsvWasmReady, exchangeRate } from "@/signals/wallet";
+import { ordAddress } from "@/signals/wallet/address";
 import { effect } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import init from "bsv-wasm-web";
@@ -11,6 +12,8 @@ let initAttempted = false;
 
 const MarketMenu: React.FC = () => {
 	useSignals();
+	const address = ordAddress.value;
+
 	effect(() => {
 		const fire = async () => {
 			await init();
@@ -31,9 +34,11 @@ const MarketMenu: React.FC = () => {
 						${exchangeRate.value.toFixed(2)}
 					</span>
 				</div>}
-        {!exchangeRate.value && <div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
-            <CgSpinner className="animate-spin" />
-        </div>          }
+				{address && !exchangeRate.value && 
+					<div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
+						<CgSpinner className="animate-spin" />
+					</div>
+				}
 			</div>
 			<div className="dropdown dropdown-end">
 				<div
