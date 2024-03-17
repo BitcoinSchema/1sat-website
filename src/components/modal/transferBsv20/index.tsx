@@ -275,7 +275,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
 							<div className="text-lg font-semibold">
-								Transfer {type} {id}
+								Transfer {type === AssetType.BSV20 ? id : sym} {type} 
 							</div>
 							<div
 								className="text-xs cursor-pointer text-[#aaa]"
