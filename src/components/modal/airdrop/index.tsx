@@ -61,6 +61,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 	const amount = useSignal(amt?.toString() || "0");
 	const address = useSignal(addr || "");
 	const destinationTickers = useSignal("");
+	const numOfHolders = useSignal('25');
 
 	const setAmountToBalance = useCallback(() => {
 		amount.value = balance.toString();
@@ -122,9 +123,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			// resolve ticker holders
 			let tickerHolders: string[] = [];
 			for (const t of tickerDestinations) {
-				let tickerHoldersUrl = `${API_HOST}/api/bsv20/tick/${t}/holders`;
+				let tickerHoldersUrl = `${API_HOST}/api/bsv20/tick/${t}/holders?limit=${numOfHolders.value}`;
 				if (type === AssetType.BSV21) {
-					tickerHoldersUrl = `${API_HOST}/api/bsv20/id/${t}/holders`;
+					tickerHoldersUrl = `${API_HOST}/api/bsv20/id/${t}/holders?limit=${numOfHolders.value}`;
 				}
 				const { promise } = http.customFetch<Holder[]>(tickerHoldersUrl);
 				const holders = await promise;
@@ -132,7 +133,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					holders.map((h) => h.address),
 				);
 			}
-
 			destinations.push(...tickerHolders);
 
 			const amountEach = Math.floor(sendAmount / destinations.length);
@@ -240,7 +240,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				marketFee: 0,
 			};
 		},
-		[address.value, destinationTickers.value, type],
+		[address.value, destinationTickers.value, numOfHolders.value, type],
 	);
 
 	const submit = useCallback(
@@ -354,6 +354,22 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								value={address.value}
 								onChange={(e) => {
 									address.value = e.target.value;
+								}}
+							/>
+						</div>
+						<div className="flex flex-col w-full mt-4">
+							<label className="text-sm font-semibold text-[#aaa] mb-2">
+								Number of holders
+							</label>
+							<input
+								type="number"
+								placeholder="25"
+								className="z-20 input input-bordered w-full"
+								value={numOfHolders.value || "0"}
+								min={"1"}
+								max={"1000"}
+								onChange={(e) => {
+									numOfHolders.value = e.target.value;									
 								}}
 							/>
 						</div>
