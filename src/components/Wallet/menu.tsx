@@ -1,24 +1,24 @@
 "use client";
 
-import { API_HOST } from "@/constants";
+import { API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
-  bsv20Balances,
-  bsvWasmReady,
-  chainInfo,
-  exchangeRate,
-  indexers,
-  ordPk,
-  payPk,
-  pendingTxs,
-  showDepositModal,
-  usdRate,
-  utxos,
+	bsv20Balances,
+	bsvWasmReady,
+	chainInfo,
+	exchangeRate,
+	hasUnprotectedKeys,
+	indexers,
+	ordPk,
+	payPk,
+	pendingTxs,
+	showDepositModal,
+	usdRate,
+	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import {
-  loadKeysFromBackupFiles,
-  setOrdPk,
-  setPayPk,
+	loadKeysFromBackupFiles,
+	loadKeysFromSessionStorage,
 } from "@/signals/wallet/client";
 import { BSV20Balance } from "@/types/bsv20";
 import { ChainInfo, IndexerStats } from "@/types/common";
@@ -30,39 +30,67 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import init from "bsv-wasm-web";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, SyntheticEvent, useEffect } from "react";
+import { ChangeEvent, useEffect } from "react";
 import toast from "react-hot-toast";
 import { CgSpinner } from "react-icons/cg";
-import { FaFileImport, FaPlus } from "react-icons/fa";
+import {
+	FaExclamationCircle,
+	FaFileImport,
+	FaPlus,
+	FaUnlock,
+} from "react-icons/fa";
 import { FaCopy, FaWallet } from "react-icons/fa6";
 import { toBitcoin, toSatoshi } from "satoshi-bitcoin-ts";
 import { useCopyToClipboard } from "usehooks-ts";
 import * as http from "../../utils/httpClient";
 import DepositModal from "../modal/deposit";
+import { EnterPassphraseModal } from "../modal/enterPassphrase";
+import ImportWalletModal from "../modal/importWallet";
+import ProtectKeysModal from "../modal/protectKeys";
 import WithdrawalModal from "../modal/withdrawal";
 let initAttempted = false;
 
 const WalletMenu: React.FC = () => {
 	useSignals();
 	const router = useRouter();
-	const [localPayPk, setLocalPayPk] = useLocalStorage<string>("1satfk");
-	const [localOrdPk, setLocalOrdPk] = useLocalStorage<string>("1satok");
+
 	const showWithdrawalModal = useSignal(false);
+	const showUnlockWalletModal = useSignal(false);
+	const showUnlockWalletButton = useSignal(false);
+	const showImportWalletModal = useSignal(false);
+	const showProtectKeysModal = useSignal(false);
+
+	const [encryptedBackup] = useLocalStorage("encryptedBackup");
 
 	const [value, copy] = useCopyToClipboard();
 
 	// useEffect needed so that we can use localStorage
 	useEffect(() => {
-		if (bsvWasmReady.value && localPayPk && localOrdPk) {
-			payPk.value = localPayPk;
-			ordPk.value = localOrdPk;
+		if (bsvWasmReady.value && payPk.value && ordPk.value) {
 			const localTxsStr = localStorage.getItem("1satpt");
 			const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
 			if (localTxs) {
 				pendingTxs.value = localTxs as PendingTransaction[];
 			}
 		}
-	}, [bsvWasmReady.value]);
+	}, [bsvWasmReady.value, ordPk.value, payPk.value]);
+
+	useEffect(() => {
+		loadKeysFromSessionStorage();
+
+		if (encryptedBackup) {
+			showUnlockWalletButton.value = true;
+		}
+	}, [encryptedBackup, showUnlockWalletButton]);
+
+	useEffect(() => {
+		if (
+			!!localStorage.getItem(OLD_PAY_PK_KEY) &&
+			!!localStorage.getItem(OLD_ORD_PK_KEY)
+		) {
+			hasUnprotectedKeys.value = true;
+		}
+	}, []);
 
 	const balance = computed(() => {
 		if (!utxos.value) {
@@ -77,7 +105,7 @@ const WalletMenu: React.FC = () => {
 			bsv20Balances.value = [];
 			try {
 				const { promise } = http.customFetch<BSV20Balance[]>(
-					`${API_HOST}/api/bsv20/${address}/balance`,
+					`${API_HOST}/api/bsv20/${address}/balance`
 				);
 				const u = await promise;
 				bsv20Balances.value = u.sort((a, b) => {
@@ -87,7 +115,8 @@ const WalletMenu: React.FC = () => {
 						: -1;
 				});
 
-				const statusUrl = "https://1sat-api-production.up.railway.app/status";
+				const statusUrl =
+					"https://1sat-api-production.up.railway.app/status";
 				const { promise: promiseStatus } = http.customFetch<{
 					exchangeRate: number;
 					chainInfo: ChainInfo;
@@ -138,12 +167,12 @@ const WalletMenu: React.FC = () => {
 		}
 	});
 
-	const importKeys = (e: SyntheticEvent) => {
-		e.preventDefault();
-		const el = document.getElementById("backupFile");
-		el?.click();
-		return;
-	};
+	// const importKeys = (e: SyntheticEvent) => {
+	// 	e.preventDefault();
+	// 	const el = document.getElementById("backupFile");
+	// 	el?.click();
+	// 	return;
+	// };
 
 	const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
@@ -152,6 +181,18 @@ const WalletMenu: React.FC = () => {
 			await loadKeysFromBackupFiles(e.target.files[0]);
 			router?.push("/wallet");
 		}
+	};
+
+	const handleUnlockWallet = () => {
+		showUnlockWalletModal.value = true;
+	};
+
+	const handleImportWallet = () => {
+		showImportWalletModal.value = true;
+	};
+
+	const handleProtectKeys = () => {
+		showProtectKeysModal.value = true;
 	};
 
 	return (
@@ -163,7 +204,6 @@ const WalletMenu: React.FC = () => {
 			>
 				<FaWallet />
 			</div>
-
 			{/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
 			<ul
 				tabIndex={0}
@@ -177,14 +217,17 @@ const WalletMenu: React.FC = () => {
 								{balance.value === undefined ? (
 									"" // user has no wallet yet
 								) : usdRate.value > 0 ? (
-									`$${(balance.value / usdRate.value).toFixed(2)}`
+									`$${(balance.value / usdRate.value).toFixed(
+										2
+									)}`
 								) : (
 									<CgSpinner className="animate-spin inline-flex w-4" />
 								)}
 								<span className="text-xs ml-1">USD</span>
 							</div>
 							<div className="text-[#555] my-2">
-								{toBitcoin(balance.value)} <span className="text-xs">BSV</span>
+								{toBitcoin(balance.value)}{" "}
+								<span className="text-xs">BSV</span>
 							</div>
 						</div>
 						<div className="flex gap-2 justify-center items-center">
@@ -199,7 +242,9 @@ const WalletMenu: React.FC = () => {
 							</button>
 							<button
 								type="button"
-								disabled={usdRate.value <= 0 || balance.value === 0}
+								disabled={
+									usdRate.value <= 0 || balance.value === 0
+								}
 								className="btn btn-sm btn-primary"
 								onClick={() => {
 									showWithdrawalModal.value = true;
@@ -225,35 +270,46 @@ const WalletMenu: React.FC = () => {
 							<li>
 								<button
 									type="button"
-									className={"flex items-center justify-between w-full"}
+									className={
+										"flex items-center justify-between w-full"
+									}
 									onClick={() => {
 										copy(fundingAddress.value || "");
 										toast.success("Copied Funding Address");
 									}}
 								>
-									Bitcoin SV Address <FaCopy className="text-[#333]" />
+									Bitcoin SV Address{" "}
+									<FaCopy className="text-[#333]" />
 								</button>
 							</li>
 							<li>
 								<button
 									type="button"
-									className={"flex items-center justify-between w-full"}
+									className={
+										"flex items-center justify-between w-full"
+									}
 									onClick={(e) => {
 										e.preventDefault();
 										copy(ordAddress.value || "");
 										console.log("Copied", ordAddress.value);
-										toast.success("Copied Ordinals Address");
+										toast.success(
+											"Copied Ordinals Address"
+										);
 									}}
 								>
-									Ordinals Address <FaCopy className="text-[#333]" />
+									Ordinals Address{" "}
+									<FaCopy className="text-[#333]" />
 								</button>
 							</li>
 						</ul>
 						<div className="divider">Keys</div>
 						<ul className="p-0">
 							<li>
-								<button type="button" onClick={importKeys}>
-									Import Keys
+								<button
+									type="button"
+									onClick={handleImportWallet}
+								>
+									Import Wallet
 								</button>
 							</li>
 							<li>
@@ -270,8 +326,29 @@ const WalletMenu: React.FC = () => {
 						</ul>
 					</div>
 				)}
+				{hasUnprotectedKeys.value && (
+					<li>
+						<button
+							className="flex w-full flex-row items-center justify-between bg-yellow-600 text-black hover:bg-yellow-500"
+							onClick={handleProtectKeys}
+						>
+							Protect Your Keys
+							<FaExclamationCircle className="w-4 h-4" />
+						</button>
+					</li>
+				)}
 				{!payPk.value && !ordPk.value && (
 					<>
+						{showUnlockWalletButton.value && (
+							<ul className="p-0">
+								<li onClick={handleUnlockWallet}>
+									<div className="flex w-full flex-row items-center justify-between">
+										Unlock Wallet
+										<FaUnlock className="w-4 h-4" />
+									</div>
+								</li>
+							</ul>
+						)}
 						<ul className="p-0">
 							<li>
 								<Link
@@ -287,10 +364,10 @@ const WalletMenu: React.FC = () => {
 							<li>
 								<button
 									type="button"
-									onClick={importKeys}
+									onClick={handleImportWallet}
 									className="flex flex-row items-center justify-between w-full"
 								>
-									Import Keys
+									Import Wallet
 									<FaFileImport className="w-4 h-4" />
 								</button>
 							</li>
@@ -312,6 +389,30 @@ const WalletMenu: React.FC = () => {
 					}}
 				/>
 			)}
+			<EnterPassphraseModal
+				open={showUnlockWalletModal.value}
+				onClose={() => {
+					showUnlockWalletModal.value = false;
+				}}
+				onUnlock={() => {
+					showUnlockWalletModal.value = false;
+				}}
+			/>
+
+			<ImportWalletModal
+				open={showImportWalletModal.value}
+				close={() => {
+					showImportWalletModal.value = false;
+				}}
+			/>
+
+			<ProtectKeysModal
+				open={showProtectKeysModal.value}
+				close={() => {
+					showProtectKeysModal.value = false;
+				}}
+			/>
+
 			<input
 				accept=".json"
 				className="hidden"
@@ -327,7 +428,7 @@ export default WalletMenu;
 
 export const backupKeys = () => {
 	const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
-		JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value }),
+		JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value })
 	)}`;
 
 	const clicker = document.createElement("a");
@@ -343,7 +444,7 @@ export const swapKeys = () => {
 	if (!tempPayPk || !tempOrdPk) {
 		return;
 	}
-	setOrdPk(tempPayPk);
-	setPayPk(tempOrdPk);
+	ordPk.value = tempPayPk;
+	payPk.value = tempOrdPk;
 	toast.success("Keys Swapped");
 };
