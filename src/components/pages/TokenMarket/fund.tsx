@@ -20,7 +20,7 @@ const Fund = ({ ticker }: { ticker: any }) => {
   const bsvNeeded = computed(() => {
     const satoshis = Math.max(
       minFee - Number(ticker.fundTotal),
-      parseInt(ticker.pendingOps) * 1000
+      Number.parseInt(ticker.pendingOps) * 1000
     );
     return toBitcoin(satoshis);
   });

@@ -216,10 +216,10 @@ const Artifact: React.FC<ArtifactProps> = ({
 				/>
 			</>
 		) : type === ArtifactType.HTML ? (
-			origin && (
+			outPoint && (
 				<HTMLArtifact
 					mini={(size || 300) < 300}
-					origin={origin}
+					origin={outPoint}
 					className={`${clickToZoom ? "cursor-pointer" : ""} h-full w-full`}
           size={size}
 					onClick={
@@ -239,7 +239,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 			>
 				<JsonArtifact
 					artifact={artifact}
-					origin={origin}
+					origin={outPoint}
 					type={type}
 					mini={(size || 300) < 300}
 				/>
@@ -247,7 +247,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		) : type === ArtifactType.Text || type === ArtifactType.OPNS || type === ArtifactType.Javascript ? (
 			<div className={`w-full flex items-center justify-center p-2 ${classNames?.wrapper ? classNames.wrapper : ""} ${classNames?.media ? classNames.media : ""}`}>
 				<TextArtifact
-					origin={origin}
+					origin={outPoint}
 					className="w-full"
 					mini={(size || 300) < 300}
 				/>

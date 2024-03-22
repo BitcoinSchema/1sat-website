@@ -1,9 +1,9 @@
 import JsonTable from "@/components/jsonTable";
 import { API_HOST } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import { OutpointTab } from "@/types/common";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import OutpointPage from ".";
-import { OutpointTab } from "./tabs";
 
 interface Props {
 	outpoint: string;

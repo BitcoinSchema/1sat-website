@@ -2,6 +2,7 @@ import OutpointCollection from "@/components/pages/outpoint/collection";
 import OutpointHeading from "@/components/pages/outpoint/heading";
 import OutpointInscription from "@/components/pages/outpoint/inscription";
 import OutpointListing from "@/components/pages/outpoint/listing";
+import OutpointOwner from "@/components/pages/outpoint/owner";
 import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
@@ -14,7 +15,7 @@ import { FaSpinner } from "react-icons/fa";
 
 type OutpointParams = {
 	outpoint: string;
-	tab: string;
+	tab: OutpointTab;
 };
 
 export type IODisplay = {
@@ -35,16 +36,15 @@ export type InputOutpoint = {
 const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	// get tx details
 	const parts = params.outpoint.split("_");
-  const txid = parts[0];
-  const vout = parts.length > 1 ? parts[1] : "0";
-  
+	const txid = parts[0];
+	const vout = parts.length > 1 ? parts[1] : "0";
+
 	const response = await fetch(
 		`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`,
 	);
 	const rawTx = await response.text();
-	{
-		/* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
-	}
+
+	/* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
 
 	// parse the raw tx
 	const tx = Transaction.from_hex(rawTx);
@@ -70,27 +70,24 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		inputOutpoints.push({ script, satoshis, txid, vout });
 	}
 
-  const outputOutpoints: string[] = [];
-  const numOutputs = tx.get_noutputs();
-  for (let i = 0; i < numOutputs; i++) {
-    outputOutpoints.push(`${txid}_${i}`);
-  }
+	const outputOutpoints: string[] = [];
+	const numOutputs = tx.get_noutputs();
+	for (let i = 0; i < numOutputs; i++) {
+		outputOutpoints.push(`${txid}_${i}`);
+	}
 
-  // check if outputs are spent
-  const outputSpendsResponse = await fetch(
-		`${API_HOST}/api/spends`,
-		{
-      method: "POST",
-			headers: {
-        "Content-Type": "application/json",
-				Accept: "application/json",
-			},
-      body: JSON.stringify(outputOutpoints),
+	// check if outputs are spent
+	const outputSpendsResponse = await fetch(`${API_HOST}/api/spends`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json",
 		},
-	);
+		body: JSON.stringify(outputOutpoints),
+	});
 
-  const outputSpends = await outputSpendsResponse.json();
-  console.log({outputOutpoints, outputSpends});
+	const outputSpends = await outputSpendsResponse.json();
+	console.log({ outputOutpoints, outputSpends });
 
 	const spendResponse = await fetch(
 		`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
@@ -110,8 +107,8 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 
 	const content = () => {
 		const outpoint = `${txid}_${vout}`;
-		const tab = params.tab as OutpointTab;
-		switch (tab as OutpointTab) {
+
+		switch (params.tab) {
 			case OutpointTab.Timeline:
 				return <OutpointTimeline outpoint={outpoint} />;
 			case OutpointTab.Inscription:
@@ -122,6 +119,8 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 				return <OutpointListing outpoint={outpoint} />;
 			case OutpointTab.Collection:
 				return <OutpointCollection outpoint={outpoint} />;
+			case OutpointTab.Owner:
+				return <OutpointOwner outpoint={outpoint} />;
 		}
 	};
 
@@ -145,7 +144,12 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 					<div className="flex">
 						<OutpointHeading outpoint={`${txid}_${vout}`} />
 					</div>
-					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} outputSpends={outputSpends} vout={parseInt(vout)}/>
+					<DisplayIO
+						rawtx={rawTx}
+						inputOutpoints={inputOutpoints}
+						outputSpends={outputSpends}
+						vout={parseInt(vout)}
+					/>
 					{content()}
 				</div>
 			</Suspense>
@@ -156,20 +160,20 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 export default Outpoint;
 
 function parseVarInt(hex: string): [number, string] {
-	let len = 1;
-	let value = parseInt(hex.substring(0, 2), 16);
+	let len = 9;
+	let value = Number.parseInt(hex.substring(0, 2), 16);
 
 	if (value < 0xfd) {
 		return [value, hex.substring(2)];
-	} else if (value === 0xfd) {
+	}
+	if (value === 0xfd) {
 		len = 3;
-	} else if (value === 0xfe) {
+	}
+	if (value === 0xfe) {
 		len = 5;
-	} else {
-		len = 9;
 	}
 
-	value = parseInt(hex.substring(2, len * 2), 16);
+	value = Number.parseInt(hex.substring(2, len * 2), 16);
 	return [value, hex.substring(len * 2)];
 }
 

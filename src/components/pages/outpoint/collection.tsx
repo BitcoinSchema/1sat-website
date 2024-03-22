@@ -1,10 +1,10 @@
 import { API_HOST } from "@/constants";
-import { CollectionStats } from "@/types/collection";
-import { OrdUtxo } from "@/types/ordinals";
+import type { CollectionStats } from "@/types/collection";
+import { OutpointTab } from "@/types/common";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import OutpointPage from ".";
 import CollectionContent from "./collectionContent";
-import { OutpointTab } from "./tabs";
 
 interface Props {
 	outpoint: string;

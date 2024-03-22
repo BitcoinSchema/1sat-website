@@ -1,8 +1,8 @@
 import { API_HOST } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import { OutpointTab } from "@/types/common";
+import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import OutpointPage from ".";
-import { OutpointTab } from "./tabs";
 
 interface Props {
   outpoint: string;
@@ -10,11 +10,11 @@ interface Props {
 
 const OutpointToken = async ({ outpoint }: Props) => {
   let artifact: OrdUtxo | undefined;
-  let bsv20: OrdUtxo | undefined;
+  let bsv20: BSV20TXO | undefined;
   try {
     const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
-    const { promise } = http.customFetch<OrdUtxo>(url);
-    artifact = await promise;
+    const { promise } = http.customFetch<BSV20TXO>(url);
+    bsv20 = await promise;
   } catch (e) {
     console.log(e);
   }
@@ -22,29 +22,31 @@ const OutpointToken = async ({ outpoint }: Props) => {
   try {
     const url = `${API_HOST}/api/inscriptions/${outpoint}`;
     const { promise } = http.customFetch<OrdUtxo>(url);
-    bsv20 = await promise;
+    artifact = await promise;
   } catch (e) {
     console.log(e);
   }
 
   const content =
-    artifact && artifact.data?.bsv20 ? (
+    artifact && artifact.origin?.data?.bsv20 ? (
       <div>
-        <div>Token</div>
+        <div>{bsv20?.tick || bsv20?.sym}</div>
+        {bsv20?.sym && bsv20.id ? <div className="text-sm">{bsv20.id}</div> : null}
+        <div>{bsv20?.op}</div>
+        <div>{bsv20?.amt}</div>
       </div>
     ) : (
       <div>Not a token</div>
     );
 
-  return (
+  return artifact && (
     <OutpointPage
-      artifact={artifact || bsv20!}
+      artifact={artifact}
       outpoint={outpoint}
       content={content}
       activeTab={OutpointTab.Token}
     />
   );
-  return;
 };
 
 export default OutpointToken;

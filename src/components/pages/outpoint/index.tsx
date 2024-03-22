@@ -1,11 +1,12 @@
 import Artifact from "@/components/artifact";
 import { API_HOST } from "@/constants";
-import { Listing } from "@/types/bsv20";
-import { OrdUtxo } from "@/types/ordinals";
+import type { Listing } from "@/types/bsv20";
+import type { OutpointTab } from "@/types/common";
+import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import * as http from "@/utils/httpClient";
 import { Noto_Serif } from "next/font/google";
-import OutpointTabs, { OutpointTab } from "./tabs";
+import OutpointTabs from "./tabs";
 
 const notoSerif = Noto_Serif({
 	style: "italic",
@@ -64,6 +65,7 @@ const OutpointPage = async ({
 					<div className="flex flex-col md:flex-row gap-4">
 						<Artifact
 							artifact={artifact}
+              latest={true}
 							size={550}
 							sizes={"100vw"}
 							glow={true}
@@ -90,6 +92,7 @@ const OutpointPage = async ({
 								hasToken={!!artifact.origin?.data?.bsv20}
                 isListing={!!artifact.data?.list}
                 isCollection={artifact.origin?.data?.map?.subType === "collection" || artifact.origin?.data?.map?.subType === "collectionItem"}
+                owner={artifact.owner}
 							/>
 							{content}
 						</div>

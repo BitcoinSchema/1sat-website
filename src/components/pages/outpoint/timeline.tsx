@@ -1,22 +1,21 @@
 import Timeline from "@/components/Timeline";
 import { API_HOST } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import { OutpointTab } from "@/types/common";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import OutpointPage from ".";
-import { OutpointTab } from "./tabs";
 
 interface Props {
   outpoint: string;
 }
 
 const OutpointTimeline = async ({ outpoint }: Props) => {
-  let listing: OrdUtxo;
   let history: OrdUtxo[] = [];
   let spends: OrdUtxo[] = [];
 
   const url = `${API_HOST}/api/inscriptions/${outpoint}`;
   const { promise } = http.customFetch<OrdUtxo>(url);
-  listing = await promise;
+  const listing = await promise;
 
   if (listing.origin?.outpoint) {
     const urlHistory = `${API_HOST}/api/inscriptions/${listing.origin?.outpoint}/history`;
@@ -41,7 +40,7 @@ const OutpointTimeline = async ({ outpoint }: Props) => {
       spends={spends}
       outpoint={outpoint}
       content={<Timeline history={history} spends={spends} listing={listing} />}
-      activeTab={OutpointTab.Timeline}
+      activeTab={OutpointTab.Timeline}      
     />
   );
 };

@@ -3,7 +3,7 @@
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { ORDFS } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 

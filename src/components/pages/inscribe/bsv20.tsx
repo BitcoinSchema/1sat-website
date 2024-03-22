@@ -11,14 +11,13 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { BSV20, Ticker } from "@/types/bsv20";
+import type { BSV20, Ticker } from "@/types/bsv20";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import { P2PKH_FULL_INPUT_SIZE, Payment, Utxo } from "@/utils/js-1sat-ord";
+import { P2PKH_FULL_INPUT_SIZE, type Payment, type Utxo } from "@/utils/js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import "buffer";
 import { debounce, head } from "lodash";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -33,7 +32,7 @@ import {
 } from "react-icons/fa";
 import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { useLocalStorage } from "usehooks-ts";
-import { InscriptionTab } from "./tabs";
+import type { InscriptionTab } from "./tabs";
 
 enum ActionType {
 	Mint = "mint",
