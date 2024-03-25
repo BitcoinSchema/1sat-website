@@ -78,10 +78,7 @@ export function GenerateWalletStep({}: Props) {
 
 			{!isGeneratingWallet.value && payPk.value && (
 				<div className="flex justify-end mt-4">
-					<button
-						className="btn btn-outline btn-sm"
-						onClick={handleNext}
-					>
+					<button className="btn btn-primary" onClick={handleNext}>
 						Next
 					</button>
 				</div>

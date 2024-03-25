@@ -1,32 +1,30 @@
 "use client";
 
+import { OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
 	ProtectKeysStep,
 	bsvWasmReady,
-	ordPk,
-	payPk,
 	protectKeysStep,
 } from "@/signals/wallet";
-import { useSignals } from "@preact/signals-react/runtime";
-import { DoneStep } from "./steps/DoneStep";
-import { InfoStep } from "./steps/InfoStep";
-import { EnterPassphraseStep } from "./steps/EnterPassphraseStep";
-import { useEffect } from "react";
-import { OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import { setKeys } from "@/signals/wallet/client";
+import { useSignals } from "@preact/signals-react/runtime";
+import { useEffect } from "react";
+import { DoneStep } from "./steps/DoneStep";
+import { EnterPassphraseStep } from "./steps/EnterPassphraseStep";
+import { InfoStep } from "./steps/InfoStep";
 
 const ProtectKeysModal = ({
 	open,
-	close,
+	onClose,
 }: {
 	open: boolean;
-	close: () => void;
+	onClose: () => void;
 }) => {
 	useSignals();
 
-	function onClose() {
+	function handleClose() {
 		protectKeysStep.value = ProtectKeysStep.Info;
-		close();
+		onClose();
 	}
 
 	useEffect(() => {
@@ -66,7 +64,7 @@ const ProtectKeysModal = ({
 
 								{protectKeysStep.value ===
 									ProtectKeysStep.Done && (
-									<DoneStep onDone={close} />
+									<DoneStep onDone={handleClose} />
 								)}
 							</div>
 						)}
@@ -74,7 +72,7 @@ const ProtectKeysModal = ({
 				)}
 			</div>
 			<form method="dialog" className="modal-backdrop">
-				<button onClick={onClose}>close</button>
+				<button onClick={handleClose}>close</button>
 			</form>
 		</dialog>
 	);

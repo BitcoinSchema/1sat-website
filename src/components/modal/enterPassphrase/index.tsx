@@ -1,4 +1,5 @@
 import EnterPassphrase from "@/components/Passphrase";
+import { bsvWasmReady } from "@/signals/wallet";
 import { EncryptDecrypt } from "@/types/wallet";
 
 interface Props {
@@ -15,6 +16,10 @@ export function EnterPassphraseModal({ open, onClose, onUnlock }: Props) {
 			onClick={() => onClose()}
 		>
 			<div className="modal-box" onClick={(e) => e.stopPropagation()}>
+				{!bsvWasmReady.value && (
+					<div className="py-2 rounded my-2">Loading...</div>
+				)}
+
 				<EnterPassphrase
 					mode={EncryptDecrypt.Decrypt}
 					onSubmit={onUnlock}

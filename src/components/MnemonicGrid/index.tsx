@@ -156,10 +156,9 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		setInputMnemonic(words);
 	};
 
-	console.log({ shuffledWords, mnemonic, mode });
 	return (
 		<div className="transition my-4 mx-auto rounded w-full text-yellow-500">
-			<div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
+			<div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
 				{mode === MnemonicGridMode.Import && (
 					<>
 						{inputMnemonic.map((word, index) => (
@@ -215,7 +214,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			{mode === MnemonicGridMode.View && (
 				<div className="w-full flex flex-col items-end my-8">
 					<button
-						className="flex mx-1 my-2 px-4 py-1 rounded bg-[#1a1a1a] text-yellow-500  p-2 items-center justify-center cursor-pointer hover:bg-[#222] transition"
+						className="btn btn-primary"
 						onClick={() => onSubmit({ verified: true })}
 					>
 						Next
@@ -225,7 +224,8 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			{mode === MnemonicGridMode.Import && (
 				<div className="w-full flex flex-col items-end my-8">
 					<button
-						className="flex mx-1 my-2 px-4 py-1 rounded bg-[#1a1a1a] text-yellow-500  p-2 items-center justify-center cursor-pointer hover:bg-[#222] transition"
+						disabled={inputMnemonic.some((word) => !word)}
+						className="btn btn-primary"
 						onClick={() =>
 							onSubmit({
 								importedMnemonic: inputMnemonic.join(" "),
@@ -239,7 +239,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			{clickedWords?.length > 0 && (
 				<div className="w-full flex justify-center my-8">
 					<div
-						className="flex p-2 bg-[#111] items-center justify-center cursor-pointer hover:bg-[#222] transition"
+						className="btn gap-0"
 						onClick={() => {
 							shuffle();
 							setClickedWords([]);

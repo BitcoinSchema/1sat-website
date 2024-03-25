@@ -12,21 +12,22 @@ import {
 	selectedBackupJson,
 } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
-import clsx from "clsx";
 import { useEffect, useMemo } from "react";
-import { SelectFileStep } from "./steps/fromBackupJson/SelectFileStep";
-import { EnterPassphraseStep as EnterPassphraseBackupJsonStep } from "./steps/fromBackupJson/EnterPassphraseStep";
-import { EnterPassphraseStep as EnterPassphraseMnemonicStep } from "./steps/fromMnemonic/EnterPassphraseStep";
 import { DoneStep } from "./steps/DoneStep";
+import { EnterPassphraseStep as EnterPassphraseBackupJsonStep } from "./steps/fromBackupJson/EnterPassphraseStep";
+import { SelectFileStep } from "./steps/fromBackupJson/SelectFileStep";
 import { EnterMnemonicStep } from "./steps/fromMnemonic/EnterMnemonicStep";
+import { EnterPassphraseStep as EnterPassphraseMnemonicStep } from "./steps/fromMnemonic/EnterPassphraseStep";
 import { GenerateWalletStep } from "./steps/fromMnemonic/GenerateWalletStep";
+import { FaFileArrowUp } from "react-icons/fa6";
+import { FaEnvelopeOpenText, FaKey } from "react-icons/fa";
 
 const ImportWalletModal = ({
 	open,
-	close,
+	onClose,
 }: {
 	open: boolean;
-	close: () => void;
+	onClose: () => void;
 }) => {
 	useSignals();
 
@@ -44,10 +45,10 @@ const ImportWalletModal = ({
 		selectedBackupJson.value = null;
 	}
 
-	function onClose() {
+	function handleClose() {
 		importWalletTab.value = null;
 		resetSteps();
-		close();
+		onClose();
 	}
 
 	const selectTab = (tab: ImportWalletTab) => {
@@ -87,24 +88,26 @@ const ImportWalletModal = ({
 								{importWalletTab.value === null && (
 									<div className="grid grid-cols-2 gap-3 mt-3">
 										<button
-											className="btn btn-outline btn-lg rounded-md p-4"
+											className="btn btn-outline btn-lg text-sm md:text-base rounded-md p-4 flex flex-nowrap"
 											onClick={() =>
 												selectTab(
 													ImportWalletTab.FromBackupJson
 												)
 											}
 										>
+											<FaFileArrowUp className="text-xl hidden md:block" />
 											From Backup JSON
 										</button>
 
 										<button
-											className="btn btn-outline btn-lg rounded-md p-4"
+											className="btn btn-outline btn-lg text-sm md:text-base rounded-md p-4 flex flex-nowrap"
 											onClick={() =>
 												selectTab(
 													ImportWalletTab.FromMnemonic
 												)
 											}
 										>
+											<FaKey className="text-lg hidden md:block" />
 											From Mnemonic
 										</button>
 									</div>
@@ -126,7 +129,9 @@ const ImportWalletModal = ({
 
 											{importWalletFromBackupJsonStep.value ===
 												ImportWalletFromBackupJsonStep.Done && (
-												<DoneStep onDone={close} />
+												<DoneStep
+													onDone={handleClose}
+												/>
 											)}
 										</div>
 									)}
@@ -152,7 +157,9 @@ const ImportWalletModal = ({
 
 											{importWalletFromMnemonicStep.value ===
 												ImportWalletFromMnemonicStep.Done && (
-												<DoneStep onDone={close} />
+												<DoneStep
+													onDone={handleClose}
+												/>
 											)}
 										</div>
 									)}
@@ -162,7 +169,7 @@ const ImportWalletModal = ({
 				)}
 			</div>
 			<form method="dialog" className="modal-backdrop">
-				<button onClick={onClose}>close</button>
+				<button onClick={handleClose}>close</button>
 			</form>
 		</dialog>
 	);

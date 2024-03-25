@@ -9,7 +9,6 @@ import {
 } from "@/signals/wallet";
 import { CreateWalletStep } from "@/types/wallet";
 import { randomMnemonic } from "@/utils/keys";
-import { FaSpinner } from "react-icons/fa";
 
 interface Props {}
 
@@ -27,8 +26,6 @@ export function CreateStep({}: Props) {
 			payPk.value = keys.payPk;
 			ordPk.value = keys.ordPk;
 			mnemonic.value = keys.mnemonic ?? null;
-			// changeAddressPath.value = keys.changeAddressPath ?? null;
-			// ordAddressPath.value = keys.ordAddressPath ?? null;
 
 			isCreatingWallet.value = false;
 
@@ -57,7 +54,7 @@ export function CreateStep({}: Props) {
 								Cancel
 							</button>
 							<button
-								className="btn btn-secondary"
+								className="btn btn-primary"
 								type="button"
 								onClick={handleGenerateWallet}
 							>
@@ -70,9 +67,14 @@ export function CreateStep({}: Props) {
 
 			{isCreatingWallet.value && (
 				<div className="flex flex-col">
-					<div className="py-2 flex gap-2 items-center">
+					<div>
+						We are now creating your wallet. This can take a few
+						seconds. Please wait...
+					</div>
+
+					<div className="py-2 flex gap-2 items-center justify-center">
 						<span className="loading loading-spinner"></span>
-						<div className=" rounded my-2">Creating wallet...</div>
+						<div className="rounded my-2">Creating wallet...</div>
 					</div>
 				</div>
 			)}

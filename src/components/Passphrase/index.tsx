@@ -111,8 +111,6 @@ const EnterPassphrase: React.FC<Props> = ({
 				const keys: EncryptedBackupJson = {
 					encryptedBackup,
 					pubKey,
-					// fundingChildKey: changeAddressPath.value ?? 0,
-					// ordChildKey: ordAddressPath.value ?? 0,
 				};
 
 				if (download) {
@@ -221,7 +219,7 @@ const EnterPassphrase: React.FC<Props> = ({
 			<div className="flex gap-2 justify-end">
 				{!download && (
 					<button
-						className="rounded p-2 bg-red-500 hover:bg-red-600 transition text-black font-semibold font-mono cursor-pointer"
+						className="btn btn-error"
 						onClick={() => onSubmit()}
 					>
 						Skip
@@ -230,7 +228,8 @@ const EnterPassphrase: React.FC<Props> = ({
 
 				<button
 					disabled={(passphrase.value?.length || 0) < 6}
-					className="rounded p-2 bg-yellow-500 hover:bg-yellow-600 transition text-black font-semibold font-mono cursor-pointer"
+					className="btn btn-primary"
+					type="button"
 					onClick={handleSubmit}
 				>
 					{showEnterPassphrase.value === EncryptDecrypt.Decrypt
@@ -240,7 +239,7 @@ const EnterPassphrase: React.FC<Props> = ({
 
 				{hasDownloadedKeys.value && (
 					<button
-						className="rounded p-2 bg-green-500 hover:bg-green-600 transition text-black font-semibold font-mono cursor-pointer"
+						className="btn btn-primary"
 						onClick={() => onSubmit()}
 					>
 						Continue

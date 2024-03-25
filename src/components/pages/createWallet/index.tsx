@@ -1,6 +1,6 @@
 "use client";
 
-import CreateWalletModal from "@/components/modal/createWallet/CreateWallet";
+import CreateWalletModal from "@/components/modal/createWallet";
 import { useSignal } from "@preact/signals-react";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";

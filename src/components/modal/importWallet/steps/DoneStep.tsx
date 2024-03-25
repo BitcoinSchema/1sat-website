@@ -5,14 +5,12 @@ interface Props {
 export function DoneStep({ onDone }: Props) {
 	return (
 		<>
-			<div className="mb-2">
-				<div className="text-sm text-gray-500">
-					Your wallet has been successfully imported.
-				</div>
+			<div className="mt-2 mb-4">
+				Your wallet has been successfully imported.
 			</div>
 
 			<div className="flex justify-end mt-4">
-				<button className="btn btn-outline btn-sm" onClick={onDone}>
+				<button className="btn btn-primary" onClick={onDone}>
 					Done
 				</button>
 			</div>

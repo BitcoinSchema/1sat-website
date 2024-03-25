@@ -401,14 +401,14 @@ const WalletMenu: React.FC = () => {
 
 			<ImportWalletModal
 				open={showImportWalletModal.value}
-				close={() => {
+				onClose={() => {
 					showImportWalletModal.value = false;
 				}}
 			/>
 
 			<ProtectKeysModal
 				open={showProtectKeysModal.value}
-				close={() => {
+				onClose={() => {
 					showProtectKeysModal.value = false;
 				}}
 			/>

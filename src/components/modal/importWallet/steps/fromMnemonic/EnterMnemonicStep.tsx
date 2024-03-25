@@ -21,6 +21,7 @@ export function EnterMnemonicStep({}: Props) {
 
 	return (
 		<>
+			<div className="mt-2 mb-4">Enter your mnemonic to continue</div>
 			<MnemonicGrid
 				mode={MnemonicGridMode.Import}
 				onSubmit={({ importedMnemonic }) =>
