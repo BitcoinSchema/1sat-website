@@ -212,8 +212,8 @@ const EnterPassphrase: React.FC<Props> = ({
 			<div className="text-gray-500 text-xs sm:test-sm md:text-base flex items-center my-4 ">
 				<RiErrorWarningFill className="mr-2" />
 				{showEnterPassphrase.value === EncryptDecrypt.Encrypt
-					? "You still need to keep your 12 word seed  phrase."
-					: "Your password unlocks your wallet each time you visit"}
+					? "You still need to keep your 12 word seed phrase."
+					: "Your password unlocks your wallet each time you visit."}
 			</div>
 
 			<div className="flex gap-2 justify-end">
