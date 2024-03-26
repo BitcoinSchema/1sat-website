@@ -35,7 +35,7 @@ const ProtectKeysModal = ({
 			return;
 		}
 
-		setKeys({ payPk, ordPk });
+		setKeys({ payPk: JSON.parse(payPk), ordPk: JSON.parse(ordPk) });
 	}, []);
 
 	return (
