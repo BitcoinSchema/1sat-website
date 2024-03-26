@@ -44,3 +44,24 @@ export const generateEncryptionKey = (
 
   return key.get_hash().to_bytes();
 };
+
+export async function generateEncryptionKeyFromPassphrase(
+  passphrase: string,
+  pubKey: string
+) {
+  if (!pubKey) {
+    console.error("No public key found. Unable to decrypt.");
+    return;
+  }
+
+  if (!passphrase || passphrase.length < 6) {
+    console.error("Invalid phrase. Too short.");
+    return;
+  }
+
+  const pubKeyBytes = new Uint8Array(Buffer.from(pubKey, "base64").buffer);
+
+  const ec = generateEncryptionKey(passphrase, pubKeyBytes);
+
+  return ec;
+}

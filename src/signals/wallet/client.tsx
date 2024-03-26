@@ -1,21 +1,35 @@
 "use client";
 
 import { PendingTransaction } from "@/types/preview";
-import { bsv20Balances, bsv20Utxos, ordPk, payPk, pendingTxs, utxos } from ".";
+import {
+	bsv20Balances,
+	bsv20Utxos,
+	changeAddressPath,
+	createWalletStep,
+	encryptedBackup,
+	encryptionKey,
+	mnemonic,
+	ordAddressPath,
+	ordPk,
+	passphrase,
+	payPk,
+	pendingTxs,
+	utxos,
+} from ".";
+import {
+	CreateWalletStep,
+	DecryptedBackupJson,
+	EncryptedBackupJson,
+} from "@/types/wallet";
+import {
+	decryptData,
+	generateEncryptionKeyFromPassphrase,
+} from "@/utils/encryption";
+import { encryptionPrefix } from "@/constants";
 
 export const setPendingTxs = (txs: PendingTransaction[]) => {
 	pendingTxs.value = [...txs];
 	localStorage.setItem("1satpt", JSON.stringify(txs));
-};
-
-export const setPayPk = (pk: string) => {
-	payPk.value = pk;
-	localStorage.setItem("1satfk", JSON.stringify(pk));
-};
-
-export const setOrdPk = (pk: string) => {
-	ordPk.value = pk;
-	localStorage.setItem("1satok", JSON.stringify(pk));
 };
 
 export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
@@ -47,11 +61,11 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
 				ordPk: string;
 			};
 			console.log({ backup });
-      
-      setPendingTxs([]);
-      utxos.value = null;
-			setPayPk(backup.payPk);
-			setOrdPk(backup.ordPk);
+
+			setPendingTxs([]);
+			utxos.value = null;
+			payPk.value = backup.payPk;
+			ordPk.value = backup.ordPk;
 			return resolve();
 		};
 		f.onerror = (e) => {
@@ -72,4 +86,90 @@ export const clearKeys = () => {
 	localStorage.removeItem("1satfk");
 	localStorage.removeItem("1satok");
 	localStorage.removeItem("1satpt");
+
+	sessionStorage.removeItem("1satfk");
+	sessionStorage.removeItem("1satok");
+
+	createWalletStep.value = CreateWalletStep.Create;
+	encryptedBackup.value = null;
+	encryptionKey.value = null;
+	passphrase.value = null;
+	mnemonic.value = null;
+};
+
+export const setKeys = (keys: {
+	payPk: string;
+	ordPk: string;
+	mnemonic?: string;
+	changeAddressPath?: number;
+	ordAddressPath?: number;
+}) => {
+	payPk.value = keys.payPk;
+	ordPk.value = keys.ordPk;
+	mnemonic.value = keys.mnemonic ?? null;
+	changeAddressPath.value = keys.changeAddressPath ?? null;
+	ordAddressPath.value = keys.ordAddressPath ?? null;
+
+	sessionStorage.setItem("1satfk", keys.payPk);
+	sessionStorage.setItem("1satok", keys.ordPk);
+};
+
+export const loadKeysFromSessionStorage = () => {
+	const payPk = sessionStorage.getItem("1satfk");
+	const ordPk = sessionStorage.getItem("1satok");
+
+	if (payPk && ordPk) {
+		setKeys({ payPk, ordPk });
+	}
+};
+
+export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
+	const encryptedKeysStr = localStorage.getItem("encryptedBackup");
+
+	if (!encryptedKeysStr) {
+		return;
+	}
+
+	const encryptedKeys = JSON.parse(encryptedKeysStr) as EncryptedBackupJson;
+
+	if (!encryptedKeys.pubKey || !encryptedKeys.encryptedBackup) {
+		throw new Error(
+			"Load keys error - No public key or encryptedBackup props found in encrypted backup"
+		);
+	}
+
+	const encryptionKey = await generateEncryptionKeyFromPassphrase(
+		passphrase,
+		encryptedKeys.pubKey
+	);
+
+	if (!encryptionKey) {
+		throw new Error("No encryption key found. Unable to decrypt.");
+	}
+
+	const decryptedBackupBin = decryptData(
+		Buffer.from(
+			encryptedKeys.encryptedBackup.replace(encryptionPrefix, ""),
+			"base64"
+		),
+		encryptionKey
+	);
+
+	const decryptedBackupStr =
+		Buffer.from(decryptedBackupBin).toString("utf-8");
+
+	const decryptedBackup = JSON.parse(
+		decryptedBackupStr
+	) as DecryptedBackupJson;
+
+	if (!decryptedBackup.payPk || !decryptedBackup.ordPk) {
+		throw new Error(
+			"Load keys error - No payPk or ordPk props found in decrypted backup"
+		);
+	}
+
+	setKeys({
+		payPk: decryptedBackup.payPk,
+		ordPk: decryptedBackup.ordPk,
+	});
 };
