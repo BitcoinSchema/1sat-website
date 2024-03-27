@@ -18,11 +18,12 @@ const notoSerif = Noto_Serif({
 const CollectionPage = ({ stats, items, collection }: Props) => {
   return (
     <div className="2xl:max-w-[80vw] max-w-[90vw] w-full mx-auto">
-      <h2 className="text-lg mb-4 flex justify-between items-center">
-        <span className={`text-2xl ${notoSerif.className}`}>{collection.origin?.data?.map?.name}</span> ({stats.count})
+      <h2 className="text-lg mb-8 flex justify-between items-center">
+        <span className={`text-2xl ${notoSerif.className}`}>{collection.origin?.data?.map?.name}</span>
+        <span>({stats.count})</span>
         {stats.count === stats.max && <div>Minted Out</div>}
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-4">
+      <div className="2xl:max-w-[70vw] max-w-[80vw] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-4">
         {items.map((item, idx) => {
           return (
             <Artifact
