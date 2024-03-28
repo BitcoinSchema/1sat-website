@@ -39,7 +39,7 @@
     "jdenticon": "^3.2.0",
     "lodash": "^4.17.21",
     "mime": "^3.0.0",
-    "next": "latest",
+    "next": "^14.1.4",
     "next-connect": "^1.0.0",
     "npm": "^10.4.0",
     "openai": "^4.26.0",
