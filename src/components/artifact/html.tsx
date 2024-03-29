@@ -49,8 +49,14 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
       if (image) {
         const url = new URL(image.src);
         const pathname = url.pathname;
+        const isOrdFsSrc = url.origin === window.location.origin;
 
-        src.value = `${ORDFS}${pathname}`;
+        if (isOrdFsSrc) {
+          src.value = `${ORDFS}${pathname}`;
+        } else {
+          src.value = image.src;
+        }
+
         isSingleImage.value = true;
       } else {
         src.value = `${ORDFS}/${origin}`;
@@ -66,9 +72,9 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 
   return (
     <div
-      className={`absolute w-full h-full pb-[65px] ${onClick ? "cursor-pointer" : ""} ${
-        className ? className : ""
-      }`}
+      className={`absolute w-full h-full pb-[65px] ${
+        onClick ? "cursor-pointer" : ""
+      } ${className ? className : ""}`}
       onClick={onClick}
     >
       {isSingleImage.value && (
