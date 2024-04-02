@@ -15,8 +15,12 @@ const Timeline = ({ history, listing, spends }: Props) => {
     <ul className="timeline timeline-vertical">
       {history.reverse().map((h, idx) => {
         let text = <>Unknown</>;
-        const positionClass = `${idx % 2 === 0 ? 'timeline-start' : 'timeline-end'} timeline-box`;
-        const positionClass2 = `${idx % 2 === 1 ? 'timeline-start' : 'timeline-end'} timeline-box`;
+        const positionClass = `${
+          idx % 2 === 0 ? "timeline-start" : "timeline-end"
+        } timeline-box`;
+        const positionClass2 = `${
+          idx % 2 === 1 ? "timeline-start" : "timeline-end"
+        } timeline-box`;
         if (h.data?.list?.price) {
           text = (
             <Link
@@ -45,12 +49,14 @@ const Timeline = ({ history, listing, spends }: Props) => {
           );
         } else if (h.spend?.length) {
           const spentListing = spends.find((s) => s.txid === h.spend);
-          console.log({ spentListing });
+          // console.log({ spentListing });
           text = (
             <Link
               href={`https://whatsonchain.com/tx/${h.spend}`}
               target="_blank"
-            >{spentListing?.sale ? "Bought": "cancelled"}</Link>
+            >
+              {spentListing?.sale ? "Bought" : "cancelled"}
+            </Link>
           );
         }
         const wocUrl = `https://whatsonchain.com/tx/${h.txid}`;
