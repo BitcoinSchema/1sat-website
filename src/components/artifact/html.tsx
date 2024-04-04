@@ -35,13 +35,16 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
         console.error(`Error fetching ${origin}`);
       }
 
-      const data = await res.text();
-      const parsedHtml = new DOMParser().parseFromString(data, "text/html");
-      html.value = parsedHtml.documentElement.innerHTML;
+      let image: HTMLImageElement | null = null
+      if(res.headers.get("content-type") === 'text/html') {
+        const data = await res.text();
+        const parsedHtml = new DOMParser().parseFromString(data, "text/html");
+        html.value = parsedHtml.documentElement.innerHTML;
 
-      const images =
-        parsedHtml.querySelectorAll<HTMLImageElement>("body > img");
-      const image = images.length === 1 ? images[0] : null;
+        const images =
+          parsedHtml.querySelectorAll<HTMLImageElement>("body > img");
+        image = images.length === 1 ? images[0] : null;
+      }
 
       /**
        * If we have a single image, we can use the image src directly

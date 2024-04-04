@@ -60,7 +60,7 @@ export const getArtifactType = (
     artifactType = ArtifactType.Text;
   } else if (t === "text/markdown") {
     artifactType = ArtifactType.MarkDown;
-  } else if (t === "text/html") {
+  } else if (t === "text/html" || t.startsWith("image/svg")) {
     artifactType = ArtifactType.HTML;
   } else if (t === "application/bsv-20") {
     artifactType = ArtifactType.BSV20;
