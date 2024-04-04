@@ -24,13 +24,14 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 }) => {
   useSignals();
 
-  const html = useSignal<string | null>(null);
+  // const html = useSignal<string | null>(null);
   const src = useSignal<string | null>(null);
   const isSingleImage = useSignal<boolean>(false);
 
   useEffect(() => {
     async function run() {
-      const res = await fetch(`${ORDFS}/${origin}`);
+      src.value = `${ORDFS}/${origin}`;
+      const res = await fetch(src.value);
       if (!res.ok) {
         console.error(`Error fetching ${origin}`);
       }
@@ -39,7 +40,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
       if(res.headers.get("content-type")?.startsWith('text/html')) {
         const data = await res.text();
         const parsedHtml = new DOMParser().parseFromString(data, "text/html");
-        html.value = parsedHtml.documentElement.innerHTML;
+        // html.value = parsedHtml.documentElement.innerHTML;
 
         const images =
           parsedHtml.querySelectorAll<HTMLImageElement>("body > img");
@@ -75,9 +76,9 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 
   return (
     <div
-      className={`absolute w-full h-full pb-[65px] ${
-        onClick ? "cursor-pointer" : ""
-      } ${className ? className : ""}`}
+      // className={`absolute w-full h-full pb-[65px] ${
+      //   onClick ? "cursor-pointer" : ""
+      // } ${className ? className : ""}`}
       onClick={onClick}
     >
       {isSingleImage.value && (
@@ -91,7 +92,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
         />
       )}
 
-      {!isSingleImage.value && html.value && (
+      {!isSingleImage.value && (
         <>
           {!mini && (
             <iframe
@@ -100,7 +101,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
               className={`pointer-events-none w-full h-full bg-none overflow-hidden no-scrollbar ${
                 size ? `w-[${size}px] h-[${size}px]` : ""
               }`}
-              srcDoc={html.value}
+              src={src.value}
               sandbox=" "
               height={size || "100%"}
               width={size || "100%"}
