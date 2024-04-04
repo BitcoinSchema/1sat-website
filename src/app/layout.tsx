@@ -21,7 +21,8 @@ const ubuntuMono = Ubuntu_Mono({
 	subsets: ["latin"],
 });
 
-const description = "A open token protocol in the spirit of BTC Ordinals with the cost efficiency and performance of Bitcoin SV.";
+const description =
+	"A open token protocol in the spirit of BTC Ordinals with the cost efficiency and performance of Bitcoin SV.";
 
 export const metadata: Metadata = {
 	metadataBase: new URL("https://alpha.1satordinals.com"),
