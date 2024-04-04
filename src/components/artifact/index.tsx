@@ -8,7 +8,7 @@ import { head } from "lodash";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { SyntheticEvent, useEffect, useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
@@ -221,12 +221,30 @@ const Artifact: React.FC<ArtifactProps> = ({
 					mini={(size || 300) < 300}
 					origin={origin}
 					className={`${clickToZoom ? "cursor-pointer" : ""} h-full w-full`}
-          size={size}
+          			size={size}
 					onClick={
 						clickToZoom
 							? () => (showZoom ? setShowZoom(false) : setShowZoom(true))
 							: undefined
 					}
+					onLoad={(e: SyntheticEvent<HTMLIFrameElement | HTMLImageElement>) => {
+						/**
+						 * If the artifact is an image, set the correct aspect ratio
+						 */
+						if (e.currentTarget instanceof HTMLImageElement) {
+							const link = e.currentTarget.closest("a");
+
+							if(!link) {
+								return;
+							}
+
+							const height = e.currentTarget.naturalHeight;
+							const width = e.currentTarget.naturalWidth;
+							const aspectRatio = `${width} / ${height}`;
+
+							link.style.aspectRatio = aspectRatio;
+						}
+					}}
 				/>
 			)
 		) : type === ArtifactType.BSV20 ||
@@ -363,7 +381,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		<React.Fragment>
 			<Link
 				key={outPoint || origin}
-				className={`${showFooter ? `pb-[65px] ${classNames?.footer ? classNames.footer : ''}` : ""} ${
+				className={`${showFooter ? `${type !== ArtifactType.HTML ? 'pb-[65px]' : ''} ${classNames?.footer ? classNames.footer : ''}` : ""} ${
 					glow ? "glow" : ""
 				} flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${
 					to ? "cursor-pointer" : "cursor-default"
