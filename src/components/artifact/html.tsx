@@ -36,7 +36,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
       }
 
       let image: HTMLImageElement | null = null
-      if(res.headers.get("content-type") === 'text/html') {
+      if(res.headers.get("content-type")?.startsWith('text/html')) {
         const data = await res.text();
         const parsedHtml = new DOMParser().parseFromString(data, "text/html");
         html.value = parsedHtml.documentElement.innerHTML;
