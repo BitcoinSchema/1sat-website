@@ -36,3 +36,10 @@ export interface Collection extends OrdUtxo {
   };
 };
 
+export type FetchItemsQuery = {
+    map: {
+        subTypeData: {
+            collectionId: string;
+        };
+    };
+}

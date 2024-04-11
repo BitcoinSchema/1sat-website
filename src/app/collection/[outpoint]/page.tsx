@@ -2,6 +2,7 @@ import CollectionPage from "@/components/pages/collection";
 import { API_HOST } from "@/constants";
 import { CollectionStats } from "@/types/collection";
 import { OrdUtxo } from "@/types/ordinals";
+import { fetchCollectionItems, fetchCollectionMarket } from "@/utils/fetchCollectionData";
 import * as http from "@/utils/httpClient";
 
 const Collection = async ({ params }: { params: { outpoint: string } }) => {
@@ -28,7 +29,6 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
   }
 
 	// Get the collection items
-  let items: OrdUtxo[] = [];
 	const q = {
 		map: {
 			subTypeData: {
@@ -37,41 +37,13 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
 		},
 	};
 
-	const collectionItemsUrl = `${API_HOST}/api/inscriptions/search?limit=100&q=${btoa(
-		JSON.stringify(q),
-	)}`;
-  try {
-	const { promise: promiseItems } =
-		http.customFetch<OrdUtxo[]>(collectionItemsUrl);
-	 items = (await promiseItems) || [];
-  } catch (e) {
-    console.error("Error fetching collection items", e, collectionItemsUrl);
-  }
-
-	// Get the market listings
-  let market: OrdUtxo[] = [];
-	const collectionMarketUrl = `${API_HOST}/api/market?limit=100&q=${btoa(
-		JSON.stringify(q),
-	)}`;
-  try {
-    const { promise: promiseMarket } =
-		http.customFetch<OrdUtxo[]>(collectionMarketUrl);
-    market = (await promiseMarket) || [];
-  } catch (e) {
-    console.error("Error fetching collection market", e, collectionMarketUrl);
-  }
-
-	// combine collection items and market listings, favoring listings
-	const both = market.concat(
-		items.filter(
-			(i) => !market.find((m) => m.origin?.outpoint === i.origin?.outpoint),
-		),
-	);
+	const items = await fetchCollectionItems(q) ?? [];
+	const market = await fetchCollectionMarket(q) ?? [];
 
 	if (!collection || !stats) {
 		return <div>Collection not found</div>;
 	}
-	return <CollectionPage stats={stats} items={both} collection={collection} />;
+	return <CollectionPage stats={stats} marketItems={market} items={items} collection={collection} query={q} />
 };
 
 export default Collection;

@@ -1,12 +1,17 @@
-import Artifact from "@/components/artifact";
-import { CollectionStats } from "@/types/collection";
+import { CollectionStats, FetchItemsQuery } from "@/types/collection";
 import { OrdUtxo } from "@/types/ordinals";
 import { Noto_Serif } from "next/font/google";
+import { CollectionNavigation } from "./CollectionNavigation";
+import { CollectionList } from "./CollectionList";
+import Image from "next/image";
 
 interface Props {
   stats: CollectionStats;
   items: OrdUtxo[];
+  marketItems: OrdUtxo[];
   collection: OrdUtxo;
+  query: FetchItemsQuery;
+  bannerImage?: string;
 }
 
 const notoSerif = Noto_Serif({
@@ -15,7 +20,9 @@ const notoSerif = Noto_Serif({
 	subsets: ["latin"],
 });
 
-const CollectionPage = ({ stats, items, collection }: Props) => {
+const CollectionPage = async ({ stats, marketItems, items, collection, query, bannerImage }: Props) => {
+  const src = bannerImage ? await import(`@/assets/images/coom/${bannerImage}`) : null;
+
   return (
     <div className="2xl:max-w-[80vw] max-w-[90vw] w-full mx-auto">
       <h2 className="text-lg mb-8 flex justify-between items-center">
@@ -23,21 +30,18 @@ const CollectionPage = ({ stats, items, collection }: Props) => {
         <span>({stats.count})</span>
         {stats.count === stats.max && <div>Minted Out</div>}
       </h2>
-      <div className="2xl:max-w-[70vw] max-w-[80vw] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-4">
-        {items.map((item, idx) => {
-          return (
-            <Artifact
-              key={`${item.txid}-${item.vout}-${item.height}`}
-              to={`/outpoint/${item.outpoint}`}
-              artifact={item}
-              size={600}
-              sizes={"100vw"}
-              priority={idx < 10}
-              showListingTag={!!item.data?.list?.price}
-            />
-          );
-        })}
-      </div>
+
+      {
+        Boolean(src) &&
+        <Image
+          className="mx-auto w-full max-h-[300px] max-w-[980px] object-cover mb-12 sm:mb-16"
+          height={300} width={980}
+          alt={`${collection.origin?.data?.map?.name} image`}
+          src={src} />
+      }
+
+     <CollectionNavigation />
+     <CollectionList initialMarketItems={marketItems} initialCollectionItems={items} query={query} />
     </div>
   );
 };
