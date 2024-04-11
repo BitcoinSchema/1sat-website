@@ -3,12 +3,12 @@
 import Artifact from "@/components/artifact";
 import { B_PREFIX, FetchStatus, toastErrorProps } from "@/constants";
 import {
-	chainInfo,
-	indexers,
-	payPk,
-	pendingTxs,
-	usdRate,
-	utxos,
+  chainInfo,
+  indexers,
+  payPk,
+  pendingTxs,
+  usdRate,
+  utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { Ticker } from "@/types/bsv20";
@@ -48,18 +48,17 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 	const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 
 	const [fetchTickerStatus, setFetchTickerStatus] = useState<FetchStatus>(
-		FetchStatus.Idle
+		FetchStatus.Idle,
 	);
 	const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
-		FetchStatus.Idle
+		FetchStatus.Idle,
 	);
 	const [limit, setLimit] = useState<string | undefined>("1337");
 	const [maxSupply, setMaxSupply] = useState<string>("21000000");
 	const [decimals, setDecimals] = useState<number | undefined>();
 	const [amount, setAmount] = useState<string>();
 	const [mintError, setMintError] = useState<string>();
-	const [showOptionalFields, setShowOptionalFields] =
-		useState<boolean>(false);
+	const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
 	const [iterations, setIterations] = useState<number>(1);
 
 	const [ticker, setTicker] = useState<string | null>(tick);
@@ -78,14 +77,14 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		(e: any) => {
 			setTicker(e.target.value);
 		},
-		[setTicker]
+		[setTicker],
 	);
 
 	const changeMaxSupply = useCallback(
 		(e: any) => {
 			setMaxSupply(e.target.value);
 		},
-		[setMaxSupply]
+		[setMaxSupply],
 	);
 
 	const changeIterations = useCallback(
@@ -93,7 +92,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			console.log("changing iterations to", e.target.value);
 			setIterations(parseInt(e.target.value));
 		},
-		[setIterations]
+		[setIterations],
 	);
 
 	const inSync = computed(() => {
@@ -116,14 +115,14 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		(e: any) => {
 			setLimit(e.target.value);
 		},
-		[setLimit]
+		[setLimit],
 	);
 
 	const changeDecimals = useCallback(
 		(e: any) => {
 			setDecimals(e.target.value ? parseInt(e.target.value) : undefined);
 		},
-		[setDecimals]
+		[setDecimals],
 	);
 
 	const changeAmount = useCallback(
@@ -133,7 +132,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				setAmount(e.target.value);
 			}
 		},
-		[setAmount]
+		[setAmount],
 	);
 
 	const changeFile = useCallback(async (e: any) => {
@@ -209,12 +208,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			const fileData = await selectedFile.arrayBuffer();
 
 			// add B output
-			const data = [
-				B_PREFIX,
-				fileData,
-				selectedFile.type,
-				"binary",
-			] as StringOrBufferArray;
+			const data = [B_PREFIX, fileData, selectedFile.type, "binary"] as StringOrBufferArray;
 			try {
 				const inscription = {
 					p: "bsv-20",
@@ -222,14 +216,11 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 					icon: "_1",
 				} as Partial<Ticker>;
 
-				if (
-					parseInt(maxSupply) === 0 ||
-					BigInt(maxSupply) > maxMaxSupply
-				) {
+				if (parseInt(maxSupply) === 0 || BigInt(maxSupply) > maxMaxSupply) {
 					alert(
 						`Invalid input: please enter a number less than or equal to ${
 							maxMaxSupply - BigInt(1)
-						}`
+						}`,
 					);
 					return;
 				}
@@ -256,7 +247,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 					utxo,
 					undefined,
 					payments,
-					data
+					data,
 				);
 
 				setInscribeStatus(FetchStatus.Success);
@@ -272,7 +263,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				return;
 			}
 		},
-		[inscribedCallback, decimals, maxSupply, ticker]
+		[inscribedCallback, decimals, maxSupply, ticker],
 	);
 
 	const bulkInscribe = useCallback(async () => {
@@ -283,7 +274,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		for (let i = 0; i < iterations; i++) {
 			await getUtxos(fundingAddress.value);
 			const sortedUtxos = utxos.value?.sort((a, b) =>
-				a.satoshis > b.satoshis ? -1 : 1
+				a.satoshis > b.satoshis ? -1 : 1,
 			);
 			const u = head(sortedUtxos);
 			if (!u) {
@@ -302,7 +293,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 
 		const utxos = await getUtxos(fundingAddress.value);
 		const sortedUtxos = utxos.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1
+			a.satoshis > b.satoshis ? -1 : 1,
 		);
 		const u = head(sortedUtxos);
 		if (!u) {
@@ -354,10 +345,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 							className="text-white w-full rounded p-2"
 							maxLength={255}
 							onKeyDown={(event) => {
-								if (
-									event.key === " " ||
-									event.key === "Enter"
-								) {
+								if (event.key === " " || event.key === "Enter") {
 									event.preventDefault();
 									return;
 								}
@@ -459,9 +447,9 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			)}
 			<div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
 				<label className="block w-full">
-					BSV21 deployements are indexed immediately. A listing fee of
-					${`${listingFee}`} will be required before it shows up in
-					some areas on the website. This can be paid later.
+					BSV21 deployements are indexed immediately. A listing fee of $
+					{`${listingFee}`} will be required before it shows up in some areas on
+					the website. This can be paid later.
 				</label>
 			</div>
 			{preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
@@ -469,9 +457,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			<button
 				disabled={submitDisabled}
 				type="submit"
-				onClick={
-					bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe
-				}
+				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
 				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
 			>
 				Preview
