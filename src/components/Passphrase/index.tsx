@@ -2,10 +2,8 @@
 
 import { encryptionPrefix, toastErrorProps, toastProps } from "@/constants";
 import {
-	changeAddressPath,
 	encryptionKey,
 	mnemonic,
-	ordAddressPath,
 	ordPk,
 	passphrase,
 	payPk,
@@ -96,7 +94,7 @@ const EnterPassphrase: React.FC<Props> = ({
 					Buffer.from(
 						JSON.stringify({
 							payPk: payPk.value,
-							ordPk: payPk.value,
+							ordPk: ordPk.value,
 						}),
 						"utf-8"
 					),
