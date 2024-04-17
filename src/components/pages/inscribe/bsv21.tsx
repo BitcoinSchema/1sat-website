@@ -151,23 +151,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				setMintError("Image must be square");
 				return;
 			}
-			// max size is 400px
-			if (img.width > 400) {
-				toast.error("Width must be 400px or less", toastErrorProps);
-				setSelectedFile(null);
-				setPreview(null);
-				setIsImage(false);
-				setMintError("Width must be 400px or less");
-				return;
-			}
-			if (file.size > 100000) {
-				toast.error("Image must be less than 100KB", toastErrorProps);
-				setSelectedFile(null);
-				setPreview(null);
-				setIsImage(false);
-				setMintError("Image must be less than 100KB");
-				return;
-			}
+
 			setMintError(undefined);
 			setSelectedFile(file);
 			if (knownImageTypes.includes(file.type)) {
