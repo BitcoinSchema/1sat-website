@@ -4,6 +4,10 @@ import CollectionPage from "@/components/pages/collection";
 import { API_HOST } from "@/constants";
 import { CollectionStats } from "@/types/collection";
 import { OrdUtxo } from "@/types/ordinals";
+import {
+	fetchCollectionItems,
+	fetchCollectionMarket,
+} from "@/utils/fetchCollectionData";
 import * as http from "@/utils/httpClient";
 import { useQuery } from "@tanstack/react-query";
 import { FaSpinner } from "react-icons/fa";
@@ -35,6 +39,7 @@ const Collection = ({ params }: { params: { outpoint: string } }) => {
 		enabled: !!params.outpoint,
 	});
 
+	// Get the collection items
 	const q = {
 		map: {
 			subTypeData: {
@@ -43,29 +48,18 @@ const Collection = ({ params }: { params: { outpoint: string } }) => {
 		},
 	};
 
-	// Get the collection items
 	const { data: items, isLoading: isLoadingItems } = useQuery<OrdUtxo[]>({
 		queryKey: ["collection", "items", params.outpoint],
-		queryFn: () => {
-			const { promise } = http.customFetch<OrdUtxo[]>(
-				`${API_HOST}/api/inscriptions/search?limit=100&q=${btoa(
-					JSON.stringify(q)
-				)}`
-			);
-			return promise;
-		},
+		queryFn: () => fetchCollectionItems(q),
 		staleTime: 1000 * 60 * 5,
 		enabled: !!params.outpoint,
 	});
 
-	// Get the market listings
 	const { data: market, isLoading: isLoadingMarket } = useQuery<OrdUtxo[]>({
 		queryKey: ["collection", "market", params.outpoint],
-		queryFn: () => {
-			const { promise } = http.customFetch<OrdUtxo[]>(
-				`${API_HOST}/api/market?limit=100&q=${btoa(JSON.stringify(q))}`
-			);
-			return promise;
+		queryFn: async () => {
+			const response = await fetchCollectionMarket(q);
+			return response || [];
 		},
 		staleTime: 1000 * 60 * 5,
 		enabled: !!params.outpoint,
@@ -79,20 +73,26 @@ const Collection = ({ params }: { params: { outpoint: string } }) => {
 		);
 	}
 
-	// combine collection items and market listings, favoring listings
-	const both = market?.concat(
-		items?.filter(
-			(i) =>
-				!market.find((m) => m.origin?.outpoint === i.origin?.outpoint)
-		) ?? []
-	);
+	if (!collection || !stats) {
+		return <div className="flex justify-center">Collection not found</div>;
+	}
 
-	if (!collection || !stats || !both) {
-		return <div>Collection not found</div>;
+	if (!items || !market) {
+		return (
+			<div className="flex justify-center">
+				Collection items not found
+			</div>
+		);
 	}
 
 	return (
-		<CollectionPage stats={stats} items={both} collection={collection} />
+		<CollectionPage
+			stats={stats}
+			marketItems={market}
+			items={items}
+			collection={collection}
+			query={q}
+		/>
 	);
 };
 
