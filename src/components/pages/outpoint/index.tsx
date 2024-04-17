@@ -1,3 +1,5 @@
+"use client";
+
 import Artifact from "@/components/artifact";
 import { API_HOST } from "@/constants";
 import { Listing } from "@/types/bsv20";
@@ -6,6 +8,7 @@ import { displayName } from "@/utils/artifact";
 import * as http from "@/utils/httpClient";
 import { Noto_Serif } from "next/font/google";
 import OutpointTabs, { OutpointTab } from "./tabs";
+import { useQuery } from "@tanstack/react-query";
 
 const notoSerif = Noto_Serif({
 	style: "italic",
@@ -23,7 +26,7 @@ interface Props {
 	activeTab: OutpointTab;
 }
 
-const OutpointPage = async ({
+const OutpointPage = ({
 	artifact,
 	listing,
 	history,
@@ -38,12 +41,21 @@ const OutpointPage = async ({
 	// O2 - Payment to lister
 	// O3 - Market Fee
 	// O4 - Change
-	if (artifact?.data?.list && !artifact.script) {
-		const { promise } = http.customFetch<OrdUtxo>(
-			`${API_HOST}/api/txos/${artifact.outpoint}?script=true`,
-		);
 
-		const { script } = await promise;
+	const { data: script } = useQuery<string>({
+		queryKey: ["script", "outpoint", artifact.outpoint],
+		queryFn: async () => {
+			const { promise } = http.customFetch<OrdUtxo>(
+				`${API_HOST}/api/txos/${artifact.outpoint}?script=true`
+			);
+
+			const { script } = await promise;
+			return script;
+		},
+		staleTime: 1000 * 60 * 5,
+	});
+
+	if (artifact?.data?.list && !artifact.script && script) {
 		artifact.script = script;
 	}
 
@@ -68,12 +80,11 @@ const OutpointPage = async ({
 							sizes={"100vw"}
 							glow={true}
 							classNames={{
-                media: "overflow-hidden",
+								media: "overflow-hidden",
 								wrapper: `overflow-hidden h-[550px] relative ${
 									// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-2/3"
-                  "w-fit"
+									"w-fit"
 								}`,
-
 							}}
 							showListingTag={true}
 						/>
@@ -81,15 +92,20 @@ const OutpointPage = async ({
 						<div
 							className={`w-full ${
 								// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-1/3"
-                "w-full"
+								"w-full"
 							} mx-auto`}
 						>
 							<OutpointTabs
 								activeTab={activeTab}
 								outpoint={outpoint}
 								hasToken={!!artifact.origin?.data?.bsv20}
-                isListing={!!artifact.data?.list}
-                isCollection={artifact.origin?.data?.map?.subType === "collection" || artifact.origin?.data?.map?.subType === "collectionItem"}
+								isListing={!!artifact.data?.list}
+								isCollection={
+									artifact.origin?.data?.map?.subType ===
+										"collection" ||
+									artifact.origin?.data?.map?.subType ===
+										"collectionItem"
+								}
 							/>
 							{content}
 						</div>

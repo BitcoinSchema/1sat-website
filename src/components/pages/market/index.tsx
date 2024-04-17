@@ -1,3 +1,5 @@
+'use client';
+
 import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import { AssetType } from "@/constants";

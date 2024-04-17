@@ -1,3 +1,5 @@
+'use client';
+
 import TokenListingSkeleton from "@/components/skeletons/listing/Token";
 import { AssetType } from "@/constants";
 import { Suspense } from "react";
@@ -8,7 +10,7 @@ interface TokenMarketProps {
   id?: string;
 }
 
-const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id }) => {
+const TokenMarket: React.FC<TokenMarketProps> = ({ type, id }) => {
   return (
       <div className="w-full overflow-x-auto">
         <table className="table font-mono">

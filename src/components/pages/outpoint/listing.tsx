@@ -1,52 +1,58 @@
+"use client";
+
 import { API_HOST } from "@/constants";
 import { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import OutpointPage from ".";
 import ListingContent from "./listingContent";
 import { OutpointTab } from "./tabs";
+import { useQuery } from "@tanstack/react-query";
 
 interface Props {
-  outpoint: string;
+	outpoint: string;
 }
 
-const OutpointListing = async ({ outpoint }: Props) => {
-  let artifact: OrdUtxo | undefined;
-  let bsv20: OrdUtxo | undefined;
-  try {
-    const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
-    const { promise } = http.customFetch<OrdUtxo>(url);
-    artifact = await promise;
-  } catch (e) {
-    console.log(e);
-  }
+const OutpointListing = ({ outpoint }: Props) => {
+	const { data: bsv20 } = useQuery<OrdUtxo>({
+		queryKey: ["inscription", "outpoint", outpoint],
+		queryFn: () => {
+			const { promise } = http.customFetch<OrdUtxo>(
+				`${API_HOST}/api/inscriptions/${outpoint}`
+			);
 
-  try {
-    const url = `${API_HOST}/api/inscriptions/${outpoint}`;
-    const { promise } = http.customFetch<OrdUtxo>(url);
-    bsv20 = await promise;
-  } catch (e) {
-    console.log(e);
-  }
+			return promise;
+		},
+		staleTime: 1000 * 60 * 5,
+	});
 
-  console.log({ artifact, bsv20 });
-  const listing = artifact?.data?.list || bsv20?.data?.list;
-  const content =
-    listing ? (
-      <ListingContent artifact={artifact || bsv20!} />
-    ) : (
-      <div>Not a listing</div>
-    );
+	const { data: artifact } = useQuery<OrdUtxo>({
+		queryKey: ["bsv20", "outpoint", outpoint],
+		queryFn: () => {
+			const { promise } = http.customFetch<OrdUtxo>(
+				`${API_HOST}/api/bsv20/outpoint/${outpoint}`
+			);
 
-  return (
-    <OutpointPage
-      artifact={artifact || bsv20!}
-      outpoint={outpoint}
-      content={content}
-      activeTab={OutpointTab.Listing}
-    />
-  );
+			return promise;
+		},
+		staleTime: 1000 * 60 * 5,
+	});
+
+	console.log({ artifact, bsv20 });
+	const listing = artifact?.data?.list || bsv20?.data?.list;
+	const content = listing ? (
+		<ListingContent artifact={artifact || bsv20!} />
+	) : (
+		<div>Not a listing</div>
+	);
+
+	return (
+		<OutpointPage
+			artifact={artifact || bsv20!}
+			outpoint={outpoint}
+			content={content}
+			activeTab={OutpointTab.Listing}
+		/>
+	);
 };
 
 export default OutpointListing;
-
-
