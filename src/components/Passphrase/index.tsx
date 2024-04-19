@@ -18,7 +18,7 @@ import { generatePassphrase } from "@/utils/passphrase";
 import { useSignal } from "@preact/signals-react";
 import { PrivateKey } from "bsv-wasm-web";
 import randomBytes from "randombytes";
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useRef } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
@@ -38,6 +38,14 @@ const EnterPassphrase: React.FC<Props> = ({
 }) => {
 	const showEnterPassphrase = useSignal<EncryptDecrypt | null>(mode);
 	const hasDownloadedKeys = useSignal<boolean>(false);
+	const passwordInputRef = useRef<HTMLInputElement>(null);
+
+	// autofocus without using the autFocus property
+	useEffect(() => {
+		if (passwordInputRef.current) {
+			passwordInputRef.current.focus();
+		}
+	}, []);
 
 	const backupKeys = (keys: EncryptedBackupJson) => {
 		const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
@@ -159,8 +167,8 @@ const EnterPassphrase: React.FC<Props> = ({
 			<div className="my-4">
 				Enter a password to{" "}
 				{showEnterPassphrase.value === EncryptDecrypt.Decrypt
-					? "Decrypt"
-					: "Encrypt"}{" "}
+					? "decrypt"
+					: "encrypt"}{" "}
 				your saved keys.
 			</div>
 			<div className="font-semibold md:text-xl my-2 relative">
@@ -191,6 +199,7 @@ const EnterPassphrase: React.FC<Props> = ({
 					onChange={handlePassphraseChange}
 					value={passphrase.value!}
 					placeholder={"your-password-here"}
+					ref={passwordInputRef}
 				/>
 			</div>
 
