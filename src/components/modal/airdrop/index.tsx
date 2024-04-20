@@ -31,6 +31,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
+import { FaQuestion } from "react-icons/fa";
 
 interface TransferModalProps {
 	onClose: () => void;
@@ -391,6 +392,31 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								}}
 							/>
 						</div>
+						{destinationTickers.value.length > 0 && (
+							<div className="flex flex-col w-full mt-4">
+								<label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center text-right justify-end">
+									<div
+										className="tooltip tooltip-left"
+										data-tip="Holders per ticker, largest first."
+									>
+										<FaQuestion className="text-[#aaa] cursor-pointer mr-2" />
+									</div>
+									Number of holders
+								</label>
+								<input
+									type="number"
+									placeholder="25"
+									className="z-20 input input-bordered w-full"
+									value={numOfHolders.value || "0"}
+									min={"1"}
+									max={"1000"}
+									onChange={(e) => {
+										numOfHolders.value = e.target.value;
+									}}
+								/>
+							</div>
+						)}
+						<div className="divider" />
 						<div className="flex flex-col mt-4">
 							<label className="text-sm font-semibold text-[#aaa] mb-2">
 								Addresses (comma separated list)
@@ -405,22 +431,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								}}
 							/>
 						</div>
-						<div className="flex flex-col w-full mt-4">
-							<label className="text-sm font-semibold text-[#aaa] mb-2">
-								Number of holders
-							</label>
-							<input
-								type="number"
-								placeholder="25"
-								className="z-20 input input-bordered w-full"
-								value={numOfHolders.value || "0"}
-								min={"1"}
-								max={"1000"}
-								onChange={(e) => {
-									numOfHolders.value = e.target.value;
-								}}
-							/>
-						</div>
+
 						<div className="modal-action">
 							<button
 								type="submit"
