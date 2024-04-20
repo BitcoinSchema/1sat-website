@@ -78,7 +78,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			changeAddress: string,
 			ordPk: PrivateKey,
 			ordAddress: string,
-			payoutAddress: string,
 			ticker: Ticker
 		): Promise<PendingTransaction> => {
 			if (!bsvWasmReady.value) {
@@ -277,6 +276,11 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
 			console.log(amount.value, addresses.value);
 			const amt = Math.floor(Number.parseFloat(amount.value) * 10 ** dec);
+			if (amt <= 0) {
+				toast.error("Amount must be greater than 0", toastErrorProps);
+				airdroppingStatus.value = FetchStatus.Error;
+				return;
+			}
 			const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${
 				type === AssetType.BSV20 ? "tick" : "id"
 			}/${id}`;
@@ -299,7 +303,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					fundingAddress.value!,
 					PrivateKey.from_wif(ordPk.value!),
 					ordAddress.value!,
-					addresses.value, // recipient ordinal address
 					ticker
 				);
 				airdroppingStatus.value = FetchStatus.Success;
@@ -427,7 +430,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								}
 								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:bg-[#555] disabled:cursor-not-allowed"
 							>
-								Send
+								{airdroppingStatus.value === FetchStatus.Loading
+									? "Raining"
+									: "Send"}
 							</button>
 						</div>
 					</form>
