@@ -196,7 +196,8 @@ const TickerContent = ({
 						}`;
 						const pricePer = (
 							Number.parseFloat(listing.price) / qty
-						).toFixed(2);
+						).toFixed(3);
+
 						const myListing = listing.owner === ordAddress.value;
 						return (
 							<div
@@ -312,10 +313,12 @@ const TickerContent = ({
 					)}
 					<div ref={ref} />
 				</td>
+
 				<td
 					colSpan={type === AssetType.BSV21 ? 3 : 2}
 					className="align-top"
 				>
+
 					<TremorChartComponent
 						ticker={ticker}
 						dataCategory={DataCategory.Sales}

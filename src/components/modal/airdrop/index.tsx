@@ -1,36 +1,37 @@
 "use client";
 
-import { Holder } from "@/components/pages/TokenMarket/list";
+import type { Holder } from "@/components/pages/TokenMarket/list";
 import { Meteors } from "@/components/ui/meteors";
-import { API_HOST, AssetType, toastErrorProps } from "@/constants";
+import { API_HOST, AssetType, FetchStatus, toastErrorProps } from "@/constants";
 import {
-  bsvWasmReady,
-  ordPk,
-  payPk,
-  pendingTxs,
-  utxos,
+	bsvWasmReady,
+	ordPk,
+	payPk,
+	pendingTxs,
+	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { Ticker } from "@/types/bsv20";
-import { BSV20TXO } from "@/types/ordinals";
-import { PendingTransaction } from "@/types/preview";
+import type { Ticker } from "@/types/bsv20";
+import type { BSV20TXO } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
-import { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "@/utils/js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
+	P2PKHAddress,
+	PrivateKey,
+	Script,
+	SigHash,
+	Transaction,
+	TxIn,
+	TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
+import { FaQuestion } from "react-icons/fa";
 
 interface TransferModalProps {
 	onClose: () => void;
@@ -57,11 +58,12 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 }) => {
 	useSignals();
 	const router = useRouter();
+	const airdroppingStatus = useSignal<FetchStatus>(FetchStatus.Idle);
 	// use signal for amount and address
 	const amount = useSignal(amt?.toString() || "0");
-	const address = useSignal(addr || "");
+	const addresses = useSignal<string>(addr || "");
 	const destinationTickers = useSignal("");
-	const numOfHolders = useSignal('25');
+	const numOfHolders = useSignal("25");
 
 	const setAmountToBalance = useCallback(() => {
 		amount.value = balance.toString();
@@ -77,8 +79,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			changeAddress: string,
 			ordPk: PrivateKey,
 			ordAddress: string,
-			payoutAddress: string,
-			ticker: Ticker,
+			ticker: Ticker
 		): Promise<PendingTransaction> => {
 			if (!bsvWasmReady.value) {
 				throw new Error("bsv wasm not ready");
@@ -90,8 +91,12 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			let i = 0;
 			for (const utxo of inputTokens) {
 				const txBuf = Buffer.from(utxo.txid, "hex");
-				let utxoIn = new TxIn(txBuf, utxo.vout, Script.from_asm_string(""));
-				amounts += parseInt(utxo.amt);
+				let utxoIn = new TxIn(
+					txBuf,
+					utxo.vout,
+					Script.from_asm_string("")
+				);
+				amounts += Number.parseInt(utxo.amt);
 				tx.add_input(utxoIn);
 
 				// sign ordinal
@@ -100,13 +105,13 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
 					i,
 					Script.from_bytes(Buffer.from(utxo.script, "base64")),
-					BigInt(1),
+					BigInt(1)
 				);
 
 				utxoIn.set_unlocking_script(
 					Script.from_asm_string(
-						`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`,
-					),
+						`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`
+					)
 				);
 
 				tx.set_input(i, utxoIn);
@@ -116,10 +121,12 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				}
 			}
 
-			const destinations = address.value.split(",").map((a) => a.trim());
-			const tickerDestinations = destinationTickers.value
+			const destinations = addresses.value
 				.split(",")
 				.map((a) => a.trim());
+			const tickerDestinations = destinationTickers.value
+				? destinationTickers.value.split(",").map((a) => a.trim())
+				: [];
 			// resolve ticker holders
 			let tickerHolders: string[] = [];
 			for (const t of tickerDestinations) {
@@ -127,20 +134,26 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				if (type === AssetType.BSV21) {
 					tickerHoldersUrl = `${API_HOST}/api/bsv20/id/${t}/holders?limit=${numOfHolders.value}`;
 				}
-				const { promise } = http.customFetch<Holder[]>(tickerHoldersUrl);
+				const { promise } =
+					http.customFetch<Holder[]>(tickerHoldersUrl);
 				const holders = await promise;
 				tickerHolders = (tickerHolders || []).concat(
-					holders.map((h) => h.address),
+					holders.map((h) => h.address)
 				);
 			}
-			destinations.push(...tickerHolders);
+			if (tickerHolders.length > 0) {
+				destinations.push(...tickerHolders);
+			}
 
 			const amountEach = Math.floor(sendAmount / destinations.length);
 			const remainder = sendAmount % destinations.length;
 
 			// make sure we have enough to cover the send amount
 			if (amounts < sendAmount) {
-        toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
+				toast.error(
+					`Not enough ${ticker.tick || ticker.sym}`,
+					toastErrorProps
+				);
 				throw new Error("insufficient funds");
 			}
 
@@ -159,12 +172,12 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					throw new Error("unexpected error");
 				}
 				const changeFileB64 = Buffer.from(
-					JSON.stringify(changeInscription),
+					JSON.stringify(changeInscription)
 				).toString("base64");
 				const changeInsc = buildInscriptionSafe(
 					P2PKHAddress.from_string(ordAddress),
 					changeFileB64,
-					"application/bsv-20",
+					"application/bsv-20"
 				);
 				const changeInscOut = new TxOut(BigInt(1), changeInsc);
 				tx.add_output(changeInscOut);
@@ -178,7 +191,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				let utxoIn = new TxIn(
 					Buffer.from(utxo.txid, "hex"),
 					utxo.vout,
-					Script.from_asm_string(""),
+					Script.from_asm_string("")
 				);
 
 				tx.add_input(utxoIn);
@@ -203,13 +216,13 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					inscription.id = ticker.id;
 				}
 
-				const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
-					"base64",
-				);
+				const fileB64 = Buffer.from(
+					JSON.stringify(inscription)
+				).toString("base64");
 				const insc = buildInscriptionSafe(
 					P2PKHAddress.from_string(dest),
 					fileB64,
-					"application/bsv-20",
+					"application/bsv-20"
 				);
 
 				let satOut = new TxOut(BigInt(1), insc);
@@ -220,12 +233,18 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				if (indexerAddress) {
 					const indexerFeeOutput = new TxOut(
 						BigInt(2000), // 1000 * 2 inscriptions
-						P2PKHAddress.from_string(indexerAddress).get_locking_script(),
+						P2PKHAddress.from_string(
+							indexerAddress
+						).get_locking_script()
 					);
 					tx.add_output(indexerFeeOutput);
 				}
 			}
-			const changeOut = createChangeOutput(tx, changeAddress, totalSatsIn);
+			const changeOut = createChangeOutput(
+				tx,
+				changeAddress,
+				totalSatsIn
+			);
 			tx.add_output(changeOut);
 
 			console.log({ RawTx: tx.to_hex(), Size: tx.get_size() });
@@ -240,47 +259,73 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				marketFee: 0,
 			};
 		},
-		[address.value, destinationTickers.value, numOfHolders.value, type],
+		[addresses.value, destinationTickers.value, numOfHolders.value, type]
 	);
 
 	const submit = useCallback(
 		async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			if (!amount.value || !address.value) {
+			if (!amount.value || !addresses.value) {
 				return;
 			}
-			if (parseFloat(amount.value) > balance) {
+			if (Number.parseFloat(amount.value) > balance) {
 				toast.error("Not enough Bitcoin!", toastErrorProps);
 				return;
 			}
-			console.log(amount.value, address.value);
-			const amt = Math.floor(parseFloat(amount.value) * 10 ** dec);
+
+			airdroppingStatus.value = FetchStatus.Loading;
+
+			console.log(amount.value, addresses.value);
+			const amt = Math.floor(Number.parseFloat(amount.value) * 10 ** dec);
+			if (amt <= 0) {
+				toast.error("Amount must be greater than 0", toastErrorProps);
+				airdroppingStatus.value = FetchStatus.Error;
+				return;
+			}
 			const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${
 				type === AssetType.BSV20 ? "tick" : "id"
 			}/${id}`;
 			const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
-			const tokenUtxos = await promise;
-			const { promise: promiseTickerDetails } = http.customFetch<Ticker>(
-				`${API_HOST}/api/bsv20/${
-					type === AssetType.BSV20 ? "tick" : "id"
-				}/${id}`,
-			);
-			const ticker = await promiseTickerDetails;
-			const transferTx = await airdropBsv20(
-				amt,
-				utxos.value!,
-				tokenUtxos,
-				PrivateKey.from_wif(payPk.value!),
-				fundingAddress.value!,
-				PrivateKey.from_wif(ordPk.value!),
-				ordAddress.value!,
-				address.value, // recipient ordinal address
-				ticker,
-			);
-			pendingTxs.value = [transferTx];
-			router.push("/preview");
+
+			try {
+				const tokenUtxos = await promise;
+				const { promise: promiseTickerDetails } =
+					http.customFetch<Ticker>(
+						`${API_HOST}/api/bsv20/${
+							type === AssetType.BSV20 ? "tick" : "id"
+						}/${id}`
+					);
+				const ticker = await promiseTickerDetails;
+				const transferTx = await airdropBsv20(
+					amt,
+					utxos.value!,
+					tokenUtxos,
+					PrivateKey.from_wif(payPk.value!),
+					fundingAddress.value!,
+					PrivateKey.from_wif(ordPk.value!),
+					ordAddress.value!,
+					ticker
+				);
+				airdroppingStatus.value = FetchStatus.Success;
+				pendingTxs.value = [transferTx];
+				router.push("/preview");
+			} catch (e) {
+				console.error(e);
+				toast.error("Failed to create airdrop", toastErrorProps);
+				airdroppingStatus.value = FetchStatus.Error;
+			}
 		},
-		[amount.value, address.value, balance, dec, type, id, airdropBsv20, router],
+		[
+			amount.value,
+			addresses.value,
+			balance,
+			airdroppingStatus,
+			dec,
+			type,
+			id,
+			airdropBsv20,
+			router,
+		]
 	);
 
 	return (
@@ -300,12 +345,15 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
-							<div className="text-lg font-semibold">Airdrop {id}</div>
+							<div className="text-lg font-semibold">
+								Airdrop {id}
+							</div>
 							<div
 								className="text-xs cursor-pointer text-[#aaa]"
 								onClick={setAmountToBalance}
 							>
-								Balance: {balance} {type === AssetType.BSV21 ? id : sym}
+								Balance: {balance}{" "}
+								{type === AssetType.BSV21 ? id : sym}
 							</div>
 						</div>
 
@@ -322,7 +370,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								onChange={(e) => {
 									if (
 										e.target.value === "" ||
-										parseFloat(e.target.value) <= balance
+										Number.parseFloat(e.target.value) <=
+											balance
 									) {
 										amount.value = e.target.value;
 									}
@@ -343,6 +392,31 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								}}
 							/>
 						</div>
+						{destinationTickers.value.length > 0 && (
+							<div className="flex flex-col w-full mt-4">
+								<label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center text-right justify-end">
+									<div
+										className="tooltip tooltip-left"
+										data-tip="Holders per ticker, largest first."
+									>
+										<FaQuestion className="text-[#aaa] cursor-pointer mr-2" />
+									</div>
+									Number of holders
+								</label>
+								<input
+									type="number"
+									placeholder="25"
+									className="z-20 input input-bordered w-full"
+									value={numOfHolders.value || "0"}
+									min={"1"}
+									max={"1000"}
+									onChange={(e) => {
+										numOfHolders.value = e.target.value;
+									}}
+								/>
+							</div>
+						)}
+						<div className="divider" />
 						<div className="flex flex-col mt-4">
 							<label className="text-sm font-semibold text-[#aaa] mb-2">
 								Addresses (comma separated list)
@@ -351,31 +425,25 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								type="text"
 								placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
 								className="z-20 input input-bordered w-full"
-								value={address.value}
+								value={addresses.value}
 								onChange={(e) => {
-									address.value = e.target.value;
+									addresses.value = e.target.value;
 								}}
 							/>
 						</div>
-						<div className="flex flex-col w-full mt-4">
-							<label className="text-sm font-semibold text-[#aaa] mb-2">
-								Number of holders
-							</label>
-							<input
-								type="number"
-								placeholder="25"
-								className="z-20 input input-bordered w-full"
-								value={numOfHolders.value || "0"}
-								min={"1"}
-								max={"1000"}
-								onChange={(e) => {
-									numOfHolders.value = e.target.value;									
-								}}
-							/>
-						</div>
+
 						<div className="modal-action">
-							<button className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
-								Send
+							<button
+								type="submit"
+								disabled={
+									airdroppingStatus.value ===
+									FetchStatus.Loading
+								}
+								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:bg-[#555] disabled:cursor-not-allowed"
+							>
+								{airdroppingStatus.value === FetchStatus.Loading
+									? "Raining"
+									: "Send"}
 							</button>
 						</div>
 					</form>
@@ -391,7 +459,7 @@ export default AirdropTokensModal;
 export const buildInscriptionSafe = (
 	destinationAddress: P2PKHAddress | string,
 	b64File?: string | undefined,
-	mediaType?: string | undefined,
+	mediaType?: string | undefined
 ): Script => {
 	let ordAsm = "";
 	// This can be omitted for reinscriptions that just update metadata
