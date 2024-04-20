@@ -13,23 +13,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
-import { FaExternalLinkAlt } from "react-icons/fa";
+import { FaExternalLinkAlt, FaFire } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
+import { GiPlainCircle } from "react-icons/gi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import { MarketData } from "./list";
 
 type IconProps = {
 	alt: string;
 	icon: string | null;
-  className?: string;
+	className?: string;
 };
 
 export const IconWithFallback: React.FC<IconProps> = (props) => {
 	const ref = useRef(null);
 	const { icon, alt, ...rest } = props;
-  
-  const imgSrc = useSignal(icon ? `/api/sanitize?url=https://ordfs.network/${icon}` : oneSatLogo);
-  console.log({icon, imgSrc: imgSrc.value});
+
+	const imgSrc = useSignal(
+		icon ? `/api/sanitize?url=https://ordfs.network/${icon}` : oneSatLogo
+	);
+	console.log({ icon, imgSrc: imgSrc.value });
 	return (
 		<Image
 			{...rest}
@@ -44,7 +47,9 @@ export const IconWithFallback: React.FC<IconProps> = (props) => {
 			}}
 			width={100}
 			height={100}
-			className={`opacity-0 rounded-lg transition ${props.className ? props.className : ""}`}
+			className={`opacity-0 rounded-lg transition ${
+				props.className ? props.className : ""
+			}`}
 		/>
 	);
 };
@@ -98,7 +103,7 @@ const TickerHeading = ({
 	const bsvNeeded = computed(() => {
 		const satoshis = Math.max(
 			minFee - Number(ticker.fundTotal),
-			(ticker.pendingOps || 0) * 1000 - parseInt(ticker.fundBalance),
+			(ticker.pendingOps || 0) * 1000 - parseInt(ticker.fundBalance)
 		);
 		console.log({
 			satoshis,
@@ -167,7 +172,7 @@ const TickerHeading = ({
 							<IconWithFallback
 								icon={ticker.icon || null}
 								alt={ticker.sym || ""}
-                className="mr-2 w-8 h-8"
+								className="mr-2 w-8 h-8"
 							/>
 						)}
 						{ticker.num && (
@@ -176,7 +181,9 @@ const TickerHeading = ({
 								{ticker.num}
 							</div>
 						)}
-						<span className="text-4xl mr-4">{ticker.tick || ticker.sym}</span>
+						<span className="text-4xl mr-4">
+							{ticker.tick || ticker.sym}
+						</span>
 					</div>
 				</th>
 				<td>
@@ -186,18 +193,35 @@ const TickerHeading = ({
 				<td>
 					<span
 						className={`ml-2 text-xl ${
-							ticker.pctChange > 0 ? "text-emerald-400" : "text-orange-700"
+							ticker.pctChange > 0
+								? "text-emerald-400"
+								: "text-orange-700"
 						}`}
 					>
 						{change}
 					</span>
 				</td>
 				<td className="w-full text-right">
-					{toBitcoin(Math.floor(ticker.marketCap / 10 ** ticker.dec)).toLocaleString()}{" "}
+					{toBitcoin(
+						Math.floor(ticker.marketCap / 10 ** ticker.dec)
+					).toLocaleString()}{" "}
 					BSV
 					<br />
 				</td>
-				<td className="break-normal text-right w-96 hover:text-info transition">
+				{type === AssetType.BSV21 && (
+					<td className="text-center w-12">
+						{ticker.contract === "pow-20" ? (
+							<div className="tooltip mx-auto" data-tip="POW-20">
+								<FaFire className="text-orange-400" />
+							</div>
+						) : (
+							<div className="tooltip mx-auto">
+								<GiPlainCircle className="text-gray-800" />
+							</div>
+						)}
+					</td>
+				)}
+				<td className="break-normal text-right w-48 hover:text-info transition">
 					<Link href={`/holders/${type}/${ticker.tick || ticker.id}`}>
 						{(ticker.accounts || 0).toLocaleString()}
 					</Link>
@@ -212,7 +236,7 @@ const TickerHeading = ({
 						{supplyContent.value}
 					</td>
 					<td
-						colSpan={2}
+						colSpan={type === AssetType.BSV21 ? 3 : 2}
 						className="text-right text-neutral-content/50 valign-center bg-[#111]"
 					>
 						<Link
@@ -227,18 +251,20 @@ const TickerHeading = ({
 			)}
 			{(ticker.pendingOps > 0 || !paidUp.value) && (
 				<tr className="group text-warning bg-warning-content">
-					<td className="" colSpan={4}>
+					<td className="" colSpan={type === AssetType.BSV21 ? 5 : 4}>
 						<div
 							className="tooltip tooltip-right"
 							data-tip={`${ticker.pendingOps} pending operations`}
 						>
-							{bsvNeeded.value > 0 ? `Needs ${bsvNeeded} BSV` : "Funded. Processing..."}
+							{bsvNeeded.value > 0
+								? `Needs ${bsvNeeded} BSV`
+								: "Funded. Processing..."}
 						</div>
 					</td>
 					<td className="transition cursor-pointer text-right">
 						<button
-              type="button"
-							className="btn btn-warning btn-sm"
+							type="button"
+							className="btn btn-warning btn-sm whitespace-nowrap"
 							onClick={openPaymentModal}
 						>
 							Fund {ticker.tick || ticker.sym}
@@ -246,7 +272,9 @@ const TickerHeading = ({
 						{showPaymentModal.value && (
 							<WithdrawalModal
 								address={ticker.fundAddress}
-								amount={bsvNeeded.value >= 0 ? bsvNeeded.value : 0}
+								amount={
+									bsvNeeded.value >= 0 ? bsvNeeded.value : 0
+								}
 								onClose={() => {
 									console.log("close modal");
 									showPaymentModal.value = false;

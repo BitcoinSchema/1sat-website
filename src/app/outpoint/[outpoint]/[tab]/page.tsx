@@ -35,11 +35,11 @@ export type InputOutpoint = {
 const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	// get tx details
 	const parts = params.outpoint.split("_");
-  const txid = parts[0];
-  const vout = parts.length > 1 ? parts[1] : "0";
-  
+	const txid = parts[0];
+	const vout = parts.length > 1 ? parts[1] : "0";
+
 	const response = await fetch(
-		`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`,
+		`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
 	);
 	const rawTx = await response.text();
 	{
@@ -61,7 +61,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 				headers: {
 					Accept: "application/octet-stream",
 				},
-			},
+			}
 		);
 		const res = await spentOutpointResponse.arrayBuffer();
 		const { script, satoshis } = parseOutput(res);
@@ -70,27 +70,24 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		inputOutpoints.push({ script, satoshis, txid, vout });
 	}
 
-  const outputOutpoints: string[] = [];
-  const numOutputs = tx.get_noutputs();
-  for (let i = 0; i < numOutputs; i++) {
-    outputOutpoints.push(`${txid}_${i}`);
-  }
+	const outputOutpoints: string[] = [];
+	const numOutputs = tx.get_noutputs();
+	for (let i = 0; i < numOutputs; i++) {
+		outputOutpoints.push(`${txid}_${i}`);
+	}
 
-  // check if outputs are spent
-  const outputSpendsResponse = await fetch(
-		`${API_HOST}/api/spends`,
-		{
-      method: "POST",
-			headers: {
-        "Content-Type": "application/json",
-				Accept: "application/json",
-			},
-      body: JSON.stringify(outputOutpoints),
+	// check if outputs are spent
+	const outputSpendsResponse = await fetch(`${API_HOST}/api/spends`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json",
 		},
-	);
+		body: JSON.stringify(outputOutpoints),
+	});
 
-  const outputSpends = await outputSpendsResponse.json();
-  console.log({outputOutpoints, outputSpends});
+	const outputSpends = await outputSpendsResponse.json();
+	console.log({ outputOutpoints, outputSpends });
 
 	const spendResponse = await fetch(
 		`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
@@ -98,7 +95,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 			headers: {
 				Accept: "application/octet-stream",
 			},
-		},
+		}
 	);
 	// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
 	const buffer = await spendResponse.arrayBuffer();
@@ -129,7 +126,10 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		<>
 			<Head>
 				<meta property="og:image" content="<generated>" />
-				<meta property="og:image:alt" content={`Outpoint ${txid}_${vout}`} />
+				<meta
+					property="og:image:alt"
+					content={`Outpoint ${txid}_${vout}`}
+				/>
 				<meta property="og:image:type" content="image/png" />
 				<meta property="og:image:width" content="1200" />
 				<meta property="og:image:height" content="630" />
@@ -145,7 +145,12 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 					<div className="flex">
 						<OutpointHeading outpoint={`${txid}_${vout}`} />
 					</div>
-					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} outputSpends={outputSpends} vout={parseInt(vout)}/>
+					<DisplayIO
+						rawtx={rawTx}
+						inputOutpoints={inputOutpoints}
+						outputSpends={outputSpends}
+						vout={parseInt(vout)}
+					/>
 					{content()}
 				</div>
 			</Suspense>
