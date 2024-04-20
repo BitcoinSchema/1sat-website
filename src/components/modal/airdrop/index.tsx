@@ -328,6 +328,14 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 		]
 	);
 
+	const loadTemplate = useCallback(async () => {
+		// https://1sat-api-production.up.railway.app/airdrop/3
+		const url = `https://1sat-api-production.up.railway.app/airdrop/3`;
+		const { promise } = http.customFetch<string[]>(url);
+		const template = await promise;
+		addresses.value = template.join(",");
+	}, [addresses]);
+
 	return (
 		<dialog
 			id="airdrop_modal"
@@ -419,7 +427,13 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 						<div className="divider" />
 						<div className="flex flex-col mt-4">
 							<label className="text-sm font-semibold text-[#aaa] mb-2">
-								Addresses (comma separated list)
+								Addresses (comma separated list){" "}
+								<div
+									className="cursor-pointer text-blue-400 hover:text-blue-500"
+									onClick={loadTemplate}
+								>
+									All Registered Users
+								</div>
 							</label>
 							<input
 								type="text"
