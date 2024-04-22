@@ -38,6 +38,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	const parts = params.outpoint.split("_");
 	const txid = parts[0];
 	const vout = parts.length > 1 ? parts[1] : "0";
+
 	let rawTx: string | undefined; // raw tx hex
 	let inputOutpoints: InputOutpoint[] = [];
 	let outputSpends: string[] = [];
@@ -48,7 +49,6 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 			`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
 		);
 		rawTx = await response.text();
-
 		/* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
 
 		// parse the raw tx
