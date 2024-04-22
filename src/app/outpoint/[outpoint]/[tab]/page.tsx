@@ -37,18 +37,22 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	const parts = params.outpoint.split("_");
 	const txid = parts[0];
 	const vout = parts.length > 1 ? parts[1] : "0";
+	let rawTx: string | undefined; // raw tx hex
+	let inputOutpoints: InputOutpoint[] | undefined;
+	let outputSpends: string[] | undefined;
+
 	// TODO: 4db870f0993ef20f7d4cfe8e5dc9b041841c5acef153d9530d7abeaa7665b250_1 fails
 	try {
 		const response = await fetch(
 			`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
 		);
-		const rawTx = await response.text();
+		rawTx = await response.text();
 
 		/* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
 
 		// parse the raw tx
 		const tx = Transaction.from_hex(rawTx);
-		const inputOutpoints: InputOutpoint[] = [];
+		inputOutpoints = [];
 		const numInputs = tx.get_ninputs();
 		for (let i = 0; i < numInputs; i++) {
 			const input = tx.get_input(i);
@@ -148,12 +152,14 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 					<div className="flex">
 						<OutpointHeading outpoint={`${txid}_${vout}`} />
 					</div>
-					<DisplayIO
-						rawtx={rawTx}
-						inputOutpoints={inputOutpoints}
-						outputSpends={outputSpends}
-						vout={Number.parseInt(vout)}
-					/>
+					{rawTx && inputOutpoints && outputSpends && (
+						<DisplayIO
+							rawtx={rawTx}
+							inputOutpoints={inputOutpoints}
+							outputSpends={outputSpends}
+							vout={Number.parseInt(vout)}
+						/>
+					)}
 					{content()}
 				</div>
 			</Suspense>
