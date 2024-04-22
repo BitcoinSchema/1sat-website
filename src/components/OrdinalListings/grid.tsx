@@ -108,7 +108,7 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
 		queryFn: () => getOutpoints(collectionIds.value, false),
 	});
 
-	// const collections = useSignal(collectionData || []);
+	const collections = useSignal(collectionData || []);
 
 	return (
 		listings && (

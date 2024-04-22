@@ -131,14 +131,13 @@ const List = ({ listings: listingsProp, address, onClick }: Props) => {
 	});
 
 	return (
-		collectionData &&
 		listings.value && (
 			<tbody className="h-full">
 				{listings.value.map((listing, idx) => {
 					const size = 100;
 					const collection = listingCollection(
 						listing,
-						collectionData
+						collectionData || []
 					);
 					const price = `${toBitcoin(
 						listing?.data?.list?.price || "0",
@@ -147,7 +146,7 @@ const List = ({ listings: listingsProp, address, onClick }: Props) => {
 					return (
 						listing && (
 							<tr
-								key={`${listing?.txid}-${listing?.vout}-${listing?.height}`}
+								key={`k-${listing?.txid}-${listing?.vout}-${listing?.height}`}
 							>
 								<td width={100} height={120} className="p-0">
 									<Artifact
