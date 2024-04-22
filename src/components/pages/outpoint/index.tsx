@@ -1,9 +1,12 @@
+"use client";
+
 import Artifact from "@/components/artifact";
 import { API_HOST } from "@/constants";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import * as http from "@/utils/httpClient";
+import { useQuery } from "@tanstack/react-query";
 import { Noto_Serif } from "next/font/google";
 import OutpointTabs, { type OutpointTab } from "./tabs";
 
@@ -23,7 +26,7 @@ interface Props {
 	activeTab: OutpointTab;
 }
 
-const OutpointPage = async ({
+const OutpointPage = ({
 	artifact,
 	listing,
 	history,
@@ -38,12 +41,21 @@ const OutpointPage = async ({
 	// O2 - Payment to lister
 	// O3 - Market Fee
 	// O4 - Change
-	if (artifact?.data?.list && !artifact.script) {
-		const { promise } = http.customFetch<OrdUtxo>(
-			`${API_HOST}/api/txos/${artifact.outpoint}?script=true`
-		);
 
-		const { script } = await promise;
+	const { data: script } = useQuery<string>({
+		queryKey: ["script", "outpoint", artifact.outpoint],
+		queryFn: async () => {
+			const { promise } = http.customFetch<OrdUtxo>(
+				`${API_HOST}/api/txos/${artifact.outpoint}?script=true`
+			);
+
+			const { script } = await promise;
+			return script;
+		},
+		staleTime: 1000 * 60 * 5,
+	});
+
+	if (artifact?.data?.list && !artifact.script && script) {
 		artifact.script = script;
 	}
 

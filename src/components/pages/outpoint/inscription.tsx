@@ -1,3 +1,5 @@
+"use client";
+
 import JsonTable from "@/components/jsonTable";
 import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
@@ -5,16 +7,26 @@ import * as http from "@/utils/httpClient";
 import Link from "next/link";
 import OutpointPage from ".";
 import { OutpointTab } from "./tabs";
+import { useQuery } from "@tanstack/react-query";
 
 interface Props {
 	outpoint: string;
 }
 
-const OutpointInscription = async ({ outpoint }: Props) => {
-	const url = `${API_HOST}/api/inscriptions/${outpoint}`;
-	const { promise } = http.customFetch<OrdUtxo>(url);
-	const artifact = await promise;
+const OutpointInscription = ({ outpoint }: Props) => {
+	const { data: artifact } = useQuery<OrdUtxo>({
+		queryKey: ["inscription", "outpoint", outpoint],
+		queryFn: () => {
+			const { promise } = http.customFetch<OrdUtxo>(
+				`${API_HOST}/api/inscriptions/${outpoint}`
+			);
+			return promise;
+		},
+		staleTime: 1000 * 60 * 5,
+	});
+
 	console.log({ artifact });
+
 	return (
 		artifact && (
 			<OutpointPage

@@ -1,5 +1,8 @@
+"use client";
+
 import { AssetType } from "@/constants";
-import { NextRequest } from "next/server";
+import * as http from "@/utils/httpClient";
+import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
 import TickerContent from "./content";
@@ -72,16 +75,85 @@ export type MarketData = {
 //   "chainwork": "0000000000000000000000000000000000000000010969f724913e0fe59377f4"
 // }
 
-const List = async ({
+const List = ({
 	type,
 	id,
 }: {
 	type: AssetType.BSV20 | AssetType.BSV21;
 	id?: string;
 }) => {
-	let marketData: MarketData[] = [];
-	const url = `https://1sat-api-production.up.railway.app/market/${type}`;
-	marketData = await getMarketData(new NextRequest(url), type, id);
+	const { data: marketData, isLoading: isLoadingMarketData } = useQuery<
+		MarketData[]
+	>({
+		queryKey: ["market", type, id],
+		queryFn: async () => {
+			const { promise } = http.customFetch<MarketData[]>(
+				`/market/${type}/list`,
+				{
+					method: "POST",
+					body: JSON.stringify({ type, id }),
+				}
+			);
+
+			const json = await promise;
+
+			return json;
+		},
+	});
+
+	//   let marketData: MarketData[] = [];
+	//   marketData = await getMarketData(new NextRequest(url), type, id);
+
+	// get the current block height
+
+	//  let listings: BSV20TXO[] = [];
+	// if (type === AssetType.BSV20) {
+	//   // const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
+	//   // const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
+	//   // listings = await promiseBsv20;
+	//   let urlV1Market = "https://1sat-api-production.up.railway.app/market/bsv20";
+	//   if (id) {
+	//     urlV1Market = `https://1sat-api-production.up.railway.app/market/bsv20/${id}`;
+	//   }
+	//   const { promise: promiseBsv20v1Market } =
+	//     http.customFetch<MarketData[]>(urlV1Market);
+	//   marketData = (await promiseBsv20v1Market)
+	//   .sort((a, b) => {
+
+	//     if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
+	//       return 1;
+	//     }
+	//     if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
+	//       return -1;
+	//     }
+	//     return a.num < b.num ? -1 : 1;
+	//     // return a.marketCap > b.marketCap ? -1 : 1;
+	//   });
+	// } else {
+	//   // aggregated market data from the API
+	//   let urlV2Market = "https://1sat-api-production.up.railway.app/market/bsv21";
+	//   if (id) {
+	//     urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21/${id}`;
+	//   }
+	//   const { promise: promiseBsv21Market } =
+	//     http.customFetch<MarketData[]>(urlV2Market);
+	//   marketData = (await promiseBsv21Market)
+	//   .sort((a, b) => {
+	//     if (a.pendingOps * 1000 > parseInt(a.fundBalance)) {
+	//       return 1;
+	//     }
+	//     if (b.pendingOps * 1000 > parseInt(b.fundBalance)) {
+	//       return -1;
+	//     }
+	//     return a.marketCap > b.marketCap ? -1 : 1;
+	//   });
+	// }
+
+	// do the above, but with infinite query
+
+	if (isLoadingMarketData || !marketData) {
+		return null;
+	}
 
 	return (
 		<tbody className="overflow-auto">
@@ -126,21 +198,3 @@ const List = async ({
 };
 
 export default List;
-
-const getMarketData = async (
-	req: NextRequest,
-	type: AssetType,
-	id?: string
-) => {
-	const res = await import("../../../app/market/[tab]/list/route");
-	const json = await (
-		await res.POST(req, {
-			params: {
-				type,
-				id,
-			},
-		})
-	).json();
-
-	return (json || []) as MarketData[];
-};

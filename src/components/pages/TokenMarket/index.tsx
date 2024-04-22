@@ -1,3 +1,5 @@
+"use client";
+
 import TokenListingSkeleton from "@/components/skeletons/listing/Token";
 import { AssetType } from "@/constants";
 import { Suspense } from "react";

@@ -1,7 +1,9 @@
+"use client";
+
 import { API_HOST } from "@/constants";
-import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
+import { useQuery } from "@tanstack/react-query";
 import OutpointPage from ".";
 import CollectionContent from "./collectionContent";
 import { OutpointTab } from "./tabs";
@@ -10,16 +12,52 @@ interface Props {
 	outpoint: string;
 }
 
-const OutpointCollection = async ({ outpoint }: Props) => {
-	let artifact: OrdUtxo | undefined;
+const OutpointCollection = ({ outpoint }: Props) => {
+	const { data: artifact } = useQuery<OrdUtxo>({
+		queryKey: ["inscription", "outpoint", outpoint],
+		queryFn: () => {
+			const { promise } = http.customFetch<OrdUtxo>(
+				`${API_HOST}/api/inscriptions/${outpoint}`
+			);
+			return promise;
+		},
+		staleTime: 1000 * 60 * 5,
+	});
 
-	try {
-		const url = `${API_HOST}/api/inscriptions/${outpoint}`;
-		const { promise } = http.customFetch<OrdUtxo>(url);
-		artifact = await promise;
-	} catch (e) {
-		console.log(e);
-	}
+	// Get the Ordinal TXO
+	const { data: collection } = useQuery<OrdUtxo>({
+		queryKey: [
+			"collection",
+			"outpoint",
+			outpoint,
+			artifact?.origin?.data?.map?.subTypeData.collectionId,
+		],
+		queryFn: () => {
+			const { promise } = http.customFetch<OrdUtxo>(
+				`${API_HOST}/api/txos/${artifact?.origin?.data?.map?.subTypeData.collectionId}`
+			);
+			return promise;
+		},
+		staleTime: 1000 * 60 * 5,
+		enabled: !!artifact,
+	});
+
+	// Get the collection stats
+	// const { data: stats } = useQuery<CollectionStats>({
+	// 	queryKey: [
+	// 		"collection",
+	// 		"stats",
+	// 		artifact?.origin?.data?.map?.subTypeData.collectionId,
+	// 	],
+	// 	queryFn: () => {
+	// 		const { promise } = http.customFetch<CollectionStats>(
+	// 			`${API_HOST}/api/collections/${artifact?.origin?.data?.map?.subTypeData.collectionId}/stats`
+	// 		);
+	// 		return promise;
+	// 	},
+	// 	staleTime: 1000 * 60 * 5,
+	// 	enabled: !!artifact,
+	// });
 
 	if (!artifact) {
 		return <div>Artifact not found</div>;
@@ -32,28 +70,6 @@ const OutpointCollection = async ({ outpoint }: Props) => {
 
 	if (!isCollection) {
 		return <div>Not a collection</div>;
-	}
-
-	// Get the Ordinal TXO
-	let collection: OrdUtxo | undefined;
-	const collectionUrl = `${API_HOST}/api/txos/${artifact.origin?.data?.map?.subTypeData.collectionId}`;
-	try {
-		const { promise: promiseCollection } =
-			http.customFetch<OrdUtxo>(collectionUrl);
-		collection = await promiseCollection;
-	} catch (e) {
-		console.error("Error fetching collection", e, collectionUrl);
-	}
-
-	// Get the collection stats
-	let stats: CollectionStats | undefined;
-	const collectionStatsUrl = `${API_HOST}/api/collections/${artifact.origin?.data?.map?.subTypeData.collectionId}/stats`;
-	try {
-		const { promise } =
-			http.customFetch<CollectionStats>(collectionStatsUrl);
-		stats = (await promise) || [];
-	} catch (e) {
-		console.error(e);
 	}
 
 	if (!collection) {
