@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import type React from "react";
 
 const COLOR1 = "#2A1603"; // Replace with your desired color1
 const COLOR2 = "#DB8738"; // Replace with your desired color2
@@ -35,9 +35,21 @@ const MinePage: React.FC = async () => {
 						<div className="divider divider-warning w-64 mx-auto text-warning/50">
 							Download Miner
 						</div>
-						<div className="flex mx-auto max-w-fit gap-4">
+						<div>
+							Request beta access in{" "}
+							<a
+								href="https://discord.gg/tZxtZy7cFp"
+								target="_blank"
+								rel="noreferrer"
+								className="text-accent"
+							>
+								Discord
+							</a>
+							.
+						</div>
+						<div className="flex mx-auto max-w-fit gap-4 pointer-events-none opacity-10">
 							<Link
-								href="/miner/pow20-windows-amd64.exe"
+								href="#/miner/pow20-windows-amd64.exe"
 								className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
 							>
 								Windows
@@ -46,7 +58,7 @@ const MinePage: React.FC = async () => {
 								</span>
 							</Link>
 							<Link
-								href="/miner/pow20-darwin-amd64"
+								href="#/miner/pow20-darwin-amd64"
 								className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
 							>
 								Mac
@@ -55,7 +67,7 @@ const MinePage: React.FC = async () => {
 								</span>
 							</Link>
 							<Link
-								href="/miner/pow20-darwin-arm64"
+								href="#/miner/pow20-darwin-arm64"
 								className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
 							>
 								Mac

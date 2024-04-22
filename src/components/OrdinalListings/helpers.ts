@@ -1,7 +1,6 @@
 import { API_HOST, resultsPerPage } from "@/constants";
-import { Collection } from "@/types/collection";
-import { OrdUtxo } from "@/types/ordinals";
-import { Signal } from "@preact/signals-react";
+import type { Collection } from "@/types/collection";
+import type { OrdUtxo } from "@/types/ordinals";
 import { uniq } from "lodash";
 import { ArtifactType, artifactTypeMap } from "../artifact";
 
@@ -52,22 +51,25 @@ export const getOrdList = async ({
 		url = `${API_HOST}/api/market?limit=${resultsPerPage}&offset=${offset}&dir=DESC`;
 	}
 
-  if (selectedType && selectedType !== ArtifactType.All) {
-    url += `&type=${artifactTypeMap.get(selectedType)}`;
-  }
-  console.log("Using url", url);  
+	if (selectedType && selectedType !== ArtifactType.All) {
+		url += `&type=${artifactTypeMap.get(selectedType)}`;
+	}
+	console.log("Using url", url);
 	const res = await fetch(url);
 	// filter for the selected type
 	const json = res.json() as Promise<OrdUtxo[]>;
-	
+
 	const result = await json;
-	const final = selectedType !== ArtifactType.All
-		? result.filter((o) => {
-				return o.origin?.data?.insc?.file.type?.startsWith(
-					artifactTypeMap.get(selectedType as ArtifactType) as string,
-				);
-		  })
-		: result;
+	const final =
+		selectedType !== ArtifactType.All
+			? result.filter((o) => {
+					return o.origin?.data?.insc?.file.type?.startsWith(
+						artifactTypeMap.get(
+							selectedType as ArtifactType
+						) as string
+					);
+			  })
+			: result;
 	return final;
 };
 
@@ -103,44 +105,39 @@ export const listingName = (listing: OrdUtxo) => {
 		return listing?.origin.data.bsv20.tick;
 	}
 	switch (listing?.origin?.data?.insc?.file.type.split(";")[0]) {
-		case "image/gif":
-		case "image/jpg":
-		case "image/jpeg":
-		case "image/webp":
-		case "image/png":
-			return (
-				listing?.origin?.data?.map?.name ||
-				listing?.origin?.data?.map?.subTypeData?.name ||
-				listing?.origin?.data?.map?.app ||
-				"Unknown Name"
-			);
+		// biome-ignore lint/suspicious/noFallthroughSwitchClause: if no title is found fall through to default behavior
 		case "text/html": {
 			// extract the title from the html
 			const html = listing?.origin?.data?.insc?.text;
 			const title = html?.match(/<title>(.*)<\/title>/)?.[1];
-			return title || listing?.origin.num;
+			if (title) {
+				return title;
+			}
 		}
 		case "text/json":
 			return listing?.origin?.data?.insc.text || listing?.origin.num;
 		case "text/plain":
 			return listing?.origin?.data?.insc.text || listing?.origin.num;
 		default:
-			return listing?.origin?.num || "Unknown";
+			// return listing?.origin?.num || "Unknown";
+			return (
+				listing?.origin?.data?.map?.name ||
+				listing?.origin?.data?.map?.subTypeData?.name ||
+				listing?.origin?.data?.map?.app ||
+				listing?.origin?.num ||
+				"Unknown Name"
+			);
 	}
 };
 
-export const listingCollection = (
-	listing: OrdUtxo,
-	collections: Signal<OrdUtxo[]>,
-) => {
+export const listingCollection = (listing: OrdUtxo, collections: OrdUtxo[]) => {
 	if (listing?.origin?.data?.map) {
 		const collectionId = listing?.origin.data.map.subTypeData?.collectionId;
 		if (!collectionId) {
 			return null;
 		}
-		const collection = collections.value.find(
-			(c) => c.outpoint === collectionId,
-		)?.origin?.data?.map;
+		const collection = collections.find((c) => c.outpoint === collectionId)
+			?.origin?.data?.map;
 		if (collection) {
 			return collection;
 		}

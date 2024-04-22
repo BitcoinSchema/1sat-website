@@ -57,11 +57,13 @@ const Bsv20List = ({
 		const fire = async () => {
 			const url = "https://1sat-api-production.up.railway.app/ticker/num";
 			const unindexed =
-				bsv20s.value?.map((u) => u.origin?.data?.bsv20?.tick as string) || [];
+				bsv20s.value?.map(
+					(u) => u.origin?.data?.bsv20?.tick as string
+				) || [];
 			const fromBalances =
 				bsv20Balances.value?.map((b) => b.tick as string) || [];
 			const finalArray = (unindexed.concat(fromBalances) || []).filter(
-				(id) => !!id,
+				(id) => !!id
 			);
 			console.log({ finalArray });
 			const ids = uniq(finalArray);
@@ -91,14 +93,14 @@ const Bsv20List = ({
 		const fire = async () => {
 			bsv20s.value = [];
 			const { promise } = http.customFetch<OrdUtxo[]>(
-				`${API_HOST}/api/txos/address/${address}/unspent?limit=1000&offset=0&dir=ASC&status=all&bsv20=true`,
+				`${API_HOST}/api/txos/address/${address}/unspent?limit=1000&offset=0&dir=ASC&status=all&bsv20=true`
 			);
 			const u = await promise;
 			// filter out tickers that already exist in holdings, and group by ticker
 			const tickerList = u.map((u) => u.data?.bsv20?.tick);
 			console.log({ tickerList });
 			bsv20s.value = u.filter((u) =>
-				holdings.value?.every((h) => h.tick !== u.data?.bsv20?.tick),
+				holdings.value?.every((h) => h.tick !== u.data?.bsv20?.tick)
 			);
 			console.log({ u });
 			bsv20s.value = u;
@@ -106,9 +108,9 @@ const Bsv20List = ({
 			if (address !== ordAddress.value) {
 				// not viewing own address
 				// fetch balances
-				const { promise: promiseBalances } = http.customFetch<BSV20Balance[]>(
-					`${API_HOST}/api/bsv20/${address}/balance`,
-				);
+				const { promise: promiseBalances } = http.customFetch<
+					BSV20Balance[]
+				>(`${API_HOST}/api/bsv20/${address}/balance`);
 				const b = await promiseBalances;
 				addressBalances.value = b.sort((a, b) => {
 					return b.all.confirmed + b.all.pending >
@@ -125,19 +127,20 @@ const Bsv20List = ({
 
 	const unindexBalances = computed(
 		() =>
-			bsv20s.value?.reduce(
-				(acc, utxo) => {
-					if (utxo.data?.bsv20?.tick) {
-						if (acc[utxo.data.bsv20.tick]) {
-							acc[utxo.data.bsv20.tick] += parseInt(utxo.data.bsv20.amt);
-						} else {
-							acc[utxo.data.bsv20.tick] = parseInt(utxo.data.bsv20.amt);
-						}
+			bsv20s.value?.reduce((acc, utxo) => {
+				if (utxo.data?.bsv20?.tick) {
+					if (acc[utxo.data.bsv20.tick]) {
+						acc[utxo.data.bsv20.tick] += parseInt(
+							utxo.data.bsv20.amt
+						);
+					} else {
+						acc[utxo.data.bsv20.tick] = parseInt(
+							utxo.data.bsv20.amt
+						);
 					}
-					return acc;
-				},
-				{} as { [key: string]: number },
-			) || {},
+				}
+				return acc;
+			}, {} as { [key: string]: number }) || {}
 	);
 
 	useEffect(() => {
@@ -172,12 +175,19 @@ const Bsv20List = ({
 		if (address && isInView && !reachedEndOfListings.value) {
 			fire();
 		}
-	}, [addressProp, holdings, isInView, newOffset, reachedEndOfListings, type]);
+	}, [
+		addressProp,
+		holdings,
+		isInView,
+		newOffset,
+		reachedEndOfListings,
+		type,
+	]);
 
 	const balances = computed(() => {
-		return (addressProp ? addressBalances.value : bsv20Balances.value)?.filter(
-			(b) => (type === AssetType.BSV20 ? !!b.tick : !b.tick),
-		);
+		return (
+			addressProp ? addressBalances.value : bsv20Balances.value
+		)?.filter((b) => (type === AssetType.BSV20 ? !!b.tick : !b.tick));
 	});
 
 	const activity = computed(() => {
@@ -198,8 +208,10 @@ const Bsv20List = ({
 						onClick={() =>
 							router.push(
 								`/market/${
-									bsv20.tick ? `bsv20/${bsv20.tick}` : `bsv21/${bsv20.id}`
-								}`,
+									bsv20.tick
+										? `bsv20/${bsv20.tick}`
+										: `bsv21/${bsv20.id}`
+								}`
 							)
 						}
 					>
@@ -209,7 +221,9 @@ const Bsv20List = ({
 					<div>{bsv20.amt}</div>
 					<div>{bsv20.price ? bsv20.price : "-"}</div>
 					<div>
-						<Link href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}>
+						<Link
+							href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
+						>
 							<FaChevronRight />
 						</Link>
 					</div>
@@ -239,98 +253,133 @@ const Bsv20List = ({
 		return (
 			<div className="grid grid-cols-3 gap-3 bg-[#222] p-4 w-full rounded mb-4">
 				<div className="text-[#777] font-semibold">Ticker</div>
-				<div className="text-[#777] font-semibold text-right">Balance</div>
+				<div className="text-[#777] font-semibold text-right">
+					Balance
+				</div>
 				<div className="w-8" />
-				{confirmedBalances?.value?.map(({ tick, all, sym, id, dec, listed }, idx) => {
-					// TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
-					const deets = find(tickerDetails.value, (t) => t.tick === tick);
-					const supply = deets?.supply || deets?.amt;
-					return (
-						<React.Fragment key={`bal-confirmed-${tick}`}>
-							<div
-								className="cursor-pointer hover:text-blue-400 transition flex items-center"
-								onClick={() =>
-									router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
-								}
-							>
-								{tick || sym}{" "}
-								<div className="text-[#555] items-center ml-2 md:flex hidden">
-									<FaHashtag className="w-3 h-3 mr-1" />
-									{deets?.num || ""}
+				{confirmedBalances?.value?.map(
+					({ tick, all, sym, id, dec, listed }, idx) => {
+						// TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
+						const deets = find(
+							tickerDetails.value,
+							(t) => t.tick === tick
+						);
+						const supply = deets?.supply || deets?.amt;
+						return (
+							<React.Fragment key={`bal-confirmed-${tick}`}>
+								<div
+									className="cursor-pointer hover:text-blue-400 transition flex items-center"
+									onClick={() =>
+										router.push(
+											`/market/${
+												id
+													? "bsv21/" + id
+													: "bsv20/" + tick
+											}`
+										)
+									}
+								>
+									{tick || sym}{" "}
+									<div className="text-[#555] items-center ml-2 md:flex hidden">
+										<FaHashtag className="w-3 h-3 mr-1" />
+										{deets?.num || ""}
+									</div>
 								</div>
-							</div>
-							<div
-								className="text-emerald-400 text-right font-mono"
-								onClick={() => (showSendModal.value = tick || id)}
-							>
-								{(all.confirmed / 10 ** dec).toLocaleString()}
-							</div>
-							<div className="flex items-center gap-2">
-								<div className="text-right">
-									{(!addressProp || addressProp === ordAddress.value) &&
-									all.confirmed / 10 ** dec > 10000 ? (
-										<>
-											<button
-												type="button"
-												className="btn btn-xs w-fit"
-												onClick={() => {
-													showAirdrop.value = tick || id;
-												}}
-											>
-												<FaParachuteBox className="w-3" />
-											</button>
-											{
-												<AirdropTokensModal
-													onClose={() => {
-														showAirdrop.value = undefined;
+								<div
+									className="text-emerald-400 text-right font-mono"
+									onClick={() =>
+										(showSendModal.value = tick || id)
+									}
+								>
+									{(
+										all.confirmed /
+										10 ** dec
+									).toLocaleString()}
+								</div>
+								<div className="flex items-center gap-2">
+									<div className="text-right">
+										{(!addressProp ||
+											addressProp === ordAddress.value) &&
+										all.confirmed / 10 ** dec > 10000 ? (
+											<>
+												<button
+													type="button"
+													className="btn btn-xs w-fit"
+													onClick={() => {
+														showAirdrop.value =
+															tick || id;
 													}}
-													type={AssetType.BSV20}
-													dec={dec}
-													id={(tick || id)!}
-													open={
-														(!!tick && showAirdrop.value === tick) ||
-														(!!id && showAirdrop.value === id)
-													}
-													balance={all.confirmed}
-												/>
-											}
-										</>
-									) : (
-										<></>
-									)}
+												>
+													<FaParachuteBox className="w-3" />
+												</button>
+												{
+													<AirdropTokensModal
+														onClose={() => {
+															showAirdrop.value =
+																undefined;
+														}}
+														type={AssetType.BSV20}
+														dec={dec}
+														id={(tick || id)!}
+														open={
+															(!!tick &&
+																showAirdrop.value ===
+																	tick) ||
+															(!!id &&
+																showAirdrop.value ===
+																	id)
+														}
+														balance={all.confirmed}
+													/>
+												}
+											</>
+										) : (
+											<></>
+										)}
+									</div>
+									<div className="text-right">
+										{(!addressProp ||
+											addressProp === ordAddress.value) &&
+										all.confirmed / 10 ** dec > 0 ? (
+											<>
+												<button
+													type="button"
+													className="btn btn-xs w-fit"
+													onClick={() => {
+														showSendModal.value =
+															tick || id;
+													}}
+												>
+													<IoSend className="w-3" />
+												</button>
+												{showSendModal.value ===
+													(tick || id) && (
+													<TransferBsv20Modal
+														onClose={() =>
+															(showSendModal.value =
+																undefined)
+														}
+														type={type}
+														id={(tick || id)!}
+														dec={dec}
+														balance={
+															(all.confirmed -
+																listed.confirmed) /
+															10 ** dec
+														}
+														sym={sym}
+													/>
+												)}
+											</>
+										) : (
+											<></>
+										)}
+									</div>
 								</div>
-								<div className="text-right">
-									{(!addressProp || addressProp === ordAddress.value) &&
-									all.confirmed / 10 ** dec > 10000 ? (
-										<>
-											<button
-												type="button"
-												className="btn btn-xs w-fit"
-												onClick={() => {
-													showSendModal.value = tick || id;
-												}}
-											>
-												<IoSend className="w-3" />
-											</button>
-											{showSendModal.value === (tick || id) && (
-												<TransferBsv20Modal
-													onClose={() => (showSendModal.value = undefined)}
-													type={type}
-													id={(tick || id)!}
-													dec={dec}
-													balance={(all.confirmed - listed.confirmed) / 10 ** dec}
-													sym={sym}
-												/>
-											)}
-										</>
-									) : (
-										<></>
-									)}
-								</div>
-							</div>
-						</React.Fragment>
-					);
-				})}
+							</React.Fragment>
+						);
+					}
+				)}
 			</div>
 		);
 	});
@@ -340,19 +389,27 @@ const Bsv20List = ({
 			<div className="grid grid-cols-2 gap-3 bg-[#222] p-4 rounded mb-4">
 				<div className="text-[#777] font-semibold">Ticker</div>
 				<div className="text-[#777] font-semibold">Balance</div>
-				{pendingBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => (
-					<React.Fragment key={`bal-pending-${tick}`}>
-						<div
-							className="cursor-pointer hover:text-blue-400 transition"
-							onClick={() =>
-								router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
-							}
-						>
-							{tick || sym}
-						</div>
-						<div className="text-emerald-400">{all.pending / 10 ** dec}</div>
-					</React.Fragment>
-				))}
+				{pendingBalances?.value?.map(
+					({ tick, all, sym, id, dec }, idx) => (
+						<React.Fragment key={`bal-pending-${tick}`}>
+							<div
+								className="cursor-pointer hover:text-blue-400 transition"
+								onClick={() =>
+									router.push(
+										`/market/${
+											id ? "bsv21/" + id : "bsv20/" + tick
+										}`
+									)
+								}
+							>
+								{tick || sym}
+							</div>
+							<div className="text-emerald-400">
+								{all.pending / 10 ** dec}
+							</div>
+						</React.Fragment>
+					)
+				)}
 			</div>
 		);
 	});
@@ -368,7 +425,11 @@ const Bsv20List = ({
 							<div
 								className="cursor-pointer hover:text-blue-400 transition"
 								onClick={() =>
-									router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
+									router.push(
+										`/market/${
+											id ? "bsv21/" + id : "bsv20/" + tick
+										}`
+									)
 								}
 							>
 								{tick || sym}
@@ -377,7 +438,7 @@ const Bsv20List = ({
 								{listed.confirmed / 10 ** dec}
 							</div>
 						</React.Fragment>
-					),
+					)
 				)}
 			</div>
 		);
@@ -389,7 +450,9 @@ const Bsv20List = ({
 				<div className="text-[#777] font-semibold">Ticker</div>
 				<div className="text-[#777] font-semibold">Balance</div>
 				{bsv20s && bsv20s.value?.length === 0 && (
-					<div className="text-[#777] font-semibold">No unindexed tokens</div>
+					<div className="text-[#777] font-semibold">
+						No unindexed tokens
+					</div>
 				)}
 				{Object.entries(unindexBalances.value)
 					.filter((t) => {
@@ -427,7 +490,9 @@ const Bsv20List = ({
 						className="tab ml-1"
 						aria-label="Confirmed"
 						checked={balanceTab.value === BalanceTab.Confirmed}
-						onChange={() => (balanceTab.value = BalanceTab.Confirmed)}
+						onChange={() =>
+							(balanceTab.value = BalanceTab.Confirmed)
+						}
 					/>
 					<div
 						role="tabpanel"
@@ -468,15 +533,20 @@ const Bsv20List = ({
 						{listedContent.value}
 					</div>
 
-					{type === AssetType.BSV20 && <>
+					{type === AssetType.BSV20 && (
+						<>
 							<input
 								type="radio"
 								name="balanceTabs"
 								role="tab"
 								className="tab mr-1"
 								aria-label="Unindexed"
-								checked={balanceTab.value === BalanceTab.Unindexed}
-								onChange={() => (balanceTab.value = BalanceTab.Unindexed)}
+								checked={
+									balanceTab.value === BalanceTab.Unindexed
+								}
+								onChange={() =>
+									(balanceTab.value = BalanceTab.Unindexed)
+								}
 							/>
 							<div
 								role="tabpanel"
@@ -484,7 +554,8 @@ const Bsv20List = ({
 							>
 								{unindexedContent.value}
 							</div>
-						</>}
+						</>
+					)}
 				</div>
 			</div>
 		);
@@ -498,15 +569,27 @@ const Bsv20List = ({
 					<div className="mb-4">{contentTabs.value}</div>
 					<div className="md:mx-6">
 						<h1 className="mb-4 flex items-center justify-between">
-							<div className="text-2xl">{type.toUpperCase()} Outputs</div>
+							<div className="text-2xl">
+								{type.toUpperCase()} Outputs
+							</div>
 							<div className="text-sm text-[#555]" />
 						</h1>
 						<div className="my-2 w-full text-sm grid grid-cols-6 p-4 gap-x-4 gap-y-2 min-w-md bg-[#111]">
-							<div className="font-semibold text-accent text-base">Height</div>
-							<div className="font-semibold text-[#777] text-base">Ticker</div>
-							<div className="font-semibold text-[#777] text-base">Op</div>
-							<div className="font-semibold text-[#777] text-base">Amount</div>
-							<div className="font-semibold text-[#777] text-base">Price</div>
+							<div className="font-semibold text-accent text-base">
+								Height
+							</div>
+							<div className="font-semibold text-[#777] text-base">
+								Ticker
+							</div>
+							<div className="font-semibold text-[#777] text-base">
+								Op
+							</div>
+							<div className="font-semibold text-[#777] text-base">
+								Amount
+							</div>
+							<div className="font-semibold text-[#777] text-base">
+								Price
+							</div>
 							<div className="" />
 							{activity}
 							<div ref={ref} />
