@@ -362,12 +362,12 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		isImage,
 	]);
 
-	const listingFee = useMemo(() => {
+	const listingFee = computed(() => {
 		if (!usdRate.value) {
 			return minFee;
 		}
 		return calculateIndexingFee(usdRate.value);
-	}, [usdRate]);
+	});
 
 	return (
 		<div className="w-full max-w-lg mx-auto">
@@ -492,8 +492,8 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			<div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
 				<label className="block w-full">
 					BSV21 deployements are indexed immediately. A listing fee of
-					${`${listingFee}`} will be required before it shows up in
-					some areas on the website. This can be paid later.
+					${`${listingFee.value}`} will be required before it shows up
+					in some areas on the website. This can be paid later.
 				</label>
 			</div>
 			{preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
