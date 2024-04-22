@@ -62,7 +62,17 @@ const Timeline = ({ history, listing, spends }: Props) => {
 								: "transferred"}
 						</Link>
 					);
+				} else {
+					text = (
+						<Link
+							href={`https://whatsonchain.com/tx/${h.txid}`}
+							target="_blank"
+						>
+							latest
+						</Link>
+					);
 				}
+
 				const wocUrl = `https://whatsonchain.com/tx/${h.txid}`;
 				const linkUrl = `/outpoint/${h.outpoint}`;
 				return (
@@ -71,7 +81,7 @@ const Timeline = ({ history, listing, spends }: Props) => {
 						className="text-sm"
 					>
 						<div className={positionClass}>
-							<Link href={linkUrl}>{h.height}</Link>
+							<Link href={linkUrl}>{h.height || "New"}</Link>
 						</div>
 						<div
 							className={`timeline-middle ${

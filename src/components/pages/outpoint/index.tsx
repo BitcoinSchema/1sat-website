@@ -1,11 +1,11 @@
 import Artifact from "@/components/artifact";
 import { API_HOST } from "@/constants";
-import { Listing } from "@/types/bsv20";
-import { OrdUtxo } from "@/types/ordinals";
+import type { Listing } from "@/types/bsv20";
+import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import * as http from "@/utils/httpClient";
 import { Noto_Serif } from "next/font/google";
-import OutpointTabs, { OutpointTab } from "./tabs";
+import OutpointTabs, { type OutpointTab } from "./tabs";
 
 const notoSerif = Noto_Serif({
 	style: "italic",
@@ -40,7 +40,7 @@ const OutpointPage = async ({
 	// O4 - Change
 	if (artifact?.data?.list && !artifact.script) {
 		const { promise } = http.customFetch<OrdUtxo>(
-			`${API_HOST}/api/txos/${artifact.outpoint}?script=true`,
+			`${API_HOST}/api/txos/${artifact.outpoint}?script=true`
 		);
 
 		const { script } = await promise;
@@ -68,12 +68,11 @@ const OutpointPage = async ({
 							sizes={"100vw"}
 							glow={true}
 							classNames={{
-                media: "overflow-hidden",
+								media: "overflow-hidden",
 								wrapper: `overflow-hidden h-[550px] relative ${
 									// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-2/3"
-                  "w-fit"
+									"w-fit"
 								}`,
-
 							}}
 							showListingTag={true}
 						/>
@@ -81,15 +80,26 @@ const OutpointPage = async ({
 						<div
 							className={`w-full ${
 								// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-1/3"
-                "w-full"
+								"w-full"
 							} mx-auto`}
 						>
 							<OutpointTabs
 								activeTab={activeTab}
 								outpoint={outpoint}
+								owner={
+									artifact.spend ||
+									!!artifact.origin?.data?.bsv20
+										? undefined
+										: artifact?.owner
+								}
 								hasToken={!!artifact.origin?.data?.bsv20}
-                isListing={!!artifact.data?.list}
-                isCollection={artifact.origin?.data?.map?.subType === "collection" || artifact.origin?.data?.map?.subType === "collectionItem"}
+								isListing={!!artifact.data?.list}
+								isCollection={
+									artifact.origin?.data?.map?.subType ===
+										"collection" ||
+									artifact.origin?.data?.map?.subType ===
+										"collectionItem"
+								}
 							/>
 							{content}
 						</div>

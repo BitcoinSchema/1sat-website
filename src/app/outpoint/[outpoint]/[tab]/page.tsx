@@ -2,6 +2,7 @@ import OutpointCollection from "@/components/pages/outpoint/collection";
 import OutpointHeading from "@/components/pages/outpoint/heading";
 import OutpointInscription from "@/components/pages/outpoint/inscription";
 import OutpointListing from "@/components/pages/outpoint/listing";
+import OutpointOwner from "@/components/pages/outpoint/owner";
 import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
@@ -39,7 +40,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	const vout = parts.length > 1 ? parts[1] : "0";
 	let rawTx: string | undefined; // raw tx hex
 	let inputOutpoints: InputOutpoint[] = [];
-	const outputSpends: string[] = [];
+	let outputSpends: string[] = [];
 
 	// TODO: 4db870f0993ef20f7d4cfe8e5dc9b041841c5acef153d9530d7abeaa7665b250_1 fails
 	try {
@@ -59,14 +60,12 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 			const txid = input?.get_prev_tx_id_hex()!;
 			const vout = input?.get_vout()!;
 			// fetch each one
-			const spentOutpointResponse = await fetch(
-				`https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`,
-				{
-					headers: {
-						Accept: "application/octet-stream",
-					},
-				}
-			);
+			const url = `https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`;
+			const spentOutpointResponse = await fetch(url, {
+				headers: {
+					Accept: "application/octet-stream",
+				},
+			});
 			const res = await spentOutpointResponse.arrayBuffer();
 			const { script, satoshis } = parseOutput(res);
 
@@ -85,12 +84,12 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				Accept: "application/json",
+				// Accept: "application/json",
 			},
 			body: JSON.stringify(outputOutpoints),
 		});
 
-		const outputSpends = await outputSpendsResponse.json();
+		outputSpends = await outputSpendsResponse.json();
 		console.log({ outputOutpoints, outputSpends });
 	} catch (e) {
 		console.error(e);
@@ -130,6 +129,8 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 				return <OutpointListing outpoint={outpoint} />;
 			case OutpointTab.Collection:
 				return <OutpointCollection outpoint={outpoint} />;
+			case OutpointTab.Owner:
+				return <OutpointOwner outpoint={outpoint} />;
 		}
 	};
 
@@ -165,7 +166,6 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 							vout={Number.parseInt(vout)}
 						/>
 					)}
-					{/* // TODO: show "scripthash" page when no outpoint is found like woc does */}
 					{content()}
 				</div>
 			</Suspense>

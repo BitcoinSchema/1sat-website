@@ -1,6 +1,6 @@
 import { API_HOST } from "@/constants";
-import { CollectionStats } from "@/types/collection";
-import { OrdUtxo } from "@/types/ordinals";
+import type { CollectionStats } from "@/types/collection";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import OutpointPage from ".";
 import CollectionContent from "./collectionContent";
@@ -49,7 +49,8 @@ const OutpointCollection = async ({ outpoint }: Props) => {
 	let stats: CollectionStats | undefined;
 	const collectionStatsUrl = `${API_HOST}/api/collections/${artifact.origin?.data?.map?.subTypeData.collectionId}/stats`;
 	try {
-		const { promise } = http.customFetch<CollectionStats>(collectionStatsUrl);
+		const { promise } =
+			http.customFetch<CollectionStats>(collectionStatsUrl);
 		stats = (await promise) || [];
 	} catch (e) {
 		console.error(e);

@@ -318,7 +318,11 @@ const Bsv20List = ({
 															showAirdrop.value =
 																undefined;
 														}}
-														type={AssetType.BSV20}
+														type={
+															id
+																? AssetType.BSV21
+																: AssetType.BSV20
+														}
 														dec={dec}
 														id={(tick || id)!}
 														open={

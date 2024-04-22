@@ -19,10 +19,10 @@ import { selectedType } from "../Wallet/filter";
 import Artifact, { ArtifactType } from "../artifact";
 import BuyBtn from "./buy";
 import {
-	checkOutpointFormat,
-	listingCollection,
-	listingName,
-	mintNumber,
+  checkOutpointFormat,
+  listingCollection,
+  listingName,
+  mintNumber,
 } from "./helpers";
 interface Props {
 	listings?: OrdUtxo[];

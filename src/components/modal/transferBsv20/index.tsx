@@ -2,11 +2,11 @@
 
 import { API_HOST, AssetType, toastErrorProps } from "@/constants";
 import {
-  bsvWasmReady,
-  ordPk,
-  payPk,
-  pendingTxs,
-  utxos,
+	bsvWasmReady,
+	ordPk,
+	payPk,
+	pendingTxs,
+	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { Ticker } from "@/types/bsv20";
@@ -18,13 +18,13 @@ import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
+	P2PKHAddress,
+	PrivateKey,
+	Script,
+	SigHash,
+	Transaction,
+	TxIn,
+	TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
@@ -73,7 +73,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			ordPk: PrivateKey,
 			ordAddress: string,
 			payoutAddress: string,
-			ticker: Ticker,
+			ticker: Ticker
 		): Promise<PendingTransaction> => {
 			if (!bsvWasmReady.value) {
 				throw new Error("bsv wasm not ready");
@@ -85,8 +85,12 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			let i = 0;
 			for (const utxo of inputTokens) {
 				const txBuf = Buffer.from(utxo.txid, "hex");
-				let utxoIn = new TxIn(txBuf, utxo.vout, Script.from_asm_string(""));
-				amounts += parseInt(utxo.amt);
+				let utxoIn = new TxIn(
+					txBuf,
+					utxo.vout,
+					Script.from_asm_string("")
+				);
+				amounts += Number.parseInt(utxo.amt);
 				tx.add_input(utxoIn);
 
 				// sign ordinal
@@ -95,13 +99,13 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 					SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
 					i,
 					Script.from_bytes(Buffer.from(utxo.script, "base64")),
-					BigInt(1),
+					BigInt(1)
 				);
 
 				utxoIn.set_unlocking_script(
 					Script.from_asm_string(
-						`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`,
-					),
+						`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`
+					)
 				);
 
 				tx.set_input(i, utxoIn);
@@ -113,7 +117,10 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 
 			// make sure we have enough to cover the send amount
 			if (amounts < sendAmount) {
-        toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
+				toast.error(
+					`Not enough ${ticker.tick || ticker.sym}`,
+					toastErrorProps
+				);
 				throw new Error("insufficient funds");
 			}
 
@@ -132,12 +139,12 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 					throw new Error("unexpected error");
 				}
 				const changeFileB64 = Buffer.from(
-					JSON.stringify(changeInscription),
+					JSON.stringify(changeInscription)
 				).toString("base64");
 				const changeInsc = buildInscriptionSafe(
 					P2PKHAddress.from_string(ordAddress),
 					changeFileB64,
-					"application/bsv-20",
+					"application/bsv-20"
 				);
 				const changeInscOut = new TxOut(BigInt(1), changeInsc);
 				tx.add_output(changeInscOut);
@@ -151,7 +158,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				let utxoIn = new TxIn(
 					Buffer.from(utxo.txid, "hex"),
 					utxo.vout,
-					Script.from_asm_string(""),
+					Script.from_asm_string("")
 				);
 
 				tx.add_input(utxoIn);
@@ -175,12 +182,12 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			}
 
 			const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
-				"base64",
+				"base64"
 			);
 			const insc = buildInscriptionSafe(
 				P2PKHAddress.from_string(payoutAddress),
 				fileB64,
-				"application/bsv-20",
+				"application/bsv-20"
 			);
 
 			let satOut = new TxOut(BigInt(1), insc);
@@ -191,12 +198,18 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			if (indexerAddress) {
 				const indexerFeeOutput = new TxOut(
 					BigInt(2000), // 1000 * 2 inscriptions
-					P2PKHAddress.from_string(indexerAddress).get_locking_script(),
+					P2PKHAddress.from_string(
+						indexerAddress
+					).get_locking_script()
 				);
 				tx.add_output(indexerFeeOutput);
 			}
 
-			const changeOut = createChangeOutput(tx, changeAddress, totalSatsIn);
+			const changeOut = createChangeOutput(
+				tx,
+				changeAddress,
+				totalSatsIn
+			);
 			tx.add_output(changeOut);
 
 			return {
@@ -210,7 +223,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				marketFee: 0,
 			};
 		},
-		[],
+		[]
 	);
 
 	const submit = useCallback(
@@ -219,7 +232,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			if (!amount.value || !address.value) {
 				return;
 			}
-			if (parseFloat(amount.value) > balance) {
+			if (Number.parseFloat(amount.value) > balance) {
 				toast.error("Not enough Bitcoin!", toastErrorProps);
 				return;
 			}
@@ -233,7 +246,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			const { promise: promiseTickerDetails } = http.customFetch<Ticker>(
 				`${API_HOST}/api/bsv20/${
 					type === AssetType.BSV20 ? "tick" : "id"
-				}/${id}`,
+				}/${id}`
 			);
 			const ticker = await promiseTickerDetails;
 			const transferTx = await transferBsv20(
@@ -245,7 +258,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				PrivateKey.from_wif(ordPk.value!),
 				ordAddress.value!,
 				address.value, // recipient ordinal address
-				ticker,
+				ticker
 			);
 			pendingTxs.value = [transferTx];
 			router.push("/preview");
@@ -259,7 +272,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			id,
 			transferBsv20,
 			router,
-		],
+		]
 	);
 
 	return (
@@ -275,13 +288,15 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
 							<div className="text-lg font-semibold">
-								Transfer {type === AssetType.BSV20 ? id : sym} {type} 
+								Transfer {type === AssetType.BSV20 ? id : sym}{" "}
+								{type}
 							</div>
 							<div
 								className="text-xs cursor-pointer text-[#aaa]"
 								onClick={setAmountToBalance}
 							>
-								Balance: {balance} {type === AssetType.BSV20 ? id : sym}
+								Balance: {balance}{" "}
+								{type === AssetType.BSV20 ? id : sym}
 							</div>
 						</div>
 

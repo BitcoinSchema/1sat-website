@@ -1,6 +1,6 @@
 import JsonTable from "@/components/jsonTable";
 import { API_HOST } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import Link from "next/link";
 import OutpointPage from ".";
