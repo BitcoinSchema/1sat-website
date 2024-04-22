@@ -23,7 +23,7 @@ const PreviewPage = () => {
 	const router = useRouter();
 	const txs = useSignal<PendingTransaction[] | null>(pendingTxs.value);
 	const pendingTx = useSignal<PendingTransaction | null>(
-		head(txs.value) || null,
+		head(txs.value) || null
 	);
 
 	effect(() => {
@@ -42,7 +42,7 @@ const PreviewPage = () => {
 	});
 
 	const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
-		FetchStatus.Idle,
+		FetchStatus.Idle
 	);
 	const broadcast = useCallback(async () => {
 		const tx = pendingTx.value;
@@ -62,10 +62,16 @@ const PreviewPage = () => {
 			setBroadcastStatus(FetchStatus.Success);
 
 			toast.success("Transaction broadcasted.", toastProps);
+
+			const returnTo = pendingTx.value?.returnTo;
 			pendingTxs.value =
 				pendingTxs.value?.filter((t) => t.txid !== tx.txid) || [];
 
-			router.back();
+			if (returnTo) {
+				router.push(returnTo);
+			} else {
+				router.back();
+			}
 		} catch {
 			setBroadcastStatus(FetchStatus.Error);
 		}
@@ -91,7 +97,7 @@ const PreviewPage = () => {
 			}
 
 			const address = P2PKHAddress.from_pubkey_hash(
-				Buffer.from(pubKeyHash, "hex"),
+				Buffer.from(pubKeyHash, "hex")
 			).to_string();
 			if (address === fundingAddress.value) {
 				totalChange += out?.get_satoshis()!;
@@ -127,13 +133,15 @@ const PreviewPage = () => {
 					pendingTx.value?.numOutputs === 1
 						? "Refund"
 						: pendingTx.value?.numOutputs === 2 &&
-							  pendingTx.value?.numInputs === 2
-						  ? "Transfer"
-						  : "Inscription"
+						  pendingTx.value?.numInputs === 2
+						? "Transfer"
+						: "Inscription"
 				}
 Preview`}
 			</h1>
-			<div className="text-center text-[#aaa] mt-2">Broadcast to finalize.</div>
+			<div className="text-center text-[#aaa] mt-2">
+				Broadcast to finalize.
+			</div>
 			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden  mt-4 mb-8 relative">
 				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
 					<div className="px-2">
@@ -143,19 +151,27 @@ Preview`}
 						</div>
 						<div className="flex justify-between">
 							<div>Size</div>
-							<div>{formatBytes(pendingTx.value?.rawTx.length! / 2)}</div>
+							<div>
+								{formatBytes(
+									pendingTx.value?.rawTx.length! / 2
+								)}
+							</div>
 						</div>
 						{(pendingTx.value?.price || 0) > 0 && (
 							<div className="flex justify-between">
 								<div>Market Price</div>
-								<div>{toBitcoin(pendingTx.value?.price || 0)} BSV</div>
+								<div>
+									{toBitcoin(pendingTx.value?.price || 0)} BSV
+								</div>
 							</div>
 						)}
 
 						<div className="divider">Network Fees</div>
 						<div className="flex justify-between">
 							<div>Network Fee</div>
-							<div>{pendingTx.value?.fee.toLocaleString()} Satoshis</div>
+							<div>
+								{pendingTx.value?.fee.toLocaleString()} Satoshis
+							</div>
 						</div>
 						<div className="flex justify-between">
 							<div>Network Fee USD</div>
@@ -179,14 +195,23 @@ Preview`}
 								<div className="flex justify-between">
 									<div>Metadata</div>
 									<div>
-										{Object.keys(pendingTx.value?.metadata).map((k) => {
+										{Object.keys(
+											pendingTx.value?.metadata
+										).map((k) => {
 											const v =
 												pendingTx.value?.metadata &&
 												pendingTx.value.metadata[k];
 											return (
-												<div key={k} className="flex justify-between">
-													<div className="mr-2 text-[#555]">{k}</div>
-													<div className="ml-2">{v}</div>
+												<div
+													key={k}
+													className="flex justify-between"
+												>
+													<div className="mr-2 text-[#555]">
+														{k}
+													</div>
+													<div className="ml-2">
+														{v}
+													</div>
 												</div>
 											);
 										})}
@@ -202,23 +227,33 @@ Preview`}
 									<div>
 										{pendingTx.value.marketFee <= 50000
 											? `${pendingTx.value.marketFee.toLocaleString()} Satoshis`
-											: `${toBitcoin(pendingTx.value.marketFee)} BSV`}
+											: `${toBitcoin(
+													pendingTx.value.marketFee
+											  )} BSV`}
 									</div>
 								</div>
 							</>
 						) : null}
-						{pendingTx.value?.iterations && pendingTx.value?.iterations > 1 && (
-							<>
-								<div className="divider">Indexing</div>
-								<div className="flex justify-between">
-									<div>Operations</div> <div>{pendingTx.value.iterations}</div>
-								</div>
-								<div className="flex justify-between">
-									<div>Indexing Fee</div>{" "}
-									<div>{toBitcoin(pendingTx.value.iterations * 1000)}BSV</div>
-								</div>
-							</>
-						)}
+						{pendingTx.value?.iterations &&
+							pendingTx.value?.iterations > 1 && (
+								<>
+									<div className="divider">Indexing</div>
+									<div className="flex justify-between">
+										<div>Operations</div>{" "}
+										<div>{pendingTx.value.iterations}</div>
+									</div>
+									<div className="flex justify-between">
+										<div>Indexing Fee</div>{" "}
+										<div>
+											{toBitcoin(
+												pendingTx.value.iterations *
+													1000
+											)}
+											BSV
+										</div>
+									</div>
+								</>
+							)}
 					</div>
 					<div className="divider" />
 					<div className="mx-auto text-center text-teal-700 mb-2">
@@ -252,8 +287,15 @@ Preview`}
 						</div>
 					</div>
 					<div className="items-center justify-center gap-2">
-						<button type="button" className="btn btn-warning w-full" onClick={broadcast} disabled={broadcastStatus === FetchStatus.Loading}>
-							{broadcastStatus === FetchStatus.Loading ? "Broadcasting..." : `Broadcast ${usdPrice}` }
+						<button
+							type="button"
+							className="btn btn-warning w-full"
+							onClick={broadcast}
+							disabled={broadcastStatus === FetchStatus.Loading}
+						>
+							{broadcastStatus === FetchStatus.Loading
+								? "Broadcasting..."
+								: `Broadcast ${usdPrice}`}
 						</button>
 					</div>
 				</div>
