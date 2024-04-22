@@ -3,8 +3,8 @@
 import JDenticon from "@/components/JDenticon";
 import CancelListingModal from "@/components/modal/cancelListing";
 import { ordAddress } from "@/signals/wallet/address";
-import { Listing } from "@/types/bsv20";
-import { OrdUtxo } from "@/types/ordinals";
+import type { Listing } from "@/types/bsv20";
+import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
@@ -17,7 +17,8 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			<div>Owner</div>
 			<div>
 				<JDenticon hashOrValue={artifact.owner} />
-				{artifact.owner} {artifact.owner === ordAddress.value ? "me" : ""}
+				{artifact.owner}{" "}
+				{artifact.owner === ordAddress.value ? "me" : ""}
 			</div>
 			<div>Price</div>
 			<div>{artifact.data?.list?.price}</div>
@@ -38,10 +39,10 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					onClose={() => {
 						showCancelModal.value = false;
 					}}
-          onCancelled={() => {
-            console.log("listing cancelled")
-            showCancelModal.value = false;
-          }}
+					onCancelled={() => {
+						console.log("listing cancelled");
+						showCancelModal.value = false;
+					}}
 					listing={artifact as Listing}
 				/>
 			)}
