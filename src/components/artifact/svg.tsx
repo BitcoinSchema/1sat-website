@@ -1,8 +1,7 @@
 import { ORDFS } from "@/constants";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { ReactEventHandler, useEffect } from "react";
-import { TbFileTypeHtml } from "react-icons/tb";
+import { useEffect, type ReactEventHandler } from "react";
 
 interface ArtifactProps {
 	origin: string;
@@ -14,7 +13,7 @@ interface ArtifactProps {
 		| ReactEventHandler<HTMLImageElement>
 		| ReactEventHandler<HTMLIFrameElement>;
 }
-const HTMLArtifact: React.FC<ArtifactProps> = ({
+const SVGArtifact: React.FC<ArtifactProps> = ({
 	origin,
 	onClick,
 	className,
@@ -84,20 +83,9 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 			// } ${className ? className : ""}`}
 			onClick={onClick}
 		>
-			{isSingleImage.value && (
-				<img
-					onLoad={onLoad as ReactEventHandler<HTMLImageElement>}
-					src={src.value}
-					height={size || "100%"}
-					width={size || "100%"}
-					alt="html artifact"
-					className="pointer-events-none w-full h-full object-contain object-center"
-				/>
-			)}
-
 			{!isSingleImage.value && (
 				<>
-					{!mini && (
+					{
 						<iframe
 							onLoad={
 								onLoad as ReactEventHandler<HTMLIFrameElement>
@@ -112,12 +100,10 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 							width={size || "100%"}
 							scrolling="no"
 						/>
-					)}
-
-					{mini && <TbFileTypeHtml className="mx-auto w-6 h-6" />}
+					}
 				</>
 			)}
 		</div>
 	);
 };
-export default HTMLArtifact;
+export default SVGArtifact;

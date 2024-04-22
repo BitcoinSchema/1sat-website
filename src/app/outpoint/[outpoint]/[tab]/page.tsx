@@ -38,8 +38,8 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	const txid = parts[0];
 	const vout = parts.length > 1 ? parts[1] : "0";
 	let rawTx: string | undefined; // raw tx hex
-	let inputOutpoints: InputOutpoint[] | undefined;
-	let outputSpends: string[] | undefined;
+	let inputOutpoints: InputOutpoint[] = [];
+	const outputSpends: string[] = [];
 
 	// TODO: 4db870f0993ef20f7d4cfe8e5dc9b041841c5acef153d9530d7abeaa7665b250_1 fails
 	try {
@@ -133,6 +133,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		}
 	};
 
+	console.log({ rawTx, inputOutpoints, outputSpends });
 	return (
 		<>
 			<Head>

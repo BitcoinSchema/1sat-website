@@ -20,15 +20,13 @@ import AudioArtifact from "./audio";
 import HTMLArtifact from "./html";
 import JsonArtifact from "./json";
 import MarkdownArtifact from "./markdown";
+import SVGArtifact from "./svg";
 import TextArtifact from "./text";
 import VideoArtifact from "./video";
 
-const Model = dynamic(
-  () => import('../model'),
-  {
-    ssr: false,
-  },
-);
+const Model = dynamic(() => import("../model"), {
+	ssr: false,
+});
 
 export enum ArtifactType {
 	All = "All",
@@ -60,6 +58,7 @@ export enum ArtifactType {
 	Unknown = "Unknown",
 	LRC20 = "LRC20",
 	Audio = "Audio",
+	SVG = "SVG",
 }
 
 // maps ArtifactType to a typical content type string
@@ -81,7 +80,7 @@ export const artifactTypeMap = new Map<ArtifactType, string>([
 
 type ArtifactProps = {
 	artifact: Partial<OrdUtxo>;
-	classNames?: { wrapper?: string; media?: string, footer?: string };
+	classNames?: { wrapper?: string; media?: string; footer?: string };
 	to?: string;
 	src?: string;
 	onClick?: (outPoint: string) => void;
@@ -112,9 +111,9 @@ const Artifact: React.FC<ArtifactProps> = ({
 	latest = false,
 	showListingTag = true,
 }) => {
-  const router = useRouter();
+	const router = useRouter();
 	const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
-		FetchStatus.Loading,
+		FetchStatus.Loading
 	);
 	const [showZoom, setShowZoom] = useState<boolean>(false);
 
@@ -126,11 +125,11 @@ const Artifact: React.FC<ArtifactProps> = ({
 			latest
 				? artifact?.data?.insc?.file.type
 				: artifact?.origin?.data?.insc?.file.type || "image/png",
-		[artifact, latest],
+		[artifact, latest]
 	);
 	const outPoint = useMemo(
 		() => (latest ? artifact?.outpoint : artifact?.origin?.outpoint),
-		[artifact, latest],
+		[artifact, latest]
 	);
 	const height = useMemo(() => artifact?.height, [artifact]);
 	const num = useMemo(
@@ -138,20 +137,21 @@ const Artifact: React.FC<ArtifactProps> = ({
 			`${
 				latest
 					? `${artifact?.height}:${artifact?.idx}:${artifact?.vout}`
-					:  artifact?.origin?.inum || artifact?.origin?.num
+					: artifact?.origin?.inum || artifact?.origin?.num
 			}`,
-		[artifact, latest],
+		[artifact, latest]
 	);
 	const txid = useMemo(
-		() => (latest ? artifact?.txid : artifact?.origin?.outpoint?.split("_")[0]),
-		[artifact, latest],
+		() =>
+			latest ? artifact?.txid : artifact?.origin?.outpoint?.split("_")[0],
+		[artifact, latest]
 	);
 	const isListing = useMemo(() => !!artifact?.data?.list, [artifact]);
 	const price = useMemo(() => artifact?.data?.list?.price, [artifact]);
 	const origin = useMemo(() => artifact?.origin?.outpoint, [artifact]);
 	const src = useMemo(
 		() => (inputSrc ? inputSrc : `${ORDFS}/${artifact?.origin?.outpoint}`),
-		[artifact, inputSrc],
+		[artifact, inputSrc]
 	);
 
 	const type = useMemo(() => {
@@ -215,26 +215,51 @@ const Artifact: React.FC<ArtifactProps> = ({
 					}`}
 				/>
 			</>
+		) : type === ArtifactType.SVG ? (
+			origin && (
+				<SVGArtifact
+					origin={origin}
+					size={size}
+					className={`${
+						clickToZoom ? "cursor-pointer" : ""
+					} h-full w-full`}
+					onClick={
+						clickToZoom
+							? () =>
+									showZoom
+										? setShowZoom(false)
+										: setShowZoom(true)
+							: undefined
+					}
+				/>
+			)
 		) : type === ArtifactType.HTML ? (
 			origin && (
 				<HTMLArtifact
 					mini={(size || 300) < 300}
 					origin={origin}
-					className={`${clickToZoom ? "cursor-pointer" : ""} h-full w-full`}
-          			size={size}
+					className={`${
+						clickToZoom ? "cursor-pointer" : ""
+					} h-full w-full`}
+					size={size}
 					onClick={
 						clickToZoom
-							? () => (showZoom ? setShowZoom(false) : setShowZoom(true))
+							? () =>
+									showZoom
+										? setShowZoom(false)
+										: setShowZoom(true)
 							: undefined
 					}
-					onLoad={(e: SyntheticEvent<HTMLIFrameElement | HTMLImageElement>) => {
+					onLoad={(
+						e: SyntheticEvent<HTMLIFrameElement | HTMLImageElement>
+					) => {
 						/**
 						 * If the artifact is an image, set the correct aspect ratio
 						 */
 						if (e.currentTarget instanceof HTMLImageElement) {
 							const link = e.currentTarget.closest("a");
 
-							if(!link) {
+							if (!link) {
 								return;
 							}
 
@@ -262,8 +287,14 @@ const Artifact: React.FC<ArtifactProps> = ({
 					mini={(size || 300) < 300}
 				/>
 			</div>
-		) : type === ArtifactType.Text || type === ArtifactType.OPNS || type === ArtifactType.Javascript ? (
-			<div className={`w-full flex items-center justify-center p-2 ${classNames?.wrapper ? classNames.wrapper : ""} ${classNames?.media ? classNames.media : ""}`}>
+		) : type === ArtifactType.Text ||
+		  type === ArtifactType.OPNS ||
+		  type === ArtifactType.Javascript ? (
+			<div
+				className={`w-full flex items-center justify-center p-2 ${
+					classNames?.wrapper ? classNames.wrapper : ""
+				} ${classNames?.media ? classNames.media : ""}`}
+			>
 				<TextArtifact
 					origin={origin}
 					className="w-full"
@@ -280,15 +311,15 @@ const Artifact: React.FC<ArtifactProps> = ({
 					defer
 				/> */}
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-        <div
+				<div
 					className={`w-full ${classNames?.wrapper || ""} ${
 						classNames?.media || ""
 					}`}
 					onClick={(e) => {
-            if (showFooter) {
-						e.preventDefault();
-						e.stopPropagation();
-            }
+						if (showFooter) {
+							e.preventDefault();
+							e.stopPropagation();
+						}
 					}}
 					onAuxClick={(e) => {
 						console.log("middle click");
@@ -340,21 +371,24 @@ const Artifact: React.FC<ArtifactProps> = ({
 							src.startsWith("data:")
 								? src
 								: showZoom
-								  ? `https://res.cloudinary.com/tonicpow/image/fetch/f_auto/${src}`
-								  : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,g_center,h_${
-											size || 300
-									  },w_${size || 300}/f_auto/${src}`
+								? `https://res.cloudinary.com/tonicpow/image/fetch/f_auto/${src}`
+								: `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,g_center,h_${
+										size || 300
+								  },w_${size || 300}/f_auto/${src}`
 						}
 						id={`artifact_${outPoint || origin}_image`}
 						alt={`Inscription${num ? " #" + num : ""}`}
 						placeholder="blur"
 						blurDataURL={`data:image/svg+xml;base64,${toBase64(
-							shimmer(700, 475),
+							shimmer(700, 475)
 						)}`}
 						sizes={sizes}
 						onClick={
 							clickToZoom
-								? () => (showZoom ? setShowZoom(false) : setShowZoom(true))
+								? () =>
+										showZoom
+											? setShowZoom(false)
+											: setShowZoom(true)
 								: undefined
 						}
 					/>
@@ -374,14 +408,20 @@ const Artifact: React.FC<ArtifactProps> = ({
 		priority,
 		num,
 		sizes,
-    showFooter
+		showFooter,
 	]);
 
 	return (
 		<React.Fragment>
 			<Link
 				key={outPoint || origin}
-				className={`${showFooter ? `${type !== ArtifactType.HTML ? 'pb-[65px]' : ''} ${classNames?.footer ? classNames.footer : ''}` : ""} ${
+				className={`${
+					showFooter
+						? `${type !== ArtifactType.HTML ? "pb-[65px]" : ""} ${
+								classNames?.footer ? classNames.footer : ""
+						  }`
+						: ""
+				} ${
 					glow ? "glow" : ""
 				} flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${
 					to ? "cursor-pointer" : "cursor-default"
@@ -404,7 +444,9 @@ const Artifact: React.FC<ArtifactProps> = ({
 				{content}
 				{sigma && head(sigma)?.valid && (
 					<div className="absolute top-0 left-0 ml-2 mt-2">
-						<Tooltip message={`Signed by ${head(sigma)?.address}` || ""}>
+						<Tooltip
+							message={`Signed by ${head(sigma)?.address}` || ""}
+						>
 							<CheckmarkIcon className="m-auto" />
 						</Tooltip>
 					</div>
@@ -420,10 +462,14 @@ const Artifact: React.FC<ArtifactProps> = ({
 						<button
 							type="button"
 							className={`rounded bg-[#222] p-2 text-[#aaa] ${
-								onClick && (outPoint || origin) ? "cursor-pointer" : ""
+								onClick && (outPoint || origin)
+									? "cursor-pointer"
+									: ""
 							}`}
 							onClick={() =>
-								onClick && (outPoint || origin) && onClick(outPoint || origin!)
+								onClick &&
+								(outPoint || origin) &&
+								onClick(outPoint || origin!)
 							}
 						>
 							#{num}
@@ -434,7 +480,11 @@ const Artifact: React.FC<ArtifactProps> = ({
 							className={` ${
 								price !== undefined &&
 								// type !== ArtifactType.BSV20 &&
-								!(height && type === ArtifactType.Text && height >= 793000)
+								!(
+									height &&
+									type === ArtifactType.Text &&
+									height >= 793000
+								)
 									? "cursor-pointer hover:bg-emerald-600 text-white"
 									: ""
 							} select-none text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
@@ -445,16 +495,24 @@ const Artifact: React.FC<ArtifactProps> = ({
 										price !== undefined &&
 										isListing &&
 										// type !== ArtifactType.BSV20 &&
-										!(height && type === ArtifactType.Text && height >= 793000)
+										!(
+											height &&
+											type === ArtifactType.Text &&
+											height >= 793000
+										)
 									)
 								) {
 									return;
 								}
 								e.stopPropagation();
-                if (artifact.origin?.data?.bsv20) {
-                  router.push(artifact.origin?.data?.bsv20?.id ? `/market/bsv21/${artifact.origin?.data?.bsv20?.id}` :`/market/bsv20/${artifact.origin?.data?.bsv20?.tick}`);
-                  return
-                }
+								if (artifact.origin?.data?.bsv20) {
+									router.push(
+										artifact.origin?.data?.bsv20?.id
+											? `/market/bsv21/${artifact.origin?.data?.bsv20?.id}`
+											: `/market/bsv20/${artifact.origin?.data?.bsv20?.tick}`
+									);
+									return;
+								}
 								setShowBuy(true);
 							}}
 							// onMouseEnter={() => {
@@ -464,7 +522,11 @@ const Artifact: React.FC<ArtifactProps> = ({
 							//   setHoverPrice(false);
 							// }}
 						>
-							{price !== undefined ? price > 1000 ? `${toBitcoin(price)} BSV` : `${price} sat` : contentType}
+							{price !== undefined
+								? price > 1000
+									? `${toBitcoin(price)} BSV`
+									: `${price} sat`
+								: contentType}
 						</button>
 					</div>
 				)}
@@ -509,4 +571,5 @@ const shimmer = (w: number, h: number) => `
   <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
 </svg>`;
 
-const ItemContainerStyle = "flex items-center justify-center w-full h-full rounded";
+const ItemContainerStyle =
+	"flex items-center justify-center w-full h-full rounded";

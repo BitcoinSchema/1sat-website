@@ -94,7 +94,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 	const changeIterations = useCallback(
 		(e: any) => {
 			console.log("changing iterations to", e.target.value);
-			setIterations(parseInt(e.target.value));
+			setIterations(Number.parseInt(e.target.value));
 		},
 		[setIterations]
 	);
