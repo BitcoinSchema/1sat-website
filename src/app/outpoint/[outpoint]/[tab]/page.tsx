@@ -35,62 +35,62 @@ export type InputOutpoint = {
 const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	// get tx details
 	const parts = params.outpoint.split("_");
-  const txid = parts[0];
-  const vout = parts.length > 1 ? parts[1] : "0";
-  
-	const response = await fetch(
-		`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`,
-	);
-	const rawTx = await response.text();
-	{
-		/* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
-	}
-
-	// parse the raw tx
-	const tx = Transaction.from_hex(rawTx);
-	const inputOutpoints: InputOutpoint[] = [];
-	const numInputs = tx.get_ninputs();
-	for (let i = 0; i < numInputs; i++) {
-		const input = tx.get_input(i);
-		const txid = input?.get_prev_tx_id_hex()!;
-		const vout = input?.get_vout()!;
-		// fetch each one
-		const spentOutpointResponse = await fetch(
-			`https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`,
-			{
-				headers: {
-					Accept: "application/octet-stream",
-				},
-			},
+	const txid = parts[0];
+	const vout = parts.length > 1 ? parts[1] : "0";
+	// TODO: 4db870f0993ef20f7d4cfe8e5dc9b041841c5acef153d9530d7abeaa7665b250_1 fails
+	try {
+		const response = await fetch(
+			`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
 		);
-		const res = await spentOutpointResponse.arrayBuffer();
-		const { script, satoshis } = parseOutput(res);
+		const rawTx = await response.text();
 
-		// const s = Script.fromHex(script).toASM();
-		inputOutpoints.push({ script, satoshis, txid, vout });
-	}
+		/* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
 
-  const outputOutpoints: string[] = [];
-  const numOutputs = tx.get_noutputs();
-  for (let i = 0; i < numOutputs; i++) {
-    outputOutpoints.push(`${txid}_${i}`);
-  }
+		// parse the raw tx
+		const tx = Transaction.from_hex(rawTx);
+		const inputOutpoints: InputOutpoint[] = [];
+		const numInputs = tx.get_ninputs();
+		for (let i = 0; i < numInputs; i++) {
+			const input = tx.get_input(i);
+			const txid = input?.get_prev_tx_id_hex()!;
+			const vout = input?.get_vout()!;
+			// fetch each one
+			const spentOutpointResponse = await fetch(
+				`https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`,
+				{
+					headers: {
+						Accept: "application/octet-stream",
+					},
+				}
+			);
+			const res = await spentOutpointResponse.arrayBuffer();
+			const { script, satoshis } = parseOutput(res);
 
-  // check if outputs are spent
-  const outputSpendsResponse = await fetch(
-		`${API_HOST}/api/spends`,
-		{
-      method: "POST",
+			// const s = Script.fromHex(script).toASM();
+			inputOutpoints.push({ script, satoshis, txid, vout });
+		}
+
+		const outputOutpoints: string[] = [];
+		const numOutputs = tx.get_noutputs();
+		for (let i = 0; i < numOutputs; i++) {
+			outputOutpoints.push(`${txid}_${i}`);
+		}
+
+		// check if outputs are spent
+		const outputSpendsResponse = await fetch(`${API_HOST}/api/spends`, {
+			method: "POST",
 			headers: {
-        "Content-Type": "application/json",
+				"Content-Type": "application/json",
 				Accept: "application/json",
 			},
-      body: JSON.stringify(outputOutpoints),
-		},
-	);
+			body: JSON.stringify(outputOutpoints),
+		});
 
-  const outputSpends = await outputSpendsResponse.json();
-  console.log({outputOutpoints, outputSpends});
+		const outputSpends = await outputSpendsResponse.json();
+		console.log({ outputOutpoints, outputSpends });
+	} catch (e) {
+		console.error(e);
+	}
 
 	const spendResponse = await fetch(
 		`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
@@ -98,7 +98,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 			headers: {
 				Accept: "application/octet-stream",
 			},
-		},
+		}
 	);
 	// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
 	const buffer = await spendResponse.arrayBuffer();
@@ -129,7 +129,10 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		<>
 			<Head>
 				<meta property="og:image" content="<generated>" />
-				<meta property="og:image:alt" content={`Outpoint ${txid}_${vout}`} />
+				<meta
+					property="og:image:alt"
+					content={`Outpoint ${txid}_${vout}`}
+				/>
 				<meta property="og:image:type" content="image/png" />
 				<meta property="og:image:width" content="1200" />
 				<meta property="og:image:height" content="630" />
@@ -145,7 +148,12 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 					<div className="flex">
 						<OutpointHeading outpoint={`${txid}_${vout}`} />
 					</div>
-					<DisplayIO rawtx={rawTx} inputOutpoints={inputOutpoints} outputSpends={outputSpends} vout={parseInt(vout)}/>
+					<DisplayIO
+						rawtx={rawTx}
+						inputOutpoints={inputOutpoints}
+						outputSpends={outputSpends}
+						vout={Number.parseInt(vout)}
+					/>
 					{content()}
 				</div>
 			</Suspense>
@@ -157,11 +165,12 @@ export default Outpoint;
 
 function parseVarInt(hex: string): [number, string] {
 	let len = 1;
-	let value = parseInt(hex.substring(0, 2), 16);
+	let value = Number.parseInt(hex.substring(0, 2), 16);
 
 	if (value < 0xfd) {
 		return [value, hex.substring(2)];
-	} else if (value === 0xfd) {
+	}
+	if (value === 0xfd) {
 		len = 3;
 	} else if (value === 0xfe) {
 		len = 5;
@@ -169,7 +178,7 @@ function parseVarInt(hex: string): [number, string] {
 		len = 9;
 	}
 
-	value = parseInt(hex.substring(2, len * 2), 16);
+	value = Number.parseInt(hex.substring(2, len * 2), 16);
 	return [value, hex.substring(len * 2)];
 }
 
