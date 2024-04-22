@@ -96,21 +96,25 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		console.error(e);
 	}
 
-	const spendResponse = await fetch(
-		`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
-		{
-			headers: {
-				Accept: "application/octet-stream",
-			},
+	try {
+		const spendResponse = await fetch(
+			`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
+			{
+				headers: {
+					Accept: "application/octet-stream",
+				},
+			}
+		);
+		// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
+		const buffer = await spendResponse.arrayBuffer();
+		if (!buffer.byteLength) {
+			console.log("not spent");
 		}
-	);
-	// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
-	const buffer = await spendResponse.arrayBuffer();
-	if (!buffer.byteLength) {
-		console.log("not spent");
+		const spendTxid = Buffer.from(buffer).toString("hex");
+		console.log({ spendTxid });
+	} catch (e) {
+		console.error(e);
 	}
-	const spendTxid = Buffer.from(buffer).toString("hex");
-	console.log({ spendTxid });
 
 	const content = () => {
 		const outpoint = `${txid}_${vout}`;
@@ -160,6 +164,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 							vout={Number.parseInt(vout)}
 						/>
 					)}
+					{/* // TODO: show "scripthash" page when no outpoint is found like woc does */}
 					{content()}
 				</div>
 			</Suspense>
