@@ -16,9 +16,12 @@ export async function POST(
 	{
 		params,
 	}: {
-		params: { type: AssetType; id: string; details?: BSV20 };
-	},
+		params: { type: AssetType; id: string };
+	}
 ) {
+	const body = await request.json();
+	const { details } = body;
+
 	const url =
 		params.type === AssetType.BSV20
 			? `${API_HOST}/api/bsv20/tick/${params.id}/holders`
@@ -26,15 +29,16 @@ export async function POST(
 
 	const holdersResp = await fetch(`${url}?limit=100`);
 	const holdersJson = ((await holdersResp.json()) || []) as Holder[];
-  
+
 	const holders = holdersJson
 		?.sort((a, b) => parseInt(b.amt) - parseInt(a.amt))
 		.map((h) => ({
 			...h,
-			amt: parseInt(h.amt) / 10 ** (params.details?.dec || 0),
-			pct: params.type === AssetType.BSV20
-				? (parseInt(h.amt) / parseInt(params.details!.supply!)) * 100
-				: (parseInt(h.amt) / parseInt(params.details!.amt!)) * 100,
+			amt: parseInt(h.amt) / 10 ** (details?.dec || 0),
+			pct:
+				params.type === AssetType.BSV20
+					? (parseInt(h.amt) / parseInt(details!.supply!)) * 100
+					: (parseInt(h.amt) / parseInt(details!.amt!)) * 100,
 		})) as TickHolder[];
 	return NextResponse.json(holders || []);
 }

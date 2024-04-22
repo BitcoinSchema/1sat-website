@@ -1,3 +1,5 @@
+"use client";
+
 import { default as JDenticon } from "@/components/JDenticon";
 import { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
