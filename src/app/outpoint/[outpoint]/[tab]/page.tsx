@@ -1,5 +1,3 @@
-"use client";
-
 import OutpointCollection from "@/components/pages/outpoint/collection";
 import OutpointHeading from "@/components/pages/outpoint/heading";
 import OutpointInscription from "@/components/pages/outpoint/inscription";
@@ -10,9 +8,9 @@ import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
 import { API_HOST } from "@/constants";
 import { OutpointTab } from "@/types/common";
-import { useQuery } from "@tanstack/react-query";
 import { Transaction } from "bsv-wasm";
 import Head from "next/head";
+import { Suspense } from "react";
 import { FaSpinner } from "react-icons/fa";
 
 type OutpointParams = {
@@ -35,135 +33,87 @@ export type InputOutpoint = {
 	vout: number;
 };
 
-const Outpoint = ({ params }: { params: OutpointParams }) => {
+const Outpoint = async ({ params }: { params: OutpointParams }) => {
 	// get tx details
 	const parts = params.outpoint.split("_");
 	const txid = parts[0];
 	const vout = parts.length > 1 ? parts[1] : "0";
 
-	const { data: rawTx, isLoading: isLoadingRawTx } = useQuery({
-		queryKey: ["tx", txid],
-		queryFn: async () => {
-			const response = await fetch(
-				`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
-			);
+	let rawTx: string | undefined; // raw tx hex
+	let inputOutpoints: InputOutpoint[] = [];
+	let outputSpends: string[] = [];
 
-			const rawTx = await response.text();
-			return rawTx;
-		},
-		staleTime: 1000 * 60 * 5,
-	});
-	// parse the raw tx
-	const { data: inputOutpoints, isLoading: isLoadingInputOutpoints } =
-		useQuery({
-			queryKey: ["tx", txid, "inputs"],
-			queryFn: async () => {
-				if (!rawTx) {
-					return [];
-				}
+	// TODO: 4db870f0993ef20f7d4cfe8e5dc9b041841c5acef153d9530d7abeaa7665b250_1 fails
+	try {
+		const response = await fetch(
+			`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
+		);
+		rawTx = await response.text();
+		/* TODO: fetch the connected inputs because getting satoshis will fail otherwise */
 
-				const tx = Transaction.from_hex(rawTx);
-				const inputOutpoints: InputOutpoint[] = [];
-				const numInputs = tx.get_ninputs();
-				for (let i = 0; i < numInputs; i++) {
-					const input = tx.get_input(i);
-					const txid = input?.get_prev_tx_id_hex()!;
-					const vout = input?.get_vout()!;
-					// fetch each one
-					const spentOutpointResponse = await fetch(
-						`https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`,
-						{
-							headers: {
-								Accept: "application/octet-stream",
-							},
-						}
-					);
-					const res = await spentOutpointResponse.arrayBuffer();
-					const { script, satoshis } = parseOutput(res);
-
-					// const s = Script.fromHex(script).toASM();
-					inputOutpoints.push({ script, satoshis, txid, vout });
-				}
-
-				return inputOutpoints;
-			},
-			enabled: !!rawTx,
-			staleTime: 1000 * 60 * 5,
-		});
-
-	// get output outpoints
-	const { data: outputOutpoints, isLoading: isLoadingOutputOutpoints } =
-		useQuery({
-			queryKey: ["tx", txid, "outputs"],
-			queryFn: async () => {
-				if (!rawTx) {
-					return [];
-				}
-
-				const tx = Transaction.from_hex(rawTx);
-				const outputOutpoints: string[] = [];
-				const numOutputs = tx.get_noutputs();
-				for (let i = 0; i < numOutputs; i++) {
-					outputOutpoints.push(`${txid}_${i}`);
-				}
-
-				return outputOutpoints;
-			},
-			enabled: !!rawTx,
-			staleTime: 1000 * 60 * 5,
-		});
-
-	const { data: outputSpends, isLoading: isLoadingOutputSpends } = useQuery({
-		queryKey: ["tx", txid, "spends"],
-		queryFn: async () => {
-			if (!outputOutpoints) {
-				return [];
-			}
-
-			const outputSpendsResponse = await fetch(`${API_HOST}/api/spends`, {
-				method: "POST",
+		// parse the raw tx
+		const tx = Transaction.from_hex(rawTx);
+		inputOutpoints = [];
+		const numInputs = tx.get_ninputs();
+		for (let i = 0; i < numInputs; i++) {
+			const input = tx.get_input(i);
+			const txid = input?.get_prev_tx_id_hex()!;
+			const vout = input?.get_vout()!;
+			// fetch each one
+			const url = `https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`;
+			const spentOutpointResponse = await fetch(url, {
 				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json",
+					Accept: "application/octet-stream",
 				},
-				body: JSON.stringify(outputOutpoints),
 			});
+			const res = await spentOutpointResponse.arrayBuffer();
+			const { script, satoshis } = parseOutput(res);
 
-			const outputSpends = await outputSpendsResponse.json();
-			return outputSpends;
-		},
-		enabled: !!outputOutpoints,
-		staleTime: 1000 * 60 * 5,
-	});
+			// const s = Script.fromHex(script).toASM();
+			inputOutpoints.push({ script, satoshis, txid, vout });
+		}
 
-	const { data: spendTxid } = useQuery({
-		queryKey: ["tx", txid, "spend"],
-		queryFn: async () => {
-			if (!outputOutpoints) {
-				return "";
+		const outputOutpoints: string[] = [];
+		const numOutputs = tx.get_noutputs();
+		for (let i = 0; i < numOutputs; i++) {
+			outputOutpoints.push(`${txid}_${i}`);
+		}
+
+		// check if outputs are spent
+		const outputSpendsResponse = await fetch(`${API_HOST}/api/spends`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				// Accept: "application/json",
+			},
+			body: JSON.stringify(outputOutpoints),
+		});
+
+		outputSpends = await outputSpendsResponse.json();
+		console.log({ outputOutpoints, outputSpends });
+	} catch (e) {
+		console.error(e);
+	}
+
+	try {
+		const spendResponse = await fetch(
+			`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
+			{
+				headers: {
+					Accept: "application/octet-stream",
+				},
 			}
-
-			const spendResponse = await fetch(
-				`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
-				{
-					headers: {
-						Accept: "application/octet-stream",
-					},
-				}
-			);
-			// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
-			const buffer = await spendResponse.arrayBuffer();
-			const spendTxid = Buffer.from(buffer).toString("hex");
-			return spendTxid;
-		},
-		enabled: !!outputOutpoints,
-		staleTime: 1000 * 60 * 5,
-	});
-
-	// check if outputs are spent
-	console.log({ outputOutpoints, outputSpends });
-
-	console.log({ spendTxid });
+		);
+		// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
+		const buffer = await spendResponse.arrayBuffer();
+		if (!buffer.byteLength) {
+			console.log("not spent");
+		}
+		const spendTxid = Buffer.from(buffer).toString("hex");
+		console.log({ spendTxid });
+	} catch (e) {
+		console.error(e);
+	}
 
 	const content = () => {
 		const outpoint = `${txid}_${vout}`;
@@ -185,12 +135,6 @@ const Outpoint = ({ params }: { params: OutpointParams }) => {
 	};
 
 	console.log({ rawTx, inputOutpoints, outputSpends });
-	const isLoading =
-		isLoadingRawTx ||
-		isLoadingInputOutpoints ||
-		isLoadingOutputSpends ||
-		isLoadingOutputOutpoints;
-
 	return (
 		<>
 			<Head>
@@ -203,29 +147,28 @@ const Outpoint = ({ params }: { params: OutpointParams }) => {
 				<meta property="og:image:width" content="1200" />
 				<meta property="og:image:height" content="630" />
 			</Head>
-
-			{isLoading ? (
-				<div className="mx-auto h-full">
-					<FaSpinner className="animate-spin" />
-				</div>
-			) : (
-				<>
-					{rawTx && inputOutpoints && (
-						<div className="max-w-6xl mx-auto w-full">
-							<div className="flex">
-								<OutpointHeading outpoint={`${txid}_${vout}`} />
-							</div>
-							<DisplayIO
-								rawtx={rawTx}
-								inputOutpoints={inputOutpoints}
-								outputSpends={outputSpends}
-								vout={Number.parseInt(vout)}
-							/>
-							{content()}
-						</div>
+			<Suspense
+				fallback={
+					<div className="mx-auto h-full">
+						<FaSpinner className="animate-spin" />
+					</div>
+				}
+			>
+				<div className="max-w-6xl mx-auto w-full">
+					<div className="flex">
+						<OutpointHeading outpoint={`${txid}_${vout}`} />
+					</div>
+					{rawTx && inputOutpoints && outputSpends && (
+						<DisplayIO
+							rawtx={rawTx}
+							inputOutpoints={inputOutpoints}
+							outputSpends={outputSpends}
+							vout={Number.parseInt(vout)}
+						/>
 					)}
-				</>
-			)}
+					{content()}
+				</div>
+			</Suspense>
 		</>
 	);
 };
