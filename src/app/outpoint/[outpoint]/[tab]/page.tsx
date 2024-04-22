@@ -12,7 +12,6 @@ import { OutpointTab } from "@/types/common";
 import { useQuery } from "@tanstack/react-query";
 import { Transaction } from "bsv-wasm";
 import Head from "next/head";
-import { Suspense } from "react";
 import { FaSpinner } from "react-icons/fa";
 
 type OutpointParams = {
@@ -211,18 +210,22 @@ const Outpoint = ({ params }: { params: OutpointParams }) => {
 					<FaSpinner className="animate-spin" />
 				</div>
 			) : (
-				<div className="max-w-6xl mx-auto w-full">
-					<div className="flex">
-						<OutpointHeading outpoint={`${txid}_${vout}`} />
-					</div>
-					<DisplayIO
-						rawtx={rawTx}
-						inputOutpoints={inputOutpoints}
-						outputSpends={outputSpends}
-						vout={parseInt(vout)}
-					/>
-					{content()}
-				</div>
+				<>
+					{rawTx && inputOutpoints && (
+						<div className="max-w-6xl mx-auto w-full">
+							<div className="flex">
+								<OutpointHeading outpoint={`${txid}_${vout}`} />
+							</div>
+							<DisplayIO
+								rawtx={rawTx}
+								inputOutpoints={inputOutpoints}
+								outputSpends={outputSpends}
+								vout={parseInt(vout)}
+							/>
+							{content()}
+						</div>
+					)}
+				</>
 			)}
 		</>
 	);
