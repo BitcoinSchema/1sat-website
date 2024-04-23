@@ -1,5 +1,3 @@
-'use client';
-
 import { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { Suspense } from "react";

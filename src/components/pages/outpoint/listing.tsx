@@ -1,9 +1,6 @@
-"use client";
-
 import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
-import { useQuery } from "@tanstack/react-query";
 import OutpointPage from ".";
 import ListingContent from "./listingContent";
 import { OutpointTab } from "./tabs";
@@ -12,30 +9,24 @@ interface Props {
 	outpoint: string;
 }
 
-const OutpointListing = ({ outpoint }: Props) => {
-	const { data: bsv20 } = useQuery<OrdUtxo>({
-		queryKey: ["inscription", "outpoint", outpoint],
-		queryFn: () => {
-			const { promise } = http.customFetch<OrdUtxo>(
-				`${API_HOST}/api/inscriptions/${outpoint}`
-			);
+const OutpointListing = async ({ outpoint }: Props) => {
+	let artifact: OrdUtxo | undefined;
+	let bsv20: OrdUtxo | undefined;
+	try {
+		const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
+		const { promise } = http.customFetch<OrdUtxo>(url);
+		bsv20 = await promise;
+	} catch (e) {
+		console.log(e);
+	}
 
-			return promise;
-		},
-		staleTime: 1000 * 60 * 5,
-	});
-
-	const { data: artifact } = useQuery<OrdUtxo>({
-		queryKey: ["bsv20", "outpoint", outpoint],
-		queryFn: () => {
-			const { promise } = http.customFetch<OrdUtxo>(
-				`${API_HOST}/api/bsv20/outpoint/${outpoint}`
-			);
-
-			return promise;
-		},
-		staleTime: 1000 * 60 * 5,
-	});
+	try {
+		const url = `${API_HOST}/api/inscriptions/${outpoint}`;
+		const { promise } = http.customFetch<OrdUtxo>(url);
+		artifact = await promise;
+	} catch (e) {
+		console.log(e);
+	}
 
 	console.log({ artifact, bsv20 });
 	const listing = artifact?.data?.list || bsv20?.data?.list;
