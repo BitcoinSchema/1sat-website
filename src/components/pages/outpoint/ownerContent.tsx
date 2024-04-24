@@ -45,9 +45,15 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			Buffer.from(artifact.script, "base64")
 		);
 		const pubkeyHash = script.to_asm_string().split(" ")[2];
-		const address = P2PKHAddress.from_pubkey_hash(
-			Buffer.from(pubkeyHash, "hex")
-		);
+		if (!pubkeyHash) {
+			return undefined;
+		}
+		const buff = Buffer.from(pubkeyHash, "hex");
+		if (!buff || buff.length !== 20) {
+			return undefined;
+		}
+
+		const address = P2PKHAddress.from_pubkey_hash(buff);
 
 		return address.to_string();
 	}, [artifact, bsvWasmReady.value]);
