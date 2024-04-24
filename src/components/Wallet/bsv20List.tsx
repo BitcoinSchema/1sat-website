@@ -301,6 +301,44 @@ const Bsv20List = ({
 									<div className="text-right">
 										{(!addressProp ||
 											addressProp === ordAddress.value) &&
+										all.confirmed / 10 ** dec > 0 ? (
+											<>
+												<button
+													type="button"
+													className="btn btn-xs w-fit"
+													onClick={() => {
+														showSendModal.value =
+															tick || id;
+													}}
+												>
+													<IoSend className="w-3" />
+												</button>
+												{showSendModal.value ===
+													(tick || id) && (
+													<TransferBsv20Modal
+														onClose={() =>
+															(showSendModal.value =
+																undefined)
+														}
+														type={type}
+														id={(tick || id)!}
+														dec={dec}
+														balance={
+															(all.confirmed -
+																listed.confirmed) /
+															10 ** dec
+														}
+														sym={sym}
+													/>
+												)}
+											</>
+										) : (
+											<></>
+										)}
+									</div>
+									<div className="text-right">
+										{(!addressProp ||
+											addressProp === ordAddress.value) &&
 										all.confirmed / 10 ** dec > 10000 ? (
 											<>
 												<button
@@ -337,44 +375,6 @@ const Bsv20List = ({
 														balance={all.confirmed}
 													/>
 												}
-											</>
-										) : (
-											<></>
-										)}
-									</div>
-									<div className="text-right">
-										{(!addressProp ||
-											addressProp === ordAddress.value) &&
-										all.confirmed / 10 ** dec > 0 ? (
-											<>
-												<button
-													type="button"
-													className="btn btn-xs w-fit"
-													onClick={() => {
-														showSendModal.value =
-															tick || id;
-													}}
-												>
-													<IoSend className="w-3" />
-												</button>
-												{showSendModal.value ===
-													(tick || id) && (
-													<TransferBsv20Modal
-														onClose={() =>
-															(showSendModal.value =
-																undefined)
-														}
-														type={type}
-														id={(tick || id)!}
-														dec={dec}
-														balance={
-															(all.confirmed -
-																listed.confirmed) /
-															10 ** dec
-														}
-														sym={sym}
-													/>
-												)}
 											</>
 										) : (
 											<></>
