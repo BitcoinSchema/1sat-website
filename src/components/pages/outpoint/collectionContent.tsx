@@ -10,7 +10,10 @@ import Link from "next/link";
 const CollectionContent = ({
 	artifact,
 	collection,
-}: { artifact: OrdUtxo; collection: OrdUtxo }) => {
+}: {
+	artifact: OrdUtxo;
+	collection: OrdUtxo;
+}) => {
 	useSignals();
 	const showCancelModal = useSignal(false);
 	const isOwner = artifact.owner === ordAddress.value;
@@ -25,9 +28,14 @@ const CollectionContent = ({
 			<h2 className="text-xl">{collection.origin?.data?.map?.name}</h2>
 			<div className="flex items-center justify-between text-[#555] my-2">
 				<div>{artifact.origin?.data?.map?.name}</div>
-				{artifact.origin?.data?.map?.subTypeData.mintNumber > 0 ? <div>
-					{artifact.origin?.data?.map?.subTypeData.mintNumber}/{numItems}
-				</div> : <div>&nbsp;</div>}
+				{artifact.origin?.data?.map?.subTypeData.mintNumber > 0 ? (
+					<div>
+						{artifact.origin?.data?.map?.subTypeData.mintNumber}/
+						{numItems}
+					</div>
+				) : (
+					<div>&nbsp;</div>
+				)}
 			</div>
 
 			<div className="flex gap-2">

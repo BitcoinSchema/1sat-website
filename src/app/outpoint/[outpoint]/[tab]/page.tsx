@@ -89,7 +89,9 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 			body: JSON.stringify(outputOutpoints),
 		});
 
-		outputSpends = await outputSpendsResponse.json();
+		outputSpends = ((await outputSpendsResponse.json()) || []).filter(
+			(s: string) => s && s !== ""
+		);
 		console.log({ outputOutpoints, outputSpends });
 	} catch (e) {
 		console.error(e);

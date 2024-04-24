@@ -82,6 +82,9 @@ export const displayName = (
 	txo: OrdUtxo,
 	latest: boolean
 ): string | undefined => {
+	if (!txo.origin) {
+		return txo.outpoint;
+	}
 	const type = getArtifactType(txo, latest);
 
 	switch (type) {

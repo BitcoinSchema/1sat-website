@@ -5,31 +5,31 @@ import Ordinals from "@/components/Wallet/ordinals";
 import Artifact from "@/components/artifact";
 import { AssetType, ORDFS, toastErrorProps } from "@/constants";
 import {
-  ordPk,
-  ordUtxos,
-  payPk,
-  pendingTxs,
-  usdRate,
-  utxos,
+	ordPk,
+	ordUtxos,
+	payPk,
+	pendingTxs,
+	usdRate,
+	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { OrdUtxo } from "@/types/ordinals";
 import { PendingTransaction } from "@/types/preview";
 import { Utxo } from "@/utils/js-1sat-ord";
 import {
-  createChangeOutput,
-  fetchOrdinal,
-  signPayment,
+	createChangeOutput,
+	fetchOrdinal,
+	signPayment,
 } from "@/utils/transaction";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
+	P2PKHAddress,
+	PrivateKey,
+	Script,
+	SigHash,
+	Transaction,
+	TxIn,
+	TxOut,
 } from "bsv-wasm-web";
 import { Buffer } from "buffer";
 import { head } from "lodash";
@@ -42,7 +42,7 @@ import { TbClick } from "react-icons/tb";
 import { toSatoshi } from "satoshi-bitcoin-ts";
 
 interface NewListingPageProps {
-  type: AssetType;
+	type: AssetType;
 }
 
 const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
@@ -51,7 +51,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 	const query = useSearchParams();
 	const outPoint = query.get("outpoint");
 	const [outpoint, setOutpoint] = useState<string | undefined>(
-		outPoint as string | undefined,
+		outPoint as string | undefined
 	);
 	const [price, setPrice] = useState<number>(0);
 
@@ -67,27 +67,32 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 			ordPk: PrivateKey,
 			ordAddress: string,
 			payoutAddress: string,
-			satoshisPayout: number,
+			satoshisPayout: number
 		): Promise<PendingTransaction> => {
 			const tx = new Transaction(1, 0);
 			const t = ordinal.txid;
 			const txBuf = Buffer.from(t, "hex");
-			const ordIn = new TxIn(txBuf, ordinal.vout, Script.from_asm_string(""));
+			const ordIn = new TxIn(
+				txBuf,
+				ordinal.vout,
+				Script.from_asm_string("")
+			);
 			tx.add_input(ordIn);
 
 			// Inputs
 			let utxoIn = new TxIn(
 				Buffer.from(paymentUtxo.txid, "hex"),
 				paymentUtxo.vout,
-				Script.from_asm_string(""),
+				Script.from_asm_string("")
 			);
 
 			tx.add_input(utxoIn);
 
-			const payoutDestinationAddress = P2PKHAddress.from_string(payoutAddress);
+			const payoutDestinationAddress =
+				P2PKHAddress.from_string(payoutAddress);
 			const payOutput = new TxOut(
 				BigInt(satoshisPayout),
-				payoutDestinationAddress.get_locking_script(),
+				payoutDestinationAddress.get_locking_script()
 			);
 
 			const destinationAddress = P2PKHAddress.from_string(ordAddress);
@@ -97,21 +102,21 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 				.split(" ")[2];
 
 			const ordLockScript = `${Script.from_hex(
-				oLockPrefix,
+				oLockPrefix
 			).to_asm_string()} ${addressHex} ${payOutput.to_hex()} ${Script.from_hex(
-				oLockSuffix,
+				oLockSuffix
 			).to_asm_string()}`;
 
 			const satOut = new TxOut(
 				BigInt(1),
-				Script.from_asm_string(ordLockScript),
+				Script.from_asm_string(ordLockScript)
 			);
 			tx.add_output(satOut);
 
 			const changeOut = createChangeOutput(
 				tx,
 				changeAddress,
-				paymentUtxo.satoshis,
+				paymentUtxo.satoshis
 			);
 			tx.add_output(changeOut);
 
@@ -134,13 +139,13 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 				SigHash.ALL | SigHash.FORKID,
 				0,
 				Script.from_bytes(Buffer.from(ordinal.script, "base64")),
-				BigInt(ordinal.satoshis),
+				BigInt(ordinal.satoshis)
 			);
 
 			ordIn.set_unlocking_script(
 				Script.from_asm_string(
-					`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`,
-				),
+					`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`
+				)
 			);
 
 			tx.set_input(0, ordIn);
@@ -159,7 +164,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 				marketFee: 0,
 			};
 		},
-		[],
+		[]
 	);
 
 	useEffect(() => {
@@ -189,7 +194,10 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 		const paymentPk = PrivateKey.from_wif(payPk.value);
 		const ordinalPk = PrivateKey.from_wif(ordPk.value);
 
-		const ordUtxos = await getOutpoints([selectedItem.origin.outpoint], true);
+		const ordUtxos = await getOutpoints(
+			[selectedItem.origin.outpoint],
+			true
+		);
 		if (!ordUtxos?.length) {
 			toast.error("Could not get item details.", toastErrorProps);
 			return;
@@ -197,12 +205,17 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 		const ordUtxo = head(ordUtxos);
 		// get the biggest utxo
 		const paymentUtxo = utxos.value.reduce((a, b) =>
-			a.satoshis > b.satoshis ? a : b,
+			a.satoshis > b.satoshis ? a : b
 		);
 
 		if (!ordUtxo || !paymentUtxo || ordAddress.value !== ordUtxo.owner) {
-      console.log({ ordUtxo, paymentUtxo, ordAddress: ordAddress.value, owner: ordUtxo?.owner || "" });
-      toast.error("Missing requirement.", toastErrorProps);
+			console.log({
+				ordUtxo,
+				paymentUtxo,
+				ordAddress: ordAddress.value,
+				owner: ordUtxo?.owner || "",
+			});
+			toast.error("Missing requirement.", toastErrorProps);
 			return;
 		}
 
@@ -214,7 +227,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 			ordinalPk,
 			ordAddress.value,
 			fundingAddress.value,
-			price,
+			price
 		);
 
 		pendingTxs.value = [pendingTx];
@@ -277,7 +290,8 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 								onClick={clickSelectItem}
 								className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer p-2 flex items-center justify-center w-full h-64 border rounded-lg border-[#333] border-dashed hover:bg-[#1a1a1a] transition mx-auto"
 							>
-								<TbClick className="text-2xl mr-2" /> Select an Item
+								<TbClick className="text-2xl mr-2" /> Select an
+								Item
 							</div>
 						)}
 
@@ -309,8 +323,8 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 											toSatoshi(
 												e.target.value.includes(".")
 													? parseFloat(e.target.value)
-													: parseInt(e.target.value),
-											),
+													: parseInt(e.target.value)
+											)
 										);
 									}}
 								/>
@@ -323,7 +337,11 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 									type="button"
 									disabled={!outpoint || !usdRate || !price}
 									onClick={() => {
-										console.log("on click!!", usdRate, price);
+										console.log(
+											"on click!!",
+											usdRate,
+											price
+										);
 										if (!outpoint) {
 											setShowSelectItem(true);
 											return;
@@ -335,7 +353,11 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 									} w-full bg-teal-500 hover:bg-teal-600 transition text-white p-2 rounded disabled:bg-[#111] disabled:text-[#555]`}
 								>
 									{` ${
-										!outpoint ? "Select an Item" : !price ? "Set a Price" : ""
+										!outpoint
+											? "Select an Item"
+											: !price
+											? "Set a Price"
+											: ""
 									}`}
 									{!!outpoint && !!usdRate.value && !!price
 										? `List for $${(price / usdRate.value)
@@ -364,7 +386,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 								} as Partial<OrdUtxo>)
 							}
 							sizes={"100vw"}
-              size={600}
+							size={600}
 						/>
 					)}
 				</div>
