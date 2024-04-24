@@ -13,7 +13,9 @@ import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
-import { FaHashtag, FaPlane } from "react-icons/fa";
+import { FaHashtag } from "react-icons/fa";
+import { IoSend } from "react-icons/io5";
+
 import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
@@ -353,7 +355,7 @@ const Bsv20List = ({
 															tick || id;
 													}}
 												>
-													<FaPlane className="w-3" />
+													<IoSend className="w-3" />
 												</button>
 												{showSendModal.value ===
 													(tick || id) && (
