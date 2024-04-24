@@ -204,10 +204,10 @@ const WalletMenu: React.FC = () => {
 			>
 				<FaWallet />
 			</div>
-			{/* biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation> */}
 			<ul
+				// biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
 				tabIndex={0}
-				className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64"
+				className="dropdown-content z-[20] menu shadow  border-yellow-200/25 bg-base-100 rounded-box w-64 border"
 			>
 				{payPk.value && ordPk.value && (
 					<div>
@@ -329,6 +329,7 @@ const WalletMenu: React.FC = () => {
 				{hasUnprotectedKeys.value && (
 					<li>
 						<button
+							type="button"
 							className="flex w-full flex-row items-center justify-between bg-yellow-600 text-black hover:bg-yellow-500"
 							onClick={handleProtectKeys}
 						>

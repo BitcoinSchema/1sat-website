@@ -10,7 +10,10 @@ import WalletTabs from "./tabs";
 const WalletOrdinals = ({
 	address: addressProp,
 	onClick,
-}: { address?: string; onClick?: (outpoint: string) => Promise<void> }) => {
+}: {
+	address?: string;
+	onClick?: (outpoint: string) => Promise<void>;
+}) => {
 	useSignals();
 	if (!ordAddress.value) {
 		return (
@@ -21,16 +24,18 @@ const WalletOrdinals = ({
 	}
 
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<div className="overflow-x-auto">
 			<div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
 				<div className="flex flex-col items-center justify-center w-full h-full max-w-5xl">
-					<WalletTabs type={AssetType.Ordinals} address={addressProp} />
+					<WalletTabs
+						type={AssetType.Ordinals}
+						address={addressProp}
+					/>
 					<div className="w-full md:w-[64rem] min-h-[80vh] tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
 						<OrdinalListings
 							address={addressProp || ordAddress.value}
 							mode={OrdViewMode.Grid}
-              onClick={onClick}
+							onClick={onClick}
 						/>
 					</div>
 				</div>
