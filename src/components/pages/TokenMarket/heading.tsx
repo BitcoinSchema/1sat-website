@@ -13,7 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
-import { FaExternalLinkAlt, FaFire } from "react-icons/fa";
+import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { GiPlainCircle } from "react-icons/gi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
@@ -213,6 +213,13 @@ const TickerHeading = ({
 						{ticker.contract === "pow-20" ? (
 							<div className="tooltip mx-auto" data-tip="POW-20">
 								<FaFire className="text-orange-400" />
+							</div>
+						) : ticker.contract === "LockToMintBsv20" ? (
+							<div
+								className="tooltip mx-auto"
+								data-tip="Lock-to-Mint"
+							>
+								<FaLock className="text-blue-400" />
 							</div>
 						) : (
 							<div className="tooltip mx-auto">
