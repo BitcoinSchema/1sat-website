@@ -1,16 +1,14 @@
 import DOMPurify from "isomorphic-dompurify";
 import { NextResponse } from "next/server";
 
-export async function GET(
-	req: Request
-) {
+export async function GET(req: Request) {
 	const url = new URL(req.url).searchParams.get("url");
 	if (!url || typeof url !== "string") {
-    return new NextResponse(null, {
-      status: 400,
-      statusText: "Bad Request",
-    });
-  }
+		return new NextResponse(null, {
+			status: 400,
+			statusText: "Bad Request",
+		});
+	}
 
 	try {
 		const response = await fetch(url);
@@ -54,8 +52,8 @@ export async function GET(
 	} catch (error) {
 		console.error(error);
 		return new NextResponse(null, {
-      status: 500,
-      statusText: "Internal Server Error",
-    });
+			status: 500,
+			statusText: "Internal Server Error",
+		});
 	}
 }

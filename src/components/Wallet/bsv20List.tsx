@@ -3,8 +3,8 @@
 import { API_HOST, AssetType, resultsPerPage } from "@/constants";
 import { bsv20Balances } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
-import { BSV20Balance } from "@/types/bsv20";
-import { BSV20TXO, OrdUtxo } from "@/types/ordinals";
+import type { BSV20Balance } from "@/types/bsv20";
+import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -14,11 +14,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { FaHashtag } from "react-icons/fa";
-import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
 import { IoSend } from "react-icons/io5";
+
+import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
-import { MarketData } from "../pages/TokenMarket/list";
+import type { MarketData } from "../pages/TokenMarket/list";
 import WalletTabs from "./tabs";
 
 enum BalanceTab {

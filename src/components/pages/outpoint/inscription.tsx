@@ -24,7 +24,9 @@ const OutpointInscription = async ({ outpoint }: Props) => {
 				content={
 					<div>
 						<div className="my-4 text-xl text-[#555]">
-							Inscription Origin
+							{artifact.origin
+								? "Inscription Origin"
+								: "Not Inscribed"}
 						</div>
 						<Link
 							className="text-xs text-[#555] hover:text-blue-500 transition"

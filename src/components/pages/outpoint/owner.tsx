@@ -13,6 +13,8 @@ interface Props {
 const OutpointOwner = async ({ outpoint }: Props) => {
 	let artifact: OrdUtxo | undefined;
 	let bsv20: OrdUtxo | undefined;
+	let isUtxo = false;
+
 	try {
 		const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
 		const { promise } = http.customFetch<OrdUtxo>(url);
@@ -29,10 +31,6 @@ const OutpointOwner = async ({ outpoint }: Props) => {
 		console.log("Failed to fetch outpoint", e);
 	}
 
-	console.log({ artifact, bsv20 });
-
-	const content = <OwnerContent artifact={artifact || bsv20!} />;
-
 	if (artifact && !artifact?.script) {
 		const results = await getOutpoints([artifact.outpoint], true);
 		if (results?.length > 0) {
@@ -41,11 +39,22 @@ const OutpointOwner = async ({ outpoint }: Props) => {
 		}
 	}
 
+	// if (!artifact && !bsv20) {
+	// 	// fetch as a utxo
+	// 	console.log("fetch as a utxo");
+	// 	const url = `${API_HOST}/api/utxos/${outpoint}`;
+	// 	const { promise } = http.customFetch<OrdUtxo>(url);
+	// 	artifact = await promise;
+	// 	isUtxo = true;
+	// }
+
+	console.log({ artifact, bsv20 });
+
 	return (
 		<OutpointPage
 			artifact={artifact || bsv20!}
 			outpoint={outpoint}
-			content={content}
+			content={<OwnerContent artifact={artifact || bsv20!} />}
 			activeTab={OutpointTab.Owner}
 		/>
 	);

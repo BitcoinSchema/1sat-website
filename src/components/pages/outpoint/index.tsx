@@ -56,26 +56,28 @@ const OutpointPage = async ({
 
 	return (
 		<div className="mx-auto flex flex-col p-2 md:p-0 min-h-64">
-			{artifact?.origin?.data?.insc && (
+			{artifact && (
 				<>
 					<h2 className={`text-2xl mb-4  ${notoSerif.className}`}>
 						{displayName(artifact, false)}
 					</h2>
 					<div className="flex flex-col md:flex-row gap-4">
-						<Artifact
-							artifact={artifact}
-							size={550}
-							sizes={"100vw"}
-							glow={true}
-							classNames={{
-								media: "overflow-hidden",
-								wrapper: `overflow-hidden h-[550px] relative ${
-									// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-2/3"
-									"w-fit"
-								}`,
-							}}
-							showListingTag={true}
-						/>
+						{artifact?.origin?.data?.insc && (
+							<Artifact
+								artifact={artifact}
+								size={550}
+								sizes={"100vw"}
+								glow={true}
+								classNames={{
+									media: "overflow-hidden",
+									wrapper: `overflow-hidden h-[550px] relative ${
+										// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-2/3"
+										"w-fit"
+									}`,
+								}}
+								showListingTag={true}
+							/>
+						)}
 						<div className="divider" />
 						<div
 							className={`w-full ${

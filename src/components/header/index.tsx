@@ -5,7 +5,7 @@ import SearchBar from "../SearchBar";
 import Wallet from "../Wallet/menu";
 import MarketMenu from "../marketMenu";
 
-const Header = ({ ubuntu }: { ubuntu: any }) => {
+const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
 	return (
 		<header className="mb-12 z-10">
 			<div className="navbar bg-base-100 relative">
@@ -25,7 +25,9 @@ const Header = ({ ubuntu }: { ubuntu: any }) => {
 								alt={"1Sat Ordinals"}
 								className="w-6 h-6 cursor-pointer rounded mr-2"
 							/>
-							<span className="md:block hidden">1Sat Ordinals</span>
+							<span className="md:block hidden">
+								1Sat Ordinals
+							</span>
 						</Link>
 					</div>
 				</div>

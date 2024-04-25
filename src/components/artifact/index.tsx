@@ -159,8 +159,8 @@ const Artifact: React.FC<ArtifactProps> = ({
 	}, [artifact, latest]);
 
 	useEffect(() => {
-		console.log({ type });
-	}, [type]);
+		console.log({ type, src });
+	}, [type, src]);
 	// const isBsv20 = useMemo(() => {
 	//   if (type === ArtifactType.BSV20) {
 	//     return true;
