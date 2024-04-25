@@ -30,3 +30,22 @@ const Publisher = async () => {
 };
 
 export default Publisher;
+
+export async function generateMetadata() {
+	const collections = COOM_COLLECTIONS.map((c) => c.name).join(", ");
+
+	return {
+		title: `Champions of Otherworldly Magic Collections - 1SatOrdinals`,
+		description: `Explore collections ${collections} on 1SatOrdinals.`,
+		openGraph: {
+			title: `Champions of Otherworldly Magic Collections - 1SatOrdinals`,
+			description: `Explore collections ${collections} on 1SatOrdinals.`,
+			type: "website",
+		},
+		twitter: {
+			card: "summary",
+			title: `Champions of Otherworldly Magic Collections - 1SatOrdinals`,
+			description: `Explore collections ${collections} on 1SatOrdinals.`,
+		},
+	};
+}
