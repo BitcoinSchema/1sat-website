@@ -1,13 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
+import src from "/src/assets/images/pow20/collapsed.png";
 
 const COLOR1 = "#2A1603"; // Replace with your desired color1
 const COLOR2 = "#DB8738"; // Replace with your desired color2
 
 const MinePage: React.FC = async () => {
-	const src = await import("/src/assets/images/pow20/collapsed.png");
-	console.log(src);
 	return (
 		<>
 			<main className="px-4 flex items-center justify-center h-full w-full min-h-[calc(100dvh-15rem+)]">
@@ -85,12 +84,12 @@ const MinePage: React.FC = async () => {
 
 export default MinePage;
 
-const bloodyPow = ` ██▓███   ▒█████   █     █░   
-▓██░  ██▒▒██▒  ██▒▓█░ █ ░█░   
-▓██░ ██▓▒▒██░  ██▒▒█░ █ ░█    
-▒██▄█▓▒ ▒▒██   ██░░█░ █ ░█    
-▒██▒ ░  ░░ ████▓▒░░░██▒██▓ 20 
-▒▓▒░ ░  ░░ ▒░▒░▒░ ░ ▓░▒ ▒     
-░▒ ░       ░ ▒ ▒░   ▒ ░ ░     
-░░       ░ ░ ░ ▒    ░   ░     
+const bloodyPow = ` ██▓███   ▒█████   █     █░
+▓██░  ██▒▒██▒  ██▒▓█░ █ ░█░
+▓██░ ██▓▒▒██░  ██▒▒█░ █ ░█
+▒██▄█▓▒ ▒▒██   ██░░█░ █ ░█
+▒██▒ ░  ░░ ████▓▒░░░██▒██▓ 20
+▒▓▒░ ░  ░░ ▒░▒░▒░ ░ ▓░▒ ▒
+░▒ ░       ░ ▒ ▒░   ▒ ░ ░
+░░       ░ ░ ░ ▒    ░   ░
              ░ ░      ░       `;
