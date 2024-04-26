@@ -294,12 +294,12 @@ const Bsv20List = ({
 											<IconWithFallback
 												icon={icon || null}
 												alt={sym || ""}
-												className="w-8 h-8 mr-2"
+												className="w-12 h-12 mr-2"
 											/>
 										)}
 										<div>
 											<div
-												className="cursor-pointer hover:text-blue-400 transition"
+												className="cursor-pointer hover:text-blue-400 transition text-xl"
 												onClick={() =>
 													router.push(
 														`/market/${
@@ -334,13 +334,54 @@ const Bsv20List = ({
 											{balanceText}
 										</div>
 										<div className="flex justify-end mt-2">
-											<div
-												className={`text-right ${
-													showAirdropIcon
-														? "mr-2"
-														: ""
-												}`}
-											>
+											{showAirdropIcon && (
+												<div
+													className={`text-right ${
+														showAirdropIcon
+															? "mr-2"
+															: ""
+													}`}
+												>
+													<button
+														type="button"
+														className="btn btn-xs w-fit hover:border hover:border-yellow-200/25"
+														onClick={() => {
+															showAirdrop.value =
+																tick || id;
+														}}
+													>
+														<FaParachuteBox className="w-3" />
+													</button>
+													{
+														<AirdropTokensModal
+															onClose={() => {
+																showAirdrop.value =
+																	undefined;
+															}}
+															type={
+																id
+																	? AssetType.BSV21
+																	: AssetType.BSV20
+															}
+															dec={dec}
+															id={(tick || id)!}
+															sym={sym}
+															open={
+																(!!tick &&
+																	showAirdrop.value ===
+																		tick) ||
+																(!!id &&
+																	showAirdrop.value ===
+																		id)
+															}
+															balance={
+																all.confirmed
+															}
+														/>
+													}
+												</div>
+											)}
+											<div className={`text-right `}>
 												{(!addressProp ||
 													addressProp ===
 														ordAddress.value) &&
@@ -381,47 +422,6 @@ const Bsv20List = ({
 													<></>
 												)}
 											</div>
-											{showAirdropIcon && (
-												<div className="text-right">
-													<button
-														type="button"
-														className="btn btn-xs w-fit"
-														onClick={() => {
-															showAirdrop.value =
-																tick || id;
-														}}
-													>
-														<FaParachuteBox className="w-3" />
-													</button>
-													{
-														<AirdropTokensModal
-															onClose={() => {
-																showAirdrop.value =
-																	undefined;
-															}}
-															type={
-																id
-																	? AssetType.BSV21
-																	: AssetType.BSV20
-															}
-															dec={dec}
-															id={(tick || id)!}
-															sym={sym}
-															open={
-																(!!tick &&
-																	showAirdrop.value ===
-																		tick) ||
-																(!!id &&
-																	showAirdrop.value ===
-																		id)
-															}
-															balance={
-																all.confirmed
-															}
-														/>
-													}
-												</div>
-											)}
 										</div>
 									</div>
 								</div>
