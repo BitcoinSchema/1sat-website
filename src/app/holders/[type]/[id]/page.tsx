@@ -1,4 +1,5 @@
 import JDenticon from "@/components/JDenticon";
+import { ArtifactType } from "@/components/artifact";
 import { API_HOST, AssetType } from "@/constants";
 import { BSV20 } from "@/types/bsv20";
 import Link from "next/link";
@@ -25,8 +26,13 @@ const Page = async ({
 			: `${API_HOST}/api/bsv20/id/${id}`;
 
 	const details = await getDetails(new NextRequest(url), type, id);
-	const holders = await getHolders(new NextRequest(`${url}/holders`), type, id, details);
-  const numHolders = (holders || []).length > 0 ? holders.length : 0;
+	const holders = await getHolders(
+		new NextRequest(`${url}/holders`),
+		type,
+		id,
+		details
+	);
+	const numHolders = (holders || []).length > 0 ? holders.length : 0;
 	return (
 		<div className="mx-auto flex flex-col max-w-5xl w-full">
 			<h1 className="text-xl px-6">
@@ -43,7 +49,9 @@ const Page = async ({
 			<div className="divider" />
 			<div className="w-full">
 				<div className="grid grid-template-columns-3 p-6">
-					<div className="">Address ({numHolders === 100 ? '100+' : numHolders})</div>
+					<div className="">
+						Address ({numHolders === 100 ? "100+" : numHolders})
+					</div>
 					<div className="w-24 text-right">Holdings</div>
 					<div className="w-12 text-right">Ownership</div>
 					<div className="divider col-span-3" />
@@ -55,11 +63,18 @@ const Page = async ({
 									className="flex items-center text-sm flex-1"
 									href={`/activity/${h.address}/ordinals`}
 								>
-									<JDenticon hashOrValue={h.address} className="w-8 h-8 mr-2" />
-									<span className="hidden md:block">{h.address}</span>
+									<JDenticon
+										hashOrValue={h.address}
+										className="w-8 h-8 mr-2"
+									/>
+									<span className="hidden md:block">
+										{h.address}
+									</span>
 								</Link>
 								<div className="w-24 text-right">{h.amt}</div>
-								<div className="w-24 text-right">{h.pct.toFixed(4)}%</div>
+								<div className="w-24 text-right">
+									{h.pct.toFixed(4)}%
+								</div>
 								<div className="flex items-center mb-2 relative col-span-3">
 									<div
 										className="w-full bg-warning/25 rounded h-1"
@@ -91,13 +106,18 @@ const getDetails = async (req: NextRequest, type: AssetType, id: string) => {
 	return details;
 };
 
-const getHolders = async (req: NextRequest, type: AssetType, id: string, details: BSV20) => {
+const getHolders = async (
+	req: NextRequest,
+	type: AssetType,
+	id: string,
+	details: BSV20
+) => {
 	const res = await import("./holders/route");
 	const json = await (
 		await res.POST(req, {
 			params: {
-        type,
-        id,
+				type,
+				id,
 				details,
 			},
 		})
@@ -105,3 +125,35 @@ const getHolders = async (req: NextRequest, type: AssetType, id: string, details
 
 	return json || ([] as Holder[]);
 };
+
+export async function generateMetadata({
+	params,
+}: {
+	params: { type: AssetType; id: string };
+}) {
+	const { type, id } = params;
+
+	const url =
+		type === AssetType.BSV20
+			? `${API_HOST}/api/bsv20/tick/${id}`
+			: `${API_HOST}/api/bsv20/id/${id}`;
+
+	const details = await getDetails(new NextRequest(url), type, id);
+
+	const tokenName = type === AssetType.BSV20 ? id : details.sym;
+
+	return {
+		title: `${tokenName} token holders`,
+		description: `Explore the details of ${tokenName} on 1SatOrdinals.`,
+		openGraph: {
+			title: `${tokenName} token holders`,
+			description: `Explore the details of ${tokenName} on 1SatOrdinals.`,
+			type: "website",
+		},
+		twitter: {
+			card: "summary_large_image",
+			title: `${tokenName} token holders`,
+			description: `Explore the details of ${tokenName} on 1SatOrdinals.`,
+		},
+	};
+}
