@@ -8,6 +8,7 @@ import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
 import { API_HOST } from "@/constants";
 import { OutpointTab } from "@/types/common";
+import { OrdUtxo } from "@/types/ordinals";
 import { Transaction } from "bsv-wasm";
 import Head from "next/head";
 import { Suspense } from "react";
@@ -145,9 +146,6 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 					property="og:image:alt"
 					content={`Outpoint ${txid}_${vout}`}
 				/>
-				<meta property="og:image:type" content="image/png" />
-				<meta property="og:image:width" content="1200" />
-				<meta property="og:image:height" content="630" />
 			</Head>
 			<Suspense
 				fallback={
@@ -168,6 +166,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 							vout={Number.parseInt(vout)}
 						/>
 					)}
+
 					{content()}
 				</div>
 			</Suspense>
@@ -212,5 +211,48 @@ function parseOutput(output: ArrayBuffer): {
 	return {
 		satoshis: satoshis,
 		script: script,
+	};
+}
+
+export async function generateMetadata({
+	params,
+}: {
+	params: { outpoint: string; tab: string };
+}) {
+	const details = await fetch(
+		`${API_HOST}/api/inscriptions/${params.outpoint}`
+	).then((res) => res.json() as Promise<OrdUtxo>);
+
+	const isImageInscription =
+		details.origin?.data?.insc?.file.type?.startsWith("image");
+
+	const name =
+		details.origin?.data?.map?.name ||
+		details.origin?.data?.bsv20?.tick ||
+		details.origin?.data?.bsv20?.sym ||
+		details.origin?.data?.insc?.json?.tick ||
+		details.origin?.data?.insc?.json?.p ||
+		details.origin?.data?.insc?.file.type ||
+		"Mystery Outpoint";
+
+	return {
+		title: `Item details - 1SatOrdinals`,
+		description: `Explore item details for ${
+			isImageInscription ? "image" : name
+		} on 1SatOrdinals.`,
+		openGraph: {
+			title: `Item details - 1SatOrdinals`,
+			description: `Explore item details for ${
+				isImageInscription ? `image ${params.outpoint}` : name
+			} on 1SatOrdinals.`,
+			type: "website",
+		},
+		twitter: {
+			card: "summary_large_image",
+			title: `Item details - 1SatOrdinals`,
+			description: `Explore item details for ${
+				isImageInscription ? "image" : name
+			} on 1SatOrdinals.`,
+		},
 	};
 }
