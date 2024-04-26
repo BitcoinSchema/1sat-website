@@ -264,8 +264,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 							<button
 								type="submit"
 								disabled={
-									Number.parseFloat(amount.value) <= 0 ||
-									!address.value
+									Number.parseFloat(amount.value || "0") <=
+										0 || !address.value
 								}
 								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:btn-disabled diabled:hover:btn-disabled"
 							>
