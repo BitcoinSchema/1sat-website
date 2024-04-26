@@ -11,6 +11,12 @@ export interface Holder {
 	amt: string;
 }
 
+export interface TickHolder {
+	address: string;
+	amt: number;
+	pct: number;
+}
+
 export type MarketData = {
 	accounts: number;
 	tick?: string;

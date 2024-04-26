@@ -1,13 +1,7 @@
-import { Holder } from "@/components/pages/TokenMarket/list";
+import { Holder, TickHolder } from "@/components/pages/TokenMarket/list";
 import { API_HOST, AssetType } from "@/constants";
 import { BSV20 } from "@/types/bsv20";
 import { NextRequest, NextResponse } from "next/server";
-
-interface TickHolder {
-	address: string;
-	amt: number;
-	pct: number;
-}
 
 export const dynamic = "force-dynamic"; // defaults to auto
 
