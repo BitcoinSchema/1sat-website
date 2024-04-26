@@ -29,8 +29,7 @@ import {
 	TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
-import { NextRequest } from "next/server";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { FaQuestion } from "react-icons/fa";
 
@@ -51,7 +50,7 @@ type Destination = {
 	amt?: number | string;
 	pct?: number;
 	receiveAmt: number;
-}
+};
 
 enum Allocation {
 	Equal = "equal",
@@ -59,18 +58,19 @@ enum Allocation {
 }
 
 type AllocationOption = {
-	value: Allocation, label: string
-}
+	value: Allocation;
+	label: string;
+};
 
 const ALLOCATION_OPTIONS: AllocationOption[] = [
 	{
 		value: Allocation.Equal,
-		label: 'Equal'
+		label: "Equal",
 	},
 	{
 		value: Allocation.Weighted,
-		label: 'Weighted'
-	}
+		label: "Weighted",
+	},
 ];
 
 const AirdropTokensModal: React.FC<TransferModalProps> = ({
@@ -154,8 +154,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			let destinations: Destination[] =
 				isEqualAllocation && addresses.value.length > 0
 					? addresses.value
-						.split(",")
-						.map((a) => ({address: a.trim(), receiveAmt: 0})) // receiveAmt will be calculated later
+							.split(",")
+							.map((a) => ({ address: a.trim(), receiveAmt: 0 })) // receiveAmt will be calculated later
 					: [];
 			const tickerDestinations = destinationTickers.value
 				? destinationTickers.value.split(",").map((a) => a.trim())
@@ -163,13 +163,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
 			// resolve ticker holders
 			let receivers: Destination[] = [];
-			let remainder: number = 0;
+			let remainder = 0;
 
 			for (const t of tickerDestinations) {
-				const url =
-					type === AssetType.BSV20
-						? `${API_HOST}/api/bsv20/tick/${t}`
-						: `${API_HOST}/api/bsv20/id/${t}`;
+				const url = `${API_HOST}/api/bsv20/tick/${t}`;
 				const tickerHoldersUrl = `${url}/holders?limit=${numOfHolders.value}`;
 				const holdersRes = await fetch(tickerHoldersUrl);
 				const holders = ((await holdersRes.json()) || []) as Holder[];
@@ -181,30 +178,42 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
 					// calculate pct held for each receiver
 					const tickHolders = holders
-						?.sort((a, b) => parseInt(b.amt) - parseInt(a.amt))
+						?.sort(
+							(a, b) =>
+								Number.parseInt(b.amt) - Number.parseInt(a.amt)
+						)
 						.map((h) => ({
 							...h,
-							amt: parseInt(h.amt) / 10 ** (details?.dec || 0),
-							pct: type === AssetType.BSV20
-								? (parseInt(h.amt) / parseInt(details!.supply!))
-								: (parseInt(h.amt) / parseInt(details!.amt!)),
+							amt:
+								Number.parseInt(h.amt) /
+								10 ** (details?.dec || 0),
+							pct:
+								Number.parseInt(h.amt) /
+								Number.parseInt(details!.supply!),
 						})) as TickHolder[];
 
 					// calculate total percentage owned by all receivers
-					const totalPctHeldByHolders = tickHolders.reduce((acc, h) => acc += h.pct, 0);
+					const totalPctHeldByHolders = tickHolders.reduce(
+						(acc, h) => (acc += h.pct),
+						0
+					);
 
 					// calculate amount to receive for each holder based on pct owned scaled
 					// to total pct owned by all receivers (totalPctOfHolders = 100%)
 					for (const holder of tickHolders) {
-						const weightedAmt = sendAmount * holder.pct / totalPctHeldByHolders;
+						const weightedAmt =
+							(sendAmount * holder.pct) / totalPctHeldByHolders;
 						const receiveAmt = Math.floor(weightedAmt);
 						remainder += Math.round(weightedAmt - receiveAmt); // round to integer to avoid js pitfalls with numbers
 
-						receivers.push({...holder, receiveAmt})
+						receivers.push({ ...holder, receiveAmt });
 					}
 				} else {
 					receivers = receivers.concat(
-						holders.map(({address}) => ({address, receiveAmt: 0}))
+						holders.map(({ address }) => ({
+							address,
+							receiveAmt: 0,
+						}))
 					);
 				}
 			}
@@ -216,7 +225,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			if (isEqualAllocation) {
 				const amountEach = Math.floor(sendAmount / destinations.length);
 				remainder = sendAmount % destinations.length;
-				destinations = destinations.map(dest => ({...dest, receiveAmt: amountEach}))
+				destinations = destinations.map((dest) => ({
+					...dest,
+					receiveAmt: amountEach,
+				}));
 			}
 
 			// make sure we have enough to cover the send amount
@@ -337,14 +349,16 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			destinationTickers.value,
 			isEqualAllocation,
 			numOfHolders.value,
-			type
+			type,
 		]
 	);
 
 	const submit = useCallback(
 		async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			const isDestinationMissing = !destinationTickers.value && !(isEqualAllocation && addresses.value);
+			const isDestinationMissing =
+				!destinationTickers.value &&
+				!(isEqualAllocation && addresses.value);
 
 			if (!amount.value || isDestinationMissing) {
 				return;
@@ -420,6 +434,11 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 		addresses.value = template.join(",");
 	}, [addresses]);
 
+	// placeholder should show the number of decimals as zeroes
+	const amtPlaceholder = useMemo(() => {
+		return dec > 0 ? `0.${"0".repeat(dec)}` : "0";
+	}, [dec]);
+
 	return (
 		<dialog
 			id="airdrop_modal"
@@ -431,21 +450,21 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
      
     > */}
 			<div
-				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
+				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/25"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
 							<div className="text-lg font-semibold">
-								Airdrop {id}
+								Airdrop {sym || id}
 							</div>
 							<div
 								className="text-xs cursor-pointer text-[#aaa]"
 								onClick={setAmountToBalance}
 							>
 								Balance: {balance}{" "}
-								{type === AssetType.BSV21 ? id : sym}
+								{type === AssetType.BSV21 ? sym : id}
 							</div>
 						</div>
 
@@ -455,10 +474,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 							</label>
 							<input
 								type="number"
-								placeholder="0.00000000"
+								placeholder={amtPlaceholder}
 								max={balance}
 								className="z-20 input input-bordered w-full"
-								value={amount.value || "0"}
+								value={amount.value === "0" ? "" : amount.value}
 								onChange={(e) => {
 									if (
 										e.target.value === "" ||
@@ -472,23 +491,42 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 						</div>
 						<div className="flex flex-col w-full mt-4">
 							<label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center">
-								Allocation
+								<span className="text-nowrap">
+									{allocation.value} allocation
+								</span>{" "}
+								<div className="text-[#555] pl-2">
+									{allocation.value === Allocation.Equal
+										? "distribute tokens equally to all addresses."
+										: "based on % of total supply held by each address."}
+								</div>
 							</label>
+
 							<select
 								className="z-20 input input-bordered w-full"
 								value={allocation.value}
 								onChange={(e) => {
-									allocation.value = e.target.value as Allocation;
+									allocation.value = e.target
+										.value as Allocation;
 								}}
 							>
-								{ALLOCATION_OPTIONS.map((opt: {value: Allocation, label: string}) => 
-									<option key={opt.value} value={opt.value}>{opt.label}</option>
+								{ALLOCATION_OPTIONS.map(
+									(opt: {
+										value: Allocation;
+										label: string;
+									}) => (
+										<option
+											key={opt.value}
+											value={opt.value}
+										>
+											{opt.label}
+										</option>
+									)
 								)}
 							</select>
 						</div>
 						<div className="flex flex-col mt-4">
 							<label className="text-sm font-semibold text-[#aaa] mb-2">
-								Destination Tickers (comma separated list)
+								BSV20 Destination Tickers (comma separated list)
 							</label>
 							<input
 								type="text"
@@ -525,17 +563,16 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 							</div>
 						)}
 
-						{
-							allocation.value !== Allocation.Weighted &&
-							<>
-								<div className="divider" />
+						<>
+							<div className="divider" />
+							{isEqualAllocation && (
 								<div className="flex flex-col mt-4">
 									<label className="text-sm font-semibold text-[#aaa] mb-2">
 										Addresses (comma separated list){" "}
 										<div
 											className="cursor-pointer text-blue-400 hover:text-blue-500"
 											onClick={loadTemplate}
-											>
+										>
 											All Registered Users
 										</div>
 									</label>
@@ -547,10 +584,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 										onChange={(e) => {
 											addresses.value = e.target.value;
 										}}
-										/>
+									/>
 								</div>
-							</>
-						}
+							)}
+						</>
 
 						<div className="modal-action">
 							<button

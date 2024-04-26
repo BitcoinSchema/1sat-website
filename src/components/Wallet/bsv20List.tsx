@@ -406,6 +406,7 @@ const Bsv20List = ({
 															}
 															dec={dec}
 															id={(tick || id)!}
+															sym={sym}
 															open={
 																(!!tick &&
 																	showAirdrop.value ===
