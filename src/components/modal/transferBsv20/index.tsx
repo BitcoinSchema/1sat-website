@@ -27,7 +27,7 @@ import {
 	TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { buildInscriptionSafe } from "../airdrop";
 
@@ -55,7 +55,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 	useSignals();
 	const router = useRouter();
 	// use signal for amount and address
-	const amount = useSignal(amt?.toString() || "0");
+	const amount = useSignal(amt?.toString());
 	const address = useSignal(addr || "");
 
 	const setAmountToBalance = useCallback(() => {
@@ -275,13 +275,18 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 		]
 	);
 
+	const placeholderText = useMemo(() => {
+		// ex 0.0000000 if dec = 8
+		return dec ? `0.${"0".repeat(dec)}` : "0";
+	}, [dec]);
+
 	return (
 		<div
-			className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
+			className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen backdrop-blur	bg-black bg-opacity-50 overflow-hidden"
 			onClick={() => onClose()}
 		>
 			<div
-				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/25"
+				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
@@ -306,14 +311,15 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 							</label>
 							<input
 								type="number"
-								placeholder="0.00000000"
+								placeholder={placeholderText}
 								max={balance}
 								className="input input-bordered w-full"
-								value={amount.value || "0"}
+								value={amount.value || undefined}
 								onChange={(e) => {
 									if (
 										e.target.value === "" ||
-										parseFloat(e.target.value) <= balance
+										Number.parseFloat(e.target.value) <=
+											balance
 									) {
 										amount.value = e.target.value;
 									}
@@ -335,7 +341,10 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 							/>
 						</div>
 						<div className="modal-action">
-							<button className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white">
+							<button
+								type="submit"
+								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
+							>
 								Send
 							</button>
 						</div>

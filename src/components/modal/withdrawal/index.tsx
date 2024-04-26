@@ -33,7 +33,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 	useSignals();
 	const router = useRouter();
 
-	const amount = useSignal(amt?.toString() || "0");
+	const amount = useSignal(amt?.toString());
 	const address = useSignal(addr || "");
 
 	const balance = computed(() => {
@@ -168,8 +168,11 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			];
 
 			router.push("/preview");
+			if (onClose) {
+				onClose();
+			}
 		},
-		[router]
+		[router, onClose]
 	);
 
 	const submit = useCallback(
@@ -191,11 +194,11 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 
 	return (
 		<div
-			className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
+			className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen backdrop-blur bg-black bg-opacity-50 overflow-hidden"
 			onClick={() => onClose()}
 		>
 			<div
-				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/25"
+				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
@@ -231,9 +234,15 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 								type="text"
 								placeholder="0.00000000"
 								className="input input-bordered w-full"
-								value={amount.value || "0"}
+								value={amount.value || ""}
 								onChange={(e) => {
-									amount.value = e.target.value;
+									if (
+										e.target.value === "" ||
+										Number.parseFloat(e.target.value) <=
+											balance.value
+									) {
+										amount.value = e.target.value;
+									}
 								}}
 							/>
 						</div>

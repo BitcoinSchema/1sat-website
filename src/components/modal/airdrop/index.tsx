@@ -442,7 +442,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 	return (
 		<dialog
 			id="airdrop_modal"
-			className={`modal ${open ? "modal-open" : ""}`}
+			className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
 			onClick={() => onClose()}
 		>
 			{/* <div
@@ -450,7 +450,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
      
     > */}
 			<div
-				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/25"
+				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">

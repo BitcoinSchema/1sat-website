@@ -12,7 +12,7 @@ export function EnterPassphraseModal({ open, onClose, onUnlock }: Props) {
 	return (
 		<dialog
 			id="enter_passphrase_modal"
-			className={`modal ${open ? "modal-open" : ""}`}
+			className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
 			onClick={() => onClose()}
 		>
 			<div className="modal-box" onClick={(e) => e.stopPropagation()}>

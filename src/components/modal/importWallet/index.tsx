@@ -13,14 +13,14 @@ import {
 } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useEffect, useMemo } from "react";
+import { FaKey } from "react-icons/fa";
+import { FaFileArrowUp } from "react-icons/fa6";
 import { DoneStep } from "./steps/DoneStep";
 import { EnterPassphraseStep as EnterPassphraseBackupJsonStep } from "./steps/fromBackupJson/EnterPassphraseStep";
 import { SelectFileStep } from "./steps/fromBackupJson/SelectFileStep";
 import { EnterMnemonicStep } from "./steps/fromMnemonic/EnterMnemonicStep";
 import { EnterPassphraseStep as EnterPassphraseMnemonicStep } from "./steps/fromMnemonic/EnterPassphraseStep";
 import { GenerateWalletStep } from "./steps/fromMnemonic/GenerateWalletStep";
-import { FaFileArrowUp } from "react-icons/fa6";
-import { FaEnvelopeOpenText, FaKey } from "react-icons/fa";
 
 const ImportWalletModal = ({
 	open,
@@ -58,7 +58,7 @@ const ImportWalletModal = ({
 	return (
 		<dialog
 			id="import_wallet_modal"
-			className={`modal ${open ? "modal-open" : ""}`}
+			className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
 		>
 			<div className="modal-box">
 				<h3 className="font-bold text-lg">

@@ -41,7 +41,7 @@ const ProtectKeysModal = ({
 	return (
 		<dialog
 			id="protect_wallet_modal"
-			className={`modal ${open ? "modal-open" : ""}`}
+			className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
 		>
 			<div className="modal-box">
 				<h3 className="font-bold text-lg">Protect Your Keys</h3>
