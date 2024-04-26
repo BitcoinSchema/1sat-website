@@ -31,7 +31,7 @@ const WalletOrdinals = ({
 						type={AssetType.Ordinals}
 						address={addressProp}
 					/>
-					<div className="w-full md:w-[64rem] min-h-[80vh] tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
+					<div className="w-full min-h-[80vh] tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row md:max-w-5xl">
 						<OrdinalListings
 							address={addressProp || ordAddress.value}
 							mode={OrdViewMode.Grid}

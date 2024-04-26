@@ -2,20 +2,24 @@
 
 import { API_HOST, FetchStatus, feeRate, toastErrorProps } from "@/constants";
 import {
-  bsv20Balances,
-  chainInfo,
-  indexers,
-  payPk,
-  pendingTxs,
-  usdRate,
-  utxos,
+	bsv20Balances,
+	chainInfo,
+	indexers,
+	payPk,
+	pendingTxs,
+	usdRate,
+	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { BSV20, Ticker } from "@/types/bsv20";
+import type { BSV20, Ticker } from "@/types/bsv20";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import { P2PKH_FULL_INPUT_SIZE, Payment, Utxo } from "@/utils/js-1sat-ord";
+import {
+	P2PKH_FULL_INPUT_SIZE,
+	type Payment,
+	type Utxo,
+} from "@/utils/js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import "buffer";
@@ -25,15 +29,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { ErrorIcon } from "react-hot-toast";
 import {
-  FaCheckCircle,
-  FaClock,
-  FaExclamationCircle,
-  FaExclamationTriangle,
-  FaInfoCircle,
+	FaCheckCircle,
+	FaClock,
+	FaExclamationCircle,
+	FaExclamationTriangle,
+	FaInfoCircle,
 } from "react-icons/fa";
 import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { useLocalStorage } from "usehooks-ts";
-import { InscriptionTab } from "./tabs";
+import type { InscriptionTab } from "./tabs";
 
 enum ActionType {
 	Mint = "mint",
@@ -54,16 +58,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 	const [selectedActionType, setSelectedActionType] = useState<ActionType>(
-		ActionType.Mint,
+		ActionType.Mint
 	);
 	const [tickerAvailable, setTickerAvailable] = useState<boolean | undefined>(
-		undefined,
+		undefined
 	);
 	const [fetchTickerStatus, setFetchTickerStatus] = useState<FetchStatus>(
-		FetchStatus.Idle,
+		FetchStatus.Idle
 	);
 	const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
-		FetchStatus.Idle,
+		FetchStatus.Idle
 	);
 	const [selectedBsv20, setSelectedBsv20] = useState<Ticker>();
 	const [limit, setLimit] = useState<string | undefined>("1337");
@@ -71,7 +75,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	const [decimals, setDecimals] = useState<number | undefined>();
 	const [amount, setAmount] = useState<string>();
 	const [mintError, setMintError] = useState<string>();
-	const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
+	const [showOptionalFields, setShowOptionalFields] =
+		useState<boolean>(false);
 	const [iterations, setIterations] = useState<number>(1);
 	const [bulkEnabled, setBulkEnabled] = useLocalStorage("bulkEnabled", false);
 	const [ticker, setTicker] = useState<string | null>(tick);
@@ -98,7 +103,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			setTicker(e.target.value);
 			if (mintError) setMintError(undefined);
 		},
-		[setTicker, mintError, setAmount],
+		[setTicker, mintError, setAmount]
 	);
 
 	const checkTicker = useCallback(
@@ -122,14 +127,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						console.log(
 							"selected BSV20",
 							{ bsv20 },
-							parseInt(bsv20.supply!) < parseInt(bsv20.max!),
+							Number.parseInt(bsv20.supply!) <
+								Number.parseInt(bsv20.max!)
 						);
 						setSelectedBsv20(bsv20);
 						if (
 							!!bsv20 &&
 							bsv20.max !== undefined &&
 							bsv20.supply !== undefined &&
-							parseInt(bsv20.supply) < parseInt(bsv20.max) &&
+							Number.parseInt(bsv20.supply) <
+								Number.parseInt(bsv20.max) &&
 							bsv20.pendingOps === 0
 						) {
 							setTickerAvailable(true);
@@ -144,7 +151,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						}
 					}
 				} else if (resp.status === 404) {
-					console.log("ticker not found", tick, "expectExist", expectExist);
+					console.log(
+						"ticker not found",
+						tick,
+						"expectExist",
+						expectExist
+					);
 					if (expectExist) {
 						setTickerAvailable(false);
 						setSelectedBsv20(undefined);
@@ -158,14 +170,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				setFetchTickerStatus(FetchStatus.Error);
 			}
 		},
-		[setSelectedBsv20, setTickerAvailable, setFetchTickerStatus],
+		[setSelectedBsv20, setTickerAvailable, setFetchTickerStatus]
 	);
 
 	const changeMaxSupply = useCallback(
 		(e: any) => {
 			setMaxSupply(e.target.value);
 		},
-		[setMaxSupply],
+		[setMaxSupply]
 	);
 
 	const changeSelectedActionType = useCallback(
@@ -177,17 +189,19 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				await checkTicker(ticker, actionType === ActionType.Mint);
 			}
 		},
-		[setSelectedActionType, ticker, checkTicker],
+		[setSelectedActionType, ticker, checkTicker]
 	);
 
 	const changeIterations: React.ChangeEventHandler<HTMLInputElement> =
 		useCallback((e) => {
 			// check the value is not more than the max
-			if (parseInt(e.target.value) > parseInt(e.target.max)) {
+			if (
+				Number.parseInt(e.target.value) > Number.parseInt(e.target.max)
+			) {
 				toast.error(`Max iterations is ${e.target.max}`);
 				return;
 			}
-			setIterations(parseInt(e.target.value));
+			setIterations(Number.parseInt(e.target.value));
 		}, []);
 
 	const inSync = computed(() => {
@@ -208,14 +222,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					: "Ticker Unavailable"
 				: mintError
 			: inSync.value
-			  ? selectedBsv20?.pendingOps && selectedBsv20?.pendingOps > 0
-					? `${selectedBsv20?.pendingOps} Pending Ops`
-					: selectedBsv20?.pending
-					  ? `Pending Supply ${selectedBsv20.pending}`
-					  : "1-4 Characters"
-			  : selectedActionType === ActionType.Deploy
-				  ? "Syncing. May already be deployed."
-				  : "Syncing. May be minted out.";
+			? selectedBsv20?.pendingOps && selectedBsv20?.pendingOps > 0
+				? `${selectedBsv20?.pendingOps} Pending Ops`
+				: selectedBsv20?.pending
+				? `Pending Supply ${selectedBsv20.pending}`
+				: "1-4 Characters"
+			: selectedActionType === ActionType.Deploy
+			? "Syncing. May already be deployed."
+			: "Syncing. May be minted out.";
 	}, [
 		tickerAvailable,
 		selectedActionType,
@@ -226,7 +240,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	]);
 
 	const totalTokens = useMemo(() => {
-		return iterations * parseInt(amount || "0");
+		return iterations * Number.parseInt(amount || "0");
 	}, [amount, iterations]);
 
 	// Define the debounced function outside of the render method
@@ -238,14 +252,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		(e: any) => {
 			setLimit(e.target.value);
 		},
-		[setLimit],
+		[setLimit]
 	);
 
 	const changeDecimals = useCallback(
 		(e: any) => {
 			setDecimals(e.target.valuye ? parseInt(e.target.value) : undefined);
 		},
-		[setDecimals],
+		[setDecimals]
 	);
 
 	const changeAmount = useCallback(
@@ -261,7 +275,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				setAmount(e.target.value);
 			}
 		},
-		[selectedBsv20, selectedActionType, setAmount],
+		[selectedBsv20, selectedActionType, setAmount]
 	);
 	// Returns the capped max iterations for a given feature token balance
 	const tierMax = useCallback((balance: number, organicMax: number) => {
@@ -290,12 +304,15 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 				switch (selectedActionType) {
 					case ActionType.Deploy:
-						if (parseInt(maxSupply) === 0 || BigInt(maxSupply) > maxMaxSupply) {
+						if (
+							parseInt(maxSupply) === 0 ||
+							BigInt(maxSupply) > maxMaxSupply
+						) {
 							toast.error(
 								`Invalid input: please enter a number less than or equal to ${
 									maxMaxSupply - BigInt(1)
 								}`,
-								toastErrorProps,
+								toastErrorProps
 							);
 							return;
 						}
@@ -310,7 +327,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						if (limit) inscription.lim = limit;
 						else if (
 							!confirm(
-								"Warning: Token will have no mint limit. This means all tokens can be minted at once. Are you sure this is what you want?",
+								"Warning: Token will have no mint limit. This means all tokens can be minted at once. Are you sure this is what you want?"
 							)
 						) {
 							setInscribeStatus(FetchStatus.Idle);
@@ -329,7 +346,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								`Max supply must be a positive integer less than or equal to ${
 									maxMaxSupply - BigInt(1)
 								}`,
-								toastErrorProps,
+								toastErrorProps
 							);
 							return;
 						}
@@ -356,7 +373,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					iterations,
 					selectedActionType === ActionType.Deploy
 						? ([] as Payment[])
-						: payments,
+						: payments
 				);
 
 				pendingTxs.value = [pendingTx];
@@ -379,7 +396,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			selectedBsv20,
 			ticker,
 			iterations,
-		],
+		]
 	);
 
 	const bulkInscribe = useCallback(async () => {
@@ -392,7 +409,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		// while (iterations > 0) {
 		await getUtxos(fundingAddress.value);
 		const sortedUtxos = utxos.value?.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1,
+			a.satoshis > b.satoshis ? -1 : 1
 		);
 		if (!sortedUtxos) {
 			console.log("no utxos");
@@ -418,7 +435,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 		const utxos = await getUtxos(fundingAddress.value);
 		const sortedUtxos = utxos.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1,
+			a.satoshis > b.satoshis ? -1 : 1
 		);
 		const u = head(sortedUtxos);
 		if (!u) {
@@ -476,9 +493,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	const confirmedOplBalance = useMemo(
 		() =>
 			bsv20Balances.value?.find(
-				(b) => b.tick?.toUpperCase() === bulkMintingTicker,
+				(b) => b.tick?.toUpperCase() === bulkMintingTicker
 			)?.all.confirmed,
-		[bsv20Balances.value],
+		[bsv20Balances.value]
 	);
 
 	// maxIterations is based on the amount of confirmed OPL the user holds
@@ -529,7 +546,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const spacers = useMemo(
 		() => calculateSpacers(maxIterations, step),
-		[maxIterations, step],
+		[maxIterations, step]
 	);
 
 	const newSupply = useMemo(() => {
@@ -548,8 +565,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		if (newTokens > max) {
 			return max;
 		}
-    const pending = selectedBsv20.pending ? parseInt(selectedBsv20.pending) : 0;
-    const pendingAdjusted = pending * 10 ** selectedBsv20.dec;
+		const pending = selectedBsv20.pending
+			? parseInt(selectedBsv20.pending)
+			: 0;
+		const pendingAdjusted = pending * 10 ** selectedBsv20.dec;
 		return newTokens + pendingAdjusted;
 	}, [selectedBsv20, totalTokens]);
 
@@ -565,7 +584,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			return 0;
 		}
 		return (
-			(bytesPerIteration * iterations * feeRate + P2PKH_FULL_INPUT_SIZE * 4) /
+			(bytesPerIteration * iterations * feeRate +
+				P2PKH_FULL_INPUT_SIZE * 4) /
 			usdRate.value
 		).toFixed(2);
 	}, [iterations]);
@@ -574,7 +594,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const canEnableBulk = useMemo(
 		() => (confirmedOplBalance ? confirmedOplBalance > 0 : false),
-		[confirmedOplBalance],
+		[confirmedOplBalance]
 	);
 
 	const currentTier = useMemo(() => {
@@ -582,7 +602,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			return 0;
 		}
 		const balance = bsv20Balances.value?.find(
-			(b) => b.tick?.toUpperCase() === bulkMintingTicker,
+			(b) => b.tick?.toUpperCase() === bulkMintingTicker
 		)?.all.confirmed;
 		if (!balance) {
 			return 0;
@@ -648,7 +668,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							maxLength={4}
 							pattern="^\S+$"
 							onKeyDown={(event) => {
-								if (event.key === " " || event.key === "Enter") {
+								if (
+									event.key === " " ||
+									event.key === "Enter"
+								) {
 									event.preventDefault();
 									return;
 								}
@@ -658,7 +681,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								changeTicker(event);
 								debouncedCheckTicker(
 									event,
-									selectedActionType === ActionType.Mint,
+									selectedActionType === ActionType.Mint
 								);
 							}}
 						/>
@@ -712,19 +735,25 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							<div className="my-2 flex justify-between items-center">
 								Amount{" "}
 								{selectedBsv20 && (
-									<button type="button" className="btn btn-sm">
+									<button
+										type="button"
+										className="btn btn-sm"
+									>
 										<span
 											className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
 											onClick={() => {
 												setAmount(
-													selectedBsv20?.lim && selectedBsv20.lim !== "0"
+													selectedBsv20?.lim &&
+														selectedBsv20.lim !==
+															"0"
 														? selectedBsv20.lim
-														: selectedBsv20.max,
+														: selectedBsv20.max
 												);
 											}}
 										>
 											Max:{" "}
-											{selectedBsv20?.lim && selectedBsv20.lim !== "0"
+											{selectedBsv20?.lim &&
+											selectedBsv20.lim !== "0"
 												? selectedBsv20.lim
 												: selectedBsv20?.max}
 										</span>
@@ -745,7 +774,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 									checkTicker(
 										ticker || "",
 										selectedActionType === ActionType.Mint,
-										event,
+										event
 									)
 								}
 							/>
@@ -773,7 +802,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						{bulkEnabled && (
 							<label className="block mb-4">
 								<div className="my-2 flex justify-between items-center">
-									<div className="font-mono text-primary/50">{iterations}𝒙</div>
+									<div className="font-mono text-primary/50">
+										{iterations}𝒙
+									</div>
 									<div
 										className="tooltip opacity-75 text-purple-400 font-mono flex items-center"
 										data-tip={`Tier ${currentTier}/5`}
@@ -801,12 +832,20 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							<>
 								<div className="bg-[#111] text-[#555] rounded p-2 font-mono text-sm">
 									<div className="flex items-center justify-between">
-										<div className="w-1/2">Indexing Fee:</div>
-										<div className="w-1/2 text-right">${iterationFeeUsd}</div>
+										<div className="w-1/2">
+											Indexing Fee:
+										</div>
+										<div className="w-1/2 text-right">
+											${iterationFeeUsd}
+										</div>
 									</div>
 									<div className="flex items-center justify-between">
-										<div className="w-1/2">Est Network Fee:</div>
-										<div className="w-1/2 text-right">${networkFeeUsd}</div>
+										<div className="w-1/2">
+											Est Network Fee:
+										</div>
+										<div className="w-1/2 text-right">
+											${networkFeeUsd}
+										</div>
 									</div>
 
 									<div className="flex items-center justify-between">
@@ -815,16 +854,19 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 											<span
 												className="tooltip text-warning"
 												data-tip={
-													!inSync.value && indexers.value && chainInfo.value
+													!inSync.value &&
+													indexers.value &&
+													chainInfo.value
 														? "The index is not caught up. These tokens may have already been minted."
 														: selectedBsv20?.included
-														  ? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
-														  : `This ticker is not included in the index${
-																	selectedBsv20?.pendingOps &&
-																	selectedBsv20.pendingOps > 0
-																		? ` and has ${selectedBsv20.pendingOps} operations in line ahead of this mint`
-																		: ""
-															  }. These tokens may have already been minted.`
+														? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
+														: `This ticker is not included in the index${
+																selectedBsv20?.pendingOps &&
+																selectedBsv20.pendingOps >
+																	0
+																	? ` and has ${selectedBsv20.pendingOps} operations in line ahead of this mint`
+																	: ""
+														  }. These tokens may have already been minted.`
 												}
 											>
 												<FaInfoCircle className="ml-2" />
@@ -840,9 +882,13 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 									</div>
 
 									<div className="flex items-center justify-between">
-										<div className="w-1/2">Pending Supply</div>
+										<div className="w-1/2">
+											Pending Supply
+										</div>
 										<div className="w-1/2 text-right">
-											{selectedBsv20?.pending ? selectedBsv20.pending : 0}
+											{selectedBsv20?.pending
+												? selectedBsv20.pending
+												: 0}
 										</div>
 									</div>
 
@@ -859,12 +905,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							<>
 								<div className="divider">Ticker Status</div>
 								<div className="p-2 bg-[#111] my-2 rounded text-warning font-mono">
-									<Link href={`/market/bsv20/${selectedBsv20?.tick}`}>
+									<Link
+										href={`/market/bsv20/${selectedBsv20?.tick}`}
+									>
 										<FaExclamationCircle className="w-5 h-5 mr-2 inline-flex opacity-50 mb-1" />
-										{selectedBsv20?.tick} is not live. Minted supply may be
-										inaccurate. Fund {selectedBsv20?.tick} first to be sure you
-										aren&apos;t over-minting. There is no gaurentee you will
-										recieve valid tokens in this state!
+										{selectedBsv20?.tick} is not live.
+										Minted supply may be inaccurate. Fund{" "}
+										{selectedBsv20?.tick} first to be sure
+										you aren&apos;t over-minting. There is
+										no gaurentee you will recieve valid
+										tokens in this state!
 									</Link>
 								</div>
 							</>
@@ -877,7 +927,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				<div className="my-2">
 					<label className="block mb-4">
 						<div className="flex items-center justify-between my-2">
-							Limit Per Mint <span className="text-[#555]">Optional</span>
+							Limit Per Mint{" "}
+							<span className="text-[#555]">Optional</span>
 						</div>
 						<input
 							className="text-white w-full rounded p-2"
@@ -885,7 +936,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							value={limit}
 							pattern="^\S+$"
 							onKeyDown={(event) => {
-								if (event.key === " " || event.key === "Enter") {
+								if (
+									event.key === " " ||
+									event.key === "Enter"
+								) {
 									event.preventDefault();
 								}
 							}}
@@ -895,14 +949,15 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				</div>
 			)}
 
-			{selectedActionType === ActionType.Deploy && !showOptionalFields && (
-				<div
-					className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
-					onClick={toggleOptionalFields}
-				>
-					<RiSettings2Fill className="mr-2" /> More Options
-				</div>
-			)}
+			{selectedActionType === ActionType.Deploy &&
+				!showOptionalFields && (
+					<div
+						className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
+						onClick={toggleOptionalFields}
+					>
+						<RiSettings2Fill className="mr-2" /> More Options
+					</div>
+				)}
 
 			{selectedActionType === ActionType.Deploy && showOptionalFields && (
 				<>
@@ -927,12 +982,13 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			{selectedActionType === ActionType.Deploy && (
 				<div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
 					<label className="block w-full">
-						While BSV20 deployements themselves are indexed immediately, mints
-						against them are indexed once an initial listing fee is paid. This
-						helps bring minting incentives in line with BSVs insanely low
-						network fees, and keeps this survice running reliably. The Listing
-						Fee for this deployent will be ${`${listingFee}`}. This can be paid
-						later.
+						While BSV20 deployements themselves are indexed
+						immediately, mints against them are indexed once an
+						initial listing fee is paid. This helps bring minting
+						incentives in line with BSVs insanely low network fees,
+						and keeps this survice running reliably. The Listing Fee
+						for this deployent will be ${`${listingFee}`}. This can
+						be paid later.
 					</label>
 				</div>
 			)}
@@ -940,11 +996,15 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			<button
 				disabled={submitDisabled}
 				type="submit"
-				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
+				onClick={
+					bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe
+				}
 				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
 			>
 				Preview{" "}
-				{selectedActionType === ActionType.Deploy ? "Deployment" : "Mint"}
+				{selectedActionType === ActionType.Deploy
+					? "Deployment"
+					: "Mint"}
 			</button>
 		</div>
 	);

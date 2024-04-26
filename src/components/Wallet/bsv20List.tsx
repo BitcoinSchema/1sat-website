@@ -266,6 +266,25 @@ const Bsv20List = ({
 							(t) => t.tick === tick
 						);
 						const supply = deets?.supply || deets?.amt;
+						const balance =
+							(all.confirmed - listed.confirmed) / 10 ** dec;
+
+						// get number of decimals
+						const numDecimals =
+							balance.toString().split(".")[1]?.length || 0;
+
+						const balanceText =
+							balance > 1000000000
+								? `${(balance / 1000000000).toFixed(2)}B`
+								: balance > 1000000
+								? `${(balance / 1000000).toFixed(2)}M`
+								: numDecimals > 0
+								? balance.toFixed(2)
+								: balance.toString();
+						const tooltip =
+							balance.toString() !== balanceText.trim()
+								? `${balance}`
+								: "";
 						return (
 							<React.Fragment key={`bal-confirmed-${tick}`}>
 								<div
@@ -287,15 +306,13 @@ const Bsv20List = ({
 									</div>
 								</div>
 								<div
-									className="text-emerald-400 text-right font-mono"
+									className="text-emerald-400 text-right font-mono tooltip tooltip-bottom"
+									data-tip={tooltip || null}
 									onClick={() =>
 										(showSendModal.value = tick || id)
 									}
 								>
-									{(
-										all.confirmed /
-										10 ** dec
-									).toLocaleString()}
+									{balanceText}
 								</div>
 								<div className="flex items-center gap-2">
 									<div className="text-right">
@@ -323,11 +340,7 @@ const Bsv20List = ({
 														type={type}
 														id={(tick || id)!}
 														dec={dec}
-														balance={
-															(all.confirmed -
-																listed.confirmed) /
-															10 ** dec
-														}
+														balance={balance}
 														sym={sym}
 													/>
 												)}
