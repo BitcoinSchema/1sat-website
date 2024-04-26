@@ -344,7 +344,10 @@ const Bsv20List = ({
 												>
 													<button
 														type="button"
-														className="btn btn-xs w-fit hover:border hover:border-yellow-200/25"
+														className="btn btn-xs w-fit hover:border hover:border-yellow-200/25 tooltip tooltip-bottom"
+														data-tip={`Airdrop ${
+															sym || tick
+														}`}
 														onClick={() => {
 															showAirdrop.value =
 																tick || id;
@@ -390,7 +393,10 @@ const Bsv20List = ({
 													<>
 														<button
 															type="button"
-															className="btn btn-xs w-fit"
+															className="btn btn-xs w-fit hover:border hover:border-yellow-200/25 tooltip tooltip-bottom"
+															data-tip={`Send ${
+																sym || tick
+															}`}
 															onClick={() => {
 																showSendModal.value =
 																	tick || id;

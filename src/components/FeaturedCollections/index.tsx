@@ -39,7 +39,9 @@ const FeaturedCollections = () => {
 					return (
 						<div
 							key={`c-${collection.origin}`}
-							ref={(el) => (itemRefs.current[idx] = el)}
+							ref={(el) => {
+								itemRefs.current[idx] = el;
+							}}
 							className={`carousel-item ${
 								isActive ? "active" : ""
 							}`}

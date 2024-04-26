@@ -36,7 +36,7 @@ const Model: React.FC<ModelProps> = ({ src, size }) => {
 			environment-image="https://cdn.polyhaven.com/gallery/4f96c7a0db3cf7f5eb36.jpg?width=2159"
 			shadow-intensity="1"
 			shadow-softness="0.73"
-			tone-mapping="neutral"
+			// tone-mapping="neutral"
 			alt="3D Model - 1Sat Ordinal Preview"
 			onLoadStart={() => {
 				console.log("on model load start");
