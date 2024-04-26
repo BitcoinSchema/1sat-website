@@ -154,7 +154,7 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 					</div>
 				}
 			>
-				<div className="max-w-6xl mx-auto w-full">
+				<div className="max-w-6xl mx-auto w-full h-full">
 					<div className="flex">
 						<OutpointHeading outpoint={`${txid}_${vout}`} />
 					</div>

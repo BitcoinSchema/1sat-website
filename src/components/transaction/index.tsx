@@ -48,8 +48,11 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 				const inScript = input?.get_unlocking_script()?.to_asm_string();
 				const pubKeyHash = inScript?.split(" ")[1]!;
 				console.log({ inScript, pubKeyHash });
+				if (!pubKeyHash || pubKeyHash.length !== 66) {
+					continue;
+				}
 				const address = P2PKHAddress.from_pubkey(
-					PublicKey.from_hex(pubKeyHash),
+					PublicKey.from_hex(pubKeyHash)
 				).to_string();
 				const txid = input.get_prev_tx_id_hex();
 				const amount = input.get_satoshis()!;
@@ -79,7 +82,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 					const pubKeyHash = outScript.split(" ")[2];
 
 					const address = P2PKHAddress.from_pubkey_hash(
-						Buffer.from(pubKeyHash, "hex"),
+						Buffer.from(pubKeyHash, "hex")
 					).to_string();
 
 					const index = i;
@@ -90,9 +93,10 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 					const amount = output.get_satoshis();
 
 					ioOuts.value.push({
-						script: `Script: ${outScript.slice(0, 20)}...${outScript.slice(
-							-20,
-						)}`,
+						script: `Script: ${outScript.slice(
+							0,
+							20
+						)}...${outScript.slice(-20)}`,
 						index: i,
 						txid: tx.get_id_hex(),
 						amount,
@@ -118,7 +122,11 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 							<li
 								key={i}
 								className={itemClass}
-								onClick={() => router.push(`/outpoint/${io.txid}_${io.index}`)}
+								onClick={() =>
+									router.push(
+										`/outpoint/${io.txid}_${io.index}`
+									)
+								}
 							>
 								<span className="text-xl font-mono flex items-center gap-1">
 									<FaHashtag />
@@ -144,9 +152,13 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 											<button
 												type="button"
 												className={`${
-													io.address ? "text-base" : ""
+													io.address
+														? "text-base"
+														: ""
 												} btn-outline ${
-													io.index === vout ? "text-white" : "text-white/50"
+													io.index === vout
+														? "text-white"
+														: "text-white/50"
 												} rounded font-mono flex items-center px-1 gap-1`}
 											>
 												{io.address || io.script}
@@ -160,7 +172,8 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 												type="button"
 												className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
 											>
-												via {truncate(io.txid)} [{io.index}]
+												via {truncate(io.txid)} [
+												{io.index}]
 											</button>
 										</Link>
 									</div>
@@ -185,13 +198,17 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 				{ioOuts.value?.map((io, i) => {
 					const sats = io.amount;
 					const itemClass = `cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative ${
-						vout === i ? "bg-neutral text-warning" : "hover:bg-neutral/50 "
+						vout === i
+							? "bg-neutral text-warning"
+							: "hover:bg-neutral/50 "
 					}`;
 					return (
 						<li
 							key={i}
 							className={itemClass}
-							onClick={() => router.push(`/outpoint/${io.txid}_${io.index}`)}
+							onClick={() =>
+								router.push(`/outpoint/${io.txid}_${io.index}`)
+							}
 						>
 							<span
 								className={`text-xl font-mono flex items-center gap-1 ${
@@ -223,7 +240,9 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 											className={`${
 												io.address ? "text-base" : ""
 											} btn-outline ${
-												io.index === vout ? "text-white" : "text-white/50"
+												io.index === vout
+													? "text-white"
+													: "text-white/50"
 											} rounded font-mono flex items-center px-1 gap-1`}
 										>
 											{io.address || io.script}
@@ -232,13 +251,19 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 									{outputSpends[io.index] && (
 										<Link
 											className="text-xs w-fit text-[#555]"
-											href={`/outpoint/${outputSpends[io.index]}`}
+											href={`/outpoint/${
+												outputSpends[io.index]
+											}`}
 										>
 											<button
 												type="button"
 												className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
 											>
-												Spend {truncate(outputSpends[io.index])} [{io.index}]
+												Spend{" "}
+												{truncate(
+													outputSpends[io.index]
+												)}{" "}
+												[{io.index}]
 											</button>
 										</Link>
 									)}
@@ -262,11 +287,15 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 			outputs.value && (
 				<>
 					<div className="flex-1 w-1/2">
-						<h2 className="my-4 text-xl font-mono font-semibold">Inputs</h2>
+						<h2 className="my-4 text-xl font-mono font-semibold">
+							Inputs
+						</h2>
 						{inputs}
 					</div>
 					<div className="flex-1 w-1/2">
-						<h2 className="my-4 text-xl font-mono font-semibold">Outputs</h2>
+						<h2 className="my-4 text-xl font-mono font-semibold">
+							Outputs
+						</h2>
 						{outputs}
 					</div>
 				</>
