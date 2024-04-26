@@ -208,15 +208,19 @@ const WalletMenu: React.FC = () => {
 				tabIndex={0}
 				role="button"
 				onClick={() => {
-					showDropdown.value = !showDropdown.value;
+					showDropdown.value = true;
 				}}
 			>
 				<FaWallet />
 			</div>
 			{showDropdown.value && (
+				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 				<ul
 					// biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
 					tabIndex={0}
+					onClick={() => {
+						showDropdown.value = false;
+					}}
 					className="dropdown-content menu shadow border-yellow-200/25 bg-base-100 rounded-box w-64 border"
 				>
 					{payPk.value && ordPk.value && (

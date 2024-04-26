@@ -322,7 +322,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 
 export default DisplayIO;
 
-const truncate = (str: string) => {
+export const truncate = (str?: string) => {
 	// does this txid => "123456...9876ab"
-	return `${str.slice(0, 6)}...${str.slice(-6)}`;
+	return str ? `${str.slice(0, 6)}...${str.slice(-6)}` : "";
 };

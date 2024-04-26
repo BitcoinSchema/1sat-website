@@ -20,6 +20,7 @@ import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
 import type { MarketData } from "../pages/TokenMarket/list";
+import { truncate } from "../transaction";
 import WalletTabs from "./tabs";
 
 enum BalanceTab {
@@ -318,10 +319,7 @@ const Bsv20List = ({
 													<FaHashtag className="w-4 h-4 mr-1 inline-block" />
 												)}
 												{deets?.num ||
-													`${id?.slice(
-														0,
-														8
-													)}...${id?.slice(-8)}` ||
+													truncate(id) ||
 													""}
 											</div>
 										</div>

@@ -15,7 +15,7 @@ export type NumResults = {
 
 const WalletBsv20 = async ({ type, address }: WalletBsv20Props) => {
 	return (
-		<div className="flex flex-col items-center justify-center w-full h-full">
+		<div className="flex flex-col justify-start w-full md:min-h-[80vh]">
 			<div className="w-full">
 				<Suspense
 					fallback={
