@@ -13,12 +13,12 @@ import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
-import { FaHashtag } from "react-icons/fa";
 import { IoSend } from "react-icons/io5";
 
-import { FaChevronRight, FaParachuteBox } from "react-icons/fa6";
+import { FaChevronRight, FaHashtag, FaParachuteBox } from "react-icons/fa6";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
+import { IconWithFallback } from "../pages/TokenMarket/heading";
 import type { MarketData } from "../pages/TokenMarket/list";
 import WalletTabs from "./tabs";
 
@@ -252,14 +252,9 @@ const Bsv20List = ({
 
 	const confirmedContent = computed(() => {
 		return (
-			<div className="grid grid-cols-3 gap-3 bg-[#222] p-4 w-full rounded mb-4">
-				<div className="text-[#777] font-semibold">Ticker</div>
-				<div className="text-[#777] font-semibold text-right">
-					Balance
-				</div>
-				<div className="w-8" />
+			<div className="bg-[#101010] rounded-lg w-full mb-4 px-2">
 				{confirmedBalances?.value?.map(
-					({ tick, all, sym, id, dec, listed }, idx) => {
+					({ tick, all, sym, id, dec, listed, icon }, idx) => {
 						// TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
 						const deets = find(
 							tickerDetails.value,
@@ -283,117 +278,153 @@ const Bsv20List = ({
 								: balance.toString();
 						const tooltip =
 							balance.toString() !== balanceText.trim()
-								? `${balance}`
+								? balance.toLocaleString()
 								: "";
+
+						const showAirdropIcon =
+							(!addressProp ||
+								addressProp === ordAddress.value) &&
+							all.confirmed / 10 ** dec > 10000;
+
 						return (
 							<React.Fragment key={`bal-confirmed-${tick}`}>
-								<div
-									className="cursor-pointer hover:text-blue-400 transition flex items-center"
-									onClick={() =>
-										router.push(
-											`/market/${
-												id
-													? "bsv21/" + id
-													: "bsv20/" + tick
-											}`
-										)
-									}
-								>
-									{tick || sym}{" "}
-									<div className="text-[#555] items-center ml-2 md:flex hidden">
-										<FaHashtag className="w-3 h-3 mr-1" />
-										{deets?.num || ""}
-									</div>
-								</div>
-								<div
-									className="text-emerald-400 text-right font-mono tooltip tooltip-bottom"
-									data-tip={tooltip || null}
-									onClick={() =>
-										(showSendModal.value = tick || id)
-									}
-								>
-									{balanceText}
-								</div>
-								<div className="flex items-center gap-2">
-									<div className="text-right">
-										{(!addressProp ||
-											addressProp === ordAddress.value) &&
-										all.confirmed / 10 ** dec > 0 ? (
-											<>
-												<button
-													type="button"
-													className="btn btn-xs w-fit"
-													onClick={() => {
-														showSendModal.value =
-															tick || id;
-													}}
-												>
-													<IoSend className="w-3" />
-												</button>
-												{showSendModal.value ===
-													(tick || id) && (
-													<TransferBsv20Modal
-														onClose={() =>
-															(showSendModal.value =
-																undefined)
-														}
-														type={type}
-														id={(tick || id)!}
-														dec={dec}
-														balance={balance}
-														sym={sym}
-													/>
-												)}
-											</>
-										) : (
-											<></>
+								<div className="grid grid-cols-2 gap-3 auto-cols-auto items-center max-w-md p-2">
+									<div className="flex items-center">
+										{AssetType.BSV21 === type && (
+											<IconWithFallback
+												icon={icon || null}
+												alt={sym || ""}
+												className="w-8 h-8 mr-2"
+											/>
 										)}
-									</div>
-									<div className="text-right">
-										{(!addressProp ||
-											addressProp === ordAddress.value) &&
-										all.confirmed / 10 ** dec > 10000 ? (
-											<>
-												<button
-													type="button"
-													className="btn btn-xs w-fit"
-													onClick={() => {
-														showAirdrop.value =
-															tick || id;
-													}}
-												>
-													<FaParachuteBox className="w-3" />
-												</button>
-												{
-													<AirdropTokensModal
-														onClose={() => {
-															showAirdrop.value =
-																undefined;
-														}}
-														type={
+										<div>
+											<div
+												className="cursor-pointer hover:text-blue-400 transition"
+												onClick={() =>
+													router.push(
+														`/market/${
 															id
-																? AssetType.BSV21
-																: AssetType.BSV20
-														}
-														dec={dec}
-														id={(tick || id)!}
-														open={
-															(!!tick &&
-																showAirdrop.value ===
-																	tick) ||
-															(!!id &&
-																showAirdrop.value ===
-																	id)
-														}
-														balance={all.confirmed}
-													/>
+																? "bsv21/" + id
+																: "bsv20/" +
+																  tick
+														}`
+													)
 												}
-											</>
-										) : (
-											<></>
-										)}
+											>
+												{tick || sym}
+											</div>
+											<div className="text-[#555]">
+												{type === AssetType.BSV20 && (
+													<FaHashtag className="w-4 h-4 mr-1 inline-block" />
+												)}
+												{deets?.num ||
+													`${id?.slice(
+														0,
+														8
+													)}...${id?.slice(-8)}` ||
+													""}
+											</div>
+										</div>
+									</div>
+									<div className="text-right">
+										<div
+											className="text-emerald-400 font-mono tooltip tooltip-bottom"
+											data-tip={tooltip || null}
+										>
+											{balanceText}
+										</div>
+										<div className="flex justify-end mt-2">
+											<div
+												className={`text-right ${
+													showAirdropIcon
+														? "mr-2"
+														: ""
+												}`}
+											>
+												{(!addressProp ||
+													addressProp ===
+														ordAddress.value) &&
+												all.confirmed / 10 ** dec >
+													0 ? (
+													<>
+														<button
+															type="button"
+															className="btn btn-xs w-fit"
+															onClick={() => {
+																showSendModal.value =
+																	tick || id;
+															}}
+														>
+															<IoSend className="w-3" />
+														</button>
+														{showSendModal.value ===
+															(tick || id) && (
+															<TransferBsv20Modal
+																onClose={() =>
+																	(showSendModal.value =
+																		undefined)
+																}
+																type={type}
+																id={
+																	(tick ||
+																		id)!
+																}
+																dec={dec}
+																balance={
+																	balance
+																}
+																sym={sym}
+															/>
+														)}
+													</>
+												) : (
+													<></>
+												)}
+											</div>
+											{showAirdropIcon && (
+												<div className="text-right">
+													<button
+														type="button"
+														className="btn btn-xs w-fit"
+														onClick={() => {
+															showAirdrop.value =
+																tick || id;
+														}}
+													>
+														<FaParachuteBox className="w-3" />
+													</button>
+													{
+														<AirdropTokensModal
+															onClose={() => {
+																showAirdrop.value =
+																	undefined;
+															}}
+															type={
+																id
+																	? AssetType.BSV21
+																	: AssetType.BSV20
+															}
+															dec={dec}
+															id={(tick || id)!}
+															open={
+																(!!tick &&
+																	showAirdrop.value ===
+																		tick) ||
+																(!!id &&
+																	showAirdrop.value ===
+																		id)
+															}
+															balance={
+																all.confirmed
+															}
+														/>
+													}
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
+								<div className="divider my-0" />
 							</React.Fragment>
 						);
 					}
@@ -499,7 +530,7 @@ const Bsv20List = ({
 
 	const contentTabs = computed(() => {
 		return (
-			<div className="mb-4">
+			<div className="mb-4 p-2 md:p-0">
 				<div role="tablist" className="tabs md:tabs-lg tabs-bordered">
 					<input
 						type="radio"
@@ -583,7 +614,7 @@ const Bsv20List = ({
 		<div className="overflow-x-auto max-w-screen">
 			<div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
 				<WalletTabs type={type} address={addressProp} />
-				<div className="tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row">
+				<div className="tab-content bg-base-100 border-base-200 rounded-box md:p-6 flex flex-col md:flex-row">
 					<div className="mb-4">{contentTabs.value}</div>
 					<div className="md:mx-6">
 						<h1 className="mb-4 flex items-center justify-between">

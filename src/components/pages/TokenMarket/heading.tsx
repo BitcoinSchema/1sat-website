@@ -17,7 +17,7 @@ import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { GiPlainCircle } from "react-icons/gi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
-import { MarketData } from "./list";
+import type { MarketData } from "./list";
 
 type IconProps = {
 	alt: string;

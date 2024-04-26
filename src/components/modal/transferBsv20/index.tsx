@@ -281,7 +281,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			onClick={() => onClose()}
 		>
 			<div
-				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
+				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/25"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">

@@ -5,13 +5,13 @@ import { payPk, pendingTxs, utxos } from "@/signals/wallet";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
+	P2PKHAddress,
+	PrivateKey,
+	Script,
+	SigHash,
+	Transaction,
+	TxIn,
+	TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
@@ -42,7 +42,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 		}
 		const amt = utxos.value.reduce(
 			(acc, utxo) => acc + (utxo.satoshis || 0),
-			0,
+			0
 		);
 		return Number.isNaN(amt) ? 0 : amt;
 	});
@@ -89,8 +89,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			tx.add_output(
 				new TxOut(
 					BigInt(satoshis),
-					P2PKHAddress.from_string(address).get_locking_script(),
-				),
+					P2PKHAddress.from_string(address).get_locking_script()
+				)
 			);
 
 			// add change output
@@ -99,9 +99,9 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 					new TxOut(
 						BigInt(change),
 						P2PKHAddress.from_pubkey(
-							PrivateKey.from_wif(payPk.value).to_public_key(),
-						).get_locking_script(),
-					),
+							PrivateKey.from_wif(payPk.value).to_public_key()
+						).get_locking_script()
+					)
 				);
 			}
 
@@ -113,7 +113,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 				const inx = new TxIn(
 					Buffer.from(u.txid, "hex"),
 					u.vout,
-					Script.from_asm_string(""),
+					Script.from_asm_string("")
 				);
 				console.log({ inx });
 				inx.set_satoshis(BigInt(u.satoshis));
@@ -124,7 +124,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 					SigHash.InputOutputs,
 					idx,
 					Script.from_asm_string(u.script),
-					BigInt(u.satoshis),
+					BigInt(u.satoshis)
 				);
 
 				console.log({ sig: sig.to_hex() });
@@ -139,8 +139,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 
 				inx.set_unlocking_script(
 					Script.from_asm_string(
-						`${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`,
-					),
+						`${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`
+					)
 				);
 
 				tx.set_input(idx, inx);
@@ -169,7 +169,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 
 			router.push("/preview");
 		},
-		[router],
+		[router]
 	);
 
 	const submit = useCallback(
@@ -186,7 +186,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			console.log(amount.value, address.value);
 			send(address.value, toSatoshi(amount.value));
 		},
-		[amount.value, address.value, balance.value, send],
+		[amount.value, address.value, balance.value, send]
 	);
 
 	return (
@@ -195,19 +195,24 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			onClick={() => onClose()}
 		>
 			<div
-				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
+				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/25"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
-							<div className="text-lg font-semibold">Withdraw</div>
+							<div className="text-lg font-semibold">
+								Withdraw
+							</div>
 							{balance.value !== undefined && (
 								<div
 									className="text-xs cursor-pointer text-[#aaa]"
 									onClick={setAmountToBalance}
 								>
-									Balance: {balance.value > 0 ? toBitcoin(balance.value) : 0}{" "}
+									Balance:{" "}
+									{balance.value > 0
+										? toBitcoin(balance.value)
+										: 0}{" "}
 									BSV
 								</div>
 							)}
@@ -249,7 +254,10 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 						<div className="modal-action">
 							<button
 								type="submit"
-								disabled={Number.parseFloat(amount.value) <= 0 || !address.value}
+								disabled={
+									Number.parseFloat(amount.value) <= 0 ||
+									!address.value
+								}
 								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:btn-disabled diabled:hover:btn-disabled"
 							>
 								Send

@@ -20,7 +20,9 @@ const WalletTabs = ({
 					<Link
 						role="tab"
 						href={
-							address ? `/activity/${address}/ordinals` : "/wallet/ordinals"
+							address
+								? `/activity/${address}/ordinals`
+								: "/wallet/ordinals"
 						}
 						className={`tab border-base-200 ${
 							type === AssetType.Ordinals ? "tab-active" : ""
@@ -30,7 +32,11 @@ const WalletTabs = ({
 					</Link>
 					<Link
 						role="tab"
-						href={address ? `/activity/${address}/bsv20` : "/wallet/bsv20"}
+						href={
+							address
+								? `/activity/${address}/bsv20`
+								: "/wallet/bsv20"
+						}
 						className={`tab border-base-200 ${
 							type === AssetType.BSV20 ? "tab-active" : ""
 						}`}
@@ -38,7 +44,11 @@ const WalletTabs = ({
 						BSV20
 					</Link>
 					<Link
-						href={address ? `/activity/${address}/bsv21` : "/wallet/bsv21"}
+						href={
+							address
+								? `/activity/${address}/bsv21`
+								: "/wallet/bsv21"
+						}
 						role="tab"
 						className={`tab border-base-200 ${
 							type === AssetType.BSV21 ? "tab-active" : ""
@@ -52,7 +62,9 @@ const WalletTabs = ({
 				{type === AssetType.Ordinals && <Filter />}
 				<Link
 					className="btn btn-sm btn-square btn-ghost"
-					href={`/inscribe?tab=${type === AssetType.Ordinals ? "image" : type}`}
+					href={`/inscribe?tab=${
+						type === AssetType.Ordinals ? "image" : type
+					}`}
 				>
 					<FaPlus />
 				</Link>
