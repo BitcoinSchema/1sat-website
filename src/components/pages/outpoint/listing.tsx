@@ -30,17 +30,17 @@ const OutpointListing = async ({ outpoint }: Props) => {
 
 	console.log({ artifact, bsv20 });
 	const listing = artifact?.data?.list || bsv20?.data?.list;
-	const content = listing ? (
-		<ListingContent artifact={artifact || bsv20!} />
-	) : (
-		<div>Not a listing</div>
-	);
+	// const content = listing ? (
+	// 	<ListingContent artifact={artifact || bsv20!} />
+	// ) : (
+	// 	<div>Not a listing</div>
+	// );
 
 	return (
 		<OutpointPage
 			artifact={artifact || bsv20!}
 			outpoint={outpoint}
-			content={content}
+			content={<ListingContent artifact={artifact || bsv20!} />}
 			activeTab={OutpointTab.Listing}
 		/>
 	);

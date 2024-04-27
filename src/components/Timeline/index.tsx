@@ -81,7 +81,9 @@ const Timeline = ({ history, listing, spends }: Props) => {
 						className="text-sm"
 					>
 						<div className={positionClass}>
-							<Link href={linkUrl}>{h.height || "New"}</Link>
+							<Link href={linkUrl}>
+								{h.height || "Unconfirmed"}
+							</Link>
 						</div>
 						<div
 							className={`timeline-middle ${

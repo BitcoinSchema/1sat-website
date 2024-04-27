@@ -59,7 +59,7 @@ const OutpointTabs = ({
 				</Link>
 			)}
 			<OwnerTab owner={owner} outpoint={outpoint} activeTab={activeTab} />
-			{isListing && (
+			{
 				<Link
 					role="tab"
 					href={`/outpoint/${outpoint}/listing`}
@@ -69,7 +69,7 @@ const OutpointTabs = ({
 				>
 					Listing
 				</Link>
-			)}
+			}
 			{isCollection && (
 				<Link
 					role="tab"

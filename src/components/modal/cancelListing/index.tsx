@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
 import { API_HOST, indexerBuyFee, toastProps } from "@/constants";
 import {
-  bsvWasmReady,
-  ordPk,
-  payPk,
-  pendingTxs,
-  utxos,
+	bsvWasmReady,
+	ordPk,
+	payPk,
+	pendingTxs,
+	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
@@ -17,13 +17,13 @@ import type { Utxo } from "@/utils/js-1sat-ord";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
+	P2PKHAddress,
+	PrivateKey,
+	Script,
+	SigHash,
+	Transaction,
+	TxIn,
+	TxOut,
 } from "bsv-wasm-web";
 import toast from "react-hot-toast";
 import { buildInscriptionSafe } from "../airdrop";
@@ -31,7 +31,7 @@ import { calculateFee } from "../buyArtifact";
 
 interface CancelListingModalProps {
 	onClose: () => void;
-	onCancelled: () => void;
+	onCancelled: (newOutpoiint: string) => void;
 	listing: Listing;
 	indexerAddress?: string;
 	className?: string;
@@ -44,8 +44,9 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 	indexerAddress,
 	className,
 }) => {
-  useSignals();
-  const cancelling = useSignal(false);
+	useSignals();
+	const cancelling = useSignal(false);
+
 	const cancelBsv20Listing = async (e: any) => {
 		if (!bsvWasmReady.value) {
 			console.log("bsv wasm not ready");
@@ -56,13 +57,13 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 			console.log("funding address not set");
 			return;
 		}
-cancelling.value = true;
+		cancelling.value = true;
 		await getUtxos(fundingAddress.value);
 
 		e.preventDefault();
 		console.log("cancel bsv20 listing");
 		if (!utxos || !payPk || !ordPk || !ordAddress || !indexerAddress) {
-      cancelling.value = false;
+			cancelling.value = false;
 
 			return;
 		}
@@ -72,7 +73,7 @@ cancelling.value = true;
 		const cancelInput = new TxIn(
 			Buffer.from(listing.txid, "hex"),
 			listing.vout,
-			Script.from_asm_string(""),
+			Script.from_asm_string("")
 		);
 		cancelTx.add_input(cancelInput);
 		const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value!);
@@ -90,17 +91,17 @@ cancelling.value = true;
 		} else if ((listing as Listing).id) {
 			inscription.id = (listing as Listing).id;
 		} else {
-      cancelling.value = false;
+			cancelling.value = false;
 			throw new Error("Invalid BSV20 listing");
 		}
-		const inscriptionB64 = Buffer.from(JSON.stringify(inscription)).toString(
-			"base64",
-		);
+		const inscriptionB64 = Buffer.from(
+			JSON.stringify(inscription)
+		).toString("base64");
 		// build an inscription output for the token transfer
 		const inscriptionScript = buildInscriptionSafe(
 			ordinalsAddress,
 			inscriptionB64,
-			"application/bsv-20",
+			"application/bsv-20"
 		);
 
 		const transferOut = new TxOut(BigInt(1), inscriptionScript);
@@ -112,7 +113,7 @@ cancelling.value = true;
 		// dummy outputs - change
 		const dummyChangeOutput = new TxOut(
 			BigInt(0),
-			changeAddress.get_locking_script(),
+			changeAddress.get_locking_script()
 		);
 		cancelTx.add_output(dummyChangeOutput);
 
@@ -120,7 +121,7 @@ cancelling.value = true;
 		if (indexerAddress) {
 			const indexerFeeOutput = new TxOut(
 				BigInt(indexerBuyFee),
-				P2PKHAddress.from_string(indexerAddress).get_locking_script(),
+				P2PKHAddress.from_string(indexerAddress).get_locking_script()
 			);
 			cancelTx.add_output(indexerFeeOutput);
 		}
@@ -134,7 +135,7 @@ cancelling.value = true;
 		let satsNeeded = fee;
 		// collect the required utxos
 		const sortedFundingUtxos = utxos.value!.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1,
+			a.satoshis > b.satoshis ? -1 : 1
 		);
 		for (const utxo of sortedFundingUtxos) {
 			if (satsCollected < satsNeeded) {
@@ -152,7 +153,7 @@ cancelling.value = true;
 			const inx = new TxIn(
 				Buffer.from(u.txid, "hex"),
 				u.vout,
-				Script.from_asm_string(""),
+				Script.from_asm_string("")
 			);
 			inx.set_satoshis(BigInt(u.satoshis));
 			cancelTx.add_input(inx);
@@ -163,7 +164,7 @@ cancelling.value = true;
 
 		const changeOutput = new TxOut(
 			BigInt(changeAmt),
-			changeAddress.get_locking_script(),
+			changeAddress.get_locking_script()
 		);
 
 		cancelTx.set_output(1, changeOutput);
@@ -174,15 +175,15 @@ cancelling.value = true;
 			SigHash.InputOutputs,
 			0,
 			Script.from_bytes(Buffer.from(listing.script, "base64")),
-			BigInt(1),
+			BigInt(1)
 		);
 
 		cancelInput.set_unlocking_script(
 			Script.from_asm_string(
 				`${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value!)
 					.to_public_key()
-					.to_hex()} OP_1`,
-			),
+					.to_hex()} OP_1`
+			)
 		);
 
 		cancelTx.set_input(0, cancelInput);
@@ -196,15 +197,15 @@ cancelling.value = true;
 				SigHash.InputOutputs,
 				idx,
 				Script.from_asm_string(u.script),
-				BigInt(u.satoshis),
+				BigInt(u.satoshis)
 			);
 
 			inx.set_unlocking_script(
 				Script.from_asm_string(
 					`${sig.to_hex()} ${PrivateKey.from_wif(payPk.value!)
 						.to_public_key()
-						.to_hex()!}`,
-				),
+						.to_hex()!}`
+				)
 			);
 
 			cancelTx.set_input(idx, inx);
@@ -218,8 +219,9 @@ cancelling.value = true;
 		pendingTxs.value = [pendingTx];
 		console.log("pending tx", pendingTx);
 		await broadcast(pendingTx);
-    cancelling.value = false;
-		onCancelled();
+		cancelling.value = false;
+		const newOutpoint = `${pendingTx.txid}_0`;
+		onCancelled(newOutpoint);
 	};
 
 	const cancelListing = async (e: any) => {
@@ -228,33 +230,32 @@ cancelling.value = true;
 			return;
 		}
 
-    if (!fundingAddress.value) {
+		if (!fundingAddress.value) {
 			console.log("funding address not set");
 			return;
 		}
-    cancelling.value = true;
+		cancelling.value = true;
 
 		await getUtxos(fundingAddress.value);
-
 
 		e.preventDefault();
 		console.log("cancel listing");
 		if (!utxos || !payPk || !ordPk || !ordAddress) {
-      cancelling.value =false;
+			cancelling.value = false;
 			return;
 		}
 
 		const cancelTx = new Transaction(1, 0);
 
 		if (listing.id || listing.tick) {
-      cancelling.value = false;
+			cancelling.value = false;
 			throw new Error("BSV20 listing!");
 		}
 
 		const cancelInput = new TxIn(
 			Buffer.from(listing.txid, "hex"),
 			listing.vout,
-			Script.from_asm_string(""),
+			Script.from_asm_string("")
 		);
 		cancelTx.add_input(cancelInput);
 		const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value!);
@@ -269,7 +270,7 @@ cancelling.value = true;
 		// dummy outputs - change
 		const dummyChangeOutput = new TxOut(
 			BigInt(0),
-			changeAddress.get_locking_script(),
+			changeAddress.get_locking_script()
 		);
 		cancelTx.add_output(dummyChangeOutput);
 
@@ -282,7 +283,7 @@ cancelling.value = true;
 		let satsNeeded = fee;
 		// collect the required utxos
 		const sortedFundingUtxos = utxos.value!.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1,
+			a.satoshis > b.satoshis ? -1 : 1
 		);
 		for (const utxo of sortedFundingUtxos) {
 			if (satsCollected < satsNeeded) {
@@ -300,7 +301,7 @@ cancelling.value = true;
 			const inx = new TxIn(
 				Buffer.from(u.txid, "hex"),
 				u.vout,
-				Script.from_asm_string(""),
+				Script.from_asm_string("")
 			);
 			inx.set_satoshis(BigInt(u.satoshis));
 			cancelTx.add_input(inx);
@@ -311,7 +312,7 @@ cancelling.value = true;
 
 		const changeOutput = new TxOut(
 			BigInt(changeAmt),
-			changeAddress.get_locking_script(),
+			changeAddress.get_locking_script()
 		);
 
 		cancelTx.set_output(1, changeOutput);
@@ -322,15 +323,15 @@ cancelling.value = true;
 			SigHash.InputOutputs,
 			0,
 			Script.from_bytes(Buffer.from(listing.script, "base64")),
-			BigInt(1),
+			BigInt(1)
 		);
 
 		cancelInput.set_unlocking_script(
 			Script.from_asm_string(
 				`${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value!)
 					.to_public_key()
-					.to_hex()} OP_1`,
-			),
+					.to_hex()} OP_1`
+			)
 		);
 
 		cancelTx.set_input(0, cancelInput);
@@ -344,15 +345,15 @@ cancelling.value = true;
 				SigHash.InputOutputs,
 				idx,
 				Script.from_asm_string(u.script),
-				BigInt(u.satoshis),
+				BigInt(u.satoshis)
 			);
 
 			inx.set_unlocking_script(
 				Script.from_asm_string(
 					`${sig.to_hex()} ${PrivateKey.from_wif(payPk.value!)
 						.to_public_key()
-						.to_hex()!}`,
-				),
+						.to_hex()!}`
+				)
 			);
 
 			cancelTx.set_input(idx, inx);
@@ -363,18 +364,24 @@ cancelling.value = true;
 			rawTx: cancelTx.to_hex(),
 			txid: cancelTx.get_id_hex(),
 		} as PendingTransaction;
+
 		pendingTxs.value = [pendingTx];
 		console.log("pending tx", pendingTx);
 		await broadcast(pendingTx);
 		pendingTxs.value =
 			pendingTxs.value?.filter((t) => t.txid !== listing.txid) || [];
 		toast.success("Listing canceled.", toastProps);
-    cancelling.value = false;
-		onCancelled();
+		cancelling.value = false;
+		const newOutpoint = `${pendingTx.txid}_0`;
+		onCancelled(newOutpoint);
 	};
 
 	return (
-		<dialog id={`cancel-listing-modal-${listing.tick}`} className="modal" open>
+		<dialog
+			id={`cancel-listing-modal-${listing.tick}`}
+			className="modal"
+			open
+		>
 			<div className="modal-box">
 				<h3 className="font-bold text-lg">Cancel Listing</h3>
 				<p className="py-4">
@@ -389,17 +396,15 @@ cancelling.value = true;
 						</button>
 						<button
 							type="button"
-              disabled={cancelling.value}
+							disabled={cancelling.value}
 							className="btn btn-error disabled:btn-disabled"
 							onClick={async (e) => {
 								console.log({ listing });
 								if (listing.tick || listing.id) {
 									await cancelBsv20Listing(e);
-									onCancelled();
 									return;
 								}
 								await cancelListing(e);
-								onCancelled();
 							}}
 						>
 							Cancel Listing

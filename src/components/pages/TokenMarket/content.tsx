@@ -243,10 +243,13 @@ const TickerContent = ({
 											onClose={() => {
 												showCancel.value = null;
 											}}
-											onCancelled={async () => {
+											onCancelled={async (
+												newOutpoint
+											) => {
 												showCancel.value = null;
 												console.log(
-													"listing cancelled"
+													"listing cancelled. New outpoint",
+													newOutpoint
 												);
 												if (!listings.value) return;
 												listings.value =
@@ -318,7 +321,6 @@ const TickerContent = ({
 					colSpan={type === AssetType.BSV21 ? 3 : 2}
 					className="align-top"
 				>
-
 					<TremorChartComponent
 						ticker={ticker}
 						dataCategory={DataCategory.Sales}

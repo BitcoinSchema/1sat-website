@@ -1,5 +1,6 @@
 "use client";
 
+import JDenticon from "@/components/JDenticon";
 import CancelListingModal from "@/components/modal/cancelListing";
 import {
 	bsvWasmReady,
@@ -247,7 +248,21 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
 	return (
 		<div>
-			<div>Owner Controls</div>
+			<div className="flex items-center">
+				<JDenticon
+					hashOrValue={artifact.owner}
+					className="mr-2 w-10 h-10"
+				/>
+				<div className="flex flex-col">
+					<div className="text-lg">{artifact.owner}</div>
+					<div className="text-sm text-[#aaa]">
+						{artifact.owner === ordAddress.value
+							? "You own this item"
+							: ""}
+					</div>
+				</div>
+			</div>
+
 			{isUtxo.value ? (
 				<div className="bg-warning text-warning-content rounded p-4 mt-4">
 					<p>
@@ -272,7 +287,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				<button
 					disabled={!!artifact.data?.list}
 					type="button"
-					className="btn disabled:text-[#555]"
+					className="btn disabled:text-[#555] my-2"
 					onClick={(e) => {
 						const to = window.prompt(
 							"Enter the address to send the ordinal to"
@@ -302,9 +317,10 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					onClose={() => {
 						showCancelModal.value = false;
 					}}
-					onCancelled={() => {
+					onCancelled={(newOutpoint) => {
 						console.log("listing cancelled");
 						showCancelModal.value = false;
+						router.push(`/outpoint/${newOutpoint}`);
 					}}
 					listing={artifact as Listing}
 				/>
