@@ -30,8 +30,8 @@ const Filter = () => {
 	useSignals();
 	return (
 		<div className="group dropdown dropdown-bottom dropdown-end dropdown-hover">
-			<div tabIndex={0} role="button" className="btn btn-sm m-1">
-				<IoFilter className="w-4 h-4 mr-2 group-hover:opacity-0 transition" />
+			<div tabIndex={0} role="button" className="btn btn-sm md:m-1">
+				<IoFilter className="w-4 h-4 md:mr-2 group-hover:opacity-0 transition mb:block" />
 				{selectedType.value || "All"}{" "}
 				{/* <FaChevronDown className="group-hover:opacity-0" /> */}
 			</div>

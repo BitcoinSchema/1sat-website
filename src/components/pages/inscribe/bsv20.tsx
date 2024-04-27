@@ -271,23 +271,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				return;
 			}
 			// exclude 0
-			if (parseInt(e.target.value) !== 0) {
+			if (Number.parseInt(e.target.value) !== 0) {
 				setAmount(e.target.value);
 			}
 		},
 		[selectedBsv20, selectedActionType, setAmount]
 	);
-	// Returns the capped max iterations for a given feature token balance
-	const tierMax = useCallback((balance: number, organicMax: number) => {
-		const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
-		if (tierNum === 0) return 0; // Handle case where balance <= 0
-
-		const tierThresholds = [0.01, 0.1, 0.25, 0.5, 1];
-		const tier = Math.floor(organicMax * tierThresholds[tierNum - 1]);
-
-		// max - supply / amount
-		return Math.min(Math.min(organicMax, tier), hardMax);
-	}, []);
 
 	const inscribeBsv20 = useCallback(
 		async (sortedUtxos: Utxo[]) => {
@@ -501,6 +490,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	// maxIterations is based on the amount of confirmed OPL the user holds
 	const maxIterations = useMemo(() => {
 		if (!selectedBsv20 || !selectedBsv20.max || !selectedBsv20.available) {
+			console.log("What", selectedBsv20);
 			return 0;
 		}
 		if (!amount || amount === "0") {
@@ -516,26 +506,20 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				: confirmedOplBalance
 			: 0;
 
-		let max = parseInt(selectedBsv20.max || "0");
+		let max = Number.parseInt(selectedBsv20.max || "0");
 		if (selectedBsv20.available) {
 			max =
-				parseInt(selectedBsv20.available) -
-				parseInt(selectedBsv20.pending || "0");
+				Number.parseInt(selectedBsv20.available) -
+				Number.parseInt(selectedBsv20.pending || "0");
 		}
 
-		const organicMax = Math.ceil(max / parseInt(amount));
+		const organicMax = Math.ceil(max / Number.parseInt(amount));
 
 		console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
-	}, [
-		selectedBsv20,
-		bulkEnabled,
-		confirmedOplBalance,
-		amount,
-		tierMax,
-		ticker,
-	]);
+	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, ticker]);
+
 	const remainder = useMemo(() => maxIterations % 10, [maxIterations]);
 	const step = useMemo(() => {
 		if (!confirmedOplBalance) {
@@ -811,7 +795,11 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 									>
 										{stars}
 										<div className="mx-1" />
-										{bulkMintingTicker}
+										<Link
+											href={`/market/bsv20/${bulkMintingTicker}`}
+										>
+											{bulkMintingTicker}
+										</Link>
 									</div>
 								</div>
 								<input
@@ -854,9 +842,11 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 											<span
 												className="tooltip text-warning"
 												data-tip={
-													!inSync.value &&
-													indexers.value &&
-													chainInfo.value
+													!tickerAvailable
+														? "Minted Out"
+														: !inSync.value &&
+														  indexers.value &&
+														  chainInfo.value
 														? "The index is not caught up. These tokens may have already been minted."
 														: selectedBsv20?.included
 														? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
@@ -1037,7 +1027,8 @@ const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
 	for (let tier = 5; tier > 0; tier--) {
 		if (balancePct >= tierThresholds[tier - 1]) return tier;
 	}
-	return tierThresholds.length;
+	// if no tiers met, return base tier 1
+	return 1;
 };
 
 // Returns the tier number 1-5
@@ -1072,3 +1063,16 @@ const tierThresholds = [
 
 // hard maximum number of iterations per mint
 const hardMax = 10000;
+const hardMin = 2;
+
+// Returns the capped max iterations for a given feature token balance
+const tierMax = (balance: number, organicMax: number) => {
+	const tierNum = calculateTier(balance, bulkMintingTickerMaxSupply);
+	if (tierNum === 0) return 0; // Handle case where balance <= 0
+
+	const tierThresholds = [0.01, 0.1, 0.25, 0.5, 1];
+	const tier = Math.floor(organicMax * tierThresholds[tierNum - 1]);
+
+	// max - supply / amount
+	return Math.max(Math.min(Math.min(organicMax, tier), hardMax), hardMin);
+};

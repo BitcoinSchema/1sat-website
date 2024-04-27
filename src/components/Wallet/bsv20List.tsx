@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
 
+import { Noto_Serif } from "next/font/google";
 import { FaChevronRight, FaHashtag, FaParachuteBox } from "react-icons/fa6";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
@@ -29,6 +30,11 @@ enum BalanceTab {
 	Listed = 2,
 	Unindexed = 3,
 }
+const notoSerif = Noto_Serif({
+	style: "italic",
+	weight: ["400", "700"],
+	subsets: ["latin"],
+});
 
 const Bsv20List = ({
 	type,
@@ -623,7 +629,7 @@ const Bsv20List = ({
 					<div className="mb-4">{contentTabs.value}</div>
 					<div className="md:mx-6">
 						<h1 className="mb-4 flex items-center justify-between">
-							<div className="text-2xl">
+							<div className={`text-2xl ${notoSerif.className}`}>
 								{type.toUpperCase()} Outputs
 							</div>
 							<div className="text-sm text-[#555]" />

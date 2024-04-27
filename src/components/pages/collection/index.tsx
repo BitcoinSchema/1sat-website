@@ -1,9 +1,9 @@
-import { CollectionStats, FetchItemsQuery } from "@/types/collection";
-import { OrdUtxo } from "@/types/ordinals";
+import type { CollectionStats, FetchItemsQuery } from "@/types/collection";
+import type { OrdUtxo } from "@/types/ordinals";
 import { Noto_Serif } from "next/font/google";
-import { CollectionNavigation } from "./CollectionNavigation";
-import { CollectionList } from "./CollectionList";
 import Image from "next/image";
+import { CollectionList } from "./CollectionList";
+import { CollectionNavigation } from "./CollectionNavigation";
 
 interface Props {
 	stats: CollectionStats;
