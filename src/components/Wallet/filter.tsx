@@ -30,12 +30,11 @@ const Filter = () => {
 	useSignals();
 	return (
 		<div className="group dropdown dropdown-bottom dropdown-end dropdown-hover">
-			<div tabIndex={0} role="button" className="btn btn-sm md:m-1">
-				<IoFilter className="w-4 h-4 md:mr-2 group-hover:opacity-0 transition mb:block" />
-				{selectedType.value || "All"}{" "}
-				{/* <FaChevronDown className="group-hover:opacity-0" /> */}
+			<div tabIndex={0} role="button" className="btn btn-xs md:m-1">
+				<IoFilter className="w-4 h-4 md:mr-2 transition mb:block" />
+				{selectedType.value || "All"}
 			</div>
-			<ul className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+			<ul className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border-yellow-200/25 border">
 				{Object.values(ArtifactType)
 					.filter((value) => {
 						return !excludeTypes.includes(value as ArtifactType);
