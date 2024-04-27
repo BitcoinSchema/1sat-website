@@ -270,8 +270,9 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				</div>
 			) : (
 				<button
+					disabled={!!artifact.data?.list}
 					type="button"
-					className="btn"
+					className="btn disabled:text-[#555]"
 					onClick={(e) => {
 						const to = window.prompt(
 							"Enter the address to send the ordinal to"

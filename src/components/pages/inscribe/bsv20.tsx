@@ -640,7 +640,15 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						{chainInfo.value && indexers.value && (
 							<span
 								className="text-[#555] hover:text-warning text-sm tooltip transition"
-								data-tip={`Latest block: ${chainInfo.value.blocks} BSV20 Deploy: ${indexers.value["bsv20-deploy"]} BSV20 Mint: ${indexers.value.bsv20} ${selectedBsv20?.tick} Pending Ops: ${selectedBsv20?.pendingOps}`}
+								data-tip={`Latest block: ${
+									chainInfo.value.blocks
+								} BSV20 Deploy: ${
+									indexers.value["bsv20-deploy"]
+								} BSV20 Mint: ${indexers.value.bsv20} ${
+									selectedBsv20 ? selectedBsv20.tick : ""
+								} Pending Ops: ${
+									selectedBsv20?.pendingOps || "0"
+								}`}
 							>
 								{tickerNote}
 							</span>
