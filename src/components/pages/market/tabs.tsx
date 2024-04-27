@@ -8,7 +8,10 @@ import { FaPlus } from "react-icons/fa";
 const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
 	return (
 		<div className="flex w-full items-center justify-between">
-			<div role="tablist" className="tabs tabs-lg tabs-lifted ml-4 gap-2 w-64">
+			<div
+				role="tablist"
+				className="tabs tabs-lg tabs-lifted ml-4 gap-2 w-64"
+			>
 				<Link
 					href={`/market/${AssetType.Ordinals}`}
 					role="tab"
@@ -46,7 +49,7 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
 				{selectedTab === AssetType.Ordinals && <Filter />}
 				{selectedTab === AssetType.Ordinals && (
 					<Link
-						className="btn btn-sm btn-square btn-ghost"
+						className="btn md:btn-sm btn-square md:btn-ghost md:relative absolute bottom-0 right-0 md:mr-0 mr-4 mb-4 md:mb-0 z-10 md:z-0"
 						href={`/market/${selectedTab}/new`}
 					>
 						<FaPlus />
