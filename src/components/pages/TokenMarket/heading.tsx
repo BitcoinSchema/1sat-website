@@ -145,7 +145,7 @@ const TickerHeading = ({
 						</Link>
 					)}
 				{type === AssetType.BSV21 && ticker.contract === "pow-20" && (
-					<Link href={"/mine"}>
+					<Link href={`pow://${ticker.id}:0:6`}>
 						<button
 							type="button"
 							className={"btn btn-sm btn-accent mr-4"}

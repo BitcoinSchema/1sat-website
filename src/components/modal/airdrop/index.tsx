@@ -222,8 +222,19 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				destinations.push(...receivers);
 			}
 
+			if (destinations.length === 0) {
+				throw new Error("No destinations found");
+			}
+
 			if (isEqualAllocation) {
 				const amountEach = Math.floor(sendAmount / destinations.length);
+				if (Number.isNaN(amountEach) || amountEach <= 0) {
+					toast.error(
+						"Amount must be greater than 0",
+						toastErrorProps
+					);
+					throw new Error("unexpected error");
+				}
 				remainder = sendAmount % destinations.length;
 				destinations = destinations.map((dest) => ({
 					...dest,
