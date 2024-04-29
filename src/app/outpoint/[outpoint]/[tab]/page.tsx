@@ -8,7 +8,7 @@ import OutpointToken from "@/components/pages/outpoint/token";
 import DisplayIO from "@/components/transaction";
 import { API_HOST } from "@/constants";
 import { OutpointTab } from "@/types/common";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import { Transaction } from "bsv-wasm";
 import Head from "next/head";
 import { Suspense } from "react";
@@ -98,25 +98,25 @@ const Outpoint = async ({ params }: { params: OutpointParams }) => {
 		console.error(e);
 	}
 
-	try {
-		const spendResponse = await fetch(
-			`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
-			{
-				headers: {
-					Accept: "application/octet-stream",
-				},
-			}
-		);
-		// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
-		const buffer = await spendResponse.arrayBuffer();
-		if (!buffer.byteLength) {
-			console.log("not spent");
-		}
-		const spendTxid = Buffer.from(buffer).toString("hex");
-		console.log({ spendTxid });
-	} catch (e) {
-		console.error(e);
-	}
+	// try {
+	// 	const spendResponse = await fetch(
+	// 		`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
+	// 		{
+	// 			headers: {
+	// 				Accept: "application/octet-stream",
+	// 			},
+	// 		}
+	// 	);
+	// 	// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
+	// 	const buffer = await spendResponse.arrayBuffer();
+	// 	if (!buffer.byteLength) {
+	// 		console.log("not spent");
+	// 	}
+	// 	const spendTxid = Buffer.from(buffer).toString("hex");
+	// 	console.log({ spendTxid });
+	// } catch (e) {
+	// 	console.error(e);
+	// }
 
 	const content = () => {
 		const outpoint = `${txid}_${vout}`;
