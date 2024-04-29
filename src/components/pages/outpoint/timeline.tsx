@@ -46,7 +46,12 @@ const OutpointTimeline = async ({ outpoint }: Props) => {
 		console.error("Failed to get inscription", e);
 	}
 	if (!listing) {
-		return <div>Not found</div>;
+		return (
+			<div>
+				Outpoint Not found
+				<div>{outpoint}</div>
+			</div>
+		);
 	}
 	return (
 		<OutpointPage
