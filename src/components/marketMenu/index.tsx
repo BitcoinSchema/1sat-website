@@ -48,7 +48,9 @@ const MarketMenu: React.FC = () => {
 					tabIndex={0}
 					role="button"
 				>
-					<FaStore />
+					<div className="tooltip tooltip-bottom" data-tip="Market">
+						<FaStore />
+					</div>
 				</div>
 
 				<ul

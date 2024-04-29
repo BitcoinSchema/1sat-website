@@ -222,7 +222,9 @@ const WalletMenu: React.FC = () => {
 					showDropdown.value = true;
 				}}
 			>
-				<FaWallet />
+				<div className="tooltip tooltip-bottom" data-tip="Wallet">
+					<FaWallet />
+				</div>
 			</div>
 			{showDropdown.value && (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
