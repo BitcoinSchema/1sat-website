@@ -59,13 +59,29 @@ const MarketMenu: React.FC = () => {
 					className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64 border border-yellow-200/25 "
 				>
 					<li>
-						<Link href="/market/ordinals">Ordinals</Link>
+						<Link
+							href="/market/ordinals"
+							className="flex items-center justify-between"
+						>
+							<div>Ordinals</div>
+							<div className="text-[#555]">NFT</div>
+						</Link>
 					</li>
 					<li>
-						<Link href="/market/bsv20">BSV20</Link>
+						<Link
+							className="flex items-center justify-between"
+							href="/market/bsv20"
+						>
+							BSV20 <div className="text-[#555]">FT</div>
+						</Link>
 					</li>
 					<li>
-						<Link href="/market/bsv21">BSV21</Link>
+						<Link
+							className="flex items-center justify-between"
+							href="/market/bsv21"
+						>
+							BSV21 <div className="text-[#555]">FT</div>
+						</Link>
 					</li>
 				</ul>
 			</div>

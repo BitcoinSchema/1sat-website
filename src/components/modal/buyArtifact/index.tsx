@@ -71,7 +71,6 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				fundingAddress.value,
 				ordAddress.value
 			);
-			debugger;
 			// get fresh utxos
 			const fundingUtxos = await getUtxos(fundingAddress.value!);
 			utxos.value = fundingUtxos;
@@ -193,6 +192,34 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			);
 
 			purchaseTx.set_output(2, changeOutput);
+
+			// create and sign inputs (payment)
+			const paymentPk = PrivateKey.from_wif(payPk.value!);
+
+			paymentUtxos.forEach((utxo, idx) => {
+				const fundingInput = new TxIn(
+					Buffer.from(utxo.txid, "hex"),
+					utxo.vout,
+					Script.from_asm_string(utxo.script)
+				);
+				purchaseTx.add_input(fundingInput);
+
+				const sig = purchaseTx.sign(
+					paymentPk,
+					SigHash.InputOutputs,
+					1 + idx,
+					Script.from_asm_string(utxo.script),
+					BigInt(utxo.satoshis)
+				);
+
+				fundingInput.set_unlocking_script(
+					Script.from_asm_string(
+						`${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`
+					)
+				);
+
+				purchaseTx.set_input(1 + idx, fundingInput);
+			});
 
 			setPendingTxs([
 				{
