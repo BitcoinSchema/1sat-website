@@ -80,14 +80,14 @@ const WalletTabs = ({
 			<div className="flex-none">
 				{type === WalletTab.Ordinals && <Filter />}
 				<Link
-					className="btn md:btn-sm md:relative absolute bottom-0 right-0 md:mr-0 mr-4 mb-4 md:mb-0 z-10 md:z-0 md:border-0 border border-yellow-200/25"
+					className="btn md:btn-xs md:relative absolute bottom-0 right-0 md:mr-0 mr-4 mb-4 md:mb-0 z-10 md:z-0 md:border-0 border border-yellow-200/25"
 					href={`/inscribe?tab=${
 						type === WalletTab.Ordinals ? "image" : type
 					}`}
 				>
 					<div className="flex items-center">
 						<FaPlus />
-						<div>Mint</div>
+						<div className="ml-2">Mint</div>
 					</div>
 				</Link>
 			</div>
