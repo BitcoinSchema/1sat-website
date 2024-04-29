@@ -117,12 +117,14 @@ const TickerHeading = ({
 
 	const supplyContent = computed(() => {
 		const totalSupply =
-			parseInt(ticker.supply || ticker.amt || "0") / 10 ** ticker.dec;
+			Number.parseInt(ticker.supply || ticker.amt || "0") /
+			10 ** ticker.dec;
 		let text = `${totalSupply?.toLocaleString()} `;
 		if (type === AssetType.BSV20) {
-			text += `/ ${parseInt(ticker.max!)?.toLocaleString()}`;
+			text += `/ ${Number.parseInt(ticker.max!)?.toLocaleString()}`;
 		}
-		const mintedOut = parseInt(ticker.supply!) === parseInt(ticker.max!);
+		const mintedOut =
+			Number.parseInt(ticker.supply!) === Number.parseInt(ticker.max!);
 		const btnDisabled = !ticker.included || paidUp.value;
 
 		return (
@@ -142,6 +144,16 @@ const TickerHeading = ({
 							</button>
 						</Link>
 					)}
+				{type === AssetType.BSV21 && ticker.contract === "pow-20" && (
+					<Link href={"/mine"}>
+						<button
+							type="button"
+							className={"btn btn-sm btn-accent mr-4"}
+						>
+							Mine {ticker.sym}
+						</button>
+					</Link>
+				)}
 				<div data-tip="Circulating Supply" className="tooltip">
 					{text}
 				</div>
