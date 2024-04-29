@@ -63,6 +63,13 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 		async (e: React.FormEvent) => {
 			e.preventDefault();
 
+			// I1 - Ordinal
+			// I2 - Funding
+			// O1 - Ordinal destination
+			// O2 - Payment to lister
+			// O3 - Market Fee
+			// O4 - Change
+
 			// detailed log
 			console.log(
 				"Buying artifact",
@@ -133,7 +140,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			purchaseTx.add_output(dummyMarketFeeOutput);
 
 			// this has to be "InputOutput" and then second time is InputOutputs
-			const preimage = purchaseTx.sighash_preimage(
+			let preimage = purchaseTx.sighash_preimage(
 				SigHash.InputOutput,
 				0,
 				Script.from_bytes(
@@ -141,7 +148,6 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				),
 				BigInt(1) //TODO: use amount from listing
 			);
-
 			listingInput.set_unlocking_script(
 				Script.from_asm_string(
 					`${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
@@ -155,6 +161,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			);
 			purchaseTx.set_input(0, listingInput);
 
+			debugger;
 			// calculate market fee
 			let marketFee = Number(price) * marketRate;
 			if (marketFee === 0) {
@@ -180,6 +187,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 					// if we had to add additional
 					fee = calculateFee(paymentUtxos.length, purchaseTx);
 					satsNeeded = BigInt(fee) + price + BigInt(marketFee);
+				} else {
+					break;
 				}
 			}
 
@@ -192,6 +201,28 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			);
 
 			purchaseTx.set_output(2, changeOutput);
+
+			preimage = purchaseTx.sighash_preimage(
+				SigHash.InputOutputs,
+				0,
+				Script.from_bytes(
+					Buffer.from(listingScript || ordScript, "base64")
+				),
+				BigInt(1)
+			);
+
+			listingInput.set_unlocking_script(
+				Script.from_asm_string(
+					`${purchaseTx.get_output(0)!.to_hex()} ${purchaseTx
+						.get_output(2)!
+						.to_hex()}${purchaseTx
+						.get_output(3)!
+						.to_hex()} ${Buffer.from(preimage).toString(
+						"hex"
+					)} OP_0`
+				)
+			);
+			purchaseTx.set_input(0, listingInput);
 
 			// create and sign inputs (payment)
 			const paymentPk = PrivateKey.from_wif(payPk.value!);
@@ -245,6 +276,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			router,
 			fundingAddress.value,
 			ordAddress.value,
+			payPk.value,
 		]
 	);
 
@@ -258,7 +290,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			Script.from_asm_string("")
 		);
 		purchaseTx.add_input(listingInput);
-		const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value!);
+		// const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value!);
 
 		// output 0 - purchasing the ordinal
 		const inscription = {
