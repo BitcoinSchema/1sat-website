@@ -1,6 +1,7 @@
 "use client";
 
-import { API_HOST, AssetType, toastErrorProps } from "@/constants";
+import { WalletTab } from "@/components/Wallet/tabs";
+import { API_HOST, toastErrorProps } from "@/constants";
 import {
 	bsvWasmReady,
 	ordPk,
@@ -35,7 +36,7 @@ interface TransferModalProps {
 	onClose: () => void;
 	amount?: number;
 	address?: string;
-	type: AssetType;
+	type: WalletTab;
 	dec: number;
 	id: string;
 	balance: number;
@@ -237,15 +238,15 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				return;
 			}
 			console.log(amount.value, address.value);
-			const amt = Math.floor(parseFloat(amount.value) * 10 ** dec);
+			const amt = Math.floor(Number.parseFloat(amount.value) * 10 ** dec);
 			const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${
-				type === AssetType.BSV20 ? "tick" : "id"
+				type === WalletTab.BSV20 ? "tick" : "id"
 			}/${id}`;
 			const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
 			const tokenUtxos = await promise;
 			const { promise: promiseTickerDetails } = http.customFetch<Ticker>(
 				`${API_HOST}/api/bsv20/${
-					type === AssetType.BSV20 ? "tick" : "id"
+					type === WalletTab.BSV20 ? "tick" : "id"
 				}/${id}`
 			);
 			const ticker = await promiseTickerDetails;
@@ -293,7 +294,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
 							<div className="text-lg font-semibold">
-								Transfer {type === AssetType.BSV20 ? id : sym}{" "}
+								Transfer {type === WalletTab.BSV20 ? id : sym}{" "}
 								{type}
 							</div>
 							<div
@@ -301,7 +302,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 								onClick={setAmountToBalance}
 							>
 								Balance: {balance}{" "}
-								{type === AssetType.BSV20 ? id : sym}
+								{type === WalletTab.BSV20 ? id : sym}
 							</div>
 						</div>
 

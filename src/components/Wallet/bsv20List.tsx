@@ -155,7 +155,7 @@ const Bsv20List = ({
 	useEffect(() => {
 		const address = addressProp || ordAddress.value;
 		const fire = async () => {
-			if (type === AssetType.BSV20) {
+			if (type === WalletTab.BSV20) {
 				const urlTokens = `${API_HOST}/api/bsv20/${address}/unspent?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v1`;
 				console.log("Fetching", urlTokens);
 				const { promise: promiseBsv20 } =
@@ -588,7 +588,7 @@ const Bsv20List = ({
 						{listedContent.value}
 					</div>
 
-					{type === AssetType.BSV20 && (
+					{type === WalletTab.BSV20 && (
 						<>
 							<input
 								type="radio"

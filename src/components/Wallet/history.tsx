@@ -2,17 +2,19 @@
 
 import { API_HOST } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { FaSpinner } from "react-icons/fa";
 import WalletTabs, { WalletTab } from "./tabs";
 
-const WalletHistory: React.FC = ({
-	address: addressProp,
-}: {
+interface WalletHistoryProps {
 	address?: string | undefined;
+}
+
+const WalletHistory: React.FC<WalletHistoryProps> = ({
+	address: addressProp,
 }) => {
 	useSignals();
 

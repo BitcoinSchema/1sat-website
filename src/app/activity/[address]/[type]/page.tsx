@@ -1,23 +1,23 @@
 import WalletBsv20 from "@/components/Wallet/bsv20";
 import WalletHistory from "@/components/Wallet/history";
 import WalletOrdinals from "@/components/Wallet/ordinals";
-import { AssetType } from "@/constants";
+import { WalletTab } from "@/components/Wallet/tabs";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 
 const AddressPage = ({
 	params,
 }: {
-	params: { address: string; type: AssetType };
+	params: { address: string; type: WalletTab };
 }) => {
 	return (
 		<div className="mx-auto">
 			<h1 className="text-3xl font-bold mb-4">
 				Address: {params.address}
 			</h1>
-			{params.type === AssetType.BSV20 ||
-			params.type === AssetType.BSV21 ? (
+			{params.type === WalletTab.BSV20 ||
+			params.type === WalletTab.BSV21 ? (
 				<WalletBsv20 address={params.address} type={params.type} />
-			) : params.type === AssetType.Ordinals ? (
+			) : params.type === WalletTab.Ordinals ? (
 				<WalletOrdinals address={params.address} />
 			) : (
 				<WalletHistory address={params.address} />
@@ -31,7 +31,7 @@ export default AddressPage;
 export async function generateMetadata({
 	params,
 }: {
-	params: { address: string; type: AssetType };
+	params: { address: string; type: WalletTab };
 }) {
 	const { address, type } = params;
 	const assetType = getCapitalizedAssetType(type);
