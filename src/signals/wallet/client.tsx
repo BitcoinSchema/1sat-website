@@ -1,6 +1,16 @@
 "use client";
 
+import { encryptionPrefix } from "@/constants";
 import { PendingTransaction } from "@/types/preview";
+import {
+	CreateWalletStep,
+	type DecryptedBackupJson,
+	type EncryptedBackupJson,
+} from "@/types/wallet";
+import {
+	decryptData,
+	generateEncryptionKeyFromPassphrase,
+} from "@/utils/encryption";
 import {
 	bsv20Balances,
 	bsv20Utxos,
@@ -16,16 +26,6 @@ import {
 	pendingTxs,
 	utxos,
 } from ".";
-import {
-	CreateWalletStep,
-	DecryptedBackupJson,
-	EncryptedBackupJson,
-} from "@/types/wallet";
-import {
-	decryptData,
-	generateEncryptionKeyFromPassphrase,
-} from "@/utils/encryption";
-import { encryptionPrefix } from "@/constants";
 
 export const setPendingTxs = (txs: PendingTransaction[]) => {
 	pendingTxs.value = [...txs];

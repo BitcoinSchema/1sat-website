@@ -1,9 +1,9 @@
-import { InscriptionTab } from "@/components/pages/inscribe/tabs";
+import type { InscriptionTab } from "@/components/pages/inscribe/tabs";
 import { AssetType } from "@/constants";
-import { BSV20Balance } from "@/types/bsv20";
-import { ChainInfo, IndexerStats, Utxo } from "@/types/common";
-import { OrdUtxo } from "@/types/ordinals";
-import { PendingTransaction } from "@/types/preview";
+import type { BSV20Balance } from "@/types/bsv20";
+import type { ChainInfo, IndexerStats, Utxo } from "@/types/common";
+import type { OrdUtxo } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
 import { CreateWalletStep } from "@/types/wallet";
 import { signal } from "@preact/signals-react";
 
@@ -29,6 +29,11 @@ export const showEnterPassphrase = signal<string | null>(null);
 export const encryptedBackup = signal<string | null>(null);
 export const encryptionKey = signal<Uint8Array | null>(null);
 export const passphrase = signal<string | null>("");
+
+/**
+ * Unlock Wallet
+ */
+export const showUnlockWalletModal = signal<boolean>(false);
 
 /**
  * Wallet keys
