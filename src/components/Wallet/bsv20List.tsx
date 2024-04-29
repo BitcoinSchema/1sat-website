@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
 
+import { getBalanceText } from "@/utils/wallet";
 import { Noto_Serif } from "next/font/google";
 import { FaChevronRight, FaHashtag, FaParachuteBox } from "react-icons/fa6";
 import AirdropTokensModal from "../modal/airdrop";
@@ -22,7 +23,7 @@ import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
 import type { MarketData } from "../pages/TokenMarket/list";
 import { truncate } from "../transaction";
-import WalletTabs from "./tabs";
+import WalletTabs, { WalletTab } from "./tabs";
 
 enum BalanceTab {
 	Confirmed = 0,
@@ -40,7 +41,7 @@ const Bsv20List = ({
 	type,
 	address: addressProp,
 }: {
-	type: AssetType.BSV20 | AssetType.BSV21;
+	type: WalletTab.BSV20 | WalletTab.BSV21;
 	address?: string;
 }) => {
 	useSignals();
@@ -138,11 +139,11 @@ const Bsv20List = ({
 			bsv20s.value?.reduce((acc, utxo) => {
 				if (utxo.data?.bsv20?.tick) {
 					if (acc[utxo.data.bsv20.tick]) {
-						acc[utxo.data.bsv20.tick] += parseInt(
+						acc[utxo.data.bsv20.tick] += Number.parseInt(
 							utxo.data.bsv20.amt
 						);
 					} else {
-						acc[utxo.data.bsv20.tick] = parseInt(
+						acc[utxo.data.bsv20.tick] = Number.parseInt(
 							utxo.data.bsv20.amt
 						);
 					}
@@ -195,12 +196,12 @@ const Bsv20List = ({
 	const balances = computed(() => {
 		return (
 			addressProp ? addressBalances.value : bsv20Balances.value
-		)?.filter((b) => (type === AssetType.BSV20 ? !!b.tick : !b.tick));
+		)?.filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick));
 	});
 
 	const activity = computed(() => {
 		return holdings.value
-			?.filter((b) => (type === AssetType.BSV20 ? !!b.tick : !b.tick))
+			?.filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick))
 			?.map((bsv20, index) => (
 				<React.Fragment key={`act-${bsv20.tick}-${index}`}>
 					<div className="text-xs text-info">
@@ -276,13 +277,7 @@ const Bsv20List = ({
 							balance.toString().split(".")[1]?.length || 0;
 
 						const balanceText =
-							balance > 1000000000
-								? `${(balance / 1000000000).toFixed(2)}B`
-								: balance > 1000000
-								? `${(balance / 1000000).toFixed(2)}M`
-								: numDecimals > 0
-								? balance.toFixed(2)
-								: balance.toString();
+							getBalanceText(balance, numDecimals) || "0";
 						const tooltip =
 							balance.toString() !== balanceText.trim()
 								? balance.toLocaleString()
@@ -297,7 +292,7 @@ const Bsv20List = ({
 							<React.Fragment key={`bal-confirmed-${tick}`}>
 								<div className="grid grid-cols-2 gap-3 auto-cols-auto items-center max-w-md p-2">
 									<div className="flex items-center">
-										{AssetType.BSV21 === type && (
+										{WalletTab.BSV21 === type && (
 											<IconWithFallback
 												icon={icon || null}
 												alt={sym || ""}
@@ -321,7 +316,7 @@ const Bsv20List = ({
 												{tick || sym}
 											</div>
 											<div className="text-[#555]">
-												{type === AssetType.BSV20 && (
+												{type === WalletTab.BSV20 && (
 													<FaHashtag className="w-4 h-4 mr-1 inline-block" />
 												)}
 												{deets?.num ||

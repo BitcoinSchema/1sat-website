@@ -1,10 +1,10 @@
-import type { AssetType } from "@/constants";
 import { Suspense } from "react";
 import TokenListingSkeleton from "../skeletons/listing/Token";
 import Bsv20List from "./bsv20List";
+import type { WalletTab } from "./tabs";
 
 interface WalletBsv20Props {
-	type: AssetType.BSV20 | AssetType.BSV21;
+	type: WalletTab.BSV20 | WalletTab.BSV21;
 	address?: string;
 }
 

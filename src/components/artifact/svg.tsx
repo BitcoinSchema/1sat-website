@@ -1,3 +1,5 @@
+"use client";
+
 import { ORDFS } from "@/constants";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -91,7 +93,7 @@ const SVGArtifact: React.FC<ArtifactProps> = ({
 								onLoad as ReactEventHandler<HTMLIFrameElement>
 							}
 							title="html artifact"
-							className={`pointer-events-none w-full h-full bg-none overflow-hidden no-scrollbar ${
+							className={`pointer-events-none w-full h-full overflow-hidden no-scrollbar  ${
 								size ? `w-[${size}px] h-[${size}px]` : ""
 							}`}
 							src={src.value}
@@ -99,6 +101,7 @@ const SVGArtifact: React.FC<ArtifactProps> = ({
 							height={size || "100%"}
 							width={size || "100%"}
 							scrolling="no"
+							allowTransparency={true}
 						/>
 					}
 				</>

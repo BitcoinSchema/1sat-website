@@ -1,13 +1,20 @@
-import { AssetType } from "@/constants";
+import type { AssetType } from "@/constants";
 import Link from "next/link";
 import { FaPlus } from "react-icons/fa6";
 import Filter from "./filter";
+
+export enum WalletTab {
+	Ordinals = "ordinals",
+	BSV20 = "bsv20",
+	BSV21 = "bsv21",
+	History = "History",
+}
 
 const WalletTabs = ({
 	type,
 	address,
 }: {
-	type: AssetType;
+	type: WalletTab | AssetType;
 	address?: string;
 }) => {
 	return (
@@ -25,7 +32,7 @@ const WalletTabs = ({
 								: "/wallet/ordinals"
 						}
 						className={`tab border-base-200 ${
-							type === AssetType.Ordinals ? "tab-active" : ""
+							type === WalletTab.Ordinals ? "tab-active" : ""
 						}`}
 					>
 						Ordinals
@@ -38,7 +45,7 @@ const WalletTabs = ({
 								: "/wallet/bsv20"
 						}
 						className={`tab border-base-200 ${
-							type === AssetType.BSV20 ? "tab-active" : ""
+							type === WalletTab.BSV20 ? "tab-active" : ""
 						}`}
 					>
 						BSV20
@@ -51,19 +58,31 @@ const WalletTabs = ({
 						}
 						role="tab"
 						className={`tab border-base-200 ${
-							type === AssetType.BSV21 ? "tab-active" : ""
+							type === WalletTab.BSV21 ? "tab-active" : ""
 						}`}
 					>
 						BSV21
 					</Link>
+
+					{/* <Link
+						href={
+							address ? `/activity/${address}` : "/wallet/history"
+						}
+						role="tab"
+						className={`tab border-base-200 ${
+							type === WalletTab.History ? "tab-active" : ""
+						}`}
+					>
+						History
+					</Link> */}
 				</div>
 			</div>
 			<div className="flex-none">
-				{type === AssetType.Ordinals && <Filter />}
+				{type === WalletTab.Ordinals && <Filter />}
 				<Link
 					className="btn md:btn-sm btn-square md:btn-ghost md:relative absolute bottom-0 right-0 md:mr-0 mr-4 mb-4 md:mb-0 z-10 md:z-0 md:border-0 border border-yellow-200/25"
 					href={`/inscribe?tab=${
-						type === AssetType.Ordinals ? "image" : type
+						type === WalletTab.Ordinals ? "image" : type
 					}`}
 				>
 					<FaPlus />

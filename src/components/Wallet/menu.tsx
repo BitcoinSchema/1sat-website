@@ -64,6 +64,17 @@ const WalletMenu: React.FC = () => {
 	const [encryptedBackup] = useLocalStorage("encryptedBackup");
 
 	const [value, copy] = useCopyToClipboard();
+	const ordAddressHover = useSignal(false);
+
+	const mouseEnterOrdAddress = () => {
+		console.log("mouseEnterOrdAddress");
+		ordAddressHover.value = true;
+	};
+
+	const mouseLeaveOrdAddress = () => {
+		console.log("mouseLeaveOrdAddress");
+		ordAddressHover.value = false;
+	};
 
 	// useEffect needed so that we can use localStorage
 	useEffect(() => {
@@ -270,7 +281,8 @@ const WalletMenu: React.FC = () => {
 									Withdraw
 								</button>
 							</div>
-							<div className="divider">Inventory</div>
+
+							<div className="divider">1Sat Wallet</div>
 							<ul className="p-0">
 								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 								<li
@@ -298,28 +310,10 @@ const WalletMenu: React.FC = () => {
 								>
 									<Link href="/wallet/bsv21">BSV21</Link>
 								</li>
-							</ul>
-							<div className="divider">Addresses</div>
-							<ul className="p-0">
-								<li>
-									<button
-										type="button"
-										className={
-											"flex items-center justify-between w-full"
-										}
-										onClick={() => {
-											copy(fundingAddress.value || "");
-											toast.success(
-												"Copied Funding Address"
-											);
-											showDropdown.value = false;
-										}}
-									>
-										Bitcoin SV Address{" "}
-										<FaCopy className="text-[#333]" />
-									</button>
-								</li>
-								<li>
+								<li
+									onMouseEnter={mouseEnterOrdAddress}
+									onMouseLeave={mouseLeaveOrdAddress}
+								>
 									<button
 										type="button"
 										className={
@@ -338,11 +332,19 @@ const WalletMenu: React.FC = () => {
 											showDropdown.value = false;
 										}}
 									>
-										Ordinals Address{" "}
+										{ordAddressHover.value
+											? `${ordAddress.value?.slice(
+													0,
+													10
+											  )}...${ordAddress.value?.slice(
+													-10
+											  )}`
+											: "Ordinals Address"}{" "}
 										<FaCopy className="text-[#333]" />
 									</button>
 								</li>
 							</ul>
+
 							<div className="divider">Keys</div>
 							<ul className="p-0">
 								<li>

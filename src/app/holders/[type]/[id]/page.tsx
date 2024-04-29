@@ -1,6 +1,7 @@
 import JDenticon from "@/components/JDenticon";
 import { API_HOST, AssetType } from "@/constants";
 import type { BSV20 } from "@/types/bsv20";
+import { getBalanceText } from "@/utils/wallet";
 import Link from "next/link";
 import { NextRequest } from "next/server";
 import React from "react";
@@ -60,14 +61,11 @@ const Page = async ({
 
 						const balance = Number.parseFloat(h.amt);
 						const numDecimals = details.dec || 0;
-						const balanceText =
-							balance > 1000000000
-								? `${(balance / 1000000000).toFixed(2)}B`
-								: balance > 1000000
-								? `${(balance / 1000000).toFixed(2)}M`
-								: numDecimals > 0
-								? balance.toFixed(2)
-								: balance.toString();
+
+						const balanceText = getBalanceText(
+							balance,
+							numDecimals
+						);
 						const tooltip =
 							balance.toString() !== balanceText.trim()
 								? balance.toLocaleString()

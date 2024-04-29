@@ -1,16 +1,20 @@
 import WalletBsv20 from "@/components/Wallet/bsv20";
+import WalletHistory from "@/components/Wallet/history";
 import WalletOrdinals from "@/components/Wallet/ordinals";
-import { AssetType } from "@/constants";
+import { WalletTab } from "@/components/Wallet/tabs";
+
 import { getCapitalizedAssetType } from "@/utils/assetType";
 
-const WalletPage = async ({ params }: { params: { tab: AssetType } }) => {
+const WalletPage = async ({ params }: { params: { tab: WalletTab } }) => {
 	return (
 		<div className="mx-auto">
-			{params.tab === AssetType.BSV20 ||
-			params.tab === AssetType.BSV21 ? (
+			{params.tab === WalletTab.BSV20 ||
+			params.tab === WalletTab.BSV21 ? (
 				<WalletBsv20 type={params.tab} />
-			) : (
+			) : params.tab === WalletTab.Ordinals ? (
 				<WalletOrdinals />
+			) : (
+				<WalletHistory />
 			)}
 		</div>
 	);
@@ -21,7 +25,7 @@ export default WalletPage;
 export async function generateMetadata({
 	params,
 }: {
-	params: { tab: AssetType };
+	params: { tab: WalletTab };
 }) {
 	const { tab } = params;
 	const assetType = getCapitalizedAssetType(tab);

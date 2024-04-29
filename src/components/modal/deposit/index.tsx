@@ -7,7 +7,7 @@ interface DespotModalProps {
 const DepositModal: React.FC<DespotModalProps> = ({ onClose }) => {
 	return (
 		<div
-			className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
+			className="modal modal-backdrop backdrop-blur modal-open"
 			onClick={() => onClose()}
 		>
 			<div

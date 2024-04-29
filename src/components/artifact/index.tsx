@@ -231,6 +231,9 @@ const Artifact: React.FC<ArtifactProps> = ({
 										: setShowZoom(true)
 							: undefined
 					}
+					onLoad={(e) => {
+						// e.target is the iframe
+					}}
 				/>
 			)
 		) : type === ArtifactType.HTML ? (

@@ -1,4 +1,5 @@
 import WalletBsv20 from "@/components/Wallet/bsv20";
+import WalletHistory from "@/components/Wallet/history";
 import WalletOrdinals from "@/components/Wallet/ordinals";
 import { AssetType } from "@/constants";
 import { getCapitalizedAssetType } from "@/utils/assetType";
@@ -16,8 +17,10 @@ const AddressPage = ({
 			{params.type === AssetType.BSV20 ||
 			params.type === AssetType.BSV21 ? (
 				<WalletBsv20 address={params.address} type={params.type} />
-			) : (
+			) : params.type === AssetType.Ordinals ? (
 				<WalletOrdinals address={params.address} />
+			) : (
+				<WalletHistory address={params.address} />
 			)}
 		</div>
 	);
