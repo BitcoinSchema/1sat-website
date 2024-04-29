@@ -1,7 +1,6 @@
 import JDenticon from "@/components/JDenticon";
-import { ArtifactType } from "@/components/artifact";
 import { API_HOST, AssetType } from "@/constants";
-import { BSV20 } from "@/types/bsv20";
+import type { BSV20 } from "@/types/bsv20";
 import Link from "next/link";
 import { NextRequest } from "next/server";
 import React from "react";
@@ -33,6 +32,7 @@ const Page = async ({
 		details
 	);
 	const numHolders = (holders || []).length > 0 ? holders.length : 0;
+
 	return (
 		<div className="mx-auto flex flex-col max-w-5xl w-full">
 			<h1 className="text-xl px-6">
@@ -57,6 +57,21 @@ const Page = async ({
 					<div className="divider col-span-3" />
 					{((holders || []) as Holder[]).map((h) => {
 						const pctWidth = `${h.pct}%`;
+
+						const balance = Number.parseFloat(h.amt);
+						const numDecimals = details.dec || 0;
+						const balanceText =
+							balance > 1000000000
+								? `${(balance / 1000000000).toFixed(2)}B`
+								: balance > 1000000
+								? `${(balance / 1000000).toFixed(2)}M`
+								: numDecimals > 0
+								? balance.toFixed(2)
+								: balance.toString();
+						const tooltip =
+							balance.toString() !== balanceText.trim()
+								? balance.toLocaleString()
+								: "";
 						return (
 							<React.Fragment key={`${id}-holder-${h.address}`}>
 								<Link
@@ -71,7 +86,12 @@ const Page = async ({
 										{h.address}
 									</span>
 								</Link>
-								<div className="w-24 text-right">{h.amt}</div>
+								<div
+									className="w-24 text-right tooltip"
+									data-tip={tooltip}
+								>
+									{balanceText}
+								</div>
 								<div className="w-24 text-right">
 									{h.pct.toFixed(4)}%
 								</div>

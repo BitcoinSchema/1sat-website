@@ -150,6 +150,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				}
 			}
 
+			debugger;
 			// if allocation is "Equal", destination can include addresses
 			let destinations: Destination[] =
 				isEqualAllocation && addresses.value.length > 0
@@ -349,7 +350,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			destinationTickers.value,
 			isEqualAllocation,
 			numOfHolders.value,
-			type,
 		]
 	);
 
@@ -358,7 +358,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			e.preventDefault();
 			const isDestinationMissing =
 				!destinationTickers.value &&
-				!(isEqualAllocation && addresses.value);
+				!(isEqualAllocation && addresses.value?.length);
 
 			if (!amount.value || isDestinationMissing) {
 				return;
@@ -453,7 +453,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
+				<div className="relative w-full min-h-64 md:h-full overflow-hidden mb-4">
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
 							<div className="text-lg font-semibold">
