@@ -150,7 +150,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				}
 			}
 
-			debugger;
 			// if allocation is "Equal", destination can include addresses
 			let destinations: Destination[] =
 				isEqualAllocation && addresses.value.length > 0

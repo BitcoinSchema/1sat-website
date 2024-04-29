@@ -160,17 +160,20 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				)
 			);
 			purchaseTx.set_input(0, listingInput);
-
-			debugger;
 			// calculate market fee
 			let marketFee = Number(price) * marketRate;
 			if (marketFee === 0) {
 				marketFee = minimumMarketFee;
 			}
+			const marketFeeOutput = new TxOut(
+				BigInt(Math.ceil(marketFee)),
+				P2PKHAddress.from_string(marketAddress).get_locking_script()
+			);
+			purchaseTx.set_output(3, marketFeeOutput);
 
 			// Calculate the network fee
 			// account for funding input and market output (not added to tx yet)
-			let paymentUtxos: Utxo[] = [];
+			const paymentUtxos: Utxo[] = [];
 			let satsCollected = 0n;
 			// initialize fee and satsNeeded (updated with each added payment utxo)
 			let fee = calculateFee(1, purchaseTx);
@@ -179,7 +182,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			const sortedFundingUtxos = utxos.value!.sort((a, b) =>
 				a.satoshis > b.satoshis ? -1 : 1
 			);
-			for (let utxo of sortedFundingUtxos) {
+			for (const utxo of sortedFundingUtxos) {
 				if (satsCollected < satsNeeded) {
 					satsCollected += BigInt(utxo.satoshis);
 					paymentUtxos.push(utxo);
@@ -196,7 +199,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			const changeAmt = satsCollected - satsNeeded;
 
 			const changeOutput = new TxOut(
-				BigInt(changeAmt),
+				changeAmt,
 				changeAddress.get_locking_script()
 			);
 
