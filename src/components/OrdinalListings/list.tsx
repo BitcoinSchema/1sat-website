@@ -1,6 +1,6 @@
 "use client";
 
-import { AssetType, resultsPerPage } from "@/constants";
+import { resultsPerPage } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import { getOutpoints } from "@/utils/address";
 import { getMarketListings } from "@/utils/artifact";
@@ -19,10 +19,10 @@ import { selectedType } from "../Wallet/filter";
 import Artifact, { ArtifactType } from "../artifact";
 import BuyBtn from "./buy";
 import {
-  checkOutpointFormat,
-  listingCollection,
-  listingName,
-  mintNumber,
+	checkOutpointFormat,
+	listingCollection,
+	listingName,
+	mintNumber,
 } from "./helpers";
 interface Props {
 	listings?: OrdUtxo[];
@@ -159,15 +159,18 @@ const List = ({ listings: listingsProp, address, onClick }: Props) => {
 										sizes={"100vw"}
 										showFooter={false}
 										priority={false}
-										to={`/outpoint/${listing?.outpoint}`}
+										to={`/outpoint/${listing?.outpoint}/listing`}
 									/>
 								</td>
 
 								<td className="flex flex-col h-[100px] p-0 pl-4">
 									<div className="my-auto max-w-64">
-										<p className="text-lg truncate overflow-hidden text-ellipses">
+										<Link
+											className="text-lg truncate overflow-hidden text-ellipses"
+											href={`/outpoint/${listing?.outpoint}/listing`}
+										>
 											{listingName(listing)}
-										</p>
+										</Link>
 										{collection && (
 											<div className="flex items-center gap-4">
 												<Link
@@ -182,7 +185,10 @@ const List = ({ listings: listingsProp, address, onClick }: Props) => {
 												</Link>
 											</div>
 										)}
-										<div className="flex items-center gap-4 text-neutral-content/25">
+										<div
+											className="flex items-center gap-4 text-neutral-content/25 tooltip"
+											data-tip="Block Number : Position in Block : Transaction Output"
+										>
 											{listing?.origin?.num}
 										</div>
 										<div className={"block md:hidden"}>
@@ -223,7 +229,7 @@ const List = ({ listings: listingsProp, address, onClick }: Props) => {
 								<td className="p-0 md:table-cell hidden text-center w-8">
 									<Link
 										className="text-sm"
-										href={`/outpoint/${listing?.outpoint}?display=${AssetType.Ordinals}`}
+										href={`/outpoint/${listing?.outpoint}/listing`}
 									>
 										<FaChevronRight className="w-6 h-6" />
 									</Link>
