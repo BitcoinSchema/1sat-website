@@ -189,7 +189,14 @@ const WalletMenu: React.FC = () => {
 	const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
 			console.log("handleFileChange called", e.target.files[0]);
-
+			if (payPk.value || ordPk.value) {
+				const c = confirm(
+					"Are you sure you want to import this wallet? Doing so will replace your existing keys so be sure to back them up first."
+				);
+				if (!c) {
+					return;
+				}
+			}
 			await loadKeysFromBackupFiles(e.target.files[0]);
 			showDropdown.value = false;
 			router?.push("/wallet");

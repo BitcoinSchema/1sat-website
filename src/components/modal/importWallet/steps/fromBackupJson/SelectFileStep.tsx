@@ -1,13 +1,14 @@
+import { backupKeys } from "@/components/Wallet/menu";
 import { toastErrorProps } from "@/constants";
 import {
 	ImportWalletFromBackupJsonStep,
 	importWalletFromBackupJsonStep,
-	ordPk,
 	payPk,
 	selectedBackupJson,
 } from "@/signals/wallet";
 import { setKeys } from "@/signals/wallet/client";
 import toast from "react-hot-toast";
+import { IoMdWarning } from "react-icons/io";
 
 interface Props {}
 
@@ -61,11 +62,25 @@ export function SelectFileStep({}: Props) {
 			ImportWalletFromBackupJsonStep.EnterPassphrase;
 	};
 
+	const handleBackup = async () => {
+		await backupKeys();
+	};
+
 	return (
 		<>
 			<div className="mt-2 mb-4">
 				Select the backup JSON file you want to import
 			</div>
+			{payPk.value && (
+				// warning about overwriting existing wallet
+				<div className="text-warning-content bg-warning p-2 rounded mb-4 flex">
+					<IoMdWarning className="w-6 mt-1" />
+					<div className="ml-2">
+						Importing a new wallet will clear the existing one. Be
+						sure you have a backup before proceeding.
+					</div>
+				</div>
+			)}
 			<input
 				type="file"
 				className="file-input file-input-bordered w-full max-w-xs file-input-sm"
@@ -73,13 +88,27 @@ export function SelectFileStep({}: Props) {
 				onChange={handleSelectFile}
 			/>
 
-			{selectedBackupJson.value && (
-				<div className="flex justify-end mt-4">
-					<button className="btn btn-primary" onClick={handleNext}>
+			<div className="modal-action">
+				{payPk.value && (
+					// backup wallet button
+					<button
+						type="button"
+						className="btn btn-primary"
+						onClick={handleBackup}
+					>
+						Backup Wallet
+					</button>
+				)}
+				{selectedBackupJson.value && (
+					<button
+						type="button"
+						className="btn btn-primary"
+						onClick={handleNext}
+					>
 						Next
 					</button>
-				</div>
-			)}
+				)}
+			</div>
 		</>
 	);
 }
