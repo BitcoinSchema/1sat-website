@@ -1,4 +1,4 @@
-import { API_HOST } from "@/constants";
+import { API_HOST, AssetType } from "@/constants";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import OutpointPage from ".";
@@ -29,7 +29,18 @@ const OutpointToken = async ({ outpoint }: Props) => {
 
 	const content = inscription?.data?.bsv20 ? (
 		<div>
-			<div>Token</div>
+			<div>
+				{inscription.data.bsv20.tick || inscription.data.bsv20.sym}
+			</div>
+			<div>
+				Type:{" "}
+				{inscription.data.bsv20.id ? AssetType.BSV21 : AssetType.BSV20}
+			</div>
+			<div>Operation: {inscription.data.bsv20.op}</div>
+			<div>Amount: {inscription.data.bsv20.amt}</div>
+			{inscription.data.bsv20.reason && (
+				<div>Reason: {inscription.data.bsv20.reason}</div>
+			)}
 		</div>
 	) : (
 		<div>Not a token</div>
