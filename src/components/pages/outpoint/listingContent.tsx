@@ -24,7 +24,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				/>
 				<div className="flex flex-col">
 					<div className="text-lg">{artifact.owner}</div>
-					<div className="text-sm text-[#aaa]">
+					<div className="text-sm text-[#aaa] mb-4">
 						{artifact.owner === ordAddress.value
 							? "You own this item"
 							: ""}

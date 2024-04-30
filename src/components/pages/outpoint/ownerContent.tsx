@@ -258,7 +258,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				/>
 				<div className="flex flex-col">
 					<div className="text-lg">{artifact.owner}</div>
-					<div className="text-sm text-[#aaa]">
+					<div className="text-sm text-[#aaa] mb-4">
 						{artifact.owner === ordAddress.value
 							? "You own this item"
 							: ""}
@@ -267,7 +267,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			</div>
 
 			{isUtxo.value ? (
-				<div className="bg-warning text-warning-content rounded p-4 mt-4">
+				<div className="bg-warning text-warning-content rounded p-4">
 					<p>
 						This appears to be a spendable UTXO output without an
 						inscription. This was probably sent to your Ordinals

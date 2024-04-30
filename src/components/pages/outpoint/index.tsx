@@ -79,6 +79,11 @@ const OutpointPage = async ({
 									showListingTag={true}
 								/>
 							)}
+							{!artifact?.origin?.data?.insc && (
+								<div className="h-full w-full text-[#aaa] flex items-center justify-center min-h-64 bg-[#111] rounded">
+									No inscription
+								</div>
+							)}
 							<div className="divider" />
 							<div
 								className={`w-full ${
@@ -109,6 +114,7 @@ const OutpointPage = async ({
 						</div>
 					</>
 				)}
+				{!artifact && <div>No Artifact</div>}
 			</div>
 		);
 	} catch (error) {

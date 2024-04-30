@@ -1,5 +1,5 @@
 import { default as JDenticon } from "@/components/JDenticon";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { TbTag } from "react-icons/tb";
 import { toBitcoin } from "satoshi-bitcoin-ts";
@@ -11,6 +11,9 @@ interface Props {
 }
 
 const Timeline = ({ history, listing, spends }: Props) => {
+	if (!history.length) {
+		return <div className="my-4 text-xl text-[#aaa]">No history</div>;
+	}
 	return (
 		<ul className="timeline timeline-vertical">
 			{history.reverse().map((h, idx) => {

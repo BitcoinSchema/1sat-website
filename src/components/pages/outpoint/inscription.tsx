@@ -23,7 +23,7 @@ const OutpointInscription = async ({ outpoint }: Props) => {
 				artifact={artifact}
 				content={
 					<div>
-						<div className="my-4 text-xl text-[#555]">
+						<div className="my-4 text-xl text-[#aaa]">
 							{artifact.origin
 								? "Inscription Origin"
 								: "Not Inscribed"}
