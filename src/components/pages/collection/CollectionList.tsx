@@ -91,7 +91,7 @@ export const CollectionList = ({
 			)}
 		</>
 	) : (
-		<div className="mx-auto my-4 text-center">{`No ${tab}${
+		<div className="mx-auto my-4 text-center w-screen max-w-5xl">{`No ${tab}${
 			isMarketTab ? " items" : ""
 		} for this collection`}</div>
 	);

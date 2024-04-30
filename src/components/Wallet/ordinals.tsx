@@ -1,8 +1,12 @@
 "use client";
 
 import { AssetType } from "@/constants";
+import { showUnlockWalletModal } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
+import { useLocalStorage } from "@/utils/storage";
+import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
+import { BsShieldLockFill } from "react-icons/bs";
 import { FaSpinner } from "react-icons/fa";
 import OrdinalListings, { OrdViewMode } from "../OrdinalListings";
 import WalletTabs from "./tabs";
@@ -15,6 +19,29 @@ const WalletOrdinals = ({
 	onClick?: (outpoint: string) => Promise<void>;
 }) => {
 	useSignals();
+	const [encryptedBackup] = useLocalStorage<string | undefined>(
+		"encryptedBackup"
+	);
+	console.log({ ordAddress: ordAddress.value, addressProp, encryptedBackup });
+
+	const locked = computed(() => !ordAddress.value && !!encryptedBackup);
+
+	if (locked.value) {
+		return (
+			// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+			<div
+				className="mx-auto w-fit flex flex-col items-center justify-center cursor-pointer"
+				onClick={() => {
+					showUnlockWalletModal.value = true;
+				}}
+			>
+				<div className="text-2xl font-bold my-4">Wallet Locked</div>
+				<BsShieldLockFill className="w-24 h-24" />
+				<div className="btn btn-primary mt-4">Unlock Wallet</div>
+			</div>
+		);
+	}
+
 	if (!ordAddress.value) {
 		return (
 			<div className="mx-auto animate-spin w-fit">
