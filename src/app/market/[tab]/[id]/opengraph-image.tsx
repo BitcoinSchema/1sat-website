@@ -1,7 +1,7 @@
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
 import { API_HOST, AssetType } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import { getNotoSerifItalicFont } from "@/utils/font";
 import { ImageResponse } from "next/og";
 
@@ -47,7 +47,7 @@ export default async function Image({
 			fonts: [
 				{
 					name: "Noto Serif",
-					data: await notoSerif,
+					data: notoSerif,
 					style: "italic",
 					weight: 400,
 				},

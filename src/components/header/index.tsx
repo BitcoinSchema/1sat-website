@@ -25,7 +25,7 @@ const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
 								alt={"1Sat Ordinals"}
 								className="w-6 h-6 cursor-pointer rounded mr-2"
 							/>
-							<span className="md:block hidden">
+							<span className="md:block hidden text-nowrap">
 								1Sat Ordinals
 							</span>
 						</Link>

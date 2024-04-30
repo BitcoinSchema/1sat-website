@@ -52,7 +52,7 @@ export default async function Image({
 			fonts: [
 				{
 					name: "Noto Serif",
-					data: await notoSerif,
+					data: notoSerif,
 					style: "italic",
 					weight: 400,
 				},

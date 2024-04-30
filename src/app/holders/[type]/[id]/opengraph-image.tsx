@@ -1,8 +1,7 @@
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
-import { Holder } from "@/components/pages/TokenMarket/list";
 import { API_HOST, AssetType } from "@/constants";
-import { BSV20 } from "@/types/bsv20";
+import type { BSV20 } from "@/types/bsv20";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 import { getNotoSerifItalicFont } from "@/utils/font";
 import { ImageResponse } from "next/og";
@@ -59,7 +58,7 @@ export default async function Image({
 			fonts: [
 				{
 					name: "Noto Serif",
-					data: await notoSerif,
+					data: notoSerif,
 					style: "italic",
 					weight: 400,
 				},
