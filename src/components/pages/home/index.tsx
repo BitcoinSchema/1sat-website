@@ -13,7 +13,7 @@ const HomePage: React.FC = async () => {
 						<div className="flex mx-auto max-w-fit gap-4">
 							<Link
 								href="/market/ordinals"
-								className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
+								className="flex flex-col btn md:btn-lg btn-primary  font-bold mb-4"
 							>
 								Ordinals
 								<span className="font-normal text-xs text-neutral/50">
@@ -22,7 +22,7 @@ const HomePage: React.FC = async () => {
 							</Link>
 							<Link
 								href="/market/bsv20"
-								className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
+								className="flex flex-col btn md:btn-lg btn-primary  font-bold mb-4"
 							>
 								BSV20
 								<span className="font-normal text-xs text-neutral/50">
@@ -31,7 +31,7 @@ const HomePage: React.FC = async () => {
 							</Link>
 							<Link
 								href="/market/bsv21"
-								className="flex flex-col btn md:btn-lg btn-primary  font-bold mt-4"
+								className="flex flex-col btn md:btn-lg btn-primary  font-bold mb-4"
 							>
 								BSV21
 								<span className="font-normal text-xs text-neutral/50">
@@ -40,7 +40,7 @@ const HomePage: React.FC = async () => {
 							</Link>
 						</div>
 
-						<div className="divider divider-warning w-64 mx-auto text-warning/50 mt-4">
+						<div className="divider divider-warning w-64 mx-auto text-warning/50">
 							BROWSE DEX
 						</div>
 
