@@ -142,7 +142,7 @@ Preview`}
 			<div className="text-center text-[#aaa] mt-2">
 				Broadcast to finalize.
 			</div>
-			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs text-ellipsis overflow-hidden  mt-4 mb-8 relative">
+			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs mt-4 mb-8 relative">
 				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
 					<div className="px-2">
 						<div className="flex justify-between">
