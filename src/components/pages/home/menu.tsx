@@ -57,36 +57,36 @@ const Menu = () => {
 				<Link
 					id="ord-btn"
 					href="/market/ordinals"
-					className="font-mono flex flex-col btn md:btn-lg btn-ghost border-neutral/75 hover:border-warning/25 font-bold mb-4 transition group"
+					className="font-mono flex flex-col btn md:btn-lg md:btn-ghost border-neutral/75 hover:border-warning/25 font-bold mb-4 transition group"
 					onMouseEnter={mouseEnter}
 					onMouseLeave={mouseLeave}
 				>
 					Ordinals
-					<span className="font-normal text-xs text-warning/50 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
+					<span className="font-normal text-xs text-warning/50 md:opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
 						Art NFTs
 					</span>
 				</Link>
 				<Link
 					id="bsv20-btn"
 					href="/market/bsv20"
-					className="font-mono flex flex-col btn md:btn-lg btn-ghost border-neutral/75 hover:border-warning/25 font-bold mb-4 transition group"
+					className="font-mono flex flex-col btn md:btn-lg md:btn-ghost border-neutral/75 hover:border-warning/25 font-bold mb-4 transition group"
 					onMouseEnter={mouseEnter}
 					onMouseLeave={mouseLeave}
 				>
 					BSV20
-					<span className="font-normal text-xs text-warning/50 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
+					<span className="font-normal text-xs text-warning/50 md:opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
 						Degen FTs
 					</span>
 				</Link>
 				<Link
 					id="bsv21-btn"
 					href="/market/bsv21"
-					className="font-mono flex flex-col btn md:btn-lg btn-ghost border-neutral/75 hover:border-warning/25 font-bold mb-4 transition group"
+					className="font-mono flex flex-col btn md:btn-lg md:btn-ghost border-neutral/75 hover:border-warning/25 font-bold mb-4 transition group"
 					onMouseEnter={mouseEnter}
 					onMouseLeave={mouseLeave}
 				>
 					BSV21
-					<span className="font-normal text-xs text-warning/50 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
+					<span className="font-normal text-xs text-warning/50 md:opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
 						Pro FTs
 					</span>
 				</Link>
