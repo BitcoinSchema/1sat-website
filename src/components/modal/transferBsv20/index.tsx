@@ -79,14 +79,14 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			if (!bsvWasmReady.value) {
 				throw new Error("bsv wasm not ready");
 			}
-			let tx = new Transaction(1, 0);
+			const tx = new Transaction(1, 0);
 
 			// add token inputs
 			let amounts = 0;
 			let i = 0;
 			for (const utxo of inputTokens) {
 				const txBuf = Buffer.from(utxo.txid, "hex");
-				let utxoIn = new TxIn(
+				const utxoIn = new TxIn(
 					txBuf,
 					utxo.vout,
 					Script.from_asm_string("")

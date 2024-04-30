@@ -2,6 +2,7 @@
 
 import JDenticon from "@/components/JDenticon";
 import CancelListingModal from "@/components/modal/cancelListing";
+import TransferBsv20Modal from "@/components/modal/transferBsv20";
 import {
 	bsvWasmReady,
 	ordPk,
@@ -33,6 +34,7 @@ import { toBitcoin } from "satoshi-bitcoin-ts";
 const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	useSignals();
 	const showCancelModal = useSignal(false);
+	const showSendModal = useSignal<string | undefined>(undefined);
 	const router = useRouter();
 
 	// TODO: Check the destination address matches the ordAddress
@@ -289,6 +291,15 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					type="button"
 					className="btn disabled:text-[#555] my-2"
 					onClick={(e) => {
+						// if its a bsv20, transfer with a different function
+						if (artifact.data?.bsv20) {
+							alert(
+								"Transfer BSV20 tokens from your wallet page"
+							);
+							router.push("/wallet/bsv20");
+							// showSendModal.value = artifact.data?.bsv20.tick || artifact.data?.bsv20.id;
+							return;
+						}
 						const to = window.prompt(
 							"Enter the address to send the ordinal to"
 						);
@@ -323,6 +334,16 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 						router.push(`/outpoint/${newOutpoint}`);
 					}}
 					listing={artifact as Listing}
+				/>
+			)}
+			{showSendModal.value === (tick || id) && (
+				<TransferBsv20Modal
+					onClose={() => (showSendModal.value = undefined)}
+					type={type}
+					id={(tick || id)!}
+					dec={dec}
+					balance={balance}
+					sym={sym}
 				/>
 			)}
 		</div>
