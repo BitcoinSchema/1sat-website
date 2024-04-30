@@ -1,4 +1,4 @@
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { Suspense } from "react";
 import OrdinalListingSkeleton from "../skeletons/listing/Ordinal";
@@ -13,14 +13,14 @@ interface OrdinalListingsProps {
 	listings?: OrdUtxo[];
 	address?: string;
 	mode: OrdViewMode;
-  onClick?: (outpoint: string) => Promise<void>;
+	onClick?: (outpoint: string) => Promise<void>;
 }
 
 const OrdinalListings: React.FC<OrdinalListingsProps> = ({
 	listings,
 	address,
 	mode,
-  onClick,
+	onClick,
 }: OrdinalListingsProps) => {
 	return (
 		<div className="w-full h-full">
@@ -41,7 +41,12 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({
 					</thead>
 				)}
 				<Suspense fallback={<OrdinalListingSkeleton iterations={30} />}>
-					<View listings={listings} address={address} mode={mode} onClick={onClick} />
+					<View
+						listings={listings}
+						address={address}
+						mode={mode}
+						onClick={onClick}
+					/>
 				</Suspense>
 			</table>
 		</div>
