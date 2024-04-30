@@ -296,7 +296,11 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 							alert(
 								"Transfer BSV20 tokens from your wallet page"
 							);
-							router.push("/wallet/bsv20");
+							router.push(
+								`/wallet/${
+									artifact.data.bsv20.id ? "bsv21" : "bsv20"
+								}`
+							);
 							// showSendModal.value = artifact.data?.bsv20.tick || artifact.data?.bsv20.id;
 							return;
 						}
