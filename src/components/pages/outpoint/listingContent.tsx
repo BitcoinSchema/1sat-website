@@ -50,7 +50,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					}/${artifact.data.bsv20.id || artifact.data.bsv20.tick}`}
 				>
 					<button type="button" className="btn">
-						List
+						Sell
 					</button>
 				</Link>
 			)}
