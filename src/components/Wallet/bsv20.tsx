@@ -20,6 +20,11 @@ const WalletBsv20 = async ({ type, address }: WalletBsv20Props) => {
 				<Suspense
 					fallback={
 						<table width={"100%"} className="w-full">
+							<tr className="px-4 flex gap-4 items-center w-full py-2">
+								<div className="w-24 skeleton h-8" />
+								<div className="w-24 skeleton h-8" />
+								<div className="w-24 skeleton h-8" />
+							</tr>
 							<TokenListingSkeleton />
 						</table>
 					}
