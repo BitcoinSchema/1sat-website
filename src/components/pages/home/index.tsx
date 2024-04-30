@@ -39,7 +39,8 @@ const HomePage: React.FC = async () => {
 								</span>
 							</Link>
 						</div>
-						<div className="divider divider-warning w-64 mx-auto text-warning/50">
+
+						<div className="divider divider-warning w-64 mx-auto text-warning/50 mt-4">
 							BROWSE DEX
 						</div>
 
