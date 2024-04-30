@@ -37,7 +37,7 @@ const WalletOrdinals = ({
 		return (
 			// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 			<div
-				className="mx-auto w-fit flex flex-col items-center justify-center cursor-pointer min-h-[80vh]"
+				className="mx-auto w-fit flex flex-col items-center justify-center cursor-pointer min-h-[70vh]"
 				onClick={() => {
 					showUnlockWalletModal.value = true;
 				}}
