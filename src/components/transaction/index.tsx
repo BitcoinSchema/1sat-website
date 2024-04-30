@@ -128,7 +128,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 									)
 								}
 							>
-								<span className="text-xl font-mono flex items-center gap-1">
+								<span className="md:text-xl font-mono flex items-center gap-1">
 									<FaHashtag />
 									{io.index}
 								</span>
@@ -136,7 +136,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 									{io.address && (
 										<JDenticon
 											hashOrValue={io.address}
-											className="w-10 h-10 mr-2"
+											className="w-6 h-6 md:w-10 md:h-10 mr-1 md:mr-2"
 										/>
 									)}
 									<div className="flex flex-col w-full">
@@ -153,7 +153,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 												type="button"
 												className={`${
 													io.address
-														? "text-base"
+														? "md:text-base"
 														: ""
 												} btn-outline ${
 													io.index === vout
@@ -211,7 +211,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 							}
 						>
 							<span
-								className={`text-xl font-mono flex items-center gap-1 ${
+								className={`md:text-xl font-mono flex items-center gap-1 ${
 									io.index === vout ? "" : ""
 								}`}
 							>
@@ -222,7 +222,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 								{io.address && (
 									<JDenticon
 										hashOrValue={io.address}
-										className="w-10 h-10 mr-2"
+										className="w-6 h-6 md:w-10 md:h-10 mr-1 md:mr-2"
 									/>
 								)}
 								<div className="flex flex-col w-full">
@@ -238,7 +238,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 										<button
 											type="button"
 											className={`${
-												io.address ? "text-base" : ""
+												io.address ? "md:text-base" : ""
 											} btn-outline ${
 												io.index === vout
 													? "text-white"
@@ -286,13 +286,13 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 			inputs.value &&
 			outputs.value && (
 				<>
-					<div className="flex-1 w-1/2">
+					<div className="md:flex-1 md:w-1/2">
 						<h2 className="my-4 text-xl font-mono font-semibold">
 							Inputs
 						</h2>
 						{inputs}
 					</div>
-					<div className="flex-1 w-1/2">
+					<div className="md:flex-1 md:w-1/2">
 						<h2 className="my-4 text-xl font-mono font-semibold">
 							Outputs
 						</h2>
@@ -305,15 +305,15 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 
 	if (!details.value) {
 		return (
-			<div className="mx-auto w-fit py-12 flex items-center font-mono text-sm">
-				<FaSpinner className="animate-spin mr-2" /> Loading
+			<div className="mx-auto w-fit py-12 items-center font-mono text-sm">
+				<FaSpinner className="animate-spin mr-2" />
 			</div>
 		);
 	}
 
 	return (
 		<>
-			<div className="flex w-full rounded gap-4 mb-4">
+			<div className="w-full rounded gap-4 mb-4 flex-col md:flex overflow-x-auto">
 				{showDetails.value && details.value}
 			</div>
 		</>
