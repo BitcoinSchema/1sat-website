@@ -102,7 +102,8 @@ export function SelectFileStep({}: Props) {
 				{selectedBackupJson.value && (
 					<button
 						type="button"
-						className="btn btn-primary"
+						disabled={!selectedBackupJson.value}
+						className="btn btn-primary disabled:btn-disabled"
 						onClick={handleNext}
 					>
 						Next
