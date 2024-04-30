@@ -2,7 +2,7 @@
 
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Artifact from "@/components/artifact";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
