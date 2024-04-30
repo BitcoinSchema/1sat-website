@@ -29,15 +29,17 @@ const OutpointToken = async ({ outpoint }: Props) => {
 
 	const content = inscription?.data?.bsv20 ? (
 		<div>
-			<div>
-				{inscription.data.bsv20.tick || inscription.data.bsv20.sym}
-			</div>
-			<div>
-				Type:{" "}
+			<div className="text-[#555]">
+				Asset Type:{" "}
 				{inscription.data.bsv20.id ? AssetType.BSV21 : AssetType.BSV20}
 			</div>
-			<div>Operation: {inscription.data.bsv20.op}</div>
-			<div>Amount: {inscription.data.bsv20.amt}</div>
+			<div>op {inscription.data.bsv20.op}</div>
+			<div className="flex items-center gap-2">
+				<div>
+					{inscription.data.bsv20.amt}{" "}
+					{inscription.data.bsv20.tick || inscription.data.bsv20.sym}
+				</div>
+			</div>
 			{inscription.data.bsv20.reason && (
 				<div>Reason: {inscription.data.bsv20.reason}</div>
 			)}
