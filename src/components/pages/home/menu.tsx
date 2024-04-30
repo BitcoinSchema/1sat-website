@@ -20,23 +20,23 @@ const Menu = () => {
 	}, [hoveredItem]);
 
 	const baseClass =
-		"w-full p-2 text-lg text-center text-sm text-warning/75 font-mono";
+		"absolute top-0 left-0 right-0 w-full p-2 text-lg text-center text-sm text-warning/75 font-mono transition duration-1000 opacity-0";
 
 	const hoverBsv20Class = useMemo(() => {
 		return `${baseClass} ${
-			hoveredItem.value === "bsv20-btn" ? "block" : "hidden"
+			hoveredItem.value === "bsv20-btn" ? "opacity-100" : ""
 		}`;
 	}, [hoveredItem.value]);
 
 	const hoverBsv21Class = useMemo(() => {
 		return `${baseClass} ${
-			hoveredItem.value === "bsv21-btn" ? "block" : "hidden"
+			hoveredItem.value === "bsv21-btn" ? "opacity-100" : ""
 		}`;
 	}, [hoveredItem.value]);
 
 	const hoverOrdClass = useMemo(() => {
 		return `${baseClass} ${
-			hoveredItem.value === "ord-btn" ? "block" : "hidden"
+			hoveredItem.value === "ord-btn" ? "opacity-100" : ""
 		}`;
 	}, [hoveredItem.value]);
 
@@ -44,15 +44,14 @@ const Menu = () => {
 		<div className="relative">
 			<div className="absolute top-0 left-0 right-0 h-16 flex items-center justify-center">
 				<div className={hoverBsv20Class}>
-					"first is first", fungible tokens
+					"first is first" fungible tokens
 				</div>
 				<div className={hoverBsv21Class}>
-					Token contracts like LTM and POW20.
+					token contracts like LTM and POW20.
 				</div>
 				<div className={hoverOrdClass}>
 					digital paintings, generative art, kittens
 				</div>
-				&nbsp;
 			</div>
 			<div className="flex mx-auto max-w-fit gap-4 mt-16">
 				<Link
