@@ -15,11 +15,11 @@ export type NumResults = {
 
 const WalletBsv20 = async ({ type, address }: WalletBsv20Props) => {
 	return (
-		<div className="flex flex-col justify-start w-full md:min-h-[80vh]">
+		<div className="flex flex-col justify-start w-screen md:min-h-[80vh] max-w-[64rem]">
 			<div className="w-full">
 				<Suspense
 					fallback={
-						<table width={"100%"}>
+						<table width={"100%"} className="w-full">
 							<TokenListingSkeleton />
 						</table>
 					}

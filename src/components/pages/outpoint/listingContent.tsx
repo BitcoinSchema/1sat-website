@@ -17,17 +17,17 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	return (
 		<div>
 			<div>Owner</div>
-			<div className="flex items-center">
+			<div className="flex items-center mb-4">
 				<JDenticon
 					hashOrValue={artifact.owner}
 					className="mr-2 w-10 h-10"
 				/>
 				<div className="flex flex-col">
 					<div className="text-lg">{artifact.owner}</div>
-					<div className="text-sm text-[#aaa] mb-4">
+					<div className="text-sm text-[#aaa]">
 						{artifact.owner === ordAddress.value
 							? "You own this item"
-							: ""}
+							: "Random Ordinal Enjoyer"}
 					</div>
 				</div>
 			</div>
