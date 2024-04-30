@@ -13,28 +13,28 @@ const HomePage: React.FC = async () => {
 						<div className="flex mx-auto max-w-fit gap-4">
 							<Link
 								href="/market/ordinals"
-								className="flex flex-col btn md:btn-lg btn-primary  font-bold mb-4"
+								className="flex flex-col btn md:btn-lg btn-ghost hover:border-neutral font-bold mb-4 group transition"
 							>
 								Ordinals
-								<span className="font-normal text-xs text-neutral/50">
+								<span className="font-normal text-xs text-warning/50 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
 									Art NFTs
 								</span>
 							</Link>
 							<Link
 								href="/market/bsv20"
-								className="flex flex-col btn md:btn-lg btn-primary  font-bold mb-4"
+								className="flex flex-col btn md:btn-lg btn-ghost hover:border-neutral font-bold mb-4 group transition"
 							>
 								BSV20
-								<span className="font-normal text-xs text-neutral/50">
+								<span className="font-normal text-xs text-warning/50 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
 									Degen FTs
 								</span>
 							</Link>
 							<Link
 								href="/market/bsv21"
-								className="flex flex-col btn md:btn-lg btn-primary  font-bold mb-4"
+								className="flex flex-col btn md:btn-lg btn-ghost hover:border-neutral  font-bold mb-4 group transition"
 							>
 								BSV21
-								<span className="font-normal text-xs text-neutral/50">
+								<span className="font-normal text-xs text-warning/50 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
 									Pro FTs
 								</span>
 							</Link>
