@@ -30,11 +30,6 @@ const iterations = 20;
 
 const TokenListingSkeleton = () => (
 	<tbody className="py-0 px-3 mb-4 w-full">
-		<tr className="px-4 flex gap-4 items-center w-full py-2">
-			<div className="w-24 skeleton h-8" />
-			<div className="w-24 skeleton h-8" />
-			<div className="w-24 skeleton h-8" />
-		</tr>
 		{[...Array(iterations)].map((_, i) => (
 			<SkeletonItem
 				key={`token-skel-${
