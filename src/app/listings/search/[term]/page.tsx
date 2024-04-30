@@ -1,9 +1,13 @@
-import ListingsPage from "@/components/pages/listings";
+import SearchPage from "@/components/pages/search";
 import { API_HOST, AssetType } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
-const Search = async ({ params }: { params: { term: string } }) => {
+const Search = async ({
+	params,
+}: {
+	params: { term: string; bsv20Matches?: string };
+}) => {
 	// &q=${btoa(JSON.stringify({
 	//   insc: {
 	//     json: {
@@ -13,16 +17,18 @@ const Search = async ({ params }: { params: { term: string } }) => {
 	// }))}
 
 	const { promise } = http.customFetch<OrdUtxo[]>(`
-    ${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&text=${params.term}
+    ${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&text=${params.term}&bsv20Matches=${params.bsv20Matches}
   `);
 	const artifacts = await promise;
 
+	const matches = params.bsv20Matches ? params.bsv20Matches.split(",") : [];
+
 	return (
-		<ListingsPage
-			showTabs={false}
+		<SearchPage
 			title={params.term}
 			imageListings={artifacts}
 			selectedAssetType={AssetType.Ordinals}
+			bsv20Matches={matches}
 		/>
 	);
 };

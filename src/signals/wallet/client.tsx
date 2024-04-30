@@ -1,7 +1,7 @@
 "use client";
 
 import { encryptionPrefix } from "@/constants";
-import { PendingTransaction } from "@/types/preview";
+import type { PendingTransaction } from "@/types/preview";
 import {
 	CreateWalletStep,
 	type DecryptedBackupJson,
