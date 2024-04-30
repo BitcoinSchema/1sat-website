@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
 
+import { useLocalStorage } from "@/utils/storage";
 import { getBalanceText } from "@/utils/wallet";
 import { Noto_Serif } from "next/font/google";
 import { FaChevronRight, FaHashtag, FaParachuteBox } from "react-icons/fa6";
@@ -23,6 +24,7 @@ import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
 import type { MarketData } from "../pages/TokenMarket/list";
 import { truncate } from "../transaction";
+import SAFU from "./safu";
 import WalletTabs, { WalletTab } from "./tabs";
 
 enum BalanceTab {
@@ -45,6 +47,11 @@ const Bsv20List = ({
 	address?: string;
 }) => {
 	useSignals();
+
+	const [encryptedBackup] = useLocalStorage<string | undefined>(
+		"encryptedBackup"
+	);
+	console.log({ ordAddress: ordAddress.value, addressProp, encryptedBackup });
 
 	const ref = useRef(null);
 	const isInView = useInView(ref);
@@ -615,6 +622,12 @@ const Bsv20List = ({
 			</div>
 		);
 	});
+
+	const locked = computed(() => !ordAddress.value && !!encryptedBackup);
+
+	if (locked.value) {
+		return <SAFU />;
+	}
 
 	return (
 		<div className="overflow-x-auto max-w-screen">

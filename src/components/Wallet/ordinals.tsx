@@ -1,15 +1,14 @@
 "use client";
 
 import { AssetType } from "@/constants";
-import { showUnlockWalletModal } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import { useLocalStorage } from "@/utils/storage";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { Noto_Serif } from "next/font/google";
-import { BsShieldLockFill } from "react-icons/bs";
 import { FaSpinner } from "react-icons/fa";
 import OrdinalListings, { OrdViewMode } from "../OrdinalListings";
+import SAFU from "./safu";
 import WalletTabs from "./tabs";
 
 const notoSerif = Noto_Serif({
@@ -34,26 +33,7 @@ const WalletOrdinals = ({
 	const locked = computed(() => !ordAddress.value && !!encryptedBackup);
 
 	if (locked.value) {
-		return (
-			// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-			<div
-				className="mx-auto w-fit flex flex-col items-center justify-center cursor-pointer min-h-[70vh]"
-				onClick={() => {
-					showUnlockWalletModal.value = true;
-				}}
-			>
-				<div
-					className={`flex items-center text-2xl text-[#555] my-4 ${notoSerif.className}`}
-				>
-					<BsShieldLockFill className="w-6 h-6 text-[#555] mr-2" />
-					Funds are SAFU
-				</div>
-
-				<div className="btn btn-primary mt-4 btn-neutral">
-					Unlock Wallet
-				</div>
-			</div>
-		);
+		return <SAFU />;
 	}
 
 	if (!ordAddress.value) {
