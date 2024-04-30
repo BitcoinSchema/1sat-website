@@ -6,6 +6,7 @@ import { ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
@@ -40,6 +41,20 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					<div>This item is not listed</div>
 				)}
 			</div>
+
+			{/* // unlisted bsv20 */}
+			{isOwner && !artifact.data?.list && artifact.data?.bsv20 && (
+				<Link
+					href={`/market/${
+						artifact.data.bsv20.id ? "bsv21" : "bsv20"
+					}/${artifact.data.bsv20.id || artifact.data.bsv20.tick}`}
+				>
+					<button type="button" className="btn">
+						List
+					</button>
+				</Link>
+			)}
+			{/* // unlisted utxo */}
 
 			{isOwner && artifact.data?.list && (
 				<button

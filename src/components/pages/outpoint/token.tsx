@@ -56,7 +56,6 @@ const OutpointToken = async ({ outpoint }: Props) => {
 			activeTab={OutpointTab.Token}
 		/>
 	);
-	return;
 };
 
 export default OutpointToken;
