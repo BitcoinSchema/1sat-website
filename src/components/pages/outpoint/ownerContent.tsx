@@ -1,6 +1,7 @@
 "use client";
 
 import JDenticon from "@/components/JDenticon";
+import { WalletTab } from "@/components/Wallet/tabs";
 import CancelListingModal from "@/components/modal/cancelListing";
 import TransferBsv20Modal from "@/components/modal/transferBsv20";
 import {
@@ -340,14 +341,22 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					listing={artifact as Listing}
 				/>
 			)}
-			{showSendModal.value === (tick || id) && (
+			{showSendModal.value ===
+				(artifact.data?.bsv20?.tick || artifact.data?.bsv20?.id) && (
 				<TransferBsv20Modal
 					onClose={() => (showSendModal.value = undefined)}
-					type={type}
-					id={(tick || id)!}
-					dec={dec}
-					balance={balance}
-					sym={sym}
+					type={
+						artifact.data?.bsv20?.id
+							? WalletTab.BSV21
+							: WalletTab.BSV20
+					}
+					id={
+						(artifact.data?.bsv20?.tick ||
+							artifact.data?.bsv20?.id)!
+					}
+					dec={artifact.data?.bsv20?.dec || 0}
+					balance={Number.parseInt(artifact.data?.bsv20?.amt || "0")}
+					sym={artifact.data?.bsv20?.sym}
 				/>
 			)}
 		</div>
