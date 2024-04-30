@@ -85,9 +85,11 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
 					))}
 				</div>
 			)}
-			<div className="text-[#555] font-semibold text-lg mb-2">
-				Ordinals
-			</div>
+			{bsv20Results && bsv20Results.length > 0 && (
+				<div className="text-[#555] font-semibold text-lg mb-2">
+					Ordinals
+				</div>
+			)}
 			<div className="tab-content block bg-base-100 border-base-200 rounded-box p-2 md:p-6">
 				<Listings />
 			</div>
