@@ -27,19 +27,10 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
 		console.error(e);
 	}
 
-	// Get the collection items
-	const q = {
-		map: {
-			subTypeData: {
-				collectionId: params.outpoint,
-			},
-		},
-	};
-
 	if (!collection || !stats) {
 		return <div>Collection not found</div>;
 	}
-	return <CollectionPage stats={stats} collection={collection} query={q} />;
+	return <CollectionPage stats={stats} collection={collection} />;
 };
 
 export default Collection;
