@@ -8,7 +8,6 @@ import { CollectionNavigation } from "./CollectionNavigation";
 interface Props {
 	stats: CollectionStats;
 	collection: OrdUtxo;
-	query: FetchItemsQuery;
 	bannerImage?: string;
 }
 
@@ -18,12 +17,16 @@ const notoSerif = Noto_Serif({
 	subsets: ["latin"],
 });
 
-const CollectionPage = async ({
-	stats,
-	collection,
-	query,
-	bannerImage,
-}: Props) => {
+const CollectionPage = async ({ stats, collection, bannerImage }: Props) => {
+	// Get the collection items
+	const query = {
+		map: {
+			subTypeData: {
+				collectionId: collection.outpoint,
+			},
+		},
+	} as FetchItemsQuery;
+
 	const src = bannerImage
 		? await import(`@/assets/images/coom/${bannerImage}`)
 		: null;

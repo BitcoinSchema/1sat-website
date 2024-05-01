@@ -8,10 +8,6 @@ import {
 	COOM_OUTPOINTS_BY_SLUGS,
 	COOM_SLUGS_AND_OUTPOINTS,
 } from "../constants";
-import {
-	fetchCollectionItems,
-	fetchCollectionMarket,
-} from "@/utils/fetchCollectionData";
 
 const CoOMCollection = async ({ params }: { params: { outpoint: string } }) => {
 	let outpoint = params.outpoint;
@@ -46,18 +42,6 @@ const CoOMCollection = async ({ params }: { params: { outpoint: string } }) => {
 		console.error(e);
 	}
 
-	// Get the collection items
-	const q = {
-		map: {
-			subTypeData: {
-				collectionId: outpoint,
-			},
-		},
-	};
-
-	const items = (await fetchCollectionItems(q)) ?? [];
-	const market = (await fetchCollectionMarket(q)) ?? [];
-
 	if (!collection || !stats) {
 		return <div>Collection not found</div>;
 	}
@@ -65,10 +49,7 @@ const CoOMCollection = async ({ params }: { params: { outpoint: string } }) => {
 	return (
 		<CollectionPage
 			stats={stats}
-			marketItems={market}
-			items={items}
 			collection={collection}
-			query={q}
 			bannerImage={COOM_BANNERS_BY_OUTPOINT[outpoint]}
 		/>
 	);
