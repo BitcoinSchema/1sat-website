@@ -313,7 +313,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 
 	return (
 		<>
-			<div className="w-full rounded gap-4 mb-4 flex-col md:flex overflow-x-auto">
+			<div className="w-full rounded gap-4 mb-4 flex-col md:flex-row flex overflow-x-auto">
 				{showDetails.value && details.value}
 			</div>
 		</>
