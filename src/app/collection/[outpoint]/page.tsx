@@ -2,10 +2,6 @@ import CollectionPage from "@/components/pages/collection";
 import { API_HOST } from "@/constants";
 import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
-import {
-	fetchCollectionItems,
-	fetchCollectionMarket,
-} from "@/utils/fetchCollectionData";
 import * as http from "@/utils/httpClient";
 
 const Collection = async ({ params }: { params: { outpoint: string } }) => {
@@ -40,21 +36,10 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
 		},
 	};
 
-	const items = (await fetchCollectionItems(q)) ?? [];
-	const market = (await fetchCollectionMarket(q)) ?? [];
-
 	if (!collection || !stats) {
 		return <div>Collection not found</div>;
 	}
-	return (
-		<CollectionPage
-			stats={stats}
-			marketItems={market}
-			items={items}
-			collection={collection}
-			query={q}
-		/>
-	);
+	return <CollectionPage stats={stats} collection={collection} query={q} />;
 };
 
 export default Collection;

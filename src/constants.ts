@@ -89,4 +89,4 @@ export const encryptionPrefix = "ENC:";
 export const OLD_PAY_PK_KEY = "1satfk";
 export const OLD_ORD_PK_KEY = "1satok";
 
-export const NUMBER_OF_ITEMS_PER_PAGE = 100;
+export const NUMBER_OF_ITEMS_PER_PAGE = 50;

@@ -47,7 +47,7 @@ const Menu = () => {
 					first is first fungible tokens
 				</div>
 				<div className={hoverBsv21Class}>
-					token contracts like LTM and POW20.
+					token contracts like LTM and POW20
 				</div>
 				<div className={hoverOrdClass}>
 					digital paintings, generative art, kittens

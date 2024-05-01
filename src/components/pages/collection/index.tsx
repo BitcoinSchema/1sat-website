@@ -7,8 +7,6 @@ import { CollectionNavigation } from "./CollectionNavigation";
 
 interface Props {
 	stats: CollectionStats;
-	items: OrdUtxo[];
-	marketItems: OrdUtxo[];
 	collection: OrdUtxo;
 	query: FetchItemsQuery;
 	bannerImage?: string;
@@ -22,8 +20,6 @@ const notoSerif = Noto_Serif({
 
 const CollectionPage = async ({
 	stats,
-	marketItems,
-	items,
 	collection,
 	query,
 	bannerImage,
@@ -53,11 +49,7 @@ const CollectionPage = async ({
 			)}
 
 			<CollectionNavigation />
-			<CollectionList
-				initialMarketItems={marketItems}
-				initialCollectionItems={items}
-				query={query}
-			/>
+			<CollectionList query={query} />
 		</div>
 	);
 };

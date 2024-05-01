@@ -2,47 +2,34 @@
 
 import Artifact from "@/components/artifact";
 import { NUMBER_OF_ITEMS_PER_PAGE } from "@/constants";
-import { FetchItemsQuery } from "@/types/collection";
-import { OrdUtxo } from "@/types/ordinals";
+import type { FetchItemsQuery } from "@/types/collection";
+import type { OrdUtxo } from "@/types/ordinals";
 import {
 	fetchCollectionItems,
 	fetchCollectionMarket,
 } from "@/utils/fetchCollectionData";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tab } from "./CollectionNavigation";
 
 type CollectionListProps = {
-	initialMarketItems: OrdUtxo[];
-	initialCollectionItems: OrdUtxo[];
 	query: FetchItemsQuery;
 };
 
-export const CollectionList = ({
-	initialMarketItems,
-	initialCollectionItems,
-	query,
-}: CollectionListProps) => {
+export const CollectionList = ({ query }: CollectionListProps) => {
 	const searchParams = useSearchParams();
 	// if there's no tab param, act as if it's market
 	const tab = searchParams.get("tab") ?? Tab.Market;
 	const isMarketTab = tab === Tab.Market;
 
-	const [marketOffset, setMarketOffset] = useState(NUMBER_OF_ITEMS_PER_PAGE);
-	const [itemsOffset, setItemsOffset] = useState(
-		isMarketTab ? 0 : NUMBER_OF_ITEMS_PER_PAGE
-	);
+	const [marketOffset, setMarketOffset] = useState(0);
+	const [itemsOffset, setItemsOffset] = useState(0);
 
-	const [marketItems, setMarketItems] =
-		useState<OrdUtxo[]>(initialMarketItems);
-	const [items, setItems] = useState<OrdUtxo[]>(initialCollectionItems);
+	const [marketItems, setMarketItems] = useState<OrdUtxo[]>([]);
+	const [items, setItems] = useState<OrdUtxo[]>([]);
 
-	const [hasMoreMarket, setHasMoreMarket] = useState(
-		initialMarketItems.length >= NUMBER_OF_ITEMS_PER_PAGE
-	);
-	const [hasMoreItems, setHasMoreItems] = useState(
-		initialCollectionItems.length >= NUMBER_OF_ITEMS_PER_PAGE
-	);
+	const [hasMoreMarket, setHasMoreMarket] = useState(true);
+	const [hasMoreItems, setHasMoreItems] = useState(true);
 
 	const hasMore = isMarketTab ? hasMoreMarket : hasMoreItems;
 	const itemsToDisplay = isMarketTab ? marketItems : items;
@@ -58,12 +45,25 @@ export const CollectionList = ({
 		} else {
 			const newItems =
 				(await fetchCollectionItems(query, itemsOffset)) ?? [];
-
+			console.log({ newItems });
 			setItems((i) => [...i, ...newItems]);
 			setHasMoreItems(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
 			setItemsOffset((offset) => offset + NUMBER_OF_ITEMS_PER_PAGE);
 		}
 	};
+
+	useEffect(() => {
+		// initial load
+		const fire = async () => {
+			await loadMore();
+		};
+		if (itemsOffset === 0 && !isMarketTab) {
+			fire();
+		}
+		if (marketOffset === 0 && isMarketTab) {
+			fire();
+		}
+	}, [loadMore, isMarketTab, marketOffset, itemsOffset]);
 
 	return itemsToDisplay.length ? (
 		<>
