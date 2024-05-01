@@ -44,7 +44,7 @@ const Menu = () => {
 		<div className="relative">
 			<div className="absolute top-0 left-0 right-0 h-16 flex items-center justify-center">
 				<div className={hoverBsv20Class}>
-					"first is first" fungible tokens
+					first is first fungible tokens
 				</div>
 				<div className={hoverBsv21Class}>
 					token contracts like LTM and POW20.
