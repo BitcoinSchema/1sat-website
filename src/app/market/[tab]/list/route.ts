@@ -1,6 +1,6 @@
-import { MarketData } from "@/components/pages/TokenMarket/list";
+import type { MarketData } from "@/components/pages/TokenMarket/list";
 import { AssetType } from "@/constants";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 interface TickHolder {
 	address: string;
@@ -47,21 +47,21 @@ export async function POST(
 		// aggregated market data from the API
 		const urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21${
 			params.id ? `/${params.id}` : ""
-		}?limit=100&sort=recentSales&dir=desc&offset=0`;
+		}?limit=100&sort=asc&dir=asc&offset=0`;
 
 		const promiseBsv21Market = await fetch(urlV2Market);
-		marketData = (
-			((await promiseBsv21Market.json()) || []) as MarketData[]
-		).sort((a, b) => {
-			if (a.pendingOps * 1000 > Number.parseInt(a.fundBalance)) {
-				return 1;
-			}
-			if (b.pendingOps * 1000 > Number.parseInt(b.fundBalance)) {
-				return -1;
-			}
-			return a.marketCap > b.marketCap ? -1 : 1;
-		});
+		marketData = (await promiseBsv21Market.json()) as MarketData[];
 	}
 
-	return NextResponse.json(marketData || []);
+	// marketData?.sort((a, b) => {
+	// 	if (a.pendingOps * 1000 > Number.parseInt(a.fundBalance)) {
+	// 		return 1;
+	// 	}
+	// 	if (b.pendingOps * 1000 > Number.parseInt(b.fundBalance)) {
+	// 		return -1;
+	// 	}
+	// 	return 0;
+	// });
+
+	return NextResponse.json(marketData);
 }
