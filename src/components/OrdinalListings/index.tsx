@@ -1,4 +1,3 @@
-import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { Suspense } from "react";
 import OrdinalListingSkeleton from "../skeletons/listing/Ordinal";
@@ -10,14 +9,14 @@ export enum OrdViewMode {
 }
 
 interface OrdinalListingsProps {
-  listings?: OrdUtxo[];
+  term?: string;
   address?: string;
   mode: OrdViewMode;
   onClick?: (outpoint: string) => Promise<void>;
 }
 
 const OrdinalListings: React.FC<OrdinalListingsProps> = ({
-  listings,
+  term,
   address,
   mode,
   onClick,
@@ -42,7 +41,7 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({
         )}
         <Suspense fallback={<OrdinalListingSkeleton iterations={30} />}>
           <View
-            listings={listings}
+            term={term}
             address={address}
             mode={mode}
             onClick={onClick}

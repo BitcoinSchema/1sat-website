@@ -6,7 +6,7 @@ import TokenMarket from "../TokenMarket";
 import MarketTabs from "./tabs";
 
 export interface MarketPageProps {
-  imageListings?: OrdUtxo[];
+  term?: string;
   collections?: OrdUtxo[];
   tokenListingsv2?: BSV20TXO[];
   modelListings?: OrdUtxo[];
@@ -32,7 +32,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         return (
           <>
             <OrdinalListings
-              listings={props.imageListings!}
+              term={props.term}
               mode={OrdViewMode.List}
             />
           </>
