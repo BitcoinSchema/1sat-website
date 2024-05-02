@@ -227,10 +227,10 @@ const Bsv20List = ({
   const getDec = useCallback((tick?: string, id?: string) => {
     const deets = find(
       balances.value,
-      (t) => tick ? t.tick === tick : t.id === id
+      (t) => type === WalletTab.BSV20 ? t.tick === tick : t.id === id
     );
     return deets?.dec || 0;
-  }, [balances.value]);
+  }, [balances.value, type]);
 
   const activity = computed(() => {
     return history.value
@@ -259,8 +259,8 @@ const Bsv20List = ({
             {bsv20.data?.bsv20?.tick || bsv20.data?.bsv20?.sym || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
           </div>
           <div>{bsv20.data?.bsv20?.op}</div>
-          <div>{bsv20.data?.bsv20?.tick ? Number.parseInt(bsv20.data.bsv20.amt || "0") / 10 ** (getDec(bsv20.data.bsv20.tick, bsv20.data.bsv20.id) || 0) : "?"}</div>
-          <div>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
+          <div>{bsv20.data?.bsv20 && Number.parseInt(bsv20.data.bsv20.amt || "0") / 10 ** (getDec(bsv20.data.bsv20.tick, bsv20.data.bsv20.id) || 0)}</div>
+          <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-red-500" : "text-green-500" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
           <div>
             <Link
               href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
