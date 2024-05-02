@@ -248,11 +248,11 @@ const Bsv20List = ({
               )
             }
           >
-            {bsv20.data?.bsv20?.tick || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
+            {bsv20.data?.bsv20?.tick || bsv20.data?.bsv20?.sym || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
           </div>
           <div>{bsv20.data?.bsv20?.op}</div>
-          <div>{bsv20.data?.bsv20?.amt}</div>
-          <div>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
+          <div>{Number.parseInt(bsv20.data?.bsv20?.amt || "0") / 10 ** (bsv20.data?.bsv20?.dec || 0)}</div>
+          <div>{bsv20.sale ? bsv20.sale : "-"}</div>
           <div>
             <Link
               href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
@@ -667,7 +667,7 @@ const Bsv20List = ({
                 Amount
               </div>
               <div className="font-semibold text-[#777] text-base">
-                Price
+                Sale
               </div>
               <div className="" />
               {activity}
