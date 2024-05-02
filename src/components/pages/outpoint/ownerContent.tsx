@@ -340,7 +340,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
           listing={artifact as Listing}
         />
       )}
-      {showSendModal.value ===
+      {showSendModal.value !== undefined && showSendModal.value ===
         (artifact.data?.bsv20?.tick || artifact.data?.bsv20?.id) && (
           <TransferBsv20Modal
             onClose={() => {
