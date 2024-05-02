@@ -68,6 +68,7 @@ const Bsv20List = ({
   // get unspent ordAddress
   const bsv20s = useSignal<OrdUtxo[] | null>(null);
   const tickerDetails = useSignal<MarketData[] | null>(null);
+  const history = useSignal<OrdUtxo[] | null>(null);
 
   effect(() => {
     const fire = async () => {
@@ -103,6 +104,23 @@ const Bsv20List = ({
       fire();
     }
   });
+
+  effect(async () => {
+    // fetch token history
+    const address = addressProp || ordAddress.value;
+    if (address) {
+      try {
+        const historyUrl = `${API_HOST}/api/txos/address/${address}/history?limit=100&offset=0&bsv20=true&origins=false`;
+        const { promise } = http.customFetch<OrdUtxo[]>(historyUrl, {
+          method: "POST",
+        });
+        history.value = await promise;
+      } catch (error) {
+        console.error("Error fetching token history", error);
+      }
+    }
+  })
+
   effect(() => {
     const address = addressProp || ordAddress.value;
     // get unindexed tickers
@@ -207,10 +225,10 @@ const Bsv20List = ({
   });
 
   const activity = computed(() => {
-    return holdings.value
-      ?.filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick))
+    return history.value
+      ?.filter((b) => (type === WalletTab.BSV20 ? !!b.data?.bsv20?.tick : !b.data?.bsv20?.tick))
       ?.map((bsv20, index) => (
-        <React.Fragment key={`act-${bsv20.tick}-${index}`}>
+        <React.Fragment key={`act-${bsv20.data?.bsv20?.tick}-${index}`}>
           <div className="text-xs text-info">
             <Link
               href={`https://whatsonchain.com/tx/${bsv20.txid}`}
@@ -223,18 +241,18 @@ const Bsv20List = ({
             className="flex items-center cursor-pointer hover:text-blue-400 transition"
             onClick={() =>
               router.push(
-                `/market/${bsv20.tick
-                  ? `bsv20/${bsv20.tick}`
-                  : `bsv21/${bsv20.id}`
+                `/market/${bsv20.data?.bsv20?.tick
+                  ? `bsv20/${bsv20.data?.bsv20?.tick}`
+                  : `bsv21/${bsv20.data?.bsv20?.id}`
                 }`
               )
             }
           >
-            {bsv20.tick || bsv20.id.slice(-8)}
+            {bsv20.data?.bsv20?.tick || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
           </div>
-          <div>{bsv20.op}</div>
-          <div>{bsv20.amt}</div>
-          <div>{bsv20.price ? bsv20.price : "-"}</div>
+          <div>{bsv20.data?.bsv20?.op}</div>
+          <div>{bsv20.data?.bsv20?.amt}</div>
+          <div>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
           <div>
             <Link
               href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
@@ -631,7 +649,7 @@ const Bsv20List = ({
           <div className="md:mx-6">
             <h1 className="mb-4 flex items-center justify-between">
               <div className={`text-2xl ${notoSerif.className}`}>
-                {type.toUpperCase()} Outputs
+                {type.toUpperCase()} History
               </div>
               <div className="text-sm text-[#555]" />
             </h1>
