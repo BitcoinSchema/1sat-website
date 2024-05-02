@@ -23,7 +23,7 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({
   onClick,
 }: OrdinalListingsProps) => {
   return (
-    <div className="w-screen max-w-7xl h-full">
+    <div className="w-screen max-w-7xl h-full p-2 md:p-6">
       <table className="table font-mono" cellSpacing={10}>
         {mode === OrdViewMode.List && (
           <thead>

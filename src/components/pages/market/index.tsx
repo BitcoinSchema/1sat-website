@@ -54,7 +54,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto p-2 md:p-0">
       {props.title && (
         <div className="text-3xl font-bold mb-4">{props.title}</div>
       )}
@@ -66,7 +66,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
           />
         </div>
       )}
-      <div className="tab-content block bg-base-100 border-base-200 rounded-box p-2 md:p-6">
+      <div className="tab-content block bg-base-100 border-base-200 rounded-box">
         <Listings id={props.id} />
       </div>
     </div>
