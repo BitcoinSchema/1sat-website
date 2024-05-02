@@ -26,7 +26,7 @@ export async function POST(
 		// listings = await promiseBsv20;
 		const urlV1Market = `https://1sat-api-production.up.railway.app/market/bsv20${
 			params.id ? `/${params.id}` : ""
-		}?limit=100&sort=recentSales&dir=desc&offset=0`;
+		}?limit=100&sort=most_recent_sale&dir=asc&offset=0`;
 
 		const promiseBsv20v1Market = await fetch(urlV1Market);
 		marketData = ((await promiseBsv20v1Market.json()) ||
@@ -47,7 +47,7 @@ export async function POST(
 		// aggregated market data from the API
 		const urlV2Market = `https://1sat-api-production.up.railway.app/market/bsv21${
 			params.id ? `/${params.id}` : ""
-		}?limit=100&sort=asc&dir=asc&offset=0`;
+		}?limit=100&sort=most_recent_sale&dir=asc&offset=0`;
 
 		const promiseBsv21Market = await fetch(urlV2Market);
 		marketData = (await promiseBsv21Market.json()) as MarketData[];
