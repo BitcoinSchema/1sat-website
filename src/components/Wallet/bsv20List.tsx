@@ -269,7 +269,7 @@ const Bsv20List = ({
             </div>
             <div>{bsv20.data?.bsv20?.op}</div>
             <div>{bsv20.data?.bsv20 && amount}</div>
-            <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-red-500" : "text-green-500" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
+            <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
             <div>
               <Link
                 href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
