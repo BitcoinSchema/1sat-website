@@ -252,7 +252,7 @@ const Bsv20List = ({
           </div>
           <div>{bsv20.data?.bsv20?.op}</div>
           <div>{Number.parseInt(bsv20.data?.bsv20?.amt || "0") / 10 ** (bsv20.data?.bsv20?.dec || 0)}</div>
-          <div>{bsv20.sale ? bsv20.sale : "-"}</div>
+          <div>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
           <div>
             <Link
               href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
