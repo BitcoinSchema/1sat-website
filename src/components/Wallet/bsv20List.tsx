@@ -3,7 +3,7 @@
 import { API_HOST, AssetType, resultsPerPage } from "@/constants";
 import { bsv20Balances } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
-import type { BSV20Balance } from "@/types/bsv20";
+import type { BSV20, BSV20Balance } from "@/types/bsv20";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { computed, effect, useSignal } from "@preact/signals-react";
@@ -232,6 +232,10 @@ const Bsv20List = ({
     return deets?.dec || 0;
   }, [balances.value, type]);
 
+  const getSym = useCallback((bsv20?: BSV20) => {
+    return find(balances.value, (t) => t.id === bsv20?.id)?.sym;
+  }, [balances.value]);
+
   const activity = computed(() => {
     return history.value
       ?.filter((b) => (type === WalletTab.BSV20 ? !!b.data?.bsv20?.tick : !b.data?.bsv20?.tick))
@@ -256,7 +260,7 @@ const Bsv20List = ({
               )
             }
           >
-            {bsv20.data?.bsv20?.tick || bsv20.data?.bsv20?.sym || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
+            {bsv20.data?.bsv20?.tick || getSym(bsv20.data?.bsv20) || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
           </div>
           <div>{bsv20.data?.bsv20?.op}</div>
           <div>{bsv20.data?.bsv20 && Number.parseInt(bsv20.data.bsv20.amt || "0") / 10 ** (getDec(bsv20.data.bsv20.tick, bsv20.data.bsv20.id) || 0)}</div>
