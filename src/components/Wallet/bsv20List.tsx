@@ -6,6 +6,7 @@ import { ordAddress } from "@/signals/wallet/address";
 import type { BSV20, BSV20Balance } from "@/types/bsv20";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
+import { getBalanceText } from "@/utils/wallet";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
@@ -16,7 +17,6 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
 
 import { useLocalStorage } from "@/utils/storage";
-import { getBalanceText } from "@/utils/wallet";
 import { Noto_Serif } from "next/font/google";
 import { FaChevronRight, FaHashtag, FaParachuteBox } from "react-icons/fa6";
 import AirdropTokensModal from "../modal/airdrop";
@@ -263,7 +263,7 @@ const Bsv20List = ({
             {bsv20.data?.bsv20?.tick || getSym(bsv20.data?.bsv20) || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
           </div>
           <div>{bsv20.data?.bsv20?.op}</div>
-          <div>{bsv20.data?.bsv20 && Number.parseInt(bsv20.data.bsv20.amt || "0") / 10 ** (getDec(bsv20.data.bsv20.tick, bsv20.data.bsv20.id) || 0)}</div>
+          <div>{bsv20.data?.bsv20 && getBalanceText(Number.parseInt(bsv20.data.bsv20.amt || "0"), getDec(bsv20.data.bsv20.tick, bsv20.data.bsv20.id))}</div>
           <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-red-500" : "text-green-500" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
           <div>
             <Link
