@@ -12,7 +12,7 @@ import { useInView } from "framer-motion";
 import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { IoSend } from "react-icons/io5";
 
 import { useLocalStorage } from "@/utils/storage";
@@ -110,7 +110,7 @@ const Bsv20List = ({
     const address = addressProp || ordAddress.value;
     if (address) {
       try {
-        const historyUrl = `${API_HOST}/api/txos/address/${address}/history?limit=100&offset=0&bsv20=true&origins=false`;
+        const historyUrl = `${API_HOST}/api/txos/address/${address}/history?limit=100&offset=0&bsv20=true&origins=true`;
         const { promise } = http.customFetch<OrdUtxo[]>(historyUrl, {
           method: "POST",
         });
@@ -224,6 +224,14 @@ const Bsv20List = ({
     )?.filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick));
   });
 
+  const getDec = useCallback((tick?: string, id?: string) => {
+    const deets = find(
+      balances.value,
+      (t) => tick ? t.tick === tick : t.id === id
+    );
+    return deets?.dec || 0;
+  }, [balances.value]);
+
   const activity = computed(() => {
     return history.value
       ?.filter((b) => (type === WalletTab.BSV20 ? !!b.data?.bsv20?.tick : !b.data?.bsv20?.tick))
@@ -251,7 +259,7 @@ const Bsv20List = ({
             {bsv20.data?.bsv20?.tick || bsv20.data?.bsv20?.sym || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
           </div>
           <div>{bsv20.data?.bsv20?.op}</div>
-          <div>{Number.parseInt(bsv20.data?.bsv20?.amt || "0") / 10 ** (bsv20.data?.bsv20?.dec || 0)}</div>
+          <div>{bsv20.data?.bsv20?.tick ? Number.parseInt(bsv20.data.bsv20.amt || "0") / 10 ** (getDec(bsv20.data.bsv20.tick, bsv20.data.bsv20.id) || 0) : "?"}</div>
           <div>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
           <div>
             <Link
