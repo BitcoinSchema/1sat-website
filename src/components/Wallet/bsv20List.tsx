@@ -237,43 +237,49 @@ const Bsv20List = ({
   }, [balances.value]);
 
   const activity = computed(() => {
+
     return history.value
       ?.filter((b) => (type === WalletTab.BSV20 ? !!b.data?.bsv20?.tick : !b.data?.bsv20?.tick))
-      ?.map((bsv20, index) => (
-        <React.Fragment key={`act-${bsv20.data?.bsv20?.tick}-${index}`}>
-          <div className="text-xs text-info">
-            <Link
-              href={`https://whatsonchain.com/tx/${bsv20.txid}`}
-              target="_blank"
+      ?.map((bsv20, index) => {
+        const decimals = getDec(bsv20.data?.bsv20?.tick, bsv20.data?.bsv20?.id)
+        const amount = getBalanceText(Number.parseInt(bsv20.data?.bsv20?.amt || "0") / 10 ** decimals, decimals)
+
+        return (
+          <React.Fragment key={`act-${bsv20.data?.bsv20?.tick}-${index}`}>
+            <div className="text-xs text-info">
+              <Link
+                href={`https://whatsonchain.com/tx/${bsv20.txid}`}
+                target="_blank"
+              >
+                {bsv20.height}
+              </Link>
+            </div>
+            <div
+              className="flex items-center cursor-pointer hover:text-blue-400 transition"
+              onClick={() =>
+                router.push(
+                  `/market/${bsv20.data?.bsv20?.tick
+                    ? `bsv20/${bsv20.data?.bsv20?.tick}`
+                    : `bsv21/${bsv20.data?.bsv20?.id}`
+                  }`
+                )
+              }
             >
-              {bsv20.height}
-            </Link>
-          </div>
-          <div
-            className="flex items-center cursor-pointer hover:text-blue-400 transition"
-            onClick={() =>
-              router.push(
-                `/market/${bsv20.data?.bsv20?.tick
-                  ? `bsv20/${bsv20.data?.bsv20?.tick}`
-                  : `bsv21/${bsv20.data?.bsv20?.id}`
-                }`
-              )
-            }
-          >
-            {bsv20.data?.bsv20?.tick || getSym(bsv20.data?.bsv20) || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
-          </div>
-          <div>{bsv20.data?.bsv20?.op}</div>
-          <div>{bsv20.data?.bsv20 && getBalanceText(Number.parseInt(bsv20.data.bsv20.amt || "0"), getDec(bsv20.data.bsv20.tick, bsv20.data.bsv20.id))}</div>
-          <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-red-500" : "text-green-500" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
-          <div>
-            <Link
-              href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
-            >
-              <FaChevronRight />
-            </Link>
-          </div>
-        </React.Fragment>
-      ));
+              {bsv20.data?.bsv20?.tick || getSym(bsv20.data?.bsv20) || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
+            </div>
+            <div>{bsv20.data?.bsv20?.op}</div>
+            <div>{bsv20.data?.bsv20 && amount}</div>
+            <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-red-500" : "text-green-500" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
+            <div>
+              <Link
+                href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
+              >
+                <FaChevronRight />
+              </Link>
+            </div>
+          </React.Fragment>
+        )
+      });
   });
 
   const listingBalances = computed(() => {
