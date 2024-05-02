@@ -6,7 +6,7 @@ import TokenMarket from "../TokenMarket";
 import MarketTabs from "./tabs";
 
 export interface MarketPageProps {
-  term?: string;
+  // imageListings?: OrdUtxo[];
   collections?: OrdUtxo[];
   tokenListingsv2?: BSV20TXO[];
   modelListings?: OrdUtxo[];
@@ -16,6 +16,7 @@ export interface MarketPageProps {
   title?: string;
   showTabs?: boolean;
   id?: string;
+  term?: string;
 }
 
 const MarketPage: React.FC<MarketPageProps> = (props) => {
@@ -26,14 +27,15 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
     showTabs = true;
   }
 
-  const Listings = ({ id }: { id?: string }) => {
+  const Listings = ({ id, term }: { id?: string, term?: string }) => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
         return (
           <>
             <OrdinalListings
-              term={props.term}
+              // listings={props.imageListings!}
               mode={OrdViewMode.List}
+              term={term}
             />
           </>
         );
@@ -67,7 +69,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         </div>
       )}
       <div className="tab-content block bg-base-100 border-base-200 rounded-box">
-        <Listings id={props.id} />
+        <Listings id={props.id} term={props.term} />
       </div>
     </div>
   );

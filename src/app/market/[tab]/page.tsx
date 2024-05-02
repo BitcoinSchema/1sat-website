@@ -8,12 +8,12 @@ const Market = async ({ params }: { params: { tab: AssetType } }) => {
   switch (params.tab) {
     case AssetType.Ordinals:
       // TODO: Featured ordinals
-      const urlImages = `${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&type=image/png`;
-      const { promise } = http.customFetch<OrdUtxo[]>(urlImages);
-      const imageListings = await promise;
+      // const urlImages = `${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&type=image/png`;
+      // const { promise } = http.customFetch<OrdUtxo[]>(urlImages);
+      // const imageListings = await promise;
       return (
         <MarketPage
-          imageListings={imageListings}
+          // imageListings={imageListings}
           selectedAssetType={AssetType.Ordinals}
         />
       );

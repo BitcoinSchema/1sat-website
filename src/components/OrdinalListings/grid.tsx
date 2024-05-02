@@ -212,3 +212,4 @@ export const getWalletOrdUtxos = async ({
       : result;
   return final;
 };
+

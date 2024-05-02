@@ -9,6 +9,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
+import { useCallback } from "react";
 import { IoMdSearch } from "react-icons/io";
 
 // signal has to be in a React.FC
@@ -21,10 +22,10 @@ const SearchBar: React.FC = () => {
   // search param is part of the path 1satordinals.com/listings/search/[TERM]
   const searchParam = usePathname().split("/").pop() || "";
 
-  const lastTerm = useSignal("");
+  const lastTerm = useSignal(searchParam);
   const focused = useSignal(false);
 
-  const subForm = (e: React.FormEvent<HTMLFormElement>) => {
+  const subForm = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (searchTerm.value.length > 0) {
       if (searchTerm.value.length <= 4) {
@@ -44,17 +45,19 @@ const SearchBar: React.FC = () => {
             searchTerm.value = "";
             autofillValues.value = null;
             focused.value = false;
+            e.currentTarget.blur();
             router.push(`/market/${found.type}/${found.tick}`);
             return;
           }
         }
       }
 
+      e.currentTarget.blur();
       focused.value = false;
       router.push(`/listings/search/${searchTerm.value}`);
       searchTerm.value = "";
     }
-  };
+  }, [searchTerm, focused, router]);
 
   effect(() => {
     const fire = async (term: string) => {
@@ -98,9 +101,19 @@ const SearchBar: React.FC = () => {
     }
   };
 
+  const searchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    // catch escape and unfocus
+    if (e.key === "Escape") {
+      searchTerm.value = "";
+      autofillValues.value = null;
+      focused.value = false;
+      e.currentTarget.blur();
+    }
+  }, [searchTerm.value, autofillValues.value, focused.value]);
+
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div className={`justify-center w-full absolute items-center ${focused.value ? 'modal-backdrop backdrop-blur w-screen h-screen' : ''}`} onClick={(e) => {
+    <div className={`justify-center  items-center ${focused.value ? 'absolute modal-backdrop backdrop-blur w-screen h-screen' : 'w-fit mx-auto'}`} onClick={(e) => {
       searchTerm.value = "";
       autofillValues.value = null;
       focused.value = false;
@@ -120,6 +133,7 @@ const SearchBar: React.FC = () => {
               onFocus={() => {
                 focused.value = true;
               }}
+              onKeyDown={searchKeyDown}
             />
             <IoMdSearch className="absolute right-2 top-1/2 transform -translate-y-1/2 text-primary/25 group-hover:text-secondary-content transition w-5 h-5" />
           </div>
