@@ -1,6 +1,6 @@
 "use client";
 
-import { API_HOST, AssetType, resultsPerPage } from "@/constants";
+import { API_HOST, AssetType, FetchStatus, resultsPerPage } from "@/constants";
 import { bsv20Balances } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import type { BSV20, BSV20Balance } from "@/types/bsv20";
@@ -70,6 +70,8 @@ const Bsv20List = ({
   const bsv20s = useSignal<OrdUtxo[] | null>(null);
   const tickerDetails = useSignal<MarketData[] | null>(null);
   const history = useSignal<OrdUtxo[] | null>(null);
+  const fetchHistoryStatus = useSignal<FetchStatus>(FetchStatus.Idle);
+  const unspentStatus = useSignal<FetchStatus>(FetchStatus.Idle);
 
   effect(() => {
     const fire = async () => {
@@ -109,14 +111,17 @@ const Bsv20List = ({
   effect(async () => {
     // fetch token history
     const address = addressProp || ordAddress.value;
-    if (address) {
+    if (fetchHistoryStatus.value === FetchStatus.Idle && address) {
       try {
+        fetchHistoryStatus.value = FetchStatus.Loading;
         const historyUrl = `${API_HOST}/api/txos/address/${address}/history?limit=100&offset=0&bsv20=true&origins=true`;
         const { promise } = http.customFetch<OrdUtxo[]>(historyUrl, {
           method: "POST",
         });
         history.value = await promise;
+        fetchHistoryStatus.value = FetchStatus.Success;
       } catch (error) {
+        fetchHistoryStatus.value = FetchStatus.Error;
         console.error("Error fetching token history", error);
       }
     }
@@ -126,36 +131,45 @@ const Bsv20List = ({
     const address = addressProp || ordAddress.value;
     // get unindexed tickers
     const fire = async () => {
+      unspentStatus.value = FetchStatus.Loading;
       bsv20s.value = [];
-      const { promise } = http.customFetch<OrdUtxo[]>(
-        `${API_HOST}/api/txos/address/${address}/unspent?limit=1000&offset=0&dir=ASC&status=all&bsv20=true`
-      );
-      const u = await promise;
-      // filter out tickers that already exist in holdings, and group by ticker
-      const tickerList = u.map((u) => u.data?.bsv20?.tick);
-      console.log({ tickerList });
-      bsv20s.value = u.filter((u) =>
-        holdings.value?.every((h) => h.tick !== u.data?.bsv20?.tick)
-      );
-      console.log({ u });
-      bsv20s.value = u;
+      try {
 
-      if (address !== ordAddress.value) {
-        // not viewing own address
-        // fetch balances
-        const { promise: promiseBalances } = http.customFetch<
-          BSV20Balance[]
-        >(`${API_HOST}/api/bsv20/${address}/balance`);
-        const b = await promiseBalances;
-        addressBalances.value = b.sort((a, b) => {
-          return b.all.confirmed + b.all.pending >
-            a.all.confirmed + a.all.pending
-            ? 1
-            : -1;
-        });
-      }
+        const { promise } = http.customFetch<OrdUtxo[]>(
+          `${API_HOST}/api/txos/address/${address}/unspent?limit=1000&offset=0&dir=ASC&status=all&bsv20=true`
+        );
+        const u = await promise;
+
+        // filter out tickers that already exist in holdings, and group by ticker
+        const tickerList = u.map((u) => u.data?.bsv20?.tick);
+        console.log({ tickerList });
+        bsv20s.value = u.filter((u) =>
+          holdings.value?.every((h) => h.tick !== u.data?.bsv20?.tick)
+        );
+        console.log({ u });
+        bsv20s.value = u;
+
+        if (address !== ordAddress.value) {
+          // not viewing own address
+          // fetch balances
+          const { promise: promiseBalances } = http.customFetch<
+            BSV20Balance[]
+          >(`${API_HOST}/api/bsv20/${address}/balance`);
+          const b = await promiseBalances;
+          addressBalances.value = b.sort((a, b) => {
+            return b.all.confirmed + b.all.pending >
+              a.all.confirmed + a.all.pending
+              ? 1
+              : -1;
+          });
+        }
+        unspentStatus.value = FetchStatus.Success;
+      } catch (error) {
+        console.error("Error fetching bsv20s", error);
+        unspentStatus.value = FetchStatus.Error;
+      };
     };
-    if (!bsv20s.value && address) {
+    if (!bsv20s.value && address && unspentStatus.value === FetchStatus.Idle) {
       fire();
     }
   });
