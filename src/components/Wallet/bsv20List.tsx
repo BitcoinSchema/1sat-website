@@ -19,6 +19,7 @@ import { IoSend } from "react-icons/io5";
 import { useLocalStorage } from "@/utils/storage";
 import { Noto_Serif } from "next/font/google";
 import { FaChevronRight, FaHashtag, FaParachuteBox } from "react-icons/fa6";
+import { toBitcoin } from "satoshi-bitcoin-ts";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
@@ -268,7 +269,7 @@ const Bsv20List = ({
               {bsv20.data?.bsv20?.tick || getSym(bsv20.data?.bsv20) || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
             </div>
             <div>{bsv20.data?.bsv20?.op}</div>
-            <div>{bsv20.data?.bsv20 && amount}</div>
+            <div>{bsv20.data?.bsv20 && amount && toBitcoin(amount)} BSV</div>
             <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
             <div>
               <Link
