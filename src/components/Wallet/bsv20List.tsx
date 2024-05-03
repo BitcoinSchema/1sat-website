@@ -269,8 +269,8 @@ const Bsv20List = ({
               {bsv20.data?.bsv20?.tick || getSym(bsv20.data?.bsv20) || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
             </div>
             <div>{bsv20.data?.bsv20?.op}</div>
-            <div>{bsv20.data?.bsv20 && amount && toBitcoin(amount)} BSV</div>
-            <div className={`${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400" : "text-gray-500"}`}>{bsv20.data?.list?.price ? bsv20.data?.list?.price : "-"}</div>
+            <div className="text-xs">{bsv20.data?.bsv20 && amount}</div>
+            <div className={`text-xs ${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400" : "text-gray-500"}`}>{bsv20.data?.list?.price ? `${toBitcoin(bsv20.data?.list?.price)} BSV` : "-"}</div>
             <div>
               <Link
                 href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}

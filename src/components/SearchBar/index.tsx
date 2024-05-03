@@ -116,7 +116,7 @@ const SearchBar: React.FC = () => {
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div className={`justify-center items-center ${focused.value ? 'top-0 md:top-auto fixed md:modal-backdrop md:backdrop-blur w-screen md:h-screen z-40' : 'w-fit mx-auto'}`} onClick={(e) => {
+    <div className={`justify-center items-center ${focused.value ? 'top-0 md:top-auto absolute md:modal-backdrop md:backdrop-blur w-screen md:h-screen' : 'w-fit mx-auto'}`} onClick={(e) => {
       searchTerm.value = "";
       autofillValues.value = null;
       focused.value = false;
