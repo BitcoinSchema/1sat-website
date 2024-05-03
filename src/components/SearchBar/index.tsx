@@ -9,7 +9,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { IoMdSearch } from "react-icons/io";
 
 // signal has to be in a React.FC
@@ -24,7 +24,7 @@ const SearchBar: React.FC = () => {
 
   const lastTerm = useSignal(searchParam);
   const focused = useSignal(false);
-
+  const inputRef = useRef<HTMLInputElement>(null);
   const subForm = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (searchTerm.value.length > 0) {
@@ -54,8 +54,9 @@ const SearchBar: React.FC = () => {
 
       e.currentTarget.blur();
       focused.value = false;
-      router.push(`/listings/search/${searchTerm.value}`);
+      const url = `/listings/search/${searchTerm.value}`;
       searchTerm.value = "";
+      router.push(url);
     }
   }, [searchTerm, focused, router]);
 
@@ -98,6 +99,8 @@ const SearchBar: React.FC = () => {
   const tickerKeyDown = (e: any) => {
     if (e.key === "Enter") {
       findBsv20Ticker(e.target.value);
+    } else {
+
     }
   };
 
@@ -109,20 +112,20 @@ const SearchBar: React.FC = () => {
       focused.value = false;
       e.currentTarget.blur();
     }
-  }, [searchTerm.value, autofillValues.value, focused.value]);
+  }, [searchTerm, focused]);
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div className={`justify-center  items-center ${focused.value ? 'absolute modal-backdrop backdrop-blur w-screen h-screen' : 'w-fit mx-auto'}`} onClick={(e) => {
+    <div className={`justify-center items-center ${focused.value ? 'top-0 md:top-auto fixed md:modal-backdrop md:backdrop-blur w-screen md:h-screen z-40' : 'w-fit mx-auto'}`} onClick={(e) => {
       searchTerm.value = "";
       autofillValues.value = null;
       focused.value = false;
-
     }}>
-      <div className={`${focused.value ? 'bg-[#111] rounded-box w-[50vw] max-w-xl h-fit flex items-center justify-center p-4' : ''}`}>
+      <div className={`${focused.value ? 'md:bg-[#111] rounded-box w-[50vw] max-w-xl h-fit flex items-center justify-center p-3' : ''}`}>
         <form className="navbar-center relative" onSubmit={subForm}>
-          <div className={`group gap-2 ${focused.value ? 'w-48 md:w-96' : 'w-full'} relative`}>
+          <div className={`group gap-2 ${focused.value ? 'w-64 md:w-96' : 'w-full'} relative`}>
             <input
+              ref={inputRef}
               type="text"
               placeholder={"Search"}
               className="w-full input input-ghost hover:input-bordered pr-8"

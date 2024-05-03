@@ -239,6 +239,13 @@ const List = ({ term, address, onClick }: Props) => {
             )
           );
         })}
+        {listings.value.length === 0 && (
+          <tr>
+            <td className="text-center" colSpan={5}>
+              No listings found
+            </td>
+          </tr>
+        )}
         <tr>
           <td className="text-center" colSpan={5}>
             <div
