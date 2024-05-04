@@ -1,125 +1,8 @@
-"use client"
-
 import { ORDFS } from "@/constants";
-import type { Collection, CollectionStats } from "@/types/collection";
-import { useQuery } from "@tanstack/react-query";
-import { Noto_Serif } from "next/font/google";
+import type { CollectionStats } from "@/types/collection";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo } from "react";
-import Slider from "react-slick";
-import "slick-carousel/slick/slick-theme.css";
-import "slick-carousel/slick/slick.css";
-import { useMediaQuery } from "usehooks-ts";
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
-
-const FeaturedCollections = () => {
-  const router = useRouter();
-
-  const { data } = useQuery({
-    queryKey: ["collections"],
-    queryFn: async () =>
-      await fetch("https://1sat-api-production.up.railway.app/collection/").then(
-        (res) => res.json()
-      ),
-  });
-
-  const fromServer = useMemo(() => data?.map((c: Collection) => {
-    return {
-      origin: c.outpoint,
-      name: c.data?.map?.name,
-      previewUrl: c.data?.map?.previewUrl,
-      height: c.height,
-      royalties: c.data?.map?.royalties,
-      stats: c.stats,
-    };
-  }), [data]);
-
-
-
-
-  const smUp = useMediaQuery('(min-width: 640px)');
-  const mdUp = useMediaQuery('(min-width: 768px)');
-  const lgUp = useMediaQuery('(min-width: 1024px)');
-  const xlUp = useMediaQuery('(min-width: 1280px)');
-  const xxlUp = useMediaQuery('(min-width: 1536px)');
-
-
-
-
-  const settings = useMemo(() => {
-    return {
-      dots: true,
-      infinite: true,
-      speed: 500,
-      slidesToShow: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
-      slidesToScroll: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
-      autoplay: true,
-      autoplaySpeed: 3000,
-    };
-  }, [xxlUp, xlUp, lgUp, mdUp, smUp]);
-
-  return (
-    <>
-      <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>
-      <div className="mb-8">
-        <Slider {...settings}>
-          {featured.map((collection: Featured) => (
-            <div key={`c-${collection.origin}`}>
-              <Link href={`/collection/${collection.origin}`}>
-                <Image
-                  src={collection.previewUrl || `${ORDFS}/${collection.origin}`}
-                  alt={collection.name}
-                  width={300}
-                  height={300}
-                  className="rounded-box h-[300px] w-[300px]"
-                />
-              </Link>
-            </div>
-          ))}
-        </Slider>
-      </div>
-      <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Current Hype</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
-        {(fromServer || []).map((s: Featured) => (
-          <div key={s.origin} className="relative overflow-hidden w-[300px] h-[300px]">
-            <Link href={`/collection/${s.origin}`}>
-              <Image
-                width={300}
-                height={300}
-                src={s.previewUrl || `${ORDFS}/${s.origin}`}
-                alt=""
-                className="rounded-box"
-              />
-            </Link>
-            <div className="absolute bottom-0 left-0 w-full h-fit p-2 bg-black/15 text-sm font-mono">
-              <Link href={`/collection/${s.origin}`} className="drop-shadow">
-                {s.name}
-              </Link>
-              <p className="drop-shadow">{s.height}</p>
-              <p className="drop-shadow">
-                {s.stats?.count
-                  ? s.stats.max
-                    ? s.stats.count
-                    : `#${s.stats.count}`
-                  : ""}
-                {s.stats?.max ? `/${s.stats.max}` : ""}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-};
-
-export default FeaturedCollections;
+import Slider, { type Settings } from "react-slick";
 
 type Featured = {
   stats?: CollectionStats;
@@ -133,6 +16,30 @@ type Featured = {
     percentage: string;
   }[];
 }
+
+const FeaturedCollections = ({ settings }: { settings: Settings }) => {
+  return (
+    <div className="mb-8">
+      <Slider {...settings}>
+        {featured.map((collection: Featured) => (
+          <div key={`c-${collection.origin}`}>
+            <Link href={`/collection/${collection.origin}`}>
+              <Image
+                src={collection.previewUrl || `${ORDFS}/${collection.origin}`}
+                alt={collection.name}
+                width={300}
+                height={300}
+                className="rounded-box h-[300px] w-[300px]"
+              />
+            </Link>
+          </div>
+        ))}
+      </Slider>
+    </div>
+  );
+}
+
+export default FeaturedCollections;
 
 const featured: Featured[] = [
   {
@@ -373,13 +280,13 @@ const featured: Featured[] = [
     previewUrl:
       "https://ordfs.network/6352cd99e4df66f727175b71da91f0bf0276cd4541ab6cb213126ea22c7f8f61_0",
   },
-  {
-    origin: "805d7173b4018228004f8655d994ea967851bdb1e15aebcf5936aeb4147fedf1_0",
-    name: "Testing Burgers",
-    height: 818298,
-    previewUrl:
-      "https://ordfs.network/805d7173b4018228004f8655d994ea967851bdb1e15aebcf5936aeb4147fedf1_0",
-  },
+  // {
+  //   origin: "805d7173b4018228004f8655d994ea967851bdb1e15aebcf5936aeb4147fedf1_0",
+  //   name: "Testing Burgers",
+  //   height: 818298,
+  //   previewUrl:
+  //     "https://ordfs.network/805d7173b4018228004f8655d994ea967851bdb1e15aebcf5936aeb4147fedf1_0",
+  // },
   {
     origin: "d545e4218a92492d7129ffc2caa02c09a7e38505a775f65b919884417814b281_0",
     name: "Nakagon 2",
