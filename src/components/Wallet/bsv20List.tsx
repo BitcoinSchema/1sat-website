@@ -154,7 +154,7 @@ const Bsv20List = ({
           // fetch balances
           const { promise: promiseBalances } = http.customFetch<
             BSV20Balance[]
-          >(`${MINI_API_HOST}/${address}/balance`);
+          >(`${MINI_API_HOST}/user/${address}/balance`);
           const b = await promiseBalances;
           addressBalances.value = b.sort((a, b) => {
             return b.all.confirmed + b.all.pending >
@@ -377,7 +377,7 @@ const Bsv20List = ({
                         )}
                         {deets?.num ||
                           truncate(id) ||
-                          ""} {price}
+                          ""} {price && price > 0 ? `${price - price * balance}` : ""}
                       </div>
                     </div>
                   </div>

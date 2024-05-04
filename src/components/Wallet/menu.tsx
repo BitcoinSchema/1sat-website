@@ -117,7 +117,7 @@ const WalletMenu: React.FC = () => {
       bsv20Balances.value = [];
       try {
         const { promise } = http.customFetch<BSV20Balance[]>(
-          `${MINI_API_HOST}/${address}/balance`
+          `${MINI_API_HOST}/user/${address}/balance`
         );
         const u = await promise;
         bsv20Balances.value = u.sort((a, b) => {
