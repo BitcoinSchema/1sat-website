@@ -1,7 +1,7 @@
 "use client";
 
 import { API_HOST, AssetType, FetchStatus, MINI_API_HOST, resultsPerPage } from "@/constants";
-import { bsv20Balances } from "@/signals/wallet";
+import { bsv20Balances, usdRate } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import type { BSV20Balance } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
@@ -361,6 +361,7 @@ const Bsv20List = ({
                 addressProp === ordAddress.value) &&
               all.confirmed / 10 ** dec > 10000;
 
+            const tokenPrice = price ? `$${((price * balance) / usdRate.value).toFixed(2)}` : "";
             return (
               <React.Fragment key={`bal-confirmed-${tick}`}>
                 <div className="grid grid-cols-2 gap-3 auto-cols-auto items-center max-w-md p-2">
@@ -393,7 +394,7 @@ const Bsv20List = ({
                         )}
                         {deets?.num ||
                           truncate(id) ||
-                          ""} {price && price > 0 ? `${price * (all.confirmed - listed.confirmed)}` : ""}
+                          ""}
                       </div>
                     </div>
                   </div>
@@ -402,7 +403,7 @@ const Bsv20List = ({
                       className="text-emerald-400 font-mono tooltip tooltip-bottom"
                       data-tip={tooltip || null}
                     >
-                      {balanceText}
+                      <span className="text-[#555] mr-2">{price && price > 0 ? `${tokenPrice}` : ""}</span> {balanceText}
                     </div>
                     <div className="flex justify-end mt-2">
                       {showAirdropIcon && (
