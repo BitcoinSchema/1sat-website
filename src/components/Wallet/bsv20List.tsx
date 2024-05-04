@@ -3,8 +3,8 @@
 import { API_HOST, AssetType, FetchStatus, resultsPerPage } from "@/constants";
 import { bsv20Balances } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
-import type { BSV20, BSV20Balance } from "@/types/bsv20";
-import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
+import type { BSV20Balance } from "@/types/bsv20";
+import type { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { getBalanceText } from "@/utils/wallet";
 import { computed, effect, useSignal } from "@preact/signals-react";
@@ -67,9 +67,9 @@ const Bsv20List = ({
   const showSendModal = useSignal<string | undefined>(undefined);
 
   // get unspent ordAddress
-  const bsv20s = useSignal<OrdUtxo[] | null>(null);
+  const bsv20s = useSignal<BSV20TXO[] | null>(null);
   const tickerDetails = useSignal<MarketData[] | null>(null);
-  const history = useSignal<OrdUtxo[] | null>(null);
+  const history = useSignal<BSV20TXO[] | null>(null);
   const fetchHistoryStatus = useSignal<FetchStatus>(FetchStatus.Idle);
   const unspentStatus = useSignal<FetchStatus>(FetchStatus.Idle);
 
@@ -78,7 +78,7 @@ const Bsv20List = ({
       const url = "https://1sat-api-production.up.railway.app/ticker/num";
       const unindexed =
         bsv20s.value?.map(
-          (u) => u.origin?.data?.bsv20?.tick as string
+          (u) => u.tick as string
         ) || [];
       const fromBalances =
         bsv20Balances.value?.map((b) => b.tick as string) || [];
@@ -110,14 +110,13 @@ const Bsv20List = ({
 
   effect(async () => {
     // fetch token history
+    // TODO: Use type
     const address = addressProp || ordAddress.value;
     if (fetchHistoryStatus.value === FetchStatus.Idle && address) {
       try {
         fetchHistoryStatus.value = FetchStatus.Loading;
-        const historyUrl = `${API_HOST}/api/txos/address/${address}/history?limit=100&offset=0&bsv20=true&origins=true`;
-        const { promise } = http.customFetch<OrdUtxo[]>(historyUrl, {
-          method: "POST",
-        });
+        const historyUrl = `${API_HOST}/api/bsv20/${address}/history?limit=100&offset=0&type=${type === WalletTab.BSV20 ? "v1" : "v2"}`;
+        const { promise } = http.customFetch<BSV20TXO[]>(historyUrl);
         history.value = await promise;
         fetchHistoryStatus.value = FetchStatus.Success;
       } catch (error) {
@@ -135,16 +134,16 @@ const Bsv20List = ({
       bsv20s.value = [];
       try {
 
-        const { promise } = http.customFetch<OrdUtxo[]>(
-          `${API_HOST}/api/txos/address/${address}/unspent?limit=1000&offset=0&dir=ASC&status=all&bsv20=true`
+        const { promise } = http.customFetch<BSV20TXO[]>(
+          `${API_HOST}/api/bsv20/${address}/unspent?limit=1000&offset=0&type=${type === WalletTab.BSV20 ? "v1" : "v2"}`
         );
         const u = await promise;
 
         // filter out tickers that already exist in holdings, and group by ticker
-        const tickerList = u.map((u) => u.data?.bsv20?.tick);
+        const tickerList = u.map((u) => u.tick);
         console.log({ tickerList });
         bsv20s.value = u.filter((u) =>
-          holdings.value?.every((h) => h.tick !== u.data?.bsv20?.tick)
+          holdings.value?.every((h) => h.tick !== u.tick)
         );
         console.log({ u });
         bsv20s.value = u;
@@ -177,14 +176,14 @@ const Bsv20List = ({
   const unindexBalances = computed(
     () =>
       bsv20s.value?.reduce((acc, utxo) => {
-        if (utxo.data?.bsv20?.tick) {
-          if (acc[utxo.data.bsv20.tick]) {
-            acc[utxo.data.bsv20.tick] += Number.parseInt(
-              utxo.data.bsv20.amt
+        if (utxo.tick) {
+          if (acc[utxo.tick]) {
+            acc[utxo.tick] += Number.parseInt(
+              utxo.amt
             );
           } else {
-            acc[utxo.data.bsv20.tick] = Number.parseInt(
-              utxo.data.bsv20.amt
+            acc[utxo.tick] = Number.parseInt(
+              utxo.amt
             );
           }
         }
@@ -196,7 +195,7 @@ const Bsv20List = ({
     const address = addressProp || ordAddress.value;
     const fire = async () => {
       if (type === WalletTab.BSV20) {
-        const urlTokens = `${API_HOST}/api/bsv20/${address}/unspent?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v1`;
+        const urlTokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v1`;
         console.log("Fetching", urlTokens);
         const { promise: promiseBsv20 } =
           http.customFetch<BSV20TXO[]>(urlTokens);
@@ -208,7 +207,7 @@ const Bsv20List = ({
           reachedEndOfListings.value = true;
         }
       } else {
-        const urlV2Tokens = `${API_HOST}/api/bsv20/${address}/unspent?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v2`;
+        const urlV2Tokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v2`;
         const { promise: promiseBsv21 } =
           http.customFetch<BSV20TXO[]>(urlV2Tokens);
         const newResults = await promiseBsv21;
@@ -247,20 +246,36 @@ const Bsv20List = ({
     return deets?.dec || 0;
   }, [balances.value, type]);
 
-  const getSym = useCallback((bsv20?: BSV20) => {
-    return find(balances.value, (t) => t.id === bsv20?.id)?.sym;
+  const getSym = useCallback((id: string) => {
+    return find(balances.value, (t) => t.id === id)?.sym;
   }, [balances.value]);
 
-  const activity = computed(() => {
+  const getAction = useCallback((bsv20: BSV20TXO) => {
+    // if (bsv20.owner === ordAddress.value) {
+    //   return "Received";
+    // }
+    // // default
+    // return bsv20.op;
+    if (bsv20.sale) {
+      return "Sale";
+    }
 
-    return history.value
-      ?.filter((b) => (type === WalletTab.BSV20 ? !!b.data?.bsv20?.tick : !b.data?.bsv20?.tick))
+    if (bsv20.spend !== "") {
+      return "Transferred";
+    }
+
+    return "Recieved";
+  }, [ordAddress.value, balances.value]);
+
+  const activity = computed(() => {
+    return (history.value || []).concat(bsv20s.value || [])
+      .filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick))
       ?.map((bsv20, index) => {
-        const decimals = getDec(bsv20.data?.bsv20?.tick, bsv20.data?.bsv20?.id)
-        const amount = getBalanceText(Number.parseInt(bsv20.data?.bsv20?.amt || "0") / 10 ** decimals, decimals)
+        const decimals = getDec(bsv20.tick, bsv20.id)
+        const amount = getBalanceText(Number.parseInt(bsv20.amt || "0") / 10 ** decimals, decimals)
 
         return (
-          <React.Fragment key={`act-${bsv20.data?.bsv20?.tick}-${index}`}>
+          <React.Fragment key={`act-${bsv20.tick}-${index}`}>
             <div className="text-xs text-info">
               <Link
                 href={`https://whatsonchain.com/tx/${bsv20.txid}`}
@@ -269,22 +284,23 @@ const Bsv20List = ({
                 {bsv20.height}
               </Link>
             </div>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
             <div
               className="flex items-center cursor-pointer hover:text-blue-400 transition"
               onClick={() =>
                 router.push(
-                  `/market/${bsv20.data?.bsv20?.tick
-                    ? `bsv20/${bsv20.data?.bsv20?.tick}`
-                    : `bsv21/${bsv20.data?.bsv20?.id}`
+                  `/market/${bsv20.tick
+                    ? `bsv20/${bsv20.tick}`
+                    : `bsv21/${bsv20?.id}`
                   }`
                 )
               }
             >
-              {bsv20.data?.bsv20?.tick || getSym(bsv20.data?.bsv20) || bsv20.data?.bsv20?.id?.slice(-8) || bsv20.data?.bsv20?.id?.slice(-8)}
+              {bsv20.tick || getSym(bsv20.id) || bsv20.id?.slice(-8) || bsv20.id?.slice(-8)}
             </div>
-            <div>{bsv20.data?.bsv20?.op}</div>
-            <div className="text-xs">{bsv20.data?.bsv20 && amount}</div>
-            <div className={`text-xs ${bsv20.data?.list?.price ? bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400" : "text-gray-500"}`}>{bsv20.data?.list?.price ? `${toBitcoin(bsv20.data?.list?.price)} BSV` : "-"}</div>
+            <div>{getAction(bsv20)}</div>
+            <div className="text-xs">{bsv20 && amount}</div>
+            <div className={`text-xs ${bsv20.price ? bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400" : "text-gray-500"}`}>{bsv20.price && bsv20.price !== "0" ? `${toBitcoin(bsv20.price)} BSV` : "-"}</div>
             <div>
               <Link
                 href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}
@@ -357,14 +373,14 @@ const Bsv20List = ({
                       />
                     )}
                     <div>
+                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                       <div
                         className="cursor-pointer hover:text-blue-400 transition text-xl"
                         onClick={() =>
                           router.push(
                             `/market/${id
-                              ? "bsv21/" + id
-                              : "bsv20/" +
-                              tick
+                              ? `bsv21/${id}`
+                              : `bsv20/${tick}`
                             }`
                           )
                         }
@@ -437,7 +453,7 @@ const Bsv20List = ({
                           }
                         </div>
                       )}
-                      <div className={`text-right `}>
+                      <div className={"text-right"}>
                         {(!addressProp ||
                           addressProp ===
                           ordAddress.value) &&
@@ -459,9 +475,9 @@ const Bsv20List = ({
                             {showSendModal.value ===
                               (tick || id) && (
                                 <TransferBsv20Modal
-                                  onClose={() =>
-                                  (showSendModal.value =
-                                    undefined)
+                                  onClose={() => {
+                                    showSendModal.value = undefined
+                                  }
                                   }
                                   type={type}
                                   id={
@@ -646,7 +662,7 @@ const Bsv20List = ({
                 name="balanceTabs"
                 role="tab"
                 className="tab mr-1"
-                aria-label="Unindexed"
+                aria-label="UTXO"
                 checked={
                   balanceTab.value === BalanceTab.Unindexed
                 }
