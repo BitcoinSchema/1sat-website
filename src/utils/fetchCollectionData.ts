@@ -31,7 +31,7 @@ export const fetchCollectionMarket = async (
 	offset = 0,
 	limit: number = NUMBER_OF_ITEMS_PER_PAGE
 ) => {
-	const collectionMarketUrl = `${API_HOST}/api/market?offset=${offset}&limit=${limit}&q=${btoa(
+	const collectionMarketUrl = `${API_HOST}/api/market?sort=price&dir=asc&offset=${offset}&limit=${limit}&q=${btoa(
 		JSON.stringify(q)
 	)}`;
 

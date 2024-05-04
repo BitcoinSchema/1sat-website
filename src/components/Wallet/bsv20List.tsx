@@ -403,7 +403,7 @@ const Bsv20List = ({
                       className="text-emerald-400 font-mono tooltip tooltip-bottom"
                       data-tip={tooltip || null}
                     >
-                      <span className="text-[#555] mr-2">{price && price > 0 ? `${tokenPrice}` : ""}</span> {balanceText}
+                      <span className="text-[#555] mr-2">{tokenPrice}</span> {balanceText}
                     </div>
                     <div className="flex justify-end mt-2">
                       {showAirdropIcon && (
