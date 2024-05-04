@@ -1,7 +1,7 @@
-import { Bsv20Status } from "@/constants";
-import { Utxo } from "@/utils/js-1sat-ord";
-import { BSV20 } from "./bsv20";
-import { BaseTxo, GPFile } from "./common";
+import type { Bsv20Status } from "@/constants";
+import type { Utxo } from "@/utils/js-1sat-ord";
+import type { BSV20 } from "./bsv20";
+import type { BaseTxo, GPFile } from "./common";
 
 export interface Inscription {
 	json?: any;

@@ -34,6 +34,7 @@ export interface Collection extends OrdUtxo {
 		previewUrl: string;
 		subTypeData: CollectionItem;
 	};
+	stats?: CollectionStats;
 }
 
 export type FetchItemsQuery = {
