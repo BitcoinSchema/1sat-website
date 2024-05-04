@@ -377,7 +377,7 @@ const Bsv20List = ({
                         )}
                         {deets?.num ||
                           truncate(id) ||
-                          ""} {price && price > 0 ? `${price - price * balance}` : ""}
+                          ""} {price && price > 0 ? `${price * (all.confirmed - listed.confirmed)}` : ""}
                       </div>
                     </div>
                   </div>
@@ -437,7 +437,7 @@ const Bsv20List = ({
                           }
                         </div>
                       )}
-                      <div className={`text-right `}>
+                      <div className={"text-right"}>
                         {(!addressProp ||
                           addressProp ===
                           ordAddress.value) &&
