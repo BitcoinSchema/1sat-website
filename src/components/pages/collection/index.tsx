@@ -2,6 +2,8 @@ import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
 import { Noto_Serif } from "next/font/google";
 import Image from "next/image";
+import Link from "next/link";
+import { FaChevronLeft } from "react-icons/fa";
 import { CollectionList } from "./CollectionList";
 import { CollectionNavigation } from "./CollectionNavigation";
 
@@ -34,9 +36,10 @@ const CollectionPage = async ({ stats, collection, bannerImage }: Props) => {
   return (
     <div className="2xl:max-w-[80vw] max-w-[90vw] w-full mx-auto">
       <h2 className="text-lg mb-8 flex justify-between items-center">
-        <span className={`text-2xl ${notoSerif.className}`}>
+        <Link className={`flex items-center text-2xl ${notoSerif.className}`} href="/collection">
+          <FaChevronLeft className="mr-2" />
           {collection.origin?.data?.map?.name}
-        </span>
+        </Link>
         <span>({stats.count})</span>
         {stats.count === stats.max && <div>Minted Out</div>}
       </h2>

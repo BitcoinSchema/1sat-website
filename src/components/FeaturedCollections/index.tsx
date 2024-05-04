@@ -66,22 +66,17 @@ const FeaturedCollections = () => {
       <div className="grid grid-cols-4">
         {(fromServer || []).map((s: Featured) => (
           <React.Fragment key={s.origin}>
-            <div>
+            <Link href={`/collection/${s.origin}`}>
               <Image
                 width={100}
                 height={100}
                 src={s.previewUrl || `${ORDFS}/${s.origin}`}
                 alt=""
               />
-            </div>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            <div
-              onClick={() => {
-                router.push(`/collection/${s.origin}`);
-              }}
-            >
+            </Link>
+            <Link href={`/collection/${s.origin}`}>
               {s.name}
-            </div>
+            </Link>
             <div>{s.height}</div>
             <div>
               {s.stats?.count
