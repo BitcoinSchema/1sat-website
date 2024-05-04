@@ -1,5 +1,6 @@
 export const ORDFS = "https://ordfs.network";
 export const API_HOST = "https://ordinals.gorillapool.io";
+export const MINI_API_HOST = "https://1sat-api-production.up.railway.app";
 
 export enum SortBy {
 	PC = "pct_minted",

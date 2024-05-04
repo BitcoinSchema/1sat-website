@@ -1,6 +1,6 @@
 "use client";
 
-import { API_HOST, AssetType, FetchStatus, resultsPerPage } from "@/constants";
+import { API_HOST, AssetType, FetchStatus, MINI_API_HOST, resultsPerPage } from "@/constants";
 import { bsv20Balances } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import type { BSV20, BSV20Balance } from "@/types/bsv20";
@@ -154,7 +154,7 @@ const Bsv20List = ({
           // fetch balances
           const { promise: promiseBalances } = http.customFetch<
             BSV20Balance[]
-          >(`${API_HOST}/api/bsv20/${address}/balance`);
+          >(`${MINI_API_HOST}/${address}/balance`);
           const b = await promiseBalances;
           addressBalances.value = b.sort((a, b) => {
             return b.all.confirmed + b.all.pending >
@@ -319,7 +319,7 @@ const Bsv20List = ({
     return (
       <div className="bg-[#101010] rounded-lg w-full mb-4 px-2">
         {confirmedBalances?.value?.map(
-          ({ tick, all, sym, id, dec, listed, icon }, idx) => {
+          ({ tick, all, sym, id, dec, listed, icon, price }, idx) => {
             // TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
             const deets = find(
               tickerDetails.value,
@@ -377,7 +377,7 @@ const Bsv20List = ({
                         )}
                         {deets?.num ||
                           truncate(id) ||
-                          ""}
+                          ""} {price}
                       </div>
                     </div>
                   </div>
