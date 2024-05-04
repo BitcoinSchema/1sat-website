@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "1Sat Ordinals Token Holders";
+export const alt = "1Sat Ordinals Collections";
 export const size = {
   width: 1200,
   height: 630,

@@ -3,13 +3,21 @@
 import { ORDFS } from "@/constants";
 import type { Collection, CollectionStats } from "@/types/collection";
 import { useQuery } from "@tanstack/react-query";
+import { Noto_Serif } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React from "react";
+import { useMemo } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
+import { useMediaQuery } from "usehooks-ts";
+
+const notoSerif = Noto_Serif({
+  style: "italic",
+  weight: ["400", "700"],
+  subsets: ["latin"],
+});
 
 const FeaturedCollections = () => {
   const router = useRouter();
@@ -22,7 +30,7 @@ const FeaturedCollections = () => {
       ),
   });
 
-  const fromServer = data?.map((c: Collection) => {
+  const fromServer = useMemo(() => data?.map((c: Collection) => {
     return {
       origin: c.outpoint,
       name: c.data?.map?.name,
@@ -31,21 +39,35 @@ const FeaturedCollections = () => {
       royalties: c.data?.map?.royalties,
       stats: c.stats,
     };
-  }, [data]);
+  }), [data]);
 
-  const settings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 4,
-    autoplay: true,
-    autoplaySpeed: 3000,
-  };
+
+
+
+  const smUp = useMediaQuery('(min-width: 640px)');
+  const mdUp = useMediaQuery('(min-width: 768px)');
+  const lgUp = useMediaQuery('(min-width: 1024px)');
+  const xlUp = useMediaQuery('(min-width: 1280px)');
+  const xxlUp = useMediaQuery('(min-width: 1536px)');
+
+
+
+
+  const settings = useMemo(() => {
+    return {
+      dots: true,
+      infinite: true,
+      speed: 500,
+      slidesToShow: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
+      slidesToScroll: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
+      autoplay: true,
+      autoplaySpeed: 3000,
+    };
+  }, [xxlUp, xlUp, lgUp, mdUp, smUp]);
 
   return (
     <>
-      <h1 className="text-xl mb-4">Featured Collections</h1>
+      <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>
       <div className="mb-8">
         <Slider {...settings}>
           {featured.map((collection: Featured) => (
@@ -56,37 +78,41 @@ const FeaturedCollections = () => {
                   alt={collection.name}
                   width={300}
                   height={300}
-                  className="rounded h-[300px] w-[300px]"
+                  className="rounded-box h-[300px] w-[300px]"
                 />
               </Link>
             </div>
           ))}
         </Slider>
       </div>
-      <div className="grid grid-cols-4">
+      <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Current Hype</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
         {(fromServer || []).map((s: Featured) => (
-          <React.Fragment key={s.origin}>
+          <div key={s.origin} className="relative overflow-hidden w-[300px] h-[300px]">
             <Link href={`/collection/${s.origin}`}>
               <Image
-                width={100}
-                height={100}
+                width={300}
+                height={300}
                 src={s.previewUrl || `${ORDFS}/${s.origin}`}
                 alt=""
+                className="rounded-box"
               />
             </Link>
-            <Link href={`/collection/${s.origin}`}>
-              {s.name}
-            </Link>
-            <div>{s.height}</div>
-            <div>
-              {s.stats?.count
-                ? s.stats.max
-                  ? s.stats.count
-                  : `#${s.stats.count}`
-                : ""}
-              {s.stats?.max ? `/${s.stats.max}` : ""}
+            <div className="absolute bottom-0 left-0 w-full h-fit p-2 bg-black/15 text-sm font-mono">
+              <Link href={`/collection/${s.origin}`} className="drop-shadow">
+                {s.name}
+              </Link>
+              <p className="drop-shadow">{s.height}</p>
+              <p className="drop-shadow">
+                {s.stats?.count
+                  ? s.stats.max
+                    ? s.stats.count
+                    : `#${s.stats.count}`
+                  : ""}
+                {s.stats?.max ? `/${s.stats.max}` : ""}
+              </p>
             </div>
-          </React.Fragment>
+          </div>
         ))}
       </div>
     </>
