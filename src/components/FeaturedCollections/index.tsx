@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { ORDFS } from "@/constants";
 import type { Collection, CollectionStats } from "@/types/collection";
@@ -6,49 +6,23 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick-theme.css";
+import "slick-carousel/slick/slick.css";
 
 const FeaturedCollections = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const router = useRouter();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((prevIndex) => {
-        if (prevIndex + 3 >= featured.length) return 0;
-        return (prevIndex + 3) % featured.length;
-      });
-    }, 3000); // Change 3000 to the desired interval in milliseconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (itemRefs.current[activeIndex]) {
-      itemRefs.current[activeIndex]?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "start",
-      });
-    }
-  }, [activeIndex]);
-
-  // const { data: collectionData } = useQuery({
-  //   queryKey: ["collections", collectionIds.value?.length > 0],
-  //   queryFn: () => getOutpoints(collectionIds.value, false),
-  // });
-
-  // https://1sat-api-production.up.railway.app/collection/
   const { data } = useQuery({
     queryKey: ["collections"],
-    queryFn: async () => await fetch("https://1sat-api-production.up.railway.app/collection/").then((res) => res.json()),
+    queryFn: async () =>
+      await fetch("https://1sat-api-production.up.railway.app/collection/").then(
+        (res) => res.json()
+      ),
   });
 
-  // example response 
-  // [{"txid":"1611d956f397caa80b56bc148b4bce87b54f39b234aeca4668b4d5a7785eb9fa","vout":0,"outpoint":"1611d956f397caa80b56bc148b4bce87b54f39b234aeca4668b4d5a7785eb9fa_0","satoshis":1,"accSats":"0","height":842279,"idx":"103","owner":"1HERMQcdFQNTFShD2mpt81McxX9kPQ9AEP","spend":"","origin":{"outpoint":"1611d956f397caa80b56bc148b4bce87b54f39b234aeca4668b4d5a7785eb9fa_0","data":{"map":{"app":"RareDropper","name":"Pixel Foxes","type":"ord","subType":"collection","royalties":"[{\"type\":\"address\",\"destination\":\"1HERMQcdFQNTFShD2mpt81McxX9kPQ9AEP\",\"percentage\":\"0.03\"}]","subTypeData":{"description":"10,000,000 pixel foxes on-chain forever"}},"insc":{"file":{"hash":"pCiUBUqqmfLorMnXiA1wQ9J5qZ8U7FYtJIjrm2Bc+tU=","size":1594,"type":"image/png"}},"sigma":[{"vin":0,"valid":true,"address":"1Jm3WuTxrKMLYXFRCFZuCB879GmqvyQoMf","algorithm":"BSM","signature":"IGdZll7/kUna5mXN5w1ylBSpcDg4pf/NCv/vW1+0pkgkI4gXnFqqYK93RbYg4H5jZb4w8phkW+o1hd3Ge9kWZUE="}],"types":["file"]},"num":"0842279:103:0"},"data":{"map":{"app":"RareDropper","name":"Pixel Foxes","type":"ord","subType":"collection","royalties":"[{\"type\":\"address\",\"destination\":\"1HERMQcdFQNTFShD2mpt81McxX9kPQ9AEP\",\"percentage\":\"0.03\"}]","subTypeData":{"description":"10,000,000 pixel foxes on-chain forever"}},"insc":{"file":{"hash":"pCiUBUqqmfLorMnXiA1wQ9J5qZ8U7FYtJIjrm2Bc+tU=","size":1594,"type":"image/png"}},"sigma":[{"vin":0,"valid":true,"address":"1Jm3WuTxrKMLYXFRCFZuCB879GmqvyQoMf","algorithm":"BSM","signature":"IGdZll7/kUna5mXN5w1ylBSpcDg4pf/NCv/vW1+0pkgkI4gXnFqqYK93RbYg4H5jZb4w8phkW+o1hd3Ge9kWZUE="}],"types":["file"]},"stats":{"count":1031515,"max":null}},{"txid":"217c6fa01e2d59e04138e117198635f750685aca771d1d3e5c808e4bf694df78","vout":0,"outpoint":"217c6fa01e2d59e04138e117198635f750685aca771d1d3e5c808e4bf694df78_0","satoshis":1,"accSats":"0","height":839592,"idx":"413","owner":"13GkWpTY","spend":"50fc0bacc8be14961b872e126722b039bcdfa35260d8d88beff4849e8a1cfcf9","origin":{"outpoint":"217c6fa01e2d59e04138e117198635f750685aca771d1d3e5c808e4bf694df78_0","data":{"map":{"app":"RareDropper","name":"Order Of The Delta","type":"ord","subType":"collection","royalties":"[{\"type\":\"address\",\"destination\":\"1EqiQhoQJdyNEvpmX9u2bCKwMLdBRNz1q\",\"percentage\":\"0.03\"}]","contractId":"d163f63790df8ee427d17eb08cd4d018","subTypeData":{"attributes":[],"description":"This is the order of the Delta"}},"insc":{"file":{"hash":"FVfroXsJk1FBWwTNBuVFpTpEooxB+rOv0QaPLd5O/z0=","size":73197,"type":"image/png"}},"lock":{"until":0,"address":"13GkWpTY"},"types":["file"]},"num":"0839592:413:0"},"data":{"map":{"app":"RareDropper","name":"Order Of The Delta","type":"ord","subType":"collection","royalties":"[{\"type\":\"address\",\"destination\":\"1EqiQhoQJdyNEvpmX9u2bCKwMLdBRNz1q\",\"percentage\":\"0.03\"}]","contractId":"d163f63790df8ee427d17eb08cd4d018","subTypeData":{"attributes":[],"description":"This is the order of the Delta"}},"insc":{"file":{"hash":"FVfroXsJk1FBWwTNBuVFpTpEooxB+rOv0QaPLd5O/z0=","size":73197,"type":"image/png"}},"lock":{"until":0,"address":"13GkWpTY"},"types":["file"]},"stats":{"count":199,"max":null}},900]
   const fromServer = data?.map((c: Collection) => {
-    // map to Featured type
     return {
       origin: c.outpoint,
       name: c.data?.map?.name,
@@ -59,50 +33,66 @@ const FeaturedCollections = () => {
     };
   }, [data]);
 
+  const settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 4,
+    autoplay: true,
+    autoplaySpeed: 3000,
+  };
+
   return (
     <>
       <h1 className="text-xl mb-4">Featured Collections</h1>
-      <div className="carousel gap-4 carousel-center w-full mb-8">
-        {featured.map((collection: Featured, idx: number) => {
-          const isActive = idx === activeIndex;
-          return (
-            <div
-              key={`c-${collection.origin}`}
-              ref={(el) => {
-                itemRefs.current[idx] = el;
-              }}
-              className={`carousel-item ${isActive ? "active" : ""
-                }`}
-            >
+      <div className="mb-8">
+        <Slider {...settings}>
+          {featured.map((collection: Featured) => (
+            <div key={`c-${collection.origin}`}>
               <Link href={`/collection/${collection.origin}`}>
                 <Image
-                  src={
-                    collection.previewUrl ||
-                    `${ORDFS}/${collection.origin}`
-                  }
+                  src={collection.previewUrl || `${ORDFS}/${collection.origin}`}
                   alt={collection.name}
                   width={300}
                   height={300}
                   className="rounded h-[300px] w-[300px]"
-                  id={`item-${collection.origin}`}
                 />
               </Link>
             </div>
-          );
-        })}
+          ))}
+        </Slider>
       </div>
-      <div className="grid grid-cols-4" >
-        {(fromServer || []).map((s: Featured) => {
-          return (<React.Fragment key={s.origin}>
-            <div><Image width={100} height={100} src={s.previewUrl || `${ORDFS}/${s.origin}`} alt="" /></div>
+      <div className="grid grid-cols-4">
+        {(fromServer || []).map((s: Featured) => (
+          <React.Fragment key={s.origin}>
+            <div>
+              <Image
+                width={100}
+                height={100}
+                src={s.previewUrl || `${ORDFS}/${s.origin}`}
+                alt=""
+              />
+            </div>
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            <div onClick={() => {
-              router.push(`/collection/${s.origin}`)
-            }}>{s.name}</div>
+            <div
+              onClick={() => {
+                router.push(`/collection/${s.origin}`);
+              }}
+            >
+              {s.name}
+            </div>
             <div>{s.height}</div>
-            <div>{s.stats?.count ? s.stats.max ? s.stats.count : `#${s.stats.count}` : ''}{s.stats?.max ? `/${s.stats.max}` : ''}</div>
-          </React.Fragment>);
-        })}
+            <div>
+              {s.stats?.count
+                ? s.stats.max
+                  ? s.stats.count
+                  : `#${s.stats.count}`
+                : ""}
+              {s.stats?.max ? `/${s.stats.max}` : ""}
+            </div>
+          </React.Fragment>
+        ))}
       </div>
     </>
   );
