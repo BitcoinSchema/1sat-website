@@ -64,4 +64,5 @@ export type BSV20Balance = {
 	dec: number;
 	sym?: string;
 	icon?: string;
+	price?: number;
 };
