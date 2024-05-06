@@ -316,25 +316,30 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
             )}
 
             <div className="my-2 w-full md:px-4">
-              <label className="block text-white mb-2 md:flex md:items-center md:justify-between">
-                <span className="block mb-1 md:mb-0">Price (BSV)</span>
-                <input
-                  className="input input-bordered w-full md:max-w-xs p-2 rounded"
-                  type="number"
-                  onChange={(e) => {
-                    if (e.target.value === "") {
-                      setPrice(0);
-                      return;
-                    }
-                    setPrice(
-                      toSatoshi(
-                        e.target.value.includes(".")
-                          ? Number.parseFloat(e.target.value)
-                          : Number.parseInt(e.target.value)
-                      )
-                    );
-                  }}
-                />
+              <label className="block text-white mb-2 font-mono md:flex md:items-center md:justify-between">
+                <span className="block mb-1 md:mb-0">Price</span>
+                <div className="relative">
+
+                  <input
+                    className="input input-bordered w-full md:max-w-xs p-2 rounded"
+                    type="number"
+                    placeholder="0.00000000"
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setPrice(0);
+                        return;
+                      }
+                      setPrice(
+                        toSatoshi(
+                          e.target.value.includes(".")
+                            ? Number.parseFloat(e.target.value)
+                            : Number.parseInt(e.target.value)
+                        )
+                      );
+                    }}
+                  />
+                  <div className="absolute right-0 bottom-0 mb-3 mr-2 text-[#555]">BSV</div>
+                </div>
               </label>
             </div>
 
@@ -342,7 +347,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
               {
                 <button
                   type="button"
-                  disabled={!outpoint || !usdRate || !price}
+                  disabled={!usdRate || (!!outpoint && !price)}
                   onClick={() => {
                     console.log(
                       "on click!!",
@@ -353,10 +358,14 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
                       setShowSelectItem(true);
                       return;
                     }
+                    if (!price) {
+                      toast.error("Please set a price", toastErrorProps);
+                      return;
+                    }
                     submit();
                   }}
-                  className={`btn btn-primary ${!outpoint ? "" : "cursor-pointer"
-                    } w-full bg-teal-500 hover:bg-teal-600 transition text-white p-2 rounded disabled:bg-[#222] disabled:text-[#555]`}
+                  className={`font-mono btn btn-ghost ${!outpoint ? "bg-neutral" : "bg-teal-500 hover:bg-teal-600 cursor-pointer"
+                    } w-full   transition text-white p-2 rounded disabled:bg-[#222] disabled:text-[#555]`}
                 >
                   {` ${!outpoint
                     ? "Select an Item"
