@@ -92,7 +92,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
       {props.title && (
         <div className="text-3xl font-bold mb-4">{props.title}</div>
       )}
-      <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>
+      {selectedAssetType === AssetType.Ordinals && <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>}
 
       {selectedAssetType === AssetType.Ordinals && <FeaturedCollections settings={settings} />}
       {showTabs && (
