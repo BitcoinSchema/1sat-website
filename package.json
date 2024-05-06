@@ -73,7 +73,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/bun": "^1.0.12",
+    "@types/bun": "^1.1.1",
     "@types/node": "^20",
     "@types/randombytes": "^2.0.3",
     "@types/react": "^18.3",

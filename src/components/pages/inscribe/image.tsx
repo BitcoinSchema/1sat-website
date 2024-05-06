@@ -5,7 +5,7 @@ import { FetchStatus } from "@/constants";
 import { generatedImage } from "@/signals/ai";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { FileEvent } from "@/types/file";
+import type { FileEvent } from "@/types/file";
 import type { TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
