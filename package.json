@@ -84,6 +84,7 @@
     "buffer": "^6.0.3",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
+    "eslint-plugin-react-hooks-signals": "^1.0.0",
     "postcss": "^8.4.38",
     "process": "^0.11.10",
     "replace-module-webpack-plugin": "^1.0.0",

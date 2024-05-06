@@ -37,7 +37,6 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     // if an imageUrl is provided, load it and set the preview
     if (generated && generatedImage.value && !preview) {
 
-      debugger
       const decoded = Buffer.from(generatedImage.value.data, 'base64')
 
       const arrayBuffer = decoded.buffer.slice(decoded.byteOffset, decoded.byteOffset + decoded.byteLength) as ArrayBuffer;

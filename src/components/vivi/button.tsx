@@ -128,12 +128,10 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
     }
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: signals-react
   const handleImageGeneration = useCallback(async () => {
     if (input) {
       const b64Json = await generateImage(input);
       if (b64Json) {
-        debugger
         generatedImage.value = {
           name: b64Json.created.toString(),
           data: b64Json.data[0].b64_json,
