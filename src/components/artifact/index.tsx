@@ -136,7 +136,7 @@ const Artifact: React.FC<ArtifactProps> = ({
     () =>
       `${latest
         ? `${artifact?.height}:${artifact?.idx}:${artifact?.vout}`
-        : artifact?.origin?.inum || artifact?.origin?.num
+        : artifact?.origin?.inum || artifact?.origin?.num || ''
       }`,
     [artifact, latest]
   );
@@ -367,7 +367,7 @@ const Artifact: React.FC<ArtifactProps> = ({
                   },w_${size || 300}/f_auto/${src}`
             }
             id={`artifact_${outPoint || origin}_image`}
-            alt={`Inscription${num ? " #" + num : ""}`}
+            alt={`Inscription${num !== '' ? ` #${num}` : ""}`}
             placeholder="blur"
             blurDataURL={`data:image/svg+xml;base64,${toBase64(
               shimmer(700, 475)
@@ -507,8 +507,8 @@ const Artifact: React.FC<ArtifactProps> = ({
             >
               {price !== undefined
                 ? price > 1000
-                  ? `${toBitcoin(price)} BSV`
-                  : `${price} sat`
+                  ? `Buy - ${toBitcoin(price)} BSV`
+                  : `Buy - ${price} sat`
                 : contentType}
             </button>
           </div>

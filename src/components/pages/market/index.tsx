@@ -27,7 +27,6 @@ export interface MarketPageProps {
   term?: string;
 }
 
-
 const notoSerif = Noto_Serif({
   style: "italic",
   weight: ["400", "700"],
@@ -59,7 +58,6 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
       autoplaySpeed: 3000,
     };
   }, [xxlUp, xlUp, lgUp, mdUp, smUp]);
-
 
   const Listings = ({ id, term }: { id?: string, term?: string }) => {
     switch (selectedAssetType) {

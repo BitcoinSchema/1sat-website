@@ -42,14 +42,14 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
           BSV21
         </Link>
       </div>
-      <div className="flex-none">
+      <div className="flex-none flex items-center">
         {selectedTab === AssetType.Ordinals && <Filter />}
         {selectedTab === AssetType.Ordinals && (
           <Link
-            className="btn md:btn-sm btn-square md:btn-ghost md:relative absolute bottom-0 right-0 md:mr-0 mr-4 mb-4 md:mb-0 z-10 md:z-0 md:border-0 border border-yellow-200/25"
+            className="btn md:btn-xs md:relative absolute bottom-0 right-0 md:mr-0 mr-4 mb-4 md:mb-0 z-10 md:z-0 md:border-0 border border-yellow-200/25"
             href={`/market/${selectedTab}/new`}
           >
-            <FaPlus />
+            <FaPlus /> List
           </Link>
         )}
       </div>
