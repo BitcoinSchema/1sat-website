@@ -13,7 +13,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
 import * as mime from "mime";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { FaPlus } from "react-icons/fa";
 import { TbClick } from "react-icons/tb";
 import { styled } from "styled-components";
@@ -22,6 +22,10 @@ interface InscribeImageProps {
   inscribedCallback: () => void;
   generated?: boolean;
 }
+
+type FileEvent = ChangeEvent<HTMLInputElement> & {
+  target: EventTarget & { files: FileList };
+};
 
 const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, generated }) => {
   useSignals();
@@ -77,7 +81,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
 
 
   const handleFileChange = useCallback(
-    (event: any) => {
+    (event: FileEvent) => {
       const file = event.target.files[0] as File;
 
       if (knownImageTypes.includes(file.type)) {
