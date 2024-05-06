@@ -300,13 +300,6 @@ const Artifact: React.FC<ArtifactProps> = ({
       </div>
     ) : type === ArtifactType.Model ? (
       <>
-        {/* <Script
-					async
-					strategy="afterInteractive"
-					type="module"
-					src="https://unpkg.com/@google/model-viewer@^3.4.0/dist/model-viewer.min.js"
-					defer
-				/> */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
           className={`w-full ${classNames?.wrapper || ""} ${classNames?.media || ""

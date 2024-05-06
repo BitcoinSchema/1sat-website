@@ -27,6 +27,7 @@
     "@types/lodash": "^4.14.202",
     "@types/mime": "3.0.0",
     "@types/react-slick": "^0.23.13",
+    "@types/three": "^0.164.0",
     "@types/uuid": "^9.0.8",
     "ai": "^3.1.1",
     "blurhash": "^2.0.5",
