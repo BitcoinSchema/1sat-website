@@ -4,13 +4,15 @@ import Artifact from "@/components/artifact";
 import { FetchStatus } from "@/constants";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { OrdUtxo, TxoData } from "@/types/ordinals";
+import type { FileEvent } from "@/types/file";
+import type { OrdUtxo, TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
 import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TbClick } from "react-icons/tb";
 import styled from "styled-components";
 
@@ -28,7 +30,7 @@ const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   );
 
   const handleFileChange = useCallback(
-    (event: any) => {
+    (event: FileEvent) => {
       const file = event.target.files[0] as File;
       setSelectedFile(file);
       if (file) {
@@ -106,9 +108,8 @@ const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
     <div className="max-w-lg mx-auto">
       <form>
         <Label
-          className={`${
-            selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
-          } rounded border border-dashed border-[#222] flex items-center justify-center`}
+          className={`${selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
+            } rounded border border-dashed border-[#222] flex items-center justify-center`}
         >
           {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
           {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
@@ -121,7 +122,7 @@ const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
         </Label>
         {preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
 
-        {selectedFile && preview && <>{artifact}</>}
+        {selectedFile && !!preview && artifact}
 
         <button
           disabled={submitDisabled}

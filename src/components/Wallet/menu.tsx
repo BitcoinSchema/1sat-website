@@ -23,6 +23,7 @@ import {
 } from "@/signals/wallet/client";
 import type { BSV20Balance } from "@/types/bsv20";
 import type { ChainInfo, IndexerStats } from "@/types/common";
+import { FileEvent } from "@/types/file";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
@@ -31,7 +32,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import init from "bsv-wasm-web";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, type ChangeEvent } from "react";
+import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { CgSpinner } from "react-icons/cg";
 import {
@@ -186,21 +187,19 @@ const WalletMenu: React.FC = () => {
   // 	return;
   // };
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      console.log("handleFileChange called", e.target.files[0]);
-      if (payPk.value || ordPk.value) {
-        const c = confirm(
-          "Are you sure you want to import this wallet? Doing so will replace your existing keys so be sure to back them up first."
-        );
-        if (!c) {
-          return;
-        }
+  const handleFileChange = async (e: FileEvent) => {
+    console.log("handleFileChange called", e.target.files[0]);
+    if (payPk.value || ordPk.value) {
+      const c = confirm(
+        "Are you sure you want to import this wallet? Doing so will replace your existing keys so be sure to back them up first."
+      );
+      if (!c) {
+        return;
       }
-      await loadKeysFromBackupFiles(e.target.files[0]);
-      showDropdown.value = false;
-      router?.push("/wallet");
     }
+    await loadKeysFromBackupFiles(e.target.files[0]);
+    showDropdown.value = false;
+    router?.push("/wallet");
   };
 
   const handleUnlockWallet = () => {
