@@ -130,19 +130,22 @@ export async function generateMetadata({
     details.origin?.data?.insc?.file.type ||
     "Mystery Outpoint";
 
+  const title = `${details.data?.list && (!details.spend || details.spend?.length === 0) ? "Buy " : ""}${name} - 1SatOrdinals`
+
+  // TODO: Make listing metadata better - show price, collection, etc
   return {
-    title: "Item details - 1SatOrdinals",
+    title,
     description: `Explore item details for ${isImageInscription ? "image" : name
       } on 1SatOrdinals.`,
     openGraph: {
-      title: "Item details - 1SatOrdinals",
+      title,
       description: `Explore item details for ${isImageInscription ? `image ${params.outpoint}` : name
         } on 1SatOrdinals.`,
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: "Item details - 1SatOrdinals",
+      title,
       description: `Explore item details for ${isImageInscription ? "image" : name
         } on 1SatOrdinals.`,
     },
