@@ -27,12 +27,12 @@ const Collections = () => {
 
   return (
     <>
-      <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>
+      <h1 className={`px-2 text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>
       <FeaturedCollections />
-      <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Current Hype</h1>
+      <h1 className={`text-2xl px-2 mb-4 ${notoSerif.className}`}>Current Hype</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
         {data?.map((c) => (
-          <div key={c.outpoint} className="relative overflow-hidden w-[300px] h-[300px]">
+          <div key={c.outpoint} className="relative overflow-hidden mx-auto w-[300px] h-[300px]">
             <Link href={`/collection/${c.outpoint}`}>
               <Image
                 width={300}

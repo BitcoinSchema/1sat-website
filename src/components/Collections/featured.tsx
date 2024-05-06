@@ -34,8 +34,8 @@ const FeaturedCollections = () => {
       dots: true,
       infinite: true,
       speed: 500,
-      slidesToShow: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
-      slidesToScroll: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
+      slidesToShow: xxlUp ? 4 : xlUp ? 4 : lgUp ? 3 : mdUp ? 3 : smUp ? 2 : 1,
+      slidesToScroll: xxlUp ? 4 : xlUp ? 4 : lgUp ? 3 : mdUp ? 3 : smUp ? 2 : 1,
       autoplay: true,
       autoplaySpeed: 3000,
     } as Settings;
@@ -52,7 +52,7 @@ const FeaturedCollections = () => {
                 alt={collection.name}
                 width={300}
                 height={300}
-                className="rounded-box h-[300px] w-[300px]"
+                className="rounded-box mx-auto h-[300px] w-[300px]"
               />
             </Link>
           </div>
