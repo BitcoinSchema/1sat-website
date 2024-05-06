@@ -37,9 +37,9 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
   const attempted = useSignal(false);
 
   effect(() => {
-    const fire = async () => {
+    const fire = async (rawTx: string) => {
       // console.log({ rawtx });
-      const tx = Transaction.from_hex(rawtx);
+      const tx = Transaction.from_hex(rawTx);
 
       const numInputs = tx.get_ninputs();
       const numOutputs = tx.get_noutputs();
@@ -107,7 +107,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
     };
     if (showDetails.value && !attempted.value && rawtx && bsvWasmReady.value) {
       attempted.value = true;
-      fire();
+      fire(rawtx);
     }
   });
 
