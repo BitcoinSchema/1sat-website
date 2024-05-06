@@ -121,13 +121,13 @@ const featured: Featured[] = [
       },
     ],
   },
-  {
-    origin: "5117338ee9885e867fbf51d7a36b09b786bc395c817f49fd91ab6f0cb0771f97_0",
-    name: "Masks of Salvation",
-    previewUrl:
-      "https://ordfs.network/5117338ee9885e867fbf51d7a36b09b786bc395c817f49fd91ab6f0cb0771f97_0",
-    height: 791882,
-  },
+  // {
+  //   origin: "5117338ee9885e867fbf51d7a36b09b786bc395c817f49fd91ab6f0cb0771f97_0",
+  //   name: "Masks of Salvation",
+  //   previewUrl:
+  //     "https://ordfs.network/5117338ee9885e867fbf51d7a36b09b786bc395c817f49fd91ab6f0cb0771f97_0",
+  //   height: 791882,
+  // },
   {
     origin: "80d224cdf1d6f6b5145a7f5ede14b357ea7c05f7f7f4aaab04d4cc36d707f806_0",
     name: "Bookworms",
@@ -156,13 +156,13 @@ const featured: Featured[] = [
       "https://takeit-art-prod.s3.amazonaws.com/1Zoide/ae18bbd2-b322-48cd-8b3e-ba127121d7f5",
     height: 792196,
   },
-  {
-    origin: "d2901f73588a012e4d4b1a44354195f86c1f057c1ccf4b612bc20c6359b11248_0",
-    name: "Uniqords",
-    previewUrl:
-      "https://ordfs.network/d2901f73588a012e4d4b1a44354195f86c1f057c1ccf4b612bc20c6359b11248_0",
-    height: 783972,
-  },
+  // {
+  //   origin: "d2901f73588a012e4d4b1a44354195f86c1f057c1ccf4b612bc20c6359b11248_0",
+  //   name: "Uniqords",
+  //   previewUrl:
+  //     "https://ordfs.network/d2901f73588a012e4d4b1a44354195f86c1f057c1ccf4b612bc20c6359b11248_0",
+  //   height: 783972,
+  // },
   {
     origin: "ac9c9f59ae63ae07bc5a25e20dc5635f233076ab18df8c43e2c16e4f3242c750_0",
     name: "CoOM Battles · Genesis Airdrop",
@@ -317,11 +317,11 @@ const featured: Featured[] = [
     previewUrl:
       "https://ordfs.network/d545e4218a92492d7129ffc2caa02c09a7e38505a775f65b919884417814b281_0",
   },
-  {
-    origin: "76e7af296d8c051775caa2a305cf99d13c870999eecedf6a453c02377e87814f_0",
-    name: "1Zoide",
-    height: 792196,
-    previewUrl:
-      "https://ordfs.network/76e7af296d8c051775caa2a305cf99d13c870999eecedf6a453c02377e87814f_0",
-  },
+  // {
+  //   origin: "76e7af296d8c051775caa2a305cf99d13c870999eecedf6a453c02377e87814f_0",
+  //   name: "1Zoide",
+  //   height: 792196,
+  //   previewUrl:
+  //     "https://ordfs.network/76e7af296d8c051775caa2a305cf99d13c870999eecedf6a453c02377e87814f_0",
+  // },
 ];
