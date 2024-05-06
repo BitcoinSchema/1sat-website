@@ -104,7 +104,7 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
                 key={`${item.txid}-${item.vout}-${item.height}-${idx}`}
                 to={`/outpoint/${item.outpoint}`}
                 artifact={item}
-                size={600}
+                size={300}
                 sizes={"100vw"}
                 priority={idx < 10}
                 showListingTag={!!item.data?.list?.price}
