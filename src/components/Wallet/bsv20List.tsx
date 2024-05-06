@@ -24,7 +24,7 @@ import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
 import type { MarketData } from "../pages/TokenMarket/list";
-import { truncate } from "../transaction";
+import { truncate } from "../transaction/display";
 import SAFU from "./safu";
 import WalletTabs, { WalletTab } from "./tabs";
 

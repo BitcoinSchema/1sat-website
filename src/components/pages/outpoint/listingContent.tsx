@@ -35,8 +35,8 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
       <div>
         {artifact.data?.list ? (
           <div>
-            <div>Price</div>
-            <div>${artifact.data?.list?.price ? artifact.data?.list?.price / usdRate.value : 0}</div>
+            <div>USD Price</div>
+            <div>${artifact.data?.list?.price && usdRate.value > 0 ? (artifact.data?.list?.price / usdRate.value).toFixed(2) : 0}</div>
           </div>
         ) : (
           <div>This item is not listed</div>
