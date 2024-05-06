@@ -44,7 +44,7 @@ export const getOrdList = async ({
 	selectedType: ArtifactType | null;
 }) => {
 	if (!address) return;
-	console.log("getOrdUtxos called", address, pageParam, selectedType);
+	// console.log("getOrdUtxos called", address, pageParam, selectedType);
 	const offset = resultsPerPage * pageParam;
 	let url = `${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${offset}&dir=DESC&status=all&bsv20=false`;
 	if (!address) {
@@ -54,7 +54,7 @@ export const getOrdList = async ({
 	if (selectedType && selectedType !== ArtifactType.All) {
 		url += `&type=${artifactTypeMap.get(selectedType)}`;
 	}
-	console.log("Using url", url);
+	// console.log("Using url", url);
 	const res = await fetch(url);
 	// filter for the selected type
 	const json = res.json() as Promise<OrdUtxo[]>;
@@ -75,9 +75,9 @@ export const getOrdList = async ({
 
 export const getOutpoints = async (ids: string[], script: boolean) => {
 	const url = `${API_HOST}/api/txos/outpoints?script=${script}`;
-	console.log("almost", url, "with", ids);
+	// console.log("almost", url, "with", ids);
 	const uniqueIds = uniq(ids);
-	console.log("hitting", url, "with", uniqueIds);
+	// console.log("hitting", url, "with", uniqueIds);
 
 	const res = await fetch(url, {
 		method: "POST",

@@ -188,7 +188,7 @@ export const getWalletOrdUtxos = async ({
   selectedType: ArtifactType | null;
 }) => {
   if (!address) return;
-  console.log("getOrdUtxos called", address, pageParam, selectedType);
+  // console.log("getOrdUtxos called", address, pageParam, selectedType);
   const offset = resultsPerPage * pageParam;
   let url = `${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${offset}&dir=DESC&status=all&bsv20=false`;
 
