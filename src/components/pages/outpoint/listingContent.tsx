@@ -2,13 +2,13 @@
 
 import JDenticon from "@/components/JDenticon";
 import CancelListingModal from "@/components/modal/cancelListing";
+import { usdRate } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toBitcoin } from "satoshi-bitcoin-ts";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
   useSignals();
@@ -36,7 +36,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
         {artifact.data?.list ? (
           <div>
             <div>Price</div>
-            <div>{toBitcoin(artifact.data?.list?.price || 0)}</div>
+            <div>${artifact.data?.list?.price ? artifact.data?.list?.price / usdRate.value : 0}</div>
           </div>
         ) : (
           <div>This item is not listed</div>
