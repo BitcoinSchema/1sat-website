@@ -1,8 +1,12 @@
+"use client"
+
 import { ORDFS } from "@/constants";
 import type { CollectionStats } from "@/types/collection";
 import Image from "next/image";
 import Link from "next/link";
-import Slider, { type Settings } from "react-slick";
+import { useMemo } from "react";
+import Slider, { Settings } from "react-slick";
+import { useMediaQuery } from "usehooks-ts";
 
 type Featured = {
   stats?: CollectionStats;
@@ -17,7 +21,26 @@ type Featured = {
   }[];
 }
 
-const FeaturedCollections = ({ settings }: { settings: Settings }) => {
+const FeaturedCollections = () => {
+
+  const smUp = useMediaQuery('(min-width: 640px)');
+  const mdUp = useMediaQuery('(min-width: 768px)');
+  const lgUp = useMediaQuery('(min-width: 1024px)');
+  const xlUp = useMediaQuery('(min-width: 1280px)');
+  const xxlUp = useMediaQuery('(min-width: 1536px)');
+
+  const settings = useMemo(() => {
+    return {
+      dots: true,
+      infinite: true,
+      speed: 500,
+      slidesToShow: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
+      slidesToScroll: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
+      autoplay: true,
+      autoplaySpeed: 3000,
+    } as Settings;
+  }, [xxlUp, xlUp, lgUp, mdUp, smUp]);
+
   return (
     <div className="mb-8">
       <Slider {...settings}>

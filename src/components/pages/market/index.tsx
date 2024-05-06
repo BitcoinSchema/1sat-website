@@ -1,15 +1,11 @@
-"use client"
-
 import FeaturedCollections from "@/components/Collections/featured";
 import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import { AssetType } from "@/constants";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import { Noto_Serif } from "next/font/google";
-import { useMemo } from "react";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
-import { useMediaQuery } from "usehooks-ts";
 import TokenMarket from "../TokenMarket";
 import MarketTabs from "./tabs";
 
@@ -41,23 +37,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
     showTabs = true;
   }
 
-  const smUp = useMediaQuery('(min-width: 640px)');
-  const mdUp = useMediaQuery('(min-width: 768px)');
-  const lgUp = useMediaQuery('(min-width: 1024px)');
-  const xlUp = useMediaQuery('(min-width: 1280px)');
-  const xxlUp = useMediaQuery('(min-width: 1536px)');
 
-  const settings = useMemo(() => {
-    return {
-      dots: true,
-      infinite: true,
-      speed: 500,
-      slidesToShow: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
-      slidesToScroll: xxlUp ? 4 : xlUp ? 4 : lgUp ? 4 : mdUp ? 3 : smUp ? 2 : 1,
-      autoplay: true,
-      autoplaySpeed: 3000,
-    };
-  }, [xxlUp, xlUp, lgUp, mdUp, smUp]);
 
   const Listings = ({ id, term }: { id?: string, term?: string }) => {
     switch (selectedAssetType) {
@@ -94,7 +74,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
       )}
       {selectedAssetType === AssetType.Ordinals && <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>}
 
-      {selectedAssetType === AssetType.Ordinals && <FeaturedCollections settings={settings} />}
+      {selectedAssetType === AssetType.Ordinals && <FeaturedCollections />}
       {showTabs && (
         <div className="flex">
           <MarketTabs
