@@ -23,7 +23,7 @@ import {
 } from "@/signals/wallet/client";
 import type { BSV20Balance } from "@/types/bsv20";
 import type { ChainInfo, IndexerStats } from "@/types/common";
-import { FileEvent } from "@/types/file";
+import type { FileEvent } from "@/types/file";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
@@ -112,7 +112,7 @@ const WalletMenu: React.FC = () => {
     return utxos.value.reduce((acc, utxo) => acc + utxo.satoshis, 0);
   });
 
-  effect(() => {
+  useEffect(() => {
     const address = ordAddress.value;
     const fire = async () => {
       bsv20Balances.value = [];
@@ -150,10 +150,11 @@ const WalletMenu: React.FC = () => {
       }
     };
 
+    console.log({ bsvWasmReady, address, bsv20Balances })
     if (bsvWasmReady.value && address && !bsv20Balances.value) {
       fire();
     }
-  });
+  }, [bsvWasmReady.value, ordAddress.value, bsv20Balances.value]);
 
   useEffect(() => {
     const fire = async (a: string) => {

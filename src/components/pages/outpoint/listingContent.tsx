@@ -9,12 +9,36 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { FaSpinner } from "react-icons/fa6";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
   useSignals();
   const router = useRouter();
   const showCancelModal = useSignal(false);
   const isOwner = artifact.owner === ordAddress.value;
+
+  const priceContent = useMemo(() => {
+    if (!ordAddress.value) {
+      return null;
+    }
+
+    if (usdRate.value === 0) {
+      return <div className="w-full text-center"><FaSpinner className="animate-spin" /></div>;
+    }
+
+    return <div>
+      {artifact.data?.list ? (
+        <div>
+          <div>USD Price</div>
+          <div>${artifact.data?.list?.price && usdRate.value > 0 ? (artifact.data?.list?.price / usdRate.value).toFixed(2) : 0}</div>
+        </div>
+      ) : (
+        <div>This item is not listed</div>
+      )}
+    </div>
+  }, [artifact.data?.list, usdRate.value, ordAddress.value]);
+
   return (
     <div>
       <div>Owner</div>
@@ -32,16 +56,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           </div>
         </div>
       </div>
-      <div>
-        {artifact.data?.list ? (
-          <div>
-            <div>USD Price</div>
-            <div>${artifact.data?.list?.price && usdRate.value > 0 ? (artifact.data?.list?.price / usdRate.value).toFixed(2) : 0}</div>
-          </div>
-        ) : (
-          <div>This item is not listed</div>
-        )}
-      </div>
+      {priceContent}
 
       {/* // unlisted bsv20 */}
       {isOwner && !artifact.data?.list && artifact.data?.bsv20 && (
