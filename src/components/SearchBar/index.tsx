@@ -27,23 +27,6 @@ const SearchBar: React.FC = () => {
   const subForm = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (searchTerm.value.length > 0) {
-      // // bsv20 exact match check
-      // if (searchTerm.value.length <= 4) {
-      //   if (autofillValues.value) {
-      //     const found = autofillValues.value.find(
-      //       (t) => t.tick === searchTerm.value.trim()
-      //     );
-      //     if (found) {
-      //       searchTerm.value = "";
-      //       autofillValues.value = null;
-      //       focused.value = false;
-      //       e.currentTarget.blur();
-      //       router.push(`/market/${found.type}/${found.tick}`);
-      //       return;
-      //     }
-      //   }
-      // }
-
       e.currentTarget.blur();
       focused.value = false;
       const url = `/listings/search/${searchTerm.value}`;
