@@ -10,6 +10,8 @@ import { bsv20Balances } from "@/signals/wallet";
 import { TokenMarketSales } from "./tokenMarketSales";
 import { TokenMarketMyListings } from "./tokenMarketMyListings";
 import { TokenMarketMySales } from "./tokenMarketMySales";
+import { useEffect } from "react";
+import { listings, myListings, mySales, sales } from "./signals";
 
 interface Props {
 	ticker: MarketData;
@@ -25,6 +27,7 @@ export function TokenMarketTabs({
 	showListingForm,
 }: Props) {
 	useSignals();
+
 	const selectedTab = useSignal<
 		"listings" | "sales" | "my_listings" | "my_sales"
 	>("listings");
@@ -35,6 +38,17 @@ export function TokenMarketTabs({
 			return b.tick === ticker.tick || b.sym === ticker.tick;
 		});
 	});
+
+	/**
+	 * Reset the listings and sales when the ticker changes
+	 * so that the user doesn't see the previous token's data
+	 */
+	useEffect(() => {
+		listings.value = [];
+		sales.value = [];
+		myListings.value = [];
+		mySales.value = [];
+	}, [ticker, type]);
 
 	return (
 		<div className="flex w-full items-center justify-between">

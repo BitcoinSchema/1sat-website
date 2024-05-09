@@ -1,19 +1,11 @@
 "use client";
 
-import { API_HOST, AssetType, resultsPerPage } from "@/constants";
+import { AssetType } from "@/constants";
 import { bsv20Balances, chainInfo } from "@/signals/wallet";
-import { Listing } from "@/types/bsv20";
-import { BSV20TXO } from "@/types/ordinals";
-import * as http from "@/utils/httpClient";
 import { computed } from "@preact/signals-react";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import { useInView } from "framer-motion";
-import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { useSignal } from "@preact/signals-react/runtime";
 import TremorChartComponent, { ChartStyle, DataCategory } from "./chart";
 import { MarketData } from "./list";
-import { listings, sales } from "./signals";
 import { TokenMarketTabs } from "./tokenMarketTabs";
 
 const TickerContent = ({
