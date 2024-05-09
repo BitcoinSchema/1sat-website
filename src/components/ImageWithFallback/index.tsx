@@ -1,9 +1,9 @@
 import fallbackImage from "@/assets/images/oneSatLogoDark.svg";
 import Image, { type ImageProps } from "next/image";
 
-interface Props extends ImageProps {
+interface Props extends Partial<ImageProps> {
   alt: string;
-  src?: string;
+  src?: string | undefined;
   fallback?: string;
   className?: string;
 }
