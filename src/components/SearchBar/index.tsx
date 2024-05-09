@@ -49,7 +49,7 @@ const SearchBar: React.FC = () => {
       searchTerm.value = "";
       router.push(url);
     }
-  }, [searchTerm, focused, router, autofillValues]);
+  }, [searchTerm.value, focused.value, router, autofillValues.value]);
 
   effect(() => {
     const fire = async (term: string) => {
