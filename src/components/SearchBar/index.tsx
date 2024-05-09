@@ -95,6 +95,8 @@ const SearchBar: React.FC = () => {
   }, [searchLoading.value, handleSearchClick]);
 
   const autofill = useMemo(() => {
+    // we need focused as a dependency so the autofill 
+    console.log({ focused: focused.value })
     return autofillValues.value &&
       autofillValues.value.length > 0 &&
       (searchTerm.value !== searchParam || searchTerm.value === "") &&
@@ -125,7 +127,7 @@ const SearchBar: React.FC = () => {
           </Link>
         ))}
       </div>)
-  }, [autofillValues.value, searchTerm.value, searchParam]);
+  }, [autofillValues.value, searchTerm.value, searchParam, focused.value]);
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
