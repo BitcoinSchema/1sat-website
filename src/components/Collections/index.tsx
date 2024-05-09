@@ -1,6 +1,6 @@
 "use client"
 
-import { MINI_API_HOST, ORDFS } from "@/constants";
+import { MARKET_API_HOST, ORDFS } from "@/constants";
 import type { Collection } from "@/types/collection";
 import { useQuery } from "@tanstack/react-query";
 import { Noto_Serif } from "next/font/google";
@@ -20,7 +20,7 @@ const Collections = () => {
   const { data } = useQuery<Collection[]>({
     queryKey: ["collections"],
     queryFn: async () =>
-      await fetch(`${MINI_API_HOST}/collection/`).then(
+      await fetch(`${MARKET_API_HOST}/collection/`).then(
         (res) => res.json()
       ),
   });

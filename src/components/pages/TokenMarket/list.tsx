@@ -1,4 +1,4 @@
-import { AssetType } from "@/constants";
+import { AssetType, MARKET_API_HOST } from "@/constants";
 import { NextRequest } from "next/server";
 import React from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
@@ -86,9 +86,15 @@ const List = async ({
   id?: string;
 }) => {
   let marketData: MarketData[] = [];
-  const url = `https://1sat-api-production.up.railway.app/market/${type}`;
-  marketData = await getMarketData(new NextRequest(url), type, id);
+  try {
+    const url = `${MARKET_API_HOST}/market/${type}`;
+    marketData = await getMarketData(new NextRequest(url), type, id);
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
 
+  console.log({ marketData });
   return (
     <tbody className="overflow-auto">
       {marketData.map((ticker, idx) => {
@@ -136,7 +142,8 @@ export default List;
 const getMarketData = async (
   req: NextRequest,
   type: AssetType,
-  id?: string
+  id?: string,
+  term?: string
 ) => {
   const res = await import("../../../app/market/[tab]/list/route");
   const json = await (
@@ -144,6 +151,7 @@ const getMarketData = async (
       params: {
         type,
         id,
+        term
       },
     })
   ).json();

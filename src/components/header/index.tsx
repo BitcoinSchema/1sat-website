@@ -8,7 +8,7 @@ import MarketMenu from "../marketMenu";
 const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
   return (
     <header className="mb-12 z-10">
-      <div className="navbar bg-base-100 relative">
+      <div className="navbar bg-base-100 relative p-0">
         <div className="navbar-start">
           <div className="px-2 min-w-12">
             <Link

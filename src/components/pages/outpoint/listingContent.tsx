@@ -34,7 +34,15 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           <div>${artifact.data?.list?.price && usdRate.value > 0 ? (artifact.data?.list?.price / usdRate.value).toFixed(2) : 0}</div>
         </div>
       ) : (
-        <div>This item is not listed</div>
+        <div>
+          <div>This item is not listed</div>
+          <Link href={`/inscribe/${artifact.txid}/${artifact.vout}`}>
+            <button type="button" className="btn">
+              List
+            </button>
+          </Link>
+        </div>
+
       )}
     </div>
   }, [artifact.data?.list, usdRate.value, ordAddress.value]);

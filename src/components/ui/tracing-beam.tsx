@@ -4,10 +4,10 @@ import {
   motion,
   useScroll,
   useSpring,
-  useTransform,
-  useVelocity,
+  useTransform
 } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const TracingBeam = ({
   children,
@@ -22,12 +22,7 @@ export const TracingBeam = ({
     offset: ["start start", "end start"],
   });
 
-  // track velocity of scroll to increase or decrease distance between svg gradient y coordinates.
-  const scrollYProgressVelocity = useVelocity(scrollYProgress);
-  const [velo, setVelocity] = React.useState(0);
-
   const contentRef = useRef<HTMLDivElement>(null);
-
   const [svgHeight, setSvgHeight] = useState(0);
 
   useEffect(() => {
@@ -35,21 +30,16 @@ export const TracingBeam = ({
       setSvgHeight(contentRef.current.offsetHeight);
     }
   }, []);
-  useEffect(() => {
-    return scrollYProgressVelocity.onChange((latestVelocity) => {
-      setVelocity(latestVelocity);
-    });
-  }, [scrollYProgressVelocity]);
 
   const y1 = useSpring(
-    useTransform(scrollYProgress, [0, 0.8], [50, svgHeight - velo * 500]),
+    useTransform(scrollYProgress, [0, 0.8], [50, svgHeight]),
     {
       stiffness: 500,
       damping: 90,
     }
   );
   const y2 = useSpring(
-    useTransform(scrollYProgress, [0, 1], [50, svgHeight - velo * 2000]),
+    useTransform(scrollYProgress, [0, 1], [50, svgHeight - 200]),
     {
       stiffness: 500,
       damping: 90,
@@ -61,7 +51,7 @@ export const TracingBeam = ({
       ref={ref}
       className={cn("relative w-full max-w-4xl mx-auto h-full", className)}
     >
-      <div className="absolute -left-20 top-3">
+      <div className="absolute -left-4 md:-left-20 top-3">
         <motion.div
           transition={{
             duration: 0.2,
@@ -86,14 +76,14 @@ export const TracingBeam = ({
               borderColor:
                 scrollYProgress.get() > 0 ? "white" : "var(--emerald-600)",
             }}
-            className="h-2 w-2 rounded-full border border-neutral-300 bg-white"
+            className="h-2 w-2  rounded-full border border-neutral-300 bg-white"
           />
         </motion.div>
         <svg
           viewBox={`0 0 20 ${svgHeight}`}
           width="20"
           height={svgHeight} // Set the SVG height
-          className=" ml-4 hidden lg:block"
+          className=" ml-4 block"
           aria-hidden="true"
         >
           <motion.path
@@ -114,7 +104,7 @@ export const TracingBeam = ({
             transition={{
               duration: 10,
             }}
-          />
+          ></motion.path>
           <defs>
             <motion.linearGradient
               id="gradient"
@@ -124,10 +114,10 @@ export const TracingBeam = ({
               y1={y1} // set y1 for gradient
               y2={y2} // set y2 for gradient
             >
-              <stop stopColor="#18CCFC" stopOpacity="0" />
-              <stop stopColor="#18CCFC" />
-              <stop offset="0.325" stopColor="#6344F5" />
-              <stop offset="1" stopColor="#AE48FF" stopOpacity="0" />
+              <stop stopColor="#18CCFC" stopOpacity="0"></stop>
+              <stop stopColor="#18CCFC"></stop>
+              <stop offset="0.325" stopColor="#6344F5"></stop>
+              <stop offset="1" stopColor="#AE48FF" stopOpacity="0"></stop>
             </motion.linearGradient>
           </defs>
         </svg>

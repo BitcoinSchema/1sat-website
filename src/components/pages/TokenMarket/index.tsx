@@ -6,11 +6,12 @@ import List from "./list";
 interface TokenMarketProps {
   type: AssetType.BSV20 | AssetType.BSV21;
   id?: string;
+  term?: string;
 }
 
-const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id }) => {
+const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, term }) => {
   return (
-    <div className="w-full overflow-x-auto rounded-b-box">
+    <div className="w-full overflow-x-auto rounded-b-box relative">
       <table className="table font-mono ">
         <thead>
           <tr>
