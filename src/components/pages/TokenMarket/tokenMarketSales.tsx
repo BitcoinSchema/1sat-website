@@ -1,0 +1,120 @@
+import { API_HOST, AssetType } from "@/constants";
+import * as http from "@/utils/httpClient";
+import { MarketData } from "./list";
+import { useEffect, useRef } from "react";
+import { useInView } from "framer-motion";
+import { useSignal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
+import { BSV20TXO } from "@/types/ordinals";
+import { sales } from "./signals";
+import { toBitcoin } from "satoshi-bitcoin-ts";
+import Link from "next/link";
+
+interface Props {
+	ticker: MarketData;
+	type: AssetType.BSV20 | AssetType.BSV21;
+}
+
+export function TokenMarketSales({ ticker, type }: Props) {
+	useSignals();
+
+	const salesRef = useRef(null);
+	const salesInView = useInView(salesRef);
+	const newSalesOffset = useSignal(0);
+	const reachedEndOfSales = useSignal(false);
+
+	useEffect(() => {
+		let nextPageOfSales: BSV20TXO[] = [];
+
+		const fire = async (id: string) => {
+			if (newSalesOffset.value === 0) {
+				sales.value = [];
+			}
+			let urlMarket = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=${newSalesOffset.value}&tick=${id}&pending=true`;
+			if (type === AssetType.BSV21) {
+				urlMarket = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=${newSalesOffset.value}&id=${id}&pending=true`;
+			}
+			newSalesOffset.value += 20;
+			const { promise: promiseBsv20v1Market } =
+				http.customFetch<BSV20TXO[]>(urlMarket);
+			nextPageOfSales = await promiseBsv20v1Market;
+
+			if (nextPageOfSales.length > 0) {
+				// For some reason this would return some items the same id from the first call so we filter them out
+				sales.value = [
+					...(sales.value || []),
+					...nextPageOfSales.filter(
+						(l) => !sales.value?.some((l2) => l2.txid === l.txid)
+					),
+				];
+			} else {
+				reachedEndOfSales.value = true;
+			}
+		};
+
+		if (salesInView) {
+			console.log({ salesInView });
+		}
+		if (
+			type === AssetType.BSV20 &&
+			(salesInView || newSalesOffset.value === 0) &&
+			ticker.tick &&
+			!reachedEndOfSales.value
+		) {
+			fire(ticker.tick);
+		} else if (
+			type === AssetType.BSV21 &&
+			(salesInView || newSalesOffset.value === 0) && // fire the first time
+			ticker.id &&
+			!reachedEndOfSales.value
+		) {
+			fire(ticker.id);
+		}
+	}, [salesInView, newSalesOffset, reachedEndOfSales, ticker, type]);
+
+	return (
+		<>
+			{sales.value?.map((sale) => {
+				return (
+					<div
+						className="flex w-full justify-between"
+						key={`${sale.txid}-${sale.vout}-${sale.height}`}
+					>
+						<Link
+							href={`/outpoint/${sale.txid}`}
+							className="flex flex-col py-1"
+						>
+							<span className="text-secondary-content/75">
+								{(
+									Number.parseInt(sale.amt) /
+									10 ** ticker.dec
+								).toLocaleString()}{" "}
+								{ticker.tick}
+							</span>
+							<span className="text-accent text-xs">
+								{sale.pricePer} / token
+							</span>
+						</Link>
+						<div className="py-1">
+							<button
+								type="button"
+								disabled
+								className="btn btn-xs btn-outline btn-secondary pointer-events-none"
+							>
+								{Number.parseInt(sale.price) > 1000
+									? `${toBitcoin(sale.price)} BSV`
+									: `${sale.price} sat`}
+							</button>
+						</div>
+					</div>
+				);
+			})}
+			{sales.value?.length === 0 && (
+				<div className="text-center text-base-content/75">
+					No sales found
+				</div>
+			)}
+			<div ref={salesRef} />
+		</>
+	);
+}

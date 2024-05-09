@@ -42,6 +42,7 @@ export interface BSV20TXO extends BaseTxo {
   sym: string;
   icon: string;
   script: string;
+  sale?: boolean
 }
 
 
