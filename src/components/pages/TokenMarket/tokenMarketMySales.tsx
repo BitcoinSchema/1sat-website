@@ -23,60 +23,22 @@ export function TokenMarketMySales({ ticker, type }: Props) {
 	const salesInView = useInView(salesRef);
 	const newSalesOffset = useSignal(0);
 	const reachedEndOfSales = useSignal(false);
-	const allSales = useSignal<BSV20TXO[]>([]);
 
 	useEffect(() => {
-		if (!ordAddress.value) {
-			return;
-		}
-
-		/**
-		 * Because the API does not have a way to filter sales and purchases
-		 * we have to fetch all the history and filter the sales on the client side
-		 */
-		async function fire() {
-			let urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${ticker.tick}/history?dir=desc&limit=1000&offset=0`;
-			if (type === AssetType.BSV21) {
-				urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${ticker.id}/history?dir=desc&limit=1000&offset=0`;
-			}
-
-			const { promise: promiseBsv20v1Market } =
-				http.customFetch<BSV20TXO[]>(urlMarket);
-
-			allSales.value = await promiseBsv20v1Market;
-		}
-
-		fire();
-	}, [ticker, type]);
-
-	useEffect(() => {
-		if (
-			!ordAddress.value ||
-			!allSales.value ||
-			allSales.value.length === 0
-		) {
-			return;
-		}
-
 		let nextPageOfSales: BSV20TXO[] = [];
 
 		const fire = async (id: string) => {
 			if (newSalesOffset.value === 0) {
 				mySales.value = [];
 			}
-
+			let urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
+			if (type === AssetType.BSV21) {
+				urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
+			}
 			newSalesOffset.value += 20;
-
-			nextPageOfSales = [...allSales.value];
-			console.log({ nextPageOfSales });
-
-			/**
-			 * To get the sales the user made, we look for sales where the owner is not the user
-			 * If the owner is the user, it means the user bought the token
-			 */
-			nextPageOfSales = nextPageOfSales.filter((sale) => {
-				return !!sale.sale;
-			});
+			const { promise: promiseBsv20v1Market } =
+				http.customFetch<BSV20TXO[]>(urlMarket);
+			nextPageOfSales = await promiseBsv20v1Market;
 
 			if (nextPageOfSales.length > 0) {
 				// For some reason this would return some items the same id from the first call so we filter them out
