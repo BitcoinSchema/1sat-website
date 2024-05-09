@@ -2,25 +2,31 @@
 
 import Artifact from "@/components/artifact";
 import { FetchStatus } from "@/constants";
+import { generatedImage } from "@/signals/ai";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { TxoData } from "@/types/ordinals";
+import type { FileEvent } from "@/types/file";
+import type { TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
 import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
 import * as mime from "mime";
-import React, { useCallback, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FaPlus } from "react-icons/fa";
 import { TbClick } from "react-icons/tb";
 import { styled } from "styled-components";
 
 interface InscribeImageProps {
   inscribedCallback: () => void;
+  generated?: boolean;
 }
 
-const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
+
+
+const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, generated }) => {
   useSignals();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
@@ -28,10 +34,55 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
+
+  useEffect(() => {
+    console.log("here", generated, generatedImage.value)
+    // if an imageUrl is provided, load it and set the preview
+    if (generated && generatedImage.value && !preview) {
+
+      const decoded = Buffer.from(generatedImage.value.data, 'base64')
+
+      const arrayBuffer = decoded.buffer.slice(decoded.byteOffset, decoded.byteOffset + decoded.byteLength) as ArrayBuffer;
+      setIsImage(true)
+
+      const file = new File([arrayBuffer], "image.png", { type: "image/png" });
+      setSelectedFile(file);
+
+      setPreview(`data:image/png;base64,${generatedImage.value.data}`);
+      // fetch(b64Json)
+      //   .then(async (res) => {
+      //     if (!res.ok) {
+      //       throw new Error("Failed to fetch image");
+      //     }
+      //     console.log("Status:", res.status)
+      //     return await res.blob()
+      //   }
+      //   ) // Fetch image data as Blob
+      //   .then((blob) => {
+      //     // Create a new File object from the Blob
+      //     const file = new File([blob], "image.png", { type: "image/png" });
+      //     setIsImage(true);
+      //     setSelectedFile(file);
+      //     const reader = new FileReader();
+      //     debugger
+      //     reader.onloadend = () => {
+      //       debugger
+      //       setPreview(reader.result);
+      //     };
+      //     reader.readAsDataURL(blob);
+      //   })
+      //   .catch((e) => {
+      //     console.error("Failed to fetch image:", e);
+      //     setLoadStatus(FetchStatus.Error);
+      //   });
+    }
+  }, [generated, generatedImage.value, preview, setIsImage]);
+
+
   const handleFileChange = useCallback(
-    (event: any) => {
+    (event: FileEvent) => {
       const file = event.target.files[0] as File;
-      
+
       if (knownImageTypes.includes(file.type)) {
         setIsImage(true);
       } else if (knownVideoTypes.includes(file.type)) {
@@ -46,6 +97,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
       if (file) {
         const reader = new FileReader();
         reader.onloadend = () => {
+          console.log("setting preview to", reader.result)
           setPreview(reader.result);
         };
         reader.readAsDataURL(file);
@@ -53,7 +105,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
         setPreview(null);
       }
     },
-    [setPreview, setSelectedFile, setIsImage]
+    []
   );
 
   type MetaMap = {
@@ -130,7 +182,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   const artifact = useMemo(async () => {
     return (
       selectedFile?.type &&
-      preview && (
+      typeof preview === "string" && (
         <Artifact
           classNames={{ media: "w-full h-full" }}
           artifact={{
@@ -147,7 +199,9 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
             txid: "",
             vout: 0,
           }}
-          src={preview as string} sizes={""} />
+          size={300}
+          src={preview as string}
+          sizes={""} />
       )
     );
   }, [preview, selectedFile]);
@@ -273,9 +327,8 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   return (
     <div className="max-w-lg mx-auto">
       <Label
-        className={`${
-          selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
-        } rounded border border-dashed border-[#222] flex items-center justify-center`}
+        className={`${selectedFile ? "" : "min-h-[300px] min-w-[360px] md:min-w-[420px]"
+          } rounded border border-dashed border-[#222] flex items-center justify-center`}
       >
         {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
         {selectedFile ? selectedFile.name : "Choose a file to inscribe"}

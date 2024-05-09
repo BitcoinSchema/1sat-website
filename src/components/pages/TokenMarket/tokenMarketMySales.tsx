@@ -47,7 +47,7 @@ export function TokenMarketMySales({ ticker, type }: Props) {
 		}
 
 		fire();
-	}, [ticker]);
+	}, [ticker, type]);
 
 	useEffect(() => {
 		if (
@@ -130,9 +130,17 @@ export function TokenMarketMySales({ ticker, type }: Props) {
 								).toLocaleString()}{" "}
 								{ticker.tick}
 							</span>
-							<span className="text-accent text-xs">
-								{sale.pricePer} / token
-							</span>
+							<div className="flex items-center">
+								<span className="text-accent text-xs">
+									{sale.pricePer} / token
+								</span>
+								<span className="text-accent text-xs mx-1">
+									•
+								</span>
+								<span className="text-accent text-xs">
+									Block #{sale.height}
+								</span>
+							</div>
 						</Link>
 						<div className="py-1">
 							<button

@@ -29,7 +29,7 @@ const SkeletonItem = () => (
 const iterations = 20;
 
 const TokenListingSkeleton = () => (
-	<tbody className="py-0 px-3 mb-4 w-full max-w-5xl">
+	<tbody className="py-0 px-3 mb-4 w-full">
 		{[...Array(iterations)].map((_, i) => (
 			<SkeletonItem
 				key={`token-skel-${

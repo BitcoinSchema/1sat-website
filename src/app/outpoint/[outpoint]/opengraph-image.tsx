@@ -1,7 +1,7 @@
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
 import { API_HOST, ORDFS } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import { getNotoSerifItalicFont } from "@/utils/font";
 import { ImageResponse } from "next/og";
 

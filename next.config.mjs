@@ -27,6 +27,12 @@ const nextConfig = {
 				port: "",
 				pathname: "/**",
 			},
+			{
+				protocol: "https",
+				hostname: "*.blob.core.windows.net",
+				port: "",
+				pathname: "/**",
+			},
 		],
 	},
 	webpack: (config, { isServer }) => {

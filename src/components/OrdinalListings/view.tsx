@@ -1,6 +1,5 @@
 "use client";
 
-import { OrdUtxo } from "@/types/ordinals";
 import { useSignals } from "@preact/signals-react/runtime";
 import { OrdViewMode } from ".";
 import GridList from "./grid";
@@ -8,14 +7,19 @@ import List from "./list";
 
 interface ViewProps {
   address?: string;
-  listings?: OrdUtxo[];
+  term?: string;
   mode: OrdViewMode;
   onClick?: (outpoint: string) => Promise<void>;
 }
 
-const View = ({ address, listings: listingsProp, mode, onClick }: ViewProps) => {
+const View = ({
+  address,
+  term,
+  mode,
+  onClick,
+}: ViewProps) => {
   useSignals();
-  
+
   // const listings = useSignal<OrdUtxo[]>(listingsProp || []);
 
   // if address is not set this is just showing listings
@@ -78,7 +82,7 @@ const View = ({ address, listings: listingsProp, mode, onClick }: ViewProps) => 
     return <GridList address={address} onClick={onClick} />;
   }
 
-  return <List address={address} onClick={onClick} />;
+  return <List address={address} onClick={onClick} term={term} />;
 };
 
 export default View;

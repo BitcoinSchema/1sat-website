@@ -2,7 +2,8 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useMemo } from "react";
+import type React from "react";
+import { useCallback, useMemo } from "react";
 import InscribeBsv20 from "./bsv20";
 import InscribeBsv21 from "./bsv21";
 import InscribeCollection from "./collection";
@@ -14,9 +15,10 @@ import InscribeText from "./text";
 type InscribeProps = {
   className?: string;
   tab: InscriptionTab;
+  generated?: boolean;
 };
 
-const Inscribe: React.FC<InscribeProps> = ({ className, tab }) => {
+const Inscribe: React.FC<InscribeProps> = ({ className, tab, generated }) => {
   const router = useRouter()
 
   const selectedTab = useMemo(() => {
@@ -32,9 +34,8 @@ const Inscribe: React.FC<InscribeProps> = ({ className, tab }) => {
 
   return (
     <div
-      className={`${
-        className ? className : ""
-      } flex flex-col w-full mx-auto p-4`}
+      className={`${className ? className : ""
+        } flex flex-col w-full mx-auto p-4`}
     >
       <InscriptionTabs currentTab={selectedTab || InscriptionTab.Image} />
       <div className="w-full">
@@ -45,7 +46,7 @@ const Inscribe: React.FC<InscribeProps> = ({ className, tab }) => {
           <InscribeHtml inscribedCallback={inscribedCallback} />
         )}
         {selectedTab === InscriptionTab.Image && (
-          <InscribeImage inscribedCallback={inscribedCallback} />
+          <InscribeImage inscribedCallback={inscribedCallback} generated={generated} />
         )}
         {selectedTab === InscriptionTab.BSV20 && (
           <InscribeBsv20 inscribedCallback={inscribedCallback} />

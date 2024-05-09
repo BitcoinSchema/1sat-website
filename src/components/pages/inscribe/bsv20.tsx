@@ -472,7 +472,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const listingFee = useMemo(() => {
 		if (!usdRate.value) {
-			return minFee;
+			return minFee * usdRate.value;
 		}
 		return selectedBsv20
 			? calculateIndexingFee(usdRate.value)
@@ -1012,7 +1012,7 @@ export default InscribeBsv20;
 
 const maxMaxSupply = BigInt("18446744073709551615");
 
-export const minFee = 100000000; // 1BSV
+export const minFee = 10000000; // .1BSV
 export const baseFee = 50;
 
 const defaultDec = 8;

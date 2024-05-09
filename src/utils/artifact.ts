@@ -136,13 +136,19 @@ export const displayName = (
 export const getMarketListings = async ({
 	pageParam,
 	selectedType,
+	term,
 }: {
 	pageParam: number;
 	selectedType: ArtifactType | null;
+	term?: string;
 }) => {
-	console.log("get markett listings called", pageParam, selectedType);
+	console.log("get market listings called", pageParam, selectedType, term);
 	const offset = resultsPerPage * pageParam;
 	let url = `${API_HOST}/api/market?limit=${resultsPerPage}&offset=${offset}&dir=DESC`;
+
+	if (term) {
+		url += `&text=${term}`;
+	}
 
 	if (selectedType && selectedType !== ArtifactType.All) {
 		url += `&type=${artifactTypeMap.get(selectedType)}`;

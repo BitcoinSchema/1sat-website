@@ -4,17 +4,18 @@ import Inscribe from "@/components/pages/inscribe/inscribe";
 import { bsvWasmReady, payPk, utxos } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter, useSearchParams } from "next/navigation";
-import React from "react";
-import { InscriptionTab } from "./tabs";
+import type React from "react";
+import type { InscriptionTab } from "./tabs";
 
 const InscribePage: React.FC = () => {
   useSignals();
   const params = useSearchParams();
   const router = useRouter();
   const tab = params.get("tab") as InscriptionTab;
+  const generated = params.get("generated") === "true";
   return (
     <>
-      {bsvWasmReady.value && payPk.value && utxos.value && <Inscribe tab={tab} />}
+      {bsvWasmReady.value && payPk.value && utxos.value && <Inscribe tab={tab} generated={generated} />}
       <div className="p-2 md:p-4">
         {bsvWasmReady.value && (!payPk.value || !utxos.value) && (
           <div

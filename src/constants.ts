@@ -1,5 +1,6 @@
 export const ORDFS = "https://ordfs.network";
 export const API_HOST = "https://ordinals.gorillapool.io";
+export const MINI_API_HOST = "https://1sat-api-production.up.railway.app";
 
 export enum SortBy {
 	PC = "pct_minted",
@@ -89,4 +90,4 @@ export const encryptionPrefix = "ENC:";
 export const OLD_PAY_PK_KEY = "1satfk";
 export const OLD_ORD_PK_KEY = "1satok";
 
-export const NUMBER_OF_ITEMS_PER_PAGE = 100;
+export const NUMBER_OF_ITEMS_PER_PAGE = 50;
