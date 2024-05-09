@@ -96,8 +96,8 @@ const SearchBar: React.FC = () => {
 
   const autofill = useMemo(() => {
     // we need focused as a dependency so the autofill 
-    console.log({ focused: focused.value })
-    return autofillValues.value &&
+
+    return focused.value && autofillValues.value &&
       autofillValues.value.length > 0 &&
       (searchTerm.value !== searchParam || searchTerm.value === "") &&
       (<div className="flex-col text-left right-0 
