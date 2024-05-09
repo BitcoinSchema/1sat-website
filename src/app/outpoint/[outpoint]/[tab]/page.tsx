@@ -39,7 +39,7 @@ const Outpoint = async ({ params, searchParams }: { params: OutpointParams, sear
   const parts = params.outpoint.split("_");
   const txid = parts[0];
   const vout = parts.length > 1 ? parts[1] : "0";
-  const details = searchParams.details !== "false";
+  const details = searchParams.details === "true";
 
   // try {
   // 	const spendResponse = await fetch(
