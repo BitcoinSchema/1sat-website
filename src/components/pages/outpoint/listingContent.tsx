@@ -36,11 +36,11 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
       ) : (
         <div>
           <div>This item is not listed</div>
-          <Link href={`/inscribe/${artifact.txid}/${artifact.vout}`}>
+          {isOwner && <Link href={`/market/ordinals/new?outpoint=${artifact.outpoint}`}>
             <button type="button" className="btn">
               List
             </button>
-          </Link>
+          </Link>}
         </div>
 
       )}

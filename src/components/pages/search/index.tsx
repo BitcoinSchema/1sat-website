@@ -121,7 +121,7 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
               className={`btn btn-sm hover:bg-neutral transition ${match.contract ? match.contract === "pow-20" ? "bg-orange-800 hover:bg-orange-600" : "" : ""}`}
             >
               <div className="flex items-center">
-                {match.icon && <ImageWithFallback src={`${ORDFS}/${match.icon}`} alt={match.tick} width={15} height={15} className="mr-2" />}
+                {match.icon && <ImageWithFallback src={`${ORDFS}/${match.icon}`} alt={match.tick} width={15} height={15} className="mr-2 rounded-box" />}
                 <div className="inline-flex">
                   {match.tick}
                 </div>
