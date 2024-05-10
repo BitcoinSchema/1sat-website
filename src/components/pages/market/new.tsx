@@ -244,6 +244,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       price
     );
 
+    pendingTx.returnTo = "/market/ordinals"
     pendingTxs.value = [pendingTx];
 
     router.push("/preview");
