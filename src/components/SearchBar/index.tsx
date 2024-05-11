@@ -4,7 +4,7 @@ import { AssetType, FetchStatus, MARKET_API_HOST, ORDFS } from "@/constants";
 import { autofillValues, searchLoading } from "@/signals/search";
 import type { Autofill } from "@/types/search";
 import * as http from "@/utils/httpClient";
-import { effect, useSignal } from "@preact/signals-react";
+import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ const SearchBar: React.FC = () => {
       focused.value = false;
       const url = `/listings/search/${searchTerm.value}`;
       searchTerm.value = "";
+      searchLoading.value = FetchStatus.Loading;
       router.push(url);
     }
   }, [searchTerm.value, focused.value, router, autofillValues.value]);
@@ -83,7 +84,7 @@ const SearchBar: React.FC = () => {
     }
   }, [searchTerm, subForm]);
 
-  const icon = useMemo(() => {
+  const icon = computed(() => {
     return searchLoading.value === FetchStatus.Loading ? (
       <FaSpinner className="absolute right-2 text-primary/25 animate-spin" />
     ) : (
@@ -92,7 +93,7 @@ const SearchBar: React.FC = () => {
         onClick={handleSearchClick}
       />
     )
-  }, [searchLoading.value, handleSearchClick]);
+  });
 
   const autofill = useMemo(() => {
     // we need focused as a dependency so the autofill 
@@ -168,7 +169,7 @@ const SearchBar: React.FC = () => {
                 onClick={clearSearch}
               />
             )}
-            {icon}
+            {icon.value}
           </div>
           {autofill}
         </form>

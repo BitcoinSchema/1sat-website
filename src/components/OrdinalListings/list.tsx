@@ -165,9 +165,9 @@ const List = ({ term, address, onClick }: Props) => {
                 </td>
 
                 <td className="flex flex-col h-[100px] p-0 pl-4">
-                  <div className="my-auto max-w-64">
+                  <div className="my-auto max-w-64 xs:max-w-xs sm:max-w-sm md:max-w-lg truncate overflow-hidden text-ellipses">
                     <Link
-                      className="text-lg truncate overflow-hidden text-ellipses"
+                      className="text-lg "
                       href={`/outpoint/${listing?.outpoint}/listing`}
                     >
                       {listingName(listing)}
