@@ -36,7 +36,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
       ) : (
         <div>
           <div>This item is not listed</div>
-          {isOwner && <Link href={`/market/ordinals/new?outpoint=${artifact.outpoint}`}>
+          {isOwner && !artifact.data?.bsv20 && <Link href={`/market/ordinals/new?outpoint=${artifact.outpoint}`}>
             <button type="button" className="btn">
               List
             </button>
@@ -78,8 +78,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
         </Link>
       )}
       {/* // unlisted utxo */}
-
-      {isOwner && artifact.data?.list && (
+      {isOwner && artifact.data?.list && !artifact.data?.bsv20 && (
         <button
           disabled={!!artifact.spend && artifact.spend !== ""}
           type="button"

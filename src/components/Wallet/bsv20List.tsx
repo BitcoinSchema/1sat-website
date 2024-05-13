@@ -546,19 +546,17 @@ const Bsv20List = ({
         {listingBalances?.value?.map(
           ({ tick, all, sym, id, listed, dec }, idx) => (
             <React.Fragment key={`bal-listed-${tick}`}>
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
               <div
                 className="cursor-pointer hover:text-blue-400 transition"
                 onClick={() =>
-                  router.push(
-                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick
-                    }`
-                  )
+                  router.push(`/market/${id ? `bsv21/${id}` : `bsv20/${tick}`}`)
                 }
               >
                 {tick || sym}
               </div>
               <div className="text-emerald-400">
-                {listed.confirmed / 10 ** dec}
+                {getBalanceText(listed.confirmed, dec)}
               </div>
             </React.Fragment>
           )
