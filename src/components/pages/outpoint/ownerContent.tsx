@@ -133,7 +133,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       return;
     },
-    [artifact, router]
+    [artifact, router, pendingTxs, payPk, ordPk, utxos, ordAddress, fundingAddress]
   );
 
   const recover = useCallback(

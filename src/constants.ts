@@ -54,7 +54,6 @@ export enum AssetType {
   Ordinals = "ordinals",
   BSV20 = "bsv20",
   BSV21 = "bsv21",
-  LRC20 = "lrc20",
 }
 
 // protocol identifiers
@@ -91,3 +90,31 @@ export const OLD_PAY_PK_KEY = "1satfk";
 export const OLD_ORD_PK_KEY = "1satok";
 
 export const NUMBER_OF_ITEMS_PER_PAGE = 50;
+
+
+export const knownImageTypes = [
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/svg+xml",
+  "image/bmp",
+  "image/tiff",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+  "image/vnd.wap.wbmp",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+  "image/apng",
+  "image/jxl",
+  "image/jpg",
+  "image/jfif",
+  "image/pjpeg",
+  "image/pjp",
+];
+
+export const knownVideoTypes = ["video/mp4", "video/webm", "video/ogg"];
+
+// TODO: Add more direct support for audio and video
+export const knownAudioTypes = ["audio/mpeg", "audio/ogg", "audio/wav"];

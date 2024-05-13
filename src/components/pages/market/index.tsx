@@ -1,5 +1,4 @@
 import FeaturedCollections from "@/components/Collections/featured";
-import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import { AssetType } from "@/constants";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
@@ -55,13 +54,6 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         return <TokenMarket type={AssetType.BSV20} id={props.id} term={props.term} />;
       case AssetType.BSV21:
         return <TokenMarket type={AssetType.BSV21} id={props.id} term={props.term} />;
-      case AssetType.LRC20:
-        return (
-          <LRC20Listings
-            listings={props.lrc20Listings!}
-            tokens={props.lrc20Tokens!}
-          />
-        );
       default:
         return null;
     }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import React from "react";
+import type React from "react";
 interface Props {
   currentTab: InscriptionTab | undefined;
   showIndicator?: boolean;
@@ -29,11 +29,11 @@ const InscriptionTabs: React.FC<Props> = ({
     <div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8">
       <Link href={`/inscribe`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Image ? 'tab-active' : ''}`}>
         <div
-      
+
           onClick={(e: any) =>
             currentTab === InscriptionTab.Image && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           Image
@@ -41,11 +41,11 @@ const InscriptionTabs: React.FC<Props> = ({
       </Link>
       <Link href={`/inscribe?tab=text`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Text ? 'tab-active' : ''}`}>
         <div
-     
+
           onClick={(e: any) =>
             currentTab === InscriptionTab.Text && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           Text
@@ -53,11 +53,11 @@ const InscriptionTabs: React.FC<Props> = ({
       </Link>
       <Link href={`/inscribe?tab=html`} role={'tab'} className={`tab ${currentTab === InscriptionTab.HTML ? 'tab-active' : ''}`}>
         <div
-  
+
           onClick={(e: any) =>
             currentTab === InscriptionTab.HTML && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           HTML
@@ -65,11 +65,11 @@ const InscriptionTabs: React.FC<Props> = ({
       </Link>
       <Link href={`/inscribe?tab=bsv20`} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV20 ? 'tab-active' : ''}`}>
         <div
-      
+
           onClick={(e: any) =>
             currentTab === InscriptionTab.BSV20 && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           BSV-20
@@ -80,7 +80,7 @@ const InscriptionTabs: React.FC<Props> = ({
           onClick={(e: any) =>
             currentTab === InscriptionTab.BSV21 && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           BSV-21
@@ -110,6 +110,18 @@ const InscriptionTabs: React.FC<Props> = ({
       >
         Collection
       </div> */}
+
+      <Link href={`/inscribe?tab=${InscriptionTab.Collection}`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Collection ? 'tab-active' : ''}`}>
+        <div
+          onClick={(e: any) =>
+            currentTab === InscriptionTab.Collection && onClickSelected
+              ? onClickSelected(e)
+              : () => { }
+          }
+        >
+          Collection
+        </div>
+      </Link>
       {/* <div
         $partiallyactive={currentTab === InscriptionTab.BSV20 ? "true" : "false"}
         href={`/inscribe?tab=video`}

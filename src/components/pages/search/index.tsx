@@ -1,7 +1,6 @@
 "use client";
 
 import ImageWithFallback from "@/components/ImageWithFallback";
-import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import TokenListings from "@/components/TokenListings";
 import { AssetType, FetchStatus, MARKET_API_HOST, ORDFS } from "@/constants";
@@ -75,13 +74,6 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
         return <TokenListings type={AssetType.BSV20} />;
       case AssetType.BSV21:
         return <TokenListings type={AssetType.BSV21} />;
-      case AssetType.LRC20:
-        return (
-          <LRC20Listings
-            listings={props.lrc20Listings!}
-            tokens={props.lrc20Tokens!}
-          />
-        );
       default:
         return null;
     }

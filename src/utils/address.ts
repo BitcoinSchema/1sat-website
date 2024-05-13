@@ -16,8 +16,8 @@ export const getBsv21Utxos = async (address: string, offset: number, id?: string
   if (id) {
     url += `&id=${id}`;
   }
-  const { promise } = http.customFetch<OrdUtxo[]>(url);    
-  
+  const { promise } = http.customFetch<OrdUtxo[]>(url);
+
   return (await promise) || [];
 }
 
@@ -26,8 +26,8 @@ export const getBsv20Utxos = async (address: string, offset: number, tick?: stri
   if (tick) {
     url += `&tick=${tick}`;
   }
-  const { promise } = http.customFetch<OrdUtxo[]>(url);    
-  
+  const { promise } = http.customFetch<OrdUtxo[]>(url);
+
   return (await promise) || [];
 }
 
@@ -57,19 +57,55 @@ export const getUtxos = async (address: string) => {
   });
 };
 
-export const getOutpoints = async (ids: string[], script: boolean) => {
-	const url = `${API_HOST}/api/txos/outpoints?script=${script}`;
-	console.log("almost", url, "with", ids);
-	const uniqueIds = uniq(ids);
-	console.log("hitting", url, "with", uniqueIds);
 
-	const res = await fetch(url, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(uniqueIds),
-	});
-	const json = (await res.json()) as OrdUtxo[];
-	return json;
+export const getCollectionUtxos = async (address: string | null) => {
+  // dummy OrdUtxo
+  const dummy = {
+    outpoint: "abc123",
+    data: {
+      map: {
+        name: "Unnamed Collection",
+      },
+    },
+  } as unknown as OrdUtxo
+  if (!address) {
+    return [dummy]
+    // throw new Error("No address provided");
+  }
+  const q = {
+    map: {
+      subType: "collection",
+    },
+  };
+  const response = await fetch(`${API_HOST}/api/txos/address/${address}/unspent`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(q),
+  });
+  if (!response.ok) {
+    return [dummy]
+    // throw new Error("Failed to fetch collection UTXOs");
+  }
+
+  return ((await response.json()) || []).concat([dummy]);
+};
+
+
+export const getOutpoints = async (ids: string[], script: boolean) => {
+  const url = `${API_HOST}/api/txos/outpoints?script=${script}`;
+  console.log("almost", url, "with", ids);
+  const uniqueIds = uniq(ids);
+  console.log("hitting", url, "with", uniqueIds);
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(uniqueIds),
+  });
+  const json = (await res.json()) as OrdUtxo[];
+  return json;
 };
