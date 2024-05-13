@@ -556,7 +556,7 @@ const Bsv20List = ({
                 {tick || sym}
               </div>
               <div className="text-emerald-400">
-                {getBalanceText(listed.confirmed, dec)}
+                {getBalanceText(listed.confirmed / 10 ** dec, dec)}
               </div>
             </React.Fragment>
           )
