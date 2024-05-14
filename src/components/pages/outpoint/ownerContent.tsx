@@ -327,7 +327,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				Cancel Listing
 			</button> */}
 
-      {showCancelModal.value && (
+      {artifact && showCancelModal.value && (
         <CancelListingModal
           onClose={() => {
             showCancelModal.value = false;

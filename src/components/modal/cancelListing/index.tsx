@@ -128,7 +128,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
     // Calculate the network fee
     // account for funding input and market output (not added to tx yet)
-    let paymentUtxos: Utxo[] = [];
+    const paymentUtxos: Utxo[] = [];
     let satsCollected = 0;
     // initialize fee and satsNeeded (updated with each added payment utxo)
     let fee = calculateFee(1, cancelTx);
@@ -149,7 +149,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     }
 
     // add payment utxos to the tx
-    for (let u of paymentUtxos) {
+    for (const u of paymentUtxos) {
       const inx = new TxIn(
         Buffer.from(u.txid, "hex"),
         u.vout,

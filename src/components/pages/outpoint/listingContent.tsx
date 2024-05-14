@@ -90,7 +90,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           Cancel
         </button>
       )}
-      {showCancelModal.value && (
+      {artifact && showCancelModal.value && (
         <CancelListingModal
           onClose={() => {
             showCancelModal.value = false;
