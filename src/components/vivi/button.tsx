@@ -189,6 +189,12 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
         </button>
       </div>
       <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
+        {messages.map((m) => (
+          <div key={m.id} className="whitespace-pre-wrap">
+            {m.role === "user" ? "User: " : "AI: "}
+            {renderMessage(m.content)}
+          </div>
+        ))}
         <input
           type="text"
           value={input}
@@ -197,12 +203,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
           placeholder="Type your message..."
           className="input input-bordered"
         />
-        {messages.map((m) => (
-          <div key={m.id} className="whitespace-pre-wrap">
-            {m.role === "user" ? "User: " : "AI: "}
-            {renderMessage(m.content)}
-          </div>
-        ))}
+
         <form
           ref={formRef}
           onSubmit={(e) => {
@@ -215,7 +216,6 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
 };
 
 export default ViviButton;
-
 
 export const fetchTranscription = async (audioFile: File) => {
   const formData = new FormData();

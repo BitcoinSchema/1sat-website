@@ -135,6 +135,10 @@ const config: Config = {
           },
         },
       },
+      screens: {
+        '3xl': '1600px',
+        '4xl': '1920px',
+      },
       transitionProperty: {
         visibility: "visibility",
       },

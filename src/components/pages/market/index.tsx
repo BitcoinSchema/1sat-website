@@ -37,8 +37,6 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
     showTabs = true;
   }
 
-
-
   const Listings = ({ id, term }: { id?: string, term?: string }) => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
@@ -68,12 +66,11 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-2 md:p-0">
+    <div className="w-full max-w-7xl mx-auto p-2 md:p-0 mt-12">
       {props.title && (
         <div className="text-3xl font-bold mb-4">{props.title}</div>
       )}
       {selectedAssetType === AssetType.Ordinals && <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>}
-
       {selectedAssetType === AssetType.Ordinals && <FeaturedCollections />}
       {showTabs && (
         <div className="flex">
