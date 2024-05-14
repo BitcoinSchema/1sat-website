@@ -5,8 +5,8 @@ import CancelListingModal from "@/components/modal/cancelListing";
 import { API_HOST, AssetType, resultsPerPage } from "@/constants";
 import { bsv20Balances, chainInfo } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
-import { Listing } from "@/types/bsv20";
-import { BSV20TXO } from "@/types/ordinals";
+import type { Listing } from "@/types/bsv20";
+import type { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
@@ -15,7 +15,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import TremorChartComponent, { ChartStyle, DataCategory } from "./chart";
-import { MarketData } from "./list";
+import type { MarketData } from "./list";
 import { listings, sales } from "./signals";
 
 const TickerContent = ({
@@ -283,7 +283,7 @@ const TickerContent = ({
                             ) /
                             10 ** ticker.dec
                           ).toLocaleString()} ${ticker.tick ||
-                            ticker.sym
+                          ticker.sym
                             }`}</span>
                           <span className="texl-base text-accent text-xs my-1">
                             {listing.pricePer}{" "}

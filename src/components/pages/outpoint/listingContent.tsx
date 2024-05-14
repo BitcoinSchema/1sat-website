@@ -77,6 +77,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           </button>
         </Link>
       )}
+
       {/* // unlisted utxo */}
       {isOwner && artifact.data?.list && !artifact.data?.bsv20 && (
         <button
@@ -90,6 +91,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           Cancel
         </button>
       )}
+
       {artifact && showCancelModal.value && (
         <CancelListingModal
           onClose={() => {

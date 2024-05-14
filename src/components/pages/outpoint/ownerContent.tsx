@@ -133,7 +133,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       return;
     },
-    [artifact, router]
+    [artifact, router, pendingTxs.value, ordPk.value, payPk.value]
   );
 
   const recover = useCallback(
@@ -217,7 +217,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       router.push("/preview");
     },
-    [router]
+    [router, pendingTxs.value, ordPk.value]
   );
 
   const recoverUtxo = useCallback(
@@ -246,7 +246,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       return;
     },
-    [artifact, recover]
+    [artifact, recover, fundingAddress.value]
   );
 
   return (
