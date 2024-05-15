@@ -22,7 +22,7 @@ import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
 import type { Utxo } from "@/utils/js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
-import { computed, useSignal } from "@preact/signals-react";
+import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
   P2PKHAddress,
@@ -34,37 +34,35 @@ import {
   TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { MarketData } from "./list";
+import { showAddListingModal } from "./tokenMarketTabs";
 
 const ListingForm = ({
-  dataset,
-  onClose,
+  initialPrice,
   ticker,
+  listedCallback
 }: {
   ticker: Partial<MarketData>;
-  dataset: {
-    height: number;
-    price: number | null;
-  }[];
-  onClose: () => void;
+  initialPrice: string;
+  listedCallback: () => void;
 }) => {
   useSignals();
   const router = useRouter();
   const listingPrice = useSignal<string | null>(null);
   const listingAmount = useSignal<string | null>(null);
 
+  const priceInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+
   // set initial price
   useEffect(() => {
-    if (dataset && !listingPrice.value) {
-      // populate the form data
-      listingPrice.value = "0";
-      for (const d of dataset) {
-        listingPrice.value = d.price?.toString() || "0";
-      }
+    if (initialPrice && !listingPrice.value) {
+      listingPrice.value = initialPrice
     }
-  }, [dataset, listingPrice]);
+  }, [initialPrice, listingPrice]);
 
   const confirmedBalance = computed(() => {
     return (
@@ -175,7 +173,13 @@ const ListingForm = ({
           p: "bsv-20",
           op: "transfer",
           amt: (amounts - sendAmount).toString(),
-        } as any;
+        } as {
+          p: string;
+          op: string;
+          amt: string;
+          tick?: string;
+          id?: string;
+        };
         if (ticker.tick) {
           changeInscription.tick = ticker.tick;
         } else if (ticker.id) {
@@ -231,7 +235,13 @@ const ListingForm = ({
         p: "bsv-20",
         op: "transfer",
         amt: sendAmount.toString(),
-      } as any;
+      } as {
+        p: string;
+        op: string;
+        amt: string;
+        tick?: string;
+        id?: string;
+      };
       if (ticker.tick) {
         inscription.tick = ticker.tick;
       } else if (ticker.id) {
@@ -258,7 +268,7 @@ const ListingForm = ({
         oLockSuffix,
       ).to_asm_string()}`;
 
-      let satOut = new TxOut(BigInt(1), Script.from_asm_string(ordLockScript));
+      const satOut = new TxOut(BigInt(1), Script.from_asm_string(ordLockScript));
       tx.add_output(satOut);
 
       // output 4 indexer fee
@@ -288,7 +298,7 @@ const ListingForm = ({
   );
 
   const submit = useCallback(
-    async (e: any) => {
+    async (e: React.FormEvent) => {
       if (!bsvWasmReady.value) {
         console.log("bsv wasm not ready");
         return;
@@ -300,11 +310,16 @@ const ListingForm = ({
         { price: listingPrice.value },
         { amount: listingAmount.value },
       );
-      if (!utxos || !payPk || !ordPk || !fundingAddress || !ordAddress) {
+      if (!ticker.fundAddress || !utxos.value || !payPk.value || !ordPk.value || !fundingAddress.value || !ordAddress.value) {
+        toast.error("Missing wallet requirement", toastErrorProps);
         return;
       }
-      const paymentPk = PrivateKey.from_wif(payPk.value!);
-      const ordinalPk = PrivateKey.from_wif(ordPk.value!);
+      if (!listingPrice.value || !listingAmount.value) {
+        toast.error("Missing listing price or amount", toastErrorProps);
+        return;
+      }
+      const paymentPk = PrivateKey.from_wif(payPk.value);
+      const ordinalPk = PrivateKey.from_wif(ordPk.value);
 
       // [{"txid":"69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6","vout":2,"outpoint":"69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6_2","height":828275,"idx":1162,"op":"transfer","amt":"10000","status":1,"reason":null,"listing":false,"owner":"139xRf73Vw3W8cMNoXW9amqZfXMrEuM9XQ","spend":"","spendHeight":null,"spendIdx":null,"tick":"PEPE","id":null,"price":"0","pricePer":"0","payout":null,"script":"dqkUF6HYh83S8XxpORgFL3VFy4fwqDSIrABjA29yZFESYXBwbGljYXRpb24vYnN2LTIwADp7InAiOiJic3YtMjAiLCJvcCI6InRyYW5zZmVyIiwidGljayI6IlBFUEUiLCJhbXQiOiIxMDAwMCJ9aA==","sale":false}]
 
@@ -312,7 +327,7 @@ const ListingForm = ({
 
       try {
         let url = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${ticker.tick}`;
-        if (!!ticker.id) {
+        if (ticker.id) {
           url = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${ticker.id}`;
         }
         console.log({ url });
@@ -320,26 +335,27 @@ const ListingForm = ({
 
         const u = (await promise).filter((u) => u.listing === false);
         const satoshisPayout = Math.ceil(
-          parseFloat(listingPrice.value!) * parseFloat(listingAmount.value!),
+          Number.parseFloat(listingPrice.value) * Number.parseFloat(listingAmount.value),
         );
-        const indexerAddress = ticker.fundAddress!;
+        const indexerAddress = ticker.fundAddress
         // refresh utxos
-        utxos.value = await getUtxos(fundingAddress.value!);
+        utxos.value = await getUtxos(fundingAddress.value);
 
         const pendingTx = await listBsv20(
-          Math.ceil(parseFloat(listingAmount.value!) * 10 ** dec.value),
-          utxos.value!,
+          Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value),
+          utxos.value,
           u,
           paymentPk,
-          fundingAddress.value!,
+          fundingAddress.value,
           ordinalPk,
-          ordAddress.value!,
-          fundingAddress.value!,
+          ordAddress.value,
+          fundingAddress.value,
           satoshisPayout,
           indexerAddress,
         );
 
         pendingTxs.value = [pendingTx];
+        listedCallback()
         router.push("/preview");
       } catch (e) {
         console.log({ e });
@@ -350,24 +366,53 @@ const ListingForm = ({
       //   return;
       // }
     },
-    [ticker, listingPrice.value, listingAmount.value, listBsv20, dec, router],
+    [ticker, listingPrice.value, listingAmount.value, listBsv20, dec, router, listedCallback],
   );
 
-  const listDisabled = computed(
+  const listDisabled = useMemo((
     () =>
       !listingAmount.value ||
       !listingPrice.value ||
-      parseInt(listingAmount.value || "0") === 0 ||
+      Number.parseFloat(listingAmount.value || "0") === 0 ||
       listingPrice.value === "0" ||
-      parseInt(listingAmount.value || "0") > (confirmedBalance.value || 0),
-  );
+      Number.parseFloat(amountInputRef.current?.value || "0") > ((confirmedBalance.value / 10 ** dec.value) - (listedBalance.value / 10 ** dec.value))
+  ), [listingAmount.value, listingPrice.value, confirmedBalance.value, dec, listedBalance]);
+
+  useEffect(() => {
+    console.log("set mounted");
+    setMounted(true);
+  }, []);
+
+  // autofocus without using the autoFocus property
+  effect(() => {
+    if (
+      mounted &&
+      showAddListingModal.value !== null &&
+      amountInputRef.current
+    ) {
+      // check which element is currently focused
+      const activeElement = document.activeElement as HTMLElement;
+      console.log({ activeElement });
+      // check if the element if visible
+      if (
+        amountInputRef.current.getBoundingClientRect().top <
+        window.innerHeight && activeElement !== amountInputRef.current
+        && activeElement !== priceInputRef.current
+      ) {
+        amountInputRef.current.focus();
+      }
+    }
+  });
+
 
   return (
     <div className="h-60 w-full">
-      <form>
+      <form action="dialog">
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
           className="text-center text-xl font-semibold cursor-pointer"
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
             const convertedValue = confirmedBalance.value / 10 ** dec.value;
             listingAmount.value = convertedValue.toString() || null;
           }}
@@ -381,26 +426,12 @@ const ListingForm = ({
             ? `(-${pendingListedBalance.value / 10 ** dec.value} pending)`
             : ""}
         </div>
-
-        <div className="form-control w-full">
-          <label className="label flex items-center justify-between">
-            <span className="label-text">Price per token</span>
-            <span className="text-[#555]">Sats</span>
-          </label>
-          <input
-            type="text"
-            placeholder="1000"
-            className="input input-sm input-bordered"
-            onChange={(e) => {
-              listingPrice.value = e.target.value;
-            }}
-          />
-        </div>
         <div className="form-control w-full">
           <label className="label">
             <span className="label-text">Amount</span>
           </label>
           <input
+            ref={amountInputRef}
             type="number"
             placeholder="0"
             className="input input-sm input-bordered"
@@ -422,11 +453,29 @@ const ListingForm = ({
             max={confirmedBalance.value}
           />
         </div>
+        <div className="form-control w-full">
+          <label className="label flex items-center justify-between">
+            <span className="label-text">Price per token</span>
+            <span className="text-[#555]">Sats</span>
+          </label>
+          <input
+            ref={priceInputRef}
+            type="text"
+            placeholder="1000"
+            className="input input-sm input-bordered"
+            onChange={(e) => {
+              e.preventDefault();
+              listingPrice.value = e.target.value;
+            }}
+          />
+        </div>
+
         <div className="modal-action">
           <button
             type="button"
             className={"btn btn-sm btn-primary"}
-            disabled={listDisabled.value}
+            // make sure the balance available is enough
+            disabled={listDisabled}
             onClick={submit}
           >
             {`List ${listingAmount.value || 0} ${ticker.tick || ticker.sym}`}

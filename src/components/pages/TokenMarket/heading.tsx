@@ -85,7 +85,7 @@ const TickerHeading = ({
   // balance can be negative indicating a funding deficit
   // in this case fundUsed will be greater than fundTotal
 
-  const openPaymentModal = async (e: any) => {
+  const openPaymentModal = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     // open modal
@@ -93,7 +93,7 @@ const TickerHeading = ({
     if (fundingAddress.value && ordAddress.value) {
       const bsv20Utxos = await getBsv20Utxos(ordAddress.value, 0, id);
       ordUtxos.value = (ordUtxos.value || []).concat(bsv20Utxos);
-      utxos.value = await getUtxos(fundingAddress.value!);
+      utxos.value = await getUtxos(fundingAddress.value);
     }
   };
 
@@ -102,7 +102,7 @@ const TickerHeading = ({
   const bsvNeeded = computed(() => {
     const satoshis = Math.max(
       minFee - Number(ticker.fundTotal),
-      (ticker.pendingOps || 0) * 1000 - parseInt(ticker.fundBalance)
+      (ticker.pendingOps || 0) * 1000 - Number.parseInt(ticker.fundBalance)
     );
     console.log({
       satoshis,
@@ -161,6 +161,7 @@ const TickerHeading = ({
   });
   return (
     <>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
       <tr
         onClick={(e) => {
           if (id) {
@@ -170,7 +171,7 @@ const TickerHeading = ({
           }
           router.push(`/market/${type}/${ticker.tick || ticker.id}`);
         }}
-        className={`transition ${!!id
+        className={`transition ${id
           ? "active text-xl text-base-content"
           : "cursor-pointer hover:text-secondary-content"
           }`}
