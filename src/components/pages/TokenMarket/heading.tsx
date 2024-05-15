@@ -85,7 +85,7 @@ const TickerHeading = ({
   // balance can be negative indicating a funding deficit
   // in this case fundUsed will be greater than fundTotal
 
-  const openPaymentModal = async (e: MouseEvent) => {
+  const openPaymentModal = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     // open modal
