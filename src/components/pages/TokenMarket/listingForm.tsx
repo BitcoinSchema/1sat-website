@@ -34,7 +34,7 @@ import {
   TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
@@ -42,9 +42,11 @@ import { showAddListingModal } from "./tokenMarketTabs";
 const ListingForm = ({
   initialPrice,
   ticker,
+  listedCallback
 }: {
   ticker: Partial<MarketData>;
   initialPrice: string;
+  listedCallback: () => void;
 }) => {
   useSignals();
   const router = useRouter();
@@ -171,7 +173,13 @@ const ListingForm = ({
           p: "bsv-20",
           op: "transfer",
           amt: (amounts - sendAmount).toString(),
-        } as any;
+        } as {
+          p: string;
+          op: string;
+          amt: string;
+          tick?: string;
+          id?: string;
+        };
         if (ticker.tick) {
           changeInscription.tick = ticker.tick;
         } else if (ticker.id) {
@@ -227,7 +235,13 @@ const ListingForm = ({
         p: "bsv-20",
         op: "transfer",
         amt: sendAmount.toString(),
-      } as any;
+      } as {
+        p: string;
+        op: string;
+        amt: string;
+        tick?: string;
+        id?: string;
+      };
       if (ticker.tick) {
         inscription.tick = ticker.tick;
       } else if (ticker.id) {
@@ -254,7 +268,7 @@ const ListingForm = ({
         oLockSuffix,
       ).to_asm_string()}`;
 
-      let satOut = new TxOut(BigInt(1), Script.from_asm_string(ordLockScript));
+      const satOut = new TxOut(BigInt(1), Script.from_asm_string(ordLockScript));
       tx.add_output(satOut);
 
       // output 4 indexer fee
@@ -341,6 +355,7 @@ const ListingForm = ({
         );
 
         pendingTxs.value = [pendingTx];
+        listedCallback()
         router.push("/preview");
       } catch (e) {
         console.log({ e });
@@ -351,19 +366,17 @@ const ListingForm = ({
       //   return;
       // }
     },
-    [ticker, listingPrice.value, listingAmount.value, listBsv20, dec, router],
+    [ticker, listingPrice.value, listingAmount.value, listBsv20, dec, router, listedCallback],
   );
 
-  const listDisabled = computed(
+  const listDisabled = useMemo((
     () =>
       !listingAmount.value ||
       !listingPrice.value ||
-      Number.parseInt(listingAmount.value || "0") === 0 ||
+      Number.parseFloat(listingAmount.value || "0") === 0 ||
       listingPrice.value === "0" ||
-      Number.parseInt(listingAmount.value || "0") > (confirmedBalance.value || 0),
-  );
-
-
+      Number.parseFloat(amountInputRef.current?.value || "0") > ((confirmedBalance.value / 10 ** dec.value) - (listedBalance.value / 10 ** dec.value))
+  ), [listingAmount.value, listingPrice.value, confirmedBalance.value, dec, listedBalance]);
 
   useEffect(() => {
     console.log("set mounted");
@@ -447,7 +460,6 @@ const ListingForm = ({
           </label>
           <input
             ref={priceInputRef}
-
             type="text"
             placeholder="1000"
             className="input input-sm input-bordered"
@@ -462,7 +474,8 @@ const ListingForm = ({
           <button
             type="button"
             className={"btn btn-sm btn-primary"}
-            disabled={listDisabled.value}
+            // make sure the balance available is enough
+            disabled={listDisabled}
             onClick={submit}
           >
             {`List ${listingAmount.value || 0} ${ticker.tick || ticker.sym}`}
