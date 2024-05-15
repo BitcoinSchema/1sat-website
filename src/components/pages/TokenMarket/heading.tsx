@@ -161,6 +161,7 @@ const TickerHeading = ({
   });
   return (
     <>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
       <tr
         onClick={(e) => {
           if (id) {
@@ -170,7 +171,7 @@ const TickerHeading = ({
           }
           router.push(`/market/${type}/${ticker.tick || ticker.id}`);
         }}
-        className={`transition ${!!id
+        className={`transition ${id
           ? "active text-xl text-base-content"
           : "cursor-pointer hover:text-secondary-content"
           }`}
