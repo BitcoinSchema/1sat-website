@@ -1,19 +1,19 @@
 "use client";
 
-import { Signal, computed } from "@preact/signals-react";
+import { bsv20Balances } from "@/signals/wallet";
+import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { AreaChart, ScatterChart } from "@tremor/react";
-import { FC, useMemo } from "react";
-import { MarketData } from "./list";
-import ListingForm from "./listingForm";
+import { useMemo, type FC } from "react";
+import type { MarketData } from "./list";
 import { listings, sales } from "./signals";
 
-export const enum ChartStyle {
+export enum ChartStyle {
   Bubble = "bubble",
   Line = "line",
 }
 
-export const enum DataCategory {
+export enum DataCategory {
   Sales = "sales",
   Listings = "listings",
 }
@@ -22,17 +22,23 @@ interface ChartProps {
   dataCategory: DataCategory;
   chartStyle: ChartStyle;
   currentHeight: number;
-  showListingForm?: Signal<boolean>;
   ticker: Partial<MarketData>;
 }
+
 const TremorChartComponent: FC<ChartProps> = ({
   dataCategory,
   chartStyle,
   currentHeight,
-  showListingForm,
   ticker,
 }) => {
   useSignals();
+
+  const ownsTicker = computed(() => {
+    return bsv20Balances.value?.some((b) => {
+      // TODO: Fix for v2
+      return b.tick === ticker.tick || b.sym === ticker.tick;
+    });
+  });
 
   // const data = computed(() => {
   //   if (dataCategory === DataCategory.Listings) {
@@ -42,7 +48,7 @@ const TremorChartComponent: FC<ChartProps> = ({
   //   }
   //   return [];
   // })
-  
+
 
   // Prepare the dataset
   const dataset = computed(() => {
@@ -54,13 +60,13 @@ const TremorChartComponent: FC<ChartProps> = ({
     const rawData = [...data].sort(
       (a, b) => {
         if (a.height === 0) {
-        
+
           -1
         }
         if (b.height === 0) {
           return 1
         }
-          
+
         return a.height > b.height ? -1 : 1;
       }
     );
@@ -72,8 +78,8 @@ const TremorChartComponent: FC<ChartProps> = ({
       if (!acc[height]) {
         acc[height] = { price: 0, amt: 0, count: 0 };
       }
-      const amt = ticker.dec ? parseFloat(item.amt) / 10 ** ticker.dec : parseFloat(item.amt);
-      acc[height].price += parseFloat(item.pricePer) * amt;
+      const amt = ticker.dec ? Number.parseFloat(item.amt) / 10 ** ticker.dec : Number.parseFloat(item.amt);
+      acc[height].price += Number.parseFloat(item.pricePer) * amt;
       acc[height].amt += amt;
       acc[height].count += 1;
       return acc;
@@ -83,7 +89,7 @@ const TremorChartComponent: FC<ChartProps> = ({
     const finalData = Object.entries(groupedData).map(([height, data]) => {
       const averagePrice = data.price / data.amt;
       return {
-        height: parseInt(height),
+        height: Number.parseInt(height),
         price: averagePrice,
         amt: data.amt,
       };
@@ -108,32 +114,21 @@ const TremorChartComponent: FC<ChartProps> = ({
 
   // Render the chart using the Chart component from @tremor/react
   return (
-    <>
-     
-        {chartStyle === "bubble" ? (
-          showListingForm?.value ? (
-            <ListingForm
-              dataset={dataset.value}
-              ticker={ticker}
-              onClose={() => {
-                console.log("close");
-                showListingForm.value = false;
-              }}
-            />
-          ) : (
-            <ScatterChart
-              className="w-full h-60"
-              data={dataset.value}
-              colors={["orange-400", "orange-500", "teal-400", "orange-300", "emerald-400", "purple-400", "pink-400", "yellow-400", "red-200", "gray-200", "indigo-200", "rose-200", "teal-200", "blue-200", "green-200", "purple-200", "pink-200", "yellow-200", "red-200", "gray-200"]}
-              showLegend={false}
-              allowDecimals={true}
-              x={"height"}
-              category={"amt"}
-              y={"price"}
-              size={"amt"}
-              minXValue={dataset.value.length ? dataset.value[0].height : 0}
-            />
-          )
+    <div className="relative">
+      {
+        chartStyle === "bubble" ? (
+          <ScatterChart
+            className="w-full h-60"
+            data={dataset.value}
+            colors={["orange-400", "orange-500", "teal-400", "orange-300", "emerald-400", "purple-400", "pink-400", "yellow-400", "red-200", "gray-200", "indigo-200", "rose-200", "teal-200", "blue-200", "green-200", "purple-200", "pink-200", "yellow-200", "red-200", "gray-200"]}
+            showLegend={false}
+            allowDecimals={true}
+            x={"height"}
+            category={"amt"}
+            y={"price"}
+            size={"amt"}
+            minXValue={dataset.value.length ? dataset.value[0].height : 0}
+          />
         ) : (
           <AreaChart
             className="w-full h-60"
@@ -145,9 +140,9 @@ const TremorChartComponent: FC<ChartProps> = ({
             connectNulls={true}
             allowDecimals={true}
           />
-        )}
-    
-    </>
+        )
+      }
+    </div >
   );
 };
 

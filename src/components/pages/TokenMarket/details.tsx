@@ -1,6 +1,8 @@
-import { MINI_API_HOST, type AssetType } from "@/constants";
-import { NextRequest } from "next/server";
-import TickerHeading from "./heading";
+import { AssetType } from "@/constants";
+import React from "react";
+import { FaExclamationTriangle } from "react-icons/fa";
+import Fund from "./fund";
+import { TokenMarketTabs } from "./tokenMarketTabs";
 
 export interface Holder {
   address: string;
@@ -74,44 +76,56 @@ export type MarketData = {
 //   "chainwork": "0000000000000000000000000000000000000000010969f724913e0fe59377f4"
 // }
 
-const List = async ({
+const Details = async ({
   type,
   id,
+  marketData,
 }: {
   type: AssetType.BSV20 | AssetType.BSV21;
   id?: string;
+  marketData: MarketData[];
 }) => {
-  let marketData: MarketData[] = [];
-  const url = `${MINI_API_HOST}/market/${type}`;
-  marketData = await getMarketData(new NextRequest(url), type, id);
-
   return (
-    <tbody className="overflow-auto">
+    <div className="overflow-auto w-full">
       {marketData.map((ticker, idx) => {
-        return (
-          <TickerHeading key={`${ticker.tick}-${idx}`} ticker={ticker} id={id} type={type} />
-        );
+        const showBsv20Content =
+          type === AssetType.BSV20 &&
+          ticker.tick?.toLowerCase() === id?.toLowerCase();
+        const showBsv21Content =
+          type === AssetType.BSV21 &&
+          ticker.id.toLowerCase() === id?.toLowerCase();
+        return (<React.Fragment key={`${ticker.tick}-content`}>
+          {ticker.included &&
+            (showBsv20Content || showBsv21Content) && (
+              <div className="transition bg-base-200 font-mono text-xs">
+                <div className="align-top">
+                  <TokenMarketTabs
+                    ticker={ticker}
+                    show={true}
+                    type={type}
+                  />
+                </div>
+              </div>
+
+            )}
+          {!ticker.included && (
+            <div className="w-full">
+              <div className="max-w-lg mx-auto">
+                <div className="bg-warning/50 text-warning-content p-2 rounded my-4 w-full flex items-center">
+                  <FaExclamationTriangle className="mr-2 text-warning" />
+                  {
+                    "This ticker is not currently listed."
+                  }
+                </div>
+                <Fund ticker={ticker} />
+              </div>
+            </div>
+          )}
+        </React.Fragment>);
       })}
-    </tbody>
+    </div>
   );
 };
 
-export default List;
+export default Details;
 
-const getMarketData = async (
-  req: NextRequest,
-  type: AssetType,
-  id?: string
-) => {
-  const res = await import("../../../app/market/[tab]/list/route");
-  const json = await (
-    await res.POST(req, {
-      params: {
-        type,
-        id,
-      },
-    })
-  ).json();
-
-  return (json || []) as MarketData[];
-};
