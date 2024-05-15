@@ -48,7 +48,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
   useSignals();
   const cancelling = useSignal(false);
 
-  const cancelBsv20Listing = useCallback(async (e: any) => {
+  const cancelBsv20Listing = useCallback(async (e: React.MouseEvent) => {
     if (!bsvWasmReady.value) {
       console.log("bsv wasm not ready");
       return;
@@ -85,7 +85,13 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       p: "bsv-20",
       op: "transfer",
       amt: (listing as Listing).amt,
-    } as any;
+    } as {
+      p: string;
+      op: string;
+      amt: string;
+      tick?: string;
+      id?: string;
+    };
 
     if ((listing as Listing).tick) {
       inscription.tick = (listing as Listing).tick;
@@ -231,7 +237,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     onCancelled(newOutpoint);
   }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
 
-  const cancelListing = useCallback(async (e: any) => {
+  const cancelListing = useCallback(async (e: React.MouseEvent) => {
     if (!bsvWasmReady.value) {
       console.log("bsv wasm not ready");
       return;
