@@ -1,9 +1,9 @@
 import fallbackImage from "@/assets/images/oneSatLogoDark.svg";
-import Image, { ImageProps } from "next/image";
+import Image, { type ImageProps } from "next/image";
 
-interface Props extends ImageProps {
+interface Props extends Partial<ImageProps> {
   alt: string;
-  src: string;
+  src?: string | undefined;
   fallback?: string;
   className?: string;
 }
@@ -11,7 +11,7 @@ interface Props extends ImageProps {
 const ImageWithFallback = ({
   fallback = fallbackImage,
   alt,
-  src,
+  src = fallbackImage,
   ...props
 }: Props) => {
   return (
@@ -25,7 +25,7 @@ const ImageWithFallback = ({
         target.classList.add("opacity-5");
       }}
       // onError={(e) => (e ? setError(e) : null)}
-      src={src}
+      src={src.endsWith("/undefined") || src.endsWith("/null") ? fallbackImage : src}
       {...props}
       className={`pointer-events-none ${props.className || ""}`}
     />

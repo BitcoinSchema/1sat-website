@@ -29,7 +29,7 @@ const SlideShow = ({ artifacts, className }: Props) => {
 
   return (
     <div
-      className={`mx-auto max-w-5xl my-8 stack ${className ? className : ""
+      className={`mx-auto w-full my-8 stack ${className ? className : ""
         }`}
     >
       {sorted?.map((artifact, idx, all) => (
@@ -40,7 +40,7 @@ const SlideShow = ({ artifacts, className }: Props) => {
           key={artifact?.origin?.outpoint}
           classNames={{
             wrapper:
-              "w-[90vw] md:w-full md:min-w-96 md:max-w-[450px] flex items-center justify-center",
+              "w-[90vw] md:w-full md:min-w-96 md:max-w-[600px] flex items-center justify-center",
             media: "w-full rounded",
           }}
           size={600}

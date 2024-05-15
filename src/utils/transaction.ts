@@ -19,9 +19,9 @@ export const signPayment = (
   paymentUtxo: Utxo,
   utxoIn: TxIn
 ) => {
- const sig2 = tx.sign(
+  const sig2 = tx.sign(
     paymentPK,
-     SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
+    SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
     inputIdx,
     Script.from_asm_string(paymentUtxo.script),
     BigInt(paymentUtxo.satoshis)
@@ -60,7 +60,7 @@ export const createChangeOutput = (
 
 export const fetchOrdinal = async (outpoint: string) => {
   const { promise } = customFetch<OrdUtxo>(
-    `${API_HOST}/api/inscriptions/${outpoint}/latest`
+    `${API_HOST}/api/inscriptions/${outpoint}?script=true`
   );
   return await promise;
 };

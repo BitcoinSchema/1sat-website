@@ -34,7 +34,15 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           <div>${artifact.data?.list?.price && usdRate.value > 0 ? (artifact.data?.list?.price / usdRate.value).toFixed(2) : 0}</div>
         </div>
       ) : (
-        <div>This item is not listed</div>
+        <div>
+          <div>This item is not listed</div>
+          {isOwner && !artifact.data?.bsv20 && <Link href={`/market/ordinals/new?outpoint=${artifact.outpoint}`}>
+            <button type="button" className="btn">
+              List
+            </button>
+          </Link>}
+        </div>
+
       )}
     </div>
   }, [artifact.data?.list, usdRate.value, ordAddress.value]);
@@ -69,9 +77,9 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           </button>
         </Link>
       )}
-      {/* // unlisted utxo */}
 
-      {isOwner && artifact.data?.list && (
+      {/* // unlisted utxo */}
+      {isOwner && artifact.data?.list && !artifact.data?.bsv20 && (
         <button
           disabled={!!artifact.spend && artifact.spend !== ""}
           type="button"
@@ -83,7 +91,8 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
           Cancel
         </button>
       )}
-      {showCancelModal.value && (
+
+      {artifact && showCancelModal.value && (
         <CancelListingModal
           onClose={() => {
             showCancelModal.value = false;

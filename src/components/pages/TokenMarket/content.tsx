@@ -1,9 +1,8 @@
 "use client";
 
 import type { AssetType } from "@/constants";
-import { bsv20Balances, chainInfo } from "@/signals/wallet";
+import { chainInfo } from "@/signals/wallet";
 import { computed } from "@preact/signals-react";
-import { useSignal } from "@preact/signals-react/runtime";
 import TremorChartComponent, { ChartStyle, DataCategory } from "./chart";
 import type { MarketData } from "./list";
 
@@ -20,15 +19,6 @@ const TickerContent = ({
     return chainInfo.value?.blocks || 0;
   });
 
-  const ownsTicker = computed(() => {
-    return bsv20Balances.value?.some((b) => {
-      // TODO: Fix for v2
-      return b.tick === ticker.tick || b.sym === ticker.tick;
-    });
-  });
-
-  // state for closing the listing form to return to chart
-  const showListingForm = useSignal(ownsTicker.value || false);
   return (
     show && (
       <div className="transition bg-base-200 flex py-4 w-full">
@@ -38,7 +28,6 @@ const TickerContent = ({
             dataCategory={DataCategory.Listings}
             chartStyle={ChartStyle.Bubble}
             currentHeight={currentHeight.value}
-            showListingForm={showListingForm}
           />
         </div>
         <div className="w-1/2 align-top">

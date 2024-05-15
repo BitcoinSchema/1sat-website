@@ -40,12 +40,10 @@ import type { MarketData } from "./list";
 
 const ListingForm = ({
   initialPrice,
-  onClose,
   ticker,
 }: {
   ticker: Partial<MarketData>;
   initialPrice: string;
-  onClose: () => void;
 }) => {
   useSignals();
   const router = useRouter();
@@ -293,11 +291,11 @@ const ListingForm = ({
         { price: listingPrice.value },
         { amount: listingAmount.value },
       );
-      if (!utxos || !payPk || !ordPk || !fundingAddress || !ordAddress) {
+      if (!utxos.value || !payPk.value || !ordPk.value || !fundingAddress.value || !ordAddress.value) {
         return;
       }
-      const paymentPk = PrivateKey.from_wif(payPk.value!);
-      const ordinalPk = PrivateKey.from_wif(ordPk.value!);
+      const paymentPk = PrivateKey.from_wif(payPk.value);
+      const ordinalPk = PrivateKey.from_wif(ordPk.value);
 
       // [{"txid":"69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6","vout":2,"outpoint":"69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6_2","height":828275,"idx":1162,"op":"transfer","amt":"10000","status":1,"reason":null,"listing":false,"owner":"139xRf73Vw3W8cMNoXW9amqZfXMrEuM9XQ","spend":"","spendHeight":null,"spendIdx":null,"tick":"PEPE","id":null,"price":"0","pricePer":"0","payout":null,"script":"dqkUF6HYh83S8XxpORgFL3VFy4fwqDSIrABjA29yZFESYXBwbGljYXRpb24vYnN2LTIwADp7InAiOiJic3YtMjAiLCJvcCI6InRyYW5zZmVyIiwidGljayI6IlBFUEUiLCJhbXQiOiIxMDAwMCJ9aA==","sale":false}]
 
@@ -313,14 +311,14 @@ const ListingForm = ({
 
         const u = (await promise).filter((u) => u.listing === false);
         const satoshisPayout = Math.ceil(
-          parseFloat(listingPrice.value!) * parseFloat(listingAmount.value!),
+          Number.parseFloat(listingPrice.value!) * Number.parseFloat(listingAmount.value!),
         );
         const indexerAddress = ticker.fundAddress!;
         // refresh utxos
         utxos.value = await getUtxos(fundingAddress.value!);
 
         const pendingTx = await listBsv20(
-          Math.ceil(parseFloat(listingAmount.value!) * 10 ** dec.value),
+          Math.ceil(Number.parseFloat(listingAmount.value!) * 10 ** dec.value),
           utxos.value!,
           u,
           paymentPk,
@@ -350,14 +348,15 @@ const ListingForm = ({
     () =>
       !listingAmount.value ||
       !listingPrice.value ||
-      parseInt(listingAmount.value || "0") === 0 ||
+      Number.parseInt(listingAmount.value || "0") === 0 ||
       listingPrice.value === "0" ||
-      parseInt(listingAmount.value || "0") > (confirmedBalance.value || 0),
+      Number.parseInt(listingAmount.value || "0") > (confirmedBalance.value || 0),
   );
 
   return (
     <div className="h-60 w-full">
       <form>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
           className="text-center text-xl font-semibold cursor-pointer"
           onClick={() => {

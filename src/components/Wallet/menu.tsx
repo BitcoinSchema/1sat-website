@@ -1,6 +1,6 @@
 "use client";
 
-import { MINI_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
+import { MARKET_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
   bsv20Balances,
   bsvWasmReady,
@@ -118,7 +118,7 @@ const WalletMenu: React.FC = () => {
       bsv20Balances.value = [];
       try {
         const { promise } = http.customFetch<BSV20Balance[]>(
-          `${MINI_API_HOST}/user/${address}/balance`
+          `${MARKET_API_HOST}/user/${address}/balance`
         );
         const u = await promise;
         bsv20Balances.value = u.sort((a, b) => {
@@ -129,7 +129,7 @@ const WalletMenu: React.FC = () => {
         });
 
         const statusUrl =
-          "https://1sat-api-production.up.railway.app/status";
+          `${MARKET_API_HOST}/status`;
         const { promise: promiseStatus } = http.customFetch<{
           exchangeRate: number;
           chainInfo: ChainInfo;

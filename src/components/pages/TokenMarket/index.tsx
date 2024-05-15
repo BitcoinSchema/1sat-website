@@ -1,14 +1,15 @@
 import TokenListingSkeleton from "@/components/skeletons/listing/Token";
-import { AssetType, MINI_API_HOST } from "@/constants";
+import { AssetType, MARKET_API_HOST } from "@/constants";
 import { NextRequest } from "next/server";
 import { Suspense } from "react";
 import TickerContent from "./content";
 import Details from "./details";
-import List, { MarketData } from "./list";
+import List, { type MarketData } from "./list";
 
 interface TokenMarketProps {
   type: AssetType.BSV20 | AssetType.BSV21;
   id?: string;
+  term?: string;
 }
 
 const TableHeading = ({ type }: { type: AssetType.BSV20 | AssetType.BSV21 }) => {
@@ -34,7 +35,7 @@ const TableHeading = ({ type }: { type: AssetType.BSV20 | AssetType.BSV21 }) => 
 const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id }) => {
 
   let marketData: MarketData[] = [];
-  const url = `${MINI_API_HOST}/market/${type}`;
+  const url = `${MARKET_API_HOST}/market/${type}`;
   marketData = await getMarketData(new NextRequest(url), type, id);
 
   const ticker = marketData.find((t) => t.tick === id || t.id === id);

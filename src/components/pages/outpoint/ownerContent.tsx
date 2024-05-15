@@ -133,7 +133,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       return;
     },
-    [artifact, router]
+    [artifact, router, pendingTxs.value, ordPk.value, payPk.value]
   );
 
   const recover = useCallback(
@@ -217,7 +217,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       router.push("/preview");
     },
-    [router]
+    [router, pendingTxs.value, ordPk.value]
   );
 
   const recoverUtxo = useCallback(
@@ -246,7 +246,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       return;
     },
-    [artifact, recover]
+    [artifact, recover, fundingAddress.value]
   );
 
   return (
@@ -327,7 +327,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				Cancel Listing
 			</button> */}
 
-      {showCancelModal.value && (
+      {artifact && showCancelModal.value && (
         <CancelListingModal
           onClose={() => {
             showCancelModal.value = false;
@@ -352,8 +352,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
                 : WalletTab.BSV20
             }
             id={
-              (artifact.data?.bsv20?.tick ||
-                artifact.data?.bsv20?.id)!
+              (artifact.data?.bsv20?.tick || artifact.data?.bsv20?.id) as string
             }
             dec={artifact.data?.bsv20?.dec || 0}
             balance={Number.parseInt(artifact.data?.bsv20?.amt || "0")}

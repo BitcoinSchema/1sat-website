@@ -1,9 +1,11 @@
 "use client";
 
+import ImageWithFallback from "@/components/ImageWithFallback";
 import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import TokenListings from "@/components/TokenListings";
-import { AssetType } from "@/constants";
+import { AssetType, FetchStatus, MARKET_API_HOST, ORDFS } from "@/constants";
+import { searchLoading } from "@/signals/search";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import type { Autofill } from "@/types/search";
 import * as http from "@/utils/httpClient";
@@ -11,7 +13,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
+import { useEffect } from "react";
 export interface SearchPageProps {
   imageListings?: OrdUtxo[];
   collections?: OrdUtxo[];
@@ -31,15 +33,35 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
   const termFromPath = pathname.split("/").pop();
 
   // use useQuery to fetch bsv20 matches for this search term
-  const { data: bsv20Results } = useQuery({
-    queryKey: ["autofill", termFromPath],
+  const { data: bsv20Results, isLoading, isError } = useQuery({
+    queryKey: ["autofill-bsv20", termFromPath],
     queryFn: async () => {
-      const url = `https://1sat-api-production.up.railway.app/ticker/autofill/bsv20/${termFromPath}`;
+      const url = `${MARKET_API_HOST}/ticker/autofill/bsv20/${termFromPath}`;
+      const { promise } = http.customFetch<Autofill[]>(url);
+      const resp = await promise;
+      searchLoading.value = FetchStatus.Success;
+      return resp;
+    },
+  });
+
+  const { data: bsv21Results, isLoading: isLoadingBsv21, isError: isErrorBsv21 } = useQuery({
+    queryKey: ["autofill-bsv21", termFromPath],
+    queryFn: async () => {
+      const url = `${MARKET_API_HOST}/ticker/autofill/bsv21/${termFromPath}`;
       const { promise } = http.customFetch<Autofill[]>(url);
       return await promise;
     },
   });
 
+  useEffect(() => {
+    if (isLoading || isLoadingBsv21) {
+      searchLoading.value = FetchStatus.Loading;
+    } else if (isError || isErrorBsv21) {
+      searchLoading.value = FetchStatus.Error;
+    }
+  }, [isLoading, isError, searchLoading, isLoadingBsv21, isErrorBsv21]);
+
+  console.log({ bsv20Results, bsv21Results })
   const Listings = () => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
@@ -66,21 +88,44 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
   };
 
   return (
-    // <TracingBeam className="">
+
     <div className="w-full max-w-5xl mx-auto">
       {props.title && (
         <div className="text-3xl font-bold mb-4">{props.title}</div>
       )}
-      <div className="text-[#555] font-semibold text-lg mb-2">BSV20</div>
+      {bsv20Results && bsv20Results.length > 0 && (<div className="text-[#555] font-semibold text-lg mb-2">BSV20</div>)}
       {bsv20Results && bsv20Results.length > 0 && (
         <div className="w-full text-base-100 grid grid-cols-8 mb-4 gap-2">
           {bsv20Results?.map((match) => (
             <Link
               key={match.id}
               href={`/market/bsv20/${match.tick}`}
-              className="btn btn-ghost btn-sm border-neutral/25 hover:text-neutral-content hover:bg-neutral/25 text-neutral"
+              className="btn btn-sm hover:bg-neutral transition"
             >
               {match.tick}
+            </Link>
+          ))}
+        </div>
+      )}
+      {bsv21Results && bsv21Results.length > 0 && (
+        <div className="text-[#555] font-semibold text-lg mb-2">
+          BSV21
+        </div>
+      )}
+      {bsv21Results && bsv21Results.length > 0 && (
+        <div className="w-full text-base-100 grid grid-cols-8 mb-4 gap-2">
+          {bsv21Results?.map((match) => (
+            <Link
+              key={match.id}
+              href={`/market/bsv21/${match.id}`}
+              className={`btn btn-sm hover:bg-neutral transition ${match.contract ? match.contract === "pow-20" ? "bg-orange-800 hover:bg-orange-600" : "" : ""}`}
+            >
+              <div className="flex items-center">
+                {match.icon && <ImageWithFallback src={`${ORDFS}/${match.icon}`} alt={match.tick} width={15} height={15} className="mr-2 rounded-box" />}
+                <div className="inline-flex">
+                  {match.tick}
+                </div>
+              </div>
             </Link>
           ))}
         </div>
@@ -94,7 +139,6 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
         <Listings />
       </div>
     </div>
-    // </TracingBeam>
   );
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { API_HOST, AssetType, FetchStatus, MINI_API_HOST, resultsPerPage } from "@/constants";
+import { API_HOST, AssetType, FetchStatus, MARKET_API_HOST, resultsPerPage } from "@/constants";
 import { bsv20Balances, usdRate } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import type { BSV20Balance } from "@/types/bsv20";
@@ -75,7 +75,7 @@ const Bsv20List = ({
 
   effect(() => {
     const fire = async () => {
-      const url = "https://1sat-api-production.up.railway.app/ticker/num";
+      const url = `${MARKET_API_HOST}/ticker/num`;
       const unindexed =
         bsv20s.value?.map(
           (u) => u.tick as string
@@ -153,7 +153,7 @@ const Bsv20List = ({
           // fetch balances
           const { promise: promiseBalances } = http.customFetch<
             BSV20Balance[]
-          >(`${MINI_API_HOST}/user/${address}/balance`);
+          >(`${MARKET_API_HOST}/user/${address}/balance`);
           const b = await promiseBalances;
           addressBalances.value = b.sort((a, b) => {
             return b.all.confirmed + b.all.pending >
@@ -546,19 +546,17 @@ const Bsv20List = ({
         {listingBalances?.value?.map(
           ({ tick, all, sym, id, listed, dec }, idx) => (
             <React.Fragment key={`bal-listed-${tick}`}>
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
               <div
                 className="cursor-pointer hover:text-blue-400 transition"
                 onClick={() =>
-                  router.push(
-                    `/market/${id ? "bsv21/" + id : "bsv20/" + tick
-                    }`
-                  )
+                  router.push(`/market/${id ? `bsv21/${id}` : `bsv20/${tick}`}`)
                 }
               >
                 {tick || sym}
               </div>
               <div className="text-emerald-400">
-                {listed.confirmed / 10 ** dec}
+                {getBalanceText(listed.confirmed / 10 ** dec, dec)}
               </div>
             </React.Fragment>
           )

@@ -3,7 +3,7 @@
 import { getOutpoints } from "@/components/OrdinalListings/helpers";
 import Ordinals from "@/components/Wallet/ordinals";
 import Artifact from "@/components/artifact";
-import { AssetType, ORDFS, toastErrorProps } from "@/constants";
+import { ORDFS, toastErrorProps, type AssetType } from "@/constants";
 import {
   ordPk,
   ordUtxos,
@@ -13,13 +13,13 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { OrdUtxo } from "@/types/ordinals";
-import { PendingTransaction } from "@/types/preview";
-import { Utxo } from "@/utils/js-1sat-ord";
+import type { OrdUtxo } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
+import type { Utxo } from "@/utils/js-1sat-ord";
 import {
   createChangeOutput,
   fetchOrdinal,
-  signPayment,
+  signPayment
 } from "@/utils/transaction";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
@@ -35,7 +35,8 @@ import { Buffer } from "buffer";
 import { head } from "lodash";
 import { Noto_Serif } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FaChevronLeft } from "react-icons/fa6";
 import { IoMdInformationCircle } from "react-icons/io";
@@ -52,7 +53,6 @@ const notoSerif = Noto_Serif({
   subsets: ["latin"],
 });
 
-
 const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   useSignals();
   const router = useRouter();
@@ -64,7 +64,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   const [price, setPrice] = useState<number>(0);
 
   const [showSelectItem, setShowSelectItem] = useState<boolean>();
-  const [selectedItem, setSelectedItem] = useState<any>();
+  const [selectedItem, setSelectedItem] = useState<OrdUtxo>();
 
   const listOrdinal = useCallback(
     async (
@@ -179,6 +179,10 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     const fire = async () => {
       if (outpoint) {
         const item = await fetchOrdinal(outpoint);
+        // if it doesnt exist in ord utxos, add it (if its also the owner)
+        if (item && item.owner === ordAddress.value) {
+          ordUtxos.value = [...(ordUtxos.value || []), item];
+        }
         setSelectedItem(item);
       }
     };
@@ -194,7 +198,8 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       !payPk.value ||
       !ordPk.value ||
       !fundingAddress.value ||
-      !ordAddress
+      !ordAddress ||
+      !selectedItem?.origin?.outpoint
     ) {
       return;
     }
@@ -202,8 +207,9 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     const paymentPk = PrivateKey.from_wif(payPk.value);
     const ordinalPk = PrivateKey.from_wif(ordPk.value);
 
+    // TODO: Suspected problem here - passing origin to get latest, maybe getting wrong answer w wrong owner?
     const ordUtxos = await getOutpoints(
-      [selectedItem.origin.outpoint],
+      [selectedItem.outpoint],
       true
     );
     if (!ordUtxos?.length) {
@@ -238,10 +244,11 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       price
     );
 
+    pendingTx.returnTo = "/market/ordinals"
     pendingTxs.value = [pendingTx];
 
     router.push("/preview");
-  }, [selectedItem, price, listOrdinal, router]);
+  }, [selectedItem, price, listOrdinal, router, ordAddress.value]);
 
   const clickSelectItem = useCallback(() => {
     setShowSelectItem(true);
@@ -266,11 +273,12 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 
     setShowSelectItem(false);
     setOutpoint(outpoint);
-  }, []);
+  }, [setSelectedItem, setShowSelectItem]);
 
   const artifact = useMemo(() => {
-    return ordUtxos.value?.find((utxo) => utxo.outpoint === outpoint);
-  }, [ordUtxos.value, outpoint]);
+    console.log({ ordUtxos: ordUtxos.value, selectedItem })
+    return ordUtxos.value?.find((utxo) => utxo?.origin?.outpoint === selectedItem?.origin?.outpoint);
+  }, [ordUtxos.value, selectedItem]);
 
 
   return (

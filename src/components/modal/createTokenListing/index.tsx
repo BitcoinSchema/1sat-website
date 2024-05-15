@@ -37,10 +37,6 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
         <ListingForm
           initialPrice={listing.pricePer}
           ticker={ticker}
-          onClose={() => {
-            console.log("close");
-            // showListingForm.value = false;
-          }}
         />
         {/* <form method="dialog">
           <div className="modal-action">          

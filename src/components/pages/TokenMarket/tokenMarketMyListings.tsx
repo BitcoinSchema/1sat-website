@@ -1,14 +1,14 @@
 import CancelListingModal from "@/components/modal/cancelListing";
 import { API_HOST, AssetType, resultsPerPage } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
-import { Listing } from "@/types/bsv20";
+import type { Listing } from "@/types/bsv20";
 import * as http from "@/utils/httpClient";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { toBitcoin } from "satoshi-bitcoin-ts";
-import { MarketData } from "./list";
+import type { MarketData } from "./list";
 import { myListings } from "./signals";
 
 interface Props {
