@@ -1,6 +1,6 @@
 "use client";
 
-import { API_HOST, indexerBuyFee, toastProps } from "@/constants";
+import { API_HOST, indexerBuyFee, toastErrorProps, toastProps } from "@/constants";
 import {
   bsvWasmReady,
   ordPk,
@@ -25,6 +25,7 @@ import {
   TxIn,
   TxOut,
 } from "bsv-wasm-web";
+import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { buildInscriptionSafe } from "../airdrop";
 import { calculateFee } from "../buyArtifact";
@@ -47,7 +48,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
   useSignals();
   const cancelling = useSignal(false);
 
-  const cancelBsv20Listing = async (e: any) => {
+  const cancelBsv20Listing = useCallback(async (e: any) => {
     if (!bsvWasmReady.value) {
       console.log("bsv wasm not ready");
       return;
@@ -180,7 +181,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
     cancelInput.set_unlocking_script(
       Script.from_asm_string(
-        `${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value!)
+        `${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value)
           .to_public_key()
           .to_hex()} OP_1`
       )
@@ -228,9 +229,9 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  };
+  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
 
-  const cancelListing = async (e: any) => {
+  const cancelListing = useCallback(async (e: any) => {
     if (!bsvWasmReady.value) {
       console.log("bsv wasm not ready");
       return;
@@ -386,7 +387,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  };
+  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
 
   return (
     <dialog
@@ -398,7 +399,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
         <h3 className="font-bold text-lg">Cancel Listing</h3>
         <p className="py-4">
           Are you sure you want to cancel the listing for{" "}
-          {listing.tick || listing.sym}?
+          {listing.tick || listing.sym || "this ordinal"}?
         </p>
         <form method="dialog">
           <div className="modal-action">
@@ -406,21 +407,25 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
             <button type="button" className="btn" onClick={onClose}>
               Close
             </button>
-            <button
+            {listing && <button
               type="button"
               disabled={cancelling.value}
               className="btn btn-error disabled:btn-disabled"
               onClick={async (e) => {
-                console.log({ listing });
                 if (listing.tick || listing.id) {
+                  console.log("Cancel BSV20", { listing });
                   await cancelBsv20Listing(e);
-                  return;
+                } else if (!listing.data?.bsv20 && !listing.origin?.data?.bsv20) {
+                  console.log("Cancel Non BSV20 Listing", { listing });
+                  await cancelListing(e);
+                } else {
+                  console.log("invalid listing", listing);
+                  toast.error(`Something went wrong ${listing.outpoint}`, toastErrorProps);
                 }
-                await cancelListing(e);
               }}
             >
               Cancel Listing
-            </button>
+            </button>}
           </div>
         </form>
       </div>

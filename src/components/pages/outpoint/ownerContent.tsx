@@ -352,8 +352,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
                 : WalletTab.BSV20
             }
             id={
-              (artifact.data?.bsv20?.tick ||
-                artifact.data?.bsv20?.id)!
+              (artifact.data?.bsv20?.tick || artifact.data?.bsv20?.id) as string
             }
             dec={artifact.data?.bsv20?.dec || 0}
             balance={Number.parseInt(artifact.data?.bsv20?.amt || "0")}
