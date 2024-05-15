@@ -27,36 +27,18 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <dialog
-      id={`cancel-listing-modal-${listing.tick}`}
+      id={`create-token-listing-modal-${listing.tick}`}
       className="modal backdrop-blur"
       open={open}
       onClick={() => onClose()}
     >
-      <div className="modal-box">
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <h3 className="font-bold text-lg">Listing {ticker.tick || ticker.sym}</h3>
         <ListingForm
           initialPrice={listing.pricePer}
           ticker={ticker}
         />
-        {/* <form method="dialog">
-          <div className="modal-action">          
-            <button type="button" className="btn" onClick={onClose}>
-              Close
-            </button>
-            <button
-              type="button"
-              disabled={creating.value}
-              className="btn btn-error disabled:btn-disabled"
-              onClick={async (e) => {
-                console.log({ listing });
-
-
-              }}
-            >
-              Cancel Listing
-            </button>
-          </div>
-        </form> */}
       </div>
     </dialog>
   );

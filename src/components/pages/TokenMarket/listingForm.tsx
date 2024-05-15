@@ -22,7 +22,7 @@ import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
 import type { Utxo } from "@/utils/js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
-import { computed, useSignal } from "@preact/signals-react";
+import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
   P2PKHAddress,
@@ -34,9 +34,10 @@ import {
   TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { MarketData } from "./list";
+import { showAddListingModal } from "./tokenMarketTabs";
 
 const ListingForm = ({
   initialPrice,
@@ -49,6 +50,10 @@ const ListingForm = ({
   const router = useRouter();
   const listingPrice = useSignal<string | null>(null);
   const listingAmount = useSignal<string | null>(null);
+
+  const priceInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   // set initial price
   useEffect(() => {
@@ -279,7 +284,7 @@ const ListingForm = ({
   );
 
   const submit = useCallback(
-    async (e: any) => {
+    async (e: React.FormEvent) => {
       if (!bsvWasmReady.value) {
         console.log("bsv wasm not ready");
         return;
@@ -291,7 +296,12 @@ const ListingForm = ({
         { price: listingPrice.value },
         { amount: listingAmount.value },
       );
-      if (!utxos.value || !payPk.value || !ordPk.value || !fundingAddress.value || !ordAddress.value) {
+      if (!ticker.fundAddress || !utxos.value || !payPk.value || !ordPk.value || !fundingAddress.value || !ordAddress.value) {
+        toast.error("Missing wallet requirement", toastErrorProps);
+        return;
+      }
+      if (!listingPrice.value || !listingAmount.value) {
+        toast.error("Missing listing price or amount", toastErrorProps);
         return;
       }
       const paymentPk = PrivateKey.from_wif(payPk.value);
@@ -303,7 +313,7 @@ const ListingForm = ({
 
       try {
         let url = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${ticker.tick}`;
-        if (!!ticker.id) {
+        if (ticker.id) {
           url = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${ticker.id}`;
         }
         console.log({ url });
@@ -311,21 +321,21 @@ const ListingForm = ({
 
         const u = (await promise).filter((u) => u.listing === false);
         const satoshisPayout = Math.ceil(
-          Number.parseFloat(listingPrice.value!) * Number.parseFloat(listingAmount.value!),
+          Number.parseFloat(listingPrice.value) * Number.parseFloat(listingAmount.value),
         );
-        const indexerAddress = ticker.fundAddress!;
+        const indexerAddress = ticker.fundAddress
         // refresh utxos
-        utxos.value = await getUtxos(fundingAddress.value!);
+        utxos.value = await getUtxos(fundingAddress.value);
 
         const pendingTx = await listBsv20(
-          Math.ceil(Number.parseFloat(listingAmount.value!) * 10 ** dec.value),
-          utxos.value!,
+          Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value),
+          utxos.value,
           u,
           paymentPk,
-          fundingAddress.value!,
+          fundingAddress.value,
           ordinalPk,
-          ordAddress.value!,
-          fundingAddress.value!,
+          ordAddress.value,
+          fundingAddress.value,
           satoshisPayout,
           indexerAddress,
         );
@@ -353,13 +363,43 @@ const ListingForm = ({
       Number.parseInt(listingAmount.value || "0") > (confirmedBalance.value || 0),
   );
 
+
+
+  useEffect(() => {
+    console.log("set mounted");
+    setMounted(true);
+  }, []);
+
+  // autofocus without using the autoFocus property
+  effect(() => {
+    if (
+      mounted &&
+      showAddListingModal.value !== null &&
+      amountInputRef.current
+    ) {
+      // check which element is currently focused
+      const activeElement = document.activeElement as HTMLElement;
+      console.log({ activeElement });
+      // check if the element if visible
+      if (
+        amountInputRef.current.getBoundingClientRect().top <
+        window.innerHeight && activeElement !== amountInputRef.current
+        && activeElement !== priceInputRef.current
+      ) {
+        amountInputRef.current.focus();
+      }
+    }
+  });
+
+
   return (
     <div className="h-60 w-full">
-      <form>
+      <form action="dialog">
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
           className="text-center text-xl font-semibold cursor-pointer"
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
             const convertedValue = confirmedBalance.value / 10 ** dec.value;
             listingAmount.value = convertedValue.toString() || null;
           }}
@@ -373,26 +413,12 @@ const ListingForm = ({
             ? `(-${pendingListedBalance.value / 10 ** dec.value} pending)`
             : ""}
         </div>
-
-        <div className="form-control w-full">
-          <label className="label flex items-center justify-between">
-            <span className="label-text">Price per token</span>
-            <span className="text-[#555]">Sats</span>
-          </label>
-          <input
-            type="text"
-            placeholder="1000"
-            className="input input-sm input-bordered"
-            onChange={(e) => {
-              listingPrice.value = e.target.value;
-            }}
-          />
-        </div>
         <div className="form-control w-full">
           <label className="label">
             <span className="label-text">Amount</span>
           </label>
           <input
+            ref={amountInputRef}
             type="number"
             placeholder="0"
             className="input input-sm input-bordered"
@@ -414,6 +440,24 @@ const ListingForm = ({
             max={confirmedBalance.value}
           />
         </div>
+        <div className="form-control w-full">
+          <label className="label flex items-center justify-between">
+            <span className="label-text">Price per token</span>
+            <span className="text-[#555]">Sats</span>
+          </label>
+          <input
+            ref={priceInputRef}
+
+            type="text"
+            placeholder="1000"
+            className="input input-sm input-bordered"
+            onChange={(e) => {
+              e.preventDefault();
+              listingPrice.value = e.target.value;
+            }}
+          />
+        </div>
+
         <div className="modal-action">
           <button
             type="button"

@@ -3,7 +3,7 @@
 import CreateTokenListingModal from "@/components/modal/createTokenListing";
 import { toastErrorProps, type AssetType } from "@/constants";
 import { bsv20Balances } from "@/signals/wallet";
-import { computed, useSignal } from "@preact/signals-react";
+import { Signal, computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import clsx from "clsx";
 import { head } from "lodash";
@@ -24,13 +24,14 @@ interface Props {
   type: AssetType.BSV20 | AssetType.BSV21;
 }
 
+export const showAddListingModal = new Signal<string | null>(null);
+
 export function TokenMarketTabs({
   ticker,
   show,
   type,
 }: Props) {
   useSignals();
-  const showAddListingModal = useSignal<string | null>(null);
   const selectedListingsTab = useSignal<"listings" | "my_listings">("listings");
   const selectedSalesTab = useSignal<"sales" | "my_sales">("sales");
   const selectedTab = useSignal<
@@ -202,8 +203,12 @@ export function TokenMarketTabs({
             })}
           >
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            {hasBalance.value && <div onClick={() => addListing(ticker)} className="md:absolute md:right-0 md:top-0 w-full md:w-fit btn btn-sm mb-4 md:mb-0 border-yellow-200/25 hover:bg-base-300 mr-4">
-              <div className="flex items-center" ><FaPlus className="mr-1" />List {ticker.sym || ticker.tick}</div>
+            {hasBalance.value && <div
+              onClick={() => addListing(ticker)}
+              className="md:absolute md:right-0 md:top-0 w-full md:w-fit btn btn-sm mb-4 md:mb-0 border-yellow-200/25 hover:bg-base-300 mr-4">
+              <div className="flex items-center" >
+                <FaPlus className="mr-1" />List {ticker.sym || ticker.tick}
+              </div>
             </div>}
             <TokenMarketListings ticker={ticker} show={show} type={type} />
           </div>
@@ -285,9 +290,14 @@ export function TokenMarketTabs({
       )
       }
 
-      <CreateTokenListingModal onClose={() => {
-        showAddListingModal.value = null;
-      }} ticker={ticker} initialPrice={topListing.value?.pricePer} open={showAddListingModal.value === ticker.id || showAddListingModal.value === ticker.tick} />
+      <CreateTokenListingModal
+        onClose={() => {
+          showAddListingModal.value = null;
+        }}
+        ticker={ticker}
+        initialPrice={topListing.value?.pricePer}
+        open={showAddListingModal.value === ticker.id ||
+          showAddListingModal.value === ticker.tick} />
     </div >
   );
 }

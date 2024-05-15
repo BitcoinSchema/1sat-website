@@ -1,5 +1,5 @@
 import { API_HOST, AssetType } from "@/constants";
-import { BSV20TXO } from "@/types/ordinals";
+import type { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -7,7 +7,7 @@ import { useInView } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { toBitcoin } from "satoshi-bitcoin-ts";
-import { MarketData } from "./list";
+import type { MarketData } from "./list";
 import { sales } from "./signals";
 
 interface Props {
