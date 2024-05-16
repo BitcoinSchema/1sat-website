@@ -78,6 +78,17 @@ const MarketMenu: React.FC = () => {
               <div className="text-[#555]">NFT</div>
             </Link>
           </li>
+          <li>
+            <Link
+              href="/inscribe"
+              className="flex items-center justify-between"
+            >
+              <div>Inscribe</div>
+              <div className="text-[#555]">NFT / FT</div>
+            </Link>
+          </li>
+
+
           <div className="divider">Token Market</div>
           <li>
             <Link

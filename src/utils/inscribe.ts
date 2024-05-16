@@ -5,6 +5,7 @@ import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { PendingTransaction } from "@/types/preview";
 import {
+  LocalSigner,
   createOrdinal,
   createOrdinalWithData,
   type Inscription,
@@ -25,7 +26,8 @@ export const handleInscribing = async (
   changeAddress: string,
   fundingUtxo: Utxo,
   metadata?: MAP, // MAP,
-  payments: Payment[] = []
+  payments: Payment[] = [],
+  idWif?: string
 ) => {
   const paymentPk = PrivateKey.from_wif(payPk);
 
@@ -35,14 +37,15 @@ export const handleInscribing = async (
     contentType: fileContentType,
   };
 
-  // const idKey = PrivateKey.from_wif(
-  //   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
-  // );
-  console.log("Inscribing with", { metadata });
-  const signer = {
-    // idKey // optional id key
-    keyHost: "http://localhost:21000",
-  } as RemoteSigner;
+  let signer: LocalSigner | undefined;
+  if (idWif) {
+    const idKey = PrivateKey.from_wif(idWif);
+    console.log("Inscribing with", { metadata });
+    signer = {
+      idKey // optional id key
+      // keyHost: "http://localhost:21000",
+    } as LocalSigner; // RemoteSigner;
+  }
 
   const tx = await createOrdinal(
     [fundingUtxo],
@@ -52,7 +55,7 @@ export const handleInscribing = async (
     0.05,
     [inscription],
     metadata, // optional metadata
-    undefined,
+    signer,
     payments
   );
   return tx;
@@ -127,7 +130,7 @@ export const handleBulkInscribingWithData = (
   }
 };
 
-export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
+export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any, idKey?: string) => {
   if (!file?.type || !utxo) {
     throw new Error("File or utxo not provided");
   }
@@ -145,7 +148,9 @@ export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
         ordAddress.value!,
         fundingAddress.value!,
         utxo,
-        metadata
+        metadata,
+        undefined,
+        idKey
       );
       const satsIn = utxo!.satoshis;
       const satsOut = Number(tx.satoshis_out());

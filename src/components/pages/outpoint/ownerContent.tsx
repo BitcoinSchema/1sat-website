@@ -39,8 +39,6 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
   const router = useRouter();
 
   // TODO: Check the destination address matches the ordAddress
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const address = useMemo(() => {
     if (bsvWasmReady.value === false) {
       return "";
@@ -133,7 +131,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       return;
     },
-    [artifact, router, pendingTxs.value, ordPk.value, payPk.value]
+    [artifact, router, pendingTxs, payPk, ordPk, utxos, ordAddress, fundingAddress]
   );
 
   const recover = useCallback(

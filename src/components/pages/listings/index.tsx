@@ -1,6 +1,5 @@
 "use client";
 
-import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import TokenListings from "@/components/TokenListings";
 import { AssetType } from "@/constants";
@@ -40,13 +39,6 @@ const ListingsPage: React.FC<ListingsPageProps> = (props) => {
         return <TokenListings type={AssetType.BSV20} />;
       case AssetType.BSV21:
         return <TokenListings type={AssetType.BSV21} />;
-      case AssetType.LRC20:
-        return (
-          <LRC20Listings
-            listings={props.lrc20Listings!}
-            tokens={props.lrc20Tokens!}
-          />
-        );
       default:
         return null;
     }
