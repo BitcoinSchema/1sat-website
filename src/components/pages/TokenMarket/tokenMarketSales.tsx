@@ -52,9 +52,9 @@ export function TokenMarketSales({ ticker, type }: Props) {
       }
     };
 
-    if (salesInView) {
-      console.log({ salesInView });
-    }
+    // if (salesInView) {
+    //   console.log({ salesInView });
+    // }
     if (
       type === AssetType.BSV20 &&
       (salesInView || newSalesOffset.value === 0) &&

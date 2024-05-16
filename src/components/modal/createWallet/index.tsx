@@ -1,8 +1,9 @@
 "use client";
 
-import { bsvWasmReady, createWalletStep, encryptedBackup } from "@/signals/wallet";
+import { bsvWasmReady, createWalletStep } from "@/signals/wallet";
 import { loadKeysFromSessionStorage } from "@/signals/wallet/client";
 import { CreateWalletStep } from "@/types/wallet";
+import { useLocalStorage } from "@/utils/storage";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -24,6 +25,7 @@ const CreateWalletModal = ({
   useSignals();
   const router = useRouter();
   const alreadyHasKey = useSignal(false);
+  const [encryptedBackup] = useLocalStorage("encryptedBackup");
 
   useEffect(() => {
     loadKeysFromSessionStorage();
@@ -32,7 +34,6 @@ const CreateWalletModal = ({
       alreadyHasKey.value = true;
     }
   }, [encryptedBackup, alreadyHasKey]);
-
 
   return (
     <dialog

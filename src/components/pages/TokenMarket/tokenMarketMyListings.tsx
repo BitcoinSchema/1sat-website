@@ -80,7 +80,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
       ticker.id &&
       !reachedEndOfListings.value
     ) {
-      console.log({ isInView, ticker });
+      // console.log({ isInView, ticker });
       fire(ticker.id);
     }
   }, [isInView, newOffset, reachedEndOfListings, ticker, type]);

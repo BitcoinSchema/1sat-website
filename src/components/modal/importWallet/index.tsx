@@ -1,5 +1,6 @@
 "use client";
 
+import { toastErrorProps } from "@/constants";
 import {
   ImportWalletFromBackupJsonStep,
   ImportWalletFromMnemonicStep,
@@ -11,8 +12,11 @@ import {
   payPk,
   selectedBackupJson,
 } from "@/signals/wallet";
-import { useSignals } from "@preact/signals-react/runtime";
-import { useEffect, useMemo } from "react";
+import { loadKeysFromSessionStorage, setKeys, type Keys } from "@/signals/wallet/client";
+import { useLocalStorage } from "@/utils/storage";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
 import { FaKey } from "react-icons/fa";
 import { FaFileArrowUp } from "react-icons/fa6";
 import { DoneStep } from "./steps/DoneStep";
@@ -29,9 +33,41 @@ const ImportWalletModal = ({
   open: boolean;
   onClose: () => void;
 }) => {
+  const [encryptedBackup, setEncryptedBackup] = useLocalStorage("encryptedBackup");
+
   useSignals();
 
-  const alreadyHasKey = useMemo(() => !!payPk.value, []);
+  const alreadyHasKey = useSignal(!!payPk.value);
+
+  useEffect(() => {
+    loadKeysFromSessionStorage();
+
+    if (encryptedBackup) {
+      alreadyHasKey.value = true;
+    } else {
+      // Check for the backup parameter in the URL fragment
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const backupKey = hashParams.get("import");
+
+      if (backupKey) {
+        // Handle the imported backup key
+        // e.g., decrypt the key and restore the wallet
+        // You can update the encryptedBackup signal or perform any necessary actions
+
+        // base64 decode the backup key
+        try {
+          const backup = JSON.parse(atob(backupKey)) as Keys;
+          console.log("Imported backup:", backup);
+          // Set the encrypted backup key
+          setKeys(backup);
+          setEncryptedBackup(backup);
+        } catch (e) {
+          console.error("Failed to import backup:", e);
+          toast.error("Failed to import backup", toastErrorProps);
+        }
+      }
+    }
+  }, [encryptedBackup]);
 
   useEffect(() => {
     resetSteps();

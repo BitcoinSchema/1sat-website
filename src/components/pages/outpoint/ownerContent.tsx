@@ -169,7 +169,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
       let idx = 0;
       let totalSats = 0;
       const u = utxo;
-      console.log({ u });
+      // console.log({ u });
       const inx = new TxIn(
         Buffer.from(u.txid, "hex"),
         u.vout,

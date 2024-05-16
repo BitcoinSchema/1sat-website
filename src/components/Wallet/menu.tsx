@@ -369,6 +369,15 @@ const WalletMenu: React.FC = () => {
                     Export Keys
                   </button>
                 </li>
+                <li>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    type="button"
+                    onClick={exportKeysViaFragment}
+                  >
+                    Migrate to 1Sat.Market
+                  </button>
+                </li>
                 {/* <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/swap">Swap Keys</Link>
               </li> */}
@@ -479,6 +488,14 @@ const WalletMenu: React.FC = () => {
 };
 
 export default WalletMenu;
+
+export const exportKeysViaFragment = () => {
+  // redirect to https://1sat.market/wallet/import#import=<b64EncryptedBackupData>
+  const data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
+  const b64 = btoa(data);
+  const base = "http://localhost:3000" // "https://1sat.market"
+  window.location.href = `${base}/wallet/import#import=${b64}`;
+}
 
 export const backupKeys = () => {
   const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(

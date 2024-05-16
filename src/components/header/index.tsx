@@ -1,4 +1,5 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import SearchBar from "../SearchBar";
@@ -6,6 +7,17 @@ import Wallet from "../Wallet/menu";
 import MarketMenu from "../marketMenu";
 
 const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
+  const headersList = headers();
+  const hostname = headersList.get("host") || "";
+
+  // if the domain is 1sat.market, isMarket will be true
+  const isMarket = hostname === "1sat.market";
+
+  // if the domain is alpha.1satordinals.com, isAlpha will be true
+  const isAlpha = hostname === "alpha.1satordinals.com";
+
+  const isLocal = hostname === "localhost:3000";
+
   return (
     <header className="mb-12 z-10">
       <div className="navbar bg-base-100 relative p-0">
@@ -26,7 +38,7 @@ const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
                 className="w-6 h-6 cursor-pointer rounded mr-2"
               />
               <span className="md:block hidden text-nowrap">
-                1Sat Ordinals
+                {isMarket ? "1Sat.Market" : isAlpha ? "1Sat Alpha" : isLocal ? "1Sat Hackinals" : "1Sat Ordinals"}
               </span>
             </Link>
           </div>

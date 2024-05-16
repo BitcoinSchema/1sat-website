@@ -72,7 +72,7 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
     } else {
       const newItems =
         (await fetchCollectionItems(collectionId, itemsOffset)) ?? [];
-      console.log({ newItems });
+      // console.log({ newItems });
       setItems((i) => [...i, ...newItems]);
       setHasMoreItems(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
       setItemsOffset((offset) => offset + NUMBER_OF_ITEMS_PER_PAGE);

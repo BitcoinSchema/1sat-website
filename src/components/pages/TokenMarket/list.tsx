@@ -90,7 +90,6 @@ const List = async ({
     return null;
   }
 
-  console.log({ marketData });
   return (
     <tbody className="overflow-auto">
       {marketData.map((ticker, idx) => {

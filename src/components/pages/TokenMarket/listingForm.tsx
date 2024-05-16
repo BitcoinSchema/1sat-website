@@ -392,7 +392,7 @@ const ListingForm = ({
     ) {
       // check which element is currently focused
       const activeElement = document.activeElement as HTMLElement;
-      console.log({ activeElement });
+      // console.log({ activeElement });
       // check if the element if visible
       if (
         amountInputRef.current.getBoundingClientRect().top <
