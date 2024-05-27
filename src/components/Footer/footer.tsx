@@ -21,7 +21,7 @@ const Footer = () => {
       {/* // discord link */}
       <span className="mx-2">&bull;</span>
       <Link
-        href="https://discord.gg/fpSaAPPj4r"
+        href="https://discord.gg/tZxtZy7cFp"
         target="_blank"
         className={`font-mono flex items-center text-sm ${linkClass}`}
       >
