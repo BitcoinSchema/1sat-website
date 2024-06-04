@@ -5,6 +5,7 @@ import {
   bsv20Balances,
   bsvWasmReady,
   chainInfo,
+  encryptedBackup,
   exchangeRate,
   hasUnprotectedKeys,
   indexers,
@@ -62,7 +63,7 @@ const WalletMenu: React.FC = () => {
   const showProtectKeysModal = useSignal(false);
   const showDropdown = useSignal(false);
 
-  const [encryptedBackup] = useLocalStorage("encryptedBackup");
+  // const [encryptedBackup] = useLocalStorage("encryptedBackup");
 
   const [value, copy] = useCopyToClipboard();
   const ordAddressHover = useSignal(false);
@@ -91,10 +92,10 @@ const WalletMenu: React.FC = () => {
   useEffect(() => {
     loadKeysFromSessionStorage();
 
-    if (encryptedBackup) {
+    if (encryptedBackup.value) {
       showUnlockWalletButton.value = true;
     }
-  }, [encryptedBackup, showUnlockWalletButton]);
+  }, [encryptedBackup.value, showUnlockWalletButton.value]);
 
   useEffect(() => {
     if (

@@ -87,12 +87,14 @@ export const clearKeys = () => {
 	localStorage.removeItem("1satfk");
 	localStorage.removeItem("1satok");
 	localStorage.removeItem("1satpt");
+	localStorage.removeItem("encryptedBackup");
 
 	sessionStorage.removeItem("1satfk");
 	sessionStorage.removeItem("1satok");
 
 	createWalletStep.value = CreateWalletStep.Create;
 	encryptedBackup.value = null;
+	
 	encryptionKey.value = null;
 	passphrase.value = null;
 	mnemonic.value = null;

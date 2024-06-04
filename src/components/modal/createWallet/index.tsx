@@ -28,10 +28,10 @@ const CreateWalletModal = ({
   useEffect(() => {
     loadKeysFromSessionStorage();
 
-    if (encryptedBackup) {
+    if (encryptedBackup.value) {
       alreadyHasKey.value = true;
     }
-  }, [encryptedBackup, alreadyHasKey]);
+  }, [encryptedBackup.value, alreadyHasKey]);
 
 
   return (
