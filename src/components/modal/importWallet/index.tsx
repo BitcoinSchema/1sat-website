@@ -10,15 +10,14 @@ import {
   importWalletFromBackupJsonStep,
   importWalletFromMnemonicStep,
   importWalletTab,
-  ordPk,
   payPk,
   selectedBackupJson
 } from "@/signals/wallet";
 import { loadKeysFromSessionStorage, setKeys, type Keys } from "@/signals/wallet/client";
 import { useLocalStorage } from "@/utils/storage";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { FaKey } from "react-icons/fa";
 import { FaFileArrowUp } from "react-icons/fa6";
@@ -44,12 +43,16 @@ const ImportWalletModal = ({
 
   const [encryptedBackup] = useLocalStorage("encryptedBackup");
 
-  const alreadyHasKey = useSignal(!!encryptedBackup);
+  const alreadyHasKey = useMemo(() => !!encryptedBackup || (!fromFragment && !!payPk.value), [
+    encryptedBackup,
+    payPk.value,
+    fromFragment
+  ]);
 
   useEffect(() => {
     loadKeysFromSessionStorage();
 
-    console.log({ fragment: fragment.get("import"), encryptedBackup, alreadyHasKey: alreadyHasKey.value })
+    console.log({ fragment: fragment.get("import"), encryptedBackup, alreadyHasKey: alreadyHasKey })
     if (!encryptedBackup) {
 
       // Check for the backup parameter in the URL fragment
@@ -64,15 +67,8 @@ const ImportWalletModal = ({
         try {
           const backup = JSON.parse(atob(backupKey)) as Keys;
           console.log("Imported backup");
-          // Set the encrypted backup key
           setKeys(backup);
-          const backupJson = {
-            payPk: payPk.value,
-            ordPk: ordPk.value,
-          };
-
-          selectedBackupJson.value = JSON.stringify(backupJson);
-          // setEncryptedBackup(backup);
+          selectedBackupJson.value = JSON.stringify(backup);
           importWalletTab.value = ImportWalletTab.FromBackupJson;
           importWalletFromBackupJsonStep.value = ImportWalletFromBackupJsonStep.EnterPassphrase;
         } catch (e) {
@@ -81,7 +77,7 @@ const ImportWalletModal = ({
         }
       }
     }
-  }, [encryptedBackup, alreadyHasKey.value, fragment, selectedBackupJson.value]);
+  }, [encryptedBackup, alreadyHasKey, fragment, selectedBackupJson.value]);
 
 
   useEffect(() => {
@@ -95,17 +91,15 @@ const ImportWalletModal = ({
       ImportWalletFromMnemonicStep.EnterMnemonic;
     selectedBackupJson.value = null;
     if (fromFragment) {
-      // construct
-
       importWalletTab.value = ImportWalletTab.FromBackupJson;
       importWalletFromBackupJsonStep.value = ImportWalletFromBackupJsonStep.EnterPassphrase;
     }
   }
 
   function handleClose() {
+    onClose();
     importWalletTab.value = null;
     resetSteps();
-    onClose();
   }
 
   const selectTab = (tab: ImportWalletTab) => {
@@ -134,7 +128,7 @@ const ImportWalletModal = ({
 
         {bsvWasmReady.value && (
           <>
-            {alreadyHasKey.value && (<div>
+            {alreadyHasKey && (<div>
               <div>
                 You already have a wallet! If you really want to
                 import a new wallet, sign out first.
@@ -157,7 +151,7 @@ const ImportWalletModal = ({
               </form></div>
             )}
 
-            {!alreadyHasKey.value && (
+            {!alreadyHasKey && (
               <>
                 {importWalletTab.value === null && (
                   <div className="grid grid-cols-2 gap-3 mt-3">
