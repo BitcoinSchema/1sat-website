@@ -370,7 +370,7 @@ const WalletMenu: React.FC = () => {
                     Export Keys
                   </button>
                 </li>
-                <li>
+                {/* <li>
                   <button
                     className="btn btn-sm btn-secondary"
                     type="button"
@@ -378,7 +378,7 @@ const WalletMenu: React.FC = () => {
                   >
                     Migrate to 1Sat.Market
                   </button>
-                </li>
+                </li> */}
                 {/* <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/swap">Swap Keys</Link>
               </li> */}
