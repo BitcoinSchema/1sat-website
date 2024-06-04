@@ -37,7 +37,7 @@ const MinePage: React.FC = async () => {
 						<div>
 							Request beta access in{" "}
 							<a
-								href="https://discord.gg/tZxtZy7cFp"
+								href="https://discord.gg/kCspYAsRZr"
 								target="_blank"
 								rel="noreferrer"
 								className="text-accent"

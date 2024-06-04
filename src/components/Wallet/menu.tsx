@@ -5,6 +5,7 @@ import {
   bsv20Balances,
   bsvWasmReady,
   chainInfo,
+  encryptedBackup,
   exchangeRate,
   hasUnprotectedKeys,
   indexers,
@@ -12,6 +13,7 @@ import {
   payPk,
   pendingTxs,
   showDepositModal,
+  showUnlockWalletButton,
   showUnlockWalletModal,
   usdRate,
   utxos,
@@ -57,12 +59,11 @@ const WalletMenu: React.FC = () => {
   const router = useRouter();
 
   const showWithdrawalModal = useSignal(false);
-  const showUnlockWalletButton = useSignal(false);
   const showImportWalletModal = useSignal(false);
   const showProtectKeysModal = useSignal(false);
   const showDropdown = useSignal(false);
 
-  const [encryptedBackup] = useLocalStorage("encryptedBackup");
+  const [eb] = useLocalStorage("encryptedBackup");
 
   const [value, copy] = useCopyToClipboard();
   const ordAddressHover = useSignal(false);
@@ -91,10 +92,10 @@ const WalletMenu: React.FC = () => {
   useEffect(() => {
     loadKeysFromSessionStorage();
 
-    if (encryptedBackup) {
+    if (eb && !encryptedBackup.value) {
       showUnlockWalletButton.value = true;
     }
-  }, [encryptedBackup, showUnlockWalletButton]);
+  }, [encryptedBackup.value, eb, showUnlockWalletButton.value]);
 
   useEffect(() => {
     if (
@@ -490,11 +491,21 @@ const WalletMenu: React.FC = () => {
 export default WalletMenu;
 
 export const exportKeysViaFragment = () => {
-  // redirect to https://1sat.market/wallet/import#import=<b64EncryptedBackupData>
-  const data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
+  // redirect to https://1sat.market/wallet/import#import=<b64KeyBackupData>
+  const fk = localStorage.getItem("1satfk");
+  const ok = localStorage.getItem("1satok");
+  let data = ""
+  if (!fk || !ok) {
+    if (!payPk.value || !ordPk.value) {
+      toast.error("No keys to export. Encrypt your keys first.");
+    }
+    data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
+  } else {
+    data = JSON.stringify({ payPk: JSON.parse(fk), ordPk: JSON.parse(ok) });
+  }
   const b64 = btoa(data);
   const base = "http://localhost:3000" // "https://1sat.market"
-  window.location.href = `${base}/wallet/import#import=${b64}`;
+  // window.location.href = `${base}/wallet/import#import=${b64}`;
 }
 
 export const backupKeys = () => {

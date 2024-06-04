@@ -8,9 +8,9 @@ import { CreateWalletStep } from "@/types/wallet";
 import { signal } from "@preact/signals-react";
 
 export type InscribeOptions = {
-	tab: InscriptionTab;
-	tick: string;
-	op: string;
+  tab: InscriptionTab;
+  tick: string;
+  op: string;
 };
 
 /**
@@ -19,7 +19,7 @@ export type InscribeOptions = {
 
 export const isCreatingWallet = signal<boolean>(false);
 export const createWalletStep = signal<CreateWalletStep>(
-	CreateWalletStep.Create
+  CreateWalletStep.Create
 );
 
 /**
@@ -34,6 +34,8 @@ export const passphrase = signal<string | null>("");
  * Unlock Wallet
  */
 export const showUnlockWalletModal = signal<boolean>(false);
+export const showUnlockWalletButton = signal<boolean>(false);
+
 
 /**
  * Wallet keys
@@ -66,32 +68,33 @@ export const showDepositModal = signal<boolean>(false);
  * Import Wallet
  */
 export enum ImportWalletTab {
-	FromBackupJson,
-	FromMnemonic,
+  FromBackupJson,
+  FromMnemonic,
+  FromFragment,
 }
 
 export enum ImportWalletFromBackupJsonStep {
-	SelectFile,
-	EnterPassphrase,
-	Done,
+  SelectFile,
+  EnterPassphrase,
+  Done,
 }
 
 export enum ImportWalletFromMnemonicStep {
-	EnterMnemonic,
-	GenerateWallet,
-	EnterPassphrase,
-	Done,
+  EnterMnemonic,
+  GenerateWallet,
+  EnterPassphrase,
+  Done,
 }
 
 export const importWalletTab = signal<ImportWalletTab | null>(null);
 export const importWalletFromBackupJsonStep =
-	signal<ImportWalletFromBackupJsonStep>(
-		ImportWalletFromBackupJsonStep.SelectFile
-	);
+  signal<ImportWalletFromBackupJsonStep>(
+    ImportWalletFromBackupJsonStep.SelectFile
+  );
 export const importWalletFromMnemonicStep =
-	signal<ImportWalletFromMnemonicStep>(
-		ImportWalletFromMnemonicStep.EnterMnemonic
-	);
+  signal<ImportWalletFromMnemonicStep>(
+    ImportWalletFromMnemonicStep.EnterMnemonic
+  );
 
 export const selectedBackupJson = signal<string | null>(null);
 
@@ -99,9 +102,9 @@ export const selectedBackupJson = signal<string | null>(null);
  * Protect keys
  */
 export enum ProtectKeysStep {
-	Info,
-	EnterPassphrase,
-	Done,
+  Info,
+  EnterPassphrase,
+  Done,
 }
 
 export const protectKeysStep = signal<ProtectKeysStep>(ProtectKeysStep.Info);

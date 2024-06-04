@@ -24,6 +24,7 @@ import {
   passphrase,
   payPk,
   pendingTxs,
+  showUnlockWalletButton,
   utxos,
 } from ".";
 
@@ -77,6 +78,7 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
 };
 
 export const clearKeys = () => {
+
   payPk.value = null;
   ordPk.value = null;
   pendingTxs.value = null;
@@ -86,15 +88,20 @@ export const clearKeys = () => {
   localStorage.removeItem("1satfk");
   localStorage.removeItem("1satok");
   localStorage.removeItem("1satpt");
+  localStorage.removeItem("encryptedBackup");
 
   sessionStorage.removeItem("1satfk");
   sessionStorage.removeItem("1satok");
 
-  createWalletStep.value = CreateWalletStep.Create;
+
   encryptedBackup.value = null;
+
   encryptionKey.value = null;
   passphrase.value = null;
   mnemonic.value = null;
+
+  showUnlockWalletButton.value = false;
+  createWalletStep.value = CreateWalletStep.Create;
 };
 
 export type Keys = {

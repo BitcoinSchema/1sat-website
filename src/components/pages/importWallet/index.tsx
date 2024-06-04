@@ -12,11 +12,12 @@ const ImportWalletPage = () => {
   const close = useCallback(
     (signedOut = false) => {
       open.value = false;
-      if (signedOut) {
-        router.push("/");
-        return;
-      }
-      router.back();
+      // if (signedOut) {
+      //   router.push("/");
+      //   return;
+      // }
+      // router.back();
+      router.push("/");
     },
     [open, router]
   );
