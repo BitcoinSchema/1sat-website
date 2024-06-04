@@ -184,18 +184,20 @@ const EnterPassphrase: React.FC<Props> = ({
 		} else {
 			await handleClickEncrypt();
 		}
+
+		onSubmit();
 	};
 
 	return (
 		<form onSubmit={handleSubmit}>
-			<div className="my-4">
+			{!hasDownloadedKeys.value && <div className="my-4">
 				Enter a password to{" "}
 				{showEnterPassphrase.value === EncryptDecrypt.Decrypt
 					? "decrypt"
 					: "encrypt"}{" "}
 				your saved keys.
-			</div>
-			<div className="font-semibold md:text-xl my-2 relative">
+			</div>}
+			{!hasDownloadedKeys.value && <div className="font-semibold md:text-xl my-2 relative">
 				{mode === EncryptDecrypt.Encrypt && (
 					<div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
 						<CopyToClipboard
@@ -208,6 +210,7 @@ const EnterPassphrase: React.FC<Props> = ({
 							}}
 						>
 							<button
+								type="button"
 								disabled={!passphrase.value}
 								className="disabled:text-[#555] transition text-yellow-500 font-semibold font-mono"
 							>
@@ -225,7 +228,7 @@ const EnterPassphrase: React.FC<Props> = ({
 					placeholder={"your-password-here"}
 					ref={passwordInputRef}
 				/>}
-			</div>
+			</div>}
 
 			{showEnterPassphrase.value === EncryptDecrypt.Encrypt && (
 				<div>

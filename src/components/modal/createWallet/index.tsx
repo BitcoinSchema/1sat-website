@@ -35,7 +35,7 @@ const CreateWalletModal = ({
   }, [encryptedBackup.value, alreadyHasKey]);
 
   useEffect(() => {
-   console.log({alreadyHasKey: alreadyHasKey.value, bsvWasmReady: bsvWasmReady.value, step: createWalletStep.value})
+    console.log({ alreadyHasKey: alreadyHasKey.value, bsvWasmReady: bsvWasmReady.value, step: createWalletStep.value })
   }, [alreadyHasKey.value, bsvWasmReady.value, createWalletStep.value]);
 
   return (

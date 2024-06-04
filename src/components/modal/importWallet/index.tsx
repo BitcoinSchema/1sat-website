@@ -22,6 +22,7 @@ import { SelectFileStep } from "./steps/fromBackupJson/SelectFileStep";
 import { EnterMnemonicStep } from "./steps/fromMnemonic/EnterMnemonicStep";
 import { EnterPassphraseStep as EnterPassphraseMnemonicStep } from "./steps/fromMnemonic/EnterPassphraseStep";
 import { GenerateWalletStep } from "./steps/fromMnemonic/GenerateWalletStep";
+import { useRouter } from "next/navigation";
 
 const ImportWalletModal = ({
   open,
@@ -33,6 +34,8 @@ const ImportWalletModal = ({
   useSignals();
 
   const alreadyHasKey = useMemo(() => !!encryptedBackup.value, [encryptedBackup.value]);
+
+  const router = useRouter()
 
   useEffect(() => {
     resetSteps();
@@ -77,11 +80,27 @@ const ImportWalletModal = ({
 
         {bsvWasmReady.value && (
           <>
-            {alreadyHasKey && (
+            {alreadyHasKey && (<div>
               <div>
                 You already have a wallet! If you really want to
-                import a new wallet, sign out first
+                import a new wallet, sign out first.
               </div>
+              <form method="dialog">
+                <div className="modal-action">
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button className="btn btn-primary" type="button" onClick={() => {
+                    router.push("/wallet/delete")
+                  }}> Sign Out</button>
+                </div>
+              </form></div>
             )}
 
             {!alreadyHasKey && (

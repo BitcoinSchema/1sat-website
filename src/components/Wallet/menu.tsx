@@ -92,6 +92,10 @@ const WalletMenu: React.FC = () => {
   useEffect(() => {
     loadKeysFromSessionStorage();
 
+    const eb = localStorage.getItem("encryptedBackup");
+    if (eb && !encryptedBackup.value) {
+      encryptedBackup.value = eb;
+    }
     if (encryptedBackup.value) {
       showUnlockWalletButton.value = true;
     }
