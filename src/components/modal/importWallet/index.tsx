@@ -51,8 +51,6 @@ const ImportWalletModal = ({
 
   useEffect(() => {
     loadKeysFromSessionStorage();
-
-    console.log({ fragment: fragment.get("import"), encryptedBackup, alreadyHasKey: alreadyHasKey })
     if (!encryptedBackup) {
 
       // Check for the backup parameter in the URL fragment
