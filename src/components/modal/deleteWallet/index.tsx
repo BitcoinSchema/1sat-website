@@ -2,6 +2,7 @@
 
 import { backupKeys } from "@/components/Wallet/menu";
 import { clearKeys } from "@/signals/wallet/client";
+import { useSignals } from "@preact/signals-react/runtime";
 
 const DeleteWalletModal = ({
 	open,
@@ -10,6 +11,8 @@ const DeleteWalletModal = ({
 	open: boolean;
 	close: (signOut?: boolean) => void;
 }) => {
+	useSignals()
+
 	return (
 		<dialog
 			id="delete_wallet_modal"

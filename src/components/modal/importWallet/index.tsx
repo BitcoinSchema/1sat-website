@@ -5,6 +5,7 @@ import {
   ImportWalletFromMnemonicStep,
   ImportWalletTab,
   bsvWasmReady,
+  encryptedBackup,
   importWalletFromBackupJsonStep,
   importWalletFromMnemonicStep,
   importWalletTab,
@@ -31,7 +32,7 @@ const ImportWalletModal = ({
 }) => {
   useSignals();
 
-  const alreadyHasKey = useMemo(() => !!payPk.value, []);
+  const alreadyHasKey = useMemo(() => !!encryptedBackup.value, [encryptedBackup.value]);
 
   useEffect(() => {
     resetSteps();

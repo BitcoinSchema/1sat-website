@@ -24,6 +24,7 @@ import {
 	passphrase,
 	payPk,
 	pendingTxs,
+	showUnlockWalletButton,
 	utxos,
 } from ".";
 
@@ -95,6 +96,8 @@ export const clearKeys = () => {
 	encryptionKey.value = null;
 	passphrase.value = null;
 	mnemonic.value = null;
+
+	showUnlockWalletButton.value = false;
 };
 
 export const setKeys = (keys: {

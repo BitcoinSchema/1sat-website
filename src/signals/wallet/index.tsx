@@ -34,6 +34,8 @@ export const passphrase = signal<string | null>("");
  * Unlock Wallet
  */
 export const showUnlockWalletModal = signal<boolean>(false);
+export const showUnlockWalletButton = signal<boolean>(false);
+
 
 /**
  * Wallet keys

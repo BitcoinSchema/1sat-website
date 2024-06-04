@@ -2,7 +2,9 @@
 
 import { encryptionPrefix, toastErrorProps, toastProps } from "@/constants";
 import {
+	ImportWalletFromBackupJsonStep,
 	encryptionKey,
+	importWalletFromBackupJsonStep,
 	mnemonic,
 	ordPk,
 	passphrase,
@@ -145,6 +147,10 @@ const EnterPassphrase: React.FC<Props> = ({
 
 				localStorage.setItem("encryptedBackup", JSON.stringify(keys));
 				passphrase.value = "";
+
+				// go to done step
+				importWalletFromBackupJsonStep.value =
+					ImportWalletFromBackupJsonStep.Done;
 			} catch (e) {
 				console.error(e);
 				toast.error("Failed to encrypt keys", toastErrorProps);

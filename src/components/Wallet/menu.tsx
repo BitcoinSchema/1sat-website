@@ -12,6 +12,7 @@ import {
   payPk,
   pendingTxs,
   showDepositModal,
+  showUnlockWalletButton,
   showUnlockWalletModal,
   usdRate,
   utxos,
@@ -57,7 +58,6 @@ const WalletMenu: React.FC = () => {
   const router = useRouter();
 
   const showWithdrawalModal = useSignal(false);
-  const showUnlockWalletButton = useSignal(false);
   const showImportWalletModal = useSignal(false);
   const showProtectKeysModal = useSignal(false);
   const showDropdown = useSignal(false);
