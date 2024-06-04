@@ -92,14 +92,14 @@ export const clearKeys = () => {
 	sessionStorage.removeItem("1satfk");
 	sessionStorage.removeItem("1satok");
 
-	createWalletStep.value = CreateWalletStep.Create;
 	encryptedBackup.value = null;
 	
 	encryptionKey.value = null;
 	passphrase.value = null;
 	mnemonic.value = null;
-
+	
 	showUnlockWalletButton.value = false;
+	createWalletStep.value = CreateWalletStep.Create;
 };
 
 export const setKeys = (keys: {

@@ -28,18 +28,22 @@ const CreateWalletModal = ({
   useEffect(() => {
     loadKeysFromSessionStorage();
 
-    if (encryptedBackup.value) {
+    const eb = localStorage.getItem("encryptedBackup")
+    if (eb) {
       alreadyHasKey.value = true;
     }
   }, [encryptedBackup.value, alreadyHasKey]);
 
+  useEffect(() => {
+   console.log({alreadyHasKey: alreadyHasKey.value, bsvWasmReady: bsvWasmReady.value, step: createWalletStep.value})
+  }, [alreadyHasKey.value, bsvWasmReady.value, createWalletStep.value]);
 
   return (
     <dialog
       id="create_wallet_modal"
       className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
     >
-      <div className="modal-box h-64 overflow-hidden">
+      <div className="modal-box h-fit">
         <h3 className="font-bold text-lg">Create New Wallet</h3>
 
         {!bsvWasmReady.value && (
