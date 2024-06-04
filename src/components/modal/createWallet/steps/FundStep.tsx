@@ -20,7 +20,7 @@ export function FundStep({ onClose }: Props) {
 
 			<div className="modal-action">
 				<button className="btn" type="button" onClick={onClose}>
-					Cancel
+					Not Now
 				</button>
 				<button
 					className="btn btn-primary"

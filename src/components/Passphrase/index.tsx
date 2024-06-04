@@ -217,14 +217,14 @@ const EnterPassphrase: React.FC<Props> = ({
 					</div>
 				)}
 
-				<input
+				{!hasDownloadedKeys.value && <input
 					className="input input-bordered w-full placeholder-[#555]"
 					type="password"
 					onChange={handlePassphraseChange}
 					value={passphrase.value!}
 					placeholder={"your-password-here"}
 					ref={passwordInputRef}
-				/>
+				/>}
 			</div>
 
 			{showEnterPassphrase.value === EncryptDecrypt.Encrypt && (
