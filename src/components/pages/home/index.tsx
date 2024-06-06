@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import SlideshowLoader from "./loader";
 import Menu from "./menu";
+import FlowLoader from "./flowLoader";
 
 const notoSerif = Noto_Serif({
   style: "italic",
@@ -34,10 +35,11 @@ const HomePage: React.FC = async () => {
               </div>
             }
           >
-            <SlideshowLoader />
+            <FlowLoader />
           </Suspense>
         </div>
       </div>
+  
     </main>
   );
 };

@@ -359,7 +359,7 @@ const Bsv20List = ({
             const showAirdropIcon =
               (!addressProp ||
                 addressProp === ordAddress.value) &&
-              all.confirmed / 10 ** dec > 10000;
+              all.confirmed / 10 ** dec > 100;
 
             const tokenPrice = price ? `$${((price * balance) / usdRate.value).toFixed(2)}` : "";
             return (

@@ -19,6 +19,7 @@ import type { Utxo } from "@/utils/js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
+import { toBitcoin } from "satoshi-bitcoin-ts"
 import {
   P2PKHAddress,
   PrivateKey,
@@ -90,14 +91,25 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
   const amount = useSignal(amt?.toString() || "0");
   const addresses = useSignal<string>(addr || "");
   const destinationTickers = useSignal("");
+  const destinationBsv21Ids = useSignal("");
   const numOfHolders = useSignal("25");
   const allocation = useSignal<Allocation>(Allocation.Equal);
   const isEqualAllocation = allocation.value === Allocation.Equal;
+  const reviewMode = useSignal(false);
+  const destinations = useSignal<Destination[]>([]);
+  const changeTokenAmount = useSignal(0);
+  const indexingFees = useSignal(0);
 
   const setAmountToBalance = useCallback(() => {
     amount.value = balance.toString();
     console.log(amount.value);
   }, [amount, balance]);
+
+  const handleReview = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    reviewMode.value = true;
+  }, [reviewMode]);
+
 
   const airdropBsv20 = useCallback(
     async (
@@ -114,6 +126,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         throw new Error("bsv wasm not ready");
       }
       let tx = new Transaction(1, 0);
+
+      // totals for airdrop review
+      indexingFees.value = 0;
+      changeTokenAmount.value = 0;
 
       // add token inputs
       let amounts = 0;
@@ -151,7 +167,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
       }
 
       // if allocation is "Equal", destination can include addresses
-      let destinations: Destination[] =
+      destinations.value =
         isEqualAllocation && addresses.value.length > 0
           ? addresses.value
             .split(",")
@@ -161,12 +177,16 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         ? destinationTickers.value.split(",").map((a) => a.trim())
         : [];
 
+      const bsv21Destinations = destinationBsv21Ids.value
+        ? destinationBsv21Ids.value.split(",").map((a) => a.trim())
+        : [];
+
       // resolve ticker holders
       let receivers: Destination[] = [];
       let remainder = 0;
 
-      for (const t of tickerDestinations) {
-        const url = `${API_HOST}/api/bsv20/tick/${t}`;
+      for (const t of tickerDestinations.concat(bsv21Destinations)) {
+        const url = `${API_HOST}/api/bsv20/${t[t.length - 2] === "_" ? "id" : "tick"}/${t}`;
         const tickerHoldersUrl = `${url}/holders?limit=${numOfHolders.value}`;
         const holdersRes = await fetch(tickerHoldersUrl);
         const holders = ((await holdersRes.json()) || []) as Holder[];
@@ -219,15 +239,15 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
       }
 
       if (receivers.length > 0) {
-        destinations.push(...receivers);
+        destinations.value.push(...receivers);
       }
 
-      if (destinations.length === 0) {
+      if (destinations.value.length === 0) {
         throw new Error("No destinations found");
       }
 
       if (isEqualAllocation) {
-        const amountEach = Math.floor(sendAmount / destinations.length);
+        const amountEach = Math.floor(sendAmount / destinations.value.length);
         if (Number.isNaN(amountEach) || amountEach <= 0) {
           toast.error(
             "Amount must be greater than 0",
@@ -235,8 +255,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
           );
           throw new Error("unexpected error");
         }
-        remainder = sendAmount % destinations.length;
-        destinations = destinations.map((dest) => ({
+        remainder = sendAmount % destinations.value.length;
+        destinations.value = destinations.value.map((dest) => ({
           ...dest,
           receiveAmt: amountEach,
         }));
@@ -252,6 +272,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
       }
 
       if (amounts > sendAmount) {
+
+        changeTokenAmount.value = amounts - sendAmount + remainder;
+
         // build change inscription
         const changeInscription = {
           p: "bsv-20",
@@ -300,7 +323,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
       }
 
       // build up the transfers
-      for (const dest of destinations) {
+      for (const dest of destinations.value) {
         const inscription = {
           p: "bsv-20",
           op: "transfer",
@@ -334,16 +357,17 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
             ).get_locking_script()
           );
           tx.add_output(indexerFeeOutput);
+          // update the review variable
+          indexingFees.value += 2000;
         }
       }
       const changeOut = createChangeOutput(
         tx,
         changeAddress,
-        totalSatsIn
+        totalSatsIn,
       );
       tx.add_output(changeOut);
 
-      console.log({ RawTx: tx.to_hex(), Size: tx.get_size() });
       return {
         rawTx: tx.to_hex(),
         size: tx.get_size(),
@@ -353,21 +377,29 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         txid: tx.get_id_hex(),
         inputTxid: paymentUtxos[0].txid,
         marketFee: 0,
-      };
+      }
     },
     [
       addresses.value,
       destinationTickers.value,
       isEqualAllocation,
       numOfHolders.value,
+      destinations.value,
     ]
   );
 
   const submit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+
+      if (reviewMode.value) {
+        router.push("/preview");
+        return;
+      }
+
       const isDestinationMissing =
         !destinationTickers.value &&
+        !destinationBsv21Ids.value &&
         !(isEqualAllocation && addresses.value?.length);
 
       if (!amount.value || isDestinationMissing) {
@@ -388,22 +420,32 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         airdroppingStatus.value = FetchStatus.Error;
         return;
       }
-      const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${type === AssetType.BSV20 ? "tick" : "id"
-        }/${id}`;
-      const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
 
       try {
-        const tokenUtxos = await promise;
-        const { promise: promiseTickerDetails } =
-          http.customFetch<Ticker>(
-            `${API_HOST}/api/bsv20/${type === AssetType.BSV20 ? "tick" : "id"
-            }/${id}`
-          );
+        const { promise: promiseTickerDetails } = http.customFetch<Ticker>(
+          `${API_HOST}/api/bsv20/${type === AssetType.BSV20 ? "tick" : "id"}/${id}`
+        );
         const ticker = await promiseTickerDetails;
+
+        const bsv20Utxos: BSV20TXO[] = [];
+        const bsv21Utxos: BSV20TXO[] = [];
+
+        if (destinationTickers.value) {
+          const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${destinationTickers.value}`;
+          const { promise: bsv20Promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
+          bsv20Utxos.push(...(await bsv20Promise));
+        }
+
+        if (destinationBsv21Ids.value) {
+          const bsv21TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${destinationBsv21Ids.value}`;
+          const { promise: bsv21Promise } = http.customFetch<BSV20TXO[]>(bsv21TxoUrl);
+          bsv21Utxos.push(...(await bsv21Promise));
+        }
+
         const transferTx = await airdropBsv20(
           amt,
           utxos.value!,
-          tokenUtxos,
+          [...bsv20Utxos, ...bsv21Utxos],
           PrivateKey.from_wif(payPk.value!),
           fundingAddress.value!,
           PrivateKey.from_wif(ordPk.value!),
@@ -411,8 +453,17 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
           ticker
         );
         airdroppingStatus.value = FetchStatus.Success;
+
+        // Get only the PendingTransaction fields from the ReviewPendingTransaction which extends it with extra stuff we dont need right now
+
         pendingTxs.value = [transferTx];
-        router.push("/preview");
+
+        if (!reviewMode.value) {
+          // If not in review mode, call handleReview instead
+          await handleReview(e);
+          return;
+        }
+
       } catch (e) {
         console.error(e);
         toast.error("Failed to create airdrop", toastErrorProps);
@@ -421,6 +472,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
     },
     [
       destinationTickers.value,
+      destinationBsv21Ids.value,
       isEqualAllocation,
       addresses.value,
       amount.value,
@@ -431,6 +483,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
       id,
       airdropBsv20,
       router,
+      reviewMode.value,
+      destinations.value,
     ]
   );
 
@@ -450,128 +504,139 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
   return (
     <dialog
       id="airdrop_modal"
-      className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
+      className={`modal backdrop-blur overflow-y-auto ${open ? "modal-open" : ""}`}
       onClick={() => onClose()}
     >
-      {/* <div
-      className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
-     
-    > */}
+      {/* <div className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden" */}
       <div
-        className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
+        className="modal-box max-h-[90vh] m-auto w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative w-full min-h-64 md:h-full overflow-hidden mb-4">
+        <div className="relative w-full min-h-64 md:h-full mb-4">
+          <div className="flex justify-between">
+            <div className="text-lg font-semibold">
+              {reviewMode.value ? "Review Airdrop" : `Airdrop ${sym || id}`}
+            </div>
+            <div
+              className="text-xs cursor-pointer text-[#aaa]"
+              onClick={setAmountToBalance}
+            >
+              Balance: {balance}{" "}
+              {type === AssetType.BSV21 ? sym : id}
+            </div>
+          </div>
           <form onSubmit={submit}>
-            <div className="flex justify-between">
-              <div className="text-lg font-semibold">
-                Airdrop {sym || id}
-              </div>
-              <div
-                className="text-xs cursor-pointer text-[#aaa]"
-                onClick={setAmountToBalance}
-              >
-                Balance: {balance}{" "}
-                {type === AssetType.BSV21 ? sym : id}
-              </div>
-            </div>
-
-            <div className="flex flex-col w-full">
-              <label className="text-sm font-semibold text-[#aaa] mb-2">
-                Amount
-              </label>
-              <input
-                type="number"
-                placeholder={amtPlaceholder}
-                max={balance}
-                className="z-20 input input-bordered w-full"
-                value={amount.value === "0" ? "" : amount.value}
-                onChange={(e) => {
-                  if (
-                    e.target.value === "" ||
-                    Number.parseFloat(e.target.value) <=
-                    balance
-                  ) {
-                    amount.value = e.target.value;
-                  }
-                }}
-              />
-            </div>
-            <div className="flex flex-col w-full mt-4">
-              <label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center">
-                <span className="text-nowrap">
-                  {allocation.value} allocation
-                </span>{" "}
-                <div className="text-[#555] pl-2">
-                  {allocation.value === Allocation.Equal
-                    ? "distribute tokens equally to all addresses."
-                    : "based on % of total supply held by each address."}
-                </div>
-              </label>
-
-              <select
-                className="z-20 input input-bordered w-full"
-                value={allocation.value}
-                onChange={(e) => {
-                  allocation.value = e.target
-                    .value as Allocation;
-                }}
-              >
-                {ALLOCATION_OPTIONS.map(
-                  (opt: {
-                    value: Allocation;
-                    label: string;
-                  }) => (
-                    <option
-                      key={opt.value}
-                      value={opt.value}
-                    >
-                      {opt.label}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-            <div className="flex flex-col mt-4">
-              <label className="text-sm font-semibold text-[#aaa] mb-2">
-                BSV20 Destination Tickers (comma separated list)
-              </label>
-              <input
-                type="text"
-                placeholder="RUG, PEPE, EGG, LOVE, SHGR"
-                className="z-20 input input-bordered w-full"
-                value={destinationTickers.value}
-                onChange={(e) => {
-                  destinationTickers.value = e.target.value;
-                }}
-              />
-            </div>
-            {destinationTickers.value.length > 0 && (
-              <div className="flex flex-col w-full mt-4">
-                <label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center text-right justify-end">
-                  <div
-                    className="tooltip tooltip-left"
-                    data-tip="Holders per ticker, largest first."
-                  >
-                    <FaQuestion className="text-[#aaa] cursor-pointer mr-2" />
-                  </div>
-                  Number of holders
+            {!reviewMode.value && <div>
+              <div className="flex flex-col w-full">
+                <label className="text-sm font-semibold text-[#aaa] mb-2">
+                  Amount
                 </label>
                 <input
                   type="number"
-                  placeholder="25"
-                  className="z-20 input input-bordered w-full"
-                  value={numOfHolders.value || "0"}
-                  min={"1"}
-                  max={"1000"}
+                  placeholder={amtPlaceholder}
+                  max={balance}
+                  className="z-20 input input-bordered w-full placeholder:text-[#333]"
+                  value={amount.value === "0" ? "" : amount.value}
                   onChange={(e) => {
-                    numOfHolders.value = e.target.value;
+                    if (
+                      e.target.value === "" ||
+                      Number.parseFloat(e.target.value) <=
+                      balance
+                    ) {
+                      amount.value = e.target.value;
+                    }
                   }}
                 />
               </div>
-            )}
+              <div className="flex flex-col w-full mt-4">
+                <label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center">
+                  <span className="text-nowrap">
+                    {allocation.value} allocation
+                  </span>{" "}
+                  <div className="text-[#555] pl-2">
+                    {allocation.value === Allocation.Equal
+                      ? "distribute tokens equally to all addresses."
+                      : "based on % of total supply held by each address."}
+                  </div>
+                </label>
 
-            <>
+                <select
+                  className="z-20 input input-bordered w-full"
+                  value={allocation.value}
+                  onChange={(e) => {
+                    allocation.value = e.target
+                      .value as Allocation;
+                  }}
+                >
+                  {ALLOCATION_OPTIONS.map(
+                    (opt: {
+                      value: Allocation;
+                      label: string;
+                    }) => (
+                      <option
+                        key={opt.value}
+                        value={opt.value}
+                      >
+                        {opt.label}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+              <div className="flex flex-col mt-4">
+                <label className="text-sm font-semibold text-[#aaa] mb-2">
+                  BSV20 Destination Tickers (comma separated list)
+                </label>
+                <input
+                  type="text"
+                  placeholder="RUG, PEPE, EGG, LOVE, SHGR"
+                  className="z-20 input input-bordered w-full placeholder:text-[#333]"
+                  value={destinationTickers.value}
+                  onChange={(e) => {
+                    destinationTickers.value = e.target.value;
+                  }}
+                />
+              </div>
+
+              <div className="flex flex-col mt-4">
+                <label className="text-sm font-semibold text-[#aaa] mb-2">
+                  BSV21 Destination Token IDs (comma separated list)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e6d40ba206340aa94ed40fe1a8adcd722c08c9438b2c1dd16b4527d561e848a2_0"
+                  className="z-20 input input-bordered w-full placeholder:text-[#333]"
+                  value={destinationBsv21Ids.value}
+                  onChange={(e) => {
+                    destinationBsv21Ids.value = e.target.value;
+                  }}
+                />
+              </div>
+
+              {(destinationTickers.value.length > 0 || destinationBsv21Ids.value.length > 0) && (
+                <div className="flex flex-col w-full mt-4">
+                  <label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center text-right justify-end">
+                    <div
+                      className="tooltip tooltip-left"
+                      data-tip="Holders per ticker, largest first."
+                    >
+                      <FaQuestion className="text-[#aaa] cursor-pointer mr-2" />
+                    </div>
+                    Number of holders
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="25"
+                    className="z-20 input input-bordered w-full placeholder:text-[#333]"
+                    value={numOfHolders.value === "0" ? "" : numOfHolders.value}
+                    max={"1000"}
+                    onChange={(e) => {
+                      numOfHolders.value = e.target.value;
+                    }}
+                  />
+                </div>
+              )}
+
               <div className="divider" />
               {isEqualAllocation && (
                 <div className="flex flex-col mt-4">
@@ -587,7 +652,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                   <input
                     type="text"
                     placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-                    className="z-20 input input-bordered w-full"
+                    className="z-20 input input-bordered w-full placeholder:text-[#333]"
                     value={addresses.value}
                     onChange={(e) => {
                       addresses.value = e.target.value;
@@ -595,27 +660,53 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                   />
                 </div>
               )}
-            </>
+            </div>}
+
+            {reviewMode.value && <div className="flex flex-col">
+              <div className="flex justify-between">
+                <div className="text-sm font-semibold text-[#aaa] mb-2">Destination ({destinations.value.length})</div>
+                <div className="text-sm font-semibold text-[#aaa] mb-2">Amount</div>
+              </div>
+              {destinations.value.map((dest, index) => (
+                <div key={index} className="flex justify-between mb-2">
+                  <span>{dest.address}</span>
+                  <span>{dest.receiveAmt / 10 ** dec} {sym || id}</span>
+                </div>
+              ))}
+              <div className="mt-4 flex justify-between">
+                <div className="text-sm font-semibold text-[#aaa] mb-2">Indexing Fees</div>
+                <div>{toBitcoin(indexingFees.value || 0)} BSV</div>
+              </div>
+              {changeTokenAmount.value > 0 && <div className="mt-4 flex justify-between">
+                <div className="text-sm font-semibold text-[#aaa] mb-2">Change Tokens</div>
+                <div>{changeTokenAmount.value / 10 ** dec} {sym || id}</div>
+              </div>}
+            </div>}
 
             <div className="modal-action">
               <button
+                type="button"
+                onClick={() => reviewMode.value = false}
+                className="bg-[#222] p-2 rounded cursor-pointer hover:bg-yellow-600 text-white">
+                Back
+              </button>
+              <button
                 type="submit"
-                disabled={
-                  airdroppingStatus.value ===
-                  FetchStatus.Loading
-                }
-                className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:bg-[#555] disabled:cursor-not-allowed"
+                disabled={airdroppingStatus.value === FetchStatus.Loading}
+                className="bg-[#222] p-2 rounded cursor-pointer hover:bg-emerald-600 text-white disabled:bg-[#555] disabled:cursor-not-allowed"
               >
-                {airdroppingStatus.value === FetchStatus.Loading
-                  ? "Raining"
-                  : "Send"}
+                {reviewMode.value ? (
+                  airdroppingStatus.value === FetchStatus.Loading ? "Raining" : "Confirm"
+                ) : (
+                  "Review"
+                )}
               </button>
             </div>
           </form>
           <Meteors number={20} />
         </div>
-      </div>
-    </dialog>
+      </div >
+    </dialog >
   );
 };
 
