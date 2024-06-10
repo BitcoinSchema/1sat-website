@@ -27,6 +27,7 @@ import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
 import { TbDice } from "react-icons/tb";
+import { useCopyToClipboard } from "usehooks-ts";
 
 type Props = {
   mode: EncryptDecrypt;
@@ -40,6 +41,8 @@ const EnterPassphrase: React.FC<Props> = ({
   download = true,
 }) => {
   useSignals();
+  const [value, copy] = useCopyToClipboard()
+
   const showEnterPassphrase = useSignal<EncryptDecrypt | null>(mode);
   const hasDownloadedKeys = useSignal<boolean>(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -200,23 +203,20 @@ const EnterPassphrase: React.FC<Props> = ({
       {!hasDownloadedKeys.value && <div className="font-semibold md:text-xl my-2 relative">
         {mode === EncryptDecrypt.Encrypt && (
           <div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
-            <CopyToClipboard
-              text={passphrase.value || ""}
-              onCopy={() => {
-                toast.success(
-                  "Copied phrase. Careful now!",
-                  toastProps
-                );
-              }}
-            >
               <button
                 type="button"
                 disabled={!passphrase.value}
                 className="disabled:text-[#555] transition text-yellow-500 font-semibold font-mono"
+                onClick={() => {
+                  copy(passphrase.value || "")
+                  toast.success(
+                    "Copied phrase. Careful now!",
+                    toastProps
+                  );
+                }}
               >
                 <FiCopy />
               </button>
-            </CopyToClipboard>
           </div>
         )}
 

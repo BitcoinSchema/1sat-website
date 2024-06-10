@@ -48,6 +48,8 @@ export const getArtifactType = (
 	}
 	if (t?.startsWith("audio")) {
 		artifactType = ArtifactType.Audio;
+	} else if (t === "application/vnd.apple.mpegurl") {
+		artifactType = ArtifactType.Audio2;
 	} else if (t?.startsWith("video")) {
 		artifactType = ArtifactType.Video;
 	} else if (t?.startsWith("model")) {

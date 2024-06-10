@@ -41,6 +41,9 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
       var file = new File([svg], "name");
 
       const el = <img alt="" src={imageUrl} />;
+      if (typeof window === "undefined") {
+        return el;
+      }
       let el2 = document.createElement("img");
       el2.src = imageUrl;
       el2.onload = () => {

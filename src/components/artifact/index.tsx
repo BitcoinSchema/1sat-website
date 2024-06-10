@@ -58,12 +58,14 @@ export enum ArtifactType {
   Unknown = "Unknown",
   LRC20 = "LRC20",
   Audio = "Audio",
+  Audio2 = "Audio2",
   SVG = "SVG",
 }
 
 // maps ArtifactType to a typical content type string
 export const artifactTypeMap = new Map<ArtifactType, string>([
   [ArtifactType.Audio, "audio/"],
+  [ArtifactType.Audio2, "application/vnd.apple.mpegurl"],
   [ArtifactType.Image, "image/"],
   [ArtifactType.Model, "model/"],
   [ArtifactType.PDF, "application/pdf"],
@@ -204,7 +206,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         src={src}
         className={`${classNames?.media ? classNames.media : ""}`}
       />
-    ) : type === ArtifactType.Audio ? (
+    ) : type === ArtifactType.Audio || type === ArtifactType.Audio2 ? (
       <>
         <AudioArtifact
           outPoint={outPoint || origin}
