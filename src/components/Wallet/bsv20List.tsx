@@ -108,7 +108,7 @@ const Bsv20List = ({
     }
   }, [bsv20s.value, tickerDetails.value]);
 
-  effect(async () => {
+  useEffect(async () => {
     // fetch token history
     // TODO: Use type
     const address = addressProp || ordAddress.value;
@@ -124,9 +124,9 @@ const Bsv20List = ({
         console.error("Error fetching token history", error);
       }
     }
-  })
+  }, [fetchHistoryStatus.value, addressProp, type]);
 
-  effect(() => {
+  useEffect(() => {
     const address = addressProp || ordAddress.value;
     // get unindexed tickers
     const fire = async () => {
@@ -171,7 +171,7 @@ const Bsv20List = ({
     if (!bsv20s.value && address && unspentStatus.value === FetchStatus.Idle) {
       fire();
     }
-  });
+  }, [bsv20s.value, addressProp, unspentStatus.value]);
 
   const unindexBalances = computed(
     () =>
