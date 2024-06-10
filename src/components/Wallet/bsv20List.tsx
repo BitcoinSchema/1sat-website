@@ -73,7 +73,7 @@ const Bsv20List = ({
   const fetchHistoryStatus = useSignal<FetchStatus>(FetchStatus.Idle);
   const unspentStatus = useSignal<FetchStatus>(FetchStatus.Idle);
 
-  effect(() => {
+  useEffect(() => {
     const fire = async () => {
       const url = `${MARKET_API_HOST}/ticker/num`;
       const unindexed =
@@ -106,7 +106,7 @@ const Bsv20List = ({
     if (bsv20s.value !== null && tickerDetails.value === null) {
       fire();
     }
-  });
+  }, [bsv20s.value, tickerDetails.value]);
 
   effect(async () => {
     // fetch token history
