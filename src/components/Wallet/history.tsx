@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { FaSpinner } from "react-icons/fa";
 import WalletTabs, { WalletTab } from "./tabs";
+import { useMemo } from "react";
 
 interface WalletHistoryProps {
   address?: string | undefined;
@@ -18,19 +19,20 @@ const WalletHistory: React.FC<WalletHistoryProps> = ({
 }) => {
   useSignals();
 
+  const ordAddressMemo = useMemo(() => ordAddress.value, [ordAddress.value]);
   const {
     data: bsv20History,
     isLoading: isLoadingBsv20History,
     isError: isBsv20HistoryError,
     error: bsv20Error,
   } = useQuery<OrdUtxo[]>({
-    queryKey: ["history", addressProp, ordAddress.value],
+    queryKey: ["history", addressProp, ordAddressMemo],
     queryFn: async () => {
-      if (!addressProp && !ordAddress.value) {
+      if (!addressProp && !ordAddressMemo) {
         return [] as OrdUtxo[];
       }
       const res = await fetch(
-        `${API_HOST}/api/txos/address/${addressProp || ordAddress.value
+        `${API_HOST}/api/txos/address/${addressProp || ordAddressMemo
         }/history?bsv20=true`
       );
       const json = await res.json();
@@ -44,13 +46,13 @@ const WalletHistory: React.FC<WalletHistoryProps> = ({
     isError: isHistoryError,
     error: historyError,
   } = useQuery<OrdUtxo[]>({
-    queryKey: ["history", addressProp, ordAddress.value],
+    queryKey: ["history", addressProp, ordAddressMemo],
     queryFn: async () => {
-      if (!addressProp && !ordAddress.value) {
+      if (!addressProp && !ordAddressMemo) {
         return [] as OrdUtxo[];
       }
       const res = await fetch(
-        `${API_HOST}/api/txos/address/${addressProp || ordAddress.value
+        `${API_HOST}/api/txos/address/${addressProp || ordAddressMemo
         }/history`
       );
       const json = await res.json();
