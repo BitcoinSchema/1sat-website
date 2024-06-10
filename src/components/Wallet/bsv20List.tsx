@@ -109,6 +109,7 @@ const Bsv20List = ({
   }, [bsv20s.value, tickerDetails.value]);
 
   const [fetched, setFetched] = useState(false);
+
   useEffect(() => {
     const fire = async () => {
       // fetch token history
@@ -197,9 +198,13 @@ const Bsv20List = ({
     }, {} as { [key: string]: number }) || {}
   }, [bsv20s.value]);
 
+  const loadingNextPage = useSignal<FetchStatus>(FetchStatus.Idle);
+
   useEffect(() => {
     const address = addressProp || ordAddress.value;
     const fire = async () => {
+      loadingNextPage.value = FetchStatus.Loading;
+      console.log("Fire", isInView)
       if (type === WalletTab.BSV20) {
         const urlTokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v1`;
         console.log("Fetching", urlTokens);
@@ -208,9 +213,11 @@ const Bsv20List = ({
         const newResults = await promiseBsv20;
         if (newResults.length > 0) {
           holdings.value = (holdings.value || []).concat(newResults);
+          loadingNextPage.value = FetchStatus.Idle;
           console.log("newLength", holdings.value.length);
         } else {
           reachedEndOfListings.value = true;
+          loadingNextPage.value = FetchStatus.Success;
         }
       } else {
         const urlV2Tokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v2`;
@@ -220,21 +227,24 @@ const Bsv20List = ({
         if (newResults.length > 0) {
           holdings.value = (holdings.value || []).concat(newResults);
           console.log("newLength", holdings.value.length);
+          loadingNextPage.value = FetchStatus.Idle;
         } else {
           reachedEndOfListings.value = true;
+          loadingNextPage.value = FetchStatus.Success;
         }
       }
       newOffset.value += resultsPerPage;
     };
-    if (address && isInView && !reachedEndOfListings.value) {
+    if (address && isInView && !reachedEndOfListings.value && loadingNextPage.value === FetchStatus.Idle) {
       fire();
     }
   }, [
     addressProp,
     holdings,
     isInView,
-    newOffset,
-    reachedEndOfListings,
+    newOffset.value,
+    reachedEndOfListings.value,
+    loadingNextPage.value,
     type,
   ]);
 
@@ -725,7 +735,7 @@ const Bsv20List = ({
               </div>
               <div className="" />
               {activity}
-              <div ref={ref} />
+              <div ref={ref}>.</div>
             </div>
           </div>
         </div>
