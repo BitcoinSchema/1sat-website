@@ -46,9 +46,11 @@ export default async function Image({
 			).then((res) => res.arrayBuffer());
 			break;
 		case "generation_2_cards.png":
+			// TODO: Fixme: This edge function is too large to deploy on vercel
+			// so I switched gen 2 to use the gen1 image for now
 			imageData = await fetch(
 				new URL(
-					"/src/assets/images/coom/generation_2_cards.png",
+					"/src/assets/images/coom/generation_1_cards.png",
 					import.meta.url
 				)
 			).then((res) => res.arrayBuffer());
