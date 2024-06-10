@@ -108,21 +108,28 @@ const Bsv20List = ({
     }
   }, [bsv20s.value, tickerDetails.value]);
 
-  useEffect(async () => {
-    // fetch token history
-    // TODO: Use type
-    const address = addressProp || ordAddress.value;
-    if (fetchHistoryStatus.value === FetchStatus.Idle && address) {
-      try {
-        fetchHistoryStatus.value = FetchStatus.Loading;
-        const historyUrl = `${API_HOST}/api/bsv20/${address}/history?limit=100&offset=0&type=${type === WalletTab.BSV20 ? "v1" : "v2"}`;
-        const { promise } = http.customFetch<BSV20TXO[]>(historyUrl);
-        history.value = await promise;
-        fetchHistoryStatus.value = FetchStatus.Success;
-      } catch (error) {
-        fetchHistoryStatus.value = FetchStatus.Error;
-        console.error("Error fetching token history", error);
+  const [fetched, setFetched] = useState(false);
+  useEffect(() => {
+    const fire = async () => {
+      // fetch token history
+      // TODO: Use type
+      const address = addressProp || ordAddress.value;
+      if (fetchHistoryStatus.value === FetchStatus.Idle && address) {
+        try {
+          fetchHistoryStatus.value = FetchStatus.Loading;
+          const historyUrl = `${API_HOST}/api/bsv20/${address}/history?limit=100&offset=0&type=${type === WalletTab.BSV20 ? "v1" : "v2"}`;
+          const { promise } = http.customFetch<BSV20TXO[]>(historyUrl);
+          history.value = await promise;
+          fetchHistoryStatus.value = FetchStatus.Success;
+        } catch (error) {
+          fetchHistoryStatus.value = FetchStatus.Error;
+          console.error("Error fetching token history", error);
+        }
       }
+    }
+    if (!fetched) {
+      setFetched(true);
+      fire();
     }
   }, [fetchHistoryStatus.value, addressProp, type]);
 
