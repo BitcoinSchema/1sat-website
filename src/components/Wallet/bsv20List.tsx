@@ -13,7 +13,7 @@ import { useInView } from "framer-motion";
 import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 
 import { useLocalStorage } from "@/utils/storage";
@@ -180,23 +180,22 @@ const Bsv20List = ({
     }
   }, [bsv20s.value, addressProp, unspentStatus.value]);
 
-  const unindexBalances = computed(
-    () =>
-      bsv20s.value?.reduce((acc, utxo) => {
-        if (utxo.tick) {
-          if (acc[utxo.tick]) {
-            acc[utxo.tick] += Number.parseInt(
-              utxo.amt
-            );
-          } else {
-            acc[utxo.tick] = Number.parseInt(
-              utxo.amt
-            );
-          }
+  const unindexBalances = useMemo(() => {
+    return bsv20s.value?.reduce((acc, utxo) => {
+      if (utxo.tick) {
+        if (acc[utxo.tick]) {
+          acc[utxo.tick] += Number.parseInt(
+            utxo.amt
+          );
+        } else {
+          acc[utxo.tick] = Number.parseInt(
+            utxo.amt
+          );
         }
-        return acc;
-      }, {} as { [key: string]: number }) || {}
-  );
+      }
+      return acc;
+    }, {} as { [key: string]: number }) || {}
+  }, [bsv20s.value]);
 
   useEffect(() => {
     const address = addressProp || ordAddress.value;
@@ -274,7 +273,7 @@ const Bsv20List = ({
     return "Recieved";
   }, [ordAddress.value, balances.value]);
 
-  const activity = computed(() => {
+  const activity = useMemo(() => {
     return (history.value || []).concat(bsv20s.value || [])
       .filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick))
       ?.map((bsv20, index) => {
@@ -318,7 +317,7 @@ const Bsv20List = ({
           </React.Fragment>
         )
       });
-  });
+  }, [bsv20s.value, tickerDetails.value]);
 
   const listingBalances = computed(() => {
     return balances.value?.filter((b) => {
@@ -338,7 +337,7 @@ const Bsv20List = ({
     });
   });
 
-  const confirmedContent = computed(() => {
+  const confirmedContent = useMemo(() => {
     return (
       <div className="bg-[#101010] rounded-lg w-full mb-4 px-2">
         {confirmedBalances?.value?.map(
@@ -514,9 +513,9 @@ const Bsv20List = ({
         )}
       </div>
     );
-  });
+  }, [confirmedBalances.value, balances.value, tickerDetails.value]);
 
-  const pendingContent = computed(() => {
+  const pendingContent = useMemo(() => {
     return (
       <div className="grid grid-cols-2 gap-3 bg-[#222] p-4 rounded mb-4">
         <div className="text-[#777] font-semibold">Ticker</div>
@@ -543,7 +542,7 @@ const Bsv20List = ({
         )}
       </div>
     );
-  });
+  }, [pendingBalances.value, balances.value, tickerDetails.value]);
 
   const listedContent = computed(() => {
     return (
@@ -626,7 +625,7 @@ const Bsv20List = ({
             role="tabpanel"
             className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
           >
-            {confirmedContent.value}
+            {confirmedContent}
           </div>
 
           <input
@@ -642,7 +641,7 @@ const Bsv20List = ({
             role="tabpanel"
             className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
           >
-            {pendingContent.value}
+            {pendingContent}
           </div>
 
           <input
@@ -680,7 +679,7 @@ const Bsv20List = ({
                 role="tabpanel"
                 className="tab-content bg-base-100 border-base-200 rounded-box border-0 mt-4"
               >
-                {unindexedContent.value}
+                {unindexedContent}
               </div>
             </>
           )}
