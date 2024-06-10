@@ -13,7 +13,7 @@ import { useInView } from "framer-motion";
 import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 
 import { useLocalStorage } from "@/utils/storage";
