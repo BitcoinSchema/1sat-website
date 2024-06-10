@@ -581,7 +581,7 @@ const Bsv20List = ({
             No unindexed tokens
           </div>
         )}
-        {Object.entries(unindexBalances.value)
+        {Object.entries(unindexBalances)
           .filter((t) => {
             // return type === AssetType.BSV20 ? tick : id;
             return true;
