@@ -19,7 +19,7 @@ const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: s
   </div> */}
         <div className='columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 md:gap-8 gap-y-8'>
             {artifacts.map(artifact => (
-                <Link href={`/outpoint/${artifact?.outpoint}/listing`}>
+                <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.txid}>
                     <div
                         key={artifact.txid}
                         className='relative mb-4 break-inside-avoid'
