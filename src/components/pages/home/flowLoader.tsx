@@ -9,7 +9,7 @@ const FlowLoader = async ({ artifact }: { artifact?: OrdUtxo }) => {
   const offset = getRandomInt(0, 1000);
 
   const { promise } = http.customFetch<OrdUtxo[]>(
-    `${API_HOST}/api/market?limit=32&offset=${offset}&type=image/png`
+    `${API_HOST}/api/market?limit=100&offset=${offset}&type=image/png`
   );
 
   // shuffle
@@ -25,7 +25,7 @@ const FlowLoader = async ({ artifact }: { artifact?: OrdUtxo }) => {
   return (
     <FlowGrid
       artifacts={artifacts}
-      className="rounded-lg shadow-2xl min-h-96 mx-auto px-4 max-w-[100rem]"
+      className="rounded-lg shadow-2xl min-h-96 mx-auto px-4 max-w-[100rem] h-full"
     />
   );
 };

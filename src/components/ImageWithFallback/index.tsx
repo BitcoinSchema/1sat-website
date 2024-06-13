@@ -1,3 +1,5 @@
+"use client"
+
 import fallbackImage from "@/assets/images/oneSatLogoDark.svg";
 import Image, { type ImageProps } from "next/image";
 
