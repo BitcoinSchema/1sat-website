@@ -6,18 +6,8 @@ import Link from "next/link";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 
 const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: string }) => {
-    const [loaded, setLoaded] = useState<Map<string, boolean>>(new Map());
     const observers = useRef<Map<string, IntersectionObserver>>(new Map());
     const [visible, setVisible] = useState<Map<string, boolean>>(new Map());
-
-
-    const handleImageLoad = useCallback((txid: string) => {
-        setLoaded(prev => new Map(prev).set(txid, true));
-    }, []);
-
-    const handleImageError = useCallback((txid: string) => {
-        setLoaded(prev => new Map(prev).set(txid, true)); // Mark as loaded to avoid infinite loading state
-    }, []);
 
     const observeImage = useCallback((element: HTMLImageElement, artifact: OrdUtxo) => {
         if (!element) return;
@@ -35,28 +25,19 @@ const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: s
 
     useEffect(() => {
         artifacts.forEach((artifact) => {
-            const img = new Image();
-            const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
-            img.src = `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`;
-            if (img.complete) {
-                handleImageLoad(artifact.txid);
-            } else {
-                img.onload = () => handleImageLoad(artifact.txid);
-                img.onerror = () => handleImageError(artifact.txid);
-            }
+            setVisible(prev => new Map(prev).set(artifact.txid, false));
         });
 
         return () => {
             observers.current.forEach(observer => observer.disconnect());
         };
-    }, [artifacts, handleImageLoad, handleImageError]);
+    }, [artifacts]);
 
     return (
         <div className={`relative text-center ${className}`}>
             <div className='columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4'>
                 {artifacts.map((artifact) => {
                     const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
-                    const isLoaded = loaded.get(artifact.txid) || false;
 
                     return (
                         <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.txid}>
