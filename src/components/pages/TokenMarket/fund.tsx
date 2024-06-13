@@ -20,7 +20,7 @@ const Fund = ({ ticker }: { ticker: any }) => {
   const bsvNeeded = computed(() => {
     const satoshis = Math.max(
       minFee - Number(ticker.fundTotal),
-      parseInt(ticker.pendingOps) * 1000
+      parseInt(ticker.pendingOps || "0") * 1000
     );
     return toBitcoin(satoshis);
   });
@@ -44,7 +44,7 @@ const Fund = ({ ticker }: { ticker: any }) => {
               </div>
             </div>
             <div className="text-right">
-              {ticker.pendingOps.toLocaleString()}
+              {(ticker.pendingOps || "0").toLocaleString()}
             </div>
             <div>Fee Rate <div className="tooltip" data-tip="Payment required per action">
               <FaQuestionCircle className="inline" />

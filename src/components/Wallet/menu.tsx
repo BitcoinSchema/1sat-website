@@ -345,9 +345,9 @@ const WalletMenu: React.FC = () => {
                     {ordAddressHover.value
                       ? `${ordAddress.value?.slice(
                         0,
-                        10
+                        8
                       )}...${ordAddress.value?.slice(
-                        -10
+                        -8
                       )}`
                       : "Ordinals Address"}{" "}
                     <FaCopy className="text-[#333]" />
