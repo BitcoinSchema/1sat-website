@@ -72,7 +72,7 @@ const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: s
                                             observeImage(el, artifact)
                                         }}
                                     />
-                                    <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent transition-opacity duration-300 ease-in-out hover:opacity-100'>
+                                    <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100'>
                                         <p className='text-base font-bold'>{toBitcoin(artifact.data?.list?.price || 0)} BSV</p>
                                         <p className='text-sm'>{artifact.data?.map?.name}</p>
                                     </div>
