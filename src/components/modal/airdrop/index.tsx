@@ -30,7 +30,7 @@ import {
   TxOut,
 } from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FaQuestion } from "react-icons/fa";
 
@@ -501,16 +501,28 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
     return dec > 0 ? `0.${"0".repeat(dec)}` : "0";
   }, [dec]);
 
+  const [clickedInside, setClickedInside] = useState(false);
+
+  const handleModalClick = () => {
+    if (!clickedInside) {
+      onClose();
+    }
+    setClickedInside(false);
+  };
+
+  const handleModalContentMouseDown = () => {
+    setClickedInside(true);
+  };
+  
   return (
     <dialog
       id="airdrop_modal"
       className={`modal backdrop-blur overflow-y-auto ${open ? "modal-open" : ""}`}
-      onClick={() => onClose()}
+      onClick={handleModalClick}
     >
-      {/* <div className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden" */}
       <div
         className="modal-box max-h-[90vh] m-auto w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={handleModalContentMouseDown}
       >
         <div className="relative w-full min-h-64 md:h-full mb-4">
           <div className="flex justify-between">

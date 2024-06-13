@@ -163,6 +163,7 @@ const ListingForm = ({
       }
       // make sure we have enough to cover the send amount
       if (amounts < sendAmount) {
+        console.log({amounts, sendAmount})
         toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
         throw new Error("insufficient funds");
       }
