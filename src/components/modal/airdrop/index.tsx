@@ -299,6 +299,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         );
         const changeInscOut = new TxOut(BigInt(1), changeInsc);
         tx.add_output(changeInscOut);
+
+        // indexing fee for the change inscription
+        indexingFees.value += 1000;
       }
 
       let totalSatsIn = 0;
@@ -347,21 +350,24 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
         let satOut = new TxOut(BigInt(1), insc);
         tx.add_output(satOut);
-
-        const indexerAddress = ticker.fundAddress;
-        // output 4 indexer fee
-        if (indexerAddress) {
-          const indexerFeeOutput = new TxOut(
-            BigInt(2000), // 1000 * 2 inscriptions
-            P2PKHAddress.from_string(
-              indexerAddress
-            ).get_locking_script()
-          );
-          tx.add_output(indexerFeeOutput);
-          // update the review variable
-          indexingFees.value += 2000;
-        }
       }
+
+      const indexerAddress = ticker.fundAddress;
+      // output 4 indexer fee
+      if (indexerAddress) {
+        const nOutputs = tx.get_noutputs();
+        const indexerFeeOutput = new TxOut(
+          BigInt(1000 * (nOutputs + 1)), // 1000 * number of transfer inscriptions
+          P2PKHAddress.from_string(
+            indexerAddress
+          ).get_locking_script()
+        );
+        tx.add_output(indexerFeeOutput);
+        // update the review variable
+        indexingFees.value = 1000 * (nOutputs);
+    
+      }
+
       const changeOut = createChangeOutput(
         tx,
         changeAddress,
