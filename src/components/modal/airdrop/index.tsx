@@ -436,7 +436,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         const transferTx = await airdropBsv20(
           amt,
           utxos.value!,
-          tokenUtxos,,
+          tokenUtxos,
           PrivateKey.from_wif(payPk.value!),
           fundingAddress.value!,
           PrivateKey.from_wif(ordPk.value!),
