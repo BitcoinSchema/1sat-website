@@ -18,7 +18,7 @@ import { IoSend } from "react-icons/io5";
 
 import { useLocalStorage } from "@/utils/storage";
 import { Noto_Serif } from "next/font/google";
-import { FaChevronRight, FaHashtag, FaParachuteBox } from "react-icons/fa6";
+import { FaChevronRight, FaFireFlameCurved, FaHashtag, FaParachuteBox } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
@@ -65,6 +65,7 @@ const Bsv20List = ({
   const showAirdrop = useSignal<string | undefined>(undefined);
 
   const showSendModal = useSignal<string | undefined>(undefined);
+  const showBurnModal = useSignal<string | undefined>(undefined);
 
   // get unspent ordAddress
   const bsv20s = useSignal<BSV20TXO[] | null>(null);
@@ -432,8 +433,7 @@ const Bsv20List = ({
                           <button
                             type="button"
                             className="btn btn-xs w-fit hover:border hover:border-yellow-200/25 tooltip tooltip-bottom"
-                            data-tip={`Airdrop ${sym || tick
-                              }`}
+                            data-tip={`Airdrop ${sym || tick}`}
                             onClick={() => {
                               showAirdrop.value =
                                 tick || id;
@@ -469,6 +469,17 @@ const Bsv20List = ({
                             />)}
                         </div>
                       )}
+                      <div className="text-right mr-2">
+                        <button
+                          type="button"
+                          className="btn btn-xs w-fit hover:border hover:border-yellow-200/25 tooltip tooltip-bottom"
+                          data-tip={`Burn ${sym || tick}`}
+                          onClick={() => {
+                            showBurnModal.value = tick || id;
+                          }}>
+                          <FaFireFlameCurved className="w-3" />
+                        </button>
+                      </div>
                       <div className={"text-right"}>
                         {(!addressProp ||
                           addressProp ===
@@ -482,31 +493,25 @@ const Bsv20List = ({
                               data-tip={`Send ${sym || tick
                                 }`}
                               onClick={() => {
-                                showSendModal.value =
-                                  tick || id;
+                                showSendModal.value = tick || id;
                               }}
                             >
                               <IoSend className="w-3" />
                             </button>
-                            {showSendModal.value ===
-                              (tick || id) && (
-                                <TransferBsv20Modal
-                                  onClose={() => {
-                                    showSendModal.value = undefined
-                                  }
-                                  }
-                                  type={type}
-                                  id={
-                                    (tick ||
-                                      id)!
-                                  }
-                                  dec={dec}
-                                  balance={
-                                    balance
-                                  }
-                                  sym={sym}
-                                />
-                              )}
+                            {(showSendModal.value === (tick || id) || showBurnModal.value === (tick || id)) && (
+                              <TransferBsv20Modal
+                                onClose={() => {
+                                  showBurnModal.value = undefined
+                                  showSendModal.value = undefined
+                                }}
+                                type={type}
+                                id={(tick || id)!}
+                                dec={dec}
+                                balance={balance}
+                                burn={showBurnModal.value === (tick || id)}
+                                sym={sym}
+                              />
+                            )}
                           </>
                         ) : (
                           <></>
@@ -709,14 +714,14 @@ const Bsv20List = ({
         <WalletTabs type={type} address={addressProp} />
         <div className="tab-content bg-base-100 border-base-200 rounded-box md:p-6 flex flex-col md:flex-row">
           <div className="mb-4">{contentTabs.value}</div>
-          <div className="md:mx-6">
+          <div className="md:ml-6">
             <h1 className="mb-4 flex items-center justify-between">
               <div className={`text-2xl ${notoSerif.className}`}>
                 {type.toUpperCase()} History
               </div>
               <div className="text-sm text-[#555]" />
             </h1>
-            <div className="my-2 w-full text-sm grid grid-cols-6 p-4 gap-x-4 gap-y-2 min-w-md bg-[#111]">
+            <div className="my-2 w-full text-sm grid grid-cols-[auto_1fr_auto_auto_auto_auto] p-4 gap-x-4 gap-y-2 min-w-md bg-[#111]">
               <div className="font-semibold text-accent text-base">
                 Height
               </div>

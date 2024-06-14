@@ -41,6 +41,7 @@ interface TransferModalProps {
 	id: string;
 	balance: number;
 	sym?: string;
+	burn?: boolean;
 }
 
 const TransferBsv20Modal: React.FC<TransferModalProps> = ({
@@ -52,6 +53,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 	dec,
 	address: addr,
 	onClose,
+	burn
 }) => {
 	useSignals();
 	const router = useRouter();
@@ -68,7 +70,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 		async (
 			sendAmount: number,
 			paymentUtxos: Utxo[],
-			inputTokens: BSV20TXO[], //
+			inputTokens: BSV20TXO[],
 			paymentPk: PrivateKey,
 			changeAddress: string,
 			ordPk: PrivateKey,
@@ -142,6 +144,8 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				const changeFileB64 = Buffer.from(
 					JSON.stringify(changeInscription)
 				).toString("base64");
+		
+				// Send burned tokens to the BSV funding address
 				const changeInsc = buildInscriptionSafe(
 					P2PKHAddress.from_string(ordAddress),
 					changeFileB64,
@@ -173,7 +177,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 
 			const inscription = {
 				p: "bsv-20",
-				op: "transfer",
+				op: burn ? "burn" : "transfer",
 				amt: sendAmount.toString(),
 			} as any;
 			if (ticker.tick) {
@@ -186,7 +190,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				"base64"
 			);
 			const insc = buildInscriptionSafe(
-				P2PKHAddress.from_string(payoutAddress),
+				P2PKHAddress.from_string(burn ? changeAddress : payoutAddress),
 				fileB64,
 				"application/bsv-20"
 			);
@@ -230,7 +234,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 	const submit = useCallback(
 		async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			if (!amount.value || !address.value) {
+			if (!amount.value || (!address.value && !burn)) {
 				return;
 			}
 			if (Number.parseFloat(amount.value) > balance) {
@@ -294,7 +298,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
 							<div className="text-lg font-semibold">
-								Transfer {type === WalletTab.BSV20 ? id : sym}{" "}
+								{burn ? "Burn" : "Transfer"} {type === WalletTab.BSV20 ? id : sym}{" "}
 								{type}
 							</div>
 							<div
@@ -327,7 +331,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 								}}
 							/>
 						</div>
-						<div className="flex flex-col mt-4">
+						{!burn && <div className="flex flex-col mt-4">
 							<label className="text-sm font-semibold text-[#aaa] mb-2">
 								Address
 							</label>
@@ -335,18 +339,18 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 								type="text"
 								placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
 								className="input input-bordered w-full"
-								value={address.value}
+								value={burn ? fundingAddress.value! : address.value}
 								onChange={(e) => {
 									address.value = e.target.value;
 								}}
 							/>
-						</div>
+						</div>}
 						<div className="modal-action">
 							<button
 								type="submit"
 								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
 							>
-								Send
+								{burn ? "Burn" : "Send"}
 							</button>
 						</div>
 					</form>
