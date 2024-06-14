@@ -268,6 +268,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
           `Not enough ${ticker.tick || ticker.sym}`,
           toastErrorProps
         );
+        debugger
         throw new Error("insufficient funds");
       }
 
@@ -426,26 +427,16 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
           `${API_HOST}/api/bsv20/${type === AssetType.BSV20 ? "tick" : "id"}/${id}`
         );
         const ticker = await promiseTickerDetails;
+      
+        const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${type === AssetType.BSV20 ? "tick" : "id"}/${id}`;
+        const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
 
-        const bsv20Utxos: BSV20TXO[] = [];
-        const bsv21Utxos: BSV20TXO[] = [];
-
-        if (destinationTickers.value) {
-          const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${destinationTickers.value}`;
-          const { promise: bsv20Promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
-          bsv20Utxos.push(...(await bsv20Promise));
-        }
-
-        if (destinationBsv21Ids.value) {
-          const bsv21TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${destinationBsv21Ids.value}`;
-          const { promise: bsv21Promise } = http.customFetch<BSV20TXO[]>(bsv21TxoUrl);
-          bsv21Utxos.push(...(await bsv21Promise));
-        }
+        const tokenUtxos = await promise;
 
         const transferTx = await airdropBsv20(
           amt,
           utxos.value!,
-          [...bsv20Utxos, ...bsv21Utxos],
+          tokenUtxos,,
           PrivateKey.from_wif(payPk.value!),
           fundingAddress.value!,
           PrivateKey.from_wif(ordPk.value!),
@@ -455,7 +446,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         airdroppingStatus.value = FetchStatus.Success;
 
         // Get only the PendingTransaction fields from the ReviewPendingTransaction which extends it with extra stuff we dont need right now
-
         pendingTxs.value = [transferTx];
 
         if (!reviewMode.value) {
