@@ -132,7 +132,7 @@ const Bsv20List = ({
       setFetched(true);
       fire();
     }
-  }, [fetchHistoryStatus.value, addressProp, type]);
+  }, [fetchHistoryStatus, addressProp, type]);
 
   useEffect(() => {
     const address = addressProp || ordAddress.value;
@@ -179,7 +179,7 @@ const Bsv20List = ({
     if (!bsv20s.value && address && unspentStatus.value === FetchStatus.Idle) {
       fire();
     }
-  }, [bsv20s.value, addressProp, unspentStatus.value]);
+  }, [bsv20s, addressProp, unspentStatus.value]);
 
   const unindexBalances = useMemo(() => {
     return bsv20s.value?.reduce((acc, utxo) => {
@@ -441,7 +441,7 @@ const Bsv20List = ({
                           >
                             <FaParachuteBox className="w-3" />
                           </button>
-                          {
+                          {showAirdrop.value === (tick || id) && (
                             <AirdropTokensModal
                               onClose={() => {
                                 showAirdrop.value =
@@ -466,8 +466,7 @@ const Bsv20List = ({
                               balance={
                                 (all.confirmed - listed.confirmed) / 10 ** dec
                               }
-                            />
-                          }
+                            />)}
                         </div>
                       )}
                       <div className={"text-right"}>
@@ -523,7 +522,7 @@ const Bsv20List = ({
         )}
       </div>
     );
-  }, [confirmedBalances.value, balances.value, tickerDetails.value]);
+  }, [confirmedBalances.value, tickerDetails.value]);
 
   const pendingContent = useMemo(() => {
     return (
