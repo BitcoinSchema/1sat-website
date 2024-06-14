@@ -39,14 +39,14 @@ export const getOrdUtxos = async (address: string, nextOffset: number) => {
 }
 
 export const getUtxos = async (address: string) => {
-  const { promise } = http.customFetch<OrdUtxo[]>(
+  const { promise } = http.customFetch<WocUtxo[]>(
     `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
     // `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
   );
   const u = await promise;
 
   debugger
-  return u.map((u: WocUtxo) => {
+  return u.map((u) => {
     return {
       satoshis: u.value,
       txid: u.tx_hash,
