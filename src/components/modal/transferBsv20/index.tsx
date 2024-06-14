@@ -241,7 +241,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			const amt = Math.floor(Number.parseFloat(amount.value) * 10 ** dec);
 			const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${
 				type === WalletTab.BSV20 ? "tick" : "id"
-			}/${id}`;
+			}/${id}?listing=false`;
 			const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
 			const tokenUtxos = await promise;
 			const { promise: promiseTickerDetails } = http.customFetch<Ticker>(

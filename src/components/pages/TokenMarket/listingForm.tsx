@@ -327,14 +327,14 @@ const ListingForm = ({
       // setPendingTransaction(pendingTx);
 
       try {
-        let url = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${ticker.tick}`;
+        let url = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${ticker.tick}?listing=false`;
         if (ticker.id) {
-          url = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${ticker.id}`;
+          url = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${ticker.id}?listing=false`;
         }
         console.log({ url });
         const { promise } = http.customFetch<BSV20TXO[]>(url);
 
-        const u = (await promise).filter((u) => u.listing === false);
+        const u = (await promise)
         const satoshisPayout = Math.ceil(
           Number.parseFloat(listingPrice.value) * Number.parseFloat(listingAmount.value),
         );
