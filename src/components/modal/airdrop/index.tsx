@@ -428,10 +428,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         );
         const ticker = await promiseTickerDetails;
       
-        const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${type === AssetType.BSV20 ? "tick" : "id"}/${id}`;
+        const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${type === AssetType.BSV20 ? "tick" : "id"}/${id}?listing=false`;
         const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
 
-        const tokenUtxos = await promise;
+        const tokenUtxos = ((await promise) || []);
 
         const transferTx = await airdropBsv20(
           amt,
