@@ -268,7 +268,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
           `Not enough ${ticker.tick || ticker.sym}`,
           toastErrorProps
         );
-        debugger
         throw new Error("insufficient funds");
       }
 

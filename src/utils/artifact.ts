@@ -40,7 +40,7 @@ export const getArtifactType = (
 	let artifactType: ArtifactType = ArtifactType.Unknown;
 	const t = latest
 		? txo?.data?.insc?.file.type
-		: txo?.origin?.data?.insc?.file.type || "image/png";
+		: txo?.origin?.data?.insc?.file.type || undefined;
 	// console.log("TYPE", t);
 	const protocol = txo.origin?.data?.insc?.json?.p;
 	if (!t) {

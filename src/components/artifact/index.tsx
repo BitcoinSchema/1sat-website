@@ -23,6 +23,7 @@ import MarkdownArtifact from "./markdown";
 import SVGArtifact from "./svg";
 import TextArtifact from "./text";
 import VideoArtifact from "./video";
+import { FaQuestion } from "react-icons/fa6";
 
 const Model = dynamic(() => import("../model"), {
   ssr: false,
@@ -335,7 +336,9 @@ const Artifact: React.FC<ArtifactProps> = ({
       >
         PDF Inscriptions not yet supported.
       </div>
-    ) : (
+    ) : type === ArtifactType.Unknown ? (<div>
+      <FaQuestion className="w-24 text-slate-800" />
+    </div>) : (
       <div
         className={`relative ${ItemContainerStyle} ${showZoom ? "h-auto" : "h-full"
           }`}

@@ -45,7 +45,6 @@ export const getUtxos = async (address: string) => {
   );
   const u = await promise;
 
-  debugger
   return u.map((u) => {
     return {
       satoshis: u.value,
