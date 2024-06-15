@@ -74,7 +74,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
           const parts = outScript.slice(0, 25).split(" ");
           const isRun = parts[2] === Buffer.from("run").toString("hex");
           ioOuts.value.push({
-            script: isRun ? "Run Output (OP_RETURN)" : "OP_RETURN",
+            script: isRun ? "Run (OP_RETURN)" : "OP_RETURN",
             index: i,
             txid: tx.get_id_hex(),
             amount: BigInt(0),
