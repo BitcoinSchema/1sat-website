@@ -68,10 +68,13 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 
         if (
           outScript.startsWith("OP_RETURN") ||
-          outScript.startsWith("OP_FALSE OP_RETURN")
+          outScript.startsWith("OP_FALSE OP_RETURN") ||
+          outScript.startsWith("0 OP_RETURN")
         ) {
+          const parts = outScript.slice(0, 25).split(" ");
+          const isRun = parts[2] === Buffer.from("run").toString("hex");
           ioOuts.value.push({
-            script: "OP_RETURN",
+            script: isRun ? "Run Output (OP_RETURN)" : "OP_RETURN",
             index: i,
             txid: tx.get_id_hex(),
             amount: BigInt(0),

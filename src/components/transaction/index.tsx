@@ -31,9 +31,7 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
           `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
         );
         const rawTx = await response.text();
-        console.log("Setting rawtx");
         setRawtx(rawTx);
-
       } catch (e) {
         console.error(e);
       }
