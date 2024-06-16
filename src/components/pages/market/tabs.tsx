@@ -60,7 +60,7 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
         </Link>
       </div>
       <div className="flex-none flex items-center">
-        {selectedTab === AssetType.BSV21 && <CurrencySwitch />}
+        {selectedTab === AssetType.BSV21 || selectedTab === AssetType.BSV20 && <CurrencySwitch />}
         {selectedTab === AssetType.Ordinals && <Filter />}
         {selectedTab === AssetType.Ordinals && (
           <Link
