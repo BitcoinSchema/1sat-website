@@ -3,7 +3,7 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
 import { AssetType } from "@/constants";
-import { ordUtxos, utxos } from "@/signals/wallet";
+import { CurrencyDisplay, currencyDisplay, ordUtxos, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { minFee } from "@/utils/bsv20";
@@ -12,7 +12,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { GiPlainCircle } from "react-icons/gi";
@@ -159,6 +159,15 @@ const TickerHeading = ({
       </>
     );
   });
+
+  const usdPrice = computed(() => {
+    if (!ticker.price || !usdRate.value) {
+      return 0;
+    }
+    console.log({ price: ticker.price, usdRate: usdRate.value });
+    return ticker.price / usdRate.value;
+  });
+
   return (
     <>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
@@ -196,10 +205,19 @@ const TickerHeading = ({
             </span>
           </div>
         </th>
-        <td>
+        {currencyDisplay.value === CurrencyDisplay.BSV && <td>
           {ticker.price?.toLocaleString() || ""}{" "}
           <span className="text-accent">sat/token</span>
-        </td>
+        </td>}
+        {currencyDisplay.value === CurrencyDisplay.USD && <td>
+          {(usdPrice.value).toLocaleString("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 6,
+            maximumFractionDigits: 6
+          })}
+          <span className="text-accent">/token</span>
+        </td>}
         <td>
           <span
             className={`ml-2 text-xl ${ticker.pctChange > 0

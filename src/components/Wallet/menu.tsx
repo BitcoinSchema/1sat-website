@@ -1,6 +1,6 @@
 "use client";
 
-import { MARKET_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
+import { FetchStatus, MARKET_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
   bsv20Balances,
   bsvWasmReady,
@@ -58,6 +58,7 @@ const WalletMenu: React.FC = () => {
   useSignals();
   const router = useRouter();
 
+  const fetchRateStatus = useSignal(FetchStatus.Idle);
   const showWithdrawalModal = useSignal(false);
   const showImportWalletModal = useSignal(false);
   const showProtectKeysModal = useSignal(false);
@@ -128,24 +129,6 @@ const WalletMenu: React.FC = () => {
             ? 1
             : -1;
         });
-
-        const statusUrl =
-          `${MARKET_API_HOST}/status`;
-        const { promise: promiseStatus } = http.customFetch<{
-          exchangeRate: number;
-          chainInfo: ChainInfo;
-          indexers: IndexerStats;
-        }>(statusUrl);
-        const {
-          chainInfo: info,
-          exchangeRate: er,
-          indexers: indx,
-        } = await promiseStatus;
-        console.log({ info, exchangeRate, indexers });
-        chainInfo.value = info;
-        usdRate.value = toSatoshi(1) / er;
-        exchangeRate.value = er;
-        indexers.value = indx;
       } catch (e) {
         console.log(e);
       }
@@ -156,6 +139,33 @@ const WalletMenu: React.FC = () => {
       fire();
     }
   }, [bsvWasmReady.value, ordAddress.value, bsv20Balances.value]);
+
+  useEffect(() => {
+    const fire = async () => {
+      fetchRateStatus.value = FetchStatus.Loading;
+      const statusUrl =
+        `${MARKET_API_HOST}/status`;
+      const { promise: promiseStatus } = http.customFetch<{
+        exchangeRate: number;
+        chainInfo: ChainInfo;
+        indexers: IndexerStats;
+      }>(statusUrl);
+      const {
+        chainInfo: info,
+        exchangeRate: er,
+        indexers: indx,
+      } = await promiseStatus;
+      fetchRateStatus.value = FetchStatus.Success;
+      console.log({ info, exchangeRate, indexers });
+      chainInfo.value = info;
+      usdRate.value = toSatoshi(1) / er;
+      exchangeRate.value = er;
+      indexers.value = indx;
+    }
+    if (fetchRateStatus.value === FetchStatus.Idle) {
+      fire();
+    }
+  }, [fetchRateStatus])
 
   useEffect(() => {
     const fire = async (a: string) => {

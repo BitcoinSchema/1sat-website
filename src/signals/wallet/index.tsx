@@ -13,6 +13,11 @@ export type InscribeOptions = {
   op: string;
 };
 
+export enum CurrencyDisplay {
+  BSV = "BSV",
+  USD = "USD",
+};
+
 /**
  * Create wallet
  */
@@ -57,6 +62,7 @@ export const bsv20Utxos = signal<OrdUtxo[] | null>(null);
 export const bsv20Balances = signal<BSV20Balance[] | null>(null);
 export const walletTab = signal<AssetType>(AssetType.Ordinals);
 export const usdRate = signal<number>(0);
+export const currencyDisplay = signal<string>(CurrencyDisplay.BSV);
 export const exchangeRate = signal<number>(0);
 export const indexers = signal<IndexerStats | null>(null);
 export const chainInfo = signal<ChainInfo | null>(null);
