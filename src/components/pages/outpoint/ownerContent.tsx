@@ -175,7 +175,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         u.vout,
         Script.from_asm_string("")
       );
-      console.log({ inx });
+      // console.log({ inx });
       inx.set_satoshis(BigInt(u.satoshis));
       tx.add_input(inx);
 
@@ -187,7 +187,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         BigInt(u.satoshis)
       );
 
-      console.log({ sig: sig.to_hex() });
+      // console.log({ sig: sig.to_hex() });
 
       inx.set_unlocking_script(
         Script.from_asm_string(

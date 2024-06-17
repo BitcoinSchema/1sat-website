@@ -134,7 +134,7 @@ const WalletMenu: React.FC = () => {
       }
     };
 
-    console.log({ bsvWasmReady, address, bsv20Balances })
+    // console.log({ bsvWasmReady, address, bsv20Balances })
     if (bsvWasmReady.value && address && !bsv20Balances.value) {
       fire();
     }
@@ -156,7 +156,7 @@ const WalletMenu: React.FC = () => {
         indexers: indx,
       } = await promiseStatus;
       fetchRateStatus.value = FetchStatus.Success;
-      console.log({ info, exchangeRate, indexers });
+      // console.log({ info, exchangeRate, indexers });
       chainInfo.value = info;
       usdRate.value = toSatoshi(1) / er;
       exchangeRate.value = er;

@@ -1,7 +1,7 @@
 import FeaturedCollections from "@/components/Collections/featured";
 import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
-import { AssetType } from "@/constants";
+import { AssetType, SortBy } from "@/constants";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import { Noto_Serif } from "next/font/google";
 import "slick-carousel/slick/slick-theme.css";
@@ -21,6 +21,8 @@ export interface MarketPageProps {
   showTabs?: boolean;
   id?: string;
   term?: string;
+  sort?: SortBy;
+  dir?: "asc" | "desc";
 }
 
 const notoSerif = Noto_Serif({
@@ -37,9 +39,8 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
     showTabs = true;
   }
 
-
-
-  const Listings = ({ id, term }: { id?: string, term?: string }) => {
+  console.log("MarketPage", { props });
+  const Listings = ({ id, term, sort, dir }: { id?: string, term?: string, sort: SortBy, dir: "asc" | "desc" }) => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:
         return (
@@ -52,9 +53,10 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
           </>
         );
       case AssetType.BSV20:
-        return <TokenMarket type={AssetType.BSV20} id={props.id} term={props.term} />;
+        console.log("Passing props to TokenMarket", { id, term, sort, dir })
+        return <TokenMarket type={AssetType.BSV20} id={id} term={term} sort={sort} dir={dir} />;
       case AssetType.BSV21:
-        return <TokenMarket type={AssetType.BSV21} id={props.id} term={props.term} />;
+        return <TokenMarket type={AssetType.BSV21} id={id} term={term} sort={sort} dir={dir} />;
       case AssetType.LRC20:
         return (
           <LRC20Listings
@@ -83,7 +85,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         </div>
       )}
       <div className="tab-content block bg-base-100 border-base-200 rounded-box">
-        <Listings id={props.id} term={props.term} />
+        <Listings id={props.id} dir={props.dir || "asc"} term={props.term} sort={props.sort || SortBy.MostRecentSale} />
       </div>
     </div>
   );

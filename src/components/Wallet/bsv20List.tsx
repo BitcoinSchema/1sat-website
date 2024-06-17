@@ -52,7 +52,7 @@ const Bsv20List = ({
   const [encryptedBackup] = useLocalStorage<string | undefined>(
     "encryptedBackup"
   );
-  console.log({ ordAddress: ordAddress.value, addressProp, encryptedBackup });
+  // console.log({ ordAddress: ordAddress.value, addressProp, encryptedBackup });
 
   const ref = useRef(null);
   const isInView = useInView(ref);
@@ -86,7 +86,7 @@ const Bsv20List = ({
       const finalArray = (unindexed.concat(fromBalances) || []).filter(
         (id) => !!id
       );
-      console.log({ finalArray });
+      // console.log({ finalArray });
       const ids = uniq(finalArray);
       if (!ids.length) return;
 
@@ -150,11 +150,11 @@ const Bsv20List = ({
 
         // filter out tickers that already exist in holdings, and group by ticker
         const tickerList = u.map((u) => u.tick);
-        console.log({ tickerList });
+        // console.log({ tickerList });
         bsv20s.value = u.filter((u) =>
           holdings.value?.every((h) => h.tick !== u.tick)
         );
-        console.log({ u });
+        // console.log({ u });
         bsv20s.value = u;
 
         if (address !== ordAddress.value) {

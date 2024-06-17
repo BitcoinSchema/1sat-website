@@ -260,7 +260,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     const ordUtxos = await getOutpoints([outpoint], true);
     const ordUtxo = head(ordUtxos);
 
-    console.log({ ordUtxo });
+    // console.log({ ordUtxo });
     // do not set the item if it is a listing
     if (ordUtxo) {
       if (!ordUtxo.data?.list) {
@@ -276,7 +276,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   }, [setSelectedItem, setShowSelectItem]);
 
   const artifact = useMemo(() => {
-    console.log({ ordUtxos: ordUtxos.value, selectedItem })
+    // console.log({ ordUtxos: ordUtxos.value, selectedItem })
     return ordUtxos.value?.find((utxo) => utxo?.origin?.outpoint === selectedItem?.origin?.outpoint);
   }, [ordUtxos.value, selectedItem]);
 

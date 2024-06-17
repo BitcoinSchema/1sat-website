@@ -109,9 +109,9 @@ const ListingForm = ({
     );
   });
 
-  useEffect(() => {
-    console.log({ amt: listingAmount.value });
-  }, [listingAmount]);
+  // useEffect(() => {
+  //   console.log({ amt: listingAmount.value });
+  // }, [listingAmount]);
 
   const listBsv20 = useCallback(
     async (
@@ -163,7 +163,7 @@ const ListingForm = ({
       }
       // make sure we have enough to cover the send amount
       if (amounts < sendAmount) {
-        console.log({amounts, sendAmount})
+        // console.log({amounts, sendAmount})
         toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
         throw new Error("insufficient funds");
       }
@@ -331,7 +331,7 @@ const ListingForm = ({
         if (ticker.id) {
           url = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${ticker.id}?listing=false`;
         }
-        console.log({ url });
+        // console.log({ url });
         const { promise } = http.customFetch<BSV20TXO[]>(url);
 
         const u = (await promise)

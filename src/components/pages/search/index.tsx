@@ -61,7 +61,7 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
     }
   }, [isLoading, isError, searchLoading, isLoadingBsv21, isErrorBsv21]);
 
-  console.log({ bsv20Results, bsv21Results })
+  // console.log({ bsv20Results, bsv21Results })
   const Listings = () => {
     switch (selectedAssetType) {
       case AssetType.Ordinals:

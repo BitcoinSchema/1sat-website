@@ -61,7 +61,7 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
         payPk: string;
         ordPk: string;
       };
-      console.log({ backup });
+      // console.log({ backup });
 
       setPendingTxs([]);
       utxos.value = null;

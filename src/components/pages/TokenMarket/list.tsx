@@ -1,6 +1,10 @@
-import { MARKET_API_HOST, type AssetType } from "@/constants";
+"use client"
+
+import { MARKET_API_HOST, type SortBy, type AssetType } from "@/constants";
 import { NextRequest } from "next/server";
 import TickerHeading from "./heading";
+import { useQuery } from "@tanstack/react-query";
+import TokenListingSkeleton from "@/components/skeletons/listing/Token";
 
 export interface Holder {
   address: string;
@@ -74,51 +78,70 @@ export type MarketData = {
 //   "chainwork": "0000000000000000000000000000000000000000010969f724913e0fe59377f4"
 // }
 
-const List = async ({
+const List = ({
   type,
   id,
+  sort,
+  dir,
 }: {
   type: AssetType.BSV20 | AssetType.BSV21;
   id?: string;
+  sort?: SortBy;
+  dir?: "asc" | "desc";
 }) => {
-  let marketData: MarketData[] = [];
-  try {
-    const url = `${MARKET_API_HOST}/market/${type}`;
-    marketData = await getMarketData(new NextRequest(url), type, id);
-  } catch (e) {
-    console.error(e);
-    return null;
+  const { data: marketData, isLoading, error } = useQuery<MarketData[]>({
+    queryKey: ["marketData", type, id, sort, dir],
+    queryFn: async () => {
+      const url = `${MARKET_API_HOST}/market/${type}${id ? `/${id}` : ""}?sort=${sort}&dir=${dir}`;
+      const response = await fetch(url);
+      return response.json();
+    },
+  });
+
+  if (isLoading) {
+    return <TokenListingSkeleton />;
+  }
+
+  if (error) {
+    console.error(error);
+    return <div>Error occurred while fetching market data.</div>;
   }
 
   return (
     <tbody className="overflow-auto">
-      {marketData.map((ticker, idx) => {
-        return (
-          <TickerHeading key={`${ticker.tick}-${idx}`} ticker={ticker} id={id} type={type} />
-        );
-      })}
+      {marketData?.map((ticker, idx) => (
+        <TickerHeading key={`${ticker.tick}-${idx}`} ticker={ticker} id={id} type={type} />
+      ))}
     </tbody>
   );
 };
 
 export default List;
 
-const getMarketData = async (
-  req: NextRequest,
-  type: AssetType,
-  id?: string,
-  term?: string
-) => {
-  const res = await import("../../../app/market/[tab]/list/route");
-  const json = await (
-    await res.POST(req, {
-      params: {
-        type,
-        id,
-        term
-      },
-    })
-  ).json();
+// const getMarketData = async (
+//   req: NextRequest,
+//   type: AssetType,
+//   id?: string,
+//   sort?: SortBy,
+//   dir?: "asc" | "desc"
+// ) => {
+//   // Clone the original request URL and add the search parameters
+//   const url = new URL(req.url);
+//   if (sort) url.searchParams.set("sort", sort);
+//   if (dir) url.searchParams.set("dir", dir);
 
-  return (json || []) as MarketData[];
-};
+//   // Create a new request object with the modified URL
+//   const modifiedRequest = new NextRequest(url.toString(), req);
+
+//   const res = await import("../../../app/market/[tab]/list/route");
+//   const json = await (
+//     await res.POST(modifiedRequest, {
+//       params: {
+//         type,
+//         id,
+//       },
+//     })
+//   ).json();
+
+//   return (json || []) as MarketData[];
+// };

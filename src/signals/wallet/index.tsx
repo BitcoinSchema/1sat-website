@@ -1,5 +1,5 @@
 import type { InscriptionTab } from "@/components/pages/inscribe/tabs";
-import { AssetType } from "@/constants";
+import { AssetType, SortBy } from "@/constants";
 import type { BSV20Balance } from "@/types/bsv20";
 import type { ChainInfo, IndexerStats, Utxo } from "@/types/common";
 import type { OrdUtxo } from "@/types/ordinals";

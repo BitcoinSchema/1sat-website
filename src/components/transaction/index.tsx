@@ -92,7 +92,7 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
 
   const toggleDetails = useCallback(() => {
     showDetails.value = !showDetails.value;
-    console.log({ showDetails: showDetails.value });
+    // console.log({ showDetails: showDetails.value });
   }, [showDetails]);
 
   useMemo(() => {
@@ -102,9 +102,9 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
     }
   }, [showing, showDetails]);
 
-  useEffect(() => {
-    console.log({ showDetails: showDetails.value });
-  }, [showDetails]);
+  // useEffect(() => {
+  //   console.log({ showDetails: showDetails.value });
+  // }, [showDetails]);
 
   return (
     <>

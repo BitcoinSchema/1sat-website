@@ -12,7 +12,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { GiPlainCircle } from "react-icons/gi";
@@ -32,7 +32,7 @@ export const IconWithFallback: React.FC<IconProps> = (props) => {
   const imgSrc = useSignal(
     icon ? `/api/sanitize?url=https://ordfs.network/${icon}` : oneSatLogo
   );
-  console.log({ icon, imgSrc: imgSrc.value });
+  // console.log({ icon, imgSrc: imgSrc.value });
   return (
     <Image
       {...rest}
@@ -104,13 +104,13 @@ const TickerHeading = ({
       minFee - Number(ticker.fundTotal),
       (ticker.pendingOps || 0) * 1000 - Number.parseInt(ticker.fundBalance)
     );
-    console.log({
-      satoshis,
-      minFee,
-      fundBalance: ticker.fundBalance,
-      fundTotal: ticker.fundTotal,
-      pendingOps: ticker.pendingOps,
-    });
+    // console.log({
+    //   satoshis,
+    //   minFee,
+    //   fundBalance: ticker.fundBalance,
+    //   fundTotal: ticker.fundTotal,
+    //   pendingOps: ticker.pendingOps,
+    // });
     return toBitcoin(satoshis);
   });
 
@@ -164,7 +164,7 @@ const TickerHeading = ({
     if (!ticker.price || !usdRate.value) {
       return 0;
     }
-    console.log({ price: ticker.price, usdRate: usdRate.value });
+    // console.log({ price: ticker.price, usdRate: usdRate.value });
     return ticker.price / usdRate.value;
   });
 
@@ -195,7 +195,10 @@ const TickerHeading = ({
               />
             )}
             {ticker.num && (
-              <div className="whitespace-nowrap items-end content-end text-right mr-4">
+              <div className="whitespace-nowrap items-end content-end text-right mr-4" onClick={() => {
+                // sort by num
+
+              }}>
                 <FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
                 {ticker.num}
               </div>

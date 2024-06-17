@@ -36,7 +36,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
   );
 
   useEffect(() => {
-    console.log("here", generated, generatedImage.value)
+    // console.log("here", generated, generatedImage.value)
     // if an imageUrl is provided, load it and set the preview
     if (generated && generatedImage.value && !preview) {
 

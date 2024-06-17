@@ -104,7 +104,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			return false;
 		}
 
-		console.log({ indexers: indexers.value, chainInfo: chainInfo.value });
+		// console.log({ indexers: indexers.value, chainInfo: chainInfo.value });
 		return (
 			indexers.value["bsv20-deploy"] >= chainInfo.value?.blocks &&
 			indexers.value.bsv20 >= chainInfo.value?.blocks

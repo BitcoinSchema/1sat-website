@@ -515,7 +515,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 		const organicMax = Math.ceil(max / Number.parseInt(amount));
 
-		console.log({ organicMax, displayOplBalance });
+		// console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
 	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, ticker]);
@@ -1029,7 +1029,7 @@ const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
 	// Define tier thresholds as percentages of max supply
 	// Assuming tiers are at 0.05%, 0.1%, 0.5%, 1%, 5% of max supply
 
-	console.log({ balancePct, tierThresholds });
+	// console.log({ balancePct, tierThresholds });
 
 	// Find the tier based on the percentage thresholds
 	for (let tier = 5; tier > 0; tier--) {

@@ -9,7 +9,7 @@ interface Props {
   address: string;
 }
 const SignerPage = ({ address, history }: Props) => {
-  console.log({ history });
+  // console.log({ history });
 
   const inscriptions = uniqBy(
     history.filter((h) => h.origin?.data?.insc?.file),

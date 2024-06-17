@@ -48,7 +48,7 @@ const OutpointOwner = async ({ outpoint }: Props) => {
 	// 	isUtxo = true;
 	// }
 
-	console.log({ artifact, bsv20 });
+	// console.log({ artifact, bsv20 });
 
 	return (
 		<OutpointPage
