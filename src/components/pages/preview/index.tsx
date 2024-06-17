@@ -122,9 +122,9 @@ const PreviewPage = () => {
 		return (cost / usdRate.value).toFixed(2);
 	});
 
-	useEffect(() => {
-		console.log({ usdPrice: usdPrice.value, change: change.value });
-	}, [usdPrice.value, change.value]);
+	// useEffect(() => {
+	// 	console.log({ usdPrice: usdPrice.value, change: change.value });
+	// }, [usdPrice.value, change.value]);
 
 	const content = computed(() => (
 		<>

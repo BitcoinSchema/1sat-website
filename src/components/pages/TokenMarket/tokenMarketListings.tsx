@@ -123,7 +123,7 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
                 className={`ml-2 btn btn-outline hover:btn-primary transition btn-xs ${myListing ? "btn-primary" : ""
                   }`}
                 onClick={() => {
-                  console.log({ listing });
+                  // console.log({ listing });
                   if (!myListing) {
                     showBuy.value = listing.txid || null;
                   } else {

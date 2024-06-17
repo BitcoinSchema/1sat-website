@@ -45,7 +45,7 @@ const ImportWalletModal = ({
 
   const alreadyHasKey = useMemo(() => !!encryptedBackup || (!fromFragment && !!payPk.value), []);
 
-  console.log({fromFragment, key: payPk.value })
+  // console.log({fromFragment, key: payPk.value })
 
   useEffect(() => {
     loadKeysFromSessionStorage();

@@ -182,7 +182,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const changeSelectedActionType = useCallback(
 		async (e: any) => {
-			console.log({ val: e.target.value });
+			// console.log({ val: e.target.value });
 			const actionType = e.target.value.toLowerCase() as ActionType;
 			setSelectedActionType(actionType);
 			if (ticker) {
@@ -435,23 +435,23 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		return await inscribeBsv20([u]);
 	}, [inscribeBsv20]);
 
-	useEffect(() => {
-		console.log({
-			tickerAvailable,
-			len: ticker?.length,
-			inscribeStatus,
-			fetchTickerStatus,
-			limit,
-			maxSupply,
-		});
-	}, [
-		fetchTickerStatus,
-		inscribeStatus,
-		limit,
-		maxSupply,
-		ticker?.length,
-		tickerAvailable,
-	]);
+	// useEffect(() => {
+	// 	console.log({
+	// 		tickerAvailable,
+	// 		len: ticker?.length,
+	// 		inscribeStatus,
+	// 		fetchTickerStatus,
+	// 		limit,
+	// 		maxSupply,
+	// 	});
+	// }, [
+	// 	fetchTickerStatus,
+	// 	inscribeStatus,
+	// 	limit,
+	// 	maxSupply,
+	// 	ticker?.length,
+	// 	tickerAvailable,
+	// ]);
 
 	const submitDisabled = useMemo(() => {
 		return (
@@ -1045,7 +1045,7 @@ const tierMaxNum = (balance: number) => {
 };
 
 const calculateSpacers = (maxIterations: number, steps: number) => {
-	console.log({ maxIterations, steps });
+	// console.log({ maxIterations, steps });
 	// Calculate the number of spacers
 	// const numSpacers = Math.floor(maxIterations / step);
 

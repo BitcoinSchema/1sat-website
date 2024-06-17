@@ -8,9 +8,9 @@ import { TbGridDots } from "react-icons/tb";
 const OutpointHeading = ({ outpoint, toggleDetails, showing }: { outpoint: string, toggleDetails: () => void, showing: boolean }) => {
   const txid = outpoint.split("_")[0];
 
-  useEffect(() => {
-    console.log({ showDetails: showing });
-  }, [showing]);
+  // useEffect(() => {
+  //   console.log({ showDetails: showing });
+  // }, [showing]);
 
   const button = useMemo(() => {
     return showing ? <CgClose /> : <TbGridDots />
