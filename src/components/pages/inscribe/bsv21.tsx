@@ -266,7 +266,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				}
 
 				inscription.sym = ticker;
-				inscription.amt = (Number.parseInt(maxSupply) * 10 ** (decimals || 0)).toString();
+				inscription.amt = (BigInt(maxSupply) * 10n ** BigInt(decimals || 0)).toString();
 
 				// optional fields
 				if (decimals !== undefined) {

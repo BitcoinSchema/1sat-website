@@ -294,7 +294,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				switch (selectedActionType) {
 					case ActionType.Deploy:
 						if (
-							parseInt(maxSupply) === 0 ||
+							Number.parseInt(maxSupply) === 0 ||
 							BigInt(maxSupply) > maxMaxSupply
 						) {
 							toast.error(
@@ -307,7 +307,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						}
 
 						inscription.tick = ticker;
-						inscription.max = maxSupply;
+						inscription.max = (BigInt(maxSupply) * 10n ** BigInt(decimals || 0)).toString();
 
 						// optional fields
 						if (decimals !== undefined) {
