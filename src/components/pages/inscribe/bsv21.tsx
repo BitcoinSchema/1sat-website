@@ -213,6 +213,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 					}}
 					src={preview as string}
 					sizes={""}
+					latest={true}
 				/>
 			)
 		);
@@ -265,7 +266,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				}
 
 				inscription.sym = ticker;
-				inscription.amt = maxSupply;
+				inscription.amt = (Number.parseInt(maxSupply) * 10 ** (decimals || 0)).toString();
 
 				// optional fields
 				if (decimals !== undefined) {

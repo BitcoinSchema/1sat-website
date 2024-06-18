@@ -117,10 +117,10 @@ const TickerHeading = ({
   const supplyContent = computed(() => {
     const totalSupply =
       Number.parseInt(ticker.supply || ticker.amt || "0") /
-      10 ** ticker.dec;
+      (ticker.dec ? 10 ** ticker.dec : 1);
     let text = `${totalSupply?.toLocaleString()} `;
     if (type === AssetType.BSV20) {
-      text += `/ ${Number.parseInt(ticker.max!)?.toLocaleString()}`;
+      text += `/ ${(Number.parseInt(ticker.max!) / (10 ** (ticker.dec || 0)))?.toLocaleString()}`;
     }
     const mintedOut =
       Number.parseInt(ticker.supply!) === Number.parseInt(ticker.max!);
