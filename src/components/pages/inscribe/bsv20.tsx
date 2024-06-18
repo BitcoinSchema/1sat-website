@@ -708,7 +708,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			{selectedActionType === ActionType.Deploy && (
 				<div className="my-2">
 					<label className="block mb-4">
-						<div className="my-2">Max Supply</div>
+					<div className="my-2 flex justify-between text-sm">Max Supply <span className="text-[#555]">Whole coins</span></div>
 						<input
 							pattern="\d+"
 							type="text"
@@ -926,7 +926,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					<label className="block mb-4">
 						<div className="flex items-center justify-between my-2">
 							Limit Per Mint{" "}
-							<span className="text-[#555]">Optional</span>
+							<span className="text-[#555] text-sm">Optional</span>
 						</div>
 						<input
 							className="text-white w-full rounded p-2"

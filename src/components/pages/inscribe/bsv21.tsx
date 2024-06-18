@@ -450,7 +450,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			</div>
 			<div className="my-2">
 				<label className="block mb-4">
-					<div className="my-2">Max Supply</div>
+					<div className="my-2 flex justify-between text-sm">Max Supply <span className="text-[#555]">Whole coins</span></div>
 					<input
 						pattern="\d+"
 						type="text"
