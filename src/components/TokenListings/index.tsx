@@ -19,7 +19,7 @@ const TokenListings: React.FC<TokenListingsProps> = async ({ type }) => {
 						<th className="text-right min-w-48">Total Price</th>
 					</tr>
 				</thead>
-				<Suspense fallback={<TokenListingSkeleton />}>
+				<Suspense fallback={<TokenListingSkeleton type={type} />}>
 					<List type={type} />
 				</Suspense>
 			</table>

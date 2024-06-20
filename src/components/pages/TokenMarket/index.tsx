@@ -26,12 +26,12 @@ const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, sort, dir }) 
     <>
       {!id && <div className="w-full rounded-b-box overflow-x-auto"><table className="table font-mono">
         <TableHeading type={type} />
-        <Suspense fallback={<TokenListingSkeleton />}>
+        <Suspense fallback={<TokenListingSkeleton type={type}/>}>
           <List type={type} sort={sort} dir={dir} />
         </Suspense>
       </table></div>}
       {id && <>
-        <Suspense fallback={<TokenListingSkeleton />}>
+        <Suspense fallback={<TokenListingSkeleton type={type}/>}>
           <div className="overflow-x-auto w-full">
             <table className="table font-mono">
               <TableHeading type={type} />

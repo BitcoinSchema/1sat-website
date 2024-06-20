@@ -3,7 +3,7 @@
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
 import { AssetType } from "@/constants";
-import { CurrencyDisplay, currencyDisplay, ordUtxos, usdRate, utxos } from "@/signals/wallet";
+import { CurrencyDisplay, currencyDisplay, exchangeRate, ordUtxos, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { minFee } from "@/utils/bsv20";
@@ -229,10 +229,14 @@ const TickerHeading = ({
           </span>
         </td>
         <td className="w-full text-right">
-          {ticker.marketCap > 0 && toBitcoin(
+          {currencyDisplay.value === CurrencyDisplay.BSV ?
+          `${ticker.marketCap > 0 ? toBitcoin(
             Math.floor(ticker.marketCap / 10 ** ticker.dec)
-          ).toLocaleString()}{" "}
-          BSV
+          ).toLocaleString() : 0} BSV` : `$${ticker.marketCap > 0 ? (
+            (toBitcoin(
+              Math.floor(ticker.marketCap / 10 ** ticker.dec)
+            ) * exchangeRate.value).toLocaleString()
+          ) : 0}`}
           <br />
         </td>
         {type === AssetType.BSV21 && (

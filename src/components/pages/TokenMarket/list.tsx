@@ -99,7 +99,7 @@ const List = ({
   });
 
   if (isLoading) {
-    return <TokenListingSkeleton />;
+    return <TokenListingSkeleton type={type} />;
   }
 
   if (error) {
