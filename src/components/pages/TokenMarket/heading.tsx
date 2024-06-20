@@ -233,9 +233,12 @@ const TickerHeading = ({
           `${ticker.marketCap > 0 ? toBitcoin(
             Math.floor(ticker.marketCap / 10 ** ticker.dec)
           ).toLocaleString() : 0} BSV` : `$${ticker.marketCap > 0 ? (
-            (toBitcoin(
+            Math.floor((toBitcoin(
               Math.floor(ticker.marketCap / 10 ** ticker.dec)
-            ) * exchangeRate.value).toLocaleString()
+            ) * exchangeRate.value)).toLocaleString("en-US", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })
           ) : 0}`}
           <br />
         </td>
