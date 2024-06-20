@@ -92,7 +92,7 @@ const List = ({
   const { data: marketData, isLoading, error } = useQuery<MarketData[]>({
     queryKey: ["marketData", type, id, sort, dir],
     queryFn: async () => {
-      const url = `${MARKET_API_HOST}/market/${type}${id ? `/${id}` : ""}?sort=${sort}&dir=${dir}`;
+      const url = `${MARKET_API_HOST}/market/${type}${id ? `/${id}` : ""}?sort=${sort}&dir=${dir}&limit=100`;
       const response = await fetch(url);
       return response.json();
     },

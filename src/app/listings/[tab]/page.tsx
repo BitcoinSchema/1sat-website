@@ -29,43 +29,6 @@ const Listings = async ({ params }: { params: { tab: AssetType } }) => {
           selectedAssetType={AssetType.BSV21}
         />
       );
-    case AssetType.LRC20:
-      const q = {
-        insc: {
-          json: {
-            p: "lrc-20",
-          },
-        },
-      };
-
-      const urlLrc20 = `${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&q=${btoa(
-        JSON.stringify(q)
-      )}`;
-      const { promise: promiseLrc20 } =
-        http.customFetch<OrdUtxo[]>(urlLrc20);
-      const lrc20Listings = await promiseLrc20;
-
-      const lrc20TokenIds = lrc20Listings
-        .filter((l) => !!l.origin?.data?.insc?.json?.id)
-        .map((l) => l.origin?.data?.insc?.json?.id!);
-
-      const urlLrc20Tokens = `${API_HOST}/api/txos/outpoints`;
-      const { promise: promiseLrc20Tokens } = http.customFetch<OrdUtxo[]>(
-        urlLrc20Tokens,
-        {
-          method: "POST",
-          body: JSON.stringify(lrc20TokenIds),
-        }
-      );
-      const lrc20Tokens = await promiseLrc20Tokens;
-
-      return (
-        <ListingsPage
-          lrc20Listings={lrc20Listings}
-          lrc20Tokens={lrc20Tokens}
-          selectedAssetType={AssetType.LRC20}
-        />
-      );
     default:
       return null;
   }

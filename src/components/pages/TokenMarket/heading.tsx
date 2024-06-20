@@ -185,7 +185,7 @@ const TickerHeading = ({
           : "cursor-pointer hover:text-secondary-content"
           }`}
       >
-        <th className="truncase text-ellipsis">
+        <th className={"truncate text-ellipsis"}>
           <div className="flex items-center">
             {type === AssetType.BSV21 && (
               <IconWithFallback
@@ -195,10 +195,7 @@ const TickerHeading = ({
               />
             )}
             {ticker.num && (
-              <div className="whitespace-nowrap items-end content-end text-right mr-4" onClick={() => {
-                // sort by num
-
-              }}>
+              <div className="whitespace-nowrap items-end content-end text-right mr-4">
                 <FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
                 {ticker.num}
               </div>

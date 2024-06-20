@@ -1,5 +1,4 @@
 import FeaturedCollections from "@/components/Collections/featured";
-import LRC20Listings from "@/components/LRC20Listings";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import { AssetType, SortBy } from "@/constants";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
@@ -14,8 +13,6 @@ export interface MarketPageProps {
   collections?: OrdUtxo[];
   tokenListingsv2?: BSV20TXO[];
   modelListings?: OrdUtxo[];
-  lrc20Listings?: OrdUtxo[];
-  lrc20Tokens?: OrdUtxo[];
   selectedAssetType?: AssetType;
   title?: string;
   showTabs?: boolean;
@@ -57,13 +54,6 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         return <TokenMarket type={AssetType.BSV20} id={id} term={term} sort={sort} dir={dir} />;
       case AssetType.BSV21:
         return <TokenMarket type={AssetType.BSV21} id={id} term={term} sort={sort} dir={dir} />;
-      case AssetType.LRC20:
-        return (
-          <LRC20Listings
-            listings={props.lrc20Listings!}
-            tokens={props.lrc20Tokens!}
-          />
-        );
       default:
         return null;
     }

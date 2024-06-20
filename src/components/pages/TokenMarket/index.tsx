@@ -18,7 +18,7 @@ interface TokenMarketProps {
 const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, sort, dir }) => {
 
   let marketData: MarketData[] = [];
-  const url = `${MARKET_API_HOST}/market/${type}?sort=${sort || SortBy.MostRecentSale}&dir=${dir || "asc"}`;
+  const url = `${MARKET_API_HOST}/market/${type}?sort=${sort || SortBy.MostRecentSale}&dir=${dir || "asc"}&limit=100`;
   marketData = await getMarketData(new NextRequest(url), type, id, sort, dir);
 
   const ticker = marketData.find((t) => t.tick === id || t.id === id);
