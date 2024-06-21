@@ -61,7 +61,7 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 			} else {
 				reachedEndOfListings.value = true;
 			}
-			listings.value = listings.value?.sort((a, b) => {
+			listings.value = (listings.value || []).sort((a, b) => {
 				return Number.parseFloat(a.pricePer) < Number.parseFloat(b.pricePer)
 					? -1
 					: 1;
