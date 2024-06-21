@@ -213,7 +213,7 @@ const TickerHeading = ({
 					<td>
 						{ticker.price?.toLocaleString("en-US", {
 							minimumFractionDigits: 0,
-							maximumFractionDigits: 6,
+							maximumFractionDigits: 8,
 							useGrouping: false,
 						}) || ""}{" "}
 						<span className="text-accent">sat/token</span>
@@ -225,7 +225,7 @@ const TickerHeading = ({
 							style: "currency",
 							currency: "USD",
 							minimumFractionDigits: 0,
-							maximumFractionDigits: 6,
+							maximumFractionDigits: 8,
 						})}
 						<span className="text-accent">/token</span>
 					</td>
@@ -248,13 +248,14 @@ const TickerHeading = ({
 										).toLocaleString()
 									: 0
 							} BSV`
-						: `$${
+						: `${
 								ticker.marketCap > 0
-									? Math.floor(
-											toBitcoin(
+									? (toBitcoin(
 												Math.floor(ticker.marketCap / 10 ** ticker.dec),
-											) * exchangeRate.value,
+											) * exchangeRate.value
 										).toLocaleString("en-US", {
+											style: "currency",
+											currency: "USD",
 											minimumFractionDigits: 0,
 											maximumFractionDigits: 0,
 										})
