@@ -449,14 +449,20 @@ export const broadcast = async ({
     return;
   }
   const rawtx = Buffer.from(rawTx, "hex").toString("base64");
-  const { promise } = http.customFetch(`${API_HOST}/api/tx`, {
-    method: "POST",
-    body: JSON.stringify({
-      rawtx,
-    }),
-  });
-  await promise;
+  try {
 
-  toast.success("Transaction broadcasted.", toastProps);
-  pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+    const { promise } = http.customFetch(`${API_HOST}/api/tx`, {
+      method: "POST",
+      body: JSON.stringify({
+        rawtx,
+      }),
+    });
+    await promise;
+    
+    toast.success("Transaction broadcasted.", toastProps);
+    pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+   } catch (e) {
+    console.error(e);
+    toast.error("Error broadcasting transaction.", toastErrorProps);
+  } 
 };
