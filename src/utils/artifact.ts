@@ -1,6 +1,6 @@
 import { ArtifactType, artifactTypeMap } from "@/components/artifact";
 import { API_HOST, ORDFS, resultsPerPage } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import { OpNsStatus, OrdUtxo } from "@/types/ordinals";
 import { Hash } from "bsv-wasm-web";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
@@ -35,7 +35,7 @@ export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
 
 export const getArtifactType = (
 	txo: OrdUtxo,
-	latest: boolean
+	latest: boolean,
 ): ArtifactType => {
 	let artifactType: ArtifactType = ArtifactType.Unknown;
 	const t = latest
@@ -50,9 +50,9 @@ export const getArtifactType = (
 		artifactType = ArtifactType.Audio;
 	} else if (t === "application/vnd.apple.mpegurl") {
 		artifactType = ArtifactType.Audio2;
-	} else if (t?.startsWith("video")) {
+	} else if (t.startsWith("video")) {
 		artifactType = ArtifactType.Video;
-	} else if (t?.startsWith("model")) {
+	} else if (t.startsWith("model")) {
 		artifactType = ArtifactType.Model;
 	} else if (t === "application/pdf") {
 		artifactType = ArtifactType.Model;
@@ -64,6 +64,8 @@ export const getArtifactType = (
 		artifactType = ArtifactType.MarkDown;
 	} else if (t === "text/html") {
 		artifactType = ArtifactType.HTML;
+	} else if (t.startsWith("text/")) {
+		artifactType = ArtifactType.Text;
 	} else if (t === "application/bsv-20") {
 		artifactType = ArtifactType.BSV20;
 	} else if (t === "application/lrc-20" || protocol === "lrc-20") {
@@ -72,9 +74,9 @@ export const getArtifactType = (
 		artifactType = ArtifactType.OPNS;
 	} else if (t === "application/json") {
 		artifactType = ArtifactType.JSON;
-	} else if (t?.startsWith("image/svg")) {
+	} else if (t.startsWith("image/svg")) {
 		artifactType = ArtifactType.SVG;
-	} else if (t?.startsWith("image")) {
+	} else if (t.startsWith("image")) {
 		artifactType = ArtifactType.Image;
 	}
 	return artifactType;
@@ -82,7 +84,7 @@ export const getArtifactType = (
 
 export const displayName = (
 	txo: OrdUtxo,
-	latest: boolean
+	latest: boolean,
 ): string | undefined => {
 	if (!txo.origin) {
 		return txo.outpoint;
@@ -117,13 +119,13 @@ export const displayName = (
 				? txo.data?.insc?.text || txo.origin?.num
 				: txo.origin?.data?.insc?.text || txo.origin?.num;
 		case ArtifactType.BSV20:
-			return latest
-				? txo.data?.bsv20?.tick
-				: txo.origin?.data?.bsv20?.tick;
+			return latest ? txo.data?.bsv20?.tick : txo.origin?.data?.bsv20?.tick;
 		case ArtifactType.LRC20:
 			return latest ? "TODO-LRC20 LATEST NAME" : "TODO LRC20 ORIGIN NAME";
 		case ArtifactType.OPNS:
-			return latest ? "TODO-OPNS LATEST NAME" : "TODO OPNS ORIGIN NAME";
+			return latest
+				? "TODO-OPNS LATEST NAME"
+				: `${txo.origin.data?.opns?.domain} ${txo.origin.data?.opns?.status === OpNsStatus.Valid ? "(Valid)" : txo.origin.data?.opns?.status === OpNsStatus.Pending ? "(Pending)" : "(Invalid)"}`;
 		case ArtifactType.Javascript:
 			return latest
 				? txo.data?.insc?.text || txo.origin?.num
@@ -165,11 +167,9 @@ export const getMarketListings = async ({
 		selectedType !== ArtifactType.All
 			? result.filter((o) => {
 					return o.origin?.data?.insc?.file.type?.startsWith(
-						artifactTypeMap.get(
-							selectedType as ArtifactType
-						) as string
+						artifactTypeMap.get(selectedType as ArtifactType) as string,
 					);
-			  })
+				})
 			: result;
 	return final;
 };

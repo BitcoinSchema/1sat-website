@@ -489,6 +489,8 @@ const sendOrdinal = async (
 			reinscription.contentType,
 			metaData
 		);
+	} else if (metaData) {
+		s = buildInscription(destinationAddress, undefined, undefined, metaData);
 	} else {
 		s = destinationAddress.get_locking_script();
 	}

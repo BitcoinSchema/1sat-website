@@ -99,7 +99,11 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
           }`;
         const pricePer = (
           Number.parseFloat(listing.price) / qty
-        ).toFixed(3);
+        ).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 6,
+          useGrouping: false
+        });
         const myListing = listing.owner === ordAddress.value;
         return (<React.Fragment key={`${listing.txid}-${listing.vout}-${listing.height}`}>
           <div
