@@ -224,7 +224,7 @@ const TickerHeading = ({
 						{usdPrice.value.toLocaleString("en-US", {
 							style: "currency",
 							currency: "USD",
-							minimumFractionDigits: 6,
+							minimumFractionDigits: 0,
 							maximumFractionDigits: 6,
 						})}
 						<span className="text-accent">/token</span>
