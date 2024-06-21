@@ -14,7 +14,7 @@ export async function POST(
 ) {
   const { type } = params;
   const searchParams = request.nextUrl.searchParams;
-  console.log("here", {searchParams, params})
+  // console.log("here", {searchParams, params})
   const sort = searchParams.get("sort") as SortBy;
   const dir = searchParams.get("dir") as "asc" | "desc";
 
