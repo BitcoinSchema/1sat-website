@@ -301,44 +301,44 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 						if (!to) {
 							return;
 						}
-						let meta: MAP | undefined = undefined;
-						let addMoreTags = true;
+						const meta: MAP | undefined = undefined;
+						// let addMoreTags = true;
 
-						while (addMoreTags) {
-							if (!meta) {
-								const typeStr = window.prompt(
-									"Enter the MAP type for this transaction (required)",
-								);
-								if (!typeStr) {
-									alert("Type is required");
-									return;
-								}
-								meta = {
-									app: "1sat.market",
-									type: typeStr,
-								};
-							}
+						// while (addMoreTags) {
+						// 	if (!meta) {
+						// 		const typeStr = window.prompt(
+						// 			"Enter the MAP type for this transaction (required)",
+						// 		);
+						// 		if (!typeStr) {
+						// 			alert("Type is required");
+						// 			return;
+						// 		}
+						// 		meta = {
+						// 			app: "1sat.market",
+						// 			type: typeStr,
+						// 		};
+						// 	}
 
-							const metaKeyStr = window.prompt("Enter the meta key");
-							if (!metaKeyStr) {
-								addMoreTags = false;
-								break;
-							}
+						// 	const metaKeyStr = window.prompt("Enter the meta key");
+						// 	if (!metaKeyStr) {
+						// 		addMoreTags = false;
+						// 		break;
+						// 	}
 
-							const metaValueStr = window.prompt("Enter the meta value");
-							if (!metaValueStr) {
-								addMoreTags = false;
-								break;
-							}
+						// 	const metaValueStr = window.prompt("Enter the meta value");
+						// 	if (!metaValueStr) {
+						// 		addMoreTags = false;
+						// 		break;
+						// 	}
 
-							if (metaKeyStr && metaValueStr) {
-								meta[metaKeyStr] = metaValueStr;
-							}
+						// 	if (metaKeyStr && metaValueStr) {
+						// 		meta[metaKeyStr] = metaValueStr;
+						// 	}
 
-							addMoreTags = window.confirm(
-								"Add another tag to this transaction?",
-							);
-						}
+						// 	addMoreTags = window.confirm(
+						// 		"Add another tag to this transaction?",
+						// 	);
+						// }
 
 						// Call transferOrdinal even if the user cancels adding more tags
 						transferOrdinal(e, to, meta);
