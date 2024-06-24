@@ -70,7 +70,6 @@ const WalletMenu: React.FC = () => {
   const ordAddressHover = useSignal(false);
 
   const mouseEnterOrdAddress = () => {
-    console.log("mouseEnterOrdAddress");
     ordAddressHover.value = true;
   };
 
@@ -94,9 +93,15 @@ const WalletMenu: React.FC = () => {
     loadKeysFromSessionStorage();
 
     if (eb && !encryptedBackup.value) {
+      // TODO: This is triggering upon signout! Fix this
+      // Reproduce: Sign in, encrypt backup
+      // close tab and reopen
+      // unlock wallet
+      // sign out - this will fire forcing the unlock button to show again!
+      console.log("showing unlock wallet button on purpose")
       showUnlockWalletButton.value = true;
     }
-  }, [encryptedBackup.value, eb, showUnlockWalletButton.value]);
+  }, [encryptedBackup.value, eb]);
 
   useEffect(() => {
     if (
@@ -310,7 +315,7 @@ const WalletMenu: React.FC = () => {
                     showDropdown.value = false;
                   }}
                 >
-                  <Link href="/wallet/ordinals">
+                  <Link href="/wallet/ordinals" >
                     Ordinals
                   </Link>
                 </li>
@@ -414,6 +419,7 @@ const WalletMenu: React.FC = () => {
             <>
               {showUnlockWalletButton.value && (
                 <ul className="p-0">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                   <li onClick={handleUnlockWallet}>
                     <div className="flex w-full flex-row items-center justify-between">
                       Unlock Wallet

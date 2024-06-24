@@ -7,9 +7,11 @@ import {
 } from "@/signals/wallet";
 import { EncryptDecrypt } from "@/types/wallet";
 
-interface Props {}
+interface Props {
+	migrating?: boolean;
+}
 
-export function EnterPassphraseStep({}: Props) {
+export function EnterPassphraseStep({migrating}: Props) {
 	const onSubmit = () => {
 		localStorage.removeItem(OLD_PAY_PK_KEY);
 		localStorage.removeItem(OLD_ORD_PK_KEY);
@@ -22,6 +24,7 @@ export function EnterPassphraseStep({}: Props) {
 			<EnterPassphrase
 				mode={EncryptDecrypt.Encrypt}
 				onSubmit={onSubmit}
+				migrating={migrating}
 			/>
 		</>
 	);

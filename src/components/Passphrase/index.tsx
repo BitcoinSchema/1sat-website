@@ -5,6 +5,7 @@ import {
   ImportWalletFromBackupJsonStep,
   encryptionKey,
   importWalletFromBackupJsonStep,
+  migrating,
   mnemonic,
   ordPk,
   passphrase,
@@ -21,7 +22,7 @@ import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { PrivateKey } from "bsv-wasm-web";
 import randomBytes from "randombytes";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
@@ -33,6 +34,7 @@ type Props = {
   mode: EncryptDecrypt;
   download?: boolean;
   onSubmit: () => void;
+  migrating?: boolean;
 };
 
 const EnterPassphrase: React.FC<Props> = ({
@@ -96,7 +98,7 @@ const EnterPassphrase: React.FC<Props> = ({
     passphrase.value = phrase;
   };
 
-  const handleClickEncrypt = async () => {
+  const handleClickEncrypt = useCallback(async () => {
     if (passphrase.value) {
       console.log("encrypt keys with passphrase");
       try {
@@ -146,8 +148,16 @@ const EnterPassphrase: React.FC<Props> = ({
           backupKeys(keys);
         }
 
+        if (migrating.value) {
+          // send postmessage
+          window.opener?.postMessage(
+            { type: "MIGRATION_SUCCESS" },
+            "https://1sat.webflow.io",
+          );
+        }
         hasDownloadedKeys.value = true;
 
+        console.log("Setting encrypted backup")
         localStorage.setItem("encryptedBackup", JSON.stringify(keys));
         passphrase.value = "";
 
@@ -159,7 +169,7 @@ const EnterPassphrase: React.FC<Props> = ({
         toast.error("Failed to encrypt keys", toastErrorProps);
       }
     }
-  };
+  }, [download, encryptionKey.value, hasDownloadedKeys, migrating.value, ordPk.value, passphrase.value, payPk.value]);
 
   const handleClickDecrypt = async () => {
     if (passphrase.value) {
@@ -224,7 +234,7 @@ const EnterPassphrase: React.FC<Props> = ({
           className="input input-bordered w-full placeholder-[#555]"
           type="password"
           onChange={handlePassphraseChange}
-          value={passphrase.value!}
+          value={passphrase.value || ""}
           placeholder={"your-password-here"}
           ref={passwordInputRef}
         />}
@@ -233,6 +243,7 @@ const EnterPassphrase: React.FC<Props> = ({
       {showEnterPassphrase.value === EncryptDecrypt.Encrypt && (
         <div>
           <div className="flex items-center">
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
             <div
               onClick={handleClickGenerate}
               className="flex items-center cursor-pointer p-2 group text-blue-400 hover:text-blue-500"
@@ -251,7 +262,7 @@ const EnterPassphrase: React.FC<Props> = ({
       </div>
 
       <div className="flex gap-2 justify-end">
-        {!download && (
+        {!migrating.value && !download && (
           <button
             type="button"
             className="btn btn-error"

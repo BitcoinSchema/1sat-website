@@ -89,9 +89,12 @@ const nextConfig = {
 			};
 			config.experiments = {
 				asyncWebAssembly: true,
-				syncWebAssembly: true,
 				layers: true,
 			};
+			// config.module.rules.push({
+			// 	test: /\.wasm$/,
+			// 	type: 'webassembly/async',
+			// });
 			config.plugins.push(
 				new ReplaceModuleWebpackPlugin({
 					rules: [

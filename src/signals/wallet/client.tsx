@@ -4,6 +4,7 @@ import { encryptionPrefix } from "@/constants";
 import type { PendingTransaction } from "@/types/preview";
 import {
   CreateWalletStep,
+  type Keys,
   type DecryptedBackupJson,
   type EncryptedBackupJson,
 } from "@/types/wallet";
@@ -78,7 +79,6 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
 };
 
 export const clearKeys = () => {
-
   payPk.value = null;
   ordPk.value = null;
   pendingTxs.value = null;
@@ -93,7 +93,6 @@ export const clearKeys = () => {
   sessionStorage.removeItem("1satfk");
   sessionStorage.removeItem("1satok");
 
-
   encryptedBackup.value = null;
 
   encryptionKey.value = null;
@@ -102,15 +101,8 @@ export const clearKeys = () => {
 
   showUnlockWalletButton.value = false;
   createWalletStep.value = CreateWalletStep.Create;
+  console.log("Cleared keys");
 };
-
-export type Keys = {
-  payPk: string;
-  ordPk: string;
-  mnemonic?: string;
-  changeAddressPath?: number;
-  ordAddressPath?: number;
-}
 
 export const setKeys = (keys: Keys) => {
   payPk.value = keys.payPk;

@@ -9,7 +9,7 @@ import { currencyDisplay, CurrencyDisplay } from "@/signals/wallet";
 
 const CurrencySwitch = () => {
   return <div className="tooltip md:tooltip-left" data-tip="Currency Display">
-    <label className="swap swap-flip text-xl mr-4 text-yellow-200/25">
+    <label className="swap swap-flip text-xl mr-4 text-yellow-200/50 hover:text-yellow-300/75 transition">
 
     {/* this hidden checkbox controls the state */}
     <input type="checkbox" onChange={() => {

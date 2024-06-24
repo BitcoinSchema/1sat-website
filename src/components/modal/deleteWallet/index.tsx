@@ -1,6 +1,7 @@
 "use client";
 
 import { backupKeys } from "@/components/Wallet/menu";
+import { showUnlockWalletButton } from "@/signals/wallet";
 import { clearKeys } from "@/signals/wallet/client";
 import { useSignals } from "@preact/signals-react/runtime";
 

@@ -5,6 +5,7 @@ import {
 	ProtectKeysStep,
 	bsvWasmReady,
 	protectKeysStep,
+	migrating
 } from "@/signals/wallet";
 import { setKeys } from "@/signals/wallet/client";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -26,7 +27,10 @@ const ProtectKeysModal = ({
 		protectKeysStep.value = ProtectKeysStep.Info;
 		onClose();
 	}
-
+	useEffect(() => {
+		console.log("Migrating?", migrating.value);
+	}, [migrating.value]);
+	
 	useEffect(() => {
 		const payPk = localStorage.getItem(OLD_PAY_PK_KEY);
 		const ordPk = localStorage.getItem(OLD_ORD_PK_KEY);
@@ -59,7 +63,7 @@ const ProtectKeysModal = ({
 
 								{protectKeysStep.value ===
 									ProtectKeysStep.EnterPassphrase && (
-									<EnterPassphraseStep />
+									<EnterPassphraseStep migrating={migrating.value} />
 								)}
 
 								{protectKeysStep.value ===
@@ -72,7 +76,7 @@ const ProtectKeysModal = ({
 				)}
 			</div>
 			<form method="dialog" className="modal-backdrop">
-				<button onClick={handleClose}>close</button>
+				<button type="button" onClick={handleClose}>close</button>
 			</form>
 		</dialog>
 	);
