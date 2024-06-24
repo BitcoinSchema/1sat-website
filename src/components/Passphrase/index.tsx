@@ -152,7 +152,7 @@ const EnterPassphrase: React.FC<Props> = ({
           // send postmessage
           window.opener?.postMessage(
             { type: "MIGRATION_SUCCESS" },
-            "https://1sat.webflow.io",
+            "https://1satordinals.com",
           );
         }
         hasDownloadedKeys.value = true;

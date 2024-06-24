@@ -25,7 +25,7 @@
 // 	);
 
 // 	const handleMessage = useCallback((event: MessageEvent) => {
-// 		if (event.origin !== "https://1sat.webflow.io") return;
+// 		if (event.origin !== "https://1satordinals.com") return;
 
 // 		if (event.data.type === "MIGRATE_KEYS") {
 // 			console.log("MIGRATE OUTER")
@@ -81,7 +81,7 @@ const ImportWalletPage = () => {
 				console.log("ALREADY LOGGED IN sending postmessage")
 				window.opener?.postMessage(
 					{ type: "ALREADY_LOGGED_IN" },
-					"https://1sat.webflow.io",
+					"https://1satordinals.com",
 				);
 			}
       open.value = false;
@@ -91,7 +91,7 @@ const ImportWalletPage = () => {
   );
 
   const handleMessage = useCallback((event: MessageEvent) => {
-    if (event.origin !== "https://1sat.webflow.io") return;
+    if (event.origin !== "https://1satordinals.com") return;
     if (event.data.type === "CHECK_READY") {
 			migrating.value = true;
       // Respond that we're ready to receive the keys

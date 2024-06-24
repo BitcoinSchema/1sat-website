@@ -74,7 +74,7 @@ const ImportWalletModal = forwardRef<
 	// 				// Send success message back to the original window
 	// 				window.opener?.postMessage(
 	// 					{ type: "MIGRATION_SUCCESS_1" },
-	// 					"https://1sat.webflow.io",
+	// 					"https://1satordinals.com",
 	// 				);
 	// 			} catch (e) {
 	// 				console.error("Failed to import backup:", e);
@@ -83,7 +83,7 @@ const ImportWalletModal = forwardRef<
 	// 				// Send failure message back to the original window
 	// 				window.opener?.postMessage(
 	// 					{ type: "MIGRATION_FAILURE" },
-	// 					"https://1sat.webflow.io",
+	// 					"https://1satordinals.com",
 	// 				);
 	// 			}
 	// 		}
@@ -102,7 +102,7 @@ const ImportWalletModal = forwardRef<
 			// we dont do this yet because keys are not encrypted and stored
 			// window.opener?.postMessage(
 			// 	{ type: "MIGRATION_SUCCESS_2" },
-			// 	"https://1sat.webflow.io",
+			// 	"https://1satordinals.com",
 			// );
 		} catch (e) {
 			console.error("Failed to import backup:", e);
@@ -111,7 +111,7 @@ const ImportWalletModal = forwardRef<
 			// Send failure message back to the original window if it exists
 			window.opener?.postMessage(
 				{ type: "MIGRATION_FAILURE" },
-				"https://1sat.webflow.io",
+				"https://1satordinals.com",
 			);
 		}
 	}, [migrating.value]);
