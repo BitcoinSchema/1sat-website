@@ -1,16 +1,18 @@
 import OutpointCollection from "@/components/pages/outpoint/collection";
-import OutpointInscription from "@/components/pages/outpoint/inscription";
 import OutpointListing from "@/components/pages/outpoint/listing";
 import OutpointOwner from "@/components/pages/outpoint/owner";
-import OutpointTimeline from "@/components/pages/outpoint/timeline";
 import OutpointToken from "@/components/pages/outpoint/token";
 import TxDetails from "@/components/transaction";
 import { API_HOST } from "@/constants";
 import { OutpointTab } from "@/types/common";
 import type { OrdUtxo } from "@/types/ordinals";
+import dynamic from "next/dynamic";
 import Head from "next/head";
 import { Suspense } from "react";
 import { FaSpinner } from "react-icons/fa";
+
+const OutpointInscription = dynamic(() => import("@/components/pages/outpoint/inscription"));
+const OutpointTimeline = dynamic(() => import("@/components/pages/outpoint/timeline"));
 
 type OutpointParams = {
   outpoint: string;
