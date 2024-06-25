@@ -49,7 +49,7 @@ const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
 											: "1Sat Ordinals"}
 							</span>
 							<div className="absolute -top-1 -right-12 bg-yellow-400 text-black text-xs font-bold py-1 px-2 rounded-sm transform rotate-12 shadow-md">
-								BETA
+								{isAlpha ? 'ALPHA' : 'BETA'}
 							</div>
 						</Link>
 					</div>

@@ -1,18 +1,19 @@
-import OutpointCollection from "@/components/pages/outpoint/collection";
-import OutpointListing from "@/components/pages/outpoint/listing";
-import OutpointOwner from "@/components/pages/outpoint/owner";
-import OutpointToken from "@/components/pages/outpoint/token";
-import TxDetails from "@/components/transaction";
-import { API_HOST } from "@/constants";
-import { OutpointTab } from "@/types/common";
-import type { OrdUtxo } from "@/types/ordinals";
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 import Head from "next/head";
 import { Suspense } from "react";
 import { FaSpinner } from "react-icons/fa";
+import { API_HOST } from "@/constants";
+import { OutpointTab } from "@/types/common";
+import type { OrdUtxo } from "@/types/ordinals";
 
-const OutpointInscription = dynamic(() => import("@/components/pages/outpoint/inscription"));
+const TxDetails = dynamic(() => import("@/components/transaction"));
 const OutpointTimeline = dynamic(() => import("@/components/pages/outpoint/timeline"));
+const OutpointInscription = dynamic(() => import("@/components/pages/outpoint/inscription"));
+const OutpointToken = dynamic(() => import("@/components/pages/outpoint/token"));
+const OutpointListing = dynamic(() => import("@/components/pages/outpoint/listing"));
+const OutpointCollection = dynamic(() => import("@/components/pages/outpoint/collection"));
+const OutpointOwner = dynamic(() => import("@/components/pages/outpoint/owner"));
+
 
 type OutpointParams = {
   outpoint: string;
