@@ -164,7 +164,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       return {
         rawTx: tx.to_hex(),
         size: tx.get_size(),
-        fee: paymentUtxo!.satoshis - Number(tx.satoshis_out()),
+        fee: paymentUtxo.satoshis - Number(tx.satoshis_out()),
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),

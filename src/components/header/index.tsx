@@ -40,10 +40,8 @@ const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
 								/>
 							</div>
 							<span className="md:block hidden text-nowrap">
-								{isMarket
+								{isMarket || isAlpha
 									? "1Sat.Market"
-									: isAlpha
-										? "1Sat Alpha"
 										: isLocal
 											? "1Sat Hackinals"
 											: "1Sat Ordinals"}
