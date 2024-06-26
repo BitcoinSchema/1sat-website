@@ -46,7 +46,7 @@ const ListingForm = ({
 }: {
   ticker: Partial<MarketData>;
   initialPrice: string;
-  listedCallback: () => void;
+  listedCallback: (spends: string[]) => void;
 }) => {
   useSignals();
   const router = useRouter();
@@ -356,7 +356,8 @@ const ListingForm = ({
         );
 
         pendingTxs.value = [pendingTx];
-        listedCallback()
+        
+       
         router.push("/preview");
       } catch (e) {
         console.log({ e });

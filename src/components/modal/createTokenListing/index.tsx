@@ -44,7 +44,7 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
 				<ListingForm
 					initialPrice={listing.pricePer}
 					ticker={ticker}
-					listedCallback={async () => {
+					listedCallback={async (spends: string[]) => {
 						onClose();
 
 						// refresh ord utxos

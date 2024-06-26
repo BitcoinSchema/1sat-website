@@ -13,4 +13,6 @@ export type PendingTransaction = {
 	iterations?: number;
 	metadata?: MAP;
 	returnTo?: string;
+	spends?: string[];
+	ordSpends?: string[];
 };

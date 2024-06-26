@@ -6,6 +6,7 @@ import {
   ordPk,
   payPk,
   pendingTxs,
+  removeSpends,
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
@@ -65,11 +66,13 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     console.log("cancel bsv20 listing");
     if (!utxos.value || !payPk.value || !ordPk.value || !ordAddress.value || !indexerAddress) {
       cancelling.value = false;
-
       return;
     }
 
     const cancelTx = new Transaction(1, 0);
+
+    const spends: string[] = []
+    const ordSpends: string[] = [listing.txid]
 
     const cancelInput = new TxIn(
       Buffer.from(listing.txid, "hex"),
@@ -157,6 +160,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
     // add payment utxos to the tx
     for (const u of paymentUtxos) {
+      spends.push(u.txid);
       const inx = new TxIn(
         Buffer.from(u.txid, "hex"),
         u.vout,
@@ -228,14 +232,18 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     const pendingTx = {
       rawTx: cancelTx.to_hex(),
       txid: cancelTx.get_id_hex(),
+      spends,
+      ordSpends,
     } as PendingTransaction;
     pendingTxs.value = [pendingTx];
+    removeSpends(pendingTx.spends || [], pendingTx.ordSpends || [])
+
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
+  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, onCancelled]);
 
   const cancelListing = useCallback(async (e: React.MouseEvent) => {
     if (!bsvWasmReady.value) {
