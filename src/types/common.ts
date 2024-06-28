@@ -25,6 +25,9 @@ export type WocUtxo = {
   value: number;
 };
 
+export type WocUtxoResults = {
+  result: WocUtxo[];
+}
 export interface IndexerStats {
   "bsv20-deploy": number,
   bsv20: number,
