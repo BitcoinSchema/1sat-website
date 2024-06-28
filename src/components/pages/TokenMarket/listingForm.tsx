@@ -46,7 +46,7 @@ const ListingForm = ({
 }: {
 	ticker: Partial<MarketData>;
 	initialPrice: string;
-	listedCallback: (spends: string[]) => void;
+	listedCallback: () => void;
 }) => {
 	useSignals();
 	const router = useRouter();

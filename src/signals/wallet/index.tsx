@@ -69,13 +69,6 @@ export const chainInfo = signal<ChainInfo | null>(null);
 export const inscribeOptions = signal<InscribeOptions | null>(null);
 
 export const showDepositModal = signal<boolean>(false);
-
-export const removeSpends = (spends: string[], ordSpends: string[]) => {
-  utxos.value = (utxos.value || []).filter((u) => !(spends || []).includes(u.txid));
-  ordUtxos.value = (ordUtxos.value || []).filter((u) => !(ordSpends || []).includes(u.txid));
-  bsv20Utxos.value = (bsv20Utxos.value || []).filter((u) => !(ordSpends || []).includes(u.txid));
-}
-
 /**
  * Import Wallet
  */

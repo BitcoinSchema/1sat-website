@@ -9,7 +9,6 @@ import {
 	ordUtxos,
 	payPk,
 	pendingTxs,
-	removeSpends,
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
@@ -85,13 +84,11 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				throw new Error("bsv wasm not ready");
 			}
 			const tx = new Transaction(1, 0);
-			const spends:string[] = []
-const ordSpends: string[] = [];
+
 			// add token inputs
 			let amounts = 0;
 			let i = 0;
 			for (const utxo of inputTokens) {
-				ordSpends.push(utxo.txid);
 				const txBuf = Buffer.from(utxo.txid, "hex");
 				const utxoIn = new TxIn(
 					txBuf,
@@ -165,7 +162,6 @@ const ordSpends: string[] = [];
 			for (const utxo of paymentUtxos.sort((a, b) => {
 				return a.satoshis > b.satoshis ? -1 : 1;
 			})) {
-				spends.push(utxo.txid);
 				let utxoIn = new TxIn(
 					Buffer.from(utxo.txid, "hex"),
 					utxo.vout,
@@ -226,14 +222,12 @@ const ordSpends: string[] = [];
 			return {
 				rawTx: tx.to_hex(),
 				size: tx.get_size(),
-				fee: paymentUtxos[0]!.satoshis - Number(tx.satoshis_out()),
+				fee: paymentUtxos[0].satoshis - Number(tx.satoshis_out()),
 				numInputs: tx.get_ninputs(),
 				numOutputs: tx.get_noutputs(),
 				txid: tx.get_id_hex(),
 				inputTxid: paymentUtxos[0].txid,
 				marketFee: 0,
-				spends,
-				ordSpends
 			};
 		},
 		[bsvWasmReady.value, burn]
@@ -290,7 +284,7 @@ const ordSpends: string[] = [];
 				ticker,
 			);
 			pendingTxs.value = [transferTx];
-			removeSpends(transferTx.spends || [], transferTx.ordSpends || [])
+			
 			router.push("/preview");
 		},
 		[bsvWasmReady.value, ordAddress.value, ordPk.value, payPk.value, fundingAddress.value, amount.value, address.value, burn, utxos.value, balance, dec, type, id, transferBsv20, router]

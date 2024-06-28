@@ -6,7 +6,6 @@ import {
   ordPk,
   payPk,
   pendingTxs,
-  removeSpends,
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
@@ -70,10 +69,6 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     }
 
     const cancelTx = new Transaction(1, 0);
-
-    const spends: string[] = []
-    const ordSpends: string[] = [listing.txid]
-
     const cancelInput = new TxIn(
       Buffer.from(listing.txid, "hex"),
       listing.vout,
@@ -160,7 +155,6 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
     // add payment utxos to the tx
     for (const u of paymentUtxos) {
-      spends.push(u.txid);
       const inx = new TxIn(
         Buffer.from(u.txid, "hex"),
         u.vout,
@@ -232,11 +226,8 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     const pendingTx = {
       rawTx: cancelTx.to_hex(),
       txid: cancelTx.get_id_hex(),
-      spends,
-      ordSpends,
     } as PendingTransaction;
     pendingTxs.value = [pendingTx];
-    removeSpends(pendingTx.spends || [], pendingTx.ordSpends || [])
 
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
