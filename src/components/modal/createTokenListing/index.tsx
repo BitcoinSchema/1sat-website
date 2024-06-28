@@ -39,7 +39,7 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
 			<div className="modal-box" onClick={(e) => e.stopPropagation()}>
 				<h3 className="font-bold text-lg flex items-center justify-between">
 					<span>Listing {ticker.tick || ticker.sym}</span>
-					<span>Price: {listing.pricePer} BSV</span>
+					<span className="text-[#555] text-xs tooltip" data-tip="Last Price">{listing.pricePer} sat/token</span>
 				</h3>
 				<ListingForm
 					initialPrice={listing.pricePer}

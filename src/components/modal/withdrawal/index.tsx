@@ -145,6 +145,11 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			const rawTx = tx.to_hex();
 			// const { rawTx, fee, size, numInputs, numOutputs } = resp;
 
+			const firstIn = tx.get_input(0);
+			if (!firstIn) {
+				toast.error("Error creating transaction", toastErrorProps);
+				return;
+			}
 			pendingTxs.value = [
 				{
 					rawTx,
@@ -153,7 +158,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 					numInputs: tx.get_ninputs(),
 					numOutputs: tx.get_noutputs(),
 					txid: tx.get_id_hex(),
-					inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
+					inputTxid: firstIn.get_prev_tx_id_hex(),
 				},
 			];
 
@@ -245,7 +250,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			// }
 
 			console.log(amount.value, address.value);
-			send(address.value, toSatoshi(amount.value));
+			await send(address.value, toSatoshi(amount.value));
 		},
 		[amount.value, address.value, balance.value, send],
 	);
