@@ -12,7 +12,7 @@ export const addressFromWif = (payPk: string) => {
 };
 
 export const getBsv21Utxos = async (address: string, offset: number, id?: string) => {
-  let url = `${API_HOST}/api/bsv20/${address}/id/${id}?limit=${resultsPerPage}&offset=${offset}&dir=DESC`
+  let url = `${API_HOST}/api/bsv20/${address}/id/${id}?limit=${resultsPerPage}&offset=${offset}&dir=DESC&listing=true`
   if (id) {
     url += `&id=${id}`;
   }
@@ -22,7 +22,7 @@ export const getBsv21Utxos = async (address: string, offset: number, id?: string
 }
 
 export const getBsv20Utxos = async (address: string, offset: number, tick?: string) => {
-  let url = `${API_HOST}/api/bsv20/${address}/tick/${tick}?limit=${resultsPerPage}&offset=${offset}&dir=DESC`
+  let url = `${API_HOST}/api/bsv20/${address}/tick/${tick}?limit=${resultsPerPage}&offset=${offset}&dir=DESC&listing=true`
   if (tick) {
     url += `&tick=${tick}`;
   }
