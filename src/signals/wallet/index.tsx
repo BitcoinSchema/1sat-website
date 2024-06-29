@@ -69,7 +69,6 @@ export const chainInfo = signal<ChainInfo | null>(null);
 export const inscribeOptions = signal<InscribeOptions | null>(null);
 
 export const showDepositModal = signal<boolean>(false);
-
 /**
  * Import Wallet
  */

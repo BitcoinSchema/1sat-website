@@ -65,12 +65,10 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     console.log("cancel bsv20 listing");
     if (!utxos.value || !payPk.value || !ordPk.value || !ordAddress.value || !indexerAddress) {
       cancelling.value = false;
-
       return;
     }
 
     const cancelTx = new Transaction(1, 0);
-
     const cancelInput = new TxIn(
       Buffer.from(listing.txid, "hex"),
       listing.vout,
@@ -230,12 +228,13 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       txid: cancelTx.get_id_hex(),
     } as PendingTransaction;
     pendingTxs.value = [pendingTx];
+
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
+  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, onCancelled]);
 
   const cancelListing = useCallback(async (e: React.MouseEvent) => {
     if (!bsvWasmReady.value) {

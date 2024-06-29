@@ -3,8 +3,10 @@
 import { WalletTab } from "@/components/Wallet/tabs";
 import { API_HOST, toastErrorProps } from "@/constants";
 import {
+	bsv20Utxos,
 	bsvWasmReady,
 	ordPk,
+	ordUtxos,
 	payPk,
 	pendingTxs,
 	utxos,
@@ -220,7 +222,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			return {
 				rawTx: tx.to_hex(),
 				size: tx.get_size(),
-				fee: paymentUtxos[0]!.satoshis - Number(tx.satoshis_out()),
+				fee: paymentUtxos[0].satoshis - Number(tx.satoshis_out()),
 				numInputs: tx.get_ninputs(),
 				numOutputs: tx.get_noutputs(),
 				txid: tx.get_id_hex(),
@@ -228,19 +230,35 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				marketFee: 0,
 			};
 		},
-		[]
+		[bsvWasmReady.value, burn]
 	);
 
 	const submit = useCallback(
 		async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			if (!amount.value || (!address.value && !burn)) {
+			if (!bsvWasmReady.value) {
+				toast.error("not ready", toastErrorProps);
 				return;
 			}
+			if (!ordAddress.value || !ordPk.value || !payPk.value || !fundingAddress.value)	{
+				toast.error("Missing keys", toastErrorProps);
+				return;
+			}
+			if (!amount.value || (!address.value && !burn)) {
+				toast.error("Missing amount or address", toastErrorProps);
+				return;
+			}
+			if (!utxos.value || !utxos.value.length) {
+				toast.error("No UTXOs", toastErrorProps);
+				return;
+			}
+			
 			if (Number.parseFloat(amount.value) > balance) {
 				toast.error("Not enough Bitcoin!", toastErrorProps);
 				return;
 			}
+
+			
 			console.log(amount.value, address.value);
 			const amt = Math.floor(Number.parseFloat(amount.value) * 10 ** dec);
 			const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${
@@ -256,28 +274,20 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			const ticker = await promiseTickerDetails;
 			const transferTx = await transferBsv20(
 				amt,
-				utxos.value!,
+				utxos.value,
 				tokenUtxos,
-				PrivateKey.from_wif(payPk.value!),
-				fundingAddress.value!,
-				PrivateKey.from_wif(ordPk.value!),
-				ordAddress.value!,
+				PrivateKey.from_wif(payPk.value),
+				fundingAddress.value,
+				PrivateKey.from_wif(ordPk.value),
+				ordAddress.value,
 				address.value, // recipient ordinal address
-				ticker
+				ticker,
 			);
 			pendingTxs.value = [transferTx];
+			
 			router.push("/preview");
 		},
-		[
-			amount.value,
-			address.value,
-			balance,
-			dec,
-			type,
-			id,
-			transferBsv20,
-			router,
-		]
+		[bsvWasmReady.value, ordAddress.value, ordPk.value, payPk.value, fundingAddress.value, amount.value, address.value, burn, utxos.value, balance, dec, type, id, transferBsv20, router]
 	);
 
 	const placeholderText = useMemo(() => {
