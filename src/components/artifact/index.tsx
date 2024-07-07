@@ -1,14 +1,14 @@
 "use client";
 
 import { FetchStatus, ORDFS } from "@/constants";
-import { OrdUtxo, SIGMA } from "@/types/ordinals";
+import type { OrdUtxo, SIGMA } from "@/types/ordinals";
 import { getArtifactType } from "@/utils/artifact";
 import { toBase64 } from "@/utils/string";
 import { head } from "lodash";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { SyntheticEvent, useEffect, useMemo, useState } from "react";
+import React, { type SyntheticEvent, useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
@@ -241,8 +241,8 @@ const Artifact: React.FC<ArtifactProps> = ({
         <HTMLArtifact
           mini={(size || 300) < 300}
           origin={origin}
-          className={`${clickToZoom ? "cursor-pointer" : ""
-            } h-full w-full`}
+          className={{wrapper: `${clickToZoom ? "cursor-pointer" : ""
+            } w-full`, iframe: ""}}
           size={size}
           onClick={
             clickToZoom
