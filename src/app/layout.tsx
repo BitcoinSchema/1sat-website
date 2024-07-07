@@ -46,7 +46,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <meta http-equiv="Content-Security-Policy" content="frame-src 'self' https://ordfs.network; frame-ancestors 'self';" />
       </head>
 
       <body className={`flex flex-col h-100vh ${inter.className}`}>
