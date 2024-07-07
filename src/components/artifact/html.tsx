@@ -106,7 +106,8 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
               className={`pointer-events-none w-full h-full bg-none overflow-hidden no-scrollbar ${size ? `w-[${size}px] h-[${size}px]` : ""
                 }`}
               src={src.value}
-              sandbox=" "
+              // sandbox=" "
+              sandbox="allow-scripts"
               height={size || "100%"}
               width={size || "100%"}
               scrolling="no"
