@@ -1,5 +1,6 @@
 import { FetchStatus, ORDFS } from "@/constants";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FaPaperclip } from "react-icons/fa6";
 import { ArtifactType } from ".";
