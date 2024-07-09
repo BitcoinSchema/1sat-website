@@ -10,10 +10,19 @@ export interface EncryptedBackupJson {
 	//   ordChildKey: number;
 }
 
-export interface DecryptedBackupJson {
+export interface OldDecryptedBackupJson {
 	ordPk?: string;
 	payPk?: string;
-	// mnemonic?: string;
+}
+
+export interface DecryptedBackupJson {
+	mnemonic: string;
+	ordPk: string;
+	payPk: string;
+	payDerivationPath: string;
+	ordDerivationPath: string;
+	identityPk: string;
+	identityDerivationPath: string;
 }
 
 export enum CreateWalletStep {
@@ -29,6 +38,8 @@ export type Keys = {
   payPk: string;
   ordPk: string;
   mnemonic?: string;
-  changeAddressPath?: number;
-  ordAddressPath?: number;
+  changeAddressPath?: number | string;
+  ordAddressPath?: number | string;
+  identityPk?: string;
+  identityAddressPath?: number | string;
 }

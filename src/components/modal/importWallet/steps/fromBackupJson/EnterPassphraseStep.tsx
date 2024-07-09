@@ -3,7 +3,7 @@ import {
 	ImportWalletFromBackupJsonStep,
 	importWalletFromBackupJsonStep,
 } from "@/signals/wallet";
-import { EncryptDecrypt, type Keys } from "@/types/wallet";
+import { EncryptDecrypt } from "@/types/wallet";
 
 interface Props {
 	migrating?: boolean;

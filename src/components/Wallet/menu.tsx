@@ -52,6 +52,7 @@ import { EnterPassphraseModal } from "../modal/enterPassphrase";
 import ImportWalletModal from "../modal/importWallet";
 import ProtectKeysModal from "../modal/protectKeys";
 import WithdrawalModal from "../modal/withdrawal";
+import { backupKeys } from "@/utils/wallet";
 let initAttempted = false;
 
 const WalletMenu: React.FC = () => {
@@ -523,17 +524,6 @@ export const exportKeysViaFragment = () => {
   const base = "http://localhost:3000" // "https://1sat.market"
   // window.location.href = `${base}/wallet/import#import=${b64}`;
 }
-
-export const backupKeys = () => {
-  const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
-    JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value })
-  )}`;
-
-  const clicker = document.createElement("a");
-  clicker.setAttribute("href", dataStr);
-  clicker.setAttribute("download", "1sat.json");
-  clicker.click();
-};
 
 export const swapKeys = () => {
   // swaps paypk with ordpk values
