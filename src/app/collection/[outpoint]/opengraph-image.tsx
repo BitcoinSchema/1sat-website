@@ -27,31 +27,14 @@ export default async function Image({
 
 	const isImageInscription =
 		details.origin?.data?.insc?.file.type?.startsWith("image");
-	const url = `${ORDFS}/${params.outpoint}`;
+	//	const url = `${ORDFS}/${params.outpoint}`;
+	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_crop,b_rgb:111111,g_center,h_${size.height},w_${size.width}/f_auto/${ORDFS}/${params.outpoint}`;
 
 	return new ImageResponse(
 		(
 			<Container>
 				{isImageInscription ? (
-					    <div style={{
-								width: '100%',
-								height: '100%',
-								display: 'flex',
-								justifyContent: 'center',
-								alignItems: 'center',
-								overflow: 'hidden',
-							}}>
-								<img 
-									src={url} 
-									alt={alt} 
-									style={{
-										width: '100%',
-										height: '100%',
-										objectFit: 'cover',
-										objectPosition: 'center',
-									}}
-								/>
-							</div>
+					<img src={url} alt={alt} />
 				) : (
 					details.origin?.data?.map?.name ||
 					details.origin?.data?.bsv20?.tick ||
