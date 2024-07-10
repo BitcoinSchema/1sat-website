@@ -23,12 +23,20 @@ export default async function Image({
 
 	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_crop,b_rgb:111111,g_center,h_${size.height},w_${size.width}/f_auto/${ORDFS}/${params.outpoint}`;
 
+	console.log("Opengraph image url:", url)
+
+	const detailsUrl = `${API_HOST}/api/inscriptions/${params.outpoint}`
 	const details = await fetch(
-		`${API_HOST}/api/inscriptions/${params.outpoint}`,
-	).then((res) => res.json() as Promise<OrdUtxo>);
+		detailsUrl,
+	).then((res) => {
+		if (!res.ok) {
+			throw new Error(`Error fetching JSON from ${detailsUrl}`);
+		}
+		return res.json() as Promise<OrdUtxo>
+	});
 
 	const isImageInscription =
-		details.origin?.data?.insc?.file.type?.startsWith("image");
+		details?.origin?.data?.insc?.file.type?.startsWith("image");
 	// const url = `${ORDFS}/${params.outpoint}`;
 
 	return new ImageResponse(

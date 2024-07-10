@@ -22,32 +22,31 @@ export default async function Image({
 	const notoSerif = await getNotoSerifItalicFont();
 
 	const details = await fetch(
-		`${API_HOST}/api/inscriptions/${params.outpoint}`
+		`${API_HOST}/api/inscriptions/${params.outpoint}`,
 	).then((res) => res.json() as Promise<OrdUtxo>);
 
 	const isImageInscription =
 		details.origin?.data?.insc?.file.type?.startsWith("image");
 	//	const url = `${ORDFS}/${params.outpoint}`;
 	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_crop,b_rgb:111111,g_center,h_${size.height},w_${size.width}/f_auto/${ORDFS}/${params.outpoint}`;
-
+	console.log({ url });
 	return new ImageResponse(
-		(
-			<Container>
-				{isImageInscription ? (
-					<img src={url} alt={alt} />
-				) : (
-					details.origin?.data?.map?.name ||
-					details.origin?.data?.bsv20?.tick ||
-					details.origin?.data?.bsv20?.sym ||
-					details.origin?.data?.insc?.json?.tick ||
-					details.origin?.data?.insc?.json?.p ||
-					details.origin?.data?.insc?.file.type ||
-					"Mystery Outpoint"
-				)}
+		<Container>
+			{isImageInscription ? (
+				// eslint-disable-next-line @next/next/no-img-element
+				<img src={url} alt={alt} />
+			) : (
+				details.origin?.data?.map?.name ||
+				details.origin?.data?.bsv20?.tick ||
+				details.origin?.data?.bsv20?.sym ||
+				details.origin?.data?.insc?.json?.tick ||
+				details.origin?.data?.insc?.json?.p ||
+				details.origin?.data?.insc?.file.type ||
+				"Mystery Outpoint"
+			)}
 
-				<Logo />
-			</Container>
-		),
+			<Logo />
+		</Container>,
 		{
 			...size,
 			fonts: [
@@ -58,6 +57,6 @@ export default async function Image({
 					weight: 400,
 				},
 			],
-		}
+		},
 	);
 }
