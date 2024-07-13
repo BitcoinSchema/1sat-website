@@ -17,6 +17,12 @@ export interface TickHolder {
   pct: number;
 }
 
+export interface CombinedHolder {
+  address: string;
+  totalPct: number;
+  tokens: { [tokenTick: string]: { amt: number; pct: number } };
+}
+
 export type MarketData = {
   accounts: number;
   tick?: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Holder, TickHolder } from "@/components/pages/TokenMarket/list";
+import type { CombinedHolder, Holder, TickHolder } from "@/components/pages/TokenMarket/list";
 import { Meteors } from "@/components/ui/meteors";
 import {
 	API_HOST,
@@ -21,7 +21,7 @@ import type { Ticker } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
-import type { Utxo } from "@/utils/js-1sat-ord";
+import type { TransferBSV20Inscription, TransferBSV21Inscription, Utxo } from "js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -200,35 +200,92 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					// console.log({hasUnderscore, url, tickerHoldersUrl, holders})
 					// calculations for weighted allocation
 					const detailsRes = await fetch(url);
-					const details = await detailsRes.json();
-					// console.log({details})
-					const maxSupply = hasUnderscore
-						? details?.supply
-						: details?.maxSupply;
+					const details = (await detailsRes.json()) as Ticker;
+					console.log({ details });
+
+					// details.supply is for BSV20, details.amt is for BSV21
+					const maxSupply: string = details.supply || details.amt;
+
+					// console.log({ maxSupply, bint: BigInt(maxSupply) });
 					// calculate pct held for each receiver
 					const tickHolders = holders
-						?.sort((a, b) => Number.parseInt(b.amt) - Number.parseInt(a.amt))
-						.map((h) => ({
-							...h,
-							amt: Number.parseInt(h.amt) / 10 ** (details?.dec || 0),
-							pct: Number(BigInt(h.amt) / BigInt(maxSupply)),
-						})) as TickHolder[];
+						?.sort((a, b) => {
+							const amtA = BigInt(a.amt);
+							const amtB = BigInt(b.amt);
+							if (amtA > amtB) return -1;
+							if (amtA < amtB) return 1;
+							return 0;
+						})
+						.map((h) => {
+							const amountBigInt = BigInt(h.amt);
+							const maxSupplyBigInt = BigInt(maxSupply);
+							const decimalPlaces = details?.dec || 0;
+
+							// Calculate percentage without precision loss
+							const pct =
+								Number(
+									(amountBigInt * BigInt(10000) * BigInt(100)) /
+										maxSupplyBigInt,
+								) / 10000;
+
+							// Calculate amount
+							const amt = Number(amountBigInt) / 10 ** decimalPlaces;
+
+							return { ...h, amt, pct };
+						}) as TickHolder[];
+
+					// make sure amt values add up to sendAmount
+					console.log(
+						`Total Supply: ${maxSupply}, Decimal Places: ${details?.dec}`,
+					);
+					// console.log({ holders, tickHolders });
 
 					// calculate total percentage owned by all receivers
 					const totalPctHeldByHolders = tickHolders.reduce(
-						(acc, h) => (acc += h.pct),
+						(acc, h) => acc + h.pct,
 						0,
 					);
+					console.log(`Total Percentage Held by top ${holders.length} accounts: ${totalPctHeldByHolders}%`);
 
-					// calculate amount to receive for each holder based on pct owned scaled
-					// to total pct owned by all receivers (totalPctOfHolders = 100%)
+					let totalAllocated = 0;
+					const tempReceivers = [];
+
+					// First pass: calculate initial receive amounts
 					for (const holder of tickHolders) {
 						const weightedAmt =
 							(sendAmount * holder.pct) / totalPctHeldByHolders;
 						const receiveAmt = Math.floor(weightedAmt);
-						remainder += Math.round(weightedAmt - receiveAmt); // round to integer to avoid js pitfalls with numbers
+						totalAllocated += receiveAmt;
+						if (receiveAmt > 0) {
+							tempReceivers.push({ ...holder, receiveAmt });
+						}
+					}
 
-						receivers.push({ ...holder, receiveAmt });
+					// Calculate remaining amount
+					let remaining = sendAmount - totalAllocated;
+
+					// Second pass: distribute remaining amount
+					tempReceivers.sort((a, b) => b.pct - a.pct); // Sort by percentage descending
+					for (let i = 0; i < tempReceivers.length && remaining > 0; i++) {
+						tempReceivers[i].receiveAmt++;
+						remaining--;
+					}
+
+					// Add the adjusted receivers to the main receivers array
+					receivers = receivers.concat(tempReceivers);
+
+					// Verify total
+					const totalReceiveAmt = receivers.reduce(
+						(sum, r) => sum + r.receiveAmt,
+						0,
+					);
+					console.log(
+						`Total Allocated: ${totalReceiveAmt}, SendAmount: ${sendAmount}`,
+					);
+					if (totalReceiveAmt !== sendAmount) {
+						console.error(
+							"Error: Total allocated amount does not match sendAmount",
+						);
 					}
 				} else {
 					receivers = receivers.concat(
@@ -275,11 +332,11 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					p: "bsv-20",
 					op: "transfer",
 					amt: (amounts - sendAmount + remainder).toString(),
-				} as any;
+				} as TransferBSV21Inscription | TransferBSV20Inscription;
 				if (ticker.tick) {
-					changeInscription.tick = ticker.tick;
+					(changeInscription as TransferBSV20Inscription).tick = ticker.tick;
 				} else if (ticker.id) {
-					changeInscription.id = ticker.id;
+					(changeInscription as TransferBSV21Inscription).id = ticker.id;
 				} else {
 					throw new Error("unexpected error");
 				}
@@ -342,7 +399,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					"application/bsv-20",
 				);
 
-				let satOut = new TxOut(BigInt(1), insc);
+				const satOut = new TxOut(BigInt(1), insc);
 				tx.add_output(satOut);
 			}
 
@@ -386,6 +443,76 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 		],
 	);
 
+  async function calculateAllocations(sendAmount: number, tickerDestinations: string[], bsv21Destinations: string[]) {
+    const allHolders: CombinedHolder[] = [];
+    let totalSupplyAcrossTokens = 0;
+  
+    for (const t of tickerDestinations.concat(bsv21Destinations)) {
+      const hasUnderscore = t.includes("_");
+      const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${t}`;
+      const tickerHoldersUrl = `${url}/holders?limit=${numOfHolders.value}`;
+      const holdersRes = await fetch(tickerHoldersUrl);
+      const holders = ((await holdersRes.json()) || []) as Holder[];
+  
+      const detailsRes = await fetch(url);
+      const details = (await detailsRes.json()) as Ticker;
+  
+      const maxSupply = BigInt(details.supply || details.amt);
+      totalSupplyAcrossTokens += Number(maxSupply);
+  
+      const tickHolders: TickHolder[] = holders.map((h) => {
+        const amountBigInt = BigInt(h.amt);
+        const pct = Number((amountBigInt * BigInt(10000) * BigInt(100)) / maxSupply) / 10000;
+        return { ...h, amt: Number(h.amt), pct };
+      });
+  
+      for (const holder of tickHolders) {
+        const existingHolder = allHolders.find(h => h.address === holder.address);
+        if (existingHolder) {
+          existingHolder.totalPct += holder.pct * (Number(maxSupply) / totalSupplyAcrossTokens);
+          existingHolder.tokens[t] = { amt: holder.amt, pct: holder.pct };
+        } else {
+          allHolders.push({
+            address: holder.address,
+            totalPct: holder.pct * (Number(maxSupply) / totalSupplyAcrossTokens),
+            tokens: { [t]: { amt: holder.amt, pct: holder.pct } }
+          });
+        }
+      }
+    }
+  
+    // Calculate allocations
+    let totalAllocated = 0;
+    const receivers: { address: string; receiveAmt: number }[] = [];
+  
+    allHolders.sort((a, b) => b.totalPct - a.totalPct);
+  
+    for (const holder of allHolders) {
+      const weightedAmt = Math.floor(sendAmount * holder.totalPct / 100);
+      if (weightedAmt > 0) {
+        receivers.push({ address: holder.address, receiveAmt: weightedAmt });
+        totalAllocated += weightedAmt;
+      }
+    }
+  
+    // Distribute remaining amount
+    let remaining = sendAmount - totalAllocated;
+    for (let i = 0; i < receivers.length && remaining > 0; i++) {
+      receivers[i].receiveAmt++;
+      remaining--;
+    }
+  
+    // Verify total allocation
+    const totalReceiveAmt = receivers.reduce((sum, r) => sum + r.receiveAmt, 0);
+    console.log(`Total Allocated: ${totalReceiveAmt}, SendAmount: ${sendAmount}`);
+    if (totalReceiveAmt !== sendAmount) {
+      console.error("Error: Total allocated amount does not match sendAmount");
+      throw new Error("Allocation error");
+    }
+  
+    return { receivers, allHolders };
+  }
+  
 	const submit = useCallback(
 		async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
