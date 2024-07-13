@@ -1,7 +1,8 @@
 import { ORDFS } from "@/constants";
 import { encode } from "blurhash";
 import { toSvg } from "jdenticon";
-import React, { useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Blurhash } from "react-blurhash";
 
 type AudioArtifactProps = {
@@ -38,13 +39,13 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
       if (!File) {
         return;
       }
-      var file = new File([svg], "name");
+      const file = new File([svg], "name");
 
       const el = <img alt="" src={imageUrl} />;
       if (typeof window === "undefined") {
         return el;
       }
-      let el2 = document.createElement("img");
+      const el2 = document.createElement("img");
       el2.src = imageUrl;
       el2.onload = () => {
         const imageData = getImageData(el2, 4, 4);
@@ -67,13 +68,13 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
         componentY
       )
       : undefined;
-  }, [position, data, componentX, componentY]);
+  }, [data, componentX, componentY]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (data && outPoint && generatedImage) {
         console.log("This will be called every 2 seconds");
-        let ael = document.getElementById(
+        const ael = document.getElementById(
           `${outPoint}_audio`
         ) as HTMLAudioElement;
         if (!ael?.paused && ael?.currentTime && ael?.duration) {
@@ -100,6 +101,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
         />
       )}
       {!bh && generatedImage}
+      {/* biome-ignore lint/a11y/useMediaCaption: <explanation> */}
       <audio
         className={`w-full transition ${className ? className : ""}`}
         src={src ? src : `${ORDFS}/${origin}`}
