@@ -13,7 +13,7 @@ import type { BSV20Balance } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { getBalanceText } from "@/utils/wallet";
-import { computed, effect, useSignal } from "@preact/signals-react";
+import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import { find, uniq } from "lodash";

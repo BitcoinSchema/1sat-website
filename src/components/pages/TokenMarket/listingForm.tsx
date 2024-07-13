@@ -1,6 +1,5 @@
 "use client";
 
-import { buildInscriptionSafe } from "@/components/modal/airdrop";
 import {
 	API_HOST,
 	oLockPrefix,
@@ -38,6 +37,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
+import { buildInscriptionSafe } from "@/components/modal/transferBsv20";
 
 const ListingForm = ({
 	initialPrice,
