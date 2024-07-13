@@ -59,7 +59,7 @@ export enum ArtifactType {
   Unknown = "Unknown",
   LRC20 = "LRC20",
   Audio = "Audio",
-  Audio2 = "Audio2",
+  Audio2 = "AppleAudio",
   SVG = "SVG",
 }
 

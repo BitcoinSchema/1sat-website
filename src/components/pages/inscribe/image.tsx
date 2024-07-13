@@ -24,8 +24,6 @@ interface InscribeImageProps {
   generated?: boolean;
 }
 
-
-
 const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, generated }) => {
   useSignals();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -48,7 +46,8 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
       const file = new File([arrayBuffer], "image.png", { type: "image/png" });
       setSelectedFile(file);
 
-      setPreview(`data:image/png;base64,${generatedImage.value.data}`);
+      const contentType = file.type || "image/png";
+      setPreview(`data:${contentType};base64,${generatedImage.value.data}`);
       // fetch(b64Json)
       //   .then(async (res) => {
       //     if (!res.ok) {
@@ -162,7 +161,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
       pendingTxs.value = [pendingTx];
       inscribedCallback();
     }
-  }, [mapData, metadata, inscribedCallback, selectedFile]);
+  }, [selectedFile, payPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, inscribedCallback]);
 
   const Input = styled.input`
     padding: 0.5rem;
@@ -185,6 +184,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
       typeof preview === "string" && (
         <Artifact
           classNames={{ media: "w-full h-full" }}
+          latest={true}
           artifact={{
             data: {
               insc: {
