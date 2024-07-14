@@ -106,7 +106,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
 	const setAmountToBalance = useCallback(() => {
 		amount.value = balance.toString();
-		console.log(amount.value);
 	}, [amount, balance]);
 
 	const handleReview = useCallback(
@@ -127,23 +126,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			ordPk: PrivateKey,
 			ordAddress: string,
 			ticker: Ticker,
-			additionalAddresses: string,
-			excludeAdresses: string,
+			extraAddresses: string,
+			excludedAdresses: string,
 		): Promise<PendingTransaction> => {
-			console.log({
-				destinationBsv21Ids: destinationBsv21Ids.value,
-				destinationTickers: destinationTickers.value,
-				numOfHolders: numOfHolders.value,
-				isEqualAllocation,
-				sendAmount,
-				ticker,
-				paymentUtxos,
-				inputTokens,
-				paymentPk,
-				changeAddress,
-				ordPk,
-				ordAddress,
-			});
 			// totals for airdrop review
 			indexingFees.value = 0;
 			changeTokenAmount.value = 0;
@@ -156,12 +141,12 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				throw new Error("No destinations found");
 			}
 			let distributions: Distribution[] = [];
-			const omitAddresses = (excludeAdresses || "")
+			const omitAddresses = (excludedAdresses || "")
 				.split(",")
 				.map((a) => a.trim())
 				.filter((a) => a.length > 0);
 
-			const plusAddresses = (additionalAddresses || "")
+			const plusAddresses = (extraAddresses || "")
 				.split(",")
 				.map((a) => a.trim())
 				.filter((a) => a.length > 0);
@@ -189,8 +174,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				address: d.address,
 				receiveAmt: Number(d.amt),
 			}));
-
-			console.log({ distributions, destinations: destinations.value });
 
 			const indexerAddress = ticker.fundAddress;
 			const additionalPayments: Payment[] = [
@@ -373,11 +356,12 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			type,
 			id,
 			ordAddress.value,
-			airdropBsv20,
-			utxos.value,
 			payPk.value,
-			fundingAddress.value,
 			ordPk.value,
+			fundingAddress.value,
+			utxos.value,
+			airdropBsv20,
+			excludeAdresses.value,
 			handleReview,
 		],
 	);
@@ -683,37 +667,49 @@ const calculateEqualDistributions = async (
 	additionalAddresses: string[],
 	excludeAdresses: string[],
 ): Promise<Distribution[]> => {
-	const allTokens = [
-		...bsv20Tickers.split(","),
-		...bsv21Ids.split(","),
-		...additionalAddresses,
-	]
+	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")]
 		.map((t) => t.trim())
-		.filter((t) => t.length > 0 && !excludeAdresses.includes(t));
+		.filter((t) => t.length > 0);
 	const tokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
 
-	let totalHolders = 0;
 	const holderSets = await Promise.all(
-		tokenDetails.map(async (details) => {
-			const url = `${API_HOST}/api/bsv20/${details.id ? "id" : "tick"}/${details.id || details.tick}/holders?limit=${numHolders}`;
-			const response = await fetch(url);
-			const holders = (await response.json()) as Holder[];
-			totalHolders += holders.length;
-			return holders;
-		}),
+		tokenDetails.map(
+			(details) =>
+				details &&
+				fetchHolders((details.id || details.tick) as string, numHolders),
+		),
 	);
+
+	const holders = holderSets.flat();
+
+	// add additional addresses to holders
+	const additionalHolders = additionalAddresses.map((address) => {
+		return { address, amt: "0" };
+	});
+
+	const finalHolders = holders.concat(additionalHolders).filter((holder) => {
+		return !excludeAdresses.includes(holder.address);
+	});
+
+	const totalHolders = finalHolders.length;
 
 	const amountPerHolder = Math.floor(sendAmount / totalHolders);
 	const distributions: Distribution[] = [];
 
 	for (const holders of holderSets) {
 		for (const holder of holders) {
-			distributions.push({
-				address: holder.address,
-				amt: amountPerHolder.toString(),
-			});
+			if (excludeAdresses.includes(holder.address)) {
+				distributions.push({
+					address: holder.address,
+					amt: amountPerHolder.toString(),
+				});
+			}
 		}
 	}
+
+	// add additional addresses
+
+	distributions.push(...additionalHolders);
 
 	// Distribute any remaining amount to the first holders
 	const remaining = sendAmount - amountPerHolder * totalHolders;
@@ -735,7 +731,7 @@ const calculateWeightedDistributions = async (
 ): Promise<Distribution[]> => {
 	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")]
 		.map((t) => t.trim())
-		.filter((t) => t.length > 0 && !excludeAdresses.includes(t));
+		.filter((t) => t.length > 0);
 
 	const allTokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
 
@@ -774,7 +770,9 @@ const calculateWeightedDistributions = async (
 		}
 	}
 
-	allHolders.sort((a, b) => b.totalWeightedAmt - a.totalWeightedAmt);
+	allHolders.sort((a, b) => b.totalWeightedAmt - a.totalWeightedAmt).filter(
+		(holder) => !excludeAdresses.includes(holder.address),
+	);
 
 	const distributions: Distribution[] = [];
 	let totalAllocated = 0;
