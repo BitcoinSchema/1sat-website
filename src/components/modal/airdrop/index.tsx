@@ -128,7 +128,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			ordAddress: string,
 			ticker: Ticker,
 			additionalAddresses: string,
-			excludeAdresses: string
+			excludeAdresses: string,
 		): Promise<PendingTransaction> => {
 			console.log({
 				destinationBsv21Ids: destinationBsv21Ids.value,
@@ -156,6 +156,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				throw new Error("No destinations found");
 			}
 			let distributions: Distribution[] = [];
+			const omitAddresses = excludeAdresses
+				.split(",")
+				.map((a) => a.trim())
+				.filter((a) => a.length > 0);
 			if (isEqualAllocation) {
 				distributions = await calculateEqualDistributions(
 					sendAmount,
@@ -163,7 +167,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					destinationBsv21Ids.value,
 					Number.parseInt(numOfHolders.value),
 					additionalAddresses,
-					excludeAdresses
+					omitAddresses,
 				);
 			} else {
 				distributions = await calculateWeightedDistributions(
@@ -171,7 +175,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					destinationTickers.value,
 					destinationBsv21Ids.value,
 					Number.parseInt(numOfHolders.value),
-					excludeAdresses
+					omitAddresses,
 				);
 			}
 
@@ -331,6 +335,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					PrivateKey.fromWif(ordPk.value),
 					ordAddress.value,
 					ticker,
+					addresses.value,
+					excludeAdresses.value,
 				);
 				airdroppingStatus.value = FetchStatus.Success;
 
@@ -533,44 +539,45 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								)}
 
 								<div className="divider" />
-								{isEqualAllocation && (<>
-									<div className="flex flex-col mt-4">
-										<label className="text-sm font-semibold text-[#aaa] mb-2">
-											Addresses (comma separated list){" "}
-											{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-											<div
-												className="cursor-pointer text-blue-400 hover:text-blue-500"
-												onClick={loadTemplate}
-											>
-												All Registered Users
-											</div>
-										</label>
-										<input
-											type="text"
-											placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-											className="z-20 input input-bordered w-full placeholder:text-[#333]"
-											value={addresses.value}
-											onChange={(e) => {
-												addresses.value = e.target.value;
-											}}
-										/>
-									</div>
+								{isEqualAllocation && (
+									<>
+										<div className="flex flex-col mt-4">
+											<label className="text-sm font-semibold text-[#aaa] mb-2">
+												Addresses (comma separated list){" "}
+												{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+												<div
+													className="cursor-pointer text-blue-400 hover:text-blue-500"
+													onClick={loadTemplate}
+												>
+													All Registered Users
+												</div>
+											</label>
+											<input
+												type="text"
+												placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+												className="z-20 input input-bordered w-full placeholder:text-[#333]"
+												value={addresses.value}
+												onChange={(e) => {
+													addresses.value = e.target.value;
+												}}
+											/>
+										</div>
 									</>
 								)}
 								<div className="flex flex-col mt-4">
-										<label className="text-sm font-semibold text-[#aaa] mb-2">
-											Exclude Addresses (comma separated list)
-										</label>
-										<input
-											type="text"
-											placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-											className="z-20 input input-bordered w-full placeholder:text-[#333]"
-											value={addresses.value}
-											onChange={(e) => {
-												excludeAdresses.value = e.target.value;
-											}}
-										/>
-									</div>
+									<label className="text-sm font-semibold text-[#aaa] mb-2">
+										Exclude Addresses (comma separated list)
+									</label>
+									<input
+										type="text"
+										placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+										className="z-20 input input-bordered w-full placeholder:text-[#333]"
+										value={addresses.value}
+										onChange={(e) => {
+											excludeAdresses.value = e.target.value;
+										}}
+									/>
+								</div>
 							</div>
 						)}
 
@@ -585,21 +592,20 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 									</div>
 								</div>
 								<div className="border-b border-[#555] pb-2">
-								{destinations.value.map((dest, index) => (
-									<div
-										key={`destination-${dest.address}`}
-										className="flex justify-between mb-2 text-xs"
-									>
-										<span>{dest.address}</span>
-										<span className="whitespace-nowrap">
-											{(dest.receiveAmt / 10 ** dec).toFixed(dec)} {sym || id}
-										</span>
-									</div>
-								))}</div>
+									{destinations.value.map((dest, index) => (
+										<div
+											key={`destination-${dest.address}`}
+											className="flex justify-between mb-2 text-xs"
+										>
+											<span>{dest.address}</span>
+											<span className="whitespace-nowrap">
+												{(dest.receiveAmt / 10 ** dec).toFixed(dec)} {sym || id}
+											</span>
+										</div>
+									))}
+								</div>
 								<div className="mt-2 flex justify-between text-sm">
-									<div className="font-semibold text-[#aaa]">
-										Indexing Fees
-									</div>
+									<div className="font-semibold text-[#aaa]">Indexing Fees</div>
 									<div>{toBitcoin(indexingFees.value || 0)} BSV</div>
 								</div>
 								{changeTokenAmount.value > 0 && (
@@ -670,11 +676,15 @@ const calculateEqualDistributions = async (
 	bsv21Ids: string,
 	numHolders: number,
 	additionalAddresses: string,
-	excludeAdresses: string
+	excludeAdresses: string[],
 ): Promise<Distribution[]> => {
-	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(","), ...additionalAddresses.split(",")].map(
-		(t) => t.trim(),
-	).filter((t) => t.length > 0 && !excludeAdresses.includes(t));
+	const allTokens = [
+		...bsv20Tickers.split(","),
+		...bsv21Ids.split(","),
+		...additionalAddresses.split(","),
+	]
+		.map((t) => t.trim())
+		.filter((t) => t.length > 0 && !excludeAdresses.includes(t));
 	const tokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
 
 	let totalHolders = 0;
@@ -716,12 +726,12 @@ const calculateWeightedDistributions = async (
 	bsv20Tickers: string,
 	bsv21Ids: string,
 	numHolders: number,
-	excludeAdresses: string
+	excludeAdresses: string[],
 ): Promise<Distribution[]> => {
-	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")].map(
-		(t) => t.trim(),
-	).filter((t) => t.length > 0 && !excludeAdresses.includes(t));
-	
+	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")]
+		.map((t) => t.trim())
+		.filter((t) => t.length > 0 && !excludeAdresses.includes(t));
+
 	const allTokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
 
 	const allHolders: CombinedHolder[] = [];
