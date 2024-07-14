@@ -156,7 +156,12 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				throw new Error("No destinations found");
 			}
 			let distributions: Distribution[] = [];
-			const omitAddresses = excludeAdresses
+			const omitAddresses = (excludeAdresses || "")
+				.split(",")
+				.map((a) => a.trim())
+				.filter((a) => a.length > 0);
+
+			const plusAddresses = (additionalAddresses || "")
 				.split(",")
 				.map((a) => a.trim())
 				.filter((a) => a.length > 0);
@@ -166,7 +171,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					destinationTickers.value,
 					destinationBsv21Ids.value,
 					Number.parseInt(numOfHolders.value),
-					additionalAddresses,
+					plusAddresses,
 					omitAddresses,
 				);
 			} else {
@@ -572,7 +577,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 										type="text"
 										placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
 										className="z-20 input input-bordered w-full placeholder:text-[#333]"
-										value={addresses.value}
+										value={excludeAdresses.value}
 										onChange={(e) => {
 											excludeAdresses.value = e.target.value;
 										}}
@@ -675,13 +680,13 @@ const calculateEqualDistributions = async (
 	bsv20Tickers: string,
 	bsv21Ids: string,
 	numHolders: number,
-	additionalAddresses: string,
+	additionalAddresses: string[],
 	excludeAdresses: string[],
 ): Promise<Distribution[]> => {
 	const allTokens = [
 		...bsv20Tickers.split(","),
 		...bsv21Ids.split(","),
-		...additionalAddresses.split(","),
+		...additionalAddresses,
 	]
 		.map((t) => t.trim())
 		.filter((t) => t.length > 0 && !excludeAdresses.includes(t));
