@@ -1,6 +1,9 @@
 "use client";
 
-import type { Holder, TickHolder } from "@/components/pages/TokenMarket/list";
+import type {
+	CombinedHolder,
+	Holder,
+} from "@/components/pages/TokenMarket/list";
 import { Meteors } from "@/components/ui/meteors";
 import {
 	API_HOST,
@@ -9,36 +12,30 @@ import {
 	MARKET_API_HOST,
 	toastErrorProps,
 } from "@/constants";
-import {
-	bsvWasmReady,
-	ordPk,
-	payPk,
-	pendingTxs,
-	utxos,
-} from "@/signals/wallet";
+import { ordPk, payPk, pendingTxs, utxos } from "@/signals/wallet";
+import { PrivateKey, Script } from "@bsv/sdk";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Ticker } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
-import type { Utxo } from "@/utils/js-1sat-ord";
-import { createChangeOutput, signPayment } from "@/utils/transaction";
+import { TokenType } from "js-1sat-ord";
+import type {
+	Distribution,
+	Payment,
+	TokenUtxo,
+	TransferOrdTokensConfig,
+	Utxo,
+} from "js-1sat-ord";
+import { transferOrdTokens } from "js-1sat-ord";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { toBitcoin } from "satoshi-bitcoin-ts";
-import {
-	P2PKHAddress,
-	PrivateKey,
-	Script,
-	SigHash,
-	Transaction,
-	TxIn,
-	TxOut,
-} from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FaQuestion } from "react-icons/fa";
+import { find } from "lodash";
 
 interface TransferModalProps {
 	onClose: () => void;
@@ -96,6 +93,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 	const airdroppingStatus = useSignal<FetchStatus>(FetchStatus.Idle);
 	const amount = useSignal(amt?.toString() || "0");
 	const addresses = useSignal<string>(addr || "");
+	const excludeAdresses = useSignal<string>("");
 	const destinationTickers = useSignal("");
 	const destinationBsv21Ids = useSignal("");
 	const numOfHolders = useSignal("25");
@@ -123,266 +121,116 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 		async (
 			sendAmount: number,
 			paymentUtxos: Utxo[],
-			inputTokens: BSV20TXO[], //
+			inputTokens: TokenUtxo[],
 			paymentPk: PrivateKey,
 			changeAddress: string,
 			ordPk: PrivateKey,
 			ordAddress: string,
 			ticker: Ticker,
+			additionalAddresses: string
+			excludeAdresses: string
 		): Promise<PendingTransaction> => {
-			if (!bsvWasmReady.value) {
-				throw new Error("bsv wasm not ready");
-			}
-			let tx = new Transaction(1, 0);
-
+			console.log({
+				destinationBsv21Ids: destinationBsv21Ids.value,
+				destinationTickers: destinationTickers.value,
+				numOfHolders: numOfHolders.value,
+				isEqualAllocation,
+				sendAmount,
+				ticker,
+				paymentUtxos,
+				inputTokens,
+				paymentPk,
+				changeAddress,
+				ordPk,
+				ordAddress,
+			});
 			// totals for airdrop review
 			indexingFees.value = 0;
 			changeTokenAmount.value = 0;
 
-			// add token inputs
-			let amounts = 0;
-			let i = 0;
-			for (const utxo of inputTokens) {
-				const txBuf = Buffer.from(utxo.txid, "hex");
-				let utxoIn = new TxIn(txBuf, utxo.vout, Script.from_asm_string(""));
-				amounts += Number.parseInt(utxo.amt);
-				tx.add_input(utxoIn);
-
-				// sign ordinal
-				const sig = tx.sign(
-					ordPk,
-					SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
-					i,
-					Script.from_bytes(Buffer.from(utxo.script, "base64")),
-					BigInt(1),
-				);
-
-				utxoIn.set_unlocking_script(
-					Script.from_asm_string(
-						`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`,
-					),
-				);
-
-				tx.set_input(i, utxoIn);
-				i++;
-				if (sendAmount <= amounts) {
-					break;
-				}
-			}
-
-			// if allocation is "Equal", destination can include addresses
-			destinations.value =
-				isEqualAllocation && addresses.value.length > 0
-					? addresses.value
-							.split(",")
-							.map((a) => ({ address: a.trim(), receiveAmt: 0 })) // receiveAmt will be calculated later
-					: [];
-			const tickerDestinations = destinationTickers.value
-				? destinationTickers.value.split(",").map((a) => a.trim())
-				: [];
-
-			const bsv21Destinations = destinationBsv21Ids.value
-				? destinationBsv21Ids.value.split(",").map((a) => a.trim())
-				: [];
-
-			// resolve ticker holders
-			let receivers: Destination[] = [];
-			let remainder = 0;
-
-			for (const t of tickerDestinations.concat(bsv21Destinations)) {
-				const hasUnderscore = t.includes("_");
-				const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${t}`;
-				const tickerHoldersUrl = `${url}/holders?limit=${numOfHolders.value}`;
-				const holdersRes = await fetch(tickerHoldersUrl);
-				const holders = ((await holdersRes.json()) || []) as Holder[];
-
-				if (!isEqualAllocation) {
-					// console.log({hasUnderscore, url, tickerHoldersUrl, holders})
-					// calculations for weighted allocation
-					const detailsRes = await fetch(url);
-					const details = await detailsRes.json();
-					// console.log({details})
-					const maxSupply = hasUnderscore
-						? details?.supply
-						: details?.maxSupply;
-					// calculate pct held for each receiver
-					const tickHolders = holders
-						?.sort((a, b) => Number.parseInt(b.amt) - Number.parseInt(a.amt))
-						.map((h) => ({
-							...h,
-							amt: Number.parseInt(h.amt) / 10 ** (details?.dec || 0),
-							pct: Number(BigInt(h.amt) / BigInt(maxSupply)),
-						})) as TickHolder[];
-
-					// calculate total percentage owned by all receivers
-					const totalPctHeldByHolders = tickHolders.reduce(
-						(acc, h) => (acc += h.pct),
-						0,
-					);
-
-					// calculate amount to receive for each holder based on pct owned scaled
-					// to total pct owned by all receivers (totalPctOfHolders = 100%)
-					for (const holder of tickHolders) {
-						const weightedAmt =
-							(sendAmount * holder.pct) / totalPctHeldByHolders;
-						const receiveAmt = Math.floor(weightedAmt);
-						remainder += Math.round(weightedAmt - receiveAmt); // round to integer to avoid js pitfalls with numbers
-
-						receivers.push({ ...holder, receiveAmt });
-					}
-				} else {
-					receivers = receivers.concat(
-						holders.map(({ address }) => ({
-							address,
-							receiveAmt: 0,
-						})),
-					);
-				}
-			}
-
-			if (receivers.length > 0) {
-				destinations.value.push(...receivers);
-			}
-
-			if (destinations.value.length === 0) {
+			if (
+				destinationTickers.value.length === 0 &&
+				destinationBsv21Ids.value.length === 0
+			) {
+				toast.error("No destinations found", toastErrorProps);
 				throw new Error("No destinations found");
 			}
-
+			let distributions: Distribution[] = [];
 			if (isEqualAllocation) {
-				const amountEach = Math.floor(sendAmount / destinations.value.length);
-				if (Number.isNaN(amountEach) || amountEach <= 0) {
-					toast.error("Amount must be greater than 0", toastErrorProps);
-					throw new Error("unexpected error");
-				}
-				remainder = sendAmount % destinations.value.length;
-				destinations.value = destinations.value.map((dest) => ({
-					...dest,
-					receiveAmt: amountEach,
-				}));
-			}
-
-			// make sure we have enough to cover the send amount
-			if (amounts < sendAmount) {
-				toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
-				throw new Error("insufficient funds");
-			}
-
-			if (amounts > sendAmount) {
-				changeTokenAmount.value = amounts - sendAmount + remainder;
-
-				// build change inscription
-				const changeInscription = {
-					p: "bsv-20",
-					op: "transfer",
-					amt: (amounts - sendAmount + remainder).toString(),
-				} as any;
-				if (ticker.tick) {
-					changeInscription.tick = ticker.tick;
-				} else if (ticker.id) {
-					changeInscription.id = ticker.id;
-				} else {
-					throw new Error("unexpected error");
-				}
-				const changeFileB64 = Buffer.from(
-					JSON.stringify(changeInscription),
-				).toString("base64");
-				const changeInsc = buildInscriptionSafe(
-					P2PKHAddress.from_string(ordAddress),
-					changeFileB64,
-					"application/bsv-20",
+				distributions = await calculateEqualDistributions(
+					sendAmount,
+					destinationTickers.value,
+					destinationBsv21Ids.value,
+					Number.parseInt(numOfHolders.value),
+					additionalAddresses,
+					excludeAdresses
 				);
-				const changeInscOut = new TxOut(BigInt(1), changeInsc);
-				tx.add_output(changeInscOut);
-
-				// indexing fee for the change inscription
-				indexingFees.value += 1000;
+			} else {
+				distributions = await calculateWeightedDistributions(
+					sendAmount,
+					destinationTickers.value,
+					destinationBsv21Ids.value,
+					Number.parseInt(numOfHolders.value),
+					additionalAddresses,
+					excludeAdresses
+				);
 			}
 
-			let totalSatsIn = 0;
-			const sortedUtxos = paymentUtxos.sort((a, b) => {
-				return a.satoshis > b.satoshis ? -1 : 1;
-			});
+			// Update the destinations signal
+			destinations.value = distributions.map((d) => ({
+				address: d.address,
+				receiveAmt: Number(d.amt),
+			}));
 
-			// payment Inputs
-			for (const utxo of sortedUtxos) {
-				let utxoIn = new TxIn(
-					Buffer.from(utxo.txid, "hex"),
-					utxo.vout,
-					Script.from_asm_string(""),
-				);
-
-				tx.add_input(utxoIn);
-
-				utxoIn = signPayment(tx, paymentPk, i, utxo, utxoIn);
-				tx.set_input(i, utxoIn);
-				totalSatsIn += utxo.satoshis;
-				i++;
-				break;
-			}
-
-			// build up the transfers
-			for (const dest of destinations.value) {
-				const inscription = {
-					p: "bsv-20",
-					op: "transfer",
-					amt: dest.receiveAmt?.toString(),
-				} as any;
-				if (ticker.tick) {
-					inscription.tick = ticker.tick;
-				} else if (ticker.id) {
-					inscription.id = ticker.id;
-				}
-
-				const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
-					"base64",
-				);
-				const insc = buildInscriptionSafe(
-					P2PKHAddress.from_string(dest.address),
-					fileB64,
-					"application/bsv-20",
-				);
-
-				let satOut = new TxOut(BigInt(1), insc);
-				tx.add_output(satOut);
-			}
+			console.log({ distributions, destinations: destinations.value });
 
 			const indexerAddress = ticker.fundAddress;
-			// output 4 indexer fee
-			if (indexerAddress) {
-				const nOutputs = tx.get_noutputs();
-				const indexerFeeOutput = new TxOut(
-					BigInt(1000 * (nOutputs + 1)), // 1000 * number of transfer inscriptions
-					P2PKHAddress.from_string(indexerAddress).get_locking_script(),
-				);
-				tx.add_output(indexerFeeOutput);
-				// update the review variable
-				indexingFees.value = 1000 * nOutputs;
-			}
+			const additionalPayments: Payment[] = [
+				{
+					to: indexerAddress,
+					amount: 1000 * (distributions.length + 1),
+				},
+			];
 
-			const changeOut = createChangeOutput(tx, changeAddress, totalSatsIn);
-			tx.add_output(changeOut);
+			const transferConfig: TransferOrdTokensConfig = {
+				inputTokens,
+				paymentPk,
+				ordPk,
+				distributions,
+				protocol: ticker.tick ? TokenType.BSV20 : TokenType.BSV21,
+				tokenID: (ticker.tick || ticker.id) as string,
+				utxos: paymentUtxos,
+				additionalPayments,
+				changeAddress,
+				tokenChangeAddress: ordAddress,
+			};
 
+			const { tx, spentOutpoints, payChange, tokenChange } =
+				await transferOrdTokens(transferConfig);
+
+			changeTokenAmount.value = Number.parseInt(tokenChange?.amt || "0");
+			indexingFees.value = tx.outputs[tx.outputs.length - 2].satoshis || 0;
 			return {
-				rawTx: tx.to_hex(),
-				size: tx.get_size(),
-				fee: paymentUtxos[0]!.satoshis - Number(tx.satoshis_out()),
-				numInputs: tx.get_ninputs(),
-				numOutputs: tx.get_noutputs(),
-				txid: tx.get_id_hex(),
+				rawTx: tx.toHex(),
+				size: tx.toBinary().length,
+				fee:
+					paymentUtxos[0].satoshis -
+					Number(tx.outputs.reduce((sum, o) => sum + (o.satoshis || 0), 0)),
+				numInputs: tx.inputs.length,
+				numOutputs: tx.outputs.length,
+				txid: tx.id("hex"),
 				inputTxid: paymentUtxos[0].txid,
 				marketFee: 0,
 			};
 		},
 		[
-			bsvWasmReady.value,
+			destinationBsv21Ids.value,
+			destinationTickers.value,
+			numOfHolders.value,
+			isEqualAllocation,
 			indexingFees,
 			changeTokenAmount,
 			destinations,
-			isEqualAllocation,
-			addresses.value,
-			destinationTickers.value,
-			destinationBsv21Ids.value,
-			numOfHolders.value,
 		],
 	);
 
@@ -430,14 +278,59 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
 				const tokenUtxos = (await promise) || [];
 
+				const inputTokens = tokenUtxos.map((txo) => {
+					console.log("InputTokens", { txo });
+					// Convert ASM to a base64 encoded script
+					return {
+						txid: txo.txid,
+						vout: txo.vout,
+						amt: txo.amt.toString(),
+						id: txo.tick || txo.id,
+						script: txo.script,
+						satoshis: 1,
+					} as TokenUtxo;
+				});
+
+				if (!payPk.value) {
+					throw new Error("Missing payment private key");
+				}
+				if (!ordPk.value) {
+					throw new Error("Missing ordinal private key");
+				}
+
+				if (!fundingAddress.value) {
+					throw new Error("Missing funding address");
+				}
+
+				if (!ordAddress.value) {
+					throw new Error("Missing ordinal address");
+				}
+
+				const paymentPk = PrivateKey.fromWif(payPk.value);
+				// const payScript = Buffer.from(new P2PKH().lock(fundingAddress.value).toHex(), 'hex').toString('base64')
+				// console.log({payScript})
+				const paymentUtxos = (utxos.value || []).map((txo) => {
+					console.log("Payments", { txo });
+					const script = Buffer.from(
+						Script.fromASM(txo.script).toHex(),
+						"hex",
+					).toString("base64");
+					return {
+						txid: txo.txid,
+						vout: txo.vout,
+						satoshis: txo.satoshis,
+						script,
+					} as Utxo;
+				});
+
 				const transferTx = await airdropBsv20(
 					amt,
-					utxos.value!,
-					tokenUtxos,
-					PrivateKey.from_wif(payPk.value!),
-					fundingAddress.value!,
-					PrivateKey.from_wif(ordPk.value!),
-					ordAddress.value!,
+					paymentUtxos,
+					inputTokens,
+					paymentPk,
+					fundingAddress.value,
+					PrivateKey.fromWif(ordPk.value),
+					ordAddress.value,
 					ticker,
 				);
 				airdroppingStatus.value = FetchStatus.Success;
@@ -457,6 +350,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			}
 		},
 		[
+			reviewMode.value,
 			destinationTickers.value,
 			destinationBsv21Ids.value,
 			isEqualAllocation,
@@ -465,12 +359,16 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			balance,
 			airdroppingStatus,
 			dec,
+			router,
 			type,
 			id,
+			ordAddress.value,
 			airdropBsv20,
-			router,
-			reviewMode.value,
-			destinations.value,
+			utxos.value,
+			payPk.value,
+			fundingAddress.value,
+			ordPk.value,
+			handleReview,
 		],
 	);
 
@@ -501,20 +399,22 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 	};
 
 	return (
+		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<dialog
 			id="airdrop_modal"
-			className={`modal backdrop-blur overflow-y-auto ${open ? "modal-open" : ""}`}
+			className={`modal backdrop-blur ${open ? "modal-open" : ""}`}
 			onClick={handleModalClick}
 		>
 			<div
-				className="modal-box max-h-[90vh] m-auto w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
+				className="modal-box max-h-[90vh] m-auto w-full max-w-xl m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
 				onMouseDown={handleModalContentMouseDown}
 			>
-				<div className="relative w-full min-h-64 md:h-full mb-4">
+				<div className="modal-content overflow-y-auto relative w-full min-h-64 md:h-full">
 					<div className="flex justify-between">
 						<div className="text-lg font-semibold">
 							{reviewMode.value ? "Review Airdrop" : `Airdrop ${sym || id}`}
 						</div>
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
 							className="text-xs cursor-pointer text-[#aaa]"
 							onClick={setAmountToBalance}
@@ -634,10 +534,11 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								)}
 
 								<div className="divider" />
-								{isEqualAllocation && (
+								{isEqualAllocation && (<>
 									<div className="flex flex-col mt-4">
 										<label className="text-sm font-semibold text-[#aaa] mb-2">
 											Addresses (comma separated list){" "}
+											{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 											<div
 												className="cursor-pointer text-blue-400 hover:text-blue-500"
 												onClick={loadTemplate}
@@ -655,6 +556,21 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 											}}
 										/>
 									</div>
+									<div className="flex flex-col mt-4">
+										<label className="text-sm font-semibold text-[#aaa] mb-2">
+											Exclude Addresses (comma separated list)
+										</label>
+										<input
+											type="text"
+											placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+											className="z-20 input input-bordered w-full placeholder:text-[#333]"
+											value={addresses.value}
+											onChange={(e) => {
+												excludeAdresses.value = e.target.value;
+											}}
+										/>
+									</div>
+									</>
 								)}
 							</div>
 						)}
@@ -669,23 +585,27 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 										Amount
 									</div>
 								</div>
+								<div className="border-b border-[#555] pb-2">
 								{destinations.value.map((dest, index) => (
-									<div key={index} className="flex justify-between mb-2">
+									<div
+										key={`destination-${dest.address}`}
+										className="flex justify-between mb-2 text-xs"
+									>
 										<span>{dest.address}</span>
-										<span>
-											{dest.receiveAmt / 10 ** dec} {sym || id}
+										<span className="whitespace-nowrap">
+											{(dest.receiveAmt / 10 ** dec).toFixed(dec)} {sym || id}
 										</span>
 									</div>
-								))}
-								<div className="mt-4 flex justify-between">
-									<div className="text-sm font-semibold text-[#aaa] mb-2">
+								))}</div>
+								<div className="mt-2 flex justify-between text-sm">
+									<div className="font-semibold text-[#aaa]">
 										Indexing Fees
 									</div>
 									<div>{toBitcoin(indexingFees.value || 0)} BSV</div>
 								</div>
 								{changeTokenAmount.value > 0 && (
-									<div className="mt-4 flex justify-between">
-										<div className="text-sm font-semibold text-[#aaa] mb-2">
+									<div className="mt-2 flex justify-between text-sm">
+										<div className="font-semibold text-[#aaa] mb-2">
 											Change Tokens
 										</div>
 										<div>
@@ -699,7 +619,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 						<div className="modal-action">
 							<button
 								type="button"
-								onClick={() => (reviewMode.value = false)}
+								onClick={() => {
+									reviewMode.value = false;
+								}}
 								className="bg-[#222] p-2 rounded cursor-pointer hover:bg-yellow-600 text-white"
 							>
 								Back
@@ -726,36 +648,144 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
 export default AirdropTokensModal;
 
-export const buildInscriptionSafe = (
-	destinationAddress: P2PKHAddress | string,
-	b64File?: string | undefined,
-	mediaType?: string | undefined,
-): Script => {
-	let ordAsm = "";
-	// This can be omitted for reinscriptions that just update metadata
-	if (b64File !== undefined && mediaType !== undefined) {
-		const ordHex = toHex("ord");
-		const fsBuffer = Buffer.from(b64File, "base64");
-		const fireShardHex = fsBuffer.toString("hex");
-		const fireShardMediaType = toHex(mediaType);
-		ordAsm = `OP_0 OP_IF ${ordHex} OP_1 ${fireShardMediaType} OP_0 ${fireShardHex} OP_ENDIF`;
+async function fetchTokenDetails(tokenId: string): Promise<Ticker> {
+	const hasUnderscore = tokenId.includes("_");
+	const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${tokenId}`;
+	const response = await fetch(url);
+	return (await response.json()) as Ticker;
+}
+
+async function fetchHolders(
+	tokenId: string,
+	numHolders: number,
+): Promise<Holder[]> {
+	const hasUnderscore = tokenId.includes("_");
+	const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${tokenId}/holders?limit=${numHolders}`;
+	const response = await fetch(url);
+	return (await response.json()) as Holder[];
+}
+
+const calculateEqualDistributions = async (
+	sendAmount: number,
+	bsv20Tickers: string,
+	bsv21Ids: string,
+	numHolders: number,
+	additionalAddresses: string,
+	excludeAdresses: string
+): Promise<Distribution[]> => {
+	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(","), ...additionalAddresses.split(",")].map(
+		(t) => t.trim(),
+	).filter((t) => t.length > 0 && !excludeAdresses.includes(t));
+	const tokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
+
+	let totalHolders = 0;
+	const holderSets = await Promise.all(
+		tokenDetails.map(async (details) => {
+			const url = `${API_HOST}/api/bsv20/${details.id ? "id" : "tick"}/${details.id || details.tick}/holders?limit=${numHolders}`;
+			const response = await fetch(url);
+			const holders = (await response.json()) as Holder[];
+			totalHolders += holders.length;
+			return holders;
+		}),
+	);
+
+	const amountPerHolder = Math.floor(sendAmount / totalHolders);
+	const distributions: Distribution[] = [];
+
+	for (const holders of holderSets) {
+		for (const holder of holders) {
+			distributions.push({
+				address: holder.address,
+				amt: amountPerHolder.toString(),
+			});
+		}
 	}
 
-	let address: P2PKHAddress;
-	// normalize destinationAddress
-	if (typeof destinationAddress === "string") {
-		address = P2PKHAddress.from_string(destinationAddress);
-	} else {
-		address = destinationAddress;
+	// Distribute any remaining amount to the first holders
+	const remaining = sendAmount - amountPerHolder * totalHolders;
+	for (let i = 0; i < remaining; i++) {
+		distributions[i].amt = (
+			Number.parseInt(distributions[i].amt) + 1
+		).toString();
 	}
-	// Create ordinal output and inscription in a single output
-	const inscriptionAsm = `${address.get_locking_script().to_asm_string()}${
-		ordAsm ? ` ${ordAsm}` : ""
-	}`;
 
-	return Script.from_asm_string(inscriptionAsm);
+	return distributions;
 };
 
-const toHex = (str: string): string => {
-	return Buffer.from(str, "utf8").toString("hex");
+const calculateWeightedDistributions = async (
+	sendAmount: number,
+	bsv20Tickers: string,
+	bsv21Ids: string,
+	numHolders: number,
+	additionalAddresses: string,
+	excludeAdresses: string
+): Promise<Distribution[]> => {
+	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(","), ...additionalAddresses.split(",")].map(
+		(t) => t.trim(),
+	).filter((t) => t.length > 0 && !excludeAdresses.includes(t));
+	
+	const allTokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
+
+	const allHolders: CombinedHolder[] = [];
+	let totalWeightedHoldings = 0;
+
+	for (const details of allTokenDetails) {
+		const holders = await fetchHolders(
+			details.id || (details.tick as string),
+			numHolders,
+		);
+		const maxSupply = BigInt(details.supply || details.amt);
+		const tokenTick = (details.tick || details.id) as string;
+
+		for (const holder of holders) {
+			const holderAmt = BigInt(holder.amt);
+			const weightedAmt = Number(holderAmt) / Number(maxSupply);
+			totalWeightedHoldings += weightedAmt;
+
+			const existingHolder = allHolders.find(
+				(h) => h.address === holder.address,
+			);
+			if (existingHolder) {
+				existingHolder.totalWeightedAmt += weightedAmt;
+				existingHolder.tokens[tokenTick] = {
+					amt: Number(holderAmt),
+					weightedAmt,
+				};
+			} else {
+				allHolders.push({
+					address: holder.address,
+					totalWeightedAmt: weightedAmt,
+					tokens: { [tokenTick]: { amt: Number(holderAmt), weightedAmt } },
+				});
+			}
+		}
+	}
+
+	allHolders.sort((a, b) => b.totalWeightedAmt - a.totalWeightedAmt);
+
+	const distributions: Distribution[] = [];
+	let totalAllocated = 0;
+
+	for (const holder of allHolders) {
+		const weightedAmt = Math.floor(
+			(sendAmount * holder.totalWeightedAmt) / totalWeightedHoldings,
+		);
+		if (weightedAmt > 0) {
+			distributions.push({
+				address: holder.address,
+				amt: weightedAmt.toString(),
+			});
+			totalAllocated += weightedAmt;
+		}
+	}
+
+	// Distribute any remaining amount to the top holders
+	const remaining = sendAmount - totalAllocated;
+	for (let i = 0; i < remaining; i++) {
+		distributions[i].amt = (
+			Number.parseInt(distributions[i].amt) + 1
+		).toString();
+	}
+
+	return distributions;
 };

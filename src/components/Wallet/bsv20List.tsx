@@ -13,7 +13,7 @@ import type { BSV20Balance } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import { getBalanceText } from "@/utils/wallet";
-import { computed, effect, useSignal } from "@preact/signals-react";
+import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import { find, uniq } from "lodash";
@@ -707,11 +707,7 @@ const Bsv20List = ({
 
 	const locked = computed(() => !ordAddress.value && !!encryptedBackup);
 
-	if (locked.value) {
-		return <SAFU />;
-	}
-
-	return (
+	return !addressProp && locked.value ? <SAFU /> : (
 		<div className="overflow-x-auto max-w-screen">
 			<div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
 				<WalletTabs type={type} address={addressProp} />
