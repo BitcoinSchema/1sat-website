@@ -13,7 +13,7 @@ import {
 	toastErrorProps,
 } from "@/constants";
 import { ordPk, payPk, pendingTxs, utxos } from "@/signals/wallet";
-import { P2PKH, PrivateKey, Script } from "@bsv/sdk";
+import { PrivateKey, Script } from "@bsv/sdk";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Ticker } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
@@ -93,6 +93,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 	const airdroppingStatus = useSignal<FetchStatus>(FetchStatus.Idle);
 	const amount = useSignal(amt?.toString() || "0");
 	const addresses = useSignal<string>(addr || "");
+	const excludeAdresses = useSignal<string>("");
 	const destinationTickers = useSignal("");
 	const destinationBsv21Ids = useSignal("");
 	const numOfHolders = useSignal("25");
@@ -126,6 +127,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			ordPk: PrivateKey,
 			ordAddress: string,
 			ticker: Ticker,
+			additionalAddresses: string
+			excludeAdresses: string
 		): Promise<PendingTransaction> => {
 			console.log({
 				destinationBsv21Ids: destinationBsv21Ids.value,
@@ -159,6 +162,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					destinationTickers.value,
 					destinationBsv21Ids.value,
 					Number.parseInt(numOfHolders.value),
+					additionalAddresses,
+					excludeAdresses
 				);
 			} else {
 				distributions = await calculateWeightedDistributions(
@@ -166,6 +171,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					destinationTickers.value,
 					destinationBsv21Ids.value,
 					Number.parseInt(numOfHolders.value),
+					additionalAddresses,
+					excludeAdresses
 				);
 			}
 
@@ -202,7 +209,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				await transferOrdTokens(transferConfig);
 
 			changeTokenAmount.value = Number.parseInt(tokenChange?.amt || "0");
-			indexingFees.value = tx.outputs.length * 1000;
+			indexingFees.value = tx.outputs[tx.outputs.length - 2].satoshis || 0;
 			return {
 				rawTx: tx.toHex(),
 				size: tx.toBinary().length,
@@ -220,10 +227,10 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			destinationBsv21Ids.value,
 			destinationTickers.value,
 			numOfHolders.value,
-			isEqualAllocation.value,
-			indexingFees.value,
-			changeTokenAmount.value,
-			destinations.value,
+			isEqualAllocation,
+			indexingFees,
+			changeTokenAmount,
+			destinations,
 		],
 	);
 
@@ -392,20 +399,22 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 	};
 
 	return (
+		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<dialog
 			id="airdrop_modal"
-			className={`modal backdrop-blur overflow-y-auto ${open ? "modal-open" : ""}`}
+			className={`modal backdrop-blur ${open ? "modal-open" : ""}`}
 			onClick={handleModalClick}
 		>
 			<div
-				className="modal-box max-h-[90vh] m-auto w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
+				className="modal-box max-h-[90vh] m-auto w-full max-w-xl m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
 				onMouseDown={handleModalContentMouseDown}
 			>
-				<div className="relative w-full min-h-64 md:h-full mb-4">
+				<div className="modal-content overflow-y-auto relative w-full min-h-64 md:h-full">
 					<div className="flex justify-between">
 						<div className="text-lg font-semibold">
 							{reviewMode.value ? "Review Airdrop" : `Airdrop ${sym || id}`}
 						</div>
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
 							className="text-xs cursor-pointer text-[#aaa]"
 							onClick={setAmountToBalance}
@@ -525,10 +534,11 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 								)}
 
 								<div className="divider" />
-								{isEqualAllocation && (
+								{isEqualAllocation && (<>
 									<div className="flex flex-col mt-4">
 										<label className="text-sm font-semibold text-[#aaa] mb-2">
 											Addresses (comma separated list){" "}
+											{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 											<div
 												className="cursor-pointer text-blue-400 hover:text-blue-500"
 												onClick={loadTemplate}
@@ -546,6 +556,21 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 											}}
 										/>
 									</div>
+									<div className="flex flex-col mt-4">
+										<label className="text-sm font-semibold text-[#aaa] mb-2">
+											Exclude Addresses (comma separated list)
+										</label>
+										<input
+											type="text"
+											placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+											className="z-20 input input-bordered w-full placeholder:text-[#333]"
+											value={addresses.value}
+											onChange={(e) => {
+												excludeAdresses.value = e.target.value;
+											}}
+										/>
+									</div>
+									</>
 								)}
 							</div>
 						)}
@@ -560,26 +585,27 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 										Amount
 									</div>
 								</div>
+								<div className="border-b border-[#555] pb-2">
 								{destinations.value.map((dest, index) => (
 									<div
 										key={`destination-${dest.address}`}
-										className="flex justify-between mb-2"
+										className="flex justify-between mb-2 text-xs"
 									>
 										<span>{dest.address}</span>
-										<span>
+										<span className="whitespace-nowrap">
 											{(dest.receiveAmt / 10 ** dec).toFixed(dec)} {sym || id}
 										</span>
 									</div>
-								))}
-								<div className="mt-4 flex justify-between">
-									<div className="text-sm font-semibold text-[#aaa] mb-2">
+								))}</div>
+								<div className="mt-2 flex justify-between text-sm">
+									<div className="font-semibold text-[#aaa]">
 										Indexing Fees
 									</div>
 									<div>{toBitcoin(indexingFees.value || 0)} BSV</div>
 								</div>
 								{changeTokenAmount.value > 0 && (
-									<div className="mt-4 flex justify-between">
-										<div className="text-sm font-semibold text-[#aaa] mb-2">
+									<div className="mt-2 flex justify-between text-sm">
+										<div className="font-semibold text-[#aaa] mb-2">
 											Change Tokens
 										</div>
 										<div>
@@ -593,7 +619,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 						<div className="modal-action">
 							<button
 								type="button"
-								onClick={() => (reviewMode.value = false)}
+								onClick={() => {
+									reviewMode.value = false;
+								}}
 								className="bg-[#222] p-2 rounded cursor-pointer hover:bg-yellow-600 text-white"
 							>
 								Back
@@ -620,15 +648,34 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
 export default AirdropTokensModal;
 
+async function fetchTokenDetails(tokenId: string): Promise<Ticker> {
+	const hasUnderscore = tokenId.includes("_");
+	const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${tokenId}`;
+	const response = await fetch(url);
+	return (await response.json()) as Ticker;
+}
+
+async function fetchHolders(
+	tokenId: string,
+	numHolders: number,
+): Promise<Holder[]> {
+	const hasUnderscore = tokenId.includes("_");
+	const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${tokenId}/holders?limit=${numHolders}`;
+	const response = await fetch(url);
+	return (await response.json()) as Holder[];
+}
+
 const calculateEqualDistributions = async (
 	sendAmount: number,
 	bsv20Tickers: string,
 	bsv21Ids: string,
 	numHolders: number,
+	additionalAddresses: string,
+	excludeAdresses: string
 ): Promise<Distribution[]> => {
-	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")].filter(
+	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(","), ...additionalAddresses.split(",")].map(
 		(t) => t.trim(),
-	);
+	).filter((t) => t.length > 0 && !excludeAdresses.includes(t));
 	const tokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
 
 	let totalHolders = 0;
@@ -665,32 +712,18 @@ const calculateEqualDistributions = async (
 	return distributions;
 };
 
-async function fetchTokenDetails(tokenId: string): Promise<Ticker> {
-	const hasUnderscore = tokenId.includes("_");
-	const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${tokenId}`;
-	const response = await fetch(url);
-	return (await response.json()) as Ticker;
-}
-
-async function fetchHolders(
-	tokenId: string,
-	numHolders: number,
-): Promise<Holder[]> {
-	const hasUnderscore = tokenId.includes("_");
-	const url = `${API_HOST}/api/bsv20/${hasUnderscore ? "id" : "tick"}/${tokenId}/holders?limit=${numHolders}`;
-	const response = await fetch(url);
-	return (await response.json()) as Holder[];
-}
-
 const calculateWeightedDistributions = async (
 	sendAmount: number,
 	bsv20Tickers: string,
 	bsv21Ids: string,
 	numHolders: number,
+	additionalAddresses: string,
+	excludeAdresses: string
 ): Promise<Distribution[]> => {
-	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")].filter(
+	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(","), ...additionalAddresses.split(",")].map(
 		(t) => t.trim(),
-	);
+	).filter((t) => t.length > 0 && !excludeAdresses.includes(t));
+	
 	const allTokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
 
 	const allHolders: CombinedHolder[] = [];

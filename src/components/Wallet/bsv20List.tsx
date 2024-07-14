@@ -707,11 +707,7 @@ const Bsv20List = ({
 
 	const locked = computed(() => !ordAddress.value && !!encryptedBackup);
 
-	if (locked.value) {
-		return <SAFU />;
-	}
-
-	return (
+	return !addressProp && locked.value ? <SAFU /> : (
 		<div className="overflow-x-auto max-w-screen">
 			<div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
 				<WalletTabs type={type} address={addressProp} />
