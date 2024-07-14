@@ -150,6 +150,15 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				.split(",")
 				.map((a) => a.trim())
 				.filter((a) => a.length > 0);
+
+			// make sure additional holders are not excluded
+			if (plusAddresses.some((a) => omitAddresses.includes(a))) {
+				toast.error(
+					"Additional addresses contain excluded addresses",
+					toastErrorProps,
+				);
+				throw new Error("Additional addresses contain excluded addresses");
+			}
 			if (isEqualAllocation) {
 				distributions = await calculateEqualDistributions(
 					sendAmount,
@@ -671,12 +680,9 @@ const calculateEqualDistributions = async (
 		.map((t) => t.trim())
 		.filter((t) => t.length > 0);
 	const tokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
-
 	const holderSets = await Promise.all(
-		tokenDetails.map(
-			(details) =>
-				details &&
-				fetchHolders((details.id || details.tick) as string, numHolders),
+		tokenDetails.map((details) =>
+			fetchHolders((details.id || details.tick) as string, numHolders),
 		),
 	);
 
@@ -696,27 +702,11 @@ const calculateEqualDistributions = async (
 	const amountPerHolder = Math.floor(sendAmount / totalHolders);
 	const distributions: Distribution[] = [];
 
-	for (const holders of holderSets) {
-		for (const holder of holders) {
-			if (excludeAdresses.includes(holder.address)) {
-				distributions.push({
-					address: holder.address,
-					amt: amountPerHolder.toString(),
-				});
-			}
-		}
-	}
-
-	// add additional addresses
-
-	distributions.push(...additionalHolders);
-
-	// Distribute any remaining amount to the first holders
-	const remaining = sendAmount - amountPerHolder * totalHolders;
-	for (let i = 0; i < remaining; i++) {
-		distributions[i].amt = (
-			Number.parseInt(distributions[i].amt) + 1
-		).toString();
+	for (const holder of finalHolders) {
+		distributions.push({
+			address: holder.address,
+			amt: amountPerHolder.toString(),
+		});
 	}
 
 	return distributions;
@@ -734,8 +724,7 @@ const calculateWeightedDistributions = async (
 		.filter((t) => t.length > 0);
 
 	const allTokenDetails = await Promise.all(allTokens.map(fetchTokenDetails));
-
-	const allHolders: CombinedHolder[] = [];
+	let allHolders: CombinedHolder[] = [];
 	let totalWeightedHoldings = 0;
 
 	for (const details of allTokenDetails) {
@@ -770,7 +759,10 @@ const calculateWeightedDistributions = async (
 		}
 	}
 
-	allHolders.sort((a, b) => b.totalWeightedAmt - a.totalWeightedAmt).filter(
+	allHolders.sort((a, b) => b.totalWeightedAmt - a.totalWeightedAmt);
+
+	// Remove excluded addresses
+	allHolders = allHolders.filter(
 		(holder) => !excludeAdresses.includes(holder.address),
 	);
 
@@ -788,14 +780,6 @@ const calculateWeightedDistributions = async (
 			});
 			totalAllocated += weightedAmt;
 		}
-	}
-
-	// Distribute any remaining amount to the top holders
-	const remaining = sendAmount - totalAllocated;
-	for (let i = 0; i < remaining; i++) {
-		distributions[i].amt = (
-			Number.parseInt(distributions[i].amt) + 1
-		).toString();
 	}
 
 	return distributions;
