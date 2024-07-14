@@ -127,7 +127,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 			ordPk: PrivateKey,
 			ordAddress: string,
 			ticker: Ticker,
-			additionalAddresses: string
+			additionalAddresses: string,
 			excludeAdresses: string
 		): Promise<PendingTransaction> => {
 			console.log({
@@ -171,7 +171,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 					destinationTickers.value,
 					destinationBsv21Ids.value,
 					Number.parseInt(numOfHolders.value),
-					additionalAddresses,
 					excludeAdresses
 				);
 			}
@@ -556,7 +555,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 											}}
 										/>
 									</div>
-									<div className="flex flex-col mt-4">
+									</>
+								)}
+								<div className="flex flex-col mt-4">
 										<label className="text-sm font-semibold text-[#aaa] mb-2">
 											Exclude Addresses (comma separated list)
 										</label>
@@ -570,8 +571,6 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 											}}
 										/>
 									</div>
-									</>
-								)}
 							</div>
 						)}
 
@@ -717,10 +716,9 @@ const calculateWeightedDistributions = async (
 	bsv20Tickers: string,
 	bsv21Ids: string,
 	numHolders: number,
-	additionalAddresses: string,
 	excludeAdresses: string
 ): Promise<Distribution[]> => {
-	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(","), ...additionalAddresses.split(",")].map(
+	const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")].map(
 		(t) => t.trim(),
 	).filter((t) => t.length > 0 && !excludeAdresses.includes(t));
 	
