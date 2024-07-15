@@ -3,20 +3,19 @@
 import { WalletTab } from "@/components/Wallet/tabs";
 import { API_HOST, toastErrorProps } from "@/constants";
 import {
-	bsv20Utxos,
 	bsvWasmReady,
 	ordPk,
-	ordUtxos,
 	payPk,
 	pendingTxs,
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { Ticker } from "@/types/bsv20";
-import { BSV20TXO } from "@/types/ordinals";
-import { PendingTransaction } from "@/types/preview";
+import type { Ticker } from "@/types/bsv20";
+import type { BSV20TXO } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
-import { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "@/utils/js-1sat-ord";
+import { toHex } from "@/utils/strings";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -32,7 +31,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
-import { buildInscriptionSafe } from "../airdrop";
 
 interface TransferModalProps {
 	onClose: () => void;
@@ -371,3 +369,33 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 };
 
 export default TransferBsv20Modal;
+
+export const buildInscriptionSafe = (
+	destinationAddress: P2PKHAddress | string,
+	b64File?: string | undefined,
+	mediaType?: string | undefined,
+): Script => {
+	let ordAsm = "";
+	// This can be omitted for reinscriptions that just update metadata
+	if (b64File !== undefined && mediaType !== undefined) {
+		const ordHex = toHex("ord");
+		const fsBuffer = Buffer.from(b64File, "base64");
+		const fireShardHex = fsBuffer.toString("hex");
+		const fireShardMediaType = toHex(mediaType);
+		ordAsm = `OP_0 OP_IF ${ordHex} OP_1 ${fireShardMediaType} OP_0 ${fireShardHex} OP_ENDIF`;
+	}
+
+	let address: P2PKHAddress;
+	// normalize destinationAddress
+	if (typeof destinationAddress === "string") {
+		address = P2PKHAddress.from_string(destinationAddress);
+	} else {
+		address = destinationAddress;
+	}
+	// Create ordinal output and inscription in a single output
+	const inscriptionAsm = `${address.get_locking_script().to_asm_string()}${
+		ordAsm ? ` ${ordAsm}` : ""
+	}`;
+
+	return Script.from_asm_string(inscriptionAsm);
+};

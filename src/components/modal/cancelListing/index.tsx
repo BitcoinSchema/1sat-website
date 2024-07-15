@@ -27,8 +27,8 @@ import {
 } from "bsv-wasm-web";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
-import { buildInscriptionSafe } from "../airdrop";
 import { calculateFee } from "../buyArtifact";
+import { buildInscriptionSafe } from "../transferBsv20";
 
 interface CancelListingModalProps {
   onClose: () => void;

@@ -32,7 +32,7 @@ import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { toBitcoin } from "satoshi-bitcoin-ts";
-import { buildInscriptionSafe } from "../airdrop";
+import { buildInscriptionSafe } from "../transferBsv20";
 interface BuyArtifactModalProps {
   onClose: () => void;
   listing: Listing | OrdUtxo;
