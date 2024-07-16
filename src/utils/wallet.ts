@@ -24,27 +24,31 @@ export const backupKeys = () => {
 	let ordPkDerivationPath = ordAddressPath.value;
 
 	if (typeof changeAddressPath.value === "number") {
-		payPkDerivationPath = `m/0/0/0/0/${changeAddressPath.value}`;
+		payPkDerivationPath = `m/${changeAddressPath.value}`;
 	}
 
 	if (typeof ordAddressPath.value === "number") {
-		ordPkDerivationPath = `m/0/0/0/0/${ordAddressPath.value}`;
+		ordPkDerivationPath = `m/${ordAddressPath.value}`;
 	}
 
-	const identityDerivationPath = !identityAddressPath.value || typeof identityAddressPath.value === "number"
-		? payPkDerivationPath
-		: identityAddressPath.value;
+	const identityDerivationPath =
+		!identityAddressPath.value ||
+		typeof identityAddressPath.value === "number"
+			? payPkDerivationPath
+			: identityAddressPath.value;
 
 	const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
-		JSON.stringify(removeNullKeys({
-			mnemonic: mnemonic.value,
-			payPk: payPk.value,
-			payDerivationPath: payPkDerivationPath,
-			ordPk: ordPk.value,
-			ordDerivationPath: ordPkDerivationPath,
-			identityPk: identityPk.value ?? payPk.value,
-			identityDerivationPath: identityDerivationPath,
-		}))
+		JSON.stringify(
+			removeNullKeys({
+				mnemonic: mnemonic.value,
+				payPk: payPk.value,
+				payDerivationPath: payPkDerivationPath,
+				ordPk: ordPk.value,
+				ordDerivationPath: ordPkDerivationPath,
+				identityPk: identityPk.value ?? payPk.value,
+				identityDerivationPath: identityDerivationPath,
+			})
+		)
 	)}`;
 
 	const clicker = document.createElement("a");
