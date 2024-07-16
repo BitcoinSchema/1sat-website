@@ -4,7 +4,7 @@ import Artifact from "@/components/artifact";
 import { FetchStatus, NUMBER_OF_ITEMS_PER_PAGE } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import {
-	fetchCollectionItems,
+	fetchCollectionItems, 
 	fetchCollectionMarket,
 } from "@/utils/fetchCollectionData";
 import { useSearchParams } from "next/navigation";
@@ -125,7 +125,7 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 							<Artifact
 								key={`${item.txid}-${item.vout}-${item.height}-${idx}`}
 								to={`/outpoint/${item.outpoint}`}
-								artifact={item}
+								artifact={item}	
 								size={300}
 								sizes={"100vw"}
 								priority={idx < 10}
