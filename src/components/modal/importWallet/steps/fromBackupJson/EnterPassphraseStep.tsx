@@ -3,11 +3,13 @@ import {
 	ImportWalletFromBackupJsonStep,
 	importWalletFromBackupJsonStep,
 } from "@/signals/wallet";
-import { EncryptDecrypt } from "@/types/wallet";
+import { EncryptDecrypt, type Keys } from "@/types/wallet";
 
-interface Props {}
+interface Props {
+	migrating?: boolean;
+}
 
-export function EnterPassphraseStep({}: Props) {
+export function EnterPassphraseStep({ migrating }: Props) {
 	const onSubmit = () => {
 		importWalletFromBackupJsonStep.value =
 			ImportWalletFromBackupJsonStep.Done;
@@ -19,6 +21,7 @@ export function EnterPassphraseStep({}: Props) {
 				mode={EncryptDecrypt.Encrypt}
 				onSubmit={onSubmit}
 				download={false}
+				migrating={migrating}
 			/>
 		</>
 	);

@@ -44,6 +44,7 @@ const PreviewPage = () => {
 	const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
 		FetchStatus.Idle
 	);
+	
 	const broadcast = useCallback(async () => {
 		const tx = pendingTx.value;
 		if (!tx) {
@@ -52,7 +53,7 @@ const PreviewPage = () => {
 		setBroadcastStatus(FetchStatus.Loading);
 		const rawtx = Buffer.from(tx.rawTx, "hex").toString("base64");
 		try {
-			const { promise } = http.customFetch<any>(`${API_HOST}/api/tx`, {
+			const { promise } = http.customFetch<string>(`${API_HOST}/api/tx`, {
 				method: "POST",
 				body: JSON.stringify({
 					rawtx,
@@ -122,9 +123,9 @@ const PreviewPage = () => {
 		return (cost / usdRate.value).toFixed(2);
 	});
 
-	useEffect(() => {
-		console.log({ usdPrice: usdPrice.value, change: change.value });
-	}, [usdPrice.value, change.value]);
+	// useEffect(() => {
+	// 	console.log({ usdPrice: usdPrice.value, change: change.value });
+	// }, [usdPrice.value, change.value]);
 
 	const content = computed(() => (
 		<>

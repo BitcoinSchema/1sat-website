@@ -9,6 +9,7 @@ import { useEffect, useRef } from "react";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import type { MarketData } from "./list";
 import { sales } from "./signals";
+import { CurrencyDisplay, currencyDisplay, exchangeRate } from "@/signals/wallet";
 
 interface Props {
   ticker: MarketData;
@@ -52,9 +53,9 @@ export function TokenMarketSales({ ticker, type }: Props) {
       }
     };
 
-    if (salesInView) {
-      console.log({ salesInView });
-    }
+    // if (salesInView) {
+    //   console.log({ salesInView });
+    // }
     if (
       type === AssetType.BSV20 &&
       (salesInView || newSalesOffset.value === 0) &&
@@ -72,9 +73,50 @@ export function TokenMarketSales({ ticker, type }: Props) {
     }
   }, [salesInView, newSalesOffset, reachedEndOfSales, ticker, type]);
 
+  
   return (
     <>
       {sales.value?.map((sale) => {
+
+const qty = Number.parseInt(sale.amt) / 10 ** ticker.dec;
+const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
+
+const pricePerSat = Number.parseFloat(sale.price) / qty;
+const pricePerUSD = (pricePerSat / 1e8) * exchangeRate.value; // Convert sat to BSV, then to USD
+
+const pricePer = currencyDisplay.value === CurrencyDisplay.BSV
+    ? `${pricePerSat.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 8,
+        useGrouping: false,
+      })} sat`
+    : pricePerUSD > 0
+      ? `${pricePerUSD.toLocaleString("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 10,
+          useGrouping: true,
+        })}`
+      : "$0.00";
+
+        	// For the button text
+				const buttonText =
+        currencyDisplay.value === CurrencyDisplay.BSV
+          ? Number.parseInt(sale.price) < 1000
+            ? `${sale.price} sat`
+            : `${toBitcoin(sale.price)} BSV`
+          : `${(
+              (Number.parseInt(sale.price) / 1e8) *
+              exchangeRate.value
+            ).toLocaleString("en-US", {
+              style: "currency",
+              currency: "USD",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+              useGrouping: true,
+            })}`;
+
         return (
           <div
             className="flex w-full justify-between"
@@ -93,7 +135,7 @@ export function TokenMarketSales({ ticker, type }: Props) {
               </span>
               <div className="flex items-center">
                 <span className="text-accent text-xs">
-                  {sale.pricePer} / token
+                  {pricePer} / token
                 </span>
                 <span className="text-accent text-xs mx-1">
                   •
@@ -109,9 +151,7 @@ export function TokenMarketSales({ ticker, type }: Props) {
                 disabled
                 className="btn btn-xs btn-outline btn-secondary pointer-events-none"
               >
-                {Number.parseInt(sale.price) > 1000
-                  ? `${toBitcoin(sale.price)} BSV`
-                  : `${sale.price} sat`}
+                {buttonText}
               </button>
             </div>
           </div>

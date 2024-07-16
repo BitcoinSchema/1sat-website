@@ -32,6 +32,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ selectedFile, preview, isImag
             size={300}
             src={preview as string}
             sizes={""}
+            latest={true}
           />
         )
       ) : (

@@ -27,8 +27,8 @@ import {
 } from "bsv-wasm-web";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
-import { buildInscriptionSafe } from "../airdrop";
 import { calculateFee } from "../buyArtifact";
+import { buildInscriptionSafe } from "../transferBsv20";
 
 interface CancelListingModalProps {
   onClose: () => void;
@@ -65,12 +65,10 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     console.log("cancel bsv20 listing");
     if (!utxos.value || !payPk.value || !ordPk.value || !ordAddress.value || !indexerAddress) {
       cancelling.value = false;
-
       return;
     }
 
     const cancelTx = new Transaction(1, 0);
-
     const cancelInput = new TxIn(
       Buffer.from(listing.txid, "hex"),
       listing.vout,
@@ -230,12 +228,13 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       txid: cancelTx.get_id_hex(),
     } as PendingTransaction;
     pendingTxs.value = [pendingTx];
+
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
+  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, onCancelled]);
 
   const cancelListing = useCallback(async (e: React.MouseEvent) => {
     if (!bsvWasmReady.value) {
@@ -449,14 +448,20 @@ export const broadcast = async ({
     return;
   }
   const rawtx = Buffer.from(rawTx, "hex").toString("base64");
-  const { promise } = http.customFetch(`${API_HOST}/api/tx`, {
-    method: "POST",
-    body: JSON.stringify({
-      rawtx,
-    }),
-  });
-  await promise;
+  try {
 
-  toast.success("Transaction broadcasted.", toastProps);
-  pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+    const { promise } = http.customFetch(`${API_HOST}/api/tx`, {
+      method: "POST",
+      body: JSON.stringify({
+        rawtx,
+      }),
+    });
+    await promise;
+    
+    toast.success("Transaction broadcasted.", toastProps);
+    pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+   } catch (e) {
+    console.error(e);
+    toast.error("Error broadcasting transaction.", toastErrorProps);
+  } 
 };

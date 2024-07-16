@@ -4,6 +4,23 @@ import Filter from "@/components/Wallet/filter";
 import { AssetType } from "@/constants";
 import Link from "next/link";
 import { FaPlus } from "react-icons/fa";
+import { FaBitcoin, FaDollarSign } from "react-icons/fa6";
+import { currencyDisplay, CurrencyDisplay } from "@/signals/wallet";
+
+const CurrencySwitch = () => {
+  return <div className="tooltip md:tooltip-left" data-tip="Currency Display">
+    <label className="swap swap-flip text-xl mr-4 text-yellow-200/50 hover:text-yellow-300/75 transition">
+
+    {/* this hidden checkbox controls the state */}
+    <input type="checkbox" onChange={() => {
+      currencyDisplay.value = currencyDisplay.value === "USD" ? "BSV" : "USD";
+    }} />
+
+    <div className={currencyDisplay.value === CurrencyDisplay.BSV ? "swap-on" : "swap-off"}><FaBitcoin className="-rotate-12" /></div>
+    <div className={currencyDisplay.value === CurrencyDisplay.BSV ? "swap-off" : "swap-on"}><FaDollarSign /></div>
+  </label>
+  </div>
+}
 
 const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
   return (
@@ -43,6 +60,7 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
         </Link>
       </div>
       <div className="flex-none flex items-center">
+        {(selectedTab === AssetType.BSV21 || selectedTab === AssetType.BSV20) && <CurrencySwitch />}
         {selectedTab === AssetType.Ordinals && <Filter />}
         {selectedTab === AssetType.Ordinals && (
           <Link

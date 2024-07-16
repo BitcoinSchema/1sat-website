@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import SlideshowLoader from "./loader";
 import Menu from "./menu";
+import FlowLoader from "./flowLoader";
 
 const notoSerif = Noto_Serif({
   style: "italic",
@@ -12,14 +13,11 @@ const notoSerif = Noto_Serif({
   subsets: ["latin"],
 });
 
-// Fake artifacts for the slideshow menu items
-const menuArtifacts: Partial<OrdUtxo>[] = [];
-
 const HomePage: React.FC = async () => {
   return (
-    <main className="px-4 flex items-center justify-center h-full w-full min-h-[calc(100dvh-15rem+)]">
+    <main className="px-4 flex items-center justify-center w-full min-h-[calc(100dvh-15rem+)]">
       <div className="flex flex-col items-center w-full h-full">
-        <div className="w-full flex flex-col items-center justify-center h-full">
+        <div className="w-full flex flex-col items-center justify-start h-full">
           <Menu />
           <div
             className={`divider divider-warning w-64 mx-auto text-warning/50 ${notoSerif.className}`}
@@ -34,10 +32,11 @@ const HomePage: React.FC = async () => {
               </div>
             }
           >
-            <SlideshowLoader />
+            <FlowLoader />
           </Suspense>
         </div>
       </div>
+  
     </main>
   );
 };

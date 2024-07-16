@@ -187,16 +187,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({ inscribedCallba
       pendingTxs.value = [pendingTx];
       inscribedCallback();
     }
-  }, [
-    collectionCoverImage,
-    collectionDescription,
-    collectionName,
-    collectionQuantity,
-    collectionRarities,
-    collectionRoyalties,
-    collectionTraits,
-    pendingTxs.value,
-  ]);
+  }, [collectionCoverImage, collectionDescription, collectionName, collectionQuantity, collectionRarities, collectionRoyalties, collectionTraits, fundingAddress.value, inscribedCallback, ordAddress.value, ordPk.value, payPk.value, validateRarities, validateRoyalties, validateTraits]);
 
   const addRarity = () => {
     setCollectionRarities([...collectionRarities, { label: "", percentage: "" }]);
@@ -212,19 +203,19 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({ inscribedCallba
     );
   };
 
-  const addTrait = () => {
+  const addTrait = useCallback(() => {
     setCollectionTraits([...collectionTraits, { name: "", values: [], occurancePercentages: [] }]);
-  };
+  }, [collectionTraits]);
 
   const removeTrait = (index: number) => {
     setCollectionTraits(collectionTraits.filter((_, i) => i !== index));
   };
 
-  const updateTrait = (index: number, field: keyof Trait, value: string | string[]) => {
+  const updateTrait = useCallback((index: number, field: keyof Trait, value: string | string[]) => {
     setCollectionTraits(
       collectionTraits.map((trait, i) => (i === index ? { ...trait, [field]: value } : trait))
     );
-  };
+  }, [collectionTraits]);
 
   const addRoyalty = () => {
     setCollectionRoyalties([...collectionRoyalties, { type: "paymail", destination: "", percentage: "" }]);

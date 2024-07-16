@@ -40,7 +40,7 @@ const SlideShow = ({ artifacts, className }: Props) => {
           key={artifact?.origin?.outpoint}
           classNames={{
             wrapper:
-              "w-[90vw] md:w-full md:min-w-96 md:max-w-[600px] flex items-center justify-center",
+              "w-[90vw] md:w-full md:min-w-96 md:max-w-[400px] 3xl:max-w-[600px] flex items-center justify-center",
             media: "w-full rounded",
           }}
           size={600}

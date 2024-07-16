@@ -3,11 +3,13 @@ export const API_HOST = "https://ordinals.gorillapool.io";
 export const MARKET_API_HOST = "https://1sat-api-production.up.railway.app" // "https://api.1sat.market";
 
 export enum SortBy {
-  PC = "pct_minted",
-  Available = "available",
-  Tick = "tick",
-  Max = "max",
-  Height = "height",
+  Ticker = "name",
+  MostRecentSale = "mode_recent_sale",
+  MarketCap = "market_cap",
+  Price = "price",
+  PctChange = "pct_change",
+  Holders = "holders",
+  Number = "num",
 }
 
 export enum Dir {
@@ -117,4 +119,4 @@ export const knownImageTypes = [
 export const knownVideoTypes = ["video/mp4", "video/webm", "video/ogg"];
 
 // TODO: Add more direct support for audio and video
-export const knownAudioTypes = ["audio/mpeg", "audio/ogg", "audio/wav"];
+export const knownAudioTypes = ["audio/mpeg", "audio/ogg", "audio/wav", "application/vnd.apple.mpegurl"];

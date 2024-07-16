@@ -1,24 +1,22 @@
 import MarketPage from "@/components/pages/market";
-import { AssetType } from "@/constants";
+import { AssetType, type SortBy } from "@/constants";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 
-const Market = async ({ params }: { params: { tab: AssetType } }) => {
+const Market = async ({ params, searchParams }: { params: { tab: AssetType,  }, searchParams: { sort: SortBy, dir: "asc" | "desc" } }) => {
+  console.log("APP/MARKET/[TAB]/page", { params, searchParams });
   switch (params.tab) {
     case AssetType.Ordinals:
-      // TODO: Featured ordinals
-      // const urlImages = `${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&type=image/png`;
-      // const { promise } = http.customFetch<OrdUtxo[]>(urlImages);
-      // const imageListings = await promise;
       return (
         <MarketPage
-          // imageListings={imageListings}
           selectedAssetType={AssetType.Ordinals}
+          sort={searchParams.sort}
+          dir={searchParams.dir}
         />
       );
     case AssetType.BSV20:
-      return <MarketPage selectedAssetType={AssetType.BSV20} />;
+      return <MarketPage selectedAssetType={AssetType.BSV20} sort={searchParams.sort} dir={searchParams.dir} />;
     case AssetType.BSV21:
-      return <MarketPage selectedAssetType={AssetType.BSV21} />;
+      return <MarketPage selectedAssetType={AssetType.BSV21} sort={searchParams.sort} dir={searchParams.dir} />;
     default:
       return null;
   }

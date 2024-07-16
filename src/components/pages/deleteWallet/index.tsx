@@ -1,6 +1,7 @@
 "use client";
 
 import DeleteWalletModal from "@/components/modal/deleteWallet";
+import { showUnlockWalletButton } from "@/signals/wallet";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,10 @@ const DeleteWalletPage = () => {
     (signedOut = false) => {
       open.value = false;
       if (signedOut) {
+        showUnlockWalletButton.value = false;
+
         router.push("/");
+        router.refresh();
         return;
       }
       router.back();

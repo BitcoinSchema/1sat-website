@@ -1,10 +1,11 @@
 "use client";
 
-import { MARKET_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
+import { FetchStatus, MARKET_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
   bsv20Balances,
   bsvWasmReady,
   chainInfo,
+  encryptedBackup,
   exchangeRate,
   hasUnprotectedKeys,
   indexers,
@@ -12,6 +13,7 @@ import {
   payPk,
   pendingTxs,
   showDepositModal,
+  showUnlockWalletButton,
   showUnlockWalletModal,
   usdRate,
   utxos,
@@ -56,19 +58,18 @@ const WalletMenu: React.FC = () => {
   useSignals();
   const router = useRouter();
 
+  const fetchRateStatus = useSignal(FetchStatus.Idle);
   const showWithdrawalModal = useSignal(false);
-  const showUnlockWalletButton = useSignal(false);
   const showImportWalletModal = useSignal(false);
   const showProtectKeysModal = useSignal(false);
   const showDropdown = useSignal(false);
 
-  const [encryptedBackup] = useLocalStorage("encryptedBackup");
+  const [eb] = useLocalStorage("encryptedBackup");
 
   const [value, copy] = useCopyToClipboard();
   const ordAddressHover = useSignal(false);
 
   const mouseEnterOrdAddress = () => {
-    console.log("mouseEnterOrdAddress");
     ordAddressHover.value = true;
   };
 
@@ -91,10 +92,16 @@ const WalletMenu: React.FC = () => {
   useEffect(() => {
     loadKeysFromSessionStorage();
 
-    if (encryptedBackup) {
+    if (eb && !encryptedBackup.value) {
+      // TODO: This is triggering upon signout! Fix this
+      // Reproduce: Sign in, encrypt backup
+      // close tab and reopen
+      // unlock wallet
+      // sign out - this will fire forcing the unlock button to show again!
+      console.log("showing unlock wallet button on purpose")
       showUnlockWalletButton.value = true;
     }
-  }, [encryptedBackup, showUnlockWalletButton]);
+  }, [encryptedBackup.value, eb]);
 
   useEffect(() => {
     if (
@@ -127,34 +134,43 @@ const WalletMenu: React.FC = () => {
             ? 1
             : -1;
         });
-
-        const statusUrl =
-          `${MARKET_API_HOST}/status`;
-        const { promise: promiseStatus } = http.customFetch<{
-          exchangeRate: number;
-          chainInfo: ChainInfo;
-          indexers: IndexerStats;
-        }>(statusUrl);
-        const {
-          chainInfo: info,
-          exchangeRate: er,
-          indexers: indx,
-        } = await promiseStatus;
-        console.log({ info, exchangeRate, indexers });
-        chainInfo.value = info;
-        usdRate.value = toSatoshi(1) / er;
-        exchangeRate.value = er;
-        indexers.value = indx;
       } catch (e) {
         console.log(e);
       }
     };
 
-    console.log({ bsvWasmReady, address, bsv20Balances })
+    // console.log({ bsvWasmReady, address, bsv20Balances })
     if (bsvWasmReady.value && address && !bsv20Balances.value) {
       fire();
     }
   }, [bsvWasmReady.value, ordAddress.value, bsv20Balances.value]);
+
+  useEffect(() => {
+    const fire = async () => {
+      fetchRateStatus.value = FetchStatus.Loading;
+      const statusUrl =
+        `${MARKET_API_HOST}/status`;
+      const { promise: promiseStatus } = http.customFetch<{
+        exchangeRate: number;
+        chainInfo: ChainInfo;
+        indexers: IndexerStats;
+      }>(statusUrl);
+      const {
+        chainInfo: info,
+        exchangeRate: er,
+        indexers: indx,
+      } = await promiseStatus;
+      fetchRateStatus.value = FetchStatus.Success;
+      // console.log({ info, exchangeRate, indexers });
+      chainInfo.value = info;
+      usdRate.value = toSatoshi(1) / er;
+      exchangeRate.value = er;
+      indexers.value = indx;
+    }
+    if (fetchRateStatus.value === FetchStatus.Idle) {
+      fire();
+    }
+  }, [fetchRateStatus])
 
   useEffect(() => {
     const fire = async (a: string) => {
@@ -299,7 +315,7 @@ const WalletMenu: React.FC = () => {
                     showDropdown.value = false;
                   }}
                 >
-                  <Link href="/wallet/ordinals">
+                  <Link href="/wallet/ordinals" >
                     Ordinals
                   </Link>
                 </li>
@@ -344,9 +360,9 @@ const WalletMenu: React.FC = () => {
                     {ordAddressHover.value
                       ? `${ordAddress.value?.slice(
                         0,
-                        10
+                        8
                       )}...${ordAddress.value?.slice(
-                        -10
+                        -8
                       )}`
                       : "Ordinals Address"}{" "}
                     <FaCopy className="text-[#333]" />
@@ -369,6 +385,15 @@ const WalletMenu: React.FC = () => {
                     Export Keys
                   </button>
                 </li>
+                {/* <li>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    type="button"
+                    onClick={exportKeysViaFragment}
+                  >
+                    Migrate to 1Sat.Market
+                  </button>
+                </li> */}
                 {/* <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
                 <Link href="/wallet/swap">Swap Keys</Link>
               </li> */}
@@ -394,6 +419,7 @@ const WalletMenu: React.FC = () => {
             <>
               {showUnlockWalletButton.value && (
                 <ul className="p-0">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                   <li onClick={handleUnlockWallet}>
                     <div className="flex w-full flex-row items-center justify-between">
                       Unlock Wallet
@@ -479,6 +505,24 @@ const WalletMenu: React.FC = () => {
 };
 
 export default WalletMenu;
+
+export const exportKeysViaFragment = () => {
+  // redirect to https://1sat.market/wallet/import#import=<b64KeyBackupData>
+  const fk = localStorage.getItem("1satfk");
+  const ok = localStorage.getItem("1satok");
+  let data = ""
+  if (!fk || !ok) {
+    if (!payPk.value || !ordPk.value) {
+      toast.error("No keys to export. Encrypt your keys first.");
+    }
+    data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
+  } else {
+    data = JSON.stringify({ payPk: JSON.parse(fk), ordPk: JSON.parse(ok) });
+  }
+  const b64 = btoa(data);
+  const base = "http://localhost:3000" // "https://1sat.market"
+  // window.location.href = `${base}/wallet/import#import=${b64}`;
+}
 
 export const backupKeys = () => {
   const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(

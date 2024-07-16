@@ -73,9 +73,9 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
     artifact,
   ]);
 
-  useEffect(() => {
-    console.log({ bsv20 });
-  }, [bsv20]);
+  // useEffect(() => {
+  //   console.log({ bsv20 });
+  // }, [bsv20]);
 
   return fetchTextStatus === FetchStatus.Success ? (
     <div className="relative w-full h-full flex">

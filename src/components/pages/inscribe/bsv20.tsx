@@ -182,7 +182,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const changeSelectedActionType = useCallback(
 		async (e: any) => {
-			console.log({ val: e.target.value });
+			// console.log({ val: e.target.value });
 			const actionType = e.target.value.toLowerCase() as ActionType;
 			setSelectedActionType(actionType);
 			if (ticker) {
@@ -294,7 +294,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				switch (selectedActionType) {
 					case ActionType.Deploy:
 						if (
-							parseInt(maxSupply) === 0 ||
+							Number.parseInt(maxSupply) === 0 ||
 							BigInt(maxSupply) > maxMaxSupply
 						) {
 							toast.error(
@@ -307,7 +307,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						}
 
 						inscription.tick = ticker;
-						inscription.max = maxSupply;
+						inscription.max = (BigInt(maxSupply) * 10n ** BigInt(decimals || 0)).toString();
 
 						// optional fields
 						if (decimals !== undefined) {
@@ -435,23 +435,23 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		return await inscribeBsv20([u]);
 	}, [inscribeBsv20]);
 
-	useEffect(() => {
-		console.log({
-			tickerAvailable,
-			len: ticker?.length,
-			inscribeStatus,
-			fetchTickerStatus,
-			limit,
-			maxSupply,
-		});
-	}, [
-		fetchTickerStatus,
-		inscribeStatus,
-		limit,
-		maxSupply,
-		ticker?.length,
-		tickerAvailable,
-	]);
+	// useEffect(() => {
+	// 	console.log({
+	// 		tickerAvailable,
+	// 		len: ticker?.length,
+	// 		inscribeStatus,
+	// 		fetchTickerStatus,
+	// 		limit,
+	// 		maxSupply,
+	// 	});
+	// }, [
+	// 	fetchTickerStatus,
+	// 	inscribeStatus,
+	// 	limit,
+	// 	maxSupply,
+	// 	ticker?.length,
+	// 	tickerAvailable,
+	// ]);
 
 	const submitDisabled = useMemo(() => {
 		return (
@@ -515,7 +515,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 		const organicMax = Math.ceil(max / Number.parseInt(amount));
 
-		console.log({ organicMax, displayOplBalance });
+		// console.log({ organicMax, displayOplBalance });
 
 		return tierMax(displayOplBalance, organicMax);
 	}, [selectedBsv20, bulkEnabled, confirmedOplBalance, amount, ticker]);
@@ -708,7 +708,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			{selectedActionType === ActionType.Deploy && (
 				<div className="my-2">
 					<label className="block mb-4">
-						<div className="my-2">Max Supply</div>
+					<div className="my-2 flex justify-between text-sm">Max Supply <span className="text-[#555]">Whole coins</span></div>
 						<input
 							pattern="\d+"
 							type="text"
@@ -926,7 +926,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					<label className="block mb-4">
 						<div className="flex items-center justify-between my-2">
 							Limit Per Mint{" "}
-							<span className="text-[#555]">Optional</span>
+							<span className="text-[#555] text-sm">Optional</span>
 						</div>
 						<input
 							className="text-white w-full rounded p-2"
@@ -1029,7 +1029,7 @@ const calculateTier = (balance: number, bulkMintingTickerMaxSupply: number) => {
 	// Define tier thresholds as percentages of max supply
 	// Assuming tiers are at 0.05%, 0.1%, 0.5%, 1%, 5% of max supply
 
-	console.log({ balancePct, tierThresholds });
+	// console.log({ balancePct, tierThresholds });
 
 	// Find the tier based on the percentage thresholds
 	for (let tier = 5; tier > 0; tier--) {
@@ -1045,7 +1045,7 @@ const tierMaxNum = (balance: number) => {
 };
 
 const calculateSpacers = (maxIterations: number, steps: number) => {
-	console.log({ maxIterations, steps });
+	// console.log({ maxIterations, steps });
 	// Calculate the number of spacers
 	// const numSpacers = Math.floor(maxIterations / step);
 

@@ -2,12 +2,15 @@ import MnemonicGrid, { MnemonicGridMode } from "@/components/MnemonicGrid";
 import { toastProps } from "@/constants";
 import { createWalletStep, mnemonic } from "@/signals/wallet";
 import { CreateWalletStep } from "@/types/wallet";
-import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
+import { useCopyToClipboard } from "usehooks-ts";
 
 interface Props {}
 
 export function ViewMnemonicStep({}: Props) {
+
+	const [value, copy] = useCopyToClipboard()
+	
 	function handleNextStep() {
 		createWalletStep.value = CreateWalletStep.VerifyMnemonic;
 	}
@@ -41,9 +44,9 @@ export function ViewMnemonicStep({}: Props) {
 					You will need this to recover your wallet in the future
 				</div>
 
-				<CopyToClipboard
-					text={mnemonic.value || ""}
-					onCopy={() => {
+				<div
+					onClick={() => {
+						copy(mnemonic.value || "")
 						toast.success(
 							"Copied mnemonic phrase. Careful now!",
 							toastProps
@@ -53,7 +56,7 @@ export function ViewMnemonicStep({}: Props) {
 					<button disabled={!mnemonic.value} className="btn btn-sm">
 						Copy
 					</button>
-				</CopyToClipboard>
+				</div>
 			</div>
 
 			<MnemonicGrid

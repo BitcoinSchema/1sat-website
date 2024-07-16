@@ -1,8 +1,9 @@
 "use client";
 
-import { bsvWasmReady, createWalletStep, encryptedBackup } from "@/signals/wallet";
+import { bsvWasmReady, createWalletStep } from "@/signals/wallet";
 import { loadKeysFromSessionStorage } from "@/signals/wallet/client";
 import { CreateWalletStep } from "@/types/wallet";
+import { useLocalStorage } from "@/utils/storage";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -24,11 +25,13 @@ const CreateWalletModal = ({
   useSignals();
   const router = useRouter();
   const alreadyHasKey = useSignal(false);
+  const [encryptedBackup] = useLocalStorage("encryptedBackup");
 
   useEffect(() => {
     loadKeysFromSessionStorage();
 
-    if (encryptedBackup) {
+    const eb = localStorage.getItem("encryptedBackup")
+    if (eb) {
       alreadyHasKey.value = true;
     }
   }, [encryptedBackup, alreadyHasKey]);
@@ -39,7 +42,7 @@ const CreateWalletModal = ({
       id="create_wallet_modal"
       className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
     >
-      <div className="modal-box h-64 overflow-hidden">
+      <div className="modal-box h-fit">
         <h3 className="font-bold text-lg">Create New Wallet</h3>
 
         {!bsvWasmReady.value && (

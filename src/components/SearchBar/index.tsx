@@ -41,12 +41,12 @@ const SearchBar: React.FC = () => {
       const url = `${MARKET_API_HOST}/ticker/autofill/bsv20/${term}`;
       const { promise } = http.customFetch<Autofill[]>(url);
       const response = await promise;
-      console.log({ response });
+      // console.log({ response });
 
       const url2 = `${MARKET_API_HOST}/ticker/autofill/bsv21/${term}`;
       const { promise: promise2 } = http.customFetch<Autofill[]>(url2);
       const response2 = await promise2;
-      console.log({ response2 });
+      // console.log({ response2 });
 
       autofillValues.value = response.concat(response2);
 

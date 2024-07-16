@@ -1,3 +1,5 @@
+"use client"
+
 import { backupKeys } from "@/components/Wallet/menu";
 import { toastErrorProps } from "@/constants";
 import {
@@ -7,12 +9,15 @@ import {
 	selectedBackupJson,
 } from "@/signals/wallet";
 import { setKeys } from "@/signals/wallet/client";
+import { useSignals } from "@preact/signals-react/runtime";
 import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 
-interface Props {}
+interface Props { }
 
-export function SelectFileStep({}: Props) {
+export function SelectFileStep({ }: Props) {
+	useSignals();
+
 	const validateJson = (json: Record<string, string>) => {
 		if (!json || typeof json !== "object") {
 			throw new Error("Invalid JSON");
@@ -47,6 +52,9 @@ export function SelectFileStep({}: Props) {
 					payPk: json.payPk,
 					ordPk: json.ordPk,
 				});
+				// go to the password step
+				importWalletFromBackupJsonStep.value =
+					ImportWalletFromBackupJsonStep.EnterPassphrase;
 			} catch (error) {
 				toast.error(
 					"Invalid JSON file. Please select a backup json.",
@@ -63,7 +71,7 @@ export function SelectFileStep({}: Props) {
 	};
 
 	const handleBackup = async () => {
-		await backupKeys();
+		backupKeys();
 	};
 
 	return (

@@ -103,12 +103,12 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       return false;
     }
 
-    console.log({ indexers: indexers.value, chainInfo: chainInfo.value });
-    return (
-      indexers.value["bsv20-deploy"] >= chainInfo.value?.blocks &&
-      indexers.value.bsv20 >= chainInfo.value?.blocks
-    );
-  });
+		// console.log({ indexers: indexers.value, chainInfo: chainInfo.value });
+		return (
+			indexers.value["bsv20-deploy"] >= chainInfo.value?.blocks &&
+			indexers.value.bsv20 >= chainInfo.value?.blocks
+		);
+	});
 
   const totalTokens = useMemo(() => {
     return iterations * Number.parseInt(amount || "0");
@@ -188,34 +188,35 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
     img.src = URL.createObjectURL(file);
   }, []);
 
-  const artifact = useMemo(async () => {
-    return (
-      selectedFile?.type &&
-      preview && (
-        <Artifact
-          classNames={{ media: "w-20 h-20", wrapper: "w-fit" }}
-          showFooter={false}
-          size={100}
-          artifact={{
-            data: {
-              insc: {
-                file: {
-                  type: selectedFile.type,
-                  size: selectedFile.size,
-                },
-              },
-            } as TxoData,
-            script: "",
-            outpoint: "",
-            txid: "",
-            vout: 0,
-          }}
-          src={preview as string}
-          sizes={""}
-        />
-      )
-    );
-  }, [preview, selectedFile]);
+	const artifact = useMemo(async () => {
+		return (
+			selectedFile?.type &&
+			preview && (
+				<Artifact
+					classNames={{ media: "w-20 h-20", wrapper: "w-fit" }}
+					showFooter={false}
+					size={100}
+					artifact={{
+						data: {
+							insc: {
+								file: {
+									type: selectedFile.type,
+									size: selectedFile.size,
+								},
+							},
+						} as TxoData,
+						script: "",
+						outpoint: "",
+						txid: "",
+						vout: 0,
+					}}
+					src={preview as string}
+					sizes={""}
+					latest={true}
+				/>
+			)
+		);
+	}, [preview, selectedFile]);
 
   type DeployBSV21Inscription = {
     p: string;
@@ -262,8 +263,8 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
           return;
         }
 
-        inscription.sym = ticker;
-        inscription.amt = maxSupply;
+				inscription.sym = ticker;
+				inscription.amt = (BigInt(maxSupply) * 10n ** BigInt(decimals || 0)).toString();
 
         // optional fields
         if (decimals !== undefined) {
@@ -407,55 +408,56 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
         </label>
       </div>
 
-      <div className="my-2 flex items-center">
-        <div className="w-28 mr-4">
-          {(!selectedFile || !preview) && (
-            <div className="text-[#555] text-lg">
-              <IconWithFallback
-                icon={null}
-                alt={"Choose an Icon"}
-                className="opacity-50 w-20 h-20 rounded-full"
-              />
-            </div>
-          )}
-          {selectedFile && preview && isImage && artifact}
-          {selectedFile && !isImage && (
-            <div className="w-full h-full bg-[#111] rounded flex items-center justify-center">
-              X
-            </div>
-          )}
-        </div>
-        <label className="block mb-4 w-full">
-          <div className="my-2 flex items-center justify-between">
-            <div>Upload Icon</div>
-            <div>
-              <div
-                className={`${mintError ? "text-error" : "text-[#555]"
-                  } text-sm`}
-              >
-                {mintError || "Max Size 100KB, Square Image"}
-              </div>
-            </div>
-          </div>
-          <input
-            type="file"
-            className="file-input w-full"
-            onChange={changeFile}
-          />
-        </label>
-      </div>
-      <div className="my-2">
-        <label className="block mb-4">
-          <div className="my-2">Max Supply</div>
-          <input
-            pattern="\d+"
-            type="text"
-            className="text-white w-full rounded p-2"
-            onChange={changeMaxSupply}
-            value={maxSupply}
-          />
-        </label>
-      </div>
+			<div className="my-2 flex items-center">
+				<div className="w-28 mr-4">
+					{(!selectedFile || !preview) && (
+						<div className="text-[#555] text-lg">
+							<IconWithFallback
+								icon={null}
+								alt={"Choose an Icon"}
+								className="opacity-50 w-20 h-20 rounded-full"
+							/>
+						</div>
+					)}
+					{selectedFile && preview && isImage && artifact}
+					{selectedFile && !isImage && (
+						<div className="w-full h-full bg-[#111] rounded flex items-center justify-center">
+							X
+						</div>
+					)}
+				</div>
+				<label className="block mb-4 w-full">
+					<div className="my-2 flex items-center justify-between">
+						<div>Upload Icon</div>
+						<div>
+							<div
+								className={`${
+									mintError ? "text-error" : "text-[#555]"
+								} text-sm`}
+							>
+								{mintError || "Max Size 100KB, Square Image"}
+							</div>
+						</div>
+					</div>
+					<input
+						type="file"
+						className="file-input w-full"
+						onChange={changeFile}
+					/>
+				</label>
+			</div>
+			<div className="my-2">
+				<label className="block mb-4">
+					<div className="my-2 flex justify-between text-sm">Max Supply <span className="text-[#555]">Whole coins</span></div>
+					<input
+						pattern="\d+"
+						type="text"
+						className="text-white w-full rounded p-2"
+						onChange={changeMaxSupply}
+						value={maxSupply}
+					/>
+				</label>
+			</div>
 
       {!showOptionalFields && (
         <div

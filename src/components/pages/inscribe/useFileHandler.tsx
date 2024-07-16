@@ -20,7 +20,8 @@ const useFileHandler = ({ generated }: { generated?: boolean }) => {
 
       const file = new File([arrayBuffer], "image.png", { type: "image/png" });
       setSelectedFile(file);
-      setPreview(`data:image/png;base64,${generatedImage.value.data}`);
+      const contentType = file.type || "image/png";
+      setPreview(`data:${contentType};base64,${generatedImage.value.data}`);
     }
   }, [generated, generatedImage.value, preview, setIsImage]);
 

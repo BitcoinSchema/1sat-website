@@ -93,7 +93,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
     } catch (e) {
       console.log(e);
     }
-  }, [inscribeHtml]);
+  }, [fundingAddress.value, inscribeHtml, ordAddress.value, payPk.value]);
 
   const [encoded, setEncoded] = useState<string>();
 
@@ -114,8 +114,8 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
       );
       // This FileReader works asynchronously, so it doesn't lag
       // the web application
-      var a = new FileReader();
-      a.onload = function (e) {
+      const a = new FileReader();
+      a.onload = (e) => {
         // Capture result here
         console.log(e.target?.result);
 
@@ -137,9 +137,11 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
     // const encoded = toBase64(text);
     return (
       <iframe
+        title="preview"
         id="previewIframe"
-        sandbox=" "
-        className="w-full rounded h-full"
+        // sandbox=" "
+        sandbox="allow-scripts"
+        className="w-full rounded h-full overflow-hidden border-0"
         // src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}
         src={`https://ordfs.network/preview/${encoded}`}
       />

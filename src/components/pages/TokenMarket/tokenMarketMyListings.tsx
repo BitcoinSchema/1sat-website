@@ -1,3 +1,5 @@
+"use client"
+
 import CancelListingModal from "@/components/modal/cancelListing";
 import { API_HOST, AssetType, resultsPerPage } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
@@ -37,7 +39,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
       if (newOffset.value === 0) {
         myListings.value = [];
       }
-      let urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${id}?dir=desc&limit=${resultsPerPage}&offset=${newOffset.value}`;
+      let urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${id}?dir=desc&limit=${resultsPerPage}&offset=${newOffset.value}&listing=true`;
       if (type === AssetType.BSV21) {
         urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${id}?dir=desc&limit=${resultsPerPage}&offset=${newOffset.value}&listing=true`;
       }
@@ -80,7 +82,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
       ticker.id &&
       !reachedEndOfListings.value
     ) {
-      console.log({ isInView, ticker });
+      // console.log({ isInView, ticker });
       fire(ticker.id);
     }
   }, [isInView, newOffset, reachedEndOfListings, ticker, type]);
@@ -93,7 +95,11 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
           }`;
         const pricePer = (
           Number.parseFloat(listing.price) / qty
-        ).toFixed(3);
+        ).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 6,
+          useGrouping: false
+        });
 
         const myListing = listing.owner === ordAddress.value;
         return (

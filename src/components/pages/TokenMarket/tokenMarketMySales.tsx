@@ -27,13 +27,13 @@ export function TokenMarketMySales({ ticker, type }: Props) {
   useEffect(() => {
     let nextPageOfSales: BSV20TXO[] = [];
 
-    const fire = async (id: string) => {
+    const fire = async (id: string, address: string) => {
       if (newSalesOffset.value === 0) {
         mySales.value = [];
       }
-      let urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/tick/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
+      let urlMarket = `${API_HOST}/api/bsv20/${address}/tick/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
       if (type === AssetType.BSV21) {
-        urlMarket = `${API_HOST}/api/bsv20/${ordAddress.value}/id/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
+        urlMarket = `${API_HOST}/api/bsv20/${address}/id/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
       }
       newSalesOffset.value += 20;
       const { promise: promiseBsv20v1Market } =
@@ -53,25 +53,27 @@ export function TokenMarketMySales({ ticker, type }: Props) {
       }
     };
 
-    if (salesInView) {
-      console.log({ salesInView });
-    }
-    if (
+    // if (salesInView) {
+    //   console.log({ salesInView });
+    // }
+    
+    if (ordAddress.value &&
       type === AssetType.BSV20 &&
       (salesInView || newSalesOffset.value === 0) &&
       ticker.tick &&
       !reachedEndOfSales.value
     ) {
-      fire(ticker.tick);
+      fire(ticker.tick, ordAddress.value);
     } else if (
+      ordAddress.value &&
       type === AssetType.BSV21 &&
       (salesInView || newSalesOffset.value === 0) && // fire the first time
       ticker.id &&
       !reachedEndOfSales.value
     ) {
-      fire(ticker.id);
+      fire(ticker.id, ordAddress.value);
     }
-  }, [salesInView, newSalesOffset, reachedEndOfSales, ticker, type]);
+  }, [salesInView, newSalesOffset, reachedEndOfSales, ticker, type, ordAddress.value]);
 
   return (
     <>

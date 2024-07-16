@@ -1,5 +1,5 @@
 import { API_HOST, resultsPerPage } from "@/constants";
-import { WocUtxo } from "@/types/common";
+import { WocUtxo, WocUtxoResults } from "@/types/common";
 import { OrdUtxo } from "@/types/ordinals";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { uniq } from "lodash";
@@ -12,7 +12,7 @@ export const addressFromWif = (payPk: string) => {
 };
 
 export const getBsv21Utxos = async (address: string, offset: number, id?: string) => {
-  let url = `${API_HOST}/api/bsv20/${address}/id/${id}?limit=${resultsPerPage}&offset=${offset}&dir=DESC`
+  let url = `${API_HOST}/api/bsv20/${address}/id/${id}?limit=${resultsPerPage}&offset=${offset}&dir=DESC&listing=true`
   if (id) {
     url += `&id=${id}`;
   }
@@ -22,7 +22,7 @@ export const getBsv21Utxos = async (address: string, offset: number, id?: string
 }
 
 export const getBsv20Utxos = async (address: string, offset: number, tick?: string) => {
-  let url = `${API_HOST}/api/bsv20/${address}/tick/${tick}?limit=${resultsPerPage}&offset=${offset}&dir=DESC`
+  let url = `${API_HOST}/api/bsv20/${address}/tick/${tick}?limit=${resultsPerPage}&offset=${offset}&dir=DESC&listing=true`
   if (tick) {
     url += `&tick=${tick}`;
   }
@@ -39,13 +39,18 @@ export const getOrdUtxos = async (address: string, nextOffset: number) => {
 }
 
 export const getUtxos = async (address: string) => {
-  const { promise } = http.customFetch<WocUtxo[]>(
-    `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
+  const { promise } = http.customFetch<WocUtxoResults>(
+    // `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated
     // `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
+    `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unconfirmed/unspent`
   );
-  const u = await promise;
+  const u = (await promise).result;
+  const { promise: promiseConfirmed } = http.customFetch<WocUtxoResults>(
+    `https://api.whatsonchain.com/v1/bsv/main/address/${address}/confirmed/unspent`
+  );
+  const c = (await promiseConfirmed).result;
 
-  return u.map((u: WocUtxo) => {
+  return u.concat(c).map((u) => {
     return {
       satoshis: u.value,
       txid: u.tx_hash,

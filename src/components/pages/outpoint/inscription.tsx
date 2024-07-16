@@ -14,7 +14,8 @@ const OutpointInscription = async ({ outpoint }: Props) => {
   const url = `${API_HOST}/api/inscriptions/${outpoint}`;
   const { promise } = http.customFetch<OrdUtxo>(url);
   const artifact = await promise;
-  // console.log({ artifact });
+  // console.log({ artifact, data: artifact.data });
+  
   return (
     artifact && (
       <OutpointPage

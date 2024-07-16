@@ -1,6 +1,6 @@
 import SignerPage from "@/components/pages/signer";
 import { API_HOST } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
 const Signer = async ({ params }: { params: { address: string } }) => {
@@ -15,17 +15,17 @@ export default Signer;
 
 export async function generateMetadata() {
 	return {
-		title: `Transaction History - 1SatOrdinals`,
-		description: `View your transaction history on 1SatOrdinals.`,
+		title: "Transaction History - 1SatOrdinals",
+		description: "View your transaction history on 1SatOrdinals.",
 		openGraph: {
-			title: `Transaction History - 1SatOrdinals`,
-			description: `View your transaction history on 1SatOrdinals.`,
+			title: "Transaction History - 1SatOrdinals",
+			description: "View your transaction history on 1SatOrdinals.",
 			type: "website",
 		},
 		twitter: {
 			card: "summary",
-			title: `Transaction History - 1SatOrdinals`,
-			description: `View your transaction history on 1SatOrdinals.`,
+			title: "Transaction History - 1SatOrdinals",
+			description: "View your transaction history on 1SatOrdinals.",
 		},
 	};
 }

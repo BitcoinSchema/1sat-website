@@ -121,14 +121,14 @@ const List = ({ term, address, onClick }: Props) => {
   });
 
   // const collections = useSignal(collectionData || []);
-  console.log({
-    collectionIds: collectionIds.value,
-    // collections: collections.value,
-    collectionData,
-    cids,
-    isFetchingCollections,
-    collectionsErr,
-  });
+  // console.log({
+  //   collectionIds: collectionIds.value,
+  //   // collections: collections.value,
+  //   collectionData,
+  //   cids,
+  //   isFetchingCollections,
+  //   collectionsErr,
+  // });
 
   return (
     listings.value && (

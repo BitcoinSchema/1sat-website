@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FaChevronLeft } from "react-icons/fa";
 import { CollectionList } from "./CollectionList";
 import { CollectionNavigation } from "./CollectionNavigation";
+import Traits, { type Collection } from "./Traits";
 
 interface Props {
   stats: CollectionStats;
@@ -55,6 +56,7 @@ const CollectionPage = async ({ stats, collection, bannerImage }: Props) => {
       )}
 
       <CollectionNavigation />
+      {collection.origin?.data?.map && <Traits collection={collection.origin.data.map as Collection} />}
       <CollectionList collectionId={collection.outpoint} />
     </div>
   );

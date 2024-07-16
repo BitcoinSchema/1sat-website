@@ -10,7 +10,7 @@ type SpotlightProps = {
 
 export const Spotlight = ({ className, fill }: SpotlightProps) => {
 	const pathname = usePathname();
-	console.log({ pathname });
+
 	if (pathname !== "/") {
 		return null;
 	}

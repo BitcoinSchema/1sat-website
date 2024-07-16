@@ -164,7 +164,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       return {
         rawTx: tx.to_hex(),
         size: tx.get_size(),
-        fee: paymentUtxo!.satoshis - Number(tx.satoshis_out()),
+        fee: paymentUtxo.satoshis - Number(tx.satoshis_out()),
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
@@ -260,7 +260,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     const ordUtxos = await getOutpoints([outpoint], true);
     const ordUtxo = head(ordUtxos);
 
-    console.log({ ordUtxo });
+    // console.log({ ordUtxo });
     // do not set the item if it is a listing
     if (ordUtxo) {
       if (!ordUtxo.data?.list) {
@@ -276,7 +276,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   }, [setSelectedItem, setShowSelectItem]);
 
   const artifact = useMemo(() => {
-    console.log({ ordUtxos: ordUtxos.value, selectedItem })
+    // console.log({ ordUtxos: ordUtxos.value, selectedItem })
     return ordUtxos.value?.find((utxo) => utxo?.origin?.outpoint === selectedItem?.origin?.outpoint);
   }, [ordUtxos.value, selectedItem]);
 

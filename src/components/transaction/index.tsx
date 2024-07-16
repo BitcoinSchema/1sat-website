@@ -31,9 +31,7 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
           `https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`
         );
         const rawTx = await response.text();
-        console.log("Setting rawtx");
         setRawtx(rawTx);
-
       } catch (e) {
         console.error(e);
       }
@@ -94,7 +92,7 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
 
   const toggleDetails = useCallback(() => {
     showDetails.value = !showDetails.value;
-    console.log({ showDetails: showDetails.value });
+    // console.log({ showDetails: showDetails.value });
   }, [showDetails]);
 
   useMemo(() => {
@@ -104,9 +102,9 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
     }
   }, [showing, showDetails]);
 
-  useEffect(() => {
-    console.log({ showDetails: showDetails.value });
-  }, [showDetails]);
+  // useEffect(() => {
+  //   console.log({ showDetails: showDetails.value });
+  // }, [showDetails]);
 
   return (
     <>

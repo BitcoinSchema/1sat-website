@@ -1,6 +1,6 @@
 export enum EncryptDecrypt {
-	Encrypt,
-	Decrypt,
+	Encrypt = 0,
+	Decrypt = 1,
 }
 
 export interface EncryptedBackupJson {
@@ -17,10 +17,18 @@ export interface DecryptedBackupJson {
 }
 
 export enum CreateWalletStep {
-	Create,
-	Created,
-	EnterPassphrase,
-	ViewMnemonic,
-	VerifyMnemonic,
-	Fund,
+	Create = 0,
+	Created = 1,
+	EnterPassphrase = 2,
+	ViewMnemonic = 3,
+	VerifyMnemonic = 4,
+	Fund = 5,
+}
+
+export type Keys = {
+  payPk: string;
+  ordPk: string;
+  mnemonic?: string;
+  changeAddressPath?: number;
+  ordAddressPath?: number;
 }

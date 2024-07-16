@@ -20,7 +20,7 @@ const CollectionContent = ({
 	const mapData = artifact.origin?.data?.map;
 	const collectionData = collection.origin?.data?.map;
 	const collectionInscription = collection.origin?.data?.insc;
-	console.log({ mapData, collectionData, collectionInscription });
+	// console.log({ mapData, collectionData, collectionInscription });
 
 	const numItems = collectionData?.subTypeData?.quantity;
 	return (

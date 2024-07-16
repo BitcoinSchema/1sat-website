@@ -489,6 +489,8 @@ const sendOrdinal = async (
 			reinscription.contentType,
 			metaData
 		);
+	} else if (metaData) {
+		s = buildInscription(destinationAddress, undefined, undefined, metaData);
 	} else {
 		s = destinationAddress.get_locking_script();
 	}
@@ -577,19 +579,19 @@ const sendUtxos = async (
 	}
 	const satsIn = inputValue;
 	const satsOut = satsIn - feeSats;
-	console.log({ feeSats, satsIn, satsOut });
+	// console.log({ feeSats, satsIn, satsOut });
 	tx.add_output(new TxOut(BigInt(satsOut), address.get_locking_script()));
 
 	// build txins from our UTXOs
 	let idx = 0;
 	for (const u of utxos || []) {
-		console.log({ u });
+		// console.log({ u });
 		const inx = new TxIn(
 			Buffer.from(u.txid, "hex"),
 			u.vout,
 			Script.from_asm_string("")
 		);
-		console.log({ inx });
+		// console.log({ inx });
 		inx.set_satoshis(BigInt(u.satoshis));
 		tx.add_input(inx);
 

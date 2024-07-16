@@ -17,6 +17,7 @@ export interface BSV20 extends OrdUtxo {
   sym?: string;
   amt: string;
   status?: Bsv20Status;
+  listing: boolean;
 }
 
 export interface Ticker extends BSV20 {

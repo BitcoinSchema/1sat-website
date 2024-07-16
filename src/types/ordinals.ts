@@ -45,11 +45,18 @@ export interface BSV20TXO extends BaseTxo {
 	sale?: boolean;
 }
 
+export enum OpNsStatus {
+	Valid = 1,
+	Pending = 0,
+	Invalid = -1,
+}
+
 export interface TxoData extends BaseTxo {
 	types?: string[];
 	insc?: Inscription;
 	map?: { [key: string]: any };
 	b?: File;
+	opns?: { domain: string, status: OpNsStatus };
 	sigma?: SIGMA[];
 	list?: {
 		price: number;

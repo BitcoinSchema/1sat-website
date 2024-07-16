@@ -1,7 +1,10 @@
 import MarketPage from "@/components/pages/market";
-import { AssetType } from "@/constants";
+import { AssetType, SortBy } from "@/constants";
 
-const Search = async ({ params }: { params: { term: string } }) => {
+const Search = async ({ params, searchParams }: { params: { term: string }, searchParams: { 
+  sort: SortBy, 
+  dir: "asc" | "desc"
+} }) => {
   // &q=${btoa(JSON.stringify({
   //   insc: {
   //     json: {
@@ -20,6 +23,8 @@ const Search = async ({ params }: { params: { term: string } }) => {
       showTabs={false}
       title={params.term}
       term={params.term}
+      sort={searchParams.sort || SortBy.MostRecentSale}
+      dir={searchParams.dir || "asc"}
       // imageListings={artifacts}
       selectedAssetType={AssetType.Ordinals}
     />

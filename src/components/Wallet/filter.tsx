@@ -28,6 +28,7 @@ const MenuItem = ({
 
 const Filter = () => {
   useSignals();
+  const excludeTypes = [ArtifactType.BSV20];
   return (
     <div className="group dropdown dropdown-bottom dropdown-end dropdown-hover">
       <div tabIndex={0} role="button" className="btn btn-xs md:m-1">
@@ -62,4 +63,3 @@ export const changeFilter = (type: ArtifactType) => {
   selectedType.value = type;
 };
 
-const excludeTypes = [ArtifactType.BSV20];

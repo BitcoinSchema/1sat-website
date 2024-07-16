@@ -28,7 +28,7 @@ const OutpointListing = async ({ outpoint }: Props) => {
     console.log(e);
   }
 
-  console.log({ artifact, bsv20 });
+  // console.log({ artifact, bsv20 });
   // const listing = artifact?.data?.list || bsv20?.data?.list;
   // const content = listing ? (
   // 	<ListingContent artifact={artifact || bsv20!} />

@@ -1,4 +1,4 @@
 {
-	"extends": ["next/core-web-vitals", "react-hooks-signals/recommended"],
+	"extends": ["next/core-web-vitals", "plugin:react-hooks-signals/recommended"],
 	"rules": { "react-hooks/exhaustive-deps": "off" }
 }

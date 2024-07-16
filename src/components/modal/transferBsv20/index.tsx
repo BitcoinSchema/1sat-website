@@ -10,11 +10,12 @@ import {
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { Ticker } from "@/types/bsv20";
-import { BSV20TXO } from "@/types/ordinals";
-import { PendingTransaction } from "@/types/preview";
+import type { Ticker } from "@/types/bsv20";
+import type { BSV20TXO } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
-import { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "@/utils/js-1sat-ord";
+import { toHex } from "@/utils/strings";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -30,7 +31,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
-import { buildInscriptionSafe } from "../airdrop";
 
 interface TransferModalProps {
 	onClose: () => void;
@@ -41,6 +41,7 @@ interface TransferModalProps {
 	id: string;
 	balance: number;
 	sym?: string;
+	burn?: boolean;
 }
 
 const TransferBsv20Modal: React.FC<TransferModalProps> = ({
@@ -52,6 +53,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 	dec,
 	address: addr,
 	onClose,
+	burn
 }) => {
 	useSignals();
 	const router = useRouter();
@@ -68,7 +70,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 		async (
 			sendAmount: number,
 			paymentUtxos: Utxo[],
-			inputTokens: BSV20TXO[], //
+			inputTokens: BSV20TXO[],
 			paymentPk: PrivateKey,
 			changeAddress: string,
 			ordPk: PrivateKey,
@@ -142,6 +144,8 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				const changeFileB64 = Buffer.from(
 					JSON.stringify(changeInscription)
 				).toString("base64");
+		
+				// Send burned tokens to the BSV funding address
 				const changeInsc = buildInscriptionSafe(
 					P2PKHAddress.from_string(ordAddress),
 					changeFileB64,
@@ -173,7 +177,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 
 			const inscription = {
 				p: "bsv-20",
-				op: "transfer",
+				op: burn ? "burn" : "transfer",
 				amt: sendAmount.toString(),
 			} as any;
 			if (ticker.tick) {
@@ -186,7 +190,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				"base64"
 			);
 			const insc = buildInscriptionSafe(
-				P2PKHAddress.from_string(payoutAddress),
+				P2PKHAddress.from_string(burn ? changeAddress : payoutAddress),
 				fileB64,
 				"application/bsv-20"
 			);
@@ -216,7 +220,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			return {
 				rawTx: tx.to_hex(),
 				size: tx.get_size(),
-				fee: paymentUtxos[0]!.satoshis - Number(tx.satoshis_out()),
+				fee: paymentUtxos[0].satoshis - Number(tx.satoshis_out()),
 				numInputs: tx.get_ninputs(),
 				numOutputs: tx.get_noutputs(),
 				txid: tx.get_id_hex(),
@@ -224,24 +228,40 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				marketFee: 0,
 			};
 		},
-		[]
+		[bsvWasmReady.value, burn]
 	);
 
 	const submit = useCallback(
 		async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			if (!amount.value || !address.value) {
+			if (!bsvWasmReady.value) {
+				toast.error("not ready", toastErrorProps);
 				return;
 			}
+			if (!ordAddress.value || !ordPk.value || !payPk.value || !fundingAddress.value)	{
+				toast.error("Missing keys", toastErrorProps);
+				return;
+			}
+			if (!amount.value || (!address.value && !burn)) {
+				toast.error("Missing amount or address", toastErrorProps);
+				return;
+			}
+			if (!utxos.value || !utxos.value.length) {
+				toast.error("No UTXOs", toastErrorProps);
+				return;
+			}
+			
 			if (Number.parseFloat(amount.value) > balance) {
 				toast.error("Not enough Bitcoin!", toastErrorProps);
 				return;
 			}
+
+			
 			console.log(amount.value, address.value);
 			const amt = Math.floor(Number.parseFloat(amount.value) * 10 ** dec);
 			const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${
 				type === WalletTab.BSV20 ? "tick" : "id"
-			}/${id}`;
+			}/${id}?listing=false`;
 			const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
 			const tokenUtxos = await promise;
 			const { promise: promiseTickerDetails } = http.customFetch<Ticker>(
@@ -252,28 +272,20 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			const ticker = await promiseTickerDetails;
 			const transferTx = await transferBsv20(
 				amt,
-				utxos.value!,
+				utxos.value,
 				tokenUtxos,
-				PrivateKey.from_wif(payPk.value!),
-				fundingAddress.value!,
-				PrivateKey.from_wif(ordPk.value!),
-				ordAddress.value!,
+				PrivateKey.from_wif(payPk.value),
+				fundingAddress.value,
+				PrivateKey.from_wif(ordPk.value),
+				ordAddress.value,
 				address.value, // recipient ordinal address
-				ticker
+				ticker,
 			);
 			pendingTxs.value = [transferTx];
+			
 			router.push("/preview");
 		},
-		[
-			amount.value,
-			address.value,
-			balance,
-			dec,
-			type,
-			id,
-			transferBsv20,
-			router,
-		]
+		[bsvWasmReady.value, ordAddress.value, ordPk.value, payPk.value, fundingAddress.value, amount.value, address.value, burn, utxos.value, balance, dec, type, id, transferBsv20, router]
 	);
 
 	const placeholderText = useMemo(() => {
@@ -294,7 +306,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 					<form onSubmit={submit}>
 						<div className="flex justify-between">
 							<div className="text-lg font-semibold">
-								Transfer {type === WalletTab.BSV20 ? id : sym}{" "}
+								{burn ? "Burn" : "Transfer"} {type === WalletTab.BSV20 ? id : sym}{" "}
 								{type}
 							</div>
 							<div
@@ -327,7 +339,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 								}}
 							/>
 						</div>
-						<div className="flex flex-col mt-4">
+						{!burn && <div className="flex flex-col mt-4">
 							<label className="text-sm font-semibold text-[#aaa] mb-2">
 								Address
 							</label>
@@ -335,18 +347,18 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 								type="text"
 								placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
 								className="input input-bordered w-full"
-								value={address.value}
+								value={burn ? fundingAddress.value! : address.value}
 								onChange={(e) => {
 									address.value = e.target.value;
 								}}
 							/>
-						</div>
+						</div>}
 						<div className="modal-action">
 							<button
 								type="submit"
 								className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
 							>
-								Send
+								{burn ? "Burn" : "Send"}
 							</button>
 						</div>
 					</form>
@@ -357,3 +369,33 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 };
 
 export default TransferBsv20Modal;
+
+export const buildInscriptionSafe = (
+	destinationAddress: P2PKHAddress | string,
+	b64File?: string | undefined,
+	mediaType?: string | undefined,
+): Script => {
+	let ordAsm = "";
+	// This can be omitted for reinscriptions that just update metadata
+	if (b64File !== undefined && mediaType !== undefined) {
+		const ordHex = toHex("ord");
+		const fsBuffer = Buffer.from(b64File, "base64");
+		const fireShardHex = fsBuffer.toString("hex");
+		const fireShardMediaType = toHex(mediaType);
+		ordAsm = `OP_0 OP_IF ${ordHex} OP_1 ${fireShardMediaType} OP_0 ${fireShardHex} OP_ENDIF`;
+	}
+
+	let address: P2PKHAddress;
+	// normalize destinationAddress
+	if (typeof destinationAddress === "string") {
+		address = P2PKHAddress.from_string(destinationAddress);
+	} else {
+		address = destinationAddress;
+	}
+	// Create ordinal output and inscription in a single output
+	const inscriptionAsm = `${address.get_locking_script().to_asm_string()}${
+		ordAsm ? ` ${ordAsm}` : ""
+	}`;
+
+	return Script.from_asm_string(inscriptionAsm);
+};

@@ -6,7 +6,7 @@ interface Props {}
 
 export function VerifyMnemonicStep({}: Props) {
   function handleOnSubmit(verified?: boolean) {
-    console.log({ verified });
+    // console.log({ verified });
 
     if (typeof verified === "undefined") {
       return;
