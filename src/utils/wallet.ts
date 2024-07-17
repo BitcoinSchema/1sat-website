@@ -31,10 +31,6 @@ export const backupKeys = () => {
 		ordPkDerivationPath = `m/${ordAddressPath.value}`;
 	}
 
-	const identityDerivationPath = !identityAddressPath.value || typeof identityAddressPath.value === "number"
-		? payPkDerivationPath
-		: identityAddressPath.value;
-
 	const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
 		JSON.stringify(removeNullKeys({
 			mnemonic: mnemonic.value,
@@ -42,8 +38,8 @@ export const backupKeys = () => {
 			payDerivationPath: payPkDerivationPath,
 			ordPk: ordPk.value,
 			ordDerivationPath: ordPkDerivationPath,
-			identityPk: identityPk.value ?? payPk.value,
-			identityDerivationPath: identityDerivationPath,
+			identityPk: identityPk.value,
+			identityDerivationPath: identityAddressPath.value,
 		}))
 	)}`;
 

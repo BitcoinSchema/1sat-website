@@ -34,8 +34,6 @@ export function CreateStep({
       mnemonic.value = keys.mnemonic ?? null;
 	  changeAddressPath.value = keys.changeAddressPath ?? null;
 	  ordAddressPath.value = keys.ordAddressPath ?? null;
-	  identityPk.value = payPk.value;
-	  identityAddressPath.value = changeAddressPath.value;
 
       isCreatingWallet.value = false;
 

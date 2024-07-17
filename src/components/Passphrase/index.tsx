@@ -120,8 +120,8 @@ const EnterPassphrase: React.FC<Props> = ({
               ordPk: ordPk.value,
 			  payDerivationPath: changeAddressPath.value,
 			  ordDerivationPath: ordAddressPath.value,
-			  identityPk: identityPk.value,
-			  identityDerivationPath: identityAddressPath.value,
+			  ...(!!identityPk.value && { identityPk: identityPk.value }),
+  			  ...(!!identityAddressPath.value && { identityDerivationPath: identityAddressPath.value }),
             }),
             "utf-8"
           ),

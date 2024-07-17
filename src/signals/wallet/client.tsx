@@ -117,8 +117,8 @@ export const setKeys = (keys: Keys) => {
   mnemonic.value = keys.mnemonic ?? null;
   changeAddressPath.value = keys.changeAddressPath ?? null;
   ordAddressPath.value = keys.ordAddressPath ?? null;
-  identityPk.value = keys.identityPk ?? payPk.value;
-  identityAddressPath.value = keys.identityAddressPath ?? changeAddressPath.value;
+  identityPk.value = keys.identityPk ?? null;
+  identityAddressPath.value = keys.identityAddressPath ?? null;
 
   sessionStorage.setItem("1satfk", keys.payPk);
   sessionStorage.setItem("1satok", keys.ordPk);
@@ -184,7 +184,7 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
 	mnemonic: decryptedBackup.mnemonic,
 	changeAddressPath: decryptedBackup.payDerivationPath,
 	ordAddressPath: decryptedBackup.ordDerivationPath,
-	identityPk: decryptedBackup.identityPk,
-	identityAddressPath: decryptedBackup.identityDerivationPath,
+	...(decryptedBackup.identityPk !== undefined && { identityPk: decryptedBackup.identityPk }),
+  	...(decryptedBackup.identityDerivationPath !== undefined && { identityAddressPath: decryptedBackup.identityDerivationPath }),
   });
 };

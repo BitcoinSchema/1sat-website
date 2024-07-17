@@ -55,8 +55,8 @@ export function SelectFileStep({}: Props) {
 					ordPk: json.ordPk,
 					changeAddressPath: json.payDerivationPath,
 					ordAddressPath: json.ordDerivationPath,
-					identityPk: json.identityPk,
-					identityAddressPath: json.identityDerivationPath,
+					...(!!json.identityPk && { identityPk: json.identityPk }),
+					...(!!json.identityDerivationPath && { identityAddressPath: json.identityDerivationPath }),
 				});
 				// go to the password step
 				importWalletFromBackupJsonStep.value =

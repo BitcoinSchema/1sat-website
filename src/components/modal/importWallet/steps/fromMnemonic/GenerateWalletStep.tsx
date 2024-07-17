@@ -33,8 +33,6 @@ export function GenerateWalletStep({}: Props) {
 					mnemonic: mnemonic.value,
 					ordAddressPath: keys.ordAddressPath,
 					changeAddressPath: keys.changeAddressPath,
-					identityAddressPath: keys.identityAddressPath,
-					identityPk: keys.identityPk,
 				});
 			}
 

@@ -21,8 +21,8 @@ export interface DecryptedBackupJson {
 	payPk: string;
 	payDerivationPath: string;
 	ordDerivationPath: string;
-	identityPk: string;
-	identityDerivationPath: string;
+	identityPk?: string;
+	identityDerivationPath?: string;
 }
 
 export enum CreateWalletStep {
