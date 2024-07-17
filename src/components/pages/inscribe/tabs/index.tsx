@@ -4,7 +4,7 @@ interface Props {
   currentTab: InscriptionTab | undefined;
   showIndicator?: boolean;
   onClickSelected?: (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement, MouseEvent>
   ) => void;
 }
 
@@ -26,11 +26,11 @@ const InscriptionTabs: React.FC<Props> = ({
   onClickSelected,
 }) => {
   return (
-    <div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8">
-      <Link href={`/inscribe`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Image ? 'tab-active' : ''}`}>
+    <div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8 overflow-x-auto w-full">
+      <Link href={"/inscribe"} role={'tab'} className={`tab ${currentTab === InscriptionTab.Image ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-
-          onClick={(e: any) =>
+          onClick={(e) =>
             currentTab === InscriptionTab.Image && onClickSelected
               ? onClickSelected(e)
               : () => { }
@@ -39,10 +39,10 @@ const InscriptionTabs: React.FC<Props> = ({
           Image
         </div>
       </Link>
-      <Link href={`/inscribe?tab=text`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Text ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=text"} role={'tab'} className={`tab ${currentTab === InscriptionTab.Text ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-
-          onClick={(e: any) =>
+          onClick={(e) =>
             currentTab === InscriptionTab.Text && onClickSelected
               ? onClickSelected(e)
               : () => { }
@@ -51,10 +51,10 @@ const InscriptionTabs: React.FC<Props> = ({
           Text
         </div>
       </Link>
-      <Link href={`/inscribe?tab=html`} role={'tab'} className={`tab ${currentTab === InscriptionTab.HTML ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=html"} role={'tab'} className={`tab ${currentTab === InscriptionTab.HTML ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-
-          onClick={(e: any) =>
+          onClick={(e) =>
             currentTab === InscriptionTab.HTML && onClickSelected
               ? onClickSelected(e)
               : () => { }
@@ -63,10 +63,11 @@ const InscriptionTabs: React.FC<Props> = ({
           HTML
         </div>
       </Link>
-      <Link href={`/inscribe?tab=bsv20`} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV20 ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=bsv20"} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV20 ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-
-          onClick={(e: any) =>
+          className="whitespace-nowrap"
+          onClick={(e) =>
             currentTab === InscriptionTab.BSV20 && onClickSelected
               ? onClickSelected(e)
               : () => { }
@@ -75,9 +76,11 @@ const InscriptionTabs: React.FC<Props> = ({
           BSV-20
         </div>
       </Link>
-      <Link href={`/inscribe?tab=bsv21`} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV21 ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=bsv21"} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV21 ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-          onClick={(e: any) =>
+          className="whitespace-nowrap"
+          onClick={(e) =>
             currentTab === InscriptionTab.BSV21 && onClickSelected
               ? onClickSelected(e)
               : () => { }
@@ -112,8 +115,9 @@ const InscriptionTabs: React.FC<Props> = ({
       </div> */}
 
       <Link href={`/inscribe?tab=${InscriptionTab.Collection}`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Collection ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-          onClick={(e: any) =>
+          onClick={(e) =>
             currentTab === InscriptionTab.Collection && onClickSelected
               ? onClickSelected(e)
               : () => { }

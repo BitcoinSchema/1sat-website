@@ -143,7 +143,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
         router.push("/inscribe?tab=image&generated=true");
       }
     }
-  }, [input, router, generatedImage]);
+  }, [input, router]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
