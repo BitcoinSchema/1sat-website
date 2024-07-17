@@ -26,7 +26,7 @@ const InscriptionTabs: React.FC<Props> = ({
   onClickSelected,
 }) => {
   return (
-    <div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8 overflow-x-auto w-full">
+    <div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8 overflow-x-auto w-fit">
       <Link href={"/inscribe"} role={'tab'} className={`tab ${currentTab === InscriptionTab.Image ? 'tab-active' : ''}`}>
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div

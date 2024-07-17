@@ -7,41 +7,31 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { FileEvent } from "@/types/file";
 import type { TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
-import { inscribeFile } from "@/utils/inscribe";
 import { useSignals } from "@preact/signals-react/runtime";
-import { head } from "lodash";
 import mime from "mime";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { IoMdClose } from "react-icons/io";
 import { IconWithFallback } from "../../TokenMarket/heading";
-import TraitsForm, { type Trait } from "./traitsForm";
-import RarityLabelForm from "./rarityLabelForm";
-
-type CollectionInscription = {
-	name: string;
-	description: string;
-	quantity?: string;
-	rarityLabels?: string;
-	traits?: string;
-	previewUrl?: string;
-	royalties?: string;
-};
+import TraitsForm, { validateTraits } from "./traitsForm";
+import RarityLabelForm, { validateRarities } from "./rarityLabelForm";
+import RoyaltyForm, { validateRoyalties } from "./royaltyForm";
+import {
+	type CollectionSubTypeData,
+	type CreateOrdinalsCollectionMetadata,
+	createOrdinals,
+	type CreateOrdinalsCollectionConfig,
+	type Destination,
+	validateSubTypeData,
+	type CollectionTraits,
+  type Royalty,
+  type RarityLabels,
+} from "js-1sat-ord";
+import { PrivateKey } from "@bsv/sdk";
+import type { PendingTransaction } from "@/types/preview";
 
 interface InscribeCollectionProps {
 	inscribedCallback: () => void;
-}
-
-export interface Rarity {
-	label: string;
-	percentage: string;
-}
-
-export interface Royalty {
-	type: "paymail" | "address";
-	destination: string;
-	percentage: string;
 }
 
 const InscribeCollection: React.FC<InscribeCollectionProps> = ({
@@ -52,8 +42,10 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 	const [collectionName, setCollectionName] = useState("");
 	const [collectionDescription, setCollectionDescription] = useState("");
 	const [collectionQuantity, setCollectionQuantity] = useState("");
-	const [collectionRarities, setCollectionRarities] = useState<Rarity[]>([]);
-	const [collectionTraits, setCollectionTraits] = useState<Trait[]>([]);
+	const [collectionRarities, setCollectionRarities] = useState<RarityLabels>(
+		[],
+	);
+	const [collectionTraits, setCollectionTraits] = useState<CollectionTraits>();
 	const [collectionCoverImage, setCollectionCoverImage] = useState<File | null>(
 		null,
 	);
@@ -62,48 +54,37 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 	const [isImage, setIsImage] = useState<boolean>(false);
 	const [mintError, setMintError] = useState<string>();
 
-	const validateTraits = useCallback(() => {
-		for (const trait of collectionTraits) {
-			if (trait.values.length !== trait.occurancePercentages.length) {
-				return "The number of trait values and occurance percentages must match.";
-			}
-
-			const totalPercentage = trait.occurancePercentages.reduce(
-				(sum, percentage) => sum + Number.parseFloat(percentage),
-				0,
-			);
-			if (totalPercentage !== 100) {
-				return "The occurance percentages for each trait must total up to exactly 100.";
+	const validateForm = useCallback(() => {
+		if (collectionTraits) {
+			const traitError = validateTraits(collectionTraits);
+			if (traitError) {
+				toast.error(traitError, toastErrorProps);
+				throw new Error(traitError);
 			}
 		}
-		return null;
-	}, [collectionTraits]);
 
-	const validateRarities = useCallback(() => {
-		if (collectionRarities.length === 1) {
-			return "You must have at least two rarities.";
+		const rarityError = validateRarities(collectionRarities);
+		if (rarityError) {
+			toast.error(rarityError, toastErrorProps);
+			throw new Error(rarityError);
 		}
 
-		const totalPercentage = collectionRarities.reduce(
-			(sum, rarity) => sum + Number.parseFloat(rarity.percentage),
-			0,
-		);
-		if (totalPercentage !== 0 && totalPercentage !== 100) {
-			return "The rarity percentages must total up to exactly 100.";
+		const royaltyError = validateRoyalties(collectionRoyalties);
+		if (royaltyError) {
+			toast.error(royaltyError, toastErrorProps);
+			throw new Error(royaltyError);
 		}
-		return null;
-	}, [collectionRarities]);
 
-	const validateRoyalties = useCallback(() => {
-		const totalPercentage = collectionRoyalties.reduce(
-			(sum, royalty) => sum + Number.parseFloat(royalty.percentage),
-			0,
-		);
-		if (totalPercentage > 7) {
-			return "The collection royalties must collectively total no more than 7%.";
+		if (!collectionName) {
+			toast.error("Name is required", toastErrorProps);
+			throw new Error("Name is required");
 		}
-		return null;
-	}, [collectionRoyalties]);
+	}, [
+		collectionName,
+		collectionRarities,
+		collectionRoyalties,
+		collectionTraits,
+	]);
 
 	const inscribeCollection = useCallback(async () => {
 		if (
@@ -112,6 +93,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			!ordAddress.value ||
 			!fundingAddress.value
 		) {
+			toast.error("Wallet not ready", toastErrorProps);
 			return;
 		}
 
@@ -120,69 +102,41 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			return;
 		}
 
-		const traitError = validateTraits();
-		if (traitError) {
-			toast.error(traitError, toastErrorProps);
-			return;
-		}
-
-		const rarityError = validateRarities();
-		if (rarityError) {
-			toast.error(rarityError, toastErrorProps);
-			return;
-		}
-
-		const royaltyError = validateRoyalties();
-		if (royaltyError) {
-			toast.error(royaltyError, toastErrorProps);
+		try {
+			validateForm();
+		} catch (e) {
+			console.error(e);
 			return;
 		}
 
 		const utxos = await getUtxos(fundingAddress.value);
-		const sortedUtxos = utxos.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1,
-		);
-		const u = head(sortedUtxos);
-		if (!u) {
-			console.error("no utxo");
-			return;
-		}
 
-		const metadata = {
+		const metaData = {
 			app: "1sat.market",
 			type: "ord",
 			subType: "collection",
 			name: collectionName,
+			royalties: JSON.stringify(collectionRoyalties) || undefined,
+		} as CreateOrdinalsCollectionMetadata;
+
+		const subTypeData: Partial<CollectionSubTypeData> = {
+			quantity: Number.parseInt(collectionQuantity),
 			description: collectionDescription,
-			quantity: collectionQuantity,
-		} as CollectionInscription;
+		};
+
+		if (!collectionQuantity) {
+			subTypeData.quantity = undefined;
+		}
 
 		if (collectionRarities.length > 0) {
-			metadata.rarityLabels = JSON.stringify(
-				collectionRarities.reduce(
-					(acc, rarity) => {
-						acc[rarity.label] = rarity.percentage;
-						return acc;
-					},
-					{} as Record<string, string>,
-				),
-			);
+			subTypeData.rarityLabels = collectionRarities;
 		}
 
-		if (collectionTraits.length > 0) {
-			metadata.traits = JSON.stringify(
-				collectionTraits.map((trait) => ({
-					[trait.name]: {
-						values: trait.values,
-						occurancePercentages: trait.occurancePercentages,
-					},
-				})),
-			);
+		if (collectionTraits) {
+      subTypeData.traits = collectionTraits;
 		}
 
-		if (collectionRoyalties.length > 0) {
-			metadata.royalties = JSON.stringify(collectionRoyalties);
-		}
+		metaData.subTypeData = subTypeData as CollectionSubTypeData
 
 		let file: File | undefined;
 		if (collectionCoverImage.type === "") {
@@ -197,9 +151,48 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			file = collectionCoverImage;
 		}
 
-		const pendingTx = await inscribeFile(u, file, metadata, ordPk.value);
-		if (pendingTx) {
-			pendingTxs.value = [pendingTx];
+		const dataB64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+
+		const destinations: Destination[] = [
+			{
+				address: ordAddress.value,
+				inscription: {
+					dataB64,
+					contentType: "application/json",
+				},
+			},
+		];
+
+		const error = validateSubTypeData("collection", metaData.subTypeData);
+		if (error) {
+			console.error(error);
+			return;
+		}
+
+		// const pendingTx = await inscribeFile(u, file, metadata, ordPk.value);
+		const config: CreateOrdinalsCollectionConfig = {
+			destinations,
+			paymentPk: PrivateKey.fromWif(payPk.value),
+			utxos,
+			metaData,
+		};
+		const { tx } = await createOrdinals(config);
+
+		if (tx) {
+			pendingTxs.value = [
+				{
+					txid: tx.id("hex"),
+					rawTx: tx.toHex(),
+					fee: tx.getFee(),
+					numInputs: tx.inputs.length,
+					numOutputs: tx.outputs.length,
+					inputTxid: tx.inputs[0].sourceTXID,
+					contentType: file.type,
+					metadata: metaData,
+					size: tx.toBinary().length,
+					returnTo: "/inscribe",
+				} as PendingTransaction,
+			];
 			inscribedCallback();
 		}
 	}, [
@@ -215,38 +208,8 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 		ordAddress.value,
 		ordPk.value,
 		payPk.value,
-		validateRarities,
-		validateRoyalties,
-		validateTraits,
+		validateForm,
 	]);
-
-	const addRoyalty = () => {
-		setCollectionRoyalties([
-			...collectionRoyalties,
-			{ type: "paymail", destination: "", percentage: "" },
-		]);
-	};
-
-	const removeRoyalty = (index: number) => {
-		setCollectionRoyalties(collectionRoyalties.filter((_, i) => i !== index));
-	};
-
-	const updateRoyalty = useCallback(
-		(index: number, field: keyof Royalty, value: string) => {
-			if (field === "percentage") {
-				const percentage = Number.parseFloat(value);
-				if (Number.isNaN(percentage) || percentage < 0 || percentage > 7) {
-					return;
-				}
-			}
-			setCollectionRoyalties(
-				collectionRoyalties.map((royalty, i) =>
-					i === index ? { ...royalty, [field]: value } : royalty,
-				),
-			);
-		},
-		[collectionRoyalties],
-	);
 
 	// (e) => setCollectionCoverImage(e.target.files?.[0] || null)}
 
@@ -435,57 +398,10 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 
 			<div className="divider" />
 
-			<div className="mt-4">
-				<label className="block font-medium">Collection Royalties</label>
-				{collectionRoyalties.map((royalty, index) => (
-					<div
-						key={`royalty-${
-							// biome-ignore lint/suspicious/noArrayIndexKey: required to prevent re-render
-							index
-						}`}
-						className="mt-2 gap-2 flex-col flex"
-					>
-						<div className="flex items-center gap-2">
-							<select
-								className="select select-bordered w-full"
-								value={royalty.type}
-								onChange={(e) => updateRoyalty(index, "type", e.target.value)}
-							>
-								<option value="paymail">Paymail</option>
-								<option value="address">Address</option>
-							</select>
-							<button
-								type="button"
-								className={removeBtnClass}
-								onClick={() => removeRoyalty(index)}
-							>
-								<IoMdClose />
-							</button>
-						</div>
-						<input
-							type="text"
-							className="input input-bordered w-full"
-							value={royalty.destination}
-							onChange={(e) =>
-								updateRoyalty(index, "destination", e.target.value)
-							}
-							placeholder={`Destination ${royalty.type === "paymail" ? "Paymail" : "Address"}`}
-						/>
-						<input
-							type="text"
-							className="input input-bordered w-full"
-							value={royalty.percentage}
-							onChange={(e) =>
-								updateRoyalty(index, "percentage", e.target.value)
-							}
-							placeholder="Percentage"
-						/>
-					</div>
-				))}
-				<button type="button" className="btn btn-sm mt-2" onClick={addRoyalty}>
-					Add Royalty
-				</button>
-			</div>
+			<RoyaltyForm
+				collectionRoyalties={collectionRoyalties}
+				setCollectionRoyalties={setCollectionRoyalties}
+			/>
 
 			<div className="divider" />
 

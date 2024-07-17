@@ -1,34 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CollectionSubTypeData, MAP } from "js-1sat-ord";
+import type { CollectionSubTypeData, CollectionTraits, CreateOrdinalsCollectionMetadata, MAP } from "js-1sat-ord";
 
 interface TraitsProps {
-	collection: Collection;
+	collection: CreateOrdinalsCollectionMetadata;
 }
 
-export type Collection = MAP & {
-	type: "ord";
-	name: string;
-	subType: "collection";
-	subTypeData?: string | CollectionSubTypeData;
-	royalties?: string;
-	previewUrl?: string;
-};
+// export type Collection = MAP & {
+// 	type: "ord";
+// 	name: string;
+// 	subType: "collection";
+// 	subTypeData?: string | CollectionSubTypeData;
+// 	royalties?: string;
+// 	previewUrl?: string;
+// };
 
-type Traits = {
-	[trait: string]: Trait;
-};
+// type Traits = {
+// 	[trait: string]: Trait;
+// };
 
-type Trait = {
-	values: string[];
-	occurancePercentages: string[];
-};
+// type Trait = {
+// 	values: string[];
+// 	occurancePercentages: string[];
+// };
 
 const Traits: React.FC<TraitsProps> = ({ collection }) => {
   return <></>
   
-	const [traits, setTraits] = useState<Traits>({});
+	const [traits, setTraits] = useState<CollectionTraits>({});
 
 	useEffect(() => {
 		console.log({ collection });
@@ -37,7 +37,7 @@ const Traits: React.FC<TraitsProps> = ({ collection }) => {
       try {
         const data = collection.subTypeData as CollectionSubTypeData;
         console.log({ traits: data?.traits });
-        setTraits(JSON.parse(data.traits) as Traits);
+        setTraits(JSON.parse(data.traits) as CollectionTraits);
       } catch (e) {
         console.error("Error parsing collection data", e);
       }

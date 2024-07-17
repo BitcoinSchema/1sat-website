@@ -1,4 +1,4 @@
-import type { MAP } from "@/utils/js-1sat-ord";
+import type { MAP } from "js-1sat-ord";
 export type PendingTransaction = {
 	rawTx: string;
 	size: number;
