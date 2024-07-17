@@ -26,7 +26,7 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
 
       let processedValue = value;
       if (field === "occurancePercentages" && Array.isArray(value)) {
-        processedValue = value.map(v => (Number.parseFloat(v) / 100).toFixed(4));
+        processedValue = value.map(v => (Number.parseInt(v, 10) / 100).toString());
       }
 
       setCollectionTraits({
@@ -40,10 +40,12 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
     [collectionTraits, setCollectionTraits]
   );
 
+
   const handlePercentageChange = useCallback((traitName: string, value: string) => {
-    setInputPercentages(prev => ({ ...prev, [traitName]: value }));
+    const cleanedValue = value.replace(/[^0-9,]/g, '');
+    setInputPercentages(prev => ({ ...prev, [traitName]: cleanedValue }));
     
-    const percentages = value.split(",").map(v => v.trim());
+    const percentages = cleanedValue.split(",").map(v => v.trim());
     updateTrait(traitName, "occurancePercentages", percentages);
   }, [updateTrait]);
 
@@ -54,7 +56,6 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
       [newTraitName]: { values: [], occurancePercentages: [] },
     });
   }, [collectionTraits, setCollectionTraits]);
-
   const removeTrait = useCallback(
     (traitName: string) => {
       const newTraits = { ...collectionTraits };
@@ -76,74 +77,60 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
     [collectionTraits, setCollectionTraits]
   );
 
-  // const totalOccurancePercentages = useMemo(() => {
-  //   if (!collectionTraits) {
-  //     return 0;
-  //   }
-  //   return Object.values(collectionTraits).reduce((acc, trait) => {
-  //     return acc + trait.occurancePercentages.reduce((sum, percentage) => sum + Number.parseFloat(percentage), 0);
-  //   }, 0) * 100;
-  // }, [collectionTraits]);
-  const totalOccurancePercentages = useMemo(() => {
-    if (!collectionTraits) {
-      return 0;
-    }
-    return Object.values(collectionTraits).reduce((acc, trait) => {
-      return acc + trait.occurancePercentages.reduce((sum, percentage) => sum + Number.parseFloat(percentage), 0);
-    }, 0) * 100;
-  }, [collectionTraits]);
+  const calculateTraitTotal = useCallback((trait: CollectionTrait) => {
+    return trait.occurancePercentages.reduce((sum, percentage) => sum + Number.parseFloat(percentage), 0);
+  }, []);
 
   return (
     <div className="mt-4">
       <label className="block font-medium flex justify-between">
-        <span>Collection Traits</span>
-        <span>{totalOccurancePercentages * 100}%</span></label>
-      {collectionTraits && Object.entries(collectionTraits).map(([traitName, trait], index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: required to prevent re-render
-        <div key={index} className="mt-2">
-          <div className="flex items-center gap-2">
+        Collection Traits
+      </label>
+      {collectionTraits && Object.entries(collectionTraits).map(([traitName, trait], index) => {
+        const traitTotal = calculateTraitTotal(trait);
+        const isComplete = traitTotal === 1;
+        
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: required to prevent re-render
+          <div key={index} className="mt-2">
+            <div className="flex items-center gap-2 relative">
+              <input
+                type="text"
+                className="input input-bordered w-full"
+                value={traitName}
+                onChange={(e) => updateTraitName(traitName, e.target.value)}
+                placeholder="Trait Name"
+              />
+              <span className={`absolute right-16 ${isComplete ? 'text-green-500' : 'text-red-500'}`}>
+                {traitTotal ? (traitTotal * 100).toFixed(0) : 0}%
+              </span>
+              <button
+                type="button"
+                className={removeBtnClass}
+                onClick={() => removeTrait(traitName)}
+              >
+                <IoMdClose />
+              </button>
+            </div>
             <input
               type="text"
-              className="input input-bordered w-full"
-              value={traitName}
-              onChange={(e) => updateTraitName(traitName, e.target.value)}
-              placeholder="Trait Name"
+              className="input input-bordered w-full mt-2"
+              value={trait.values.join(", ")}
+              onChange={(e) =>
+                updateTrait(traitName, "values", e.target.value.split(", "))
+              }
+              placeholder="Trait Values (comma-separated)"
             />
-            <button
-              type="button"
-              className={removeBtnClass}
-              onClick={() => removeTrait(traitName)}
-            >
-              <IoMdClose />
-            </button>
+            <input
+              type="text"
+              className="input input-bordered w-full mt-2"
+              value={inputPercentages[traitName] || trait.occurancePercentages.map(v => (parseFloat(v) * 100).toFixed(0)).join(", ")}
+              onChange={(e) => handlePercentageChange(traitName, e.target.value)}
+              placeholder="Occurance Percentages (comma-separated whole numbers)"
+            />
           </div>
-          <input
-            type="text"
-            className="input input-bordered w-full mt-2"
-            value={trait.values.join(", ")}
-            onChange={(e) =>
-              updateTrait(traitName, "values", e.target.value.split(", "))
-            }
-            placeholder="Trait Values (comma-separated)"
-          />
-          {/* <input
-            type="text"
-            className="input input-bordered w-full mt-2"
-            value={trait.occurancePercentages.join(", ")}
-            onChange={(e) =>
-              updateTrait(traitName, "occurancePercentages", e.target.value.split(", "))
-            }
-            placeholder="Occurance Percentages (comma-separated)"
-          /> */}
-          <input
-            type="text"
-            className="input input-bordered w-full mt-2"
-            value={inputPercentages[traitName] || trait.occurancePercentages.map(v => (parseFloat(v) * 100).toFixed(2)).join(", ")}
-            onChange={(e) => handlePercentageChange(traitName, e.target.value)}
-            placeholder="Occurance Percentages (comma-separated)"
-          />
-        </div>
-      ))}
+        );
+      })}
       <button type="button" className="btn btn-sm mt-2" onClick={addTrait}>
         Add Trait
       </button>
@@ -152,23 +139,6 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
 };
 
 export default TraitsForm;
-
-// export const validateTraits = (collectionTraits: CollectionTraits) => {
-//   for (const [traitName, trait] of Object.entries(collectionTraits)) {
-//     if (trait.values.length !== trait.occurancePercentages.length) {
-//       return `The number of trait values and occurance percentages must match for trait "${traitName}".`;
-//     }
-
-//     const totalPercentage = trait.occurancePercentages.reduce(
-//       (sum, percentage) => sum + Number.parseFloat(percentage),
-//       0
-//     );
-//     if (totalPercentage !== 1) {
-//       return `The occurance percentages for trait "${traitName}" must total up to exactly 100%.`;
-//     }
-//   }
-//   return null;
-// };
 
 export const validateTraits = (collectionTraits: CollectionTraits) => {
   for (const [traitName, trait] of Object.entries(collectionTraits)) {
@@ -180,12 +150,9 @@ export const validateTraits = (collectionTraits: CollectionTraits) => {
       (sum, percentage) => sum + Number.parseFloat(percentage),
       0
     );
-    if (Math.abs(totalPercentage - 1) > 0.0001) {  // Allow for small floating-point errors
+    if (totalPercentage !== 1) {
       return `The occurance percentages for trait "${traitName}" must total up to exactly 100%.`;
     }
   }
   return null;
 };
-
-const toDisplayPercentage = (value: string) => (Number.parseFloat(value) * 100).toFixed(2);
-const toFloatValue = (value: string) => (Number.parseFloat(value) / 100).toFixed(4);
