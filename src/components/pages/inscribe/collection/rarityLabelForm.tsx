@@ -36,14 +36,14 @@ const RarityLabelForm: React.FC<RarityLabelFormProps> = ({
 	};
 
   const totalPct = collectionRarities.reduce((acc, curr) => {
-    return acc + Number(curr.percentage);
+    return acc + Number.parseFloat(curr.percentage) * 100;
   }, 0);
 
 	return (
 		<div className="mt-4">
 			<label className="block font-medium flex justify-between">
         <span>Collection Rarity Labels</span>
-        <span className={`${totalPct === 1 ? 'text-emerald-400' : 'text-red-400'}`}>{totalPct * 100}%</span>
+        <span className={`${totalPct === 1 ? 'text-emerald-400' : 'text-red-400'}`}>{totalPct}%</span>
       </label>
 			{collectionRarities.map((rarity, index) => (
 				<div

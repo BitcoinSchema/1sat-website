@@ -1,6 +1,7 @@
 import { IoMdClose } from "react-icons/io";
-import { type Royalty, removeBtnClass } from ".";
+import { removeBtnClass } from ".";
 import { useCallback } from "react";
+import type { Royalty } from "js-1sat-ord";
 
 interface RoyaltyFormProps {
   collectionRoyalties: Royalty[];
@@ -15,7 +16,7 @@ const RoyaltyForm: React.FC<RoyaltyFormProps> = ({
 	const addRoyalty = () => {
 		setCollectionRoyalties([
 			...collectionRoyalties,
-			{ type: "paymail", destination: "", percentage: "" },
+			{ type: "paymail", destination: "", percentage: "" } as Royalty,
 		]);
 	};
 

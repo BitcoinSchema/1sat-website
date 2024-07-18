@@ -19,13 +19,13 @@ import RoyaltyForm, { validateRoyalties } from "./royaltyForm";
 import {
 	type CollectionSubTypeData,
 	type CreateOrdinalsCollectionMetadata,
-	createOrdinals,
 	type CreateOrdinalsCollectionConfig,
 	type Destination,
-	validateSubTypeData,
 	type CollectionTraits,
-  type Royalty,
-  type RarityLabels,
+	type Royalty,
+	type RarityLabels,
+	createOrdinals,
+	validateSubTypeData,
 } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
 import type { PendingTransaction } from "@/types/preview";
@@ -133,10 +133,10 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 		}
 
 		if (collectionTraits) {
-      subTypeData.traits = collectionTraits;
+			subTypeData.traits = collectionTraits;
 		}
 
-		metaData.subTypeData = subTypeData as CollectionSubTypeData
+		metaData.subTypeData = subTypeData as CollectionSubTypeData;
 
 		let file: File | undefined;
 		if (collectionCoverImage.type === "") {
@@ -259,7 +259,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			reader.readAsDataURL(file);
 		};
 		img.src = URL.createObjectURL(file);
-	}, []);
+	}, [setCollectionCoverImage, setPreview]);
 
 	const artifact = useMemo(async () => {
 		return (
@@ -269,6 +269,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 					classNames={{ media: "w-20 h-20 rounded", wrapper: "w-fit" }}
 					showFooter={false}
 					size={100}
+          latest={true}
 					artifact={{
 						data: {
 							insc: {
