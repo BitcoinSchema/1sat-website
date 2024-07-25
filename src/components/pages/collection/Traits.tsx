@@ -26,7 +26,7 @@ interface TraitsProps {
 // };
 
 const Traits: React.FC<TraitsProps> = ({ collection }) => {
-  return <></>
+  // return <></>
   
 	const [traits, setTraits] = useState<CollectionTraits>({});
 
@@ -37,7 +37,7 @@ const Traits: React.FC<TraitsProps> = ({ collection }) => {
       try {
         const data = collection.subTypeData as CollectionSubTypeData;
         console.log({ traits: data?.traits });
-        setTraits(JSON.parse(data.traits) as CollectionTraits);
+        setTraits(data.traits);
       } catch (e) {
         console.error("Error parsing collection data", e);
       }

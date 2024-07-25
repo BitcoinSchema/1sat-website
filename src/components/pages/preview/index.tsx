@@ -3,12 +3,13 @@
 import { API_HOST, FetchStatus, toastProps } from "@/constants";
 import { pendingTxs, usdRate } from "@/signals/wallet";
 import { fundingAddress } from "@/signals/wallet/address";
-import { PendingTransaction } from "@/types/preview";
+import type { PendingTransaction } from "@/types/preview";
 import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
 import { computed, effect } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { P2PKHAddress, Transaction } from "bsv-wasm-web";
+import { stringifyMetaData } from "js-1sat-ord";
 import { head } from "lodash";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -23,7 +24,7 @@ const PreviewPage = () => {
 	const router = useRouter();
 	const txs = useSignal<PendingTransaction[] | null>(pendingTxs.value);
 	const pendingTx = useSignal<PendingTransaction | null>(
-		head(txs.value) || null
+		head(txs.value) || null,
 	);
 
 	effect(() => {
@@ -42,9 +43,9 @@ const PreviewPage = () => {
 	});
 
 	const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
-		FetchStatus.Idle
+		FetchStatus.Idle,
 	);
-	
+
 	const broadcast = useCallback(async () => {
 		const tx = pendingTx.value;
 		if (!tx) {
@@ -76,7 +77,7 @@ const PreviewPage = () => {
 		} catch {
 			setBroadcastStatus(FetchStatus.Error);
 		}
-	}, [pendingTx.value, router, setBroadcastStatus]);
+	}, [pendingTx.value, pendingTxs.value, router]);
 
 	const change = computed(() => {
 		if (!pendingTx.value?.numOutputs) {
@@ -98,7 +99,7 @@ const PreviewPage = () => {
 			}
 
 			const address = P2PKHAddress.from_pubkey_hash(
-				Buffer.from(pubKeyHash, "hex")
+				Buffer.from(pubKeyHash, "hex"),
 			).to_string();
 			if (address === fundingAddress.value) {
 				totalChange += out?.get_satoshis()!;
@@ -123,10 +124,6 @@ const PreviewPage = () => {
 		return (cost / usdRate.value).toFixed(2);
 	});
 
-	// useEffect(() => {
-	// 	console.log({ usdPrice: usdPrice.value, change: change.value });
-	// }, [usdPrice.value, change.value]);
-
 	const content = computed(() => (
 		<>
 			<h1 className="text-center text-2xl">
@@ -134,15 +131,13 @@ const PreviewPage = () => {
 					pendingTx.value?.numOutputs === 1
 						? "Refund"
 						: pendingTx.value?.numOutputs === 2 &&
-						  pendingTx.value?.numInputs === 2
-						? "Transfer"
-						: "Inscription"
+								pendingTx.value?.numInputs === 2
+							? "Transfer"
+							: "Inscription"
 				}
 Preview`}
 			</h1>
-			<div className="text-center text-[#aaa] mt-2">
-				Broadcast to finalize.
-			</div>
+			<div className="text-center text-[#aaa] mt-2">Broadcast to finalize.</div>
 			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs mt-4 mb-8 relative">
 				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
 					<div className="px-2">
@@ -152,27 +147,19 @@ Preview`}
 						</div>
 						<div className="flex justify-between">
 							<div>Size</div>
-							<div>
-								{formatBytes(
-									pendingTx.value?.rawTx.length! / 2
-								)}
-							</div>
+							<div>{formatBytes(pendingTx.value?.rawTx.length! / 2)}</div>
 						</div>
 						{(pendingTx.value?.price || 0) > 0 && (
 							<div className="flex justify-between">
 								<div>Market Price</div>
-								<div>
-									{toBitcoin(pendingTx.value?.price || 0)} BSV
-								</div>
+								<div>{toBitcoin(pendingTx.value?.price || 0)} BSV</div>
 							</div>
 						)}
 
 						<div className="divider">Network Fees</div>
 						<div className="flex justify-between">
 							<div>Network Fee</div>
-							<div>
-								{pendingTx.value?.fee.toLocaleString()} Satoshis
-							</div>
+							<div>{pendingTx.value?.fee.toLocaleString()} Satoshis</div>
 						</div>
 						<div className="flex justify-between">
 							<div>Network Fee USD</div>
@@ -196,26 +183,33 @@ Preview`}
 								<div className="flex justify-between">
 									<div>Metadata</div>
 									<div>
-										{Object.keys(
-											pendingTx.value?.metadata
-										).map((k) => {
-											const v =
-												pendingTx.value?.metadata &&
-												pendingTx.value.metadata[k];
-											return (
-												<div
-													key={k}
-													className="flex justify-between"
-												>
-													<div className="mr-2 text-[#555]">
-														{k}
+										{pendingTx.value?.metadata &&
+											Object.keys(pendingTx.value.metadata).map((k) => {
+												let meta = pendingTx.value?.metadata;
+												if (pendingTx.value && typeof k === "object") {
+													meta = stringifyMetaData(pendingTx.value.metadata);
+												}
+												const v = meta?.[k];
+												return (
+													<div key={k} className="flex justify-between">
+														<div className="mr-2 text-[#555]">{k}</div>
+														<div className="ml-2">
+															{typeof v === "object" ? 
+																Object.keys(v).map((k2) => {
+																	return (
+																		<div key={k2} className="flex justify-between">
+																			<div className="mr-2 text-[#555]">{k2}</div>
+																			<div className="ml-2">{v[k2]}</div>
+																		</div>
+																	);
+																}
+															) : (
+																<div>{v}</div>
+															)}
+														</div>
 													</div>
-													<div className="ml-2">
-														{v}
-													</div>
-												</div>
-											);
-										})}
+												);
+											})}
 									</div>
 								</div>
 							</>
@@ -228,33 +222,26 @@ Preview`}
 									<div>
 										{pendingTx.value.marketFee <= 50000
 											? `${pendingTx.value.marketFee.toLocaleString()} Satoshis`
-											: `${toBitcoin(
-													pendingTx.value.marketFee
-											  )} BSV`}
+											: `${toBitcoin(pendingTx.value.marketFee)} BSV`}
 									</div>
 								</div>
 							</>
 						) : null}
-						{pendingTx.value?.iterations &&
-							pendingTx.value?.iterations > 1 && (
-								<>
-									<div className="divider">Indexing</div>
-									<div className="flex justify-between">
-										<div>Operations</div>{" "}
-										<div>{pendingTx.value.iterations}</div>
+						{pendingTx.value?.iterations && pendingTx.value?.iterations > 1 && (
+							<>
+								<div className="divider">Indexing</div>
+								<div className="flex justify-between">
+									<div>Operations</div> <div>{pendingTx.value.iterations}</div>
+								</div>
+								<div className="flex justify-between">
+									<div>Indexing Fee</div>{" "}
+									<div>
+										{toBitcoin(pendingTx.value.iterations * 1000)}
+										BSV
 									</div>
-									<div className="flex justify-between">
-										<div>Indexing Fee</div>{" "}
-										<div>
-											{toBitcoin(
-												pendingTx.value.iterations *
-													1000
-											)}
-											BSV
-										</div>
-									</div>
-								</>
-							)}
+								</div>
+							</>
+						)}
 					</div>
 					<div className="divider" />
 					<div className="mx-auto text-center text-teal-700 mb-2">

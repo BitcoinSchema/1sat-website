@@ -116,9 +116,12 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			type: "ord",
 			subType: "collection",
 			name: collectionName,
-			royalties: JSON.stringify(collectionRoyalties) || undefined,
 		} as CreateOrdinalsCollectionMetadata;
 
+		if (collectionRoyalties.length > 0) {
+			metaData.royalties = collectionRoyalties;
+		}
+		
 		const subTypeData: Partial<CollectionSubTypeData> = {
 			quantity: Number.parseInt(collectionQuantity),
 			description: collectionDescription,
@@ -177,7 +180,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			metaData,
 		};
 		const { tx } = await createOrdinals(config);
-
+    console.log("TX", tx.toHex());
 		if (tx) {
 			pendingTxs.value = [
 				{

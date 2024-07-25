@@ -1,7 +1,10 @@
+"use client"
+
 import type { OrdUtxo } from "@/types/ordinals";
 // CollectionForm.tsx
 import { FaQuestionCircle } from "react-icons/fa";
 import type { MetaMap } from "./image";
+import { useRouter } from "next/navigation";
 
 interface CollectionFormProps {
   userCollections?: OrdUtxo[];
@@ -22,6 +25,9 @@ const CollectionItemForm: React.FC<CollectionFormProps> = ({
   setMetadata,
   selectedFile,
 }) => {
+
+  const router = useRouter();
+
   return (
     <div className="my-4">
       {/* // toggle between minting a collection item or inscribing an image */}
@@ -64,6 +70,11 @@ const CollectionItemForm: React.FC<CollectionFormProps> = ({
             onChange={(e) => {
               // set collection id on metadata
               const collectionId = e.target.value;
+              if (collectionId === "new-collection") {
+                // redirect to collection form
+                router.push("/inscribe?tab=collection");
+                return;
+              }
               const collection = userCollections?.find((c) => c.outpoint === collectionId);
               if (collection) {
                 // use "mapData" to populate initial metadata
@@ -88,6 +99,7 @@ const CollectionItemForm: React.FC<CollectionFormProps> = ({
             }}
           >
             <option value="">Choose a Collection</option>
+            <option value="new-collection">New Collection</option>
             {userCollections?.map((collection) => (
               <option key={collection.outpoint} value={collection.outpoint}>
                 {collection.data?.map?.name || "Unnamed Collection"}

@@ -1,6 +1,7 @@
 import { IoMdClose } from "react-icons/io";
 import { removeBtnClass } from ".";
 import type { Rarity, RarityLabels } from "js-1sat-ord";
+import { useMemo } from "react";
 
 interface RarityLabelFormProps {
 	collectionRarities: RarityLabels;
@@ -35,15 +36,18 @@ const RarityLabelForm: React.FC<RarityLabelFormProps> = ({
 		);
 	};
 
-  const totalPct = collectionRarities.reduce((acc, curr) => {
-    return acc + Number.parseFloat(curr.percentage) * 100;
-  }, 0);
+  const totalPct = useMemo(() => {
+    const pct = collectionRarities.reduce((acc, curr) => {
+      return acc + Number.parseFloat(curr.percentage) * 100;
+    }, 0);
+    return `${Number.isNaN(pct) ? '' : `${pct}%`}`;
+  }, [collectionRarities]);
 
 	return (
 		<div className="mt-4">
 			<label className="block font-medium flex justify-between">
         <span>Collection Rarity Labels</span>
-        <span className={`${totalPct === 1 ? 'text-emerald-400' : 'text-red-400'}`}>{totalPct}%</span>
+        <span className={`${totalPct === "100%" ? 'text-emerald-400' : 'text-red-400'}`}>{totalPct}</span>
       </label>
 			{collectionRarities.map((rarity, index) => (
 				<div
@@ -78,7 +82,7 @@ const RarityLabelForm: React.FC<RarityLabelFormProps> = ({
 					</button>
 				</div>
 			))}
-			<button disabled={totalPct === 1} type="button" className="btn btn-sm mt-2 disabled:bg-[#222] disabled:cursor-default" onClick={addRarity}>
+			<button disabled={totalPct === '100%'} type="button" className="btn btn-sm mt-2 disabled:bg-[#222] disabled:cursor-default" onClick={addRarity}>
 				Add Rarity
 			</button>
 		</div>
@@ -88,16 +92,22 @@ const RarityLabelForm: React.FC<RarityLabelFormProps> = ({
 export default RarityLabelForm;
 
 export const validateRarities = (collectionRarities: RarityLabels) => {
+	if (collectionRarities.length === 0) {
+		// none is okay
+		return null;
+	}
   if (collectionRarities.length === 1) {
     return "You must have at least two rarities.";
   }
-
+  if (collectionRarities.every((rarity) => rarity.percentage === "0" || rarity.percentage === "" || rarity.percentage === "1")) {
+    return "Rarities cannot have a percentage of 0, or 100";
+  }
   const totalPercentage = collectionRarities.reduce(
     (sum, rarity) => sum + Number.parseFloat(rarity.percentage),
     0,
   );
-  if (totalPercentage !== 0 && totalPercentage !== 100) {
-    return "The rarity percentages must total up to exactly 100.";
+  if (totalPercentage !== 0 && totalPercentage !== 1) {
+    return `The rarity percentages must total up to exactly 100. Currently at ${totalPercentage * 100}.`;
   }
   return null;
 };
