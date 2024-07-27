@@ -1,33 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CollectionSubTypeData, CollectionTraits, CreateOrdinalsCollectionMetadata, MAP } from "js-1sat-ord";
+import type { CollectionSubTypeData, CollectionTraits, CreateOrdinalsCollectionMetadata, MAP, PreMAP } from "js-1sat-ord";
 
 interface TraitsProps {
-	collection: CreateOrdinalsCollectionMetadata;
+	collection: PreMAP;
 }
 
-// export type Collection = MAP & {
-// 	type: "ord";
-// 	name: string;
-// 	subType: "collection";
-// 	subTypeData?: string | CollectionSubTypeData;
-// 	royalties?: string;
-// 	previewUrl?: string;
-// };
-
-// type Traits = {
-// 	[trait: string]: Trait;
-// };
-
-// type Trait = {
-// 	values: string[];
-// 	occurancePercentages: string[];
-// };
-
-const Traits: React.FC<TraitsProps> = ({ collection }) => {
-  // return <></>
-  
+const Traits: React.FC<TraitsProps> = ({ collection }) => {  
 	const [traits, setTraits] = useState<CollectionTraits>({});
 
 	useEffect(() => {
@@ -35,9 +15,10 @@ const Traits: React.FC<TraitsProps> = ({ collection }) => {
 		if (collection.subTypeData) {
       console.log({ data: collection.subTypeData });
       try {
-        const data = collection.subTypeData as CollectionSubTypeData;
+        const data = collection.subTypeData as any;
+				const parsedTraits = JSON.parse(data?.traits) as CollectionTraits;
         console.log({ traits: data?.traits });
-        setTraits(data.traits);
+        setTraits(parsedTraits);
       } catch (e) {
         console.error("Error parsing collection data", e);
       }

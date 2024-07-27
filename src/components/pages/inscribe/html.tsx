@@ -141,6 +141,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
         id="previewIframe"
         // sandbox=" "
         sandbox="allow-scripts"
+        allow="autoplay"
         className="w-full rounded h-full overflow-hidden border-0"
         // src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}
         src={`https://ordfs.network/preview/${encoded}`}

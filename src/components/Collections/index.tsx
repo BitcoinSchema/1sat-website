@@ -43,7 +43,7 @@ const Collections = () => {
               <Image
                 width={300}
                 height={300}
-                src={c.data?.map?.previewUrl || `${ORDFS}/${c.outpoint}`}
+                src={`${ORDFS}/${c.outpoint}` || c.data?.map?.previewUrl}
                 alt=""
                 className="rounded-box"
               />
