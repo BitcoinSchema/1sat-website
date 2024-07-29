@@ -39,18 +39,37 @@ export const getOrdUtxos = async (address: string, nextOffset: number) => {
 }
 
 export const getUtxos = async (address: string) => {
-  const { promise } = http.customFetch<WocUtxoResults>(
+  // const { promise } = http.customFetch<WocUtxoResults>(
+  //   // `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated
+  //   // `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
+  //   `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unconfirmed/unspent`
+  // );
+  // const u = (await promise).result;
+  // const { promise: promiseConfirmed } = http.customFetch<WocUtxoResults>(
+  //   `https://api.whatsonchain.com/v1/bsv/main/address/${address}/confirmed/unspent`
+  // );
+  // const c = (await promiseConfirmed).result;
+
+  // return u.concat(c).map((u) => {
+  //   return {
+  //     satoshis: u.value,
+  //     txid: u.tx_hash,
+  //     vout: u.tx_pos,
+  //     script: P2PKHAddress.from_string(address)
+  //       .get_locking_script()
+  //       .to_asm_string(),
+  //   };
+  // });
+
+  const { promise } = http.customFetch<WocUtxo[]>(
     // `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated
     // `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
-    `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unconfirmed/unspent`
+    `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`
   );
-  const u = (await promise).result;
-  const { promise: promiseConfirmed } = http.customFetch<WocUtxoResults>(
-    `https://api.whatsonchain.com/v1/bsv/main/address/${address}/confirmed/unspent`
-  );
-  const c = (await promiseConfirmed).result;
+  const utxos = (await promise);
 
-  return u.concat(c).map((u) => {
+
+  return utxos.map((u) => {
     return {
       satoshis: u.value,
       txid: u.tx_hash,
