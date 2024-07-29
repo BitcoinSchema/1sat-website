@@ -140,6 +140,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
         title="preview"
         id="previewIframe"
         // sandbox=" "
+        allow="autoplay"
         sandbox="allow-scripts"
         className="w-full rounded h-full overflow-hidden border-0"
         // src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}

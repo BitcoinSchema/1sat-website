@@ -31,6 +31,8 @@ export function GenerateWalletStep({}: Props) {
 					payPk: keys.payPk,
 					ordPk: keys.ordPk,
 					mnemonic: mnemonic.value,
+					ordAddressPath: keys.ordAddressPath,
+					changeAddressPath: keys.changeAddressPath,
 				});
 			}
 
