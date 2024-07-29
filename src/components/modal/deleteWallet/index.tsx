@@ -1,8 +1,7 @@
 "use client";
 
-import { backupKeys } from "@/components/Wallet/menu";
-import { showUnlockWalletButton } from "@/signals/wallet";
 import { clearKeys } from "@/signals/wallet/client";
+import { backupKeys } from "@/utils/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 
 const DeleteWalletModal = ({

@@ -1,6 +1,5 @@
-"use client"
+"use client";
 
-import { backupKeys } from "@/components/Wallet/menu";
 import { toastErrorProps } from "@/constants";
 import {
 	ImportWalletFromBackupJsonStep,
@@ -9,13 +8,14 @@ import {
 	selectedBackupJson,
 } from "@/signals/wallet";
 import { setKeys } from "@/signals/wallet/client";
+import { backupKeys } from "@/utils/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 
-interface Props { }
+interface Props {}
 
-export function SelectFileStep({ }: Props) {
+export function SelectFileStep({}: Props) {
 	useSignals();
 
 	const validateJson = (json: Record<string, string>) => {
@@ -48,9 +48,15 @@ export function SelectFileStep({ }: Props) {
 				const json = JSON.parse(content);
 				validateJson(json);
 				selectedBackupJson.value = json;
+
 				setKeys({
+					mnemonic: json.mnemonic,
 					payPk: json.payPk,
 					ordPk: json.ordPk,
+					changeAddressPath: json.payDerivationPath,
+					ordAddressPath: json.ordDerivationPath,
+					...(!!json.identityPk && { identityPk: json.identityPk }),
+					...(!!json.identityDerivationPath && { identityAddressPath: json.identityDerivationPath }),
 				});
 				// go to the password step
 				importWalletFromBackupJsonStep.value =
