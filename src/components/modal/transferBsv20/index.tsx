@@ -28,6 +28,7 @@ import {
 	TxIn,
 	TxOut,
 } from "bsv-wasm-web";
+import { TokenUtxo } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
@@ -86,6 +87,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			// add token inputs
 			let amounts = 0;
 			let i = 0;
+      const spentOutpoints: string[] = [];
 			for (const utxo of inputTokens) {
 				const txBuf = Buffer.from(utxo.txid, "hex");
 				const utxoIn = new TxIn(
@@ -95,6 +97,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				);
 				amounts += Number.parseInt(utxo.amt);
 				tx.add_input(utxoIn);
+        spentOutpoints.push(`${utxo.txid}_${utxo.vout}`);
 
 				// sign ordinal
 				const sig = tx.sign(
@@ -153,6 +156,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				);
 				const changeInscOut = new TxOut(BigInt(1), changeInsc);
 				tx.add_output(changeInscOut);
+
 			}
 
 			let totalSatsIn = 0;
@@ -167,6 +171,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				);
 
 				tx.add_input(utxoIn);
+        spentOutpoints.push(`${utxo.txid}_${utxo.vout}`);
 
 				utxoIn = signPayment(tx, paymentPk, i, utxo, utxoIn);
 				tx.set_input(i, utxoIn);
@@ -224,7 +229,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				numInputs: tx.get_ninputs(),
 				numOutputs: tx.get_noutputs(),
 				txid: tx.get_id_hex(),
-				inputTxid: paymentUtxos[0].txid,
+				spentOutpoints,
 				marketFee: 0,
 			};
 		},

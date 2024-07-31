@@ -219,7 +219,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				numInputs: tx.inputs.length,
 				numOutputs: tx.outputs.length,
 				txid: tx.id("hex"),
-				inputTxid: paymentUtxos[0].txid,
+				spentOutpoints,
+        payChange, 
+        tokenChange,
 				marketFee: 0,
 			};
 		},

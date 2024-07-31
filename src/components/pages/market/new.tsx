@@ -86,6 +86,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
         Script.from_asm_string("")
       );
       tx.add_input(ordIn);
+      const spentOutpoints = [`${ordinal.txid}_${ordinal.vout}`]
 
       // Inputs
       let utxoIn = new TxIn(
@@ -95,6 +96,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       );
 
       tx.add_input(utxoIn);
+      spentOutpoints.push(`${paymentUtxo.txid}_${paymentUtxo.vout}`)
 
       const payoutDestinationAddress =
         P2PKHAddress.from_string(payoutAddress);
@@ -168,7 +170,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
-        inputTxid: paymentUtxo.txid,
+        spentOutpoints,
         marketFee: 0,
       };
     },

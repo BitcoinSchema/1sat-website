@@ -105,6 +105,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 				);
 			}
 
+      const spentOutpoints = []
 			// build txins from our UTXOs
 			let idx = 0;
 			let totalSats = 0;
@@ -118,6 +119,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 				// console.log({ inx });
 				inx.set_satoshis(BigInt(u.satoshis));
 				tx.add_input(inx);
+          
+        spentOutpoints.push(`${u.txid}_${u.vout}`);
 
 				const sig = tx.sign(
 					paymentPk,
@@ -158,7 +161,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 					numInputs: tx.get_ninputs(),
 					numOutputs: tx.get_noutputs(),
 					txid: tx.get_id_hex(),
-					inputTxid: firstIn.get_prev_tx_id_hex(),
+					spentOutpoints
 				},
 			];
 

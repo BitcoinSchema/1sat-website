@@ -135,7 +135,7 @@ const createOrdinal = async (
 	metaData?: MAP,
 	signer?: LocalSigner | RemoteSigner,
 	additionalPayments: Payment[] = []
-): Promise<Transaction> => {
+): Promise<{ tx: Transaction, spentOutpoints: string[] }> => {
 	console.log(
 		"Creating tx",
 		utxos,
@@ -150,6 +150,7 @@ const createOrdinal = async (
 	);
 	console.log("Ready", Transaction);
 	let tx = new Transaction(1, 0);
+  const spentOutpoints = []
 	const utxosArray = Array.isArray(utxos) ? utxos : [utxos];
 	const inscriptionsArray = Array.isArray(inscriptions)
 		? inscriptions
@@ -195,6 +196,7 @@ const createOrdinal = async (
 		);
 		totalSatsIn += BigInt(utxo.satoshis);
 		tx.add_input(utxoIn);
+    spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
 		if (totalSatsIn > totalOut) {
 			satisfied = true;
 			break;
@@ -278,7 +280,7 @@ const createOrdinal = async (
 	}
 
 	console.log("Created tx", { tx: tx.to_hex() });
-	return tx;
+	return { spentOutpoints, tx };
 };
 
 const createOrdinalWithData = async (
@@ -292,7 +294,7 @@ const createOrdinalWithData = async (
 	signer: LocalSigner | RemoteSigner | undefined,
 	additionalPayments: Payment[],
 	data: StringOrBufferArray
-): Promise<Transaction> => {
+): Promise<{ tx: Transaction, spentOutpoints: string[] }> => {
 	console.log(
 		"Creating tx",
 		utxos,
@@ -346,6 +348,7 @@ const createOrdinalWithData = async (
 		tx.add_output(satOut);
 	}
 
+  const spentOutpoints = []
 	// total the outputs
 	let totalOut = 0n;
 	const numOuts = tx.get_noutputs();
@@ -364,6 +367,7 @@ const createOrdinalWithData = async (
 		);
 		totalSatsIn += BigInt(utxo.satoshis);
 		tx.add_input(utxoIn);
+    spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
 		if (totalSatsIn > totalOut) {
 			satisfied = true;
 			break;
@@ -447,7 +451,7 @@ const createOrdinalWithData = async (
 	}
 
 	console.log("Created tx", { tx: tx.to_hex() });
-	return tx;
+	return { tx, spentOutpoints };
 };
 
 const sendOrdinal = async (

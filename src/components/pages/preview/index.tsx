@@ -1,7 +1,7 @@
 "use client";
 
 import { API_HOST, FetchStatus, toastProps } from "@/constants";
-import { pendingTxs, usdRate } from "@/signals/wallet";
+import { ordUtxos, pendingTxs, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress } from "@/signals/wallet/address";
 import { PendingTransaction } from "@/types/preview";
 import { formatBytes } from "@/utils/bytes";
@@ -68,6 +68,8 @@ const PreviewPage = () => {
 			pendingTxs.value =
 				pendingTxs.value?.filter((t) => t.txid !== tx.txid) || [];
 
+        utxos.value = (utxos.value || []).filter((u) => !tx.spentOutpoints.includes(`${u.txid}_${u.vout}`));
+        ordUtxos.value = (ordUtxos.value || []).filter((u) => !tx.spentOutpoints.includes(`${u.txid}_${u.vout}`));
 			if (returnTo) {
 				router.push(returnTo);
 			} else {
@@ -76,7 +78,7 @@ const PreviewPage = () => {
 		} catch {
 			setBroadcastStatus(FetchStatus.Error);
 		}
-	}, [pendingTx.value, pendingTxs.value, router]);
+	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
 
 	const change = computed(() => {
 		if (!pendingTx.value?.numOutputs) {

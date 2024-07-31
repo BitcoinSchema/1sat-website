@@ -131,6 +131,9 @@ const ListingForm = ({
 			}
 			const tx = new Transaction(1, 0);
 
+      const spentOutpoints = []
+      const tokenChange = []
+
 			// add token inputs
 			let amounts = 0;
 			let i = 0;
@@ -138,7 +141,8 @@ const ListingForm = ({
 				const txBuf = Buffer.from(utxo.txid, "hex");
 				const utxoIn = new TxIn(txBuf, utxo.vout, Script.from_asm_string(""));
 				amounts += Number.parseInt(utxo.amt);
-				tx.add_input(utxoIn);
+				tx.add_input(utxoIn);  
+        spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
 
 				// sign ordinal
 				const sig = tx.sign(
@@ -212,6 +216,7 @@ const ListingForm = ({
 				);
 
 				tx.add_input(utxoIn);
+        spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
 
 				utxoIn = signPayment(tx, paymentPk, i, utxo, utxoIn);
 				tx.set_input(i, utxoIn);
@@ -294,7 +299,7 @@ const ListingForm = ({
 				numInputs: tx.get_ninputs(),
 				numOutputs: tx.get_noutputs(),
 				txid: tx.get_id_hex(),
-				inputTxid: paymentUtxos[0].txid,
+				spentOutpoints,
 				marketFee: 0,
 			};
 		},
