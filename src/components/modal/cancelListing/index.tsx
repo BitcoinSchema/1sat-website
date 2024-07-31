@@ -392,7 +392,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
+  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, listing, pendingTxs.value, onCancelled]);
 
   return (
     <dialog
