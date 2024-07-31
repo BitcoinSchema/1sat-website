@@ -33,6 +33,12 @@ const nextConfig = {
 				port: "",
 				pathname: "/**",
 			},
+			{
+				protocol: "https",
+				hostname: "ordinals.gorillapool.io",
+				port: "",
+				pathname: "/**",
+			},
 		],
 	},
 	webpack: (config, { isServer }) => {

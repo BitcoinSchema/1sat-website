@@ -202,67 +202,67 @@ const EnterPassphrase: React.FC<Props> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+		<form onSubmit={handleSubmit}>
       {!hasDownloadedKeys.value && <div className="my-4">
-        Enter a password to{" "}
-        {showEnterPassphrase.value === EncryptDecrypt.Decrypt
-          ? "decrypt"
-          : "encrypt"}{" "}
-        your saved keys.
+					Enter a password to{" "}
+					{showEnterPassphrase.value === EncryptDecrypt.Decrypt
+						? "decrypt"
+						: "encrypt"}{" "}
+					your saved keys.
       </div>}
       {!hasDownloadedKeys.value && <div className="font-semibold md:text-xl my-2 relative">
-        {mode === EncryptDecrypt.Encrypt && (
-          <div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
-              <button
-                type="button"
-                disabled={!passphrase.value}
-                className="disabled:text-[#555] transition text-yellow-500 font-semibold font-mono"
-                onClick={() => {
+					{mode === EncryptDecrypt.Encrypt && (
+						<div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
+							<button
+								type="button"
+								disabled={!passphrase.value}
+								className="disabled:text-[#555] transition text-yellow-500 font-semibold font-mono"
+								onClick={() => {
                   copy(passphrase.value || "")
-                  toast.success(
-                    "Copied phrase. Careful now!",
-                    toastProps
-                  );
-                }}
-              >
-                <FiCopy />
-              </button>
-          </div>
-        )}
+									toast.success(
+										"Copied phrase. Careful now!",
+										toastProps
+									);
+								}}
+							>
+								<FiCopy />
+							</button>
+						</div>
+					)}
 
         {!hasDownloadedKeys.value && <input
-          className="input input-bordered w-full placeholder-[#555]"
-          type="password"
-          onChange={handlePassphraseChange}
-          value={passphrase.value || ""}
-          placeholder={"your-password-here"}
-          ref={passwordInputRef}
+							className="input input-bordered w-full placeholder-[#555]"
+							type="password"
+							onChange={handlePassphraseChange}
+							value={passphrase.value || ""}
+							placeholder={"your-password-here"}
+							ref={passwordInputRef}
         />}
       </div>}
 
-      {showEnterPassphrase.value === EncryptDecrypt.Encrypt && (
-        <div>
-          <div className="flex items-center">
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            <div
-              onClick={handleClickGenerate}
-              className="flex items-center cursor-pointer p-2 group text-blue-400 hover:text-blue-500"
-            >
-              <TbDice className="mr-2 group-hover:animate-spin" />{" "}
-              Generate a strong passphrase
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="text-gray-500 text-xs sm:test-sm md:text-base flex items-center my-4 ">
-        <RiErrorWarningFill className="mr-2" />
-        {showEnterPassphrase.value === EncryptDecrypt.Encrypt
-          ? "You still need to keep your 12 word seed phrase."
-          : "Your password unlocks your wallet each time you visit."}
-      </div>
+			{showEnterPassphrase.value === EncryptDecrypt.Encrypt && (
+				<div>
+					<div className="flex items-center">
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+						<div
+							onClick={handleClickGenerate}
+							className="flex items-center cursor-pointer p-2 group text-blue-400 hover:text-blue-500"
+						>
+							<TbDice className="mr-2 group-hover:animate-spin" />{" "}
+							Generate a strong passphrase
+						</div>
+					</div>
+				</div>
+			)}
+			<div className="text-gray-500 text-xs sm:test-sm md:text-base flex items-center my-4 ">
+				<RiErrorWarningFill className="mr-2" />
+				{showEnterPassphrase.value === EncryptDecrypt.Encrypt
+					? "You still need to keep your 12 word seed phrase."
+					: "Your password unlocks your wallet each time you visit."}
+			</div>
 
-      <div className="flex gap-2 justify-end">
-        {!migrating.value && !download && (
+			<div className="flex gap-2 justify-end">
+				{/* {!migrating.value && !download && (
           <button
             type="button"
             className="btn btn-error"
@@ -270,30 +270,30 @@ const EnterPassphrase: React.FC<Props> = ({
           >
             Skip
           </button>
-        )}
+        )} */}
 
-        <button
-          disabled={(passphrase.value?.length || 0) < 6}
-          className="btn btn-primary"
-          type="button"
-          onClick={handleSubmit}
-        >
-          {showEnterPassphrase.value === EncryptDecrypt.Decrypt
-            ? "Unlock Wallet"
-            : `Encrypt ${download ? "& Download" : ""} Keys`}
-        </button>
+				<button
+					disabled={(passphrase.value?.length || 0) < 6}
+					className="btn btn-primary"
+					type="button"
+					onClick={handleSubmit}
+				>
+					{showEnterPassphrase.value === EncryptDecrypt.Decrypt
+						? "Unlock Wallet"
+						: `Encrypt ${download ? "& Download" : ""} Keys`}
+				</button>
 
-        {hasDownloadedKeys.value && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => onSubmit()}
-          >
-            Continue
-          </button>
-        )}
-      </div>
-    </form>
+				{hasDownloadedKeys.value && (
+					<button
+						type="button"
+						className="btn btn-primary"
+						onClick={() => onSubmit()}
+					>
+						Continue
+					</button>
+				)}
+			</div>
+		</form>
   );
 };
 export default EnterPassphrase;
