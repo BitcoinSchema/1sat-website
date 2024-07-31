@@ -40,7 +40,7 @@ export const getBsv20Utxos = async (
 	return (await promise) || [];
 };
 
-export const getOrdUtxos = async (address: string, nextOffset: number): => {
+export const getOrdUtxos = async (address: string, nextOffset: number) => {
 	const { promise } = http.customFetch<OrdUtxo[]>(
 		`${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${nextOffset}&dir=DESC&status=all&bsv20=false`,
 	);
