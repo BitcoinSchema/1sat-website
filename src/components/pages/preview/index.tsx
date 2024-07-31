@@ -76,7 +76,7 @@ const PreviewPage = () => {
 		} catch {
 			setBroadcastStatus(FetchStatus.Error);
 		}
-	}, [pendingTx.value, router, setBroadcastStatus]);
+	}, [pendingTx.value, pendingTxs.value, router]);
 
 	const change = computed(() => {
 		if (!pendingTx.value?.numOutputs) {
