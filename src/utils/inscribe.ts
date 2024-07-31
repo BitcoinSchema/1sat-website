@@ -16,6 +16,7 @@ import {
 import { PrivateKey } from "bsv-wasm-web";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 export const handleInscribing = async (
 	payPk: string,
@@ -163,7 +164,7 @@ export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
 				} as PendingTransaction;
 				console.log(Object.keys(result));
 
-				pendingTxs.value = [result];
+				setPendingTxs([result]);
 				//setInscribeStatus(FetchStatus.Success);
 				return result;
 			}
@@ -219,7 +220,7 @@ export const inscribeUtf8 = async (
 		spentOutpoints,
 		iterations,
 	} as PendingTransaction;
-	pendingTxs.value = [result];
+	setPendingTxs([result]);
 	return result;
 };
 export type StringOrBufferArray = (string | Buffer)[];
@@ -269,6 +270,6 @@ export const inscribeUtf8WithData = async (
 	if (returnTo) {
 		result.returnTo = returnTo;
 	}
-	pendingTxs.value = [result];
+	setPendingTxs([result]);
 	return result;
 };

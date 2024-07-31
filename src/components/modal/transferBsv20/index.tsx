@@ -10,6 +10,7 @@ import {
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import type { Ticker } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
@@ -286,7 +287,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				address.value, // recipient ordinal address
 				ticker,
 			);
-			pendingTxs.value = [transferTx];
+			setPendingTxs([transferTx]);
 			
 			router.push("/preview");
 		},

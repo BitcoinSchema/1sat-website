@@ -38,6 +38,7 @@ import toast from "react-hot-toast";
 import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
 import { buildInscriptionSafe } from "@/components/modal/transferBsv20";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 const ListingForm = ({
 	initialPrice,
@@ -371,7 +372,7 @@ const ListingForm = ({
 					indexerAddress,
 				);
 
-				pendingTxs.value = [pendingTx];
+				setPendingTxs([pendingTx]);
 
 				router.push("/preview");
 			} catch (e) {

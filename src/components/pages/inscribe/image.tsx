@@ -5,6 +5,7 @@ import { FetchStatus } from "@/constants";
 import { generatedImage } from "@/signals/ai";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import type { FileEvent } from "@/types/file";
 import type { TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
@@ -158,7 +159,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     }
     const pendingTx = await inscribeFile(u, file, m);
     if (pendingTx) {
-      pendingTxs.value = [pendingTx];
+      setPendingTxs([pendingTx]);
       inscribedCallback();
     }
   }, [selectedFile, payPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, inscribedCallback]);

@@ -32,6 +32,7 @@ import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import type { MAP } from "@/utils/js-1sat-ord";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	useSignals();
@@ -121,13 +122,13 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				undefined,
 			);
 
-			pendingTxs.value = [
+			setPendingTxs([
 				{
 					rawTx: tx.to_hex(),
 					fee: 0,
 					txid: tx.get_id_hex(),
 				} as PendingTransaction,
-			];
+			]);
 
 			router.push("/preview");
 
@@ -205,7 +206,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			const rawTx = tx.to_hex();
 			// const { rawTx, fee, size, numInputs, numOutputs } = resp;
 
-			pendingTxs.value = [
+			setPendingTxs([
 				{
 					rawTx,
 					size: Math.ceil(rawTx.length / 2),
@@ -215,11 +216,11 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					txid: tx.get_id_hex(),
 					spentOutpoints
 				},
-			];
+			])
 
 			router.push("/preview");
 		},
-		[router, pendingTxs.value, ordPk.value],
+		[router, ordPk.value],
 	);
 
 	const recoverUtxo = useCallback(

@@ -13,6 +13,7 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import type { Utxo } from "@/utils/js-1sat-ord";
@@ -247,10 +248,10 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     );
 
     pendingTx.returnTo = "/market/ordinals"
-    pendingTxs.value = [pendingTx];
+    setPendingTxs([pendingTx]);
 
     router.push("/preview");
-  }, [selectedItem, price, listOrdinal, router, ordAddress.value]);
+  }, [selectedItem, price, utxos.value, payPk.value, ordPk.value, fundingAddress.value, ordAddress.value, listOrdinal, router]);
 
   const clickSelectItem = useCallback(() => {
     setShowSelectItem(true);

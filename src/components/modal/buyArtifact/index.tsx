@@ -494,10 +494,12 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
     (listing as Listing).tick !== undefined ||
     (listing as Listing).id !== undefined;
   return (
-    <div
+    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<div
       className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
       onClick={() => onClose()}
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
       <div
         className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
         onClick={(e) => e.stopPropagation()}
