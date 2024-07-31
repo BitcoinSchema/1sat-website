@@ -32,6 +32,7 @@ import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import type { MAP } from "@/utils/js-1sat-ord";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	useSignals();
@@ -121,19 +122,19 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				undefined,
 			);
 
-			pendingTxs.value = [
+			setPendingTxs([
 				{
 					rawTx: tx.to_hex(),
 					fee: 0,
 					txid: tx.get_id_hex(),
 				} as PendingTransaction,
-			];
+			]);
 
 			router.push("/preview");
 
 			return;
 		},
-		[artifact, router, pendingTxs.value, ordPk.value, payPk.value],
+		[utxos.value, artifact.script, artifact.txid, artifact.vout, artifact.satoshis, ordAddress.value, payPk.value, ordPk.value, fundingAddress.value, router],
 	);
 
 	const recover = useCallback(
@@ -179,6 +180,8 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			inx.set_satoshis(BigInt(u.satoshis));
 			tx.add_input(inx);
 
+      const spentOutpoints = [`${u.txid}_${u.vout}`]
+
 			const sig = tx.sign(
 				paymentPk,
 				SigHash.InputOutputs,
@@ -203,7 +206,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			const rawTx = tx.to_hex();
 			// const { rawTx, fee, size, numInputs, numOutputs } = resp;
 
-			pendingTxs.value = [
+			setPendingTxs([
 				{
 					rawTx,
 					size: Math.ceil(rawTx.length / 2),
@@ -211,13 +214,13 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					numInputs: tx.get_ninputs(),
 					numOutputs: tx.get_noutputs(),
 					txid: tx.get_id_hex(),
-					inputTxid: tx.get_input(0)!.get_prev_tx_id_hex(),
+					spentOutpoints
 				},
-			];
+			])
 
 			router.push("/preview");
 		},
-		[router, pendingTxs.value, ordPk.value],
+		[router, ordPk.value],
 	);
 
 	const recoverUtxo = useCallback(

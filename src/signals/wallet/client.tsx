@@ -20,6 +20,8 @@ import {
 	createWalletStep,
 	encryptedBackup,
 	encryptionKey,
+  identityAddressPath,
+  identityPk,
 	mnemonic,
 	ordAddressPath,
 	ordPk,
@@ -80,16 +82,21 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
 };
 
 export const clearKeys = () => {
-	payPk.value = null;
-	ordPk.value = null;
-	pendingTxs.value = null;
-	utxos.value = null;
-	bsv20Utxos.value = null;
-	bsv20Balances.value = null;
-	localStorage.removeItem("1satfk");
-	localStorage.removeItem("1satok");
-	localStorage.removeItem("1satpt");
-	localStorage.removeItem("encryptedBackup");
+  payPk.value = null;
+  ordPk.value = null;
+  changeAddressPath.value = null;
+  ordAddressPath.value = null;
+  identityPk.value = null;
+  identityAddressPath.value = null;
+
+  pendingTxs.value = null;
+  utxos.value = null;
+  bsv20Utxos.value = null;
+  bsv20Balances.value = null;
+  localStorage.removeItem("1satfk");
+  localStorage.removeItem("1satok");
+  localStorage.removeItem("1satpt");
+  localStorage.removeItem("encryptedBackup");
 
 	sessionStorage.removeItem("1satfk");
 	sessionStorage.removeItem("1satok");
@@ -108,11 +115,13 @@ export const clearKeys = () => {
 };
 
 export const setKeys = (keys: Keys) => {
-	payPk.value = keys.payPk;
-	ordPk.value = keys.ordPk;
-	mnemonic.value = keys.mnemonic ?? null;
-	changeAddressPath.value = keys.changeAddressPath ?? null;
-	ordAddressPath.value = keys.ordAddressPath ?? null;
+  payPk.value = keys.payPk;
+  ordPk.value = keys.ordPk;
+  mnemonic.value = keys.mnemonic ?? null;
+  changeAddressPath.value = keys.changeAddressPath ?? null;
+  ordAddressPath.value = keys.ordAddressPath ?? null;
+  identityPk.value = keys.identityPk ?? null;
+  identityAddressPath.value = keys.identityAddressPath ?? null;
 
 	sessionStorage.setItem("1satfk", keys.payPk);
 	sessionStorage.setItem("1satok", keys.ordPk);
@@ -185,6 +194,11 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
 	setKeys({
 		payPk: decryptedBackup.payPk,
 		ordPk: decryptedBackup.ordPk,
+	mnemonic: decryptedBackup.mnemonic,
+	changeAddressPath: decryptedBackup.payDerivationPath,
+	ordAddressPath: decryptedBackup.ordDerivationPath,
+	...(decryptedBackup.identityPk !== undefined && { identityPk: decryptedBackup.identityPk }),
+  	...(decryptedBackup.identityDerivationPath !== undefined && { identityAddressPath: decryptedBackup.identityDerivationPath }),
 	});
 
 	return "SUCCESS";

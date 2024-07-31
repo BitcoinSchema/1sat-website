@@ -79,6 +79,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         fundingAddress.value,
         ordAddress.value
       );
+
+      
       // get fresh utxos
       const fundingUtxos = await getUtxos(fundingAddress.value!);
       utxos.value = fundingUtxos;
@@ -92,6 +94,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         Script.from_asm_string("")
       );
       purchaseTx.add_input(listingInput);
+      const spentOutpoints = [listing.outpoint];
 
       // output 0 - purchasing the ordinal
       const buyerOutput = new TxOut(
@@ -244,7 +247,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           Script.from_asm_string(utxo.script)
         );
         purchaseTx.add_input(fundingInput);
-
+        spentOutpoints.push(`${utxo.txid}_${utxo.vout}`);
+        
         const sig = purchaseTx.sign(
           paymentPk,
           SigHash.InputOutputs,
@@ -270,7 +274,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           fee: 100,
           numInputs: purchaseTx.get_ninputs(),
           numOutputs: purchaseTx.get_noutputs(),
-          inputTxid: listing.txid,
+          spentOutpoints,
         },
       ]);
 
@@ -279,15 +283,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
       onClose();
       router.push("/preview");
     },
-    [
-      listing,
-      onClose,
-      price,
-      router,
-      fundingAddress.value,
-      ordAddress.value,
-      payPk.value,
-    ]
+    [listing, price, fundingAddress.value, ordAddress.value, utxos.value, payPk.value, onClose, router]
   );
 
   const buyBsv20 = useCallback(() => {
@@ -300,6 +296,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
       Script.from_asm_string("")
     );
     purchaseTx.add_input(listingInput);
+    const spentOutpoints = [listing.outpoint];
     // const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value!);
 
     // output 0 - purchasing the ordinal
@@ -458,6 +455,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         Script.from_asm_string(utxo.script)
       );
       purchaseTx.add_input(fundingInput);
+      spentOutpoints.push(`${utxo.txid}_${utxo.vout}`);
 
       const sig = purchaseTx.sign(
         paymentPk,
@@ -484,22 +482,24 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         fee: 100,
         numInputs: purchaseTx.get_ninputs(),
         numOutputs: purchaseTx.get_noutputs(),
-        inputTxid: listing.txid,
+        spentOutpoints
       },
     ]);
 
     onClose();
     router.push("/preview");
-  }, [indexerAddress, listing, onClose, price, router]);
+  }, [fundingAddress.value, indexerAddress, listing, onClose, ordAddress.value, payPk.value, price, router, utxos.value]);
 
   const isBsv20Listing =
     (listing as Listing).tick !== undefined ||
     (listing as Listing).id !== undefined;
   return (
-    <div
+    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<div
       className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
       onClick={() => onClose()}
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
       <div
         className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
         onClick={(e) => e.stopPropagation()}

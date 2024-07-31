@@ -13,6 +13,7 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import type { Utxo } from "@/utils/js-1sat-ord";
@@ -86,6 +87,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
         Script.from_asm_string("")
       );
       tx.add_input(ordIn);
+      const spentOutpoints = [`${ordinal.txid}_${ordinal.vout}`]
 
       // Inputs
       let utxoIn = new TxIn(
@@ -95,6 +97,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       );
 
       tx.add_input(utxoIn);
+      spentOutpoints.push(`${paymentUtxo.txid}_${paymentUtxo.vout}`)
 
       const payoutDestinationAddress =
         P2PKHAddress.from_string(payoutAddress);
@@ -168,7 +171,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
         numInputs: tx.get_ninputs(),
         numOutputs: tx.get_noutputs(),
         txid: tx.get_id_hex(),
-        inputTxid: paymentUtxo.txid,
+        spentOutpoints,
         marketFee: 0,
       };
     },
@@ -245,10 +248,10 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     );
 
     pendingTx.returnTo = "/market/ordinals"
-    pendingTxs.value = [pendingTx];
+    setPendingTxs([pendingTx]);
 
     router.push("/preview");
-  }, [selectedItem, price, listOrdinal, router, ordAddress.value]);
+  }, [selectedItem, price, utxos.value, payPk.value, ordPk.value, fundingAddress.value, ordAddress.value, listOrdinal, router]);
 
   const clickSelectItem = useCallback(() => {
     setShowSelectItem(true);

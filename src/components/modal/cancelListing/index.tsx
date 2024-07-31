@@ -29,6 +29,7 @@ import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { calculateFee } from "../buyArtifact";
 import { buildInscriptionSafe } from "../transferBsv20";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 interface CancelListingModalProps {
   onClose: () => void;
@@ -227,7 +228,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       rawTx: cancelTx.to_hex(),
       txid: cancelTx.get_id_hex(),
     } as PendingTransaction;
-    pendingTxs.value = [pendingTx];
+    setPendingTxs([pendingTx]);
 
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
@@ -383,16 +384,15 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       txid: cancelTx.get_id_hex(),
     } as PendingTransaction;
 
-    pendingTxs.value = [pendingTx];
+    setPendingTxs([pendingTx]);
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
-    pendingTxs.value =
-      pendingTxs.value?.filter((t) => t.txid !== listing.txid) || [];
+    setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== listing.txid) || []);
     toast.success("Listing canceled.", toastProps);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
+  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, listing, pendingTxs.value, onCancelled]);
 
   return (
     <dialog
@@ -459,7 +459,7 @@ export const broadcast = async ({
     await promise;
     
     toast.success("Transaction broadcasted.", toastProps);
-    pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+    setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== txid) || []);
    } catch (e) {
     console.error(e);
     toast.error("Error broadcasting transaction.", toastErrorProps);

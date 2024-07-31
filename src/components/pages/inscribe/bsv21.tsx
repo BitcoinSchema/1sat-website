@@ -31,6 +31,7 @@ import { RiSettings2Fill } from "react-icons/ri";
 import { IconWithFallback } from "../TokenMarket/heading";
 import { knownImageTypes } from "./image";
 import type { InscriptionTab } from "./tabs";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 const top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"];
 
@@ -294,7 +295,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				setInscribeStatus(FetchStatus.Success);
 
 				if (pendingTx) {
-					pendingTxs.value = [pendingTx];
+					setPendingTxs([pendingTx]);
 					inscribedCallback();
 				}
 			} catch (error) {

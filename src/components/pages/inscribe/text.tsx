@@ -3,6 +3,7 @@
 import { FetchStatus } from "@/constants";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import { getUtxos } from "@/utils/address";
 import { inscribeUtf8 } from "@/utils/inscribe";
 import { Utxo } from "@/utils/js-1sat-ord";
@@ -91,11 +92,11 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
       }
       const pendingTx = await inscribeText(u, text);
       if (pendingTx) {
-        pendingTxs.value = [pendingTx];
+        setPendingTxs([pendingTx]);
         inscribedCallback();
       }
     },
-    [inscribedCallback, text, inscribeText]
+    [text, payPk.value, ordAddress.value, fundingAddress.value, inscribeText, inscribedCallback]
   );
 
   return (

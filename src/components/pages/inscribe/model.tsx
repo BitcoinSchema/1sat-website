@@ -4,6 +4,7 @@ import Artifact from "@/components/artifact";
 import { FetchStatus } from "@/constants";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import type { FileEvent } from "@/types/file";
 import type { OrdUtxo, TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
@@ -63,7 +64,7 @@ const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
 
     const pendingTx = await inscribeFile(u, selectedFile);
     if (pendingTx) {
-      pendingTxs.value = [pendingTx];
+      setPendingTxs([pendingTx]);
       inscribedCallback();
     }
   }, [inscribedCallback, selectedFile]);

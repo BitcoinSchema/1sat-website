@@ -38,6 +38,7 @@ import {
 import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { useLocalStorage } from "usehooks-ts";
 import type { InscriptionTab } from "./tabs";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 enum ActionType {
 	Mint = "mint",
@@ -365,7 +366,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						: payments
 				);
 
-				pendingTxs.value = [pendingTx];
+				setPendingTxs([pendingTx]);
 				setInscribeStatus(FetchStatus.Success);
 				inscribedCallback();
 			} catch (error) {

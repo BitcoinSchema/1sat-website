@@ -1,7 +1,11 @@
 import {
+	changeAddressPath,
   createWalletStep,
+  identityAddressPath,
+  identityPk,
   isCreatingWallet,
   mnemonic,
+  ordAddressPath,
   ordPk,
   payPk
 } from "@/signals/wallet";
@@ -28,6 +32,8 @@ export function CreateStep({
       payPk.value = keys.payPk;
       ordPk.value = keys.ordPk;
       mnemonic.value = keys.mnemonic ?? null;
+	  changeAddressPath.value = keys.changeAddressPath ?? null;
+	  ordAddressPath.value = keys.ordAddressPath ?? null;
 
       isCreatingWallet.value = false;
 

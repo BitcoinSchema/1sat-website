@@ -36,6 +36,7 @@ import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FaQuestion } from "react-icons/fa";
 import { find } from "lodash";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 interface TransferModalProps {
 	onClose: () => void;
@@ -219,7 +220,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				numInputs: tx.inputs.length,
 				numOutputs: tx.outputs.length,
 				txid: tx.id("hex"),
-				inputTxid: paymentUtxos[0].txid,
+				spentOutpoints,
+        payChange, 
+        tokenChange,
 				marketFee: 0,
 			};
 		},
@@ -338,7 +341,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				airdroppingStatus.value = FetchStatus.Success;
 
 				// Get only the PendingTransaction fields from the ReviewPendingTransaction which extends it with extra stuff we dont need right now
-				pendingTxs.value = [transferTx];
+        setPendingTxs([transferTx]);
 
 				if (!reviewMode.value) {
 					// If not in review mode, call handleReview instead

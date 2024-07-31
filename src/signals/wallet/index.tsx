@@ -47,10 +47,12 @@ export const showUnlockWalletButton = signal<boolean>(false);
  * Wallet keys
  */
 export const mnemonic = signal<string | null>(null);
-export const changeAddressPath = signal<number | null>(null);
-export const ordAddressPath = signal<number | null>(null);
+export const changeAddressPath = signal<number | string | null>(null);
+export const ordAddressPath = signal<number | string | null>(null);
 export const payPk = signal<string | null>(null);
 export const ordPk = signal<string | null>(null);
+export const identityPk = signal<string | null>(null);
+export const identityAddressPath = signal<number | string | null>(null);
 
 /**
  * Wallet state

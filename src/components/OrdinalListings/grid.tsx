@@ -84,7 +84,6 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, listings, data?.pages[data.pages.length - 1]]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     const newPageData = data?.pages[data.pages.length - 1];
     if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {

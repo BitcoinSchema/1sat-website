@@ -66,6 +66,7 @@ import ImportWalletModal from "../modal/importWallet";
 import ManageProfileModal from "../modal/manageProfile";
 import ProtectKeysModal from "../modal/protectKeys";
 import WithdrawalModal from "../modal/withdrawal";
+import { backupKeys } from "@/utils/wallet";
 let initAttempted = false;
 
 const WalletMenu: React.FC = () => {
@@ -575,33 +576,22 @@ const WalletMenu: React.FC = () => {
 export default WalletMenu;
 
 export const exportKeysViaFragment = () => {
-	// redirect to https://1sat.market/wallet/import#import=<b64KeyBackupData>
-	const fk = localStorage.getItem("1satfk");
-	const ok = localStorage.getItem("1satok");
-	let data = "";
-	if (!fk || !ok) {
-		if (!payPk.value || !ordPk.value) {
-			toast.error("No keys to export. Encrypt your keys first.");
-		}
-		data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
-	} else {
-		data = JSON.stringify({ payPk: JSON.parse(fk), ordPk: JSON.parse(ok) });
-	}
-	const b64 = btoa(data);
-	const base = "http://localhost:3000"; // "https://1sat.market"
-	// window.location.href = `${base}/wallet/import#import=${b64}`;
-};
-
-export const backupKeys = () => {
-	const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
-		JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value })
-	)}`;
-
-	const clicker = document.createElement("a");
-	clicker.setAttribute("href", dataStr);
-	clicker.setAttribute("download", "1sat.json");
-	clicker.click();
-};
+  // redirect to https://1sat.market/wallet/import#import=<b64KeyBackupData>
+  const fk = localStorage.getItem("1satfk");
+  const ok = localStorage.getItem("1satok");
+  let data = ""
+  if (!fk || !ok) {
+    if (!payPk.value || !ordPk.value) {
+      toast.error("No keys to export. Encrypt your keys first.");
+    }
+    data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
+  } else {
+    data = JSON.stringify({ payPk: JSON.parse(fk), ordPk: JSON.parse(ok) });
+  }
+  const b64 = btoa(data);
+  const base = "http://localhost:3000" // "https://1sat.market"
+  // window.location.href = `${base}/wallet/import#import=${b64}`;
+}
 
 export const swapKeys = () => {
 	// swaps paypk with ordpk values

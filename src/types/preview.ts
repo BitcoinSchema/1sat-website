@@ -1,4 +1,5 @@
 import type { MAP } from "@/utils/js-1sat-ord";
+import type { NftUtxo, TokenUtxo, Utxo } from "js-1sat-ord";
 export type PendingTransaction = {
 	rawTx: string;
 	size: number;
@@ -6,7 +7,9 @@ export type PendingTransaction = {
 	numInputs: number;
 	numOutputs: number;
 	txid: string;
-	inputTxid: string;
+	spentOutpoints: string[];
+  payChange?: Utxo, 
+  tokenChange?: TokenUtxo,
 	contentType?: string;
 	price?: number;
 	marketFee?: number;

@@ -2,6 +2,7 @@
 
 import { toastErrorProps } from "@/constants";
 import { payPk, pendingTxs, utxos } from "@/signals/wallet";
+import { setPendingTxs } from "@/signals/wallet/client";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
@@ -105,6 +106,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 				);
 			}
 
+      const spentOutpoints = []
 			// build txins from our UTXOs
 			let idx = 0;
 			let totalSats = 0;
@@ -118,6 +120,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 				// console.log({ inx });
 				inx.set_satoshis(BigInt(u.satoshis));
 				tx.add_input(inx);
+          
+        spentOutpoints.push(`${u.txid}_${u.vout}`);
 
 				const sig = tx.sign(
 					paymentPk,
@@ -150,7 +154,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 				toast.error("Error creating transaction", toastErrorProps);
 				return;
 			}
-			pendingTxs.value = [
+			setPendingTxs([
 				{
 					rawTx,
 					size: Math.ceil(rawTx.length / 2),
@@ -158,9 +162,9 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 					numInputs: tx.get_ninputs(),
 					numOutputs: tx.get_noutputs(),
 					txid: tx.get_id_hex(),
-					inputTxid: firstIn.get_prev_tx_id_hex(),
+					spentOutpoints
 				},
-			];
+			])
 
 			router.push("/preview");
 			if (onClose) {
