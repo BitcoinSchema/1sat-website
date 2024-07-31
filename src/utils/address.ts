@@ -1,10 +1,10 @@
 import { API_HOST, resultsPerPage } from "@/constants";
 import { WocUtxo, WocUtxoResults } from "@/types/common";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { uniq } from "lodash";
 import * as http from "./httpClient";
-import { fetchNftUtxos, fetchPayUtxos } from "js-1sat-ord";
+import { fetchNftUtxos, fetchPayUtxos, type Utxo } from "js-1sat-ord";
 
 export const addressFromWif = (payPk: string) => {
 	const wif = PrivateKey.from_wif(payPk);
@@ -40,16 +40,14 @@ export const getBsv20Utxos = async (
 	return (await promise) || [];
 };
 
-export const getOrdUtxos = async (address: string, nextOffset: number) => {
-
-  return await fetchNftUtxos(address, undefined, resultsPerPage, nextOffset);
-	// const { promise } = http.customFetch<OrdUtxo[]>(
-	// 	`${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${nextOffset}&dir=DESC&status=all&bsv20=false`,
-	// );
-	// return (await promise) || [];
+export const getOrdUtxos = async (address: string, nextOffset: number): => {
+	const { promise } = http.customFetch<OrdUtxo[]>(
+		`${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${nextOffset}&dir=DESC&status=all&bsv20=false`,
+	);
+	return (await promise) || [];
 };
 
-export const getUtxos = async (address: string) => {
+export const getUtxos = async (address: string): Promise<Utxo[]> => {
 
   // use gorillapool
   try {
@@ -57,6 +55,7 @@ export const getUtxos = async (address: string) => {
     
   } catch (e) {
     console.log("error", e);
+    return [];
   }
   
 	// try {
