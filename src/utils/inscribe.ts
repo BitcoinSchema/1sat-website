@@ -59,7 +59,7 @@ export const handleInscribing = async (
 };
 
 // same as haleInscribing but takes multiple utxos and multiple inscriptions
-export const handleBulkInscribing = (
+export const handleBulkInscribing = async (
 	payPk: string,
 	inscriptions: Inscription[],
 	ordAddress: string,
@@ -74,22 +74,19 @@ export const handleBulkInscribing = (
 	const signer = {
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
-	try {
-		const tx = createOrdinal(
-			fundingUtxos,
-			ordAddress,
-			paymentPk,
-			changeAddress,
-			0.05,
-			inscriptions,
-			metadata, // optional metadata
-			undefined,
-			why, // payments
-		);
-		return tx;
-	} catch (e) {
-		throw e;
-	}
+
+	const { tx, spentOutpoints } = await createOrdinal(
+		fundingUtxos,
+		ordAddress,
+		paymentPk,
+		changeAddress,
+		0.05,
+		inscriptions,
+		metadata, // optional metadata
+		undefined,
+		why, // payments
+	);
+	return { tx, spentOutpoints }
 };
 // same as handleBulkInscribing but with data
 export const handleBulkInscribingWithData = async (
