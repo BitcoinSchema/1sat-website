@@ -4,6 +4,7 @@ import { OrdUtxo } from "@/types/ordinals";
 import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { uniq } from "lodash";
 import * as http from "./httpClient";
+import { fetchPayUtxos } from "js-1sat-ord";
 
 export const addressFromWif = (payPk: string) => {
 	const wif = PrivateKey.from_wif(payPk);
@@ -47,50 +48,58 @@ export const getOrdUtxos = async (address: string, nextOffset: number) => {
 };
 
 export const getUtxos = async (address: string) => {
-	try {
-		// Try beta endpoint first
-		const { promise } = http.customFetch<WocUtxoResults>(
-			// `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated
-			// `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
-			`https://api.whatsonchain.com/v1/bsv/main/address/${address}/unconfirmed/unspent`,
-		);
-		const u = (await promise).result;
-		const { promise: promiseConfirmed } = http.customFetch<WocUtxoResults>(
-			`https://api.whatsonchain.com/v1/bsv/main/address/${address}/confirmed/unspent`,
-		);
-		const c = (await promiseConfirmed).result;
 
-		return u.concat(c).map((u) => {
-			return {
-				satoshis: u.value,
-				txid: u.tx_hash,
-				vout: u.tx_pos,
-				script: P2PKHAddress.from_string(address)
-					.get_locking_script()
-					.to_asm_string(),
-			};
-		});
-	} catch (e) {
-		console.log("error", e);
+  // use gorillapool
+  try {
+    return await fetchPayUtxos(address, "asm");
+    
+  } catch (e) {
+    console.log("error", e);
+  }
+  
+	// try {
+	// 	// Try beta endpoint first
+	// 		// `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated
+	// 		// `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
+	// 		`https://api.whatsonchain.com/v1/bsv/main/address/${address}/unconfirmed/unspent`,
+	// 	);
+	// 	const u = (await promise).result;
+	// 	const { promise: promiseConfirmed } = http.customFetch<WocUtxoResults>(
+	// 		`https://api.whatsonchain.com/v1/bsv/main/address/${address}/confirmed/unspent`,
+	// 	);
+	// 	const c = (await promiseConfirmed).result;
 
-		const { promise } = http.customFetch<WocUtxo[]>(
-			// `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated
-			// `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
-			`https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`,
-		);
-		const utxos = await promise;
+	// 	return u.concat(c).map((u) => {
+	// 		return {
+	// 			satoshis: u.value,
+	// 			txid: u.tx_hash,
+	// 			vout: u.tx_pos,
+	// 			script: P2PKHAddress.from_string(address)
+	// 				.get_locking_script()
+	// 				.to_asm_string(),
+	// 		};
+	// 	});
+	// } catch (e) {
+	// 	console.log("error", e);
 
-		return utxos.map((u) => {
-			return {
-				satoshis: u.value,
-				txid: u.tx_hash,
-				vout: u.tx_pos,
-				script: P2PKHAddress.from_string(address)
-					.get_locking_script()
-					.to_asm_string(),
-			};
-		});
-	}
+	// 	const { promise } = http.customFetch<WocUtxo[]>(
+	// 		// `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated
+	// 		// `https://ordinals.gorillapool.io/api/txos/address/${address}/unspent?bsv20=false`
+	// 		`https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent`,
+	// 	);
+	// 	const utxos = await promise;
+
+	// 	return utxos.map((u) => {
+	// 		return {
+	// 			satoshis: u.value,
+	// 			txid: u.tx_hash,
+	// 			vout: u.tx_pos,
+	// 			script: P2PKHAddress.from_string(address)
+	// 				.get_locking_script()
+	// 				.to_asm_string(),
+	// 		};
+	// 	});
+	// }
 };
 
 export const getOutpoints = async (ids: string[], script: boolean) => {
