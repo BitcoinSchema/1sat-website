@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { CgClose } from "react-icons/cg";
 import { TbGridDots } from "react-icons/tb";
 

@@ -8,31 +8,23 @@ import {
 	bsvWasmReady,
 	ordPk,
 	payPk,
-	pendingTxs,
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
-import { sendOrdinal, type Utxo } from "@/utils/js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import {
-	P2PKHAddress,
-	PrivateKey,
-	Script,
-	SigHash,
-	Transaction,
-	TxIn,
-	TxOut,
-} from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-bitcoin-ts";
-import type { MAP } from "@/utils/js-1sat-ord";
 import { setPendingTxs } from "@/signals/wallet/client";
+import { Hash, PrivateKey, Script, Utils } from "@bsv/sdk";
+import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig } from "js-1sat-ord";
+import { toastErrorProps } from "@/constants";
+const { toBase58Check } = Utils
 
 const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	useSignals();
@@ -47,19 +39,22 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 		if (bsvWasmReady.value === false) {
 			return "";
 		}
-		const script = Script.from_bytes(Buffer.from(artifact.script, "base64"));
-		const pubkeyHash = script.to_asm_string().split(" ")[2];
+		const script = Script.fromHex(Buffer.from(artifact.script, "base64").toString('hex'));
+		const pubkeyHash = script.toASM().split(" ")[2];
 		if (!pubkeyHash) {
 			return undefined;
 		}
 		const buff = Buffer.from(pubkeyHash, "hex");
-		if (!buff || buff.length !== 20) {
+    const data = script.chunks[2].data;
+		if (!data || !buff || buff.length !== 20) {
 			return undefined;
 		}
 
-		const address = P2PKHAddress.from_pubkey_hash(buff);
+    const hash = Hash.ripemd160(data)
+		const address = toBase58Check(hash)
+    // P2PKHAddress.from_pubkey_hash(buff);
 
-		return address.to_string();
+		return address
 	}, [artifact, bsvWasmReady.value]);
 
 	const isUtxo = computed(() => {
@@ -80,13 +75,13 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 		) => {
 			console.log("transferOrdinal");
 
-			const paymentUtxo = (utxos.value || []).sort(
-				(a, b) => b.satoshis - a.satoshis,
-			)[0];
+			// const paymentUtxo = (utxos.value || []).sort(
+			// 	(a, b) => b.satoshis - a.satoshis,
+			// )[0];
 
-			const scriptAsm = Script.from_bytes(
-				Buffer.from(artifact.script, "base64"),
-			).to_asm_string();
+			const scriptAsm = Script.fromHex(
+				Buffer.from(artifact.script, "base64").toString('hex'),
+			).toASM();
 			const artifactUtxo = {
 				txid: artifact.txid,
 				vout: artifact.vout,
@@ -109,24 +104,32 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				return;
 			}
 
-			const tx = await sendOrdinal(
-				paymentUtxo,
-				artifactUtxo,
-				PrivateKey.from_wif(payPk.value),
-				fundingAddress.value,
-				0.05,
-				PrivateKey.from_wif(ordPk.value),
-				to,
-				undefined,
-				meta,
-				undefined,
-			);
+      const paymentUtxos = utxos.value
+      if (!paymentUtxos) {
+        toast.error("No payment utxos", toastErrorProps)
+        return
+      }
+
+      const sendOrdinalsConfig: SendOrdinalsConfig = {
+        paymentUtxos,
+        ordinals: [artifactUtxo],
+        paymentPk: PrivateKey.fromWif(payPk.value),
+        ordPk: PrivateKey.fromWif(ordPk.value),
+        destinations: [{address: to}],
+      }
+      if (meta) {
+        sendOrdinalsConfig.metaData = meta
+      }
+
+      const { tx, spentOutpoints } = await sendOrdinals(sendOrdinalsConfig)
 
 			setPendingTxs([
 				{
-					rawTx: tx.to_hex(),
-					fee: 0,
-					txid: tx.get_id_hex(),
+					rawTx: tx.toHex(),
+					fee: tx.getFee(),
+					txid: tx.id('hex'),
+          spentOutpoints,
+          metadata: meta
 				} as PendingTransaction,
 			]);
 
@@ -143,6 +146,11 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				return;
 			}
 
+      if (!utxos.value) {
+        toast.error("No utxos", toastErrorProps)
+        return
+      }
+
 			if (!address?.startsWith("1")) {
 				console.error("inivalid receive address");
 				return;
@@ -155,72 +163,34 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				},
 			});
 
-			const feeSats = 20;
-			const paymentPk = PrivateKey.from_wif(ordPk.value);
-			const tx = new Transaction(1, 0);
+			const paymentPk = PrivateKey.fromWif(ordPk.value);
+      const payments: Payment[] = [{
+        to: address,
+        amount: utxo.satoshis
+      }]
+			const config: SendUtxosConfig = {
+        utxos: utxos.value,
+        paymentPk,
+        payments
+      }
 
-			tx.add_output(
-				new TxOut(
-					BigInt(utxo.satoshis - feeSats),
-					P2PKHAddress.from_string(address).get_locking_script(),
-				),
-			);
-
-			// build txins from our UTXOs
-			let idx = 0;
-			let totalSats = 0;
-			const u = utxo;
-			// console.log({ u });
-			const inx = new TxIn(
-				Buffer.from(u.txid, "hex"),
-				u.vout,
-				Script.from_asm_string(""),
-			);
-			// console.log({ inx });
-			inx.set_satoshis(BigInt(u.satoshis));
-			tx.add_input(inx);
-
-      const spentOutpoints = [`${u.txid}_${u.vout}`]
-
-			const sig = tx.sign(
-				paymentPk,
-				SigHash.InputOutputs,
-				idx,
-				Script.from_asm_string(u.script),
-				BigInt(u.satoshis),
-			);
-
-			// console.log({ sig: sig.to_hex() });
-
-			inx.set_unlocking_script(
-				Script.from_asm_string(
-					`${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`,
-				),
-			);
-
-			tx.set_input(idx, inx);
-			idx++;
-
-			totalSats += u.satoshis;
-
-			const rawTx = tx.to_hex();
-			// const { rawTx, fee, size, numInputs, numOutputs } = resp;
-
+      const { tx, spentOutpoints } = await sendUtxos(config)
+      const rawTx = tx.toHex();
 			setPendingTxs([
 				{
 					rawTx,
 					size: Math.ceil(rawTx.length / 2),
 					fee: 20,
-					numInputs: tx.get_ninputs(),
-					numOutputs: tx.get_noutputs(),
-					txid: tx.get_id_hex(),
+					numInputs: tx.inputs.length,
+					numOutputs: tx.outputs.length,
+					txid: tx.id('hex'),
 					spentOutpoints
 				},
 			])
 
 			router.push("/preview");
 		},
-		[router, ordPk.value],
+		[ordPk.value, utxos.value, router],
 	);
 
 	const recoverUtxo = useCallback(
@@ -229,9 +199,9 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
 			const b64Script = artifact.script;
 
-			const asmScript = Script.from_bytes(
-				Buffer.from(b64Script, "base64"),
-			).to_asm_string();
+			const asmScript = Script.fromHex(
+				Buffer.from(b64Script, "base64").toString('hex'),
+			).toASM();
 
 			const artifactUtxo = {
 				txid: artifact.txid,
