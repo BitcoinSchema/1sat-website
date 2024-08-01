@@ -64,11 +64,6 @@ const nextConfig = {
 						{
 							// This should not be necessary
 							from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-							to: `${currentDirectory}/.next/server/app/preview/bsv_wasm_bg.wasm`,
-						},
-						{
-							// This should not be necessary
-							from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
 							to: `${currentDirectory}/.next/server/app/inscribe/bsv_wasm_bg.wasm`,
 						},
 					],
