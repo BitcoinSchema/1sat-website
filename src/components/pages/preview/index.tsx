@@ -109,6 +109,9 @@ const PreviewPage = () => {
 		const numOutputs = tx.outputs.length;
 		let totalOut = 0;
 		for (const out of tx.outputs) {
+      if (out.change) {
+        continue
+      }
 			totalOut += out.satoshis || 0;
 		}
 		const cost = totalOut - change
