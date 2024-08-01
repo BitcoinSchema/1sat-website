@@ -89,15 +89,9 @@ const PreviewPage = () => {
 			return 0;
 		}
     const tx = Transaction.fromHex(pendingTx.value.rawTx)
-		
-		let totalChange = 0;
-    for (const out of tx.outputs) {
-      if (out.change) {
-        totalChange = out.satoshis || 0;
-      }
-    }
-
-		return totalChange;
+    const changeOut = tx.outputs.find((o) => o.change)
+  
+		return changeOut?.satoshis || 0;
 	}, [pendingTx.value]);
 
 	const usdPrice = useMemo(() => {
@@ -109,18 +103,11 @@ const PreviewPage = () => {
 
 		let totalOut = 0;
 		for (const out of tx.outputs) {
-      if (out.change) {
-        continue
-      }
 			totalOut += out.satoshis || 0;
 		}
 		const cost = totalOut - change
 		return (cost / usdRate.value).toFixed(2);
 	}, [change, pendingTx.value, usdRate.value]);
-
-	// useEffect(() => {
-	// 	console.log({ usdPrice: usdPrice.value, change: change.value });
-	// }, [usdPrice.value, change.value]);
 
 	return (
 		<>
