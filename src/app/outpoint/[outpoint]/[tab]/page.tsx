@@ -25,7 +25,7 @@ export type IODisplay = {
   script?: string;
   index: number;
   txid: string;
-  amount: bigint;
+  amount: number;
 };
 
 export type InputOutpoint = {
