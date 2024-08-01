@@ -15,6 +15,7 @@ import { selectedType } from "../Wallet/filter";
 import { ArtifactType, artifactTypeMap } from "../artifact";
 import Ordinals from "../ordinals";
 import { checkOutpointFormat } from "./helpers";
+import { uniq } from "lodash";
 
 interface Props {
   address: string;
@@ -93,13 +94,13 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
   }, [isInView]);
 
   const collectionIds = computed(() =>
-    listings.value.reduce((i, v) => {
+    uniq(listings.value.reduce((i, v) => {
       const cid = v.origin?.data?.map?.subTypeData?.collectionId;
       if (cid && checkOutpointFormat(cid)) {
         i.push(cid);
       }
       return i;
-    }, [] as string[])
+    }, [] as string[]))
   );
 
   const { data: collectionData } = useQuery({
