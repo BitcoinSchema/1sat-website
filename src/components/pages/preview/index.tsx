@@ -85,7 +85,7 @@ const PreviewPage = () => {
 	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
 
 	const change = useMemo(() => {
-		if (!pendingTx.value?.numOutputs) {
+		if (!pendingTx.value?.rawTx) {
 			return 0;
 		}
     const tx = Transaction.fromHex(pendingTx.value.rawTx)
@@ -98,7 +98,7 @@ const PreviewPage = () => {
     }
 
 		return totalChange;
-	}, [pendingTx.value?.numOutputs, pendingTx.value?.rawTx]);
+	}, [pendingTx.value]);
 
 	const usdPrice = useMemo(() => {
 		if (!pendingTx.value?.rawTx || !usdRate.value) {
@@ -106,7 +106,7 @@ const PreviewPage = () => {
 		}
 
 		const tx = Transaction.fromHex(pendingTx.value.rawTx);
-		const numOutputs = tx.outputs.length;
+
 		let totalOut = 0;
 		for (const out of tx.outputs) {
       if (out.change) {
@@ -116,7 +116,7 @@ const PreviewPage = () => {
 		}
 		const cost = totalOut - change
 		return (cost / usdRate.value).toFixed(2);
-	}, [change, pendingTx.value?.rawTx, usdRate.value]);
+	}, [change, pendingTx.value, usdRate.value]);
 
 	// useEffect(() => {
 	// 	console.log({ usdPrice: usdPrice.value, change: change.value });
