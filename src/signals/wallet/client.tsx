@@ -131,9 +131,6 @@ export const loadKeysFromSessionStorage = () => {
 	const payPk = sessionStorage.getItem("1satfk");
 	const ordPk = sessionStorage.getItem("1satok");
 
-	console.log("KEYS!!! -----------");
-	console.log(`${payPk} --- ${ordPk}`);
-
   if (payPk && ordPk) {
 		setKeys({ payPk, ordPk });
   }

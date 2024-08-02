@@ -23,9 +23,8 @@ import {
 	usdRate,
 	utxos,
 } from "@/signals/wallet";
-import { selectedBapIdentity } from "@/signals/bapIdentity";
+import { activeBapIdentity, hasIdentityBackup } from "@/signals/bapIdentity";
 import {loadIdentityFromSessionStorage} from "@/signals/bapIdentity/client";
-import { generateFromString } from "generate-avatar";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import {
 	loadKeysFromBackupFiles,
@@ -81,6 +80,18 @@ const WalletMenu: React.FC = () => {
 	const showDropdown = useSignal(false);
 
 	const [eb] = useLocalStorage("encryptedBackup");
+	
+	useEffect(() => {
+		if (!activeBapIdentity.value) {
+			loadIdentityFromSessionStorage();
+		}
+		
+	},[activeBapIdentity.value]);
+
+	useEffect(()=> {
+		hasIdentityBackup.value = Boolean(localStorage.getItem("encryptedIdentity"));
+	},[]);
+
 
 	const [value, copy] = useCopyToClipboard();
 	const ordAddressHover = useSignal(false);
@@ -255,11 +266,11 @@ const WalletMenu: React.FC = () => {
 	};
 
 	const identityColor =
-		selectedBapIdentity.value && hashColor(selectedBapIdentity.value.idKey);
+		activeBapIdentity.value && hashColor(activeBapIdentity.value.idKey);
 
 	const identityImage =
-		selectedBapIdentity.value?.identity?.image &&
-		getImageFromGP(selectedBapIdentity.value?.identity?.image);
+		activeBapIdentity.value?.identity?.image &&
+		getImageFromGP(activeBapIdentity.value?.identity?.image);
 
 	return (
 		<ul className="dropdown dropdown-end">
@@ -290,6 +301,7 @@ const WalletMenu: React.FC = () => {
 							src={identityImage}
 							alt="Profile image"
 							fill={true}
+							sizes="(max-width: 768px) 5vw, (max-width: 1200px) 2vw, 1vw"
 						/>
 					) : (
 						<MdAccountCircle

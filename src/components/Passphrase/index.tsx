@@ -3,14 +3,10 @@
 import { encryptionPrefix, toastErrorProps, toastProps } from "@/constants";
 import {
   ImportWalletFromBackupJsonStep,
-  changeAddressPath,
   encryptionKey,
-  identityAddressPath,
-  identityPk,
   importWalletFromBackupJsonStep,
   migrating,
   mnemonic,
-  ordAddressPath,
   ordPk,
   passphrase,
   payPk,
@@ -22,17 +18,19 @@ import {
   generateEncryptionKeyFromPassphrase,
 } from "@/utils/encryption";
 import { generatePassphrase } from "@/utils/passphrase";
-import { backupKeys } from "@/utils/wallet";
 import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { PrivateKey } from "bsv-wasm-web";
 import randomBytes from "randombytes";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
 import { TbDice } from "react-icons/tb";
 import { useCopyToClipboard } from "usehooks-ts";
+import { hasIdentityBackup } from "@/signals/bapIdentity/index";
+import {loadIdentityFromEncryptedStorage} from "@/signals/bapIdentity/client";
 
 type Props = {
   mode: EncryptDecrypt;
@@ -76,6 +74,21 @@ const EnterPassphrase: React.FC<Props> = ({
     }
   });
 
+  const backupKeys = (keys: EncryptedBackupJson) => {
+    const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify({
+        payPk: payPk.value,
+        ordPk: ordPk.value,
+        mnemonic: mnemonic.value,
+      })
+    )}`;
+
+    const clicker = document.createElement("a");
+    clicker.setAttribute("href", dataStr);
+    clicker.setAttribute("download", "1sat.json");
+    clicker.click();
+  };
+
   const handlePassphraseChange = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
@@ -115,13 +128,8 @@ const EnterPassphrase: React.FC<Props> = ({
         const encrypted = encryptData(
           Buffer.from(
             JSON.stringify({
-			  mnemonic: mnemonic.value,
               payPk: payPk.value,
               ordPk: ordPk.value,
-			  payDerivationPath: changeAddressPath.value,
-			  ordDerivationPath: ordAddressPath.value,
-			  ...(!!identityPk.value && { identityPk: identityPk.value }),
-  			  ...(!!identityAddressPath.value && { identityDerivationPath: identityAddressPath.value }),
             }),
             "utf-8"
           ),
@@ -139,7 +147,7 @@ const EnterPassphrase: React.FC<Props> = ({
         };
 
         if (download) {
-          backupKeys();
+          backupKeys(keys);
         }
 
         if (migrating.value) {
@@ -163,27 +171,19 @@ const EnterPassphrase: React.FC<Props> = ({
         toast.error("Failed to encrypt keys", toastErrorProps);
       }
     }
-  }, [
-	download,
-	encryptionKey.value,
-	hasDownloadedKeys,
-	migrating.value,
-	ordPk.value,
-	passphrase.value,
-	payPk.value,
-	mnemonic.value,
-	changeAddressPath.value,
-	ordAddressPath.value,
-	identityPk.value,
-	identityAddressPath.value
-  ]);
+  }, [download, encryptionKey.value, hasDownloadedKeys, migrating.value, ordPk.value, passphrase.value, payPk.value]);
 
   const handleClickDecrypt = async () => {
     if (passphrase.value) {
-      console.log("decrypt keys w passphrase");
-
       try {
-        await loadKeysFromEncryptedStorage(passphrase.value);
+        const succeeded = await loadKeysFromEncryptedStorage(passphrase.value);
+        if (succeeded && !!hasIdentityBackup.value) {
+          const decryptedId = await loadIdentityFromEncryptedStorage(passphrase.value);
+
+          if (!decryptedId) {
+            toast.error("Failed to decrypt identity, please import it again.", toastErrorProps);
+          }
+        }
         onSubmit();
       } catch (e) {
         console.error(e);
@@ -209,98 +209,88 @@ const EnterPassphrase: React.FC<Props> = ({
   };
 
   return (
-		<form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit}>
       {!hasDownloadedKeys.value && <div className="my-4">
-					Enter a password to{" "}
-					{showEnterPassphrase.value === EncryptDecrypt.Decrypt
-						? "decrypt"
-						: "encrypt"}{" "}
-					your saved keys.
+        Enter a password to{" "}
+        {showEnterPassphrase.value === EncryptDecrypt.Decrypt
+          ? "decrypt"
+          : "encrypt"}{" "}
+        your saved keys.
       </div>}
       {!hasDownloadedKeys.value && <div className="font-semibold md:text-xl my-2 relative">
-					{mode === EncryptDecrypt.Encrypt && (
-						<div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
-							<button
-								type="button"
-								disabled={!passphrase.value}
-								className="disabled:text-[#555] transition text-yellow-500 font-semibold font-mono"
-								onClick={() => {
+        {mode === EncryptDecrypt.Encrypt && (
+          <div className="absolute right-0 h-full flex items-center justify-center mr-2 cursor-pointer">
+              <button
+                type="button"
+                disabled={!passphrase.value}
+                className="disabled:text-[#555] transition text-yellow-500 font-semibold font-mono"
+                onClick={() => {
                   copy(passphrase.value || "")
-									toast.success(
-										"Copied phrase. Careful now!",
-										toastProps
-									);
-								}}
-							>
-								<FiCopy />
-							</button>
-						</div>
-					)}
+                  toast.success(
+                    "Copied phrase. Careful now!",
+                    toastProps
+                  );
+                }}
+              >
+                <FiCopy />
+              </button>
+          </div>
+        )}
 
         {!hasDownloadedKeys.value && <input
-							className="input input-bordered w-full placeholder-[#555]"
-							type="password"
-							onChange={handlePassphraseChange}
-							value={passphrase.value || ""}
-							placeholder={"your-password-here"}
-							ref={passwordInputRef}
+          className="input input-bordered w-full placeholder-[#555]"
+          type="password"
+          onChange={handlePassphraseChange}
+          value={passphrase.value || ""}
+          placeholder={"your-password-here"}
+          ref={passwordInputRef}
         />}
       </div>}
 
-			{showEnterPassphrase.value === EncryptDecrypt.Encrypt && (
-				<div>
-					<div className="flex items-center">
-						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-						<div
-							onClick={handleClickGenerate}
-							className="flex items-center cursor-pointer p-2 group text-blue-400 hover:text-blue-500"
-						>
-							<TbDice className="mr-2 group-hover:animate-spin" />{" "}
-							Generate a strong passphrase
-						</div>
-					</div>
-				</div>
-			)}
-			<div className="text-gray-500 text-xs sm:test-sm md:text-base flex items-center my-4 ">
-				<RiErrorWarningFill className="mr-2" />
-				{showEnterPassphrase.value === EncryptDecrypt.Encrypt
-					? "You still need to keep your 12 word seed phrase."
-					: "Your password unlocks your wallet each time you visit."}
-			</div>
+      {showEnterPassphrase.value === EncryptDecrypt.Encrypt && (
+        <div>
+          <div className="flex items-center">
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+            <div
+              onClick={handleClickGenerate}
+              className="flex items-center cursor-pointer p-2 group text-blue-400 hover:text-blue-500"
+            >
+              <TbDice className="mr-2 group-hover:animate-spin" />{" "}
+              Generate a strong passphrase
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="text-gray-500 text-xs sm:test-sm md:text-base flex items-center my-4 ">
+        <RiErrorWarningFill className="mr-2" />
+        {showEnterPassphrase.value === EncryptDecrypt.Encrypt
+          ? "You still need to keep your 12 word seed phrase."
+          : "Your password unlocks your wallet each time you visit."}
+      </div>
 
-			<div className="flex gap-2 justify-end">
-				{/* {!migrating.value && !download && (
+      <div className="flex gap-2 justify-end">
+        <button
+          disabled={(passphrase.value?.length || 0) < 6}
+          className="btn btn-primary"
+          type="button"
+          onClick={handleSubmit}
+        >
+          {showEnterPassphrase.value === EncryptDecrypt.Decrypt
+            ? "Unlock Wallet"
+            : `Encrypt ${download ? "& Download" : ""} Keys`}
+        </button>
+
+        {hasDownloadedKeys.value && (
           <button
             type="button"
-            className="btn btn-error"
+            className="btn btn-primary"
             onClick={() => onSubmit()}
           >
-            Skip
+            Continue
           </button>
-        )} */}
-
-				<button
-					disabled={(passphrase.value?.length || 0) < 6}
-					className="btn btn-primary"
-					type="button"
-					onClick={handleSubmit}
-				>
-					{showEnterPassphrase.value === EncryptDecrypt.Decrypt
-						? "Unlock Wallet"
-						: `Encrypt ${download ? "& Download" : ""} Keys`}
-				</button>
-
-				{hasDownloadedKeys.value && (
-					<button
-						type="button"
-						className="btn btn-primary"
-						onClick={() => onSubmit()}
-					>
-						Continue
-					</button>
-				)}
-			</div>
-		</form>
+        )}
+      </div>
+    </form>
   );
 };
 export default EnterPassphrase;
