@@ -44,7 +44,6 @@
     "daisyui": "^4.11.1",
     "dompurify": "^3.0.9",
     "framer-motion": "^11.1.7",
-    "generate-avatar": "^1.4.10",
     "isomorphic-dompurify": "^2.4.0",
     "jdenticon": "^3.2.0",
     "js-1sat-ord": "^0.1.29",
