@@ -3,17 +3,15 @@
 import { toastErrorProps } from "@/constants";
 import { payPk, pendingTxs, utxos } from "@/signals/wallet";
 import { setPendingTxs } from "@/signals/wallet/client";
+import { P2PKH, PrivateKey } from "@bsv/sdk";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-	P2PKHAddress,
-	PrivateKey,
-	Script,
-	SigHash,
-	Transaction,
-	TxIn,
-	TxOut,
-} from "bsv-wasm-web";
+	type Payment,
+	sendUtxos,
+	type SendUtxosConfig,
+	type Utxo,
+} from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
@@ -71,104 +69,43 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 				},
 			});
 
-			const feeSats = 20;
-			const satsNeeded = satoshis + feeSats;
-			const paymentPk = PrivateKey.from_wif(payPk.value);
-			const tx = new Transaction(1, 0);
-
-			// Outputs
-			let inputValue = 0;
-			for (const u of utxos.value || []) {
-				inputValue += u.satoshis;
-				if (inputValue >= satsNeeded) {
-					break;
-				}
-			}
-			const satsIn = inputValue;
-
-			const change = satsIn - satoshis - feeSats;
-			tx.add_output(
-				new TxOut(
-					BigInt(satoshis),
-					P2PKHAddress.from_string(address).get_locking_script(),
-				),
-			);
-
-			// add change output
-			if (change > 0) {
-				tx.add_output(
-					new TxOut(
-						BigInt(change),
-						P2PKHAddress.from_pubkey(
-							PrivateKey.from_wif(payPk.value).to_public_key(),
-						).get_locking_script(),
-					),
-				);
+			if (!utxos.value || !utxos.value.length) {
+				toast.error("No utxos to send", toastErrorProps);
 			}
 
-      const spentOutpoints = []
-			// build txins from our UTXOs
-			let idx = 0;
-			let totalSats = 0;
-			for (const u of utxos.value || []) {
-				// console.log({ u });
-				const inx = new TxIn(
-					Buffer.from(u.txid, "hex"),
-					u.vout,
-					Script.from_asm_string(""),
-				);
-				// console.log({ inx });
-				inx.set_satoshis(BigInt(u.satoshis));
-				tx.add_input(inx);
-          
-        spentOutpoints.push(`${u.txid}_${u.vout}`);
-
-				const sig = tx.sign(
-					paymentPk,
-					SigHash.InputOutputs,
-					idx,
-					Script.from_asm_string(u.script),
-					BigInt(u.satoshis),
-				);
-
-				inx.set_unlocking_script(
-					Script.from_asm_string(
-						`${sig.to_hex()} ${paymentPk.to_public_key().to_hex()}`,
-					),
-				);
-
-				tx.set_input(idx, inx);
-				idx++;
-
-				totalSats += u.satoshis;
-				if (satsNeeded <= totalSats) {
-					break;
-				}
-			}
-
-			const rawTx = tx.to_hex();
-			// const { rawTx, fee, size, numInputs, numOutputs } = resp;
-
-			const firstIn = tx.get_input(0);
-			if (!firstIn) {
-				toast.error("Error creating transaction", toastErrorProps);
-				return;
-			}
-			setPendingTxs([
+			const paymentPk = PrivateKey.fromWif(payPk.value);
+			const payments: Payment[] = [
 				{
-					rawTx,
-					size: Math.ceil(rawTx.length / 2),
-					fee: 20,
-					numInputs: tx.get_ninputs(),
-					numOutputs: tx.get_noutputs(),
-					txid: tx.get_id_hex(),
-					spentOutpoints
+					to: address,
+					amount: satoshis,
 				},
-			])
+			];
+			const sendConfig: SendUtxosConfig = {
+				utxos: utxos.value as Utxo[],
+				paymentPk,
+				payments,
+			};
+			try {
+				const { tx, spentOutpoints, payChange } = await sendUtxos(sendConfig);
+				const rawTx = tx.toHex();
+				setPendingTxs([
+					{
+						rawTx,
+						size: Math.ceil(rawTx.length / 2),
+						fee: tx.getFee(),
+						numInputs: tx.inputs.length,
+						numOutputs: tx.outputs.length,
+						txid: tx.id("hex"),
+						spentOutpoints,
+					},
+				]);
 
-			router.push("/preview");
-			if (onClose) {
-				onClose();
+				router.push("/preview");
+				if (onClose) {
+					onClose();
+				}
+			} catch (e) {
+				toast.error("Error creating tx", toastErrorProps);
 			}
 		},
 		[payPk.value, router, onClose, utxos.value],
@@ -192,8 +129,8 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			// 	// POST https://opns-paymail-production.up.railway.app/v1/bsvalias/p2p-payment-destination/shruggr@1sat.app
 
 			// 	//const url = `https://opns-paymail-production.up.railway.app/v1/bsvalias/p2p-payment-destination/${address.value}`;
-      //   const handle = address.value.split('@')[0];
-      //   const url = `https://ordinals.gorillapool.io/api/opns/${handle}`
+			//   const handle = address.value.split('@')[0];
+			//   const url = `https://ordinals.gorillapool.io/api/opns/${handle}`
 			// 	// const headers = {
 			// 	// 	Accept: "application/json",
 			// 	// 	"Content-Type": "application/json",
@@ -212,24 +149,24 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 			// 		}[];
 			// 		reference: string;
 			// 	};
-      //   // {
-      //   //   "outpoint": "d10057af8e5365d259a3401b542ca94f9a210f8ff8dd04346b0d3661bf46b84b_2",
-      //   //   "origin": "d10057af8e5365d259a3401b542ca94f9a210f8ff8dd04346b0d3661bf46b84b_2",
-      //   //   "domain": "shruggr",
-      //   //   "owner": "1MUqT79bq5xbNWHbb96qvv12U56WN8oiyr",
-      //   //   "map": null
-      //   // }
-      //   type OpNSResponse = {
-      //     outpoint: string;
-      //     origin: string;
-      //     domain: string;
-      //     owner: string;
-      //     map: null;
-      //   }
+			//   // {
+			//   //   "outpoint": "d10057af8e5365d259a3401b542ca94f9a210f8ff8dd04346b0d3661bf46b84b_2",
+			//   //   "origin": "d10057af8e5365d259a3401b542ca94f9a210f8ff8dd04346b0d3661bf46b84b_2",
+			//   //   "domain": "shruggr",
+			//   //   "owner": "1MUqT79bq5xbNWHbb96qvv12U56WN8oiyr",
+			//   //   "map": null
+			//   // }
+			//   type OpNSResponse = {
+			//     outpoint: string;
+			//     origin: string;
+			//     domain: string;
+			//     owner: string;
+			//     map: null;
+			//   }
 			// 	const json = (await resp.json()) as OpNSResponse;
 			// 	console.log(json);
 
-      //   address.value = json.owner;
+			//   address.value = json.owner;
 
 			// 	// get address from script
 			// 	// const s = json.outputs[0].script;

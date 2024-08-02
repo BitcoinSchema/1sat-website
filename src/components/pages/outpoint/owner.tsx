@@ -13,7 +13,6 @@ interface Props {
 const OutpointOwner = async ({ outpoint }: Props) => {
 	let artifact: OrdUtxo | undefined;
 	let bsv20: OrdUtxo | undefined;
-	let isUtxo = false;
 
 	try {
 		const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
