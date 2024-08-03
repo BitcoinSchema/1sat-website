@@ -258,7 +258,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const changeDecimals = useCallback(
 		(e: any) => {
-			setDecimals(e.target.valuye ? parseInt(e.target.value) : undefined);
+			setDecimals(e.target.valuye ? Number.parseInt(e.target.value) : undefined);
 		},
 		[setDecimals]
 	);
@@ -266,7 +266,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	const changeAmount = useCallback(
 		(e: any) => {
 			if (selectedActionType === ActionType.Mint && selectedBsv20?.lim) {
-				if (parseInt(e.target.value) <= parseInt(selectedBsv20.lim)) {
+				if (Number.parseInt(e.target.value) <= Number.parseInt(selectedBsv20.lim)) {
 					setAmount(e.target.value);
 				}
 				return;
@@ -287,7 +287,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			setInscribeStatus(FetchStatus.Loading);
 
 			try {
-				let inscription = {
+				const inscription = {
 					p: "bsv-20",
 					op: selectedActionType,
 				} as BSV20;
@@ -328,7 +328,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					case ActionType.Mint:
 						if (
 							!amount ||
-							parseInt(amount) == 0 ||
+							Number.parseInt(amount) == 0 ||
 							BigInt(amount) > maxMaxSupply ||
 							!selectedBsv20
 						) {
@@ -434,7 +434,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		}
 
 		return await inscribeBsv20([u]);
-	}, [inscribeBsv20]);
+	}, [fundingAddress.value, inscribeBsv20, ordAddress.value, payPk.value]);
 
 	// useEffect(() => {
 	// 	console.log({
@@ -460,7 +460,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			!ticker?.length ||
 			inscribeStatus === FetchStatus.Loading ||
 			fetchTickerStatus === FetchStatus.Loading ||
-			(!!limit && !!maxSupply && parseInt(maxSupply) < parseInt(limit))
+			(!!limit && !!maxSupply && Number.parseInt(maxSupply) < Number.parseInt(limit))
 		);
 	}, [
 		inscribeStatus,
@@ -544,14 +544,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			return 0;
 		}
 
-		const supply = parseInt(selectedBsv20.supply);
-		const max = parseInt(selectedBsv20.max);
+		const supply = Number.parseInt(selectedBsv20.supply);
+		const max = Number.parseInt(selectedBsv20.max);
 		const newTokens = supply / 10 ** selectedBsv20.dec + totalTokens;
 		if (newTokens > max) {
 			return max;
 		}
 		const pending = selectedBsv20.pending
-			? parseInt(selectedBsv20.pending)
+			? Number.parseInt(selectedBsv20.pending)
 			: 0;
 		const pendingAdjusted = pending * 10 ** selectedBsv20.dec;
 		return newTokens + pendingAdjusted;

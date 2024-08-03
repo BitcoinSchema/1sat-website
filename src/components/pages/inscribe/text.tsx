@@ -6,10 +6,11 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { getUtxos } from "@/utils/address";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "@/utils/js-1sat-ord";
 import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
-import React, { useCallback, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useMemo, useState } from "react";
 import { RiSettings2Fill } from "react-icons/ri";
 
 interface InscribeTextProps {
@@ -109,7 +110,8 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
         />
       </div>
       {!showOptionalFields && (
-        <div
+        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<div
           className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
           onClick={toggleOptionalFields}
         >
@@ -144,7 +146,8 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
         </div>
       )}
 
-      <button
+      {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
+<button
         disabled={submitDisabled}
         onClick={clickInscribe}
         className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"

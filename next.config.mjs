@@ -36,35 +36,7 @@ const nextConfig = {
 		],
 	},
 	webpack: (config, { isServer }) => {
-		if (isServer) {
-			// get the current working directory
-			const currentDirectory = process.cwd();
-
-			config.plugins.push(
-				new CopyPlugin({
-					patterns: [
-						{
-							from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-							to: `${currentDirectory}/.next/server/vendor-chunks/bsv_wasm_bg.wasm`,
-						},
-						{
-							from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-							to: `${currentDirectory}/.next/server/app/bsv_wasm_bg.wasm`,
-						},
-						{
-							// This should not be necessary
-							from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-							to: `${currentDirectory}/.next/server/chunks/bsv_wasm_bg.wasm`,
-						},
-						{
-							// This should not be necessary
-							from: "node_modules/bsv-wasm/bsv_wasm_bg.wasm",
-							to: `${currentDirectory}/.next/server/app/inscribe/bsv_wasm_bg.wasm`,
-						},
-					],
-				})
-			);
-		} else {
+		if (!isServer) {
 			config.resolve.fallback = {
 				dns: false,
 				fs: false,
@@ -77,24 +49,24 @@ const nextConfig = {
 				net: false,
 				process: "process/browser",
 			};
-			config.experiments = {
-				asyncWebAssembly: true,
-				layers: true,
-			};
+			// config.experiments = {
+			// 	asyncWebAssembly: true,
+			// 	layers: true,
+			// };
 			// config.module.rules.push({
 			// 	test: /\.wasm$/,
 			// 	type: 'webassembly/async',
 			// });
-			config.plugins.push(
-				new ReplaceModuleWebpackPlugin({
-					rules: [
-						{
-							originModule: "bsv-wasm",
-							replaceModule: "bsv-wasm-web",
-						},
-					],
-				})
-			);
+			// config.plugins.push(
+			// 	new ReplaceModuleWebpackPlugin({
+			// 		rules: [
+			// 			{
+			// 				originModule: "bsv-wasm",
+			// 				replaceModule: "bsv-wasm-web",
+			// 			},
+			// 		],
+			// 	})
+			// );
 		}
 
 		return config;

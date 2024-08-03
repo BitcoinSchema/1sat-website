@@ -23,22 +23,14 @@ import type { Utxo } from "@/utils/js-1sat-ord";
 import { createChangeOutput, signPayment } from "@/utils/transaction";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import {
-	P2PKHAddress,
-	PrivateKey,
-	Script,
-	SigHash,
-	Transaction,
-	TxIn,
-	TxOut,
-} from "bsv-wasm-web";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
-import { buildInscriptionSafe } from "@/components/modal/transferBsv20";
 import { setPendingTxs } from "@/signals/wallet/client";
+import { PrivateKey } from "@bsv/sdk";
+import { TokenListing, TokenType, type CreateOrdTokenListingsConfig, type Listing } from "js-1sat-ord";
 
 const ListingForm = ({
 	initialPrice,
@@ -116,182 +108,222 @@ const ListingForm = ({
 
 	const listBsv20 = useCallback(
 		async (
-			sendAmount: number,
-			paymentUtxos: Utxo[],
+			amt: string,
+			utxos: Utxo[],
 			inputTokens: BSV20TXO[], //
 			paymentPk: PrivateKey,
 			changeAddress: string,
 			ordPk: PrivateKey,
 			ordAddress: string,
-			payoutAddress: string,
+			payAddress: string,
 			satoshisPayout: number,
 			indexerAddress: string,
 		): Promise<PendingTransaction> => {
 			if (!bsvWasmReady.value) {
 				throw new Error("bsv wasm not ready");
 			}
-			const tx = new Transaction(1, 0);
 
-      const spentOutpoints = []
-      const tokenChange = []
+      const listing: TokenListing = {
+        payAddress,
+        price: satoshisPayout,
+        ordAddress,
+        amt: BigInt(amt),
+        listingUtxo: {
+          satoshis: ordinal,
+          txid: "",
+          vout: 0,
+          script: "",
+          amt,
+          id: (ticker.id ? ticker.id : ticker.tick) as string,
+        }
+      }
 
-			// add token inputs
-			let amounts = 0;
-			let i = 0;
-			for (const utxo of inputTokens) {
-				const txBuf = Buffer.from(utxo.txid, "hex");
-				const utxoIn = new TxIn(txBuf, utxo.vout, Script.from_asm_string(""));
-				amounts += Number.parseInt(utxo.amt);
-				tx.add_input(utxoIn);  
-        spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
+      const additionalPayments = []
+      if (indexerAddress) {
+        additionalPayments.push({
+          to: indexerAddress,
+          amount: 2000, // 1000 * 2 inscriptions
+        })
+      }
 
-				// sign ordinal
-				const sig = tx.sign(
-					ordPk,
-					SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
-					i,
-					Script.from_bytes(Buffer.from(utxo.script, "base64")),
-					BigInt(1),
-				);
+      const config: CreateOrdTokenListingsConfig = {
+        utxos,
+        listings: [listing],
+        paymentPk,
+        ordPk,
+        protocol: TokenType.BSV20,
+        tokenID: "",
+        inputTokens: inputTokens.map((i) => {
+          amt: i.amt,
+          id: i.tick ? i.tick : i.id,
+          satoshis: i.satoshis
+        } as TokenUtxo),
+        tokenChangeAddress: "",
+        additionalPayments
+      }
 
-				utxoIn.set_unlocking_script(
-					Script.from_asm_string(
-						`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`,
-					),
-				);
+			// const tx = new Transaction(1, 0);
 
-				tx.set_input(i, utxoIn);
-				i++;
-				if (sendAmount <= amounts) {
-					break;
-				}
-			}
-			// make sure we have enough to cover the send amount
-			if (amounts < sendAmount) {
-				// console.log({amounts, sendAmount})
-				toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
-				throw new Error("insufficient funds");
-			}
+      // const spentOutpoints = []
+      // const tokenChange = []
 
-			if (amounts > sendAmount) {
-				// build change inscription
-				const changeInscription = {
-					p: "bsv-20",
-					op: "transfer",
-					amt: (amounts - sendAmount).toString(),
-				} as {
-					p: string;
-					op: string;
-					amt: string;
-					tick?: string;
-					id?: string;
-				};
-				if (ticker.tick) {
-					changeInscription.tick = ticker.tick;
-				} else if (ticker.id) {
-					changeInscription.id = ticker.id;
-				} else {
-					throw new Error("unexpected error");
-				}
-				const changeFileB64 = Buffer.from(
-					JSON.stringify(changeInscription),
-				).toString("base64");
-				const changeInsc = buildInscriptionSafe(
-					P2PKHAddress.from_string(ordAddress),
-					changeFileB64,
-					"application/bsv-20",
-				);
-				const changeInscOut = new TxOut(BigInt(1), changeInsc);
-				tx.add_output(changeInscOut);
-			}
+			// // add token inputs
+			// let amounts = 0;
+			// let i = 0;
+			// for (const utxo of inputTokens) {
+			// 	const txBuf = Buffer.from(utxo.txid, "hex");
+			// 	const utxoIn = new TxIn(txBuf, utxo.vout, Script.from_asm_string(""));
+			// 	amounts += Number.parseInt(utxo.amt);
+			// 	tx.add_input(utxoIn);  
+      //   spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
 
-			let totalSatsIn = 0;
-			// payment Inputs
-			for (const utxo of paymentUtxos.sort((a, b) => {
-				return a.satoshis > b.satoshis ? -1 : 1;
-			})) {
-				let utxoIn = new TxIn(
-					Buffer.from(utxo.txid, "hex"),
-					utxo.vout,
-					Script.from_asm_string(""),
-				);
+			// 	// sign ordinal
+			// 	const sig = tx.sign(
+			// 		ordPk,
+			// 		SigHash.NONE | SigHash.ANYONECANPAY | SigHash.FORKID,
+			// 		i,
+			// 		Script.from_bytes(Buffer.from(utxo.script, "base64")),
+			// 		BigInt(1),
+			// 	);
 
-				tx.add_input(utxoIn);
-        spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
+			// 	utxoIn.set_unlocking_script(
+			// 		Script.from_asm_string(
+			// 			`${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`,
+			// 		),
+			// 	);
 
-				utxoIn = signPayment(tx, paymentPk, i, utxo, utxoIn);
-				tx.set_input(i, utxoIn);
-				totalSatsIn += utxo.satoshis;
-				i++;
-				break;
-			}
+			// 	tx.set_input(i, utxoIn);
+			// 	i++;
+			// 	if (sendAmount <= amounts) {
+			// 		break;
+			// 	}
+			// }
+			// // make sure we have enough to cover the send amount
+			// if (amounts < sendAmount) {
+			// 	// console.log({amounts, sendAmount})
+			// 	toast.error(`Not enough ${ticker.tick || ticker.sym}`, toastErrorProps);
+			// 	throw new Error("insufficient funds");
+			// }
 
-			const payoutDestinationAddress = P2PKHAddress.from_string(payoutAddress);
-			const payOutput = new TxOut(
-				BigInt(satoshisPayout),
-				payoutDestinationAddress.get_locking_script(),
-			);
+			// if (amounts > sendAmount) {
+			// 	// build change inscription
+			// 	const changeInscription = {
+			// 		p: "bsv-20",
+			// 		op: "transfer",
+			// 		amt: (amounts - sendAmount).toString(),
+			// 	} as {
+			// 		p: string;
+			// 		op: string;
+			// 		amt: string;
+			// 		tick?: string;
+			// 		id?: string;
+			// 	};
+			// 	if (ticker.tick) {
+			// 		changeInscription.tick = ticker.tick;
+			// 	} else if (ticker.id) {
+			// 		changeInscription.id = ticker.id;
+			// 	} else {
+			// 		throw new Error("unexpected error");
+			// 	}
+			// 	const changeFileB64 = Buffer.from(
+			// 		JSON.stringify(changeInscription),
+			// 	).toString("base64");
+			// 	const changeInsc = buildInscriptionSafe(
+			// 		P2PKHAddress.from_string(ordAddress),
+			// 		changeFileB64,
+			// 		"application/bsv-20",
+			// 	);
+			// 	const changeInscOut = new TxOut(BigInt(1), changeInsc);
+			// 	tx.add_output(changeInscOut);
+			// }
 
-			const destinationAddress = P2PKHAddress.from_string(ordAddress);
-			const addressHex = destinationAddress
-				.get_locking_script()
-				.to_asm_string()
-				.split(" ")[2];
+			// let totalSatsIn = 0;
+			// // payment Inputs
+			// for (const utxo of paymentUtxos.sort((a, b) => {
+			// 	return a.satoshis > b.satoshis ? -1 : 1;
+			// })) {
+			// 	let utxoIn = new TxIn(
+			// 		Buffer.from(utxo.txid, "hex"),
+			// 		utxo.vout,
+			// 		Script.from_asm_string(""),
+			// 	);
 
-			const inscription = {
-				p: "bsv-20",
-				op: "transfer",
-				amt: sendAmount.toString(),
-			} as {
-				p: string;
-				op: string;
-				amt: string;
-				tick?: string;
-				id?: string;
-			};
-			if (ticker.tick) {
-				inscription.tick = ticker.tick;
-			} else if (ticker.id) {
-				inscription.id = ticker.id;
-			}
+			// 	tx.add_input(utxoIn);
+      //   spentOutpoints.push(`${utxo.txid}_${utxo.vout}`)
 
-			const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
-				"base64",
-			);
-			const insc = buildInscriptionSafe(
-				destinationAddress.to_string(),
-				fileB64,
-				"application/bsv-20",
-			);
-			const transferInscription = insc
-				.to_asm_string()
-				.split(" ")
-				.slice(5) // remove the p2pkh added by buildInscription
-				.join(" ");
+			// 	utxoIn = signPayment(tx, paymentPk, i, utxo, utxoIn);
+			// 	tx.set_input(i, utxoIn);
+			// 	totalSatsIn += utxo.satoshis;
+			// 	i++;
+			// 	break;
+			// }
 
-			const ordLockScript = `${transferInscription} ${Script.from_hex(
-				oLockPrefix,
-			).to_asm_string()} ${addressHex} ${payOutput.to_hex()} ${Script.from_hex(
-				oLockSuffix,
-			).to_asm_string()}`;
+			// const payoutDestinationAddress = P2PKHAddress.from_string(payoutAddress);
+			// const payOutput = new TxOut(
+			// 	BigInt(satoshisPayout),
+			// 	payoutDestinationAddress.get_locking_script(),
+			// );
 
-			const satOut = new TxOut(
-				BigInt(1),
-				Script.from_asm_string(ordLockScript),
-			);
-			tx.add_output(satOut);
+			// const destinationAddress = P2PKHAddress.from_string(ordAddress);
+			// const addressHex = destinationAddress
+			// 	.get_locking_script()
+			// 	.to_asm_string()
+			// 	.split(" ")[2];
 
-			// output 4 indexer fee
-			if (indexerAddress) {
-				const indexerFeeOutput = new TxOut(
-					BigInt(2000), // 1000 * 2 inscriptions
-					P2PKHAddress.from_string(indexerAddress).get_locking_script(),
-				);
-				tx.add_output(indexerFeeOutput);
-			}
+			// const inscription = {
+			// 	p: "bsv-20",
+			// 	op: "transfer",
+			// 	amt: sendAmount.toString(),
+			// } as {
+			// 	p: string;
+			// 	op: string;
+			// 	amt: string;
+			// 	tick?: string;
+			// 	id?: string;
+			// };
+			// if (ticker.tick) {
+			// 	inscription.tick = ticker.tick;
+			// } else if (ticker.id) {
+			// 	inscription.id = ticker.id;
+			// }
 
-			const changeOut = createChangeOutput(tx, changeAddress, totalSatsIn);
-			tx.add_output(changeOut);
+			// const fileB64 = Buffer.from(JSON.stringify(inscription)).toString(
+			// 	"base64",
+			// );
+			// const insc = buildInscriptionSafe(
+			// 	destinationAddress.to_string(),
+			// 	fileB64,
+			// 	"application/bsv-20",
+			// );
+			// const transferInscription = insc
+			// 	.to_asm_string()
+			// 	.split(" ")
+			// 	.slice(5) // remove the p2pkh added by buildInscription
+			// 	.join(" ");
+
+			// const ordLockScript = `${transferInscription} ${Script.from_hex(
+			// 	oLockPrefix,
+			// ).to_asm_string()} ${addressHex} ${payOutput.to_hex()} ${Script.from_hex(
+			// 	oLockSuffix,
+			// ).to_asm_string()}`;
+
+			// const satOut = new TxOut(
+			// 	BigInt(1),
+			// 	Script.from_asm_string(ordLockScript),
+			// );
+			// tx.add_output(satOut);
+
+			// // output 4 indexer fee
+			// if (indexerAddress) {
+			// 	const indexerFeeOutput = new TxOut(
+			// 		BigInt(2000), // 1000 * 2 inscriptions
+			// 		P2PKHAddress.from_string(indexerAddress).get_locking_script(),
+			// 	);
+			// 	tx.add_output(indexerFeeOutput);
+			// }
+
+			// const changeOut = createChangeOutput(tx, changeAddress, totalSatsIn);
+			// tx.add_output(changeOut);
 
 			return {
 				rawTx: tx.to_hex(),
