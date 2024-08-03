@@ -32,8 +32,6 @@
     "@types/uuid": "^9.0.8",
     "ai": "^3.1.15",
     "blurhash": "^2.0.5",
-    "bsv-wasm": "^2.1.1",
-    "bsv-wasm-web": "^2.1.1",
     "bun-copy-plugin": "^0.2.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
