@@ -1,5 +1,4 @@
-import { Hash } from "bsv-wasm-web";
-import { randomBytes } from "crypto";
+import { randomBytes } from "node:crypto";
 import { bip39words } from "./bip39words";
 
 function generateEntropy(bitLength: number): Buffer {

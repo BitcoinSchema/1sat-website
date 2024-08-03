@@ -2,13 +2,12 @@
 
 import type { InputOutpoint } from "@/app/outpoint/[outpoint]/[tab]/page";
 import { API_HOST } from "@/constants";
-import { bsvWasmReady } from "@/signals/wallet";
 import { Signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { Transaction } from "bsv-wasm-web";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import OutpointHeading from "../pages/outpoint/heading";
 import DisplayIO from "./display";
+import { Transaction } from "@bsv/sdk";
 
 export const showDetails = new Signal<boolean>(undefined);
 
@@ -37,21 +36,21 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
       }
     };
 
-    if (!rawtx && bsvWasmReady.value && txid && showDetails.value) {
+    if (!rawtx && txid && showDetails.value) {
       fire();
     }
-  }, [bsvWasmReady.value, txid, showDetails.value]);
+  }, [txid, showDetails.value, rawtx]);
 
 
   useEffect(() => {
     const fire = async (rawTx: string) => {
-      const tx = Transaction.from_hex(rawTx);
-      const numInputs = tx.get_ninputs();
+      const tx = Transaction.fromHex(rawTx);
+      const numInputs = tx.inputs.length;
       const inputOutpointsData: InputOutpoint[] = [];
       for (let i = 0; i < numInputs; i++) {
-        const input = tx.get_input(i);
-        const txid = input?.get_prev_tx_id_hex()!;
-        const vout = input?.get_vout()!;
+        const input = tx.inputs[i];
+        const txid = input.sourceTXID as string;
+        const vout = input.sourceOutputIndex;
         const url = `https://junglebus.gorillapool.io/v1/txo/get/${txid}_${vout}`;
         const spentOutpointResponse = await fetch(url, {
           headers: {
@@ -65,7 +64,7 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
       setInputOutpoints(inputOutpointsData);
 
       const outputOutpoints: string[] = [];
-      const numOutputs = tx.get_noutputs();
+      const numOutputs = tx.outputs.length;
       for (let i = 0; i < numOutputs; i++) {
         outputOutpoints.push(`${txid}_${i}`);
       }
@@ -88,12 +87,12 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
     if (rawtx) {
       fire(rawtx);
     }
-  }, [rawtx, setOutputSpends, setInputOutpoints]);
+  }, [rawtx, setOutputSpends, setInputOutpoints, txid]);
 
   const toggleDetails = useCallback(() => {
     showDetails.value = !showDetails.value;
     // console.log({ showDetails: showDetails.value });
-  }, [showDetails]);
+  }, [showDetails.value]);
 
   useMemo(() => {
     if (showDetails.value === undefined) {

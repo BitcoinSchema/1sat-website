@@ -13,10 +13,10 @@ import {
 	type RemoteSigner,
 	type Utxo,
 } from "@/utils/js-1sat-ord";
-import { PrivateKey } from "bsv-wasm-web";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
 import { setPendingTxs } from "@/signals/wallet/client";
+import { PrivateKey } from "@bsv/sdk";
 
 export const handleInscribing = async (
 	payPk: string,
@@ -28,7 +28,7 @@ export const handleInscribing = async (
 	metadata?: MAP, // MAP,
 	payments: Payment[] = [],
 ) => {
-	const paymentPk = PrivateKey.from_wif(payPk);
+	const paymentPk = PrivateKey.fromWif(payPk);
 
 	// inscription
 	const inscription = {

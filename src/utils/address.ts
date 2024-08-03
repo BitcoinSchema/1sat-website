@@ -1,15 +1,14 @@
 import { API_HOST, resultsPerPage } from "@/constants";
 import { WocUtxo, WocUtxoResults } from "@/types/common";
 import type { OrdUtxo } from "@/types/ordinals";
-import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm-web";
 import { uniq } from "lodash";
 import * as http from "./httpClient";
 import { fetchNftUtxos, fetchPayUtxos, type Utxo } from "js-1sat-ord";
+import { PrivateKey } from "@bsv/sdk";
 
 export const addressFromWif = (payPk: string) => {
-	const wif = PrivateKey.from_wif(payPk);
-	const pk = PublicKey.from_private_key(wif);
-	return wif && pk && payPk && P2PKHAddress.from_pubkey(pk).to_string();
+	const pk = PrivateKey.fromWif(payPk);
+	return pk && payPk && pk.toAddress().toString();
 };
 
 export const getBsv21Utxos = async (
