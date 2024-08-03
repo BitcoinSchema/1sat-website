@@ -8,7 +8,7 @@ import {
 } from "@/constants";
 import {
 	bsv20Balances,
-	bsvWasmReady,
+	
 	ordPk,
 	payPk,
 	pendingTxs,
@@ -30,7 +30,7 @@ import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { PrivateKey } from "@bsv/sdk";
-import { TokenListing, TokenType, type CreateOrdTokenListingsConfig, type Listing } from "js-1sat-ord";
+import { type TokenListing, TokenType, type CreateOrdTokenListingsConfig, type Listing, type TokenUtxo, createOrdTokenListings } from "js-1sat-ord";
 
 const ListingForm = ({
 	initialPrice,
@@ -119,23 +119,12 @@ const ListingForm = ({
 			satoshisPayout: number,
 			indexerAddress: string,
 		): Promise<PendingTransaction> => {
-			if (!bsvWasmReady.value) {
-				throw new Error("bsv wasm not ready");
-			}
-
+			
       const listing: TokenListing = {
         payAddress,
         price: satoshisPayout,
         ordAddress,
         amt: BigInt(amt),
-        listingUtxo: {
-          satoshis: ordinal,
-          txid: "",
-          vout: 0,
-          script: "",
-          amt,
-          id: (ticker.id ? ticker.id : ticker.tick) as string,
-        }
       }
 
       const additionalPayments = []
@@ -151,17 +140,19 @@ const ListingForm = ({
         listings: [listing],
         paymentPk,
         ordPk,
-        protocol: TokenType.BSV20,
-        tokenID: "",
-        inputTokens: inputTokens.map((i) => {
+        protocol: ticker.tick ? TokenType.BSV20 : TokenType.BSV21,
+        tokenID: (ticker.tick || ticker.id) as string,
+        changeAddress,
+        inputTokens: inputTokens.map((i) => ({
           amt: i.amt,
           id: i.tick ? i.tick : i.id,
           satoshis: i.satoshis
-        } as TokenUtxo),
+        }) as TokenUtxo),
         tokenChangeAddress: "",
         additionalPayments
       }
 
+      const { tx, spentOutpoints, tokenChange, payChange } = await createOrdTokenListings(config);
 			// const tx = new Transaction(1, 0);
 
       // const spentOutpoints = []
@@ -326,25 +317,24 @@ const ListingForm = ({
 			// tx.add_output(changeOut);
 
 			return {
-				rawTx: tx.to_hex(),
-				size: tx.get_size(),
-				fee: paymentUtxos[0].satoshis - Number(tx.satoshis_out()),
-				numInputs: tx.get_ninputs(),
-				numOutputs: tx.get_noutputs(),
-				txid: tx.get_id_hex(),
+				rawTx: tx.toHex(),
+				size: tx.toBinary().length,
+				fee: tx.getFee(),
+				numInputs: tx.inputs.length,
+				numOutputs: tx.outputs.length,
+				txid: tx.id('hex'),
 				spentOutpoints,
 				marketFee: 0,
+        tokenChange,
+        payChange
 			};
 		},
-		[bsvWasmReady.value, ticker.id, ticker.sym, ticker.tick],
+		[ticker],
 	);
 
 	const submit = useCallback(
 		async (e: React.FormEvent) => {
-			if (!bsvWasmReady.value) {
-				console.log("bsv wasm not ready");
-				return;
-			}
+			
 			e.preventDefault();
 			console.log(
 				"create listing",
@@ -367,8 +357,8 @@ const ListingForm = ({
 				toast.error("Missing listing price or amount", toastErrorProps);
 				return;
 			}
-			const paymentPk = PrivateKey.from_wif(payPk.value);
-			const ordinalPk = PrivateKey.from_wif(ordPk.value);
+			const paymentPk = PrivateKey.fromWif(payPk.value);
+			const ordinalPk = PrivateKey.fromWif(ordPk.value);
 
 			// [{"txid":"69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6","vout":2,"outpoint":"69a5956ee1cad8056f0c4d6ca4f87766080b36a75f2192d2cf75f1f668f446d6_2","height":828275,"idx":1162,"op":"transfer","amt":"10000","status":1,"reason":null,"listing":false,"owner":"139xRf73Vw3W8cMNoXW9amqZfXMrEuM9XQ","spend":"","spendHeight":null,"spendIdx":null,"tick":"PEPE","id":null,"price":"0","pricePer":"0","payout":null,"script":"dqkUF6HYh83S8XxpORgFL3VFy4fwqDSIrABjA29yZFESYXBwbGljYXRpb24vYnN2LTIwADp7InAiOiJic3YtMjAiLCJvcCI6InRyYW5zZmVyIiwidGljayI6IlBFUEUiLCJhbXQiOiIxMDAwMCJ9aA==","sale":false}]
 
@@ -392,7 +382,8 @@ const ListingForm = ({
 				utxos.value = await getUtxos(fundingAddress.value);
 
 				const pendingTx = await listBsv20(
-					Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value),
+					// Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value),
+          listingAmount.value,
 					utxos.value,
 					u,
 					paymentPk,
@@ -416,20 +407,7 @@ const ListingForm = ({
 			//   return;
 			// }
 		},
-		[
-			bsvWasmReady.value,
-			ticker,
-			listingPrice.value,
-			listingAmount.value,
-			utxos.value,
-			payPk.value,
-			ordPk.value,
-			fundingAddress.value,
-			ordAddress.value,
-			listBsv20,
-			dec.value,
-			router,
-		],
+		[ticker, listingPrice.value, listingAmount.value, utxos.value, payPk.value, ordPk.value, fundingAddress.value, ordAddress.value, listBsv20, router],
 	);
 
 	const listDisabled = useMemo(
