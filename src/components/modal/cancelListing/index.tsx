@@ -17,7 +17,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { setPendingTxs } from "@/signals/wallet/client";
-import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType, Utxo } from "js-1sat-ord";
+import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType, type Utxo } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
 
 interface CancelListingModalProps {
@@ -264,13 +264,13 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       vout: listing.vout,
       script: listing.script
     }]
-
     
     const config: CancelOrdListingsConfig = {
       utxos: utxos.value,
       paymentPk: PrivateKey.fromWif(payPk.value),
       ordPk: PrivateKey.fromWif(ordPk.value),
       listingUtxos,
+      // TODO: This should be allowed to be ommitted
       additionalPayments: []
     }
 
