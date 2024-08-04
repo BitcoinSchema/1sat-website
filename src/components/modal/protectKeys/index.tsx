@@ -3,7 +3,6 @@
 import { OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
 	ProtectKeysStep,
-	bsvWasmReady,
 	protectKeysStep,
 	migrating
 } from "@/signals/wallet";
@@ -50,11 +49,7 @@ const ProtectKeysModal = ({
 			<div className="modal-box">
 				<h3 className="font-bold text-lg">Protect Your Keys</h3>
 
-				{!bsvWasmReady.value && (
-					<div className="py-2 rounded my-2">Loading...</div>
-				)}
-
-				{bsvWasmReady.value && (
+				{(
 					<>
 						{open && (
 							<div>

@@ -6,7 +6,6 @@ import {
 	ImportWalletFromBackupJsonStep,
 	ImportWalletFromMnemonicStep,
 	ImportWalletTab,
-	bsvWasmReady,
 	importWalletFromBackupJsonStep,
 	importWalletFromMnemonicStep,
 	importWalletTab,
@@ -183,11 +182,6 @@ const ImportWalletModal = forwardRef<
 							: ""}
 				</h3>
 
-				{!bsvWasmReady.value && (
-					<div className="py-2 rounded my-2">Loading...</div>
-				)}
-
-				{bsvWasmReady.value && (
 					<>
 						{alreadyHasKey && (
 							<div>
@@ -292,7 +286,7 @@ const ImportWalletModal = forwardRef<
 							</>
 						)}
 					</>
-				)}
+			
 			</div>
 		</dialog>
 	);

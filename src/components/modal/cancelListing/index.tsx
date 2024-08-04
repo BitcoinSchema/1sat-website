@@ -2,7 +2,6 @@
 
 import { API_HOST, indexerBuyFee, toastErrorProps, toastProps } from "@/constants";
 import {
-  bsvWasmReady,
   ordPk,
   payPk,
   pendingTxs,
@@ -13,7 +12,6 @@ import type { Listing } from "@/types/bsv20";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
-import type { Utxo } from "@/utils/js-1sat-ord";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
@@ -41,11 +39,6 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
   const cancelling = useSignal(false);
 
   const cancelBsv20Listing = useCallback(async (e: React.MouseEvent) => {
-    if (!bsvWasmReady.value) {
-      console.log("bsv wasm not ready");
-      return;
-    }
-
     if (!fundingAddress.value) {
       console.log("funding address not set");
       return;
@@ -238,14 +231,9 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, onCancelled]);
+  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, onCancelled]);
 
   const cancelListing = useCallback(async (e: React.MouseEvent) => {
-    if (!bsvWasmReady.value) {
-      console.log("bsv wasm not ready");
-      return;
-    }
-
     if (!fundingAddress.value) {
       console.log("funding address not set");
       return;
@@ -414,7 +402,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, listing, pendingTxs.value, onCancelled]);
+  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, listing, pendingTxs.value, onCancelled]);
 
   return (
     <dialog

@@ -62,9 +62,8 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 				} as WalletKeys);
 
 				return;
-			} else {
-				setTimeout(() => searchForAddress(i + 1), 0);
 			}
+      setTimeout(() => searchForAddress(i + 1), 0);
 		};
 
 		if (!found) {

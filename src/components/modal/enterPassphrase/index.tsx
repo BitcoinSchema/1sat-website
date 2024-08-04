@@ -1,7 +1,6 @@
 "use client"
 
 import EnterPassphrase from "@/components/Passphrase";
-import { bsvWasmReady } from "@/signals/wallet";
 import { EncryptDecrypt } from "@/types/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 
@@ -22,10 +21,6 @@ export function EnterPassphraseModal({ open, onClose, onUnlock }: Props) {
 		>
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<div className="modal-box" onClick={(e) => e.stopPropagation()}>
-				{!bsvWasmReady.value && (
-					<div className="py-2 rounded my-2">Loading...</div>
-				)}
-
 				<EnterPassphrase mode={EncryptDecrypt.Decrypt} onSubmit={onUnlock} />
 			</div>
 		</dialog>

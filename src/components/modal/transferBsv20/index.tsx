@@ -3,7 +3,6 @@
 import { WalletTab } from "@/components/Wallet/tabs";
 import { API_HOST, toastErrorProps } from "@/constants";
 import {
-	bsvWasmReady,
 	ordPk,
 	payPk,
 	utxos,
@@ -68,10 +67,6 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			payoutAddress: string,
 			ticker: Ticker
 		): Promise<PendingTransaction> => {
-			if (!bsvWasmReady.value) {
-				throw new Error("bsv wasm not ready");
-			}
-
       const distributions: Distribution[] = [{
         address: burn ? changeAddress : payoutAddress,
         amt: sendAmount
@@ -108,16 +103,12 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 				marketFee: 0,
 			};
 		},
-		[bsvWasmReady.value, burn]
+		[burn]
 	);
 
 	const submit = useCallback(
 		async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			if (!bsvWasmReady.value) {
-				toast.error("not ready", toastErrorProps);
-				return;
-			}
 			if (!ordAddress.value || !ordPk.value || !payPk.value || !fundingAddress.value)	{
 				toast.error("Missing keys", toastErrorProps);
 				return;
@@ -168,7 +159,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 			
 			router.push("/preview");
 		},
-		[bsvWasmReady.value, ordAddress.value, ordPk.value, payPk.value, fundingAddress.value, amount.value, address.value, burn, utxos.value, balance, dec, type, id, transferBsv20, router]
+		[ordAddress.value, ordPk.value, payPk.value, fundingAddress.value, amount.value, address.value, burn, utxos.value, balance, type, id, transferBsv20, router]
 	);
 
 	const placeholderText = useMemo(() => {

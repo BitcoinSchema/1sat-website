@@ -5,7 +5,6 @@ import { WalletTab } from "@/components/Wallet/tabs";
 import CancelListingModal from "@/components/modal/cancelListing";
 import TransferBsv20Modal from "@/components/modal/transferBsv20";
 import {
-	bsvWasmReady,
 	ordPk,
 	payPk,
 	utxos,
@@ -33,12 +32,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	const router = useRouter();
 
 	// TODO: Check the destination address matches the ordAddress
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	const address = useMemo(() => {
-		if (bsvWasmReady.value === false) {
-			return "";
-		}
 		const script = Script.fromHex(Buffer.from(artifact.script, "base64").toString('hex'));
 		const pubkeyHash = script.toASM().split(" ")[2];
 		if (!pubkeyHash) {
@@ -55,7 +49,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
     // P2PKHAddress.from_pubkey_hash(buff);
 
 		return address
-	}, [artifact, bsvWasmReady.value]);
+	}, [artifact]);
 
 	const isUtxo = computed(() => {
 		return !!(

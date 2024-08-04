@@ -1,7 +1,7 @@
 "use client";
 
 import { API_HOST, FetchStatus, toastProps } from "@/constants";
-import { bsvWasmReady, ordUtxos, pendingTxs, usdRate, utxos } from "@/signals/wallet";
+import { ordUtxos, pendingTxs, usdRate, utxos } from "@/signals/wallet";
 import { setPendingTxs } from "@/signals/wallet/client";
 import type { PendingTransaction } from "@/types/preview";
 import { formatBytes } from "@/utils/bytes";
@@ -26,11 +26,11 @@ const PreviewPage = () => {
 	);
 
 	useEffect(() => {
-    if (bsvWasmReady.value) {
+    if(pendingTxs.value?.length) {
       txs.value = pendingTxs.value;
       pendingTx.value = head(txs.value) || null;
     }
-	}, [bsvWasmReady.value, pendingTx, pendingTxs.value, txs]);
+	}, [pendingTx, pendingTxs.value, txs]);
 
 	const feeUsd = useMemo(() => {
 		if (!pendingTx.value?.fee) {
