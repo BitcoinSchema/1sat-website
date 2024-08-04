@@ -1,6 +1,4 @@
-import { ExtendedPrivateKey, P2PKHAddress } from "bsv-wasm";
-import { generateMnemonic } from "./mnemonic";
-import { DecryptedBackupJson } from "@/types/wallet";
+import { HD, Mnemonic } from '@bsv/sdk';
 
 export type WalletKeys = {
 	ordPk: string;
@@ -14,12 +12,15 @@ export type WalletKeys = {
 
 export const findKeysFromMnemonic = async (mnemonic: string) => {
 	return new Promise<WalletKeys>((resolve, reject) => {
-		const xprivWasm = ExtendedPrivateKey.from_mnemonic(
-			Buffer.from(mnemonic, "utf8")
-		);
+		const seed = Mnemonic.fromString(mnemonic).toSeed();
+  		const masterNode = HD.fromSeed(seed);
+		
+		// const xprivWasm = ExtendedPrivateKey.from_mnemonic(
+		// 	Buffer.from(mnemonic, "utf8")
+		// );
 
-		const payPrivKey = xprivWasm.derive(0);
-		const payPk = payPrivKey.get_private_key().to_wif();
+		const payPrivKey = masterNode.derive('m/0');
+		const payPk = payPrivKey.privKey.toWif();
 
 		let ordPk;
 		let ordPrivKey;
@@ -41,13 +42,11 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 				return;
 			}
 
-			ordPrivKey = xprivWasm.derive(i);
-			ordAddress = P2PKHAddress.from_pubkey(
-				ordPrivKey.get_private_key().to_public_key()
-			);
+			ordPrivKey = masterNode.derive(`m/${i}`);
+			ordAddress = ordPrivKey.privKey.toAddress();
 
-			if (ordAddress.to_string().startsWith("1s")) {
-				ordPk = ordPrivKey.get_private_key().to_wif();
+			if (ordAddress.startsWith("1s")) {
+				ordPk = ordPrivKey.privKey.toWif();
 				found = true;
 				console.log(
 					`Ord address found! Using child key ${i} for ordinals.`
@@ -73,6 +72,5 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 };
 
 export const randomMnemonic: () => Promise<WalletKeys> = () => {
-	const mnemonic = generateMnemonic(128);
-	return findKeysFromMnemonic(mnemonic);
+	return findKeysFromMnemonic(Mnemonic.fromRandom(128).toString());
 };
