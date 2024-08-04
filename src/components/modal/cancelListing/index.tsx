@@ -57,8 +57,15 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       utxos: utxos.value,
       paymentPk: PrivateKey.fromWif(payPk.value),
       ordPk: PrivateKey.fromWif(ordPk.value),
-      listingUtxos: [],
-      additionalPayments: [],
+      listingUtxos: [{
+        amt: listing.amt,
+        id: (listing.tick || listing.id) as string,
+        satoshis: 1,
+        txid: listing.txid,
+        vout: listing.vout,
+        script: listing.script
+      }],
+      additionalPayments: [{to: indexerAddress, amount: indexerBuyFee}],
       protocol: (listing as Listing).tick ? TokenType.BSV20 : TokenType.BSV21,
       tokenID: ((listing as Listing).tick || (listing as Listing).id) as string,
     }
