@@ -6,6 +6,8 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { PendingTransaction } from "@/types/preview";
 import {
 	createOrdinals,
+	type Destination,
+	type PreMAP,
 	type CreateOrdinalsConfig,
 	type Inscription,
 	type MAP,
@@ -23,10 +25,9 @@ export const handleInscribing = async (
 	fileAsBase64: string,
 	fileContentType: string,
 	ordAddress: string,
-	changeAddress: string,
 	utxos: Utxo[],
-	metadata?: MAP, // MAP,
-	payments: Payment[] = [],
+	metaData?: PreMAP, // MAP,
+	additionalPayments: Payment[] = [],
 ) => {
 	const paymentPk = PrivateKey.fromWif(payPk);
 
@@ -39,29 +40,39 @@ export const handleInscribing = async (
 	// const idKey = PrivateKey.from_wif(
 	//   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
 	// );
-	console.log("Inscribing with", { metadata });
+	console.log("Inscribing with", { metaData });
 	const signer = {
 		// idKey // optional id key
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
 
-  const config: CreateOrdinalsConfig = {
-    utxos: [],
-    destinations: [],
-    paymentPk: new default
-  }
-	const { spentOutpoints, tx } = await createOrdinals(
-		[fundingUtxo],
-		ordAddress,
+	const destinations: Destination[] = [
+		{
+			address: ordAddress,
+      inscription
+		},
+	];
+
+
+  // [fundingUtxo],
+  // ordAddress,
+  // paymentPk,
+  // changeAddress,
+  // 0.05,
+  // [inscription],
+  // metadata, // optional metadata
+  // undefined,
+  // payments,
+
+	const config: CreateOrdinalsConfig = {
+		utxos,
+		destinations,
 		paymentPk,
-		changeAddress,
-		0.05,
-		[inscription],
-		metadata, // optional metadata
-		undefined,
-		payments,
-	);
-	return { spentOutpoints, tx };
+    metaData,
+    additionalPayments,
+	};
+	const { spentOutpoints, tx, payChange } = await createOrdinals(config);
+	return { spentOutpoints, tx, payChange};
 };
 
 // same as haleInscribing but takes multiple utxos and multiple inscriptions
@@ -70,35 +81,33 @@ export const handleBulkInscribing = async (
 	inscriptions: Inscription[],
 	ordAddress: string,
 	changeAddress: string,
-	fundingUtxos: Utxo[],
-	metadata?: MAP,
-	payments: Payment[] = [],
+	utxos: Utxo[],
+	metaData?: PreMAP,
+	additionalPayments: Payment[] = [],
 ) => {
-	const why = payments;
-	const paymentPk = PrivateKey.from_wif(payPk);
+	const paymentPk = PrivateKey.fromWif(payPk);
 
-	const signer = {
-		keyHost: "http://localhost:21000",
-	} as RemoteSigner;
+	// const signer = {
+	// 	keyHost: "http://localhost:21000",
+	// } as RemoteSigner;
 
-  const config: CreateOrdinalsConfig = {
-    utxos: [],
-    destinations: [],
-    paymentPk,
-  }
+  const destinations: Destination[] = inscriptions.map((inscription) => {
+    return {
+      address: ordAddress,
+      inscription
+    }
+  });
 
-	const { tx, spentOutpoints } = await createOrdinals(
-		fundingUtxos,
-		ordAddress,
+	const config: CreateOrdinalsConfig = {
+		utxos,
+		destinations,
 		paymentPk,
-		changeAddress,
-		0.05,
-		inscriptions,
-		metadata, // optional metadata
-		undefined,
-		why, // payments
-	);
-	return { tx, spentOutpoints }
+    metaData,
+    additionalPayments
+	};
+
+	const { tx, spentOutpoints, payChange } = await createOrdinals(config);
+	return { tx, spentOutpoints, payChange };
 };
 // same as handleBulkInscribing but with data
 export const handleBulkInscribingWithData = async (
@@ -112,7 +121,7 @@ export const handleBulkInscribingWithData = async (
 	data: StringOrBufferArray,
 ) => {
 	const why = payments;
-	const paymentPk = PrivateKey.from_wif(payPk);
+	const paymentPk = PrivateKey.fromWif(payPk);
 
 	const signer = {
 		keyHost: "http://localhost:21000",
@@ -133,7 +142,11 @@ export const handleBulkInscribingWithData = async (
 	return { tx, spentOutpoints };
 };
 
-export const inscribeFile = async (utxos: Utxo[], file: File, metadata?: any) => {
+export const inscribeFile = async (
+	utxos: Utxo[],
+	file: File,
+	metadata?: any,
+) => {
 	if (!file?.type || !utxos.length) {
 		throw new Error("File or utxo not provided");
 	}
@@ -149,27 +162,17 @@ export const inscribeFile = async (utxos: Utxo[], file: File, metadata?: any) =>
 				fileAsBase64,
 				file.type,
 				ordAddress.value!,
-				fundingAddress.value!,
 				utxos,
 				metadata,
 			);
-			const satsIn = utxo!.satoshis;
-			const satsOut = Number(tx.satoshis_out());
-			if (satsIn && satsOut) {
-				const fee = satsIn - satsOut;
-				if (fee < 0) {
-					console.error("Fee inadequate");
-					toast.error("Fee Inadequate", toastErrorProps);
-					// setInscribeStatus(FetchStatus.Error);
-					throw new Error("Fee inadequate");
-				}
+
 				const result = {
-					rawTx: tx.to_hex(),
-					size: tx.get_size(),
-					fee,
-					numInputs: tx.get_ninputs(),
-					numOutputs: tx.get_noutputs(),
-					txid: tx.get_id_hex(),
+					rawTx: tx.toHex(),
+					size: tx.toBinary().length,
+					fee: tx.getFee(),
+					numInputs: tx.inputs.length,
+					numOutputs: tx.outputs.length,
+					txid: tx.id('hex'),
 					spentOutpoints,
 					metadata,
 				} as PendingTransaction;
@@ -178,7 +181,7 @@ export const inscribeFile = async (utxos: Utxo[], file: File, metadata?: any) =>
 				setPendingTxs([result]);
 				//setInscribeStatus(FetchStatus.Success);
 				return result;
-			}
+			
 		} catch (e) {
 			console.error(e);
 			//setInscribeStatus(FetchStatus.Error);

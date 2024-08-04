@@ -132,16 +132,6 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		[setDecimals]
 	);
 
-	const changeAmount = useCallback(
-		(e: any) => {
-			// exclude 0
-			if (Number.parseInt(e.target.value) !== 0) {
-				setAmount(e.target.value);
-			}
-		},
-		[setAmount]
-	);
-
 	const changeFile = useCallback(async (e: any) => {
 		// TODO: This reads the file twice which is pretty inefficient
 		// would be nice to get dimensions and ArrayBuffer for preview in one go
