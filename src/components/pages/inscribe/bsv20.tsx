@@ -327,7 +327,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					case ActionType.Mint:
 						if (
 							!amount ||
-							Number.parseInt(amount) == 0 ||
+							Number.parseInt(amount) === 0 ||
 							BigInt(amount) > maxMaxSupply ||
 							!selectedBsv20
 						) {
@@ -352,7 +352,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				if (address) {
 					payments.push({
 						to: address,
-						amount: BigInt(iterationFee) * BigInt(iterations),
+						amount: iterationFee * iterations,
 					});
 				}
 				const pendingTx = await inscribeUtf8(
@@ -950,7 +950,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 			{selectedActionType === ActionType.Deploy &&
 				!showOptionalFields && (
-					<div
+					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<div
 						className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
 						onClick={toggleOptionalFields}
 					>
@@ -1085,3 +1086,8 @@ const tierMax = (balance: number, organicMax: number) => {
 	// max - supply / amount
 	return Math.max(Math.min(Math.min(organicMax, tier), hardMax), hardMin);
 };
+
+
+export const P2PKH_INPUT_SCRIPT_SIZE = 107;
+export const P2PKH_FULL_INPUT_SIZE = 148;
+export const P2PKH_OUTPUT_SIZE = 34;

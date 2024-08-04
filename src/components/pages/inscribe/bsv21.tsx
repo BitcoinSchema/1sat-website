@@ -18,7 +18,14 @@ import {
 	inscribeUtf8WithData,
 	type StringOrBufferArray,
 } from "@/utils/inscribe";
-import type { Utxo } from "js-1sat-ord";
+import {
+  deployBsv21Token,
+	type DeployBsv21TokenConfig,
+	type IconInscription,
+	type ImageContentType,
+	type Payment,
+	type Utxo,
+} from "js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
@@ -32,6 +39,7 @@ import { IconWithFallback } from "../TokenMarket/heading";
 import { knownImageTypes } from "./image";
 import type { InscriptionTab } from "./tabs";
 import { setPendingTxs } from "@/signals/wallet/client";
+import { PrivateKey } from "@bsv/sdk";
 
 const top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"];
 
@@ -52,18 +60,17 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 	const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 
 	const [fetchTickerStatus, setFetchTickerStatus] = useState<FetchStatus>(
-		FetchStatus.Idle
+		FetchStatus.Idle,
 	);
 	const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
-		FetchStatus.Idle
+		FetchStatus.Idle,
 	);
 	const [limit, setLimit] = useState<string | undefined>("1337");
 	const [maxSupply, setMaxSupply] = useState<string>("21000000");
 	const [decimals, setDecimals] = useState<number | undefined>();
 	const [amount, setAmount] = useState<string>();
 	const [mintError, setMintError] = useState<string>();
-	const [showOptionalFields, setShowOptionalFields] =
-		useState<boolean>(false);
+	const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
 	const [iterations, setIterations] = useState<number>(1);
 
 	const [ticker, setTicker] = useState<string | null>(tick);
@@ -82,14 +89,14 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		(e: any) => {
 			setTicker(e.target.value);
 		},
-		[setTicker]
+		[setTicker],
 	);
 
 	const changeMaxSupply = useCallback(
 		(e: any) => {
 			setMaxSupply(e.target.value);
 		},
-		[setMaxSupply]
+		[setMaxSupply],
 	);
 
 	const changeIterations = useCallback(
@@ -97,7 +104,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			console.log("changing iterations to", e.target.value);
 			setIterations(Number.parseInt(e.target.value));
 		},
-		[setIterations]
+		[setIterations],
 	);
 
 	const inSync = computed(() => {
@@ -120,16 +127,24 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		(e: any) => {
 			setLimit(e.target.value);
 		},
-		[setLimit]
+		[setLimit],
 	);
 
 	const changeDecimals = useCallback(
 		(e: any) => {
-			setDecimals(
-				e.target.value ? Number.parseInt(e.target.value) : undefined
-			);
+			setDecimals(e.target.value ? Number.parseInt(e.target.value) : undefined);
 		},
-		[setDecimals]
+		[setDecimals],
+	);
+
+	const changeAmount = useCallback(
+		(e: any) => {
+			// exclude 0
+			if (Number.parseInt(e.target.value) !== 0) {
+				setAmount(e.target.value);
+			}
+		},
+		[setAmount],
 	);
 
 	const changeFile = useCallback(async (e: any) => {
@@ -220,82 +235,105 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 	};
 
 	const inscribeBsv21 = useCallback(
-		async (utxo: Utxo) => {
+		async (utxos: Utxo[]) => {
 			if (!ticker || ticker?.length === 0 || selectedFile === null) {
 				return;
 			}
-
-			setInscribeStatus(FetchStatus.Loading);
-
-			// get a buffer of the file
-			const fileData = await selectedFile.arrayBuffer();
-
-			// add B output
-			const data = [
-				B_PREFIX,
-				fileData,
-				selectedFile.type,
-				"binary",
-			] as StringOrBufferArray;
-			try {
-				const inscription = {
-					p: "bsv-20",
-					op: "deploy+mint",
-					icon: "_1",
-				} as DeployBSV21Inscription;
-
-				if (
-					Number.parseInt(maxSupply) === 0 ||
-					BigInt(maxSupply) > maxMaxSupply
-				) {
-					alert(
-						`Invalid input: please enter a number less than or equal to ${
-							maxMaxSupply - BigInt(1)
-						}`
-					);
-					return;
-				}
-
-				inscription.sym = ticker;
-				inscription.amt = (BigInt(maxSupply) * 10n ** BigInt(decimals || 0)).toString();
-
-				// optional fields
-				if (decimals !== undefined) {
-					inscription.dec = String(decimals);
-				}
-
-				const text = JSON.stringify(inscription);
-				const payments = [
-					// {
-					//   to: selectedBsv20.fundAddress,
-					//   amount: 1000n,
-					// },
-				] as { to: string; amount: bigint }[];
-
-				const pendingTx = await inscribeUtf8WithData(
-					text,
-					"application/bsv-20",
-					utxo,
-					undefined,
-					payments,
-					data
-				);
-
-				pendingTx.returnTo = `/market/bsv21/${pendingTx.txid}_0`;
-				setInscribeStatus(FetchStatus.Success);
-
-				if (pendingTx) {
-					setPendingTxs([pendingTx]);
-					inscribedCallback();
-				}
-			} catch (error) {
-				setInscribeStatus(FetchStatus.Error);
-
-				toast.error(`Failed to inscribe ${error}`, toastErrorProps);
+			if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
+				console.error("Missing payPk, ordAddress, or fundingAddress");
 				return;
 			}
+			setInscribeStatus(FetchStatus.Loading);
+
+			const paymentPk = PrivateKey.fromWif(payPk.value);
+
+      			// get a buffer of the file
+			const fileData = await selectedFile.arrayBuffer();
+
+			const icon: IconInscription = {
+				dataB64: Buffer.from(fileData).toString("base64"),
+				contentType: selectedFile.type as ImageContentType,
+			};
+
+			const config: DeployBsv21TokenConfig = {
+				symbol: ticker,
+				icon,
+				utxos,
+				initialDistribution: {
+					address: ordAddress.value,
+					amt: maxSupply,
+				},
+				paymentPk,
+				destinationAddress: ordAddress.value,
+			};
+
+      const { tx, spentOutpoints, payChange } = await deployBsv21Token(config);
+
+			// add B output
+			// const data = [
+			// 	B_PREFIX,
+			// 	fileData,
+			// 	selectedFile.type,
+			// 	"binary",
+			// ] as StringOrBufferArray;
+			// try {
+			// 	const inscription = {
+			// 		p: "bsv-20",
+			// 		op: "deploy+mint",
+			// 		icon: "_1",
+			// 	} as DeployBSV21Inscription;
+
+			// 	if (
+			// 		Number.parseInt(maxSupply) === 0 ||
+			// 		BigInt(maxSupply) > maxMaxSupply
+			// 	) {
+			// 		alert(
+			// 			`Invalid input: please enter a number less than or equal to ${
+			// 				maxMaxSupply - BigInt(1)
+			// 			}`,
+			// 		);
+			// 		return;
+			// 	}
+
+			// 	inscription.sym = ticker;
+			// 	inscription.amt = (
+			// 		BigInt(maxSupply) *
+			// 		10n ** BigInt(decimals || 0)
+			// 	).toString();
+
+			// 	// optional fields
+			// 	if (decimals !== undefined) {
+			// 		inscription.dec = String(decimals);
+			// 	}
+
+			// 	const text = JSON.stringify(inscription);				
+      setPendingTxs([{
+        returnTo: `/market/bsv21/${tx.id('hex')}_0`,
+        rawTx: tx.toHex(),
+        size: tx.toBinary().length,
+        fee: tx.getFee(),
+        numInputs: tx.inputs.length,
+        numOutputs: tx.outputs.length,
+        txid: tx.id('hex'),
+        spentOutpoints,
+        payChange,
+      }]);
+      setInscribeStatus(FetchStatus.Success);
+
+			// 	if (pendingTx) {
+			// 		setPendingTxs([pendingTx]);
+			// 		inscribedCallback();
+			// 	}
+			// } catch (error) {
+			// 	setInscribeStatus(FetchStatus.Error);
+
+			// 	toast.error(`Failed to inscribe ${error}`, toastErrorProps);
+			// 	return;
+			// }
+
+
 		},
-		[ticker, selectedFile, maxSupply, decimals, inscribedCallback]
+		[ticker, selectedFile, payPk.value, ordAddress.value, fundingAddress.value, maxSupply],
 	);
 
 	const bulkInscribe = useCallback(async () => {
@@ -307,7 +345,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		for (let i = 0; i < iterations; i++) {
 			await getUtxos(fundingAddress.value);
 			const sortedUtxos = utxos.value?.sort((a, b) =>
-				a.satoshis > b.satoshis ? -1 : 1
+				a.satoshis > b.satoshis ? -1 : 1,
 			);
 			const u = head(sortedUtxos);
 			if (!u) {
@@ -317,7 +355,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 
 			return await inscribeBsv21(u);
 		}
-	}, [iterations, inscribeBsv21]);
+	}, [fundingAddress.value, iterations, utxos.value, inscribeBsv21]);
 
 	const clickInscribe = useCallback(async () => {
 		if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
@@ -326,7 +364,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 
 		const utxos = await getUtxos(fundingAddress.value);
 		const sortedUtxos = utxos.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1
+			a.satoshis > b.satoshis ? -1 : 1,
 		);
 		const u = head(sortedUtxos);
 		if (!u) {
@@ -363,25 +401,20 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 
 	return (
 		<div className="w-full max-w-lg mx-auto">
-			<div className="text-white w-full p-2 rounded my-2">
-				Deploy New Token
-			</div>
+			<div className="text-white w-full p-2 rounded my-2">Deploy New Token</div>
 			<div className="my-2">
 				<label className="block mb-4">
 					{/* TODO: Autofill */}
 					<div className="flex items-center justify-between my-2">
 						Symbol{" "}
-						<span className="text-[#555]">{`Not required to be unique`}</span>
+						<span className="text-[#555]">{"Not required to be unique"}</span>
 					</div>
 					<div className="relative">
 						<input
 							className="text-white w-full rounded p-2"
 							maxLength={255}
 							onKeyDown={(event) => {
-								if (
-									event.key === " " ||
-									event.key === "Enter"
-								) {
+								if (event.key === " " || event.key === "Enter") {
 									event.preventDefault();
 									return;
 								}
@@ -441,7 +474,9 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			</div>
 			<div className="my-2">
 				<label className="block mb-4">
-					<div className="my-2 flex justify-between text-sm">Max Supply <span className="text-[#555]">Whole coins</span></div>
+					<div className="my-2 flex justify-between text-sm">
+						Max Supply <span className="text-[#555]">Whole coins</span>
+					</div>
 					<input
 						pattern="\d+"
 						type="text"
@@ -453,6 +488,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			</div>
 
 			{!showOptionalFields && (
+				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 				<div
 					className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
 					onClick={toggleOptionalFields}
@@ -483,9 +519,9 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			)}
 			<div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
 				<label className="block w-full">
-					BSV21 deployements are indexed immediately. A listing fee of
-					${`${listingFee.value}`} will be required before it shows up
-					in some areas on the website. This can be paid later.
+					BSV21 deployements are indexed immediately. A listing fee of $
+					{`${listingFee.value}`} will be required before it shows up in some
+					areas on the website. This can be paid later.
 				</label>
 			</div>
 			{preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
@@ -493,9 +529,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			<button
 				disabled={submitDisabled}
 				type="submit"
-				onClick={
-					bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe
-				}
+				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
 				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
 			>
 				Preview

@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-import CopyPlugin from "copy-webpack-plugin";
-import ReplaceModuleWebpackPlugin from "replace-module-webpack-plugin";
 const nextConfig = {
 	reactStrictMode: true,
 	images: {

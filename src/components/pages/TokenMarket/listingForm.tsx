@@ -124,7 +124,6 @@ const ListingForm = ({
         price: satoshisPayout,
         ordAddress,
         amt: BigInt(amt),
-        // listingUtxo: undefined
       }
 
       const additionalPayments = []

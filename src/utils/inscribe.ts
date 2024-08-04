@@ -127,18 +127,31 @@ export const handleBulkInscribingWithData = async (
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
 
-	const { tx, spentOutpoints } = await createOrdinalWithData(
-		fundingUtxos,
-		ordAddress,
-		paymentPk,
-		changeAddress,
-		0.05,
-		inscriptions,
-		metadata, // optional metadata
-		undefined,
-		why, // payments
-		data,
-	);
+  const config: CreateOrdinalsConfig = {
+    utxos: fundingUtxos,
+    destinations: inscriptions.map((inscription) => {
+      return {
+        address: ordAddress,
+        inscription
+      }
+    }),
+    paymentPk,
+    metaData: metadata,
+    additionalPayments: payments,
+  };
+  
+	const { tx, spentOutpoints } = await createOrdinals(config);
+	// 	fundingUtxos,
+	// 	ordAddress,
+	// 	paymentPk,
+	// 	changeAddress,
+	// 	0.05,
+	// 	inscriptions,
+	// 	metadata, // optional metadata
+	// 	undefined,
+	// 	why, // payments
+	// 	data,
+	// );
 	return { tx, spentOutpoints };
 };
 
@@ -202,7 +215,6 @@ export const inscribeUtf8 = async (
 	iterations = 1,
 	payments: Payment[] = [],
 ) => {
-	const why = payments;
 	const fileAsBase64 = Buffer.from(text).toString("base64");
 	// normalize utxo to array
 	const utxos = Array.isArray(utxo) ? utxo : [utxo];
@@ -219,18 +231,18 @@ export const inscribeUtf8 = async (
 		fundingAddress.value!,
 		utxos,
 		undefined,
-		why, // payments
+		payments,
 	);
 	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
 	const satsOut = Number(tx.satoshis_out());
 	const fee = satsIn - satsOut;
 	const result = {
-		rawTx: tx.to_hex(),
-		size: tx.get_size(),
+		rawTx: tx.toHex(),
+		size: tx.toBinary().length,
 		fee,
-		numInputs: tx.get_ninputs(),
-		numOutputs: tx.get_noutputs(),
-		txid: tx.get_id_hex(),
+		numInputs: tx.inputs.length,
+		numOutputs: tx.outputs.length,
+		txid: tx.id('hex'),
 		spentOutpoints,
 		iterations,
 	} as PendingTransaction;
@@ -248,7 +260,7 @@ export const inscribeUtf8WithData = async (
 	data: StringOrBufferArray,
 	returnTo?: string,
 ) => {
-	const why = payments;
+
 	const fileAsBase64 = Buffer.from(text).toString("base64");
 	// normalize utxo to array
 	const utxos = Array.isArray(utxo) ? utxo : [utxo];
@@ -265,19 +277,19 @@ export const inscribeUtf8WithData = async (
 		fundingAddress.value!,
 		utxos,
 		undefined,
-		why || [], // payments
+		payments || [],
 		data,
 	);
 	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
 	const satsOut = Number(tx.satoshis_out());
 	const fee = satsIn - satsOut;
 	const result = {
-		rawTx: tx.to_hex(),
-		size: tx.get_size(),
+		rawTx: tx.toHex(),
+		size: tx.toBinary().length,
 		fee,
-		numInputs: tx.get_ninputs(),
-		numOutputs: tx.get_noutputs(),
-		txid: tx.get_id_hex(),
+		numInputs: tx.inputs.length,
+		numOutputs: tx.outputs.length,
+		txid: tx.id('hex'),
 		spentOutpoints,
 		iterations,
 	} as PendingTransaction;
