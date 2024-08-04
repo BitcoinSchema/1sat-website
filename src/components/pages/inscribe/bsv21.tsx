@@ -15,10 +15,6 @@ import type { TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import {
-	inscribeUtf8WithData,
-	type StringOrBufferArray,
-} from "@/utils/inscribe";
-import {
   deployBsv21Token,
 	type DeployBsv21TokenConfig,
 	type IconInscription,
@@ -225,15 +221,6 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		);
 	}, [preview, selectedFile]);
 
-	type DeployBSV21Inscription = {
-		p: string;
-		op: string;
-		icon: string;
-		sym: string;
-		amt: string;
-		dec: string;
-	};
-
 	const inscribeBsv21 = useCallback(
 		async (utxos: Utxo[]) => {
 			if (!ticker || ticker?.length === 0 || selectedFile === null) {
@@ -268,45 +255,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			};
 
       const { tx, spentOutpoints, payChange } = await deployBsv21Token(config);
-
-			// add B output
-			// const data = [
-			// 	B_PREFIX,
-			// 	fileData,
-			// 	selectedFile.type,
-			// 	"binary",
-			// ] as StringOrBufferArray;
-			// try {
-			// 	const inscription = {
-			// 		p: "bsv-20",
-			// 		op: "deploy+mint",
-			// 		icon: "_1",
-			// 	} as DeployBSV21Inscription;
-
-			// 	if (
-			// 		Number.parseInt(maxSupply) === 0 ||
-			// 		BigInt(maxSupply) > maxMaxSupply
-			// 	) {
-			// 		alert(
-			// 			`Invalid input: please enter a number less than or equal to ${
-			// 				maxMaxSupply - BigInt(1)
-			// 			}`,
-			// 		);
-			// 		return;
-			// 	}
-
-			// 	inscription.sym = ticker;
-			// 	inscription.amt = (
-			// 		BigInt(maxSupply) *
-			// 		10n ** BigInt(decimals || 0)
-			// 	).toString();
-
-			// 	// optional fields
-			// 	if (decimals !== undefined) {
-			// 		inscription.dec = String(decimals);
-			// 	}
-
-			// 	const text = JSON.stringify(inscription);				
+		
       setPendingTxs([{
         returnTo: `/market/bsv21/${tx.id('hex')}_0`,
         rawTx: tx.toHex(),
@@ -319,19 +268,6 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
         payChange,
       }]);
       setInscribeStatus(FetchStatus.Success);
-
-			// 	if (pendingTx) {
-			// 		setPendingTxs([pendingTx]);
-			// 		inscribedCallback();
-			// 	}
-			// } catch (error) {
-			// 	setInscribeStatus(FetchStatus.Error);
-
-			// 	toast.error(`Failed to inscribe ${error}`, toastErrorProps);
-			// 	return;
-			// }
-
-
 		},
 		[ticker, selectedFile, payPk.value, ordAddress.value, fundingAddress.value, maxSupply],
 	);
@@ -340,6 +276,11 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		if (!payPk || !ordAddress || !fundingAddress.value) {
 			return;
 		}
+
+    if (!utxos.value) {
+      console.log("no utxos");
+      return;
+    }
 
 		// range up to iterations
 		for (let i = 0; i < iterations; i++) {
@@ -353,7 +294,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				return;
 			}
 
-			return await inscribeBsv21(u);
+			return await inscribeBsv21(utxos.value);
 		}
 	}, [fundingAddress.value, iterations, utxos.value, inscribeBsv21]);
 
@@ -363,17 +304,9 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		}
 
 		const utxos = await getUtxos(fundingAddress.value);
-		const sortedUtxos = utxos.sort((a, b) =>
-			a.satoshis > b.satoshis ? -1 : 1,
-		);
-		const u = head(sortedUtxos);
-		if (!u) {
-			console.log("no utxo");
-			return;
-		}
 
-		return await inscribeBsv21(u);
-	}, [inscribeBsv21]);
+		return await inscribeBsv21(utxos);
+	}, [fundingAddress.value, inscribeBsv21, ordAddress.value, payPk.value]);
 
 	const submitDisabled = useMemo(() => {
 		return (

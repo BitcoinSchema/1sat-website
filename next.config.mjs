@@ -35,6 +35,9 @@ const nextConfig = {
 	},
 	webpack: (config, { isServer }) => {
 		if (!isServer) {
+      config.node = {
+        global: true,
+      };
 			config.resolve.fallback = {
 				dns: false,
 				fs: false,
@@ -47,24 +50,6 @@ const nextConfig = {
 				net: false,
 				process: "process/browser",
 			};
-			// config.experiments = {
-			// 	asyncWebAssembly: true,
-			// 	layers: true,
-			// };
-			// config.module.rules.push({
-			// 	test: /\.wasm$/,
-			// 	type: 'webassembly/async',
-			// });
-			// config.plugins.push(
-			// 	new ReplaceModuleWebpackPlugin({
-			// 		rules: [
-			// 			{
-			// 				originModule: "bsv-wasm",
-			// 				replaceModule: "bsv-wasm-web",
-			// 			},
-			// 		],
-			// 	})
-			// );
 		}
 
 		return config;

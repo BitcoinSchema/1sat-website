@@ -103,7 +103,8 @@ export const handleBulkInscribing = async (
 		destinations,
 		paymentPk,
     metaData,
-    additionalPayments
+    additionalPayments,
+    changeAddress,
 	};
 
 	const { tx, spentOutpoints, payChange } = await createOrdinals(config);
@@ -118,9 +119,7 @@ export const handleBulkInscribingWithData = async (
 	fundingUtxos: Utxo[],
 	metadata: MAP | undefined,
 	payments: Payment[],
-	data: StringOrBufferArray,
 ) => {
-	const why = payments;
 	const paymentPk = PrivateKey.fromWif(payPk);
 
 	const signer = {
@@ -138,6 +137,7 @@ export const handleBulkInscribingWithData = async (
     paymentPk,
     metaData: metadata,
     additionalPayments: payments,
+    changeAddress,
   };
   
 	const { tx, spentOutpoints } = await createOrdinals(config);
@@ -254,59 +254,6 @@ export const inscribeUtf8 = async (
 		spentOutpoints,
 		iterations,
 	} as PendingTransaction;
-	setPendingTxs([result]);
-	return result;
-};
-export type StringOrBufferArray = (string | Buffer)[];
-
-export const inscribeUtf8WithData = async (
-	text: string,
-	contentType: string,
-	utxo: Utxo | Utxo[],
-	iterations: number | undefined,
-	payments: Payment[] | undefined,
-	data: StringOrBufferArray,
-	returnTo?: string,
-) => {
-  if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
-    throw new Error("Missing payPk, ordAddress or fundingAddress");
-  }
-
-	const fileAsBase64 = Buffer.from(text).toString("base64");
-	// normalize utxo to array
-	const utxos = Array.isArray(utxo) ? utxo : [utxo];
-	// duplicate inscription * iterations and pass in the array
-	let num = iterations || 1;
-	const inscriptions: Inscription[] = [];
-	while (num--) {
-		inscriptions.push({ dataB64: fileAsBase64, contentType });
-	}
-	const { spentOutpoints, tx } = await handleBulkInscribingWithData(
-		payPk.value,
-		inscriptions,
-		ordAddress.value,
-		fundingAddress.value,
-		utxos,
-		undefined,
-		payments || [],
-		data,
-	);
-	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
-	const satsOut = tx.outputs.reduce((acc, output) => acc + (output.satoshis || 0), 0);
-	const fee = satsIn - satsOut;
-	const result = {
-		rawTx: tx.toHex(),
-		size: tx.toBinary().length,
-		fee,
-		numInputs: tx.inputs.length,
-		numOutputs: tx.outputs.length,
-		txid: tx.id('hex'),
-		spentOutpoints,
-		iterations,
-	} as PendingTransaction;
-	if (returnTo) {
-		result.returnTo = returnTo;
-	}
 	setPendingTxs([result]);
 	return result;
 };

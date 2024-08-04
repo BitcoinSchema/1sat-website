@@ -12,6 +12,7 @@ import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
 import { useSignals } from "@preact/signals-react/runtime";
+import { PreMAP } from "js-1sat-ord";
 import { head } from "lodash";
 import * as mime from "mime";
 import type React from "react";
@@ -120,7 +121,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     const md = metadata?.reduce((acc, curr) => {
       acc[curr.key] = curr.value;
       return acc;
-    }, {} as { [key: string]: string });
+    }, {} as PreMAP);
     if (md) {
       md.app = "1satordinals.com";
       md.type = "ord";
