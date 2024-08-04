@@ -477,7 +477,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		return selectedBsv20
 			? calculateIndexingFee(usdRate.value)
 			: calculateIndexingFee(usdRate.value);
-	}, [selectedBsv20]);
+	}, [selectedBsv20, usdRate.value]);
 
 	const confirmedOplBalance = useMemo(
 		() =>
@@ -561,7 +561,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			return 0;
 		}
 		return ((iterationFee * iterations) / usdRate.value).toFixed(2);
-	}, [iterations]);
+	}, [iterations, usdRate.value]);
 
 	const networkFeeUsd = useMemo(() => {
 		if (!usdRate.value) {
@@ -572,7 +572,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				P2PKH_FULL_INPUT_SIZE * 4) /
 			usdRate.value
 		).toFixed(2);
-	}, [iterations]);
+	}, [iterations, usdRate.value]);
 
 	// confirmedOplBalance && tierMaxNum(confirmedOplBalance) > 0
 

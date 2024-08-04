@@ -85,7 +85,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
       // console.log({ isInView, ticker });
       fire(ticker.id);
     }
-  }, [isInView, newOffset, reachedEndOfListings, ticker, type]);
+  }, [newOffset.value, isInView, myListings.value, ordAddress.value, reachedEndOfListings.value, ticker, type]);
 
   return (
     <>
