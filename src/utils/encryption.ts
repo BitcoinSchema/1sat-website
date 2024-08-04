@@ -1,54 +1,83 @@
-import { AES, AESAlgorithms, Hash, KDF, PBKDF2Hashes } from "bsv-wasm-web";
+async function getKey(key: Uint8Array): Promise<CryptoKey> {
+  return await crypto.subtle.importKey(
+    "raw",
+    key,
+    { name: "AES-CBC" },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
 
-export const encryptData = (
+export async function encryptData(
   data: Uint8Array,
   key: Uint8Array,
   iv: Uint8Array
-): Uint8Array => {
-  const ivUint8Array = new Uint8Array(iv);
-  const dataUint8Array = new Uint8Array(data);
-  const keyUint8Array = new Uint8Array(key);
-  return AES.encrypt(
-    keyUint8Array,
-    ivUint8Array,
-    dataUint8Array,
-    AESAlgorithms.AES256_CBC
+): Promise<Uint8Array> {
+  const cryptoKey = await getKey(key);
+  const encryptedContent = await crypto.subtle.encrypt(
+    { name: "AES-CBC", iv },
+    cryptoKey,
+    data
   );
-};
+  
+  // Combine IV and encrypted content
+  const result = new Uint8Array(iv.length + encryptedContent.byteLength);
+  result.set(iv);
+  result.set(new Uint8Array(encryptedContent), iv.length);
+  
+  return result;
+}
 
-export const decryptData = (
+export async function decryptData(
   encryptedData: Uint8Array,
   key: Uint8Array
-): Uint8Array => {
+): Promise<Uint8Array> {
   const iv = encryptedData.slice(0, 16);
   const encryptedContent = encryptedData.slice(16);
-  return AES.decrypt(key, iv, encryptedContent, AESAlgorithms.AES256_CBC);
-};
+  
+  const cryptoKey = await getKey(key);
+  const decryptedContent = await crypto.subtle.decrypt(
+    { name: "AES-CBC", iv },
+    cryptoKey,
+    encryptedContent
+  );
+  
+  return new Uint8Array(decryptedContent);
+}
 
-export const generateEncryptionKey = (
+export async function generateEncryptionKey(
   passphrase: string,
   publicKey: Uint8Array
-) => {
-  // Derive a unique salt from the user's public key using a hash function
-  const salt = Hash.sha_256(publicKey);
-  const keySize = 256 / 8; // 256-bit key
-  const iterations = 1000;
-
-  const key = KDF.pbkdf2(
-    new TextEncoder().encode(passphrase),
-    salt.to_bytes(),
-    PBKDF2Hashes.SHA256,
-    iterations,
-    keySize
+): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const salt = await crypto.subtle.digest("SHA-256", publicKey);
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(passphrase),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"]
   );
-
-  return key.get_hash().to_bytes();
-};
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 1000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  
+  return new Uint8Array(derivedBits);
+}
 
 export async function generateEncryptionKeyFromPassphrase(
   passphrase: string,
   pubKey: string
-) {
+): Promise<Uint8Array | undefined> {
   if (!pubKey) {
     console.error("No public key found. Unable to decrypt.");
     return;
@@ -61,7 +90,7 @@ export async function generateEncryptionKeyFromPassphrase(
 
   const pubKeyBytes = new Uint8Array(Buffer.from(pubKey, "base64").buffer);
 
-  const ec = generateEncryptionKey(passphrase, pubKeyBytes);
+  const ec = await generateEncryptionKey(passphrase, pubKeyBytes);
 
   return ec;
 }

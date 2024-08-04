@@ -157,7 +157,7 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
     throw new Error("No encryption key found. Unable to decrypt.");
   }
 
-  const decryptedBackupBin = decryptData(
+  const decryptedBackupBin = await decryptData(
     Buffer.from(
       encryptedKeys.encryptedBackup.replace(encryptionPrefix, ""),
       "base64"
