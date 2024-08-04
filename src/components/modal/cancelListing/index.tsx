@@ -17,7 +17,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { setPendingTxs } from "@/signals/wallet/client";
-import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType } from "js-1sat-ord";
+import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType, Utxo } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
 
 interface CancelListingModalProps {
@@ -53,13 +53,15 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       return;
     }
 
+    const id = (listing.tick || listing.id) as string
+
     const config: CancelOrdTokenListingsConfig = {
       utxos: utxos.value,
       paymentPk: PrivateKey.fromWif(payPk.value),
       ordPk: PrivateKey.fromWif(ordPk.value),
       listingUtxos: [{
         amt: listing.amt,
-        id: (listing.tick || listing.id) as string,
+        id,
         satoshis: 1,
         txid: listing.txid,
         vout: listing.vout,
@@ -67,7 +69,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       }],
       additionalPayments: [{to: indexerAddress, amount: indexerBuyFee}],
       protocol: (listing as Listing).tick ? TokenType.BSV20 : TokenType.BSV21,
-      tokenID: ((listing as Listing).tick || (listing as Listing).id) as string,
+      tokenID: id,
     }
 
     const { tx } = await cancelOrdTokenListings(config);
@@ -269,6 +271,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       paymentPk: PrivateKey.fromWif(payPk.value),
       ordPk: PrivateKey.fromWif(ordPk.value),
       listingUtxos,
+      additionalPayments: []
     }
 
     const { tx, spentOutpoints, payChange } = await cancelOrdListings(config);
