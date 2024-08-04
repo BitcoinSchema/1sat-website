@@ -158,11 +158,14 @@ export const handleBulkInscribingWithData = async (
 export const inscribeFile = async (
 	utxos: Utxo[],
 	file: File,
-	metadata?: any,
+	metadata?: PreMAP,
 ) => {
 	if (!file?.type || !utxos.length) {
 		throw new Error("File or utxo not provided");
 	}
+  if (!payPk.value || !ordAddress.value) {
+    throw new Error("Missing payPk or ordAddress");
+  }
 
 	//   setInscribeStatus(FetchStatus.Loading);
 	try {
@@ -171,10 +174,10 @@ export const inscribeFile = async (
 			// setInscribeStatus(FetchStatus.Loading);
 
 			const { tx, spentOutpoints } = await handleInscribing(
-				payPk.value!,
+				payPk.value,
 				fileAsBase64,
 				file.type,
-				ordAddress.value!,
+				ordAddress.value,
 				utxos,
 				metadata,
 			);
@@ -215,6 +218,11 @@ export const inscribeUtf8 = async (
 	iterations = 1,
 	payments: Payment[] = [],
 ) => {
+
+  if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
+    throw new Error("Missing payPk, ordAddress or fundingAddress");
+  }
+
 	const fileAsBase64 = Buffer.from(text).toString("base64");
 	// normalize utxo to array
 	const utxos = Array.isArray(utxo) ? utxo : [utxo];
@@ -225,16 +233,16 @@ export const inscribeUtf8 = async (
 		inscriptions.push({ dataB64: fileAsBase64, contentType });
 	}
 	const { tx, spentOutpoints } = await handleBulkInscribing(
-		payPk.value!,
+		payPk.value,
 		inscriptions,
-		ordAddress.value!,
-		fundingAddress.value!,
+		ordAddress.value,
+		fundingAddress.value,
 		utxos,
 		undefined,
 		payments,
 	);
 	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
-	const satsOut = Number(tx.satoshis_out());
+	const satsOut = tx.outputs.reduce((acc, output) => acc + (output.satoshis || 0), 0);
 	const fee = satsIn - satsOut;
 	const result = {
 		rawTx: tx.toHex(),
@@ -260,6 +268,9 @@ export const inscribeUtf8WithData = async (
 	data: StringOrBufferArray,
 	returnTo?: string,
 ) => {
+  if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
+    throw new Error("Missing payPk, ordAddress or fundingAddress");
+  }
 
 	const fileAsBase64 = Buffer.from(text).toString("base64");
 	// normalize utxo to array
@@ -271,17 +282,17 @@ export const inscribeUtf8WithData = async (
 		inscriptions.push({ dataB64: fileAsBase64, contentType });
 	}
 	const { spentOutpoints, tx } = await handleBulkInscribingWithData(
-		payPk.value!,
+		payPk.value,
 		inscriptions,
-		ordAddress.value!,
-		fundingAddress.value!,
+		ordAddress.value,
+		fundingAddress.value,
 		utxos,
 		undefined,
 		payments || [],
 		data,
 	);
 	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
-	const satsOut = Number(tx.satoshis_out());
+	const satsOut = tx.outputs.reduce((acc, output) => acc + (output.satoshis || 0), 0);
 	const fee = satsIn - satsOut;
 	const result = {
 		rawTx: tx.toHex(),
