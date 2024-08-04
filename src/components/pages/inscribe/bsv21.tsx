@@ -18,7 +18,7 @@ import {
 	inscribeUtf8WithData,
 	type StringOrBufferArray,
 } from "@/utils/inscribe";
-import type { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";

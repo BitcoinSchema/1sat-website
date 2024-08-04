@@ -15,11 +15,10 @@ import type { BSV20, Ticker } from "@/types/bsv20";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import {
-	P2PKH_FULL_INPUT_SIZE,
-	type Payment,
-	type Utxo,
-} from "@/utils/js-1sat-ord";
+import type {
+	Payment,
+	Utxo,
+} from "js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import "buffer";
@@ -732,7 +731,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 										type="button"
 										className="btn btn-sm"
 									>
-										<span
+										{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+<span
 											className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
 											onClick={() => {
 												setAmount(

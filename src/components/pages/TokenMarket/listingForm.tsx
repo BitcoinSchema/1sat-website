@@ -19,8 +19,7 @@ import type { BSV20TXO } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
-import type { Utxo } from "@/utils/js-1sat-ord";
-import { createChangeOutput, signPayment } from "@/utils/transaction";
+import type { Utxo } from "js-1sat-ord";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
@@ -125,6 +124,7 @@ const ListingForm = ({
         price: satoshisPayout,
         ordAddress,
         amt: BigInt(amt),
+        // listingUtxo: undefined
       }
 
       const additionalPayments = []

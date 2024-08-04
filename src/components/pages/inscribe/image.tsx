@@ -134,15 +134,6 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     }
 
     const utxos = await getUtxos(fundingAddress.value);
-    const sortedUtxos = utxos.sort((a, b) =>
-      a.satoshis > b.satoshis ? -1 : 1
-    );
-    const u = head(sortedUtxos);
-    if (!u) {
-      console.log("no utxo");
-      return;
-    }
-
     // metadata
     const m =
       metadata && Object.keys(metadata).length > 0 ? mapData : undefined;
@@ -157,7 +148,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     if (!file) {
       file = selectedFile;
     }
-    const pendingTx = await inscribeFile(u, file, m);
+    const pendingTx = await inscribeFile(utxos, file, m);
     if (pendingTx) {
       setPendingTxs([pendingTx]);
       inscribedCallback();

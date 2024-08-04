@@ -5,14 +5,14 @@ import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { PendingTransaction } from "@/types/preview";
 import {
-	createOrdinal,
-	createOrdinalWithData,
+	createOrdinals,
+	type CreateOrdinalsConfig,
 	type Inscription,
 	type MAP,
 	type Payment,
 	type RemoteSigner,
 	type Utxo,
-} from "@/utils/js-1sat-ord";
+} from "js-1sat-ord";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
 import { setPendingTxs } from "@/signals/wallet/client";
@@ -24,7 +24,7 @@ export const handleInscribing = async (
 	fileContentType: string,
 	ordAddress: string,
 	changeAddress: string,
-	fundingUtxo: Utxo,
+	utxos: Utxo[],
 	metadata?: MAP, // MAP,
 	payments: Payment[] = [],
 ) => {
@@ -45,7 +45,12 @@ export const handleInscribing = async (
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
 
-	const { spentOutpoints, tx } = await createOrdinal(
+  const config: CreateOrdinalsConfig = {
+    utxos: [],
+    destinations: [],
+    paymentPk: new default
+  }
+	const { spentOutpoints, tx } = await createOrdinals(
 		[fundingUtxo],
 		ordAddress,
 		paymentPk,
@@ -76,7 +81,13 @@ export const handleBulkInscribing = async (
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
 
-	const { tx, spentOutpoints } = await createOrdinal(
+  const config: CreateOrdinalsConfig = {
+    utxos: [],
+    destinations: [],
+    paymentPk,
+  }
+
+	const { tx, spentOutpoints } = await createOrdinals(
 		fundingUtxos,
 		ordAddress,
 		paymentPk,
@@ -122,8 +133,8 @@ export const handleBulkInscribingWithData = async (
 	return { tx, spentOutpoints };
 };
 
-export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
-	if (!file?.type || !utxo) {
+export const inscribeFile = async (utxos: Utxo[], file: File, metadata?: any) => {
+	if (!file?.type || !utxos.length) {
 		throw new Error("File or utxo not provided");
 	}
 
@@ -139,7 +150,7 @@ export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
 				file.type,
 				ordAddress.value!,
 				fundingAddress.value!,
-				utxo,
+				utxos,
 				metadata,
 			);
 			const satsIn = utxo!.satoshis;

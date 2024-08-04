@@ -9,7 +9,7 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { setPendingTxs } from "@/signals/wallet/client";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
-import type { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "js-1sat-ord";
 import {
 	fetchOrdinal,
 } from "@/utils/transaction";
