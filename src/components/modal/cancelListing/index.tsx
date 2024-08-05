@@ -2,6 +2,7 @@
 
 import { API_HOST, indexerBuyFee, toastErrorProps, toastProps } from "@/constants";
 import {
+  bsv20Utxos,
   ordPk,
   payPk,
   pendingTxs,
@@ -19,6 +20,7 @@ import toast from "react-hot-toast";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType, type Utxo } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
+import { OrdUtxo } from "@/types/ordinals";
 
 interface CancelListingModalProps {
   onClose: () => void;
@@ -72,8 +74,21 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       tokenID: id,
     }
 
-    const { tx } = await cancelOrdTokenListings(config);
+    const { tx, spentOutpoints, tokenChange } = await cancelOrdTokenListings(config);
 
+    bsv20Utxos.value = bsv20Utxos.value?.filter((u) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1) || [];
+    bsv20Utxos.value = bsv20Utxos.value?.concat({
+      satoshis: 1,
+      vout: tokenChange.vout,
+      script: tokenChange.script,
+      txid: tokenChange.txid,
+      outpoint: `${tokenChange.txid}_${tokenChange.vout}`,
+      accSats: 0,
+      height: 0,
+      idx: 0,
+      sale: false,
+    } as OrdUtxo) || [];
+    utxos.value = utxos.value?.filter((u) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1) || [];
     // const cancelTx = new Transaction(1, 0);
     // const cancelInput = new TxIn(
     //   Buffer.from(listing.txid, "hex"),
@@ -240,7 +255,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, onCancelled]);
+  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, bsv20Utxos.value, onCancelled]);
 
   const cancelListing = useCallback(async (e: React.MouseEvent) => {
     if (!fundingAddress.value) {
@@ -270,8 +285,6 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       paymentPk: PrivateKey.fromWif(payPk.value),
       ordPk: PrivateKey.fromWif(ordPk.value),
       listingUtxos,
-      // TODO: This should be allowed to be ommitted
-      additionalPayments: []
     }
 
     const { tx, spentOutpoints, payChange } = await cancelOrdListings(config);
@@ -401,7 +414,8 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       rawTx: tx.toHex(),
       txid: tx.id('hex'),
       spentOutpoints,
-      payChange
+      payChange,
+      tokenChange
     } as PendingTransaction;
 
     setPendingTxs([pendingTx]);
