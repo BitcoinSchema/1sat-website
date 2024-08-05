@@ -21,12 +21,12 @@ import {
 	type PurchaseOrdListingConfig,
 	fetchPayUtxos,
 	purchaseOrdListing,
-	type Utxo,
 	type Payment,
 	type PurchaseOrdTokenListingConfig,
 	type TokenUtxo,
   TokenType,
   purchaseOrdTokenListing,
+  type ExistingListing,
 } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
 interface BuyArtifactModalProps {
@@ -46,6 +46,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 	showLicense,
 	indexerAddress,
 }: BuyArtifactModalProps) => {
+
+  console.log({listing})
 	// const { buyArtifact } = useOrdinals();
 	useSignals();
 	const router = useRouter();
@@ -95,12 +97,14 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			const fundingUtxos = await fetchPayUtxos(fundingAddress.value);
 			utxos.value = fundingUtxos;
 
-			const listingUtxo: Utxo = {
+			const existingListing: ExistingListing = {
+        payout: ((listing as Listing).payout || (listing as OrdUtxo).data?.list?.payout) as string,
+        listingUtxo: {
 				satoshis: listing.satoshis,
 				txid: listing.txid,
 				vout: listing.vout,
 				script: listing.script,
-			};
+			}};
 
 			// calculate market fee
 			let marketFee = Number(price) * marketRate;
@@ -118,10 +122,11 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			const config: PurchaseOrdListingConfig = {
 				utxos: fundingUtxos,
 				paymentPk: PrivateKey.fromWif(payPk.value),
-				listingUtxo,
+				listing: existingListing,
 				ordAddress: ordAddress.value,
 				additionalPayments,
 			};
+      
 			const { tx, spentOutpoints, payChange } =
 				await purchaseOrdListing(config);
 
