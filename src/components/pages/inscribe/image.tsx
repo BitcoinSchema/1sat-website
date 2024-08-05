@@ -12,7 +12,7 @@ import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
 import { useSignals } from "@preact/signals-react/runtime";
-import { PreMAP } from "js-1sat-ord";
+import type { PreMAP } from "js-1sat-ord";
 import { head } from "lodash";
 import * as mime from "mime";
 import type React from "react";

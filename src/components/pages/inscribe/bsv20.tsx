@@ -173,12 +173,6 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		[setSelectedBsv20, setTickerAvailable, setFetchTickerStatus]
 	);
 
-	const changeMaxSupply = useCallback(
-		(e: any) => {
-			setMaxSupply(e.target.value);
-		},
-		[setMaxSupply]
-	);
 
 	const changeSelectedActionType = useCallback(
 		async (e: any) => {
@@ -713,7 +707,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							pattern="\d+"
 							type="text"
 							className="text-white w-full rounded p-2 uppercase"
-							onChange={changeMaxSupply}
+							onChange={(e) => setMaxSupply(e.target.value)}
 							value={maxSupply}
 						/>
 					</label>
