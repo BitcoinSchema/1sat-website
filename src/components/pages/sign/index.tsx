@@ -52,7 +52,7 @@ const SignMessagePage = ({ message }: { message: string }) => {
 			}
 
 			const pk = PrivateKey.fromWif(activeKey.value);
-
+      
 			// sign
 			proof.value = pk.sign(message, "hex").toString("base64") as string;
 		}

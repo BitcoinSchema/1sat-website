@@ -1,12 +1,11 @@
 "use client";
 
 import Artifact from "@/components/artifact";
-import { B_PREFIX, FetchStatus, toastErrorProps } from "@/constants";
+import { FetchStatus, toastErrorProps } from "@/constants";
 import {
 	chainInfo,
 	indexers,
 	payPk,
-	pendingTxs,
 	usdRate,
 	utxos,
 } from "@/signals/wallet";
@@ -253,6 +252,10 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 				paymentPk,
 				destinationAddress: ordAddress.value,
 			};
+
+      if (decimals) {
+        config.decimals = decimals;
+      }
 
       const { tx, spentOutpoints, payChange } = await deployBsv21Token(config);
 		

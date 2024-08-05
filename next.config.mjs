@@ -35,9 +35,6 @@ const nextConfig = {
 	},
 	webpack: (config, { isServer }) => {
 		if (!isServer) {
-      config.node = {
-        global: true,
-      };
 			config.resolve.fallback = {
 				dns: false,
 				fs: false,

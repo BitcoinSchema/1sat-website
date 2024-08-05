@@ -168,7 +168,7 @@ const WalletMenu: React.FC = () => {
     if (fetchRateStatus.value === FetchStatus.Idle) {
       fire();
     }
-  }, [fetchRateStatus])
+  }, [fetchRateStatus.value]);
 
   useEffect(() => {
     const fire = async (a: string) => {
