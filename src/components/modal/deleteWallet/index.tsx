@@ -80,7 +80,7 @@ const DeleteWalletModal = ({
 							className="btn"
 							type="button"
 							onClick={() => {
-								close();
+								close(true);
 							}}
 						>
 							Cancel
