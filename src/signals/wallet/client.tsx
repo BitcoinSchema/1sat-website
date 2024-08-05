@@ -80,36 +80,6 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
   });
 };
 
-export const clearKeys = () => {
-  payPk.value = null;
-  ordPk.value = null;
-  changeAddressPath.value = null;
-  ordAddressPath.value = null;
-  identityPk.value = null;
-  identityAddressPath.value = null;
-
-  pendingTxs.value = null;
-  utxos.value = null;
-  bsv20Utxos.value = null;
-  bsv20Balances.value = null;
-  localStorage.removeItem("1satfk");
-  localStorage.removeItem("1satok");
-  localStorage.removeItem("1satpt");
-  localStorage.removeItem("encryptedBackup");
-
-  sessionStorage.removeItem("1satfk");
-  sessionStorage.removeItem("1satok");
-
-  encryptedBackup.value = null;
-
-  encryptionKey.value = null;
-  passphrase.value = null;
-  mnemonic.value = null;
-
-  showUnlockWalletButton.value = false;
-  createWalletStep.value = CreateWalletStep.Create;
-  console.log("Cleared keys");
-};
 
 export const setKeys = (keys: Keys) => {
   payPk.value = keys.payPk;
