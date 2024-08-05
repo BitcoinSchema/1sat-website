@@ -73,14 +73,13 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			// 	(a, b) => b.satoshis - a.satoshis,
 			// )[0];
 
-			const scriptAsm = Script.fromHex(
-				Buffer.from(artifact.script, "base64").toString('hex'),
-			).toASM();
+
+
 			const artifactUtxo = {
 				txid: artifact.txid,
 				vout: artifact.vout,
 				satoshis: artifact.satoshis,
-				script: scriptAsm,
+				script: artifact.script,
 			} as Utxo;
 
 			if (to === ordAddress.value && !meta) {
@@ -115,6 +114,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         sendOrdinalsConfig.metaData = meta
       }
 
+      console.log({artifactUtxo, paymentUtxos})
       const { tx, spentOutpoints, payChange } = await sendOrdinals(sendOrdinalsConfig)
 
 			setPendingTxs([

@@ -50,7 +50,7 @@ export const getUtxos = async (address: string): Promise<Utxo[]> => {
 
   // use gorillapool
   try {
-    return await fetchPayUtxos(address, "asm");
+    return await fetchPayUtxos(address);
     
   } catch (e) {
     console.log("error", e);
