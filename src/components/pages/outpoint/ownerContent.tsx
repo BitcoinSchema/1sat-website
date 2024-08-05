@@ -31,26 +31,16 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	const showSendModal = useSignal<string | undefined>(undefined);
 	const router = useRouter();
 
-	// TODO: Check the destination address matches the ordAddress
 	const address = useMemo(() => {
-		const script = Script.fromHex(Buffer.from(artifact.script, "base64").toString('hex'));
-		const pubkeyHash = script.toASM().split(" ")[2];
-		if (!pubkeyHash) {
+		const script = Script.fromBinary(Utils.toArray(artifact.script, "base64"));
+    const pubkeyHash = script.chunks[2].data;
+		if (!pubkeyHash || pubkeyHash.length !== 20) {
 			return undefined;
 		}
-		const buff = Buffer.from(pubkeyHash, "hex");
-    const data = script.chunks[2].data;
-		if (!data || !buff || buff.length !== 20) {
-			return undefined;
-		}
-
-    const hash = Hash.ripemd160(data)
-		const address = toBase58Check(hash)
-    // P2PKHAddress.from_pubkey_hash(buff);
-
-		return address
+		return toBase58Check(pubkeyHash)
 	}, [artifact]);
 
+  console.log({address, artifact, ordAddress: ordAddress.value})
 	const isUtxo = computed(() => {
 		return !!(
 			artifact.origin === null &&
@@ -159,14 +149,13 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			});
 
 			const paymentPk = PrivateKey.fromWif(ordPk.value);
-      const payments: Payment[] = [{
-        to: address,
-        amount: utxo.satoshis
-      }]
+      // intentionally keep payments empty, we get the change back
+      const payments: Payment[] = []
 			const config: SendUtxosConfig = {
-        utxos: utxos.value,
+        utxos: [utxo],
         paymentPk,
-        payments
+        payments,
+        changeAddress: address,
       }
 
       const { tx, spentOutpoints } = await sendUtxos(config)
@@ -179,7 +168,8 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					numInputs: tx.inputs.length,
 					numOutputs: tx.outputs.length,
 					txid: tx.id('hex'),
-					spentOutpoints
+					spentOutpoints,
+          returnTo: "/",
 				},
 			])
 
@@ -191,18 +181,11 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	const recoverUtxo = useCallback(
 		async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
 			console.log("recover utxo");
-
-			const b64Script = artifact.script;
-
-			const asmScript = Script.fromHex(
-				Buffer.from(b64Script, "base64").toString('hex'),
-			).toASM();
-
 			const artifactUtxo = {
 				txid: artifact.txid,
 				vout: artifact.vout,
 				satoshis: artifact.satoshis,
-				script: asmScript,
+				script: artifact.script
 			} as Utxo;
 
 			if (!fundingAddress.value) {
