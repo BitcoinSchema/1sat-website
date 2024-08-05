@@ -120,7 +120,6 @@ const ListingForm = ({
         price: satoshisPayout,
         ordAddress,
         amt: BigInt(amt),
-        dec: ticker.dec || 0,
       }
 
       const additionalPayments = []
@@ -149,7 +148,8 @@ const ListingForm = ({
           txid: i.txid,
         }) as TokenUtxo),
         tokenChangeAddress: ordAddress,
-        additionalPayments
+        additionalPayments,
+        decimals: ticker.dec || 0,
       }
 
       
