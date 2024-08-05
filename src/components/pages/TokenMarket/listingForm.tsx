@@ -25,7 +25,7 @@ import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { PrivateKey } from "@bsv/sdk";
-import { type TokenListing, TokenType, type CreateOrdTokenListingsConfig, type NewListing, type TokenUtxo, createOrdTokenListings } from "js-1sat-ord";
+import { type NewTokenListing, TokenType, type CreateOrdTokenListingsConfig, type NewListing, type TokenUtxo, createOrdTokenListings } from "js-1sat-ord";
 
 const ListingForm = ({
 	initialPrice,
@@ -115,7 +115,7 @@ const ListingForm = ({
 			indexerAddress: string,
 		): Promise<PendingTransaction> => {
 			
-      const listing: TokenListing = {
+      const listing: NewTokenListing = {
         payAddress,
         price: satoshisPayout,
         ordAddress,
@@ -382,9 +382,12 @@ const ListingForm = ({
 				// refresh utxos
 				utxos.value = await getUtxos(fundingAddress.value);
 
+        if (listingAmount.value > Number.MAX_SAFE_INTEGER.toString()) {
+          throw new Error("listing amount too large")
+        }
+
 				const pendingTx = await listBsv20(
-					// Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value),
-          listingAmount.value,
+					Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value).toString(),
 					utxos.value,
 					u,
 					paymentPk,
