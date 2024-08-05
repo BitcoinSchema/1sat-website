@@ -191,6 +191,9 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			id: ((listing as Listing).id
 				? (listing as Listing).id
 				: (listing as Listing).tick) as string,
+      payout: (listing as Listing).payout,
+      price: Number.parseInt((listing as Listing).price),
+      isListing: true,
 		};
 
 		// calculate market fee
