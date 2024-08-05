@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType, type Utxo } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 
 interface CancelListingModalProps {
   onClose: () => void;
@@ -415,7 +415,6 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       txid: tx.id('hex'),
       spentOutpoints,
       payChange,
-      tokenChange
     } as PendingTransaction;
 
     setPendingTxs([pendingTx]);
