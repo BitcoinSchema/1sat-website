@@ -80,27 +80,6 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		setShowOptionalFields(!showOptionalFields);
 	}, [showOptionalFields]);
 
-	const changeTicker = useCallback(
-		(e: any) => {
-			setTicker(e.target.value);
-		},
-		[setTicker],
-	);
-
-	const changeMaxSupply = useCallback(
-		(e: any) => {
-			setMaxSupply(e.target.value);
-		},
-		[setMaxSupply],
-	);
-
-	const changeIterations = useCallback(
-		(e: any) => {
-			console.log("changing iterations to", e.target.value);
-			setIterations(Number.parseInt(e.target.value));
-		},
-		[setIterations],
-	);
 
 	const inSync = computed(() => {
 		if (!indexers.value || !chainInfo.value) {
@@ -114,35 +93,10 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		);
 	});
 
-	const totalTokens = useMemo(() => {
-		return iterations * Number.parseInt(amount || "0");
-	}, [amount, iterations]);
-
-	const changeLimit = useCallback(
-		(e: any) => {
-			setLimit(e.target.value);
-		},
-		[setLimit],
-	);
-
-	const changeDecimals = useCallback(
-		(e: any) => {
-			setDecimals(e.target.value ? Number.parseInt(e.target.value) : undefined);
-		},
-		[setDecimals],
-	);
-
-	const changeAmount = useCallback(
-		(e: any) => {
-			// exclude 0
-			if (Number.parseInt(e.target.value) !== 0) {
-				setAmount(e.target.value);
-			}
-		},
-		[setAmount],
-	);
-
-	const changeFile = useCallback(async (e: any) => {
+	const changeFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) {
+      return;
+    }
 		// TODO: This reads the file twice which is pretty inefficient
 		// would be nice to get dimensions and ArrayBuffer for preview in one go
 
@@ -275,32 +229,6 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 		[ticker, selectedFile, payPk.value, ordAddress.value, fundingAddress.value, maxSupply, decimals],
 	);
 
-	const bulkInscribe = useCallback(async () => {
-		if (!payPk || !ordAddress || !fundingAddress.value) {
-			return;
-		}
-
-    if (!utxos.value) {
-      console.log("no utxos");
-      return;
-    }
-
-		// range up to iterations
-		for (let i = 0; i < iterations; i++) {
-			await getUtxos(fundingAddress.value);
-			const sortedUtxos = utxos.value?.sort((a, b) =>
-				a.satoshis > b.satoshis ? -1 : 1,
-			);
-			const u = head(sortedUtxos);
-			if (!u) {
-				console.log("no utxo");
-				return;
-			}
-
-			return await inscribeBsv21(utxos.value);
-		}
-	}, [fundingAddress.value, iterations, utxos.value, inscribeBsv21]);
-
 	const clickInscribe = useCallback(async () => {
 		if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
 			return;
@@ -356,9 +284,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 								}
 							}}
 							value={ticker || ""}
-							onChange={(event) => {
-								changeTicker(event);
-							}}
+							onChange={(e) => setTicker(e.target.value)}
 						/>
 
 						{!inSync && (
@@ -417,7 +343,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 						pattern="\d+"
 						type="text"
 						className="text-white w-full rounded p-2"
-						onChange={changeMaxSupply}
+						onChange={(e) => setMaxSupply(e.target.value)}
 						value={maxSupply}
 					/>
 				</label>
@@ -447,7 +373,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 								max={18}
 								value={decimals}
 								placeholder={defaultDec.toString()}
-								onChange={changeDecimals}
+								onChange={(e) => setDecimals(e.target.value ? Number.parseInt(e.target.value) : undefined)}
 							/>
 						</label>
 					</div>
@@ -465,7 +391,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			<button
 				disabled={submitDisabled}
 				type="submit"
-				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
+				onClick={clickInscribe}
 				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
 			>
 				Preview
@@ -477,7 +403,6 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 export default InscribeBsv21;
 
 const maxMaxSupply = BigInt("18446744073709551615");
-const bulkEnabled = false;
 
 export const minFee = 100000000; // 1BSV
 export const baseFee = 50;

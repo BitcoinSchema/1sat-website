@@ -51,7 +51,6 @@ import ImportWalletModal from "../modal/importWallet";
 import ProtectKeysModal from "../modal/protectKeys";
 import WithdrawalModal from "../modal/withdrawal";
 import { backupKeys } from "@/utils/wallet";
-let initAttempted = false;
 
 const WalletMenu: React.FC = () => {
   useSignals();
