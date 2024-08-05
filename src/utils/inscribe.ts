@@ -173,7 +173,7 @@ export const inscribeFile = async (
 		try {
 			// setInscribeStatus(FetchStatus.Loading);
 
-			const { tx, spentOutpoints } = await handleInscribing(
+			const { tx, spentOutpoints, payChange } = await handleInscribing(
 				payPk.value,
 				fileAsBase64,
 				file.type,
@@ -190,6 +190,7 @@ export const inscribeFile = async (
 					numOutputs: tx.outputs.length,
 					txid: tx.id('hex'),
 					spentOutpoints,
+          payChange,
 					metadata,
 				} as PendingTransaction;
 				console.log(Object.keys(result));
@@ -232,7 +233,7 @@ export const inscribeUtf8 = async (
 	while (num--) {
 		inscriptions.push({ dataB64: fileAsBase64, contentType });
 	}
-	const { tx, spentOutpoints } = await handleBulkInscribing(
+	const { tx, spentOutpoints, payChange } = await handleBulkInscribing(
 		payPk.value,
 		inscriptions,
 		ordAddress.value,
@@ -252,6 +253,7 @@ export const inscribeUtf8 = async (
 		numOutputs: tx.outputs.length,
 		txid: tx.id('hex'),
 		spentOutpoints,
+    payChange,
 		iterations,
 	} as PendingTransaction;
 	setPendingTxs([result]);

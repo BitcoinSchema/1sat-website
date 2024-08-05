@@ -81,7 +81,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 				ordPk,
 			};
 
-			const { tx, spentOutpoints } = await createOrdListings(config);
+			const { tx, spentOutpoints, payChange } = await createOrdListings(config);
 
 			// const tx = new Transaction(1, 0);
 			// const t = ordinal.txid;
@@ -177,6 +177,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 				numInputs: tx.inputs.length,
 				numOutputs: tx.outputs.length,
 				spentOutpoints,
+        payChange,
 				marketFee: 0,
 			};
 		},

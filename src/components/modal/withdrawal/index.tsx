@@ -97,6 +97,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
 						numOutputs: tx.outputs.length,
 						txid: tx.id("hex"),
 						spentOutpoints,
+            payChange,
 					},
 				]);
 

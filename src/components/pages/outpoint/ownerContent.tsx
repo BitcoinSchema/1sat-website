@@ -115,7 +115,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         sendOrdinalsConfig.metaData = meta
       }
 
-      const { tx, spentOutpoints } = await sendOrdinals(sendOrdinalsConfig)
+      const { tx, spentOutpoints, payChange } = await sendOrdinals(sendOrdinalsConfig)
 
 			setPendingTxs([
 				{
@@ -123,6 +123,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					fee: tx.getFee(),
 					txid: tx.id('hex'),
           spentOutpoints,
+          payChange,
           metadata: meta
 				} as PendingTransaction,
 			]);

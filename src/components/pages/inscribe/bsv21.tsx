@@ -272,7 +272,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       }]);
       setInscribeStatus(FetchStatus.Success);
 		},
-		[ticker, selectedFile, payPk.value, ordAddress.value, fundingAddress.value, maxSupply],
+		[ticker, selectedFile, payPk.value, ordAddress.value, fundingAddress.value, maxSupply, decimals],
 	);
 
 	const bulkInscribe = useCallback(async () => {

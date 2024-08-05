@@ -85,12 +85,17 @@ const PreviewPage = () => {
 	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
 
 	const change = useMemo(() => {
-		if (!pendingTx.value?.rawTx) {
+    if (pendingTx.value?.payChange) {
+      console.log({change: pendingTx.value.payChange.satoshis})
+      return pendingTx.value.payChange.satoshis
+    }
+    if (!pendingTx.value?.rawTx) {
 			return 0;
 		}
     const tx = Transaction.fromHex(pendingTx.value.rawTx)
     const changeOut = tx.outputs.find((o) => o.change)
-  
+    console.log({changeOut, pendingTx: pendingTx.value})
+
 		return changeOut?.satoshis || 0;
 	}, [pendingTx.value]);
 
