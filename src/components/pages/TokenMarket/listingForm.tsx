@@ -120,6 +120,7 @@ const ListingForm = ({
         price: satoshisPayout,
         ordAddress,
         amt: BigInt(amt),
+        dec: ticker.dec || 0,
       }
 
       const additionalPayments = []
@@ -387,7 +388,8 @@ const ListingForm = ({
         }
 
 				const pendingTx = await listBsv20(
-					Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value).toString(),
+					// Math.ceil(Number.parseFloat(listingAmount.value) * 10 ** dec.value).toString(),
+          listingAmount.value,
 					utxos.value,
 					u,
 					paymentPk,
