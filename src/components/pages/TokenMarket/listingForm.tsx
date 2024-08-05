@@ -29,7 +29,7 @@ import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { PrivateKey } from "@bsv/sdk";
-import { type TokenListing, TokenType, type CreateOrdTokenListingsConfig, type Listing, type TokenUtxo, createOrdTokenListings } from "js-1sat-ord";
+import { type TokenListing, TokenType, type CreateOrdTokenListingsConfig, type TokenUtxo, createOrdTokenListings } from "js-1sat-ord";
 
 const ListingForm = ({
 	initialPrice,
