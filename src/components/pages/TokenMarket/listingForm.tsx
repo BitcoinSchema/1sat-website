@@ -2,16 +2,12 @@
 
 import {
 	API_HOST,
-	oLockPrefix,
-	oLockSuffix,
 	toastErrorProps,
 } from "@/constants";
 import {
 	bsv20Balances,
-	
 	ordPk,
 	payPk,
-	pendingTxs,
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
@@ -134,6 +130,7 @@ const ListingForm = ({
         })
       }
 
+      console.log({inputTokens})
       const config: CreateOrdTokenListingsConfig = {
         utxos,
         listings: [listing],
@@ -145,13 +142,18 @@ const ListingForm = ({
         inputTokens: inputTokens.map((i) => ({
           amt: i.amt,
           id: i.tick ? i.tick : i.id,
-          satoshis: i.satoshis
+          satoshis: i.satoshis,
+          script: i.script,
+          vout: i.vout,
+          txid: i.txid,
         }) as TokenUtxo),
-        tokenChangeAddress: "",
+        tokenChangeAddress: ordAddress,
         additionalPayments
       }
 
+      
       const { tx, spentOutpoints, tokenChange, payChange } = await createOrdTokenListings(config);
+      
 			// const tx = new Transaction(1, 0);
 
       // const spentOutpoints = []

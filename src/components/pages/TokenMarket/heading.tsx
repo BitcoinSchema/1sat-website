@@ -4,6 +4,7 @@ import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
 import { AssetType } from "@/constants";
 import {
+  bsv20Utxos,
 	CurrencyDisplay,
 	currencyDisplay,
 	exchangeRate,
@@ -99,8 +100,8 @@ const TickerHeading = ({
 		// open modal
 		showPaymentModal.value = true;
 		if (fundingAddress.value && ordAddress.value) {
-			const bsv20Utxos = await getBsv20Utxos(ordAddress.value, 0, id);
-			ordUtxos.value = (ordUtxos.value || []).concat(bsv20Utxos);
+			const bu = await getBsv20Utxos(ordAddress.value, 0, id);
+			bsv20Utxos.value = (bsv20Utxos.value || []).concat(bu);
 			utxos.value = await getUtxos(fundingAddress.value);
 		}
 	};
@@ -123,15 +124,18 @@ const TickerHeading = ({
 	});
 
 	const supplyContent = computed(() => {
+    if (!ticker.supply || !ticker.amt || !ticker.max) {
+      return null
+    }
 		const totalSupply =
 			Number.parseInt(ticker.supply || ticker.amt || "0") /
 			(ticker.dec ? 10 ** ticker.dec : 1);
 		let text = `${totalSupply?.toLocaleString()} `;
 		if (type === AssetType.BSV20) {
-			text += `/ ${(Number.parseInt(ticker.max!) / 10 ** (ticker.dec || 0))?.toLocaleString()}`;
+			text += `/ ${(Number.parseInt(ticker.max) / 10 ** (ticker.dec || 0))?.toLocaleString()}`;
 		}
 		const mintedOut =
-			Number.parseInt(ticker.supply!) === Number.parseInt(ticker.max!);
+			Number.parseInt(ticker.supply) === Number.parseInt(ticker.max);
 		const btnDisabled = !ticker.included || paidUp.value;
 
 		return (
