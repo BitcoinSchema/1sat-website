@@ -203,9 +203,15 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
                 type="number"
                 placeholder={placeholderText}
                 max={balance}
+                step={dec ? `0.${"0".repeat(dec - 1)}1` : "1"}
                 className="input input-bordered w-full"
                 value={amount.value || undefined}
                 onChange={(e) => {
+
+                  const regex = new RegExp(`^\\d*\\.?\\d{0,${dec}}$`);
+                  if (!regex.test(e.target.value)) {
+                    e.target.value = e.target.value.slice(0, -1);
+                  }
                   if (
                     e.target.value === "" ||
                     Number.parseFloat(e.target.value) <=
