@@ -18,6 +18,7 @@ import {
 	currencyDisplay,
 	exchangeRate,
 } from "@/signals/wallet";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 interface Props {
 	ticker: MarketData;
@@ -26,72 +27,48 @@ interface Props {
 }
 
 export function TokenMarketListings({ ticker, show, type }: Props) {
-	useSignals();
-	const showBuy = useSignal<string | null>(null);
-	const showCancel = useSignal<string | null>(null);
-	const newOffset = useSignal(0);
-	const reachedEndOfListings = useSignal(false);
-	const ref = useRef(null);
-	const isInView = useInView(ref);
+  useSignals();
+  const showBuy = useSignal<string | null>(null);
+  const showCancel = useSignal<string | null>(null);
+  const ref = React.useRef(null);
+  const isInView = useInView(ref);
 
-	useEffect(() => {
-		let nextPageOfListings: Listing[] = [];
+  const fetchListings = async ({ pageParam }: { pageParam: number }) => {
+    const id = type === AssetType.BSV20 ? ticker.tick : ticker.id;
+    const urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=${resultsPerPage}&offset=${pageParam}&${
+      type === AssetType.BSV20 ? "tick" : "id"
+    }=${id}`;
+    const { promise: promiseBsv20v1Market } = http.customFetch<Listing[]>(urlMarket);
+    return promiseBsv20v1Market;
+  };
 
-		const fire = async (id: string) => {
-			if (newOffset.value === 0) {
-				listings.value = [];
-			}
-			let urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=${resultsPerPage}&offset=${newOffset.value}&tick=${id}`;
-			if (type === AssetType.BSV21) {
-				urlMarket = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=${resultsPerPage}&offset=${newOffset.value}&id=${id}`;
-			}
-			newOffset.value += 20;
-			const { promise: promiseBsv20v1Market } =
-				http.customFetch<Listing[]>(urlMarket);
-			nextPageOfListings = await promiseBsv20v1Market;
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+  } = useInfiniteQuery({
+    queryKey: ["tokenMarketListings", ticker, type],
+    queryFn: fetchListings,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === resultsPerPage ? allPages.length * resultsPerPage : undefined;
+    },
+    initialPageParam: 0,
+    enabled: !!ticker.tick || !!ticker.id,
+  });
 
-			if (nextPageOfListings.length > 0) {
-				// For some reason this would return some items the same id from the first call so we filter them out
-				listings.value = [
-					...(nextPageOfListings || []),
-					...(listings.value || []).filter(
-						(l) => !nextPageOfListings?.some((l2) => l2.txid === l.txid),
-					),
-				];
-			} else {
-				reachedEndOfListings.value = true;
-			}
-			listings.value = (listings.value || []).sort((a, b) => {
-				return Number.parseFloat(a.pricePer) < Number.parseFloat(b.pricePer)
-					? -1
-					: 1;
-			});
-		};
+  useEffect(() => {
+    if (isInView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [isInView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-		if (
-			type === AssetType.BSV20 &&
-			(isInView || newOffset.value === 0) &&
-			ticker.tick &&
-			!reachedEndOfListings.value
-		) {
-			// const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
-			// const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
-			// listings = await promiseBsv20;
-			fire(ticker.tick);
-		} else if (
-			type === AssetType.BSV21 &&
-			(isInView || newOffset.value === 0) && // fire the first time
-			ticker.id &&
-			!reachedEndOfListings.value
-		) {
-			// console.log({ isInView, ticker });
-			fire(ticker.id);
-		}
-	}, [isInView, newOffset, reachedEndOfListings, ticker, type]);
+  const listings = data?.pages.flat() || [];
 
 	return (
 		<>
-			{listings.value?.map((listing) => {
+			{listings?.map((listing) => {
 				const qty = Number.parseInt(listing.amt) / 10 ** ticker.dec;
 				const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
 
@@ -229,7 +206,20 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 				);
 			})}
 
-			{listings.value?.length === 0 && (
+      {status === "pending" && (
+        <div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
+          Loading...
+        </div>
+      )}
+
+      {status === "error" && (
+        <div className="text-center text-error min-h-64 flex items-center justify-center">
+          Error loading listings
+        </div>
+      )}
+
+
+			{listings?.length === 0 && (
 				<div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
 					No listings found
 				</div>
