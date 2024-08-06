@@ -104,16 +104,42 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 				iv
 			);
 
+			const encryptedIdentitiesBackup = encryptData(
+				Buffer.from(
+					JSON.stringify({
+						allBapIdentities: bapIdentities.value,
+					}),
+					"utf-8"
+				),
+				bapIdEncryptionKey.value,
+				iv
+			);
+
 			const encryptedIdentity =
 				encryptionPrefix +
 				Buffer.concat([iv, encrypted]).toString("base64");
+
+			const encryptedAllIdentities =
+				encryptionPrefix +
+				Buffer.concat([iv, encryptedIdentitiesBackup]).toString("base64");
 
 			const activeIdentityBackup: EncryptedIdentityJson = {
 				encryptedIdentity,
 				pubKey,
 			};
 
+			const allIdentitiesBackup = {
+				encryptedAllIdentities,
+				pubKey,
+			};
+
 			const encryptedIdentityString = JSON.stringify(activeIdentityBackup);
+			const encryptedAllIdentitiesString = JSON.stringify(allIdentitiesBackup);
+
+			localStorage.setItem(
+				"encryptedAllIdentities",
+				encryptedAllIdentitiesString 
+			);	
 
 			localStorage.setItem(
 				"encryptedIdentity",
@@ -122,19 +148,14 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 				
 			activeBapIdentity.value = selectedBapIdentity.value;
 			hasIdentityBackup.value = true;
-			setIdentitySessionStorage(selectedBapIdentity.value!);	
-			
+			setIdentitySessionStorage(selectedBapIdentity.value!);
+			setIdentitySessionStorage(bapIdentities.value!);			
 			return true;
 		} catch (e) {
 			console.log(e);
 			toast.error("Failed to encrypt identity", toastErrorProps);
 		}
-	}, [
-		bapIdEncryptionKey.value,
-		passphrase.value,
-		payPk.value,
-		selectedBapIdentity.value,
-	]);
+	}, [bapIdEncryptionKey.value, bapIdentities.value, passphrase.value, payPk.value, selectedBapIdentity.value]);
 
 	const handleDecryptEncrypt = async () => {
 		const passwordCorrect = await passwordCanDecrypt();

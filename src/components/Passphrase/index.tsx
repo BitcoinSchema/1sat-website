@@ -30,7 +30,7 @@ import { RiErrorWarningFill } from "react-icons/ri";
 import { TbDice } from "react-icons/tb";
 import { useCopyToClipboard } from "usehooks-ts";
 import { hasIdentityBackup } from "@/signals/bapIdentity/index";
-import {loadIdentityFromEncryptedStorage} from "@/signals/bapIdentity/client";
+import { loadAvailableIdentitiesFromEncryptedStorage, loadIdentityFromEncryptedStorage } from "@/signals/bapIdentity/client";
 
 type Props = {
   mode: EncryptDecrypt;
@@ -179,8 +179,9 @@ const EnterPassphrase: React.FC<Props> = ({
         const succeeded = await loadKeysFromEncryptedStorage(passphrase.value);
         if (succeeded && !!hasIdentityBackup.value) {
           const decryptedId = await loadIdentityFromEncryptedStorage(passphrase.value);
+          const decryptedIdentities = await loadAvailableIdentitiesFromEncryptedStorage(passphrase.value);
 
-          if (!decryptedId) {
+          if (!decryptedId || !decryptedIdentities) {
             toast.error("Failed to decrypt identity, please import it again.", toastErrorProps);
           }
         }

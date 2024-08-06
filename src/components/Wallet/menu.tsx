@@ -380,6 +380,9 @@ const WalletMenu: React.FC = () => {
 										Manage Profile
 									</button>
 								</li>
+								<li>
+									<Link href="/profile">Profile Details</Link>
+								</li>
 							</ul>
 
 							<div className="divider">1Sat Wallet</div>

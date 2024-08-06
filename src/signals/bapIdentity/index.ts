@@ -24,3 +24,4 @@ export const identitiesLoading = signal<boolean>(false);
 export const activeBapIdentity = signal<IdentityResult | null>(null);
 export const selectedBapIdentity = signal<IdentityResult | null>(null);
 export const hasIdentityBackup = signal<boolean>(false);
+export const availableIdentities = signal<IdentityResult[] | null>(null);
