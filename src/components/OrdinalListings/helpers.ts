@@ -107,6 +107,9 @@ export const listingName = (listing: OrdUtxo) => {
 	switch (listing?.origin?.data?.insc?.file.type.split(";")[0]) {
 		// biome-ignore lint/suspicious/noFallthroughSwitchClause: if no title is found fall through to default behavior
 		case "text/html": {
+      if (listing?.origin?.data.map) {
+        return listing?.origin?.data.map.name || listing?.origin.data.map.subTypeData.name 
+      }
 			// extract the title from the html
 			const html = listing?.origin?.data?.insc?.text;
 			const title = html?.match(/<title>(.*)<\/title>/)?.[1];
