@@ -23,9 +23,9 @@ import {
 } from "@/utils/encryption";
 import { generatePassphrase } from "@/utils/passphrase";
 import { backupKeys } from "@/utils/wallet";
+import { PrivateKey } from "@bsv/sdk";
 import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { PrivateKey } from "bsv-wasm-web";
 import randomBytes from "randombytes";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
@@ -76,7 +76,7 @@ const EnterPassphrase: React.FC<Props> = ({
     }
   });
 
-  const handlePassphraseChange = (e: any) => {
+  const handlePassphraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     e.stopPropagation();
     passphrase.value = e.target.value;
@@ -95,9 +95,9 @@ const EnterPassphrase: React.FC<Props> = ({
           return;
         }
 
-        const pubKey = PrivateKey.from_wif(payPk.value)
-          .to_public_key()
-          .to_hex();
+        const pubKey = PrivateKey.fromWif(payPk.value)
+          .toPublicKey()
+          .toString();
         encryptionKey.value =
           (await generateEncryptionKeyFromPassphrase(
             passphrase.value,
@@ -112,7 +112,7 @@ const EnterPassphrase: React.FC<Props> = ({
         }
 
         const iv = new Uint8Array(randomBytes(16).buffer);
-        const encrypted = encryptData(
+        const encrypted = await encryptData(
           Buffer.from(
             JSON.stringify({
 			  mnemonic: mnemonic.value,

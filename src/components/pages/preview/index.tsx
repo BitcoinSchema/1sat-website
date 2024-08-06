@@ -1,7 +1,7 @@
 "use client";
 
 import { API_HOST, FetchStatus, toastProps } from "@/constants";
-import { bsvWasmReady, ordUtxos, pendingTxs, usdRate, utxos } from "@/signals/wallet";
+import { ordUtxos, pendingTxs, usdRate, utxos } from "@/signals/wallet";
 import { setPendingTxs } from "@/signals/wallet/client";
 import type { PendingTransaction } from "@/types/preview";
 import { formatBytes } from "@/utils/bytes";
@@ -26,11 +26,11 @@ const PreviewPage = () => {
 	);
 
 	useEffect(() => {
-    if (bsvWasmReady.value) {
+    if(pendingTxs.value?.length) {
       txs.value = pendingTxs.value;
       pendingTx.value = head(txs.value) || null;
     }
-	}, [bsvWasmReady.value, pendingTx, pendingTxs.value, txs]);
+	}, [pendingTx, pendingTxs.value, txs]);
 
 	const feeUsd = useMemo(() => {
 		if (!pendingTx.value?.fee) {
@@ -85,19 +85,18 @@ const PreviewPage = () => {
 	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
 
 	const change = useMemo(() => {
-		if (!pendingTx.value?.rawTx) {
+    if (pendingTx.value?.payChange) {
+      console.log({change: pendingTx.value.payChange.satoshis})
+      return pendingTx.value.payChange.satoshis
+    }
+    if (!pendingTx.value?.rawTx) {
 			return 0;
 		}
     const tx = Transaction.fromHex(pendingTx.value.rawTx)
-		
-		let totalChange = 0;
-    for (const out of tx.outputs) {
-      if (out.change) {
-        totalChange = out.satoshis || 0;
-      }
-    }
+    const changeOut = tx.outputs.find((o) => o.change)
+    console.log({changeOut, pendingTx: pendingTx.value})
 
-		return totalChange;
+		return changeOut?.satoshis || 0;
 	}, [pendingTx.value]);
 
 	const usdPrice = useMemo(() => {
@@ -109,18 +108,11 @@ const PreviewPage = () => {
 
 		let totalOut = 0;
 		for (const out of tx.outputs) {
-      if (out.change) {
-        continue
-      }
 			totalOut += out.satoshis || 0;
 		}
 		const cost = totalOut - change
 		return (cost / usdRate.value).toFixed(2);
 	}, [change, pendingTx.value, usdRate.value]);
-
-	// useEffect(() => {
-	// 	console.log({ usdPrice: usdPrice.value, change: change.value });
-	// }, [usdPrice.value, change.value]);
 
 	return (
 		<>

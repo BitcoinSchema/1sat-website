@@ -57,7 +57,6 @@ export const identityAddressPath = signal<number | string | null>(null);
  * Wallet state
  */
 export const pendingTxs = signal<PendingTransaction[] | null>(null);
-export const bsvWasmReady = signal<boolean>(false);
 export const utxos = signal<Utxo[] | null>(null);
 export const ordUtxos = signal<OrdUtxo[] | null>(null);
 export const bsv20Utxos = signal<OrdUtxo[] | null>(null);

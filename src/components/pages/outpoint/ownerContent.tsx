@@ -5,7 +5,6 @@ import { WalletTab } from "@/components/Wallet/tabs";
 import CancelListingModal from "@/components/modal/cancelListing";
 import TransferBsv20Modal from "@/components/modal/transferBsv20";
 import {
-	bsvWasmReady,
 	ordPk,
 	payPk,
 	utxos,
@@ -32,31 +31,16 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	const showSendModal = useSignal<string | undefined>(undefined);
 	const router = useRouter();
 
-	// TODO: Check the destination address matches the ordAddress
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	const address = useMemo(() => {
-		if (bsvWasmReady.value === false) {
-			return "";
-		}
-		const script = Script.fromHex(Buffer.from(artifact.script, "base64").toString('hex'));
-		const pubkeyHash = script.toASM().split(" ")[2];
-		if (!pubkeyHash) {
+		const script = Script.fromBinary(Utils.toArray(artifact.script, "base64"));
+    const pubkeyHash = script.chunks[2].data;
+		if (!pubkeyHash || pubkeyHash.length !== 20) {
 			return undefined;
 		}
-		const buff = Buffer.from(pubkeyHash, "hex");
-    const data = script.chunks[2].data;
-		if (!data || !buff || buff.length !== 20) {
-			return undefined;
-		}
+		return toBase58Check(pubkeyHash)
+	}, [artifact]);
 
-    const hash = Hash.ripemd160(data)
-		const address = toBase58Check(hash)
-    // P2PKHAddress.from_pubkey_hash(buff);
-
-		return address
-	}, [artifact, bsvWasmReady.value]);
-
+  console.log({address, artifact, ordAddress: ordAddress.value})
 	const isUtxo = computed(() => {
 		return !!(
 			artifact.origin === null &&
@@ -79,14 +63,13 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			// 	(a, b) => b.satoshis - a.satoshis,
 			// )[0];
 
-			const scriptAsm = Script.fromHex(
-				Buffer.from(artifact.script, "base64").toString('hex'),
-			).toASM();
+
+
 			const artifactUtxo = {
 				txid: artifact.txid,
 				vout: artifact.vout,
 				satoshis: artifact.satoshis,
-				script: scriptAsm,
+				script: artifact.script,
 			} as Utxo;
 
 			if (to === ordAddress.value && !meta) {
@@ -121,7 +104,8 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         sendOrdinalsConfig.metaData = meta
       }
 
-      const { tx, spentOutpoints } = await sendOrdinals(sendOrdinalsConfig)
+      console.log({artifactUtxo, paymentUtxos})
+      const { tx, spentOutpoints, payChange } = await sendOrdinals(sendOrdinalsConfig)
 
 			setPendingTxs([
 				{
@@ -129,6 +113,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					fee: tx.getFee(),
 					txid: tx.id('hex'),
           spentOutpoints,
+          payChange,
           metadata: meta
 				} as PendingTransaction,
 			]);
@@ -164,14 +149,13 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 			});
 
 			const paymentPk = PrivateKey.fromWif(ordPk.value);
-      const payments: Payment[] = [{
-        to: address,
-        amount: utxo.satoshis
-      }]
+      // intentionally keep payments empty, we get the change back
+      const payments: Payment[] = []
 			const config: SendUtxosConfig = {
-        utxos: utxos.value,
+        utxos: [utxo],
         paymentPk,
-        payments
+        payments,
+        changeAddress: address,
       }
 
       const { tx, spentOutpoints } = await sendUtxos(config)
@@ -184,7 +168,8 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					numInputs: tx.inputs.length,
 					numOutputs: tx.outputs.length,
 					txid: tx.id('hex'),
-					spentOutpoints
+					spentOutpoints,
+          returnTo: "/",
 				},
 			])
 
@@ -196,18 +181,11 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	const recoverUtxo = useCallback(
 		async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
 			console.log("recover utxo");
-
-			const b64Script = artifact.script;
-
-			const asmScript = Script.fromHex(
-				Buffer.from(b64Script, "base64").toString('hex'),
-			).toASM();
-
 			const artifactUtxo = {
 				txid: artifact.txid,
 				vout: artifact.vout,
 				satoshis: artifact.satoshis,
-				script: asmScript,
+				script: artifact.script
 			} as Utxo;
 
 			if (!fundingAddress.value) {

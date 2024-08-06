@@ -5,30 +5,31 @@ import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { PendingTransaction } from "@/types/preview";
 import {
-	createOrdinal,
-	createOrdinalWithData,
+	createOrdinals,
+	type Destination,
+	type PreMAP,
+	type CreateOrdinalsConfig,
 	type Inscription,
 	type MAP,
 	type Payment,
 	type RemoteSigner,
 	type Utxo,
-} from "@/utils/js-1sat-ord";
-import { PrivateKey } from "bsv-wasm-web";
+} from "js-1sat-ord";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
 import { setPendingTxs } from "@/signals/wallet/client";
+import { PrivateKey } from "@bsv/sdk";
 
 export const handleInscribing = async (
 	payPk: string,
 	fileAsBase64: string,
 	fileContentType: string,
 	ordAddress: string,
-	changeAddress: string,
-	fundingUtxo: Utxo,
-	metadata?: MAP, // MAP,
-	payments: Payment[] = [],
+	utxos: Utxo[],
+	metaData?: PreMAP, // MAP,
+	additionalPayments: Payment[] = [],
 ) => {
-	const paymentPk = PrivateKey.from_wif(payPk);
+	const paymentPk = PrivateKey.fromWif(payPk);
 
 	// inscription
 	const inscription = {
@@ -39,24 +40,39 @@ export const handleInscribing = async (
 	// const idKey = PrivateKey.from_wif(
 	//   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
 	// );
-	console.log("Inscribing with", { metadata });
+	console.log("Inscribing with", { metaData });
 	const signer = {
 		// idKey // optional id key
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
 
-	const { spentOutpoints, tx } = await createOrdinal(
-		[fundingUtxo],
-		ordAddress,
+	const destinations: Destination[] = [
+		{
+			address: ordAddress,
+      inscription
+		},
+	];
+
+
+  // [fundingUtxo],
+  // ordAddress,
+  // paymentPk,
+  // changeAddress,
+  // 0.05,
+  // [inscription],
+  // metadata, // optional metadata
+  // undefined,
+  // payments,
+
+	const config: CreateOrdinalsConfig = {
+		utxos,
+		destinations,
 		paymentPk,
-		changeAddress,
-		0.05,
-		[inscription],
-		metadata, // optional metadata
-		undefined,
-		payments,
-	);
-	return { spentOutpoints, tx };
+    metaData,
+    additionalPayments,
+	};
+	const { spentOutpoints, tx, payChange } = await createOrdinals(config);
+	return { spentOutpoints, tx, payChange};
 };
 
 // same as haleInscribing but takes multiple utxos and multiple inscriptions
@@ -65,29 +81,34 @@ export const handleBulkInscribing = async (
 	inscriptions: Inscription[],
 	ordAddress: string,
 	changeAddress: string,
-	fundingUtxos: Utxo[],
-	metadata?: MAP,
-	payments: Payment[] = [],
+	utxos: Utxo[],
+	metaData?: PreMAP,
+	additionalPayments: Payment[] = [],
 ) => {
-	const why = payments;
-	const paymentPk = PrivateKey.from_wif(payPk);
+	const paymentPk = PrivateKey.fromWif(payPk);
 
-	const signer = {
-		keyHost: "http://localhost:21000",
-	} as RemoteSigner;
+	// const signer = {
+	// 	keyHost: "http://localhost:21000",
+	// } as RemoteSigner;
 
-	const { tx, spentOutpoints } = await createOrdinal(
-		fundingUtxos,
-		ordAddress,
+  const destinations: Destination[] = inscriptions.map((inscription) => {
+    return {
+      address: ordAddress,
+      inscription
+    }
+  });
+
+	const config: CreateOrdinalsConfig = {
+		utxos,
+		destinations,
 		paymentPk,
-		changeAddress,
-		0.05,
-		inscriptions,
-		metadata, // optional metadata
-		undefined,
-		why, // payments
-	);
-	return { tx, spentOutpoints }
+    metaData,
+    additionalPayments,
+    changeAddress,
+	};
+
+	const { tx, spentOutpoints, payChange } = await createOrdinals(config);
+	return { tx, spentOutpoints, payChange };
 };
 // same as handleBulkInscribing but with data
 export const handleBulkInscribingWithData = async (
@@ -98,34 +119,53 @@ export const handleBulkInscribingWithData = async (
 	fundingUtxos: Utxo[],
 	metadata: MAP | undefined,
 	payments: Payment[],
-	data: StringOrBufferArray,
 ) => {
-	const why = payments;
-	const paymentPk = PrivateKey.from_wif(payPk);
+	const paymentPk = PrivateKey.fromWif(payPk);
 
 	const signer = {
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
 
-	const { tx, spentOutpoints } = await createOrdinalWithData(
-		fundingUtxos,
-		ordAddress,
-		paymentPk,
-		changeAddress,
-		0.05,
-		inscriptions,
-		metadata, // optional metadata
-		undefined,
-		why, // payments
-		data,
-	);
+  const config: CreateOrdinalsConfig = {
+    utxos: fundingUtxos,
+    destinations: inscriptions.map((inscription) => {
+      return {
+        address: ordAddress,
+        inscription
+      }
+    }),
+    paymentPk,
+    metaData: metadata,
+    additionalPayments: payments,
+    changeAddress,
+  };
+  
+	const { tx, spentOutpoints } = await createOrdinals(config);
+	// 	fundingUtxos,
+	// 	ordAddress,
+	// 	paymentPk,
+	// 	changeAddress,
+	// 	0.05,
+	// 	inscriptions,
+	// 	metadata, // optional metadata
+	// 	undefined,
+	// 	why, // payments
+	// 	data,
+	// );
 	return { tx, spentOutpoints };
 };
 
-export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
-	if (!file?.type || !utxo) {
+export const inscribeFile = async (
+	utxos: Utxo[],
+	file: File,
+	metadata?: PreMAP,
+) => {
+	if (!file?.type || !utxos.length) {
 		throw new Error("File or utxo not provided");
 	}
+  if (!payPk.value || !ordAddress.value) {
+    throw new Error("Missing payPk or ordAddress");
+  }
 
 	//   setInscribeStatus(FetchStatus.Loading);
 	try {
@@ -133,33 +173,24 @@ export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
 		try {
 			// setInscribeStatus(FetchStatus.Loading);
 
-			const { tx, spentOutpoints } = await handleInscribing(
-				payPk.value!,
+			const { tx, spentOutpoints, payChange } = await handleInscribing(
+				payPk.value,
 				fileAsBase64,
 				file.type,
-				ordAddress.value!,
-				fundingAddress.value!,
-				utxo,
+				ordAddress.value,
+				utxos,
 				metadata,
 			);
-			const satsIn = utxo!.satoshis;
-			const satsOut = Number(tx.satoshis_out());
-			if (satsIn && satsOut) {
-				const fee = satsIn - satsOut;
-				if (fee < 0) {
-					console.error("Fee inadequate");
-					toast.error("Fee Inadequate", toastErrorProps);
-					// setInscribeStatus(FetchStatus.Error);
-					throw new Error("Fee inadequate");
-				}
+
 				const result = {
-					rawTx: tx.to_hex(),
-					size: tx.get_size(),
-					fee,
-					numInputs: tx.get_ninputs(),
-					numOutputs: tx.get_noutputs(),
-					txid: tx.get_id_hex(),
+					rawTx: tx.toHex(),
+					size: tx.toBinary().length,
+					fee: tx.getFee(),
+					numInputs: tx.inputs.length,
+					numOutputs: tx.outputs.length,
+					txid: tx.id('hex'),
 					spentOutpoints,
+          payChange,
 					metadata,
 				} as PendingTransaction;
 				console.log(Object.keys(result));
@@ -167,7 +198,7 @@ export const inscribeFile = async (utxo: Utxo, file: File, metadata?: any) => {
 				setPendingTxs([result]);
 				//setInscribeStatus(FetchStatus.Success);
 				return result;
-			}
+			
 		} catch (e) {
 			console.error(e);
 			//setInscribeStatus(FetchStatus.Error);
@@ -188,7 +219,11 @@ export const inscribeUtf8 = async (
 	iterations = 1,
 	payments: Payment[] = [],
 ) => {
-	const why = payments;
+
+  if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
+    throw new Error("Missing payPk, ordAddress or fundingAddress");
+  }
+
 	const fileAsBase64 = Buffer.from(text).toString("base64");
 	// normalize utxo to array
 	const utxos = Array.isArray(utxo) ? utxo : [utxo];
@@ -198,78 +233,29 @@ export const inscribeUtf8 = async (
 	while (num--) {
 		inscriptions.push({ dataB64: fileAsBase64, contentType });
 	}
-	const { tx, spentOutpoints } = await handleBulkInscribing(
-		payPk.value!,
+	const { tx, spentOutpoints, payChange } = await handleBulkInscribing(
+		payPk.value,
 		inscriptions,
-		ordAddress.value!,
-		fundingAddress.value!,
+		ordAddress.value,
+		fundingAddress.value,
 		utxos,
 		undefined,
-		why, // payments
+		payments,
 	);
 	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
-	const satsOut = Number(tx.satoshis_out());
+	const satsOut = tx.outputs.reduce((acc, output) => acc + (output.satoshis || 0), 0);
 	const fee = satsIn - satsOut;
 	const result = {
-		rawTx: tx.to_hex(),
-		size: tx.get_size(),
+		rawTx: tx.toHex(),
+		size: tx.toBinary().length,
 		fee,
-		numInputs: tx.get_ninputs(),
-		numOutputs: tx.get_noutputs(),
-		txid: tx.get_id_hex(),
+		numInputs: tx.inputs.length,
+		numOutputs: tx.outputs.length,
+		txid: tx.id('hex'),
 		spentOutpoints,
+    payChange,
 		iterations,
 	} as PendingTransaction;
-	setPendingTxs([result]);
-	return result;
-};
-export type StringOrBufferArray = (string | Buffer)[];
-
-export const inscribeUtf8WithData = async (
-	text: string,
-	contentType: string,
-	utxo: Utxo | Utxo[],
-	iterations: number | undefined,
-	payments: Payment[] | undefined,
-	data: StringOrBufferArray,
-	returnTo?: string,
-) => {
-	const why = payments;
-	const fileAsBase64 = Buffer.from(text).toString("base64");
-	// normalize utxo to array
-	const utxos = Array.isArray(utxo) ? utxo : [utxo];
-	// duplicate inscription * iterations and pass in the array
-	let num = iterations || 1;
-	const inscriptions: Inscription[] = [];
-	while (num--) {
-		inscriptions.push({ dataB64: fileAsBase64, contentType });
-	}
-	const { spentOutpoints, tx } = await handleBulkInscribingWithData(
-		payPk.value!,
-		inscriptions,
-		ordAddress.value!,
-		fundingAddress.value!,
-		utxos,
-		undefined,
-		why || [], // payments
-		data,
-	);
-	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
-	const satsOut = Number(tx.satoshis_out());
-	const fee = satsIn - satsOut;
-	const result = {
-		rawTx: tx.to_hex(),
-		size: tx.get_size(),
-		fee,
-		numInputs: tx.get_ninputs(),
-		numOutputs: tx.get_noutputs(),
-		txid: tx.get_id_hex(),
-		spentOutpoints,
-		iterations,
-	} as PendingTransaction;
-	if (returnTo) {
-		result.returnTo = returnTo;
-	}
 	setPendingTxs([result]);
 	return result;
 };

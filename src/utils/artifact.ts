@@ -1,7 +1,7 @@
 import { ArtifactType, artifactTypeMap } from "@/components/artifact";
 import { API_HOST, ORDFS, resultsPerPage } from "@/constants";
-import { OpNsStatus, OrdUtxo } from "@/types/ordinals";
-import { Hash } from "bsv-wasm-web";
+import { OpNsStatus, type OrdUtxo } from "@/types/ordinals";
+import { Hash, Utils } from "@bsv/sdk";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
 	const origin =
@@ -16,7 +16,7 @@ export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
 				const blob = await response.blob();
 				const buff = await response.arrayBuffer();
 				const f = {
-					hash: Hash.sha_256(new Uint8Array(buff)).to_hex(),
+					hash: Utils.toHex(Hash.sha256(Buffer.from(buff).toString('hex'), 'hex')),
 					size: blob.size,
 					type: blob.type,
 				};
@@ -108,6 +108,11 @@ export const displayName = (
 		case ArtifactType.Text:
 		case ArtifactType.MarkDown:
 		case ArtifactType.HTML: {
+      const nameFromMeta = (txo.origin?.data?.map?.name ||
+          txo.origin?.data?.map?.subTypeData?.name);
+        if (nameFromMeta) {
+          return nameFromMeta
+        }
 			const html = !latest
 				? txo.origin?.data?.insc?.text
 				: txo.data?.insc?.text;

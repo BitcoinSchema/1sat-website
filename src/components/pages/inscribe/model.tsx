@@ -53,21 +53,14 @@ const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
     }
 
     const utxos = await getUtxos(fundingAddress.value);
-    const sortedUtxos = utxos.sort((a, b) =>
-      a.satoshis > b.satoshis ? -1 : 1
-    );
-    const u = head(sortedUtxos);
-    if (!u) {
-      console.log("no utxo");
-      return;
-    }
 
-    const pendingTx = await inscribeFile(u, selectedFile);
+
+    const pendingTx = await inscribeFile(utxos, selectedFile);
     if (pendingTx) {
       setPendingTxs([pendingTx]);
       inscribedCallback();
     }
-  }, [inscribedCallback, selectedFile]);
+  }, [fundingAddress.value, inscribedCallback, payPk.value, selectedFile]);
 
   const Input = styled.input`
     padding: 0.5rem;

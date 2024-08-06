@@ -47,7 +47,7 @@ const List = ({ term, address, onClick }: Props) => {
     if (!selectedType.value && !!selectedArtifactType) {
       selectedType.value = selectedArtifactType || null;
     }
-  }, [selectedArtifactType, selectedType]);
+  }, [selectedArtifactType, selectedType.value]);
 
   const {
     data,
@@ -85,16 +85,15 @@ const List = ({ term, address, onClick }: Props) => {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
   }, [data, listings, data?.pages[data.pages.length - 1]]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     const newPageData = data?.pages[data.pages.length - 1];
     if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
       fetchNextPage();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
   }, [isInView]);
 
   const collectionIds = computed(() =>
@@ -144,7 +143,6 @@ const List = ({ term, address, onClick }: Props) => {
             true
           ).toString()} BSV`;
           return (
-            // biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
             listing && (
               <tr
                 key={`k-${listing?.txid}-${listing?.vout}-${listing?.height}`}

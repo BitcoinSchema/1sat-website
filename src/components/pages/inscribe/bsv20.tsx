@@ -15,11 +15,10 @@ import type { BSV20, Ticker } from "@/types/bsv20";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import {
-	P2PKH_FULL_INPUT_SIZE,
-	type Payment,
-	type Utxo,
-} from "@/utils/js-1sat-ord";
+import type {
+	Payment,
+	Utxo,
+} from "js-1sat-ord";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import "buffer";
@@ -174,12 +173,6 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		[setSelectedBsv20, setTickerAvailable, setFetchTickerStatus]
 	);
 
-	const changeMaxSupply = useCallback(
-		(e: any) => {
-			setMaxSupply(e.target.value);
-		},
-		[setMaxSupply]
-	);
 
 	const changeSelectedActionType = useCallback(
 		async (e: any) => {
@@ -258,7 +251,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 	const changeDecimals = useCallback(
 		(e: any) => {
-			setDecimals(e.target.valuye ? parseInt(e.target.value) : undefined);
+			setDecimals(e.target.valuye ? Number.parseInt(e.target.value) : undefined);
 		},
 		[setDecimals]
 	);
@@ -266,7 +259,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	const changeAmount = useCallback(
 		(e: any) => {
 			if (selectedActionType === ActionType.Mint && selectedBsv20?.lim) {
-				if (parseInt(e.target.value) <= parseInt(selectedBsv20.lim)) {
+				if (Number.parseInt(e.target.value) <= Number.parseInt(selectedBsv20.lim)) {
 					setAmount(e.target.value);
 				}
 				return;
@@ -287,7 +280,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			setInscribeStatus(FetchStatus.Loading);
 
 			try {
-				let inscription = {
+				const inscription = {
 					p: "bsv-20",
 					op: selectedActionType,
 				} as BSV20;
@@ -328,7 +321,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					case ActionType.Mint:
 						if (
 							!amount ||
-							parseInt(amount) == 0 ||
+							Number.parseInt(amount) === 0 ||
 							BigInt(amount) > maxMaxSupply ||
 							!selectedBsv20
 						) {
@@ -353,7 +346,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				if (address) {
 					payments.push({
 						to: address,
-						amount: BigInt(iterationFee) * BigInt(iterations),
+						amount: iterationFee * iterations,
 					});
 				}
 				const pendingTx = await inscribeUtf8(
@@ -434,7 +427,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		}
 
 		return await inscribeBsv20([u]);
-	}, [inscribeBsv20]);
+	}, [fundingAddress.value, inscribeBsv20, ordAddress.value, payPk.value]);
 
 	// useEffect(() => {
 	// 	console.log({
@@ -460,7 +453,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			!ticker?.length ||
 			inscribeStatus === FetchStatus.Loading ||
 			fetchTickerStatus === FetchStatus.Loading ||
-			(!!limit && !!maxSupply && parseInt(maxSupply) < parseInt(limit))
+			(!!limit && !!maxSupply && Number.parseInt(maxSupply) < Number.parseInt(limit))
 		);
 	}, [
 		inscribeStatus,
@@ -478,7 +471,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 		return selectedBsv20
 			? calculateIndexingFee(usdRate.value)
 			: calculateIndexingFee(usdRate.value);
-	}, [selectedBsv20]);
+	}, [selectedBsv20, usdRate.value]);
 
 	const confirmedOplBalance = useMemo(
 		() =>
@@ -544,14 +537,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			return 0;
 		}
 
-		const supply = parseInt(selectedBsv20.supply);
-		const max = parseInt(selectedBsv20.max);
+		const supply = Number.parseInt(selectedBsv20.supply);
+		const max = Number.parseInt(selectedBsv20.max);
 		const newTokens = supply / 10 ** selectedBsv20.dec + totalTokens;
 		if (newTokens > max) {
 			return max;
 		}
 		const pending = selectedBsv20.pending
-			? parseInt(selectedBsv20.pending)
+			? Number.parseInt(selectedBsv20.pending)
 			: 0;
 		const pendingAdjusted = pending * 10 ** selectedBsv20.dec;
 		return newTokens + pendingAdjusted;
@@ -562,7 +555,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 			return 0;
 		}
 		return ((iterationFee * iterations) / usdRate.value).toFixed(2);
-	}, [iterations]);
+	}, [iterations, usdRate.value]);
 
 	const networkFeeUsd = useMemo(() => {
 		if (!usdRate.value) {
@@ -573,7 +566,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				P2PKH_FULL_INPUT_SIZE * 4) /
 			usdRate.value
 		).toFixed(2);
-	}, [iterations]);
+	}, [iterations, usdRate.value]);
 
 	// confirmedOplBalance && tierMaxNum(confirmedOplBalance) > 0
 
@@ -714,7 +707,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							pattern="\d+"
 							type="text"
 							className="text-white w-full rounded p-2 uppercase"
-							onChange={changeMaxSupply}
+							onChange={(e) => setMaxSupply(e.target.value)}
 							value={maxSupply}
 						/>
 					</label>
@@ -732,7 +725,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 										type="button"
 										className="btn btn-sm"
 									>
-										<span
+										{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+<span
 											className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
 											onClick={() => {
 												setAmount(
@@ -950,7 +944,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
 			{selectedActionType === ActionType.Deploy &&
 				!showOptionalFields && (
-					<div
+					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<div
 						className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
 						onClick={toggleOptionalFields}
 					>
@@ -1085,3 +1080,8 @@ const tierMax = (balance: number, organicMax: number) => {
 	// max - supply / amount
 	return Math.max(Math.min(Math.min(organicMax, tier), hardMax), hardMin);
 };
+
+
+export const P2PKH_INPUT_SCRIPT_SIZE = 107;
+export const P2PKH_FULL_INPUT_SIZE = 148;
+export const P2PKH_OUTPUT_SIZE = 34;

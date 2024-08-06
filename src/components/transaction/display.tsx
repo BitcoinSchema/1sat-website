@@ -4,7 +4,6 @@ import type {
 	IODisplay,
 	InputOutpoint,
 } from "@/app/outpoint/[outpoint]/[tab]/page";
-import { bsvWasmReady } from "@/signals/wallet";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
@@ -110,7 +109,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 				}
 			}
 		};
-		if (showDetails.value && !attempted.value && rawtx && bsvWasmReady.value) {
+		if (showDetails.value && !attempted.value && rawtx) {
 			attempted.value = true;
 			fire(rawtx);
 		}

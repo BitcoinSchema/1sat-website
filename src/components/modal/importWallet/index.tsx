@@ -6,7 +6,6 @@ import {
 	ImportWalletFromBackupJsonStep,
 	ImportWalletFromMnemonicStep,
 	ImportWalletTab,
-	bsvWasmReady,
 	importWalletFromBackupJsonStep,
 	importWalletFromMnemonicStep,
 	importWalletTab,
@@ -58,38 +57,6 @@ const ImportWalletModal = forwardRef<
 		[encryptedBackup, importData, payPk.value],
 	);
 
-	// useEffect(() => {
-	// 	loadKeysFromSessionStorage();
-	// 	if (!encryptedBackup) {
-	// 		if (importData && !selectedBackupJson.value) {
-	// 			try {
-	// 				console.log("Imported backup 1");
-	// 				setKeys(importData);
-	// 				selectedBackupJson.value = JSON.stringify(importData);
-	// 				importWalletTab.value = ImportWalletTab.FromBackupJson;
-	// 				importWalletFromBackupJsonStep.value =
-	// 					ImportWalletFromBackupJsonStep.EnterPassphrase;
-					
-
-	// 				// Send success message back to the original window
-	// 				window.opener?.postMessage(
-	// 					{ type: "MIGRATION_SUCCESS_1" },
-	// 					"https://1satordinals.com",
-	// 				);
-	// 			} catch (e) {
-	// 				console.error("Failed to import backup:", e);
-	// 				toast.error("Failed to import backup", toastErrorProps);
-
-	// 				// Send failure message back to the original window
-	// 				window.opener?.postMessage(
-	// 					{ type: "MIGRATION_FAILURE" },
-	// 					"https://1satordinals.com",
-	// 				);
-	// 			}
-	// 		}
-	// 	}
-	// }, [encryptedBackup, alreadyHasKey, importData, selectedBackupJson.value]);
-
 	const handleImportData = useCallback((data: Keys) => {
 		try {
 			console.log("Imported backup 2");
@@ -99,11 +66,6 @@ const ImportWalletModal = forwardRef<
 			importWalletFromBackupJsonStep.value =
 				ImportWalletFromBackupJsonStep.EnterPassphrase;
 				console.log("Not sending success to original window yet. Migrating?", migrating.value);
-			// we dont do this yet because keys are not encrypted and stored
-			// window.opener?.postMessage(
-			// 	{ type: "MIGRATION_SUCCESS_2" },
-			// 	"https://1satordinals.com",
-			// );
 		} catch (e) {
 			console.error("Failed to import backup:", e);
 			toast.error("Failed to import backup", toastErrorProps);
@@ -126,16 +88,6 @@ const ImportWalletModal = forwardRef<
 			handleImportData(importData);
 		}
 	}, [importData, migrating.value, handleImportData]);
-
-	const handleBackupKey = (backupKey: string) => {
-		try {
-			const backup = JSON.parse(atob(backupKey)) as Keys;
-			handleImportData(backup);
-		} catch (e) {
-			console.error("Failed to import backup:", e);
-			toast.error("Failed to import backup", toastErrorProps);
-		}
-	};
 
 	const resetSteps = useCallback(() => {
 		console.log("Resetting steps");
@@ -183,11 +135,6 @@ const ImportWalletModal = forwardRef<
 							: ""}
 				</h3>
 
-				{!bsvWasmReady.value && (
-					<div className="py-2 rounded my-2">Loading...</div>
-				)}
-
-				{bsvWasmReady.value && (
 					<>
 						{alreadyHasKey && (
 							<div>
@@ -292,7 +239,7 @@ const ImportWalletModal = forwardRef<
 							</>
 						)}
 					</>
-				)}
+			
 			</div>
 		</dialog>
 	);
