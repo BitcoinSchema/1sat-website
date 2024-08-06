@@ -86,8 +86,10 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         changeAddress: ordAddress,
         paymentPk,
         ordPk,
-        additionalPayments
+        additionalPayments,
+        decimals: ticker.dec || 0,
       }
+      console.log({config})
       const { tx, spentOutpoints, tokenChange, payChange } = await transferOrdTokens(config)
 		
 			return {

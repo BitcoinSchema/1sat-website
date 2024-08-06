@@ -204,6 +204,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 				additionalPayments,
 				changeAddress,
 				tokenChangeAddress: ordAddress,
+        decimals: ticker.dec || 0,
 			};
 
 			const { tx, spentOutpoints, payChange, tokenChange } =

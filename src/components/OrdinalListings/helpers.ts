@@ -27,7 +27,7 @@ export const checkOutpointFormat = (outpoint: string) => {
 	if (split[0].length !== 64) {
 		return false;
 	}
-	if (Number.isNaN(parseInt(split[1]))) {
+	if (Number.isNaN(Number.parseInt(split[1]))) {
 		return false;
 	}
 	return true;
