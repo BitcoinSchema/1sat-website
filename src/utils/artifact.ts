@@ -108,8 +108,8 @@ export const displayName = (
 		case ArtifactType.Text:
 		case ArtifactType.MarkDown:
 		case ArtifactType.HTML: {
-      const nameFromMeta = txo.data?.map?.name ||
-        txo.data?.map?.subTypeData?.name
+      const nameFromMeta = (txo.origin?.data?.map?.name ||
+          txo.origin?.data?.map?.subTypeData?.name);
         if (nameFromMeta) {
           return nameFromMeta
         }
