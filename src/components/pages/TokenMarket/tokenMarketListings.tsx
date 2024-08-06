@@ -64,11 +64,15 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
     }
   }, [isInView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const listings = data?.pages.flat() || [];
+  useEffect(() => {
+    listings.value = data?.pages.flat() || [];
+  }, [
+    data?.pages,
+  ])
 
 	return (
 		<>
-			{listings?.map((listing) => {
+			{listings.value?.map((listing) => {
 				const qty = Number.parseInt(listing.amt) / 10 ** ticker.dec;
 				const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
 
@@ -219,7 +223,7 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
       )}
 
 
-			{listings?.length === 0 && (
+			{listings.value?.length === 0 && (
 				<div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
 					No listings found
 				</div>
