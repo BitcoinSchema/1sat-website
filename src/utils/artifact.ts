@@ -16,7 +16,6 @@ export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
 				const blob = await response.blob();
 				const buff = await response.arrayBuffer();
 				const f = {
-          // TODO: Check this is correct (converting from bsv-wasm)
 					hash: Utils.toHex(Hash.sha256(Buffer.from(buff).toString('hex'), 'hex')),
 					size: blob.size,
 					type: blob.type,

@@ -76,7 +76,7 @@ const EnterPassphrase: React.FC<Props> = ({
     }
   });
 
-  const handlePassphraseChange = (e: any) => {
+  const handlePassphraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     e.stopPropagation();
     passphrase.value = e.target.value;

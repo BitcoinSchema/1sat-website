@@ -1,4 +1,4 @@
-async function getKey(key: Uint8Array): Promise<CryptoKey> {
+const getKey = async (key: Uint8Array): Promise<CryptoKey> => {
   return await crypto.subtle.importKey(
     "raw",
     key,
@@ -8,11 +8,11 @@ async function getKey(key: Uint8Array): Promise<CryptoKey> {
   );
 }
 
-export async function encryptData(
+export const encryptData = async (
   data: Uint8Array,
   key: Uint8Array,
   iv: Uint8Array
-): Promise<Uint8Array> {
+): Promise<Uint8Array> => {
   const cryptoKey = await getKey(key);
   const encryptedContent = await crypto.subtle.encrypt(
     { name: "AES-CBC", iv },
@@ -21,34 +21,34 @@ export async function encryptData(
   );
   
   // Combine IV and encrypted content
-  const result = new Uint8Array(iv.length + encryptedContent.byteLength);
-  result.set(iv);
-  result.set(new Uint8Array(encryptedContent), iv.length);
+  // const result = new Uint8Array(iv.length + encryptedContent.byteLength);
+  // result.set(iv);
+  // result.set(new Uint8Array(encryptedContent), iv.length);
   
-  return result;
+  // They are already combined
+  return new Uint8Array(encryptedContent);
 }
 
-export async function decryptData(
+export const decryptData = async(
   encryptedData: Uint8Array,
   key: Uint8Array
-): Promise<Uint8Array> {
+): Promise<Uint8Array> => {
+  const cryptoKey = await getKey(key);
   const iv = encryptedData.slice(0, 16);
   const encryptedContent = encryptedData.slice(16);
-  
-  const cryptoKey = await getKey(key);
+
   const decryptedContent = await crypto.subtle.decrypt(
     { name: "AES-CBC", iv },
     cryptoKey,
     encryptedContent
   );
-  
   return new Uint8Array(decryptedContent);
 }
 
-export async function generateEncryptionKey(
+export const generateEncryptionKey = async (
   passphrase: string,
   publicKey: Uint8Array
-): Promise<Uint8Array> {
+): Promise<Uint8Array> => {
   const encoder = new TextEncoder();
   const salt = await crypto.subtle.digest("SHA-256", publicKey);
   
@@ -74,10 +74,10 @@ export async function generateEncryptionKey(
   return new Uint8Array(derivedBits);
 }
 
-export async function generateEncryptionKeyFromPassphrase(
+export const generateEncryptionKeyFromPassphrase = async (
   passphrase: string,
   pubKey: string
-): Promise<Uint8Array | undefined> {
+): Promise<Uint8Array | undefined> => {
   if (!pubKey) {
     console.error("No public key found. Unable to decrypt.");
     return;
@@ -90,7 +90,5 @@ export async function generateEncryptionKeyFromPassphrase(
 
   const pubKeyBytes = new Uint8Array(Buffer.from(pubKey, "base64").buffer);
 
-  const ec = await generateEncryptionKey(passphrase, pubKeyBytes);
-
-  return ec;
+  return await generateEncryptionKey(passphrase, pubKeyBytes);
 }

@@ -39,7 +39,7 @@ const nextConfig = {
 				dns: false,
 				fs: false,
 				module: false,
-				crypto: false,
+				// crypto: false,
 				os: false,
 				stream: false,
 				http: false,
