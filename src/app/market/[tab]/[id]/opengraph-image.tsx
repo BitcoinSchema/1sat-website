@@ -77,8 +77,3 @@ export default async function Image({
     }
   );
 }
-
-
-const tickerName = (details: BSV20, assetType: AssetType) => {
-  return assetType === AssetType.BSV20 ? details.tick : details.sym;
-}
