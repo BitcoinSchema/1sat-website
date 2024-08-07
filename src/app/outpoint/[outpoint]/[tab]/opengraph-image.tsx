@@ -66,11 +66,17 @@ export default async function Image({
             fontFamily: "Noto Serif",
             fontStyle: "italic",
             fontWeight: 400,
-            fontSize: "2.5rem",
+            fontSize: "3rem",
             top: 0,
             left: 0,
             margin: "1rem",
             position: "absolute",
+            background: "rgba(0, 0, 0, 0.5)",
+            width: "100%",
+            padding: ".5rem",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}>{name || ""}</div>
         )}
         <Gradient />
