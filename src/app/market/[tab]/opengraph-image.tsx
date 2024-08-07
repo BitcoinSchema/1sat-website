@@ -1,14 +1,12 @@
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
-import { API_HOST, AssetType } from "@/constants";
-import type { OrdUtxo } from "@/types/ordinals";
-import { displayName } from "@/utils/artifact";
+import type { AssetType } from "@/constants";
 import { getNotoSerifItalicFont } from "@/utils/font";
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "1Sat Ordinals Inscription";
+export const alt = "1Sat Ordinals Market Listings";
 export const size = {
   width: 1200,
   height: 630,
@@ -18,20 +16,14 @@ export const contentType = "image/png";
 export default async function Image({
   params,
 }: {
-  params: { tab: AssetType; id: string };
+  params: { tab: AssetType };
 }) {
   const notoSerif = await getNotoSerifItalicFont();
-
-  const detailsUrl = `${API_HOST}/api/bsv20/${params.tab === AssetType.BSV20 ? "tick" : "id"
-    }/${params.id}`;
-  const details = await fetch(detailsUrl).then(
-    (res) => res.json() as Promise<OrdUtxo>
-  );
 
   return new ImageResponse(
     (
       <Container>
-        {displayName(details, false) || "Mystery Outpoint"}
+        {`${params.tab} Market Listings`}
         <Logo />
       </Container>
     ),

@@ -15,6 +15,7 @@ export function Container({ children }: PropsWithChildren) {
         justifyContent: "center",
         fontFamily: "Noto Serif",
         position: "relative",
+        textTransform: "capitalize",
       }}
     >
       {children}
