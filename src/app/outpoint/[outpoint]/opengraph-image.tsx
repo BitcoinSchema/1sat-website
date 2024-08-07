@@ -1,5 +1,4 @@
 import { Container } from "@/components/og/Container";
-import { Gradient } from "@/components/og/Gradient";
 import { Logo } from "@/components/og/Logo";
 import { API_HOST, ORDFS } from "@/constants";
 import type { OrdUtxo, SigilMeta } from "@/types/ordinals";
@@ -66,7 +65,7 @@ export default async function Image({
             position: "absolute",
           }}>{name || ""}</div>
         )}
-        <Gradient />
+        {/* <Gradient /> */}
         <Logo />
       </Container>
     ),
