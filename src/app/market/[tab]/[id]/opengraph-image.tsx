@@ -1,8 +1,7 @@
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
 import { API_HOST, AssetType } from "@/constants";
-import type { OrdUtxo } from "@/types/ordinals";
-import { displayName } from "@/utils/artifact";
+import type { BSV20 } from "@/types/bsv20";
 import { getNotoSerifItalicFont } from "@/utils/font";
 import { ImageResponse } from "next/og";
 
@@ -22,16 +21,35 @@ export default async function Image({
 }) {
   const notoSerif = await getNotoSerifItalicFont();
 
-  const detailsUrl = `${API_HOST}/api/bsv20/${params.tab === AssetType.BSV20 ? "tick" : "id"
-    }/${params.id}`;
-  const details = await fetch(detailsUrl).then(
-    (res) => res.json() as Promise<OrdUtxo>
-  );
+  let ticker: string | undefined;
+  if (params.tab === AssetType.BSV20) {
+    ticker = params.id;
+  } else {
+    const detailsUrl = `${API_HOST}/api/bsv20/id/${params.id}`;
+    const details = await fetch(detailsUrl).then(
+      (res) => res.json() as Promise<BSV20>
+    );
+    ticker = details.sym;
+  }
 
   return new ImageResponse(
     (
       <Container>
-        {displayName(details, false) || "Mystery Outpoint"}
+        {params.tab === AssetType.BSV21 && (
+          <div style={{
+            fontFamily: "Noto Serif",
+            fontStyle: "italic",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            margin: "1rem",
+            fontSize: "1rem",
+          }}
+          >
+            {params.id}
+          </div>
+        )}
+        {ticker || "Mystery Outpoint"}
         <Logo />
       </Container>
     ),
@@ -47,4 +65,9 @@ export default async function Image({
       ],
     }
   );
+}
+
+
+const tickerName = (details: BSV20, assetType: AssetType) => {
+  return assetType === AssetType.BSV20 ? details.tick : details.sym;
 }
