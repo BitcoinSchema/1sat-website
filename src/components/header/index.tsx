@@ -14,7 +14,7 @@ const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
 	const isMarket = hostname === "1sat.market";
 
 	// if the domain is alpha.1satordinals.com, isAlpha will be true
-	const isAlpha = hostname === "alpha.1satordinals.com";
+	const isAlpha = hostname === "alpha.1satordinals.com" || hostname === "alpha.1sat.market";
 
 	const isLocal = hostname === "localhost:3000";
 
