@@ -33,32 +33,33 @@ export default async function Image({
     );
     ticker = details.sym;
     icon = details.icon || "b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
-    console.log({ details })
   }
 
   return new ImageResponse(
     (
       <Container>
-        {params.tab === AssetType.BSV21 && (
+        {(
           <div style={{
             fontFamily: "Noto Serif",
             fontStyle: "italic",
             position: "absolute",
             top: 0,
             left: 0,
-            margin: "1rem",
+            margin: "1.5rem",
             fontSize: "1rem",
             display: "flex",
             alignItems: "center",
             color: "#555555",
           }}
           >
-            {params.id}
+            {params.tab === AssetType.BSV21 ? "BSV21" : "BSV20"}
           </div>
         )}
-        <img width="50" height="50" src={`${ORDFS}/${icon}`} alt={ticker || ""} style={{
-          marginRight: ".5rem",
-        }} />
+        {
+          // eslint-disable-next-line @next/next/no-img-element
+          (<img width="50" height="50" src={`${ORDFS}/${icon}`} alt={ticker || ""} style={{
+            marginRight: ".5rem",
+          }} />)}
         {ticker || "Mystery Outpoint"}
         <Logo />
       </Container>
