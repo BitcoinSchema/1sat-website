@@ -124,7 +124,7 @@ export const displayName = (
         ? txo.data?.insc?.text || txo.origin?.num
         : txo.origin?.data?.insc?.text || txo.origin?.num;
     case ArtifactType.BSV20:
-      return latest ? txo.data?.bsv20?.tick : txo.origin?.data?.bsv20?.tick || txo.origin?.data?.bsv20?.sym;
+      return latest ? txo.data?.bsv20?.tick || txo?.data?.insc?.json?.sym : txo.origin?.data?.bsv20?.tick || txo.origin?.data?.insc?.json?.sym;
     case ArtifactType.LRC20:
       return latest ? "TODO-LRC20 LATEST NAME" : "TODO LRC20 ORIGIN NAME";
     case ArtifactType.OPNS:
