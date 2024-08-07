@@ -24,7 +24,7 @@ export default async function Image() {
             alignItems: "center",
           }}
         >
-          <div>Collections</div>
+          <div>1Sat Market Collections</div>
         </div>
         <Logo />
       </Container>
