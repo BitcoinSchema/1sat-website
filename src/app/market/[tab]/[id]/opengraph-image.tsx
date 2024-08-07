@@ -45,7 +45,7 @@ export default async function Image({
             position: "absolute",
             top: 0,
             left: 0,
-            margin: "1.5rem",
+            margin: "3rem",
             fontSize: "1rem",
             display: "flex",
             alignItems: "center",
