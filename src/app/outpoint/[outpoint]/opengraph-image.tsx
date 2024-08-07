@@ -62,7 +62,6 @@ export default async function Image({
             fontSize: "3rem",
             top: 0,
             left: 0,
-            margin: "1rem",
             position: "absolute",
             background: "rgba(0, 0, 0, 0.5)",
             width: "100%",
