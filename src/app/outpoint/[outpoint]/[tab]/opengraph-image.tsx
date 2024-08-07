@@ -3,6 +3,7 @@ import { Gradient } from "@/components/og/Gradient";
 import { Logo } from "@/components/og/Logo";
 import { API_HOST, ORDFS } from "@/constants";
 import type { OrdUtxo, SigilMeta } from "@/types/ordinals";
+import { displayName } from "@/utils/artifact";
 import { getNotoSerifItalicFont } from "@/utils/font";
 import { ImageResponse } from "next/og";
 
@@ -49,7 +50,7 @@ export default async function Image({
     details?.origin?.data?.insc?.file.type?.startsWith("image");
   // const url = `${ORDFS}/${params.outpoint}`;
 
-  const name = displayName(details);
+  const name = displayName(details, false);
   return new ImageResponse(
     (
       <Container>
@@ -65,7 +66,7 @@ export default async function Image({
             fontFamily: "Noto Serif",
             fontStyle: "italic",
             fontWeight: 400,
-            fontSize: "1.5rem",
+            fontSize: "2.5rem",
             top: 0,
             left: 0,
             margin: "1rem",
@@ -90,11 +91,11 @@ export default async function Image({
   );
 }
 
-const displayName = (details: OrdUtxo): string | undefined => {
-  return details.origin?.data?.map?.name ||
-    details.origin?.data?.bsv20?.tick ||
-    details.origin?.data?.bsv20?.sym ||
-    details.origin?.data?.insc?.json?.tick ||
-    details.origin?.data?.insc?.json?.p ||
-    details.origin?.data?.insc?.file.type;
-}
+// export const displayName = (details: OrdUtxo): string | undefined => {
+//   return details.origin?.data?.map?.name || details.origin?.data?.map?.subTypeData.name ||
+//     details.origin?.data?.bsv20?.tick ||
+//     details.origin?.data?.bsv20?.sym ||
+//     details.origin?.data?.insc?.json?.tick ||
+//     details.origin?.data?.insc?.json?.p ||
+//     details.origin?.data?.insc?.file.type;
+// }
