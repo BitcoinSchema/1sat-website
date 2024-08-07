@@ -29,7 +29,7 @@ export default async function Image() {
             alignItems: "center",
           }}
         >
-          <div>1Sat Market {isAlpha ? "ALPHA" : "BETA"}</div>
+          <div>{`1Sat Market ${isAlpha ? "ALPHA" : "BETA"}`}</div>
         </div>
         <Logo />
       </Container>
