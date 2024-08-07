@@ -18,9 +18,9 @@ import {
   type Payment,
   type PurchaseOrdListingConfig,
   type PurchaseOrdTokenListingConfig,
-  type TokenUtxo,
-  Royalty,
+  type Royalty,
   TokenType,
+  type TokenUtxo,
   fetchPayUtxos,
   purchaseOrdListing,
   purchaseOrdTokenListing,
@@ -127,10 +127,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         ordAddress: ordAddress.value,
         additionalPayments,
       };
-      debugger
 
       if (listing.origin?.data?.map?.royalties) {
-        debugger
         const royalties = JSON.parse(listing.origin?.data?.map?.royalties) as Royalty[]
         if (royalties) {
           config.royalties = royalties
@@ -150,6 +148,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           numOutputs: tx.outputs.length,
           spentOutpoints,
           payChange,
+          returnTo: "/market/ordinals"
         },
       ]);
 
