@@ -59,7 +59,7 @@ export default async function Image({
             fontFamily: "Noto Serif",
             fontStyle: "italic",
             fontWeight: 400,
-            fontSize: "1.5rem",
+            fontSize: "2.5rem",
             top: 0,
             left: 0,
             margin: "1rem",
