@@ -11,9 +11,7 @@ import { useSignal } from "@preact/signals-react";
 import { useEffect } from "react";
 import { FaCheck } from "react-icons/fa";
 
-interface Props {}
-
-export function GenerateWalletStep({}: Props) {
+export function GenerateWalletStep() {
 	const isGeneratingWallet = useSignal(false);
 
 	useEffect(() => {
@@ -31,6 +29,8 @@ export function GenerateWalletStep({}: Props) {
 					payPk: keys.payPk,
 					ordPk: keys.ordPk,
 					mnemonic: mnemonic.value,
+					ordAddressPath: keys.ordAddressPath,
+					changeAddressPath: keys.changeAddressPath,
 				});
 			}
 
@@ -78,7 +78,8 @@ export function GenerateWalletStep({}: Props) {
 
 			{!isGeneratingWallet.value && payPk.value && (
 				<div className="flex justify-end mt-4">
-					<button className="btn btn-primary" onClick={handleNext}>
+					{/* biome-ignore lint/a11y/useButtonType: <explanation> */}
+          <button className="btn btn-primary" onClick={handleNext}>
 						Next
 					</button>
 				</div>

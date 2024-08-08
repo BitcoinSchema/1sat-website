@@ -4,34 +4,18 @@ import { getOutpoints } from "@/components/OrdinalListings/helpers";
 import Ordinals from "@/components/Wallet/ordinals";
 import Artifact from "@/components/artifact";
 import { ORDFS, toastErrorProps, type AssetType } from "@/constants";
-import {
-  ordPk,
-  ordUtxos,
-  payPk,
-  pendingTxs,
-  usdRate,
-  utxos,
-} from "@/signals/wallet";
+import { ordPk, ordUtxos, payPk, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
-import type { Utxo } from "@/utils/js-1sat-ord";
 import {
-  createChangeOutput,
   fetchOrdinal,
-  signPayment
 } from "@/utils/transaction";
+import { PrivateKey } from "@bsv/sdk";
 import { useSignals } from "@preact/signals-react/runtime";
-import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
-} from "bsv-wasm-web";
-import { Buffer } from "buffer";
+import type { Utxo } from "js-1sat-ord";
+import { createOrdListings, type CreateOrdListingsConfig } from "js-1sat-ord";
 import { head } from "lodash";
 import { Noto_Serif } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -59,7 +43,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   const query = useSearchParams();
   const outPoint = query.get("outpoint");
   const [outpoint, setOutpoint] = useState<string | undefined>(
-    outPoint as string | undefined
+    outPoint as string | undefined,
   );
   const [price, setPrice] = useState<number>(0);
 
@@ -68,65 +52,88 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
 
   const listOrdinal = useCallback(
     async (
-      paymentUtxo: Utxo,
+      utxos: Utxo[],
       ordinal: OrdUtxo,
       paymentPk: PrivateKey,
       changeAddress: string,
       ordPk: PrivateKey,
       ordAddress: string,
       payoutAddress: string,
-      satoshisPayout: number
+      satoshisPayout: number,
     ): Promise<PendingTransaction> => {
-      const tx = new Transaction(1, 0);
-      const t = ordinal.txid;
-      const txBuf = Buffer.from(t, "hex");
-      const ordIn = new TxIn(
-        txBuf,
-        ordinal.vout,
-        Script.from_asm_string("")
-      );
-      tx.add_input(ordIn);
+      const config: CreateOrdListingsConfig = {
+        utxos,
+        listings: [
+          {
+            payAddress: payoutAddress,
+            price: satoshisPayout,
+            ordAddress,
+            listingUtxo: {
+              satoshis: ordinal.satoshis,
+              txid: ordinal.txid,
+              vout: ordinal.vout,
+              script: ordinal.script,
+            },
+          },
+        ],
+        paymentPk,
+        ordPk,
+      };
 
-      // Inputs
-      let utxoIn = new TxIn(
-        Buffer.from(paymentUtxo.txid, "hex"),
-        paymentUtxo.vout,
-        Script.from_asm_string("")
-      );
+      const { tx, spentOutpoints, payChange } = await createOrdListings(config);
 
-      tx.add_input(utxoIn);
+      // const tx = new Transaction(1, 0);
+      // const t = ordinal.txid;
+      // const txBuf = Buffer.from(t, "hex");
+      // const ordIn = new TxIn(
+      //   txBuf,
+      //   ordinal.vout,
+      //   Script.from_asm_string("")
+      // );
+      // tx.add_input(ordIn);
+      // const spentOutpoints = [`${ordinal.txid}_${ordinal.vout}`]
 
-      const payoutDestinationAddress =
-        P2PKHAddress.from_string(payoutAddress);
-      const payOutput = new TxOut(
-        BigInt(satoshisPayout),
-        payoutDestinationAddress.get_locking_script()
-      );
+      // // Inputs
+      // let utxoIn = new TxIn(
+      //   Buffer.from(paymentUtxo.txid, "hex"),
+      //   paymentUtxo.vout,
+      //   Script.from_asm_string("")
+      // );
 
-      const destinationAddress = P2PKHAddress.from_string(ordAddress);
-      const addressHex = destinationAddress
-        .get_locking_script()
-        .to_asm_string()
-        .split(" ")[2];
+      // tx.add_input(utxoIn);
+      // spentOutpoints.push(`${paymentUtxo.txid}_${paymentUtxo.vout}`)
 
-      const ordLockScript = `${Script.from_hex(
-        oLockPrefix
-      ).to_asm_string()} ${addressHex} ${payOutput.to_hex()} ${Script.from_hex(
-        oLockSuffix
-      ).to_asm_string()}`;
+      // const payoutDestinationAddress =
+      //   P2PKHAddress.from_string(payoutAddress);
+      // const payOutput = new TxOut(
+      //   BigInt(satoshisPayout),
+      //   payoutDestinationAddress.get_locking_script()
+      // );
 
-      const satOut = new TxOut(
-        BigInt(1),
-        Script.from_asm_string(ordLockScript)
-      );
-      tx.add_output(satOut);
+      // const destinationAddress = P2PKHAddress.from_string(ordAddress);
+      // const addressHex = destinationAddress
+      //   .get_locking_script()
+      //   .to_asm_string()
+      //   .split(" ")[2];
 
-      const changeOut = createChangeOutput(
-        tx,
-        changeAddress,
-        paymentUtxo.satoshis
-      );
-      tx.add_output(changeOut);
+      // const ordLockScript = `${Script.from_hex(
+      //   oLockPrefix
+      // ).to_asm_string()} ${addressHex} ${payOutput.to_hex()} ${Script.from_hex(
+      //   oLockSuffix
+      // ).to_asm_string()}`;
+
+      // const satOut = new TxOut(
+      //   BigInt(1),
+      //   Script.from_asm_string(ordLockScript)
+      // );
+      // tx.add_output(satOut);
+
+      // const changeOut = createChangeOutput(
+      //   tx,
+      //   changeAddress,
+      //   paymentUtxo.satoshis
+      // );
+      // tx.add_output(changeOut);
 
       // if (!ordinal.script) {
       // 	const ordRawTx = await getRawTxById(ordinal.txid);
@@ -142,37 +149,38 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       // }
 
       // sign ordinal
-      const sig = tx.sign(
-        ordPk,
-        SigHash.ALL | SigHash.FORKID,
-        0,
-        Script.from_bytes(Buffer.from(ordinal.script, "base64")),
-        BigInt(ordinal.satoshis)
-      );
+      // const sig = tx.sign(
+      //   ordPk,
+      //   SigHash.ALL | SigHash.FORKID,
+      //   0,
+      //   Script.from_bytes(Buffer.from(ordinal.script, "base64")),
+      //   BigInt(ordinal.satoshis)
+      // );
 
-      ordIn.set_unlocking_script(
-        Script.from_asm_string(
-          `${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`
-        )
-      );
+      // ordIn.set_unlocking_script(
+      //   Script.from_asm_string(
+      //     `${sig.to_hex()} ${ordPk.to_public_key().to_hex()}`
+      //   )
+      // );
 
-      tx.set_input(0, ordIn);
+      // tx.set_input(0, ordIn);
 
-      utxoIn = signPayment(tx, paymentPk, 1, paymentUtxo, utxoIn);
-      tx.set_input(1, utxoIn);
+      // utxoIn = signPayment(tx, paymentPk, 1, paymentUtxo, utxoIn);
+      // tx.set_input(1, utxoIn);
 
       return {
-        rawTx: tx.to_hex(),
-        size: tx.get_size(),
-        fee: paymentUtxo.satoshis - Number(tx.satoshis_out()),
-        numInputs: tx.get_ninputs(),
-        numOutputs: tx.get_noutputs(),
-        txid: tx.get_id_hex(),
-        inputTxid: paymentUtxo.txid,
+        rawTx: tx.toHex(),
+        txid: tx.id("hex"),
+        size: tx.toBinary().length,
+        fee: tx.getFee(),
+        numInputs: tx.inputs.length,
+        numOutputs: tx.outputs.length,
+        spentOutpoints,
+        payChange,
         marketFee: 0,
       };
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -189,7 +197,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     if (outpoint && !selectedItem) {
       fire();
     }
-  }, [outpoint, selectedItem]);
+  }, [ordAddress.value, ordUtxos.value, outpoint, selectedItem]);
 
   const submit = useCallback(async () => {
     console.log("create listing", selectedItem, price);
@@ -204,28 +212,21 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       return;
     }
 
-    const paymentPk = PrivateKey.from_wif(payPk.value);
-    const ordinalPk = PrivateKey.from_wif(ordPk.value);
+    const paymentPk = PrivateKey.fromWif(payPk.value);
+    const ordinalPk = PrivateKey.fromWif(ordPk.value);
 
     // TODO: Suspected problem here - passing origin to get latest, maybe getting wrong answer w wrong owner?
-    const ordUtxos = await getOutpoints(
-      [selectedItem.outpoint],
-      true
-    );
+    const ordUtxos = await getOutpoints([selectedItem.outpoint], true);
     if (!ordUtxos?.length) {
       toast.error("Could not get item details.", toastErrorProps);
       return;
     }
     const ordUtxo = head(ordUtxos);
-    // get the biggest utxo
-    const paymentUtxo = utxos.value.reduce((a, b) =>
-      a.satoshis > b.satoshis ? a : b
-    );
 
-    if (!ordUtxo || !paymentUtxo || ordAddress.value !== ordUtxo.owner) {
+    if (!ordUtxo || !utxos.value || ordAddress.value !== ordUtxo.owner) {
       console.log({
         ordUtxo,
-        paymentUtxo,
+        utxos: utxos.value,
         ordAddress: ordAddress.value,
         owner: ordUtxo?.owner || "",
       });
@@ -234,52 +235,66 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     }
 
     const pendingTx = await listOrdinal(
-      paymentUtxo,
+      utxos.value,
       ordUtxo,
       paymentPk,
       fundingAddress.value,
       ordinalPk,
       ordAddress.value,
       fundingAddress.value,
-      price
+      price,
     );
 
-    pendingTx.returnTo = "/market/ordinals"
-    pendingTxs.value = [pendingTx];
+    pendingTx.returnTo = "/market/ordinals";
+    setPendingTxs([pendingTx]);
 
     router.push("/preview");
-  }, [selectedItem, price, listOrdinal, router, ordAddress.value]);
+  }, [
+    selectedItem,
+    price,
+    utxos.value,
+    payPk.value,
+    ordPk.value,
+    fundingAddress.value,
+    ordAddress.value,
+    listOrdinal,
+    router,
+  ]);
 
   const clickSelectItem = useCallback(() => {
     setShowSelectItem(true);
   }, []);
 
-  const clickOrdinal = useCallback(async (outpoint: string) => {
-    console.log("Clicked", outpoint);
-    //     const items = await fetchOrdinal(outpoint);
-    const ordUtxos = await getOutpoints([outpoint], true);
-    const ordUtxo = head(ordUtxos);
+  const clickOrdinal = useCallback(
+    async (outpoint: string) => {
+      console.log("Clicked", outpoint);
+      //     const items = await fetchOrdinal(outpoint);
+      const ordUtxos = await getOutpoints([outpoint], true);
+      const ordUtxo = head(ordUtxos);
 
-    // console.log({ ordUtxo });
-    // do not set the item if it is a listing
-    if (ordUtxo) {
-      if (!ordUtxo.data?.list) {
-        setSelectedItem(ordUtxo);
-      } else {
-        toast.error("This item is already listed", toastErrorProps);
-        return;
+      // console.log({ ordUtxo });
+      // do not set the item if it is a listing
+      if (ordUtxo) {
+        if (!ordUtxo.data?.list) {
+          setSelectedItem(ordUtxo);
+        } else {
+          toast.error("This item is already listed", toastErrorProps);
+          return;
+        }
       }
-    }
 
-    setShowSelectItem(false);
-    setOutpoint(outpoint);
-  }, [setSelectedItem, setShowSelectItem]);
+      setShowSelectItem(false);
+      setOutpoint(outpoint);
+    },
+    [setSelectedItem, setShowSelectItem],
+  );
 
   const artifact = useMemo(() => {
     // console.log({ ordUtxos: ordUtxos.value, selectedItem })
-    return ordUtxos.value?.find((utxo) => utxo?.origin?.outpoint === selectedItem?.origin?.outpoint);
+    return ordUtxos.value?.find(
+      (utxo) => utxo?.origin?.outpoint === selectedItem?.origin?.outpoint,
+    );
   }, [ordUtxos.value, selectedItem]);
-
 
   return (
     <div className="flex flex-col max-w-6xl w-full mx-auto">
@@ -307,8 +322,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
                 onClick={clickSelectItem}
                 className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer p-2 flex items-center justify-center w-full h-64 border rounded-lg border-[#333] border-dashed hover:bg-[#1a1a1a] transition mx-auto"
               >
-                <TbClick className="text-2xl mr-2" /> Select an
-                Item
+                <TbClick className="text-2xl mr-2" /> Select an Item
               </div>
             )}
 
@@ -317,7 +331,8 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
                 <div className="rounded p-2 md:p-4 max-w-4xl text-[#777] flex mb-2 items-start justify-start">
                   <IoMdInformationCircle className="-mt-6 md:w-24 md:h-24 md:mr-2 opacity-25 text-emerald-200" />
                   <div className="md:text-xl">
-                    Listings are can be purchased on the market page, or on other platforms. Listings can be cancelled at any time.
+                    Listings are can be purchased on the market page, or on
+                    other platforms. Listings can be cancelled at any time.
                   </div>
                 </div>
               </div>
@@ -327,7 +342,6 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
               <label className="block text-white mb-2 font-mono md:flex md:items-center md:justify-between">
                 <span className="block mb-1 md:mb-0">Price</span>
                 <div className="relative">
-
                   <input
                     className="input input-bordered w-full md:max-w-xs p-2 rounded"
                     type="number"
@@ -341,12 +355,14 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
                         toSatoshi(
                           e.target.value.includes(".")
                             ? Number.parseFloat(e.target.value)
-                            : Number.parseInt(e.target.value)
-                        )
+                            : Number.parseInt(e.target.value),
+                        ),
                       );
                     }}
                   />
-                  <div className="absolute right-0 bottom-0 mb-3 mr-2 text-[#555]">BSV</div>
+                  <div className="absolute right-0 bottom-0 mb-3 mr-2 text-[#555]">
+                    BSV
+                  </div>
                 </div>
               </label>
             </div>
@@ -357,11 +373,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
                   type="button"
                   disabled={!usdRate || (!!outpoint && !price)}
                   onClick={() => {
-                    console.log(
-                      "on click!!",
-                      usdRate,
-                      price
-                    );
+                    console.log("on click!!", usdRate, price);
                     if (!outpoint) {
                       setShowSelectItem(true);
                       return;
@@ -372,14 +384,12 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
                     }
                     submit();
                   }}
-                  className={`font-mono btn btn-ghost ${!outpoint ? "bg-neutral" : "bg-teal-500 hover:bg-teal-600 cursor-pointer"
+                  className={`font-mono btn btn-ghost ${!outpoint
+                      ? "bg-neutral"
+                      : "bg-teal-500 hover:bg-teal-600 cursor-pointer"
                     } w-full   transition text-white p-2 rounded disabled:bg-[#222] disabled:text-[#555]`}
                 >
-                  {` ${!outpoint
-                    ? "Select an Item"
-                    : !price
-                      ? "Set a Price"
-                      : ""
+                  {` ${!outpoint ? "Select an Item" : !price ? "Set a Price" : ""
                     }`}
                   {!!outpoint && !!usdRate.value && !!price
                     ? `List for $${(price / usdRate.value)

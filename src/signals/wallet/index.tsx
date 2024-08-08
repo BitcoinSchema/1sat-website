@@ -46,16 +46,17 @@ export const showUnlockWalletButton = signal<boolean>(false);
  * Wallet keys
  */
 export const mnemonic = signal<string | null>(null);
-export const changeAddressPath = signal<number | null>(null);
-export const ordAddressPath = signal<number | null>(null);
+export const changeAddressPath = signal<number | string | null>(null);
+export const ordAddressPath = signal<number | string | null>(null);
 export const payPk = signal<string | null>(null);
 export const ordPk = signal<string | null>(null);
+export const identityPk = signal<string | null>(null);
+export const identityAddressPath = signal<number | string | null>(null);
 
 /**
  * Wallet state
  */
 export const pendingTxs = signal<PendingTransaction[] | null>(null);
-export const bsvWasmReady = signal<boolean>(false);
 export const utxos = signal<Utxo[] | null>(null);
 export const ordUtxos = signal<OrdUtxo[] | null>(null);
 export const bsv20Utxos = signal<OrdUtxo[] | null>(null);

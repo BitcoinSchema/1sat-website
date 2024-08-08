@@ -2,7 +2,7 @@
 
 import type { MarketData } from "@/components/pages/TokenMarket/list";
 import ListingForm from "@/components/pages/TokenMarket/listingForm";
-import { ordUtxos, utxos } from "@/signals/wallet";
+import { bsv20Utxos, ordUtxos, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -49,12 +49,12 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
 
 						// refresh ord utxos
 						if (fundingAddress.value && ordAddress.value) {
-							const bsv20Utxos = await getBsv20Utxos(
+							const bu = await getBsv20Utxos(
 								ordAddress.value,
 								0,
 								ticker.id,
 							);
-							ordUtxos.value = (ordUtxos.value || []).concat(bsv20Utxos);
+							bsv20Utxos.value = (bsv20Utxos.value || []).concat(bu);
 							utxos.value = await getUtxos(fundingAddress.value);
 						}
 					}}

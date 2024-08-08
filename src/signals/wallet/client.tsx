@@ -19,6 +19,8 @@ import {
   createWalletStep,
   encryptedBackup,
   encryptionKey,
+  identityAddressPath,
+  identityPk,
   mnemonic,
   ordAddressPath,
   ordPk,
@@ -78,31 +80,6 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
   });
 };
 
-export const clearKeys = () => {
-  payPk.value = null;
-  ordPk.value = null;
-  pendingTxs.value = null;
-  utxos.value = null;
-  bsv20Utxos.value = null;
-  bsv20Balances.value = null;
-  localStorage.removeItem("1satfk");
-  localStorage.removeItem("1satok");
-  localStorage.removeItem("1satpt");
-  localStorage.removeItem("encryptedBackup");
-
-  sessionStorage.removeItem("1satfk");
-  sessionStorage.removeItem("1satok");
-
-  encryptedBackup.value = null;
-
-  encryptionKey.value = null;
-  passphrase.value = null;
-  mnemonic.value = null;
-
-  showUnlockWalletButton.value = false;
-  createWalletStep.value = CreateWalletStep.Create;
-  console.log("Cleared keys");
-};
 
 export const setKeys = (keys: Keys) => {
   payPk.value = keys.payPk;
@@ -110,6 +87,8 @@ export const setKeys = (keys: Keys) => {
   mnemonic.value = keys.mnemonic ?? null;
   changeAddressPath.value = keys.changeAddressPath ?? null;
   ordAddressPath.value = keys.ordAddressPath ?? null;
+  identityPk.value = keys.identityPk ?? null;
+  identityAddressPath.value = keys.identityAddressPath ?? null;
 
   sessionStorage.setItem("1satfk", keys.payPk);
   sessionStorage.setItem("1satok", keys.ordPk);
@@ -148,7 +127,7 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
     throw new Error("No encryption key found. Unable to decrypt.");
   }
 
-  const decryptedBackupBin = decryptData(
+  const decryptedBackupBin = await decryptData(
     Buffer.from(
       encryptedKeys.encryptedBackup.replace(encryptionPrefix, ""),
       "base64"
@@ -172,5 +151,10 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
   setKeys({
     payPk: decryptedBackup.payPk,
     ordPk: decryptedBackup.ordPk,
+	mnemonic: decryptedBackup.mnemonic,
+	changeAddressPath: decryptedBackup.payDerivationPath,
+	ordAddressPath: decryptedBackup.ordDerivationPath,
+	...(decryptedBackup.identityPk !== undefined && { identityPk: decryptedBackup.identityPk }),
+  	...(decryptedBackup.identityDerivationPath !== undefined && { identityAddressPath: decryptedBackup.identityDerivationPath }),
   });
 };

@@ -1,6 +1,6 @@
 import MarketPage from "@/components/pages/market";
 import { API_HOST, AssetType } from "@/constants";
-import { OrdUtxo } from "@/types/ordinals";
+import { BSV20 } from "@/types/bsv20";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 import { redirect } from "next/navigation";
 
@@ -39,23 +39,21 @@ export async function generateMetadata({
 }: {
   params: { tab: AssetType; id: string };
 }) {
-  const detailsUrl = `${API_HOST}/api/bsv20/${params.tab === AssetType.BSV20 ? "tick" : "id"
-    }/${params.id}`;
-
-  const details = await fetch(detailsUrl).then(
-    (res) => res.json() as Promise<OrdUtxo>
-  );
-
+  let ticker: string | undefined;
+  let icon: string | undefined;
   const assetType = getCapitalizedAssetType(params.tab);
+  if (params.tab === AssetType.BSV20) {
+    ticker = params.id;
+  } else if (params.tab === AssetType.BSV21) {
+    const detailsUrl = `${API_HOST}/api/bsv20/id/${params.id}`;
+    const details = await fetch(detailsUrl).then(
+      (res) => res.json() as Promise<BSV20>
+    );
+    ticker = details.sym;
+    icon = details.icon || "b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
+  }
 
-  const name =
-    details.origin?.data?.map?.name ||
-    details.origin?.data?.bsv20?.tick ||
-    details.origin?.data?.bsv20?.sym ||
-    details.origin?.data?.insc?.json?.tick ||
-    details.origin?.data?.insc?.json?.p ||
-    details.origin?.data?.insc?.file.type ||
-    "Mystery Outpoint";
+  const name = ticker || "Mystery Outpoint";
 
   return {
     title: `${assetType} Market Listings for ${name} - 1SatOrdinals`,

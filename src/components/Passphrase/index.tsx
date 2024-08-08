@@ -3,10 +3,14 @@
 import { encryptionPrefix, toastErrorProps, toastProps } from "@/constants";
 import {
   ImportWalletFromBackupJsonStep,
+  changeAddressPath,
   encryptionKey,
+  identityAddressPath,
+  identityPk,
   importWalletFromBackupJsonStep,
   migrating,
   mnemonic,
+  ordAddressPath,
   ordPk,
   passphrase,
   payPk,
@@ -18,12 +22,12 @@ import {
   generateEncryptionKeyFromPassphrase,
 } from "@/utils/encryption";
 import { generatePassphrase } from "@/utils/passphrase";
+import { backupKeys } from "@/utils/wallet";
+import { PrivateKey } from "@bsv/sdk";
 import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { PrivateKey } from "bsv-wasm-web";
 import randomBytes from "randombytes";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
@@ -72,22 +76,7 @@ const EnterPassphrase: React.FC<Props> = ({
     }
   });
 
-  const backupKeys = (keys: EncryptedBackupJson) => {
-    const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify({
-        payPk: payPk.value,
-        ordPk: ordPk.value,
-        mnemonic: mnemonic.value,
-      })
-    )}`;
-
-    const clicker = document.createElement("a");
-    clicker.setAttribute("href", dataStr);
-    clicker.setAttribute("download", "1sat.json");
-    clicker.click();
-  };
-
-  const handlePassphraseChange = (e: any) => {
+  const handlePassphraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     e.stopPropagation();
     passphrase.value = e.target.value;
@@ -106,9 +95,9 @@ const EnterPassphrase: React.FC<Props> = ({
           return;
         }
 
-        const pubKey = PrivateKey.from_wif(payPk.value)
-          .to_public_key()
-          .to_hex();
+        const pubKey = PrivateKey.fromWif(payPk.value)
+          .toPublicKey()
+          .toString();
         encryptionKey.value =
           (await generateEncryptionKeyFromPassphrase(
             passphrase.value,
@@ -123,11 +112,16 @@ const EnterPassphrase: React.FC<Props> = ({
         }
 
         const iv = new Uint8Array(randomBytes(16).buffer);
-        const encrypted = encryptData(
+        const encrypted = await encryptData(
           Buffer.from(
             JSON.stringify({
+			  mnemonic: mnemonic.value,
               payPk: payPk.value,
               ordPk: ordPk.value,
+			  payDerivationPath: changeAddressPath.value,
+			  ordDerivationPath: ordAddressPath.value,
+			  ...(!!identityPk.value && { identityPk: identityPk.value }),
+  			  ...(!!identityAddressPath.value && { identityDerivationPath: identityAddressPath.value }),
             }),
             "utf-8"
           ),
@@ -145,7 +139,7 @@ const EnterPassphrase: React.FC<Props> = ({
         };
 
         if (download) {
-          backupKeys(keys);
+          backupKeys();
         }
 
         if (migrating.value) {
@@ -169,7 +163,20 @@ const EnterPassphrase: React.FC<Props> = ({
         toast.error("Failed to encrypt keys", toastErrorProps);
       }
     }
-  }, [download, encryptionKey.value, hasDownloadedKeys, migrating.value, ordPk.value, passphrase.value, payPk.value]);
+  }, [
+	download,
+	encryptionKey.value,
+	hasDownloadedKeys,
+	migrating.value,
+	ordPk.value,
+	passphrase.value,
+	payPk.value,
+	mnemonic.value,
+	changeAddressPath.value,
+	ordAddressPath.value,
+	identityPk.value,
+	identityAddressPath.value
+  ]);
 
   const handleClickDecrypt = async () => {
     if (passphrase.value) {

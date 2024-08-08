@@ -2,7 +2,7 @@
 
 import { API_HOST, indexerBuyFee, toastErrorProps, toastProps } from "@/constants";
 import {
-  bsvWasmReady,
+  bsv20Utxos,
   ordPk,
   payPk,
   pendingTxs,
@@ -13,22 +13,14 @@ import type { Listing } from "@/types/bsv20";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
-import type { Utxo } from "@/utils/js-1sat-ord";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
-} from "bsv-wasm-web";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
-import { calculateFee } from "../buyArtifact";
-import { buildInscriptionSafe } from "../transferBsv20";
+import { setPendingTxs } from "@/signals/wallet/client";
+import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType, type Utxo } from "js-1sat-ord";
+import { PrivateKey } from "@bsv/sdk";
+import type { OrdUtxo } from "@/types/ordinals";
 
 interface CancelListingModalProps {
   onClose: () => void;
@@ -49,11 +41,6 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
   const cancelling = useSignal(false);
 
   const cancelBsv20Listing = useCallback(async (e: React.MouseEvent) => {
-    if (!bsvWasmReady.value) {
-      console.log("bsv wasm not ready");
-      return;
-    }
-
     if (!fundingAddress.value) {
       console.log("funding address not set");
       return;
@@ -68,180 +55,209 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       return;
     }
 
-    const cancelTx = new Transaction(1, 0);
-    const cancelInput = new TxIn(
-      Buffer.from(listing.txid, "hex"),
-      listing.vout,
-      Script.from_asm_string("")
-    );
-    cancelTx.add_input(cancelInput);
-    const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value);
+    const id = (listing.tick || listing.id) as string
 
-    // add inscription
-    // output 0 - purchasing the ordinal
-    const inscription = {
-      p: "bsv-20",
-      op: "transfer",
-      amt: (listing as Listing).amt,
-    } as {
-      p: string;
-      op: string;
-      amt: string;
-      tick?: string;
-      id?: string;
-    };
-
-    if ((listing as Listing).tick) {
-      inscription.tick = (listing as Listing).tick;
-    } else if ((listing as Listing).id) {
-      inscription.id = (listing as Listing).id;
-    } else {
-      cancelling.value = false;
-      throw new Error("Invalid BSV20 listing");
-    }
-    const inscriptionB64 = Buffer.from(
-      JSON.stringify(inscription)
-    ).toString("base64");
-    // build an inscription output for the token transfer
-    const inscriptionScript = buildInscriptionSafe(
-      ordinalsAddress,
-      inscriptionB64,
-      "application/bsv-20"
-    );
-
-    const transferOut = new TxOut(BigInt(1), inscriptionScript);
-
-    cancelTx.add_output(transferOut);
-
-    const changeAddress = P2PKHAddress.from_string(fundingAddress.value);
-
-    // dummy outputs - change
-    const dummyChangeOutput = new TxOut(
-      BigInt(0),
-      changeAddress.get_locking_script()
-    );
-    cancelTx.add_output(dummyChangeOutput);
-
-    // output 1 indexer fee
-    if (indexerAddress) {
-      const indexerFeeOutput = new TxOut(
-        BigInt(indexerBuyFee),
-        P2PKHAddress.from_string(indexerAddress).get_locking_script()
-      );
-      cancelTx.add_output(indexerFeeOutput);
+    const config: CancelOrdTokenListingsConfig = {
+      utxos: utxos.value,
+      paymentPk: PrivateKey.fromWif(payPk.value),
+      ordPk: PrivateKey.fromWif(ordPk.value),
+      listingUtxos: [{
+        amt: listing.amt,
+        id,
+        satoshis: 1,
+        txid: listing.txid,
+        vout: listing.vout,
+        script: listing.script
+      }],
+      additionalPayments: [{to: indexerAddress, amount: indexerBuyFee}],
+      protocol: (listing as Listing).tick ? TokenType.BSV20 : TokenType.BSV21,
+      tokenID: id,
     }
 
-    // Calculate the network fee
-    // account for funding input and market output (not added to tx yet)
-    const paymentUtxos: Utxo[] = [];
-    let satsCollected = 0;
-    // initialize fee and satsNeeded (updated with each added payment utxo)
-    let fee = calculateFee(1, cancelTx);
-    let satsNeeded = fee;
-    // collect the required utxos
-    const sortedFundingUtxos = utxos.value.sort((a, b) =>
-      a.satoshis > b.satoshis ? -1 : 1
-    );
-    for (const utxo of sortedFundingUtxos) {
-      if (satsCollected < satsNeeded) {
-        satsCollected += utxo.satoshis;
-        paymentUtxos.push(utxo);
+    const { tx, spentOutpoints, tokenChange } = await cancelOrdTokenListings(config);
 
-        // if we had to add additional
-        fee = calculateFee(paymentUtxos.length, cancelTx);
-        satsNeeded = fee + BigInt(indexerBuyFee);
-      }
-    }
+    bsv20Utxos.value = bsv20Utxos.value?.filter((u) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1) || [];
+    bsv20Utxos.value = bsv20Utxos.value?.concat({
+      satoshis: 1,
+      vout: tokenChange.vout,
+      script: tokenChange.script,
+      txid: tokenChange.txid,
+      outpoint: `${tokenChange.txid}_${tokenChange.vout}`,
+      accSats: 0,
+      height: 0,
+      idx: 0,
+      sale: false,
+    } as OrdUtxo) || [];
+    utxos.value = utxos.value?.filter((u) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1) || [];
+    // const cancelTx = new Transaction(1, 0);
+    // const cancelInput = new TxIn(
+    //   Buffer.from(listing.txid, "hex"),
+    //   listing.vout,
+    //   Script.from_asm_string("")
+    // );
+    // cancelTx.add_input(cancelInput);
+    // const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value);
 
-    // add payment utxos to the tx
-    for (const u of paymentUtxos) {
-      const inx = new TxIn(
-        Buffer.from(u.txid, "hex"),
-        u.vout,
-        Script.from_asm_string("")
-      );
-      inx.set_satoshis(BigInt(u.satoshis));
-      cancelTx.add_input(inx);
-    }
+    // // add inscription
+    // // output 0 - purchasing the ordinal
+    // const inscription = {
+    //   p: "bsv-20",
+    //   op: "transfer",
+    //   amt: (listing as Listing).amt,
+    // } as {
+    //   p: string;
+    //   op: string;
+    //   amt: string;
+    //   tick?: string;
+    //   id?: string;
+    // };
 
-    // Replace dummy change output
-    const changeAmt = BigInt(satsCollected) - satsNeeded;
+    // if ((listing as Listing).tick) {
+    //   inscription.tick = (listing as Listing).tick;
+    // } else if ((listing as Listing).id) {
+    //   inscription.id = (listing as Listing).id;
+    // } else {
+    //   cancelling.value = false;
+    //   throw new Error("Invalid BSV20 listing");
+    // }
+    // const inscriptionB64 = Buffer.from(
+    //   JSON.stringify(inscription)
+    // ).toString("base64");
+    // // build an inscription output for the token transfer
+    // const inscriptionScript = buildInscriptionSafe(
+    //   ordinalsAddress,
+    //   inscriptionB64,
+    //   "application/bsv-20"
+    // );
 
-    const changeOutput = new TxOut(
-      BigInt(changeAmt),
-      changeAddress.get_locking_script()
-    );
+    // const transferOut = new TxOut(BigInt(1), inscriptionScript);
 
-    cancelTx.set_output(1, changeOutput);
+    // cancelTx.add_output(transferOut);
 
-    // sign the cancel input
-    const sig = cancelTx.sign(
-      PrivateKey.from_wif(ordPk.value),
-      SigHash.InputOutputs,
-      0,
-      Script.from_bytes(Buffer.from(listing.script, "base64")),
-      BigInt(1)
-    );
+    // const changeAddress = P2PKHAddress.from_string(fundingAddress.value);
 
-    cancelInput.set_unlocking_script(
-      Script.from_asm_string(
-        `${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value)
-          .to_public_key()
-          .to_hex()} OP_1`
-      )
-    );
+    // // dummy outputs - change
+    // const dummyChangeOutput = new TxOut(
+    //   BigInt(0),
+    //   changeAddress.get_locking_script()
+    // );
+    // cancelTx.add_output(dummyChangeOutput);
 
-    cancelTx.set_input(0, cancelInput);
+    // // output 1 indexer fee
+    // if (indexerAddress) {
+    //   const indexerFeeOutput = new TxOut(
+    //     BigInt(indexerBuyFee),
+    //     P2PKHAddress.from_string(indexerAddress).get_locking_script()
+    //   );
+    //   cancelTx.add_output(indexerFeeOutput);
+    // }
 
-    // sign the funding inputs
-    let idx = 1;
-    for (const u of paymentUtxos) {
+    // // Calculate the network fee
+    // // account for funding input and market output (not added to tx yet)
+    // const paymentUtxos: Utxo[] = [];
+    // let satsCollected = 0;
+    // // initialize fee and satsNeeded (updated with each added payment utxo)
+    // let fee = calculateFee(1, cancelTx);
+    // let satsNeeded = fee;
+    // // collect the required utxos
+    // const sortedFundingUtxos = utxos.value.sort((a, b) =>
+    //   a.satoshis > b.satoshis ? -1 : 1
+    // );
+    // for (const utxo of sortedFundingUtxos) {
+    //   if (satsCollected < satsNeeded) {
+    //     satsCollected += utxo.satoshis;
+    //     paymentUtxos.push(utxo);
 
-      const inx = cancelTx.get_input(idx);
-      if (!inx) {
-        cancelling.value = false;
-        return;
-      }
+    //     // if we had to add additional
+    //     fee = calculateFee(paymentUtxos.length, cancelTx);
+    //     satsNeeded = fee + BigInt(indexerBuyFee);
+    //   }
+    // }
 
-      const sig = cancelTx.sign(
-        PrivateKey.from_wif(payPk.value),
-        SigHash.InputOutputs,
-        idx,
-        Script.from_asm_string(u.script),
-        BigInt(u.satoshis)
-      );
+    // // add payment utxos to the tx
+    // for (const u of paymentUtxos) {
+    //   const inx = new TxIn(
+    //     Buffer.from(u.txid, "hex"),
+    //     u.vout,
+    //     Script.from_asm_string("")
+    //   );
+    //   inx.set_satoshis(BigInt(u.satoshis));
+    //   cancelTx.add_input(inx);
+    // }
 
-      inx.set_unlocking_script(
-        Script.from_asm_string(
-          `${sig.to_hex()} ${PrivateKey.from_wif(payPk.value)
-            .to_public_key()
-            .to_hex()}`
-        )
-      );
+    // // Replace dummy change output
+    // const changeAmt = BigInt(satsCollected) - satsNeeded;
 
-      cancelTx.set_input(idx, inx);
-      idx++;
-    }
+    // const changeOutput = new TxOut(
+    //   BigInt(changeAmt),
+    //   changeAddress.get_locking_script()
+    // );
+
+    // cancelTx.set_output(1, changeOutput);
+
+    // // sign the cancel input
+    // const sig = cancelTx.sign(
+    //   PrivateKey.from_wif(ordPk.value),
+    //   SigHash.InputOutputs,
+    //   0,
+    //   Script.from_bytes(Buffer.from(listing.script, "base64")),
+    //   BigInt(1)
+    // );
+
+    // cancelInput.set_unlocking_script(
+    //   Script.from_asm_string(
+    //     `${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value)
+    //       .to_public_key()
+    //       .to_hex()} OP_1`
+    //   )
+    // );
+
+    // cancelTx.set_input(0, cancelInput);
+
+    // // sign the funding inputs
+    // let idx = 1;
+    // for (const u of paymentUtxos) {
+
+    //   const inx = cancelTx.get_input(idx);
+    //   if (!inx) {
+    //     cancelling.value = false;
+    //     return;
+    //   }
+
+    //   const sig = cancelTx.sign(
+    //     PrivateKey.from_wif(payPk.value),
+    //     SigHash.InputOutputs,
+    //     idx,
+    //     Script.from_asm_string(u.script),
+    //     BigInt(u.satoshis)
+    //   );
+
+    //   inx.set_unlocking_script(
+    //     Script.from_asm_string(
+    //       `${sig.to_hex()} ${PrivateKey.from_wif(payPk.value)
+    //         .to_public_key()
+    //         .to_hex()}`
+    //     )
+    //   );
+
+    //   cancelTx.set_input(idx, inx);
+    //   idx++;
+    // }
 
     const pendingTx = {
-      rawTx: cancelTx.to_hex(),
-      txid: cancelTx.get_id_hex(),
+      rawTx: tx.toHex(),
+      txid: tx.id('hex'),
     } as PendingTransaction;
-    pendingTxs.value = [pendingTx];
+    setPendingTxs([pendingTx]);
 
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [bsvWasmReady.value, fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, onCancelled]);
+  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, indexerAddress, listing, bsv20Utxos.value, onCancelled]);
 
   const cancelListing = useCallback(async (e: React.MouseEvent) => {
-    if (!bsvWasmReady.value) {
-      console.log("bsv wasm not ready");
-      return;
-    }
-
     if (!fundingAddress.value) {
       console.log("funding address not set");
       return;
@@ -257,142 +273,159 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       return;
     }
 
-    const cancelTx = new Transaction(1, 0);
-
-    if (listing.id || listing.tick) {
-      cancelling.value = false;
-      throw new Error("BSV20 listing!");
+    const listingUtxos: Utxo[] =[{
+      satoshis: listing.satoshis,
+      txid: listing.txid,
+      vout: listing.vout,
+      script: listing.script
+    }]
+    
+    const config: CancelOrdListingsConfig = {
+      utxos: utxos.value,
+      paymentPk: PrivateKey.fromWif(payPk.value),
+      ordPk: PrivateKey.fromWif(ordPk.value),
+      listingUtxos,
     }
 
-    const cancelInput = new TxIn(
-      Buffer.from(listing.txid, "hex"),
-      listing.vout,
-      Script.from_asm_string("")
-    );
-    cancelTx.add_input(cancelInput);
-    const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value);
+    const { tx, spentOutpoints, payChange } = await cancelOrdListings(config);
 
-    const satOutScript = ordinalsAddress.get_locking_script();
-    const transferOut = new TxOut(BigInt(1), satOutScript);
+    // const cancelTx = new Transaction(1, 0);
 
-    cancelTx.add_output(transferOut);
+    // if (listing.id || listing.tick) {
+    //   cancelling.value = false;
+    //   throw new Error("BSV20 listing!");
+    // }
 
-    const changeAddress = P2PKHAddress.from_string(fundingAddress.value);
+    // const cancelInput = new TxIn(
+    //   Buffer.from(listing.txid, "hex"),
+    //   listing.vout,
+    //   Script.from_asm_string("")
+    // );
+    // cancelTx.add_input(cancelInput);
+    // const ordinalsAddress = P2PKHAddress.from_string(ordAddress.value);
 
-    // dummy outputs - change
-    const dummyChangeOutput = new TxOut(
-      BigInt(0),
-      changeAddress.get_locking_script()
-    );
-    cancelTx.add_output(dummyChangeOutput);
+    // const satOutScript = ordinalsAddress.get_locking_script();
+    // const transferOut = new TxOut(BigInt(1), satOutScript);
 
-    // Calculate the network fee
-    // account for funding input and market output (not added to tx yet)
-    const paymentUtxos: Utxo[] = [];
-    let satsCollected = 0;
-    // initialize fee and satsNeeded (updated with each added payment utxo)
-    let fee = calculateFee(1, cancelTx);
-    let satsNeeded = fee;
-    // collect the required utxos
-    const sortedFundingUtxos = utxos.value.sort((a, b) =>
-      a.satoshis > b.satoshis ? -1 : 1
-    );
-    for (const utxo of sortedFundingUtxos) {
-      if (satsCollected < satsNeeded) {
-        satsCollected += utxo.satoshis;
-        paymentUtxos.push(utxo);
+    // cancelTx.add_output(transferOut);
 
-        // if we had to add additional
-        fee = calculateFee(paymentUtxos.length, cancelTx);
-        satsNeeded = fee + BigInt(indexerBuyFee);
-      }
-    }
+    // const changeAddress = P2PKHAddress.from_string(fundingAddress.value);
 
-    // add payment utxos to the tx
-    for (const u of paymentUtxos) {
-      const inx = new TxIn(
-        Buffer.from(u.txid, "hex"),
-        u.vout,
-        Script.from_asm_string("")
-      );
-      inx.set_satoshis(BigInt(u.satoshis));
-      cancelTx.add_input(inx);
-    }
+    // // dummy outputs - change
+    // const dummyChangeOutput = new TxOut(
+    //   BigInt(0),
+    //   changeAddress.get_locking_script()
+    // );
+    // cancelTx.add_output(dummyChangeOutput);
 
-    // Replace dummy change output
-    const changeAmt = BigInt(satsCollected) - satsNeeded;
+    // // Calculate the network fee
+    // // account for funding input and market output (not added to tx yet)
+    // const paymentUtxos: Utxo[] = [];
+    // let satsCollected = 0;
+    // // initialize fee and satsNeeded (updated with each added payment utxo)
+    // let fee = calculateFee(1, cancelTx);
+    // let satsNeeded = fee;
+    // // collect the required utxos
+    // const sortedFundingUtxos = utxos.value.sort((a, b) =>
+    //   a.satoshis > b.satoshis ? -1 : 1
+    // );
+    // for (const utxo of sortedFundingUtxos) {
+    //   if (satsCollected < satsNeeded) {
+    //     satsCollected += utxo.satoshis;
+    //     paymentUtxos.push(utxo);
 
-    const changeOutput = new TxOut(
-      BigInt(changeAmt),
-      changeAddress.get_locking_script()
-    );
+    //     // if we had to add additional
+    //     fee = calculateFee(paymentUtxos.length, cancelTx);
+    //     satsNeeded = fee + BigInt(indexerBuyFee);
+    //   }
+    // }
 
-    cancelTx.set_output(1, changeOutput);
+    // // add payment utxos to the tx
+    // for (const u of paymentUtxos) {
+    //   const inx = new TxIn(
+    //     Buffer.from(u.txid, "hex"),
+    //     u.vout,
+    //     Script.from_asm_string("")
+    //   );
+    //   inx.set_satoshis(BigInt(u.satoshis));
+    //   cancelTx.add_input(inx);
+    // }
 
-    // sign the cancel input
-    const sig = cancelTx.sign(
-      PrivateKey.from_wif(ordPk.value),
-      SigHash.InputOutputs,
-      0,
-      Script.from_bytes(Buffer.from(listing.script, "base64")),
-      BigInt(1)
-    );
+    // // Replace dummy change output
+    // const changeAmt = BigInt(satsCollected) - satsNeeded;
 
-    cancelInput.set_unlocking_script(
-      Script.from_asm_string(
-        `${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value)
-          .to_public_key()
-          .to_hex()} OP_1`
-      )
-    );
+    // const changeOutput = new TxOut(
+    //   BigInt(changeAmt),
+    //   changeAddress.get_locking_script()
+    // );
 
-    cancelTx.set_input(0, cancelInput);
+    // cancelTx.set_output(1, changeOutput);
 
-    // sign the funding inputs
-    let idx = 1;
-    for (const u of paymentUtxos) {
-      const inx = cancelTx.get_input(idx);
+    // // sign the cancel input
+    // const sig = cancelTx.sign(
+    //   PrivateKey.from_wif(ordPk.value),
+    //   SigHash.InputOutputs,
+    //   0,
+    //   Script.from_bytes(Buffer.from(listing.script, "base64")),
+    //   BigInt(1)
+    // );
 
-      if (!inx) {
-        cancelling.value = false;
-        return;
-      }
+    // cancelInput.set_unlocking_script(
+    //   Script.from_asm_string(
+    //     `${sig.to_hex()} ${PrivateKey.from_wif(ordPk.value)
+    //       .to_public_key()
+    //       .to_hex()} OP_1`
+    //   )
+    // );
 
-      const sig = cancelTx.sign(
-        PrivateKey.from_wif(payPk.value),
-        SigHash.InputOutputs,
-        idx,
-        Script.from_asm_string(u.script),
-        BigInt(u.satoshis)
-      );
+    // cancelTx.set_input(0, cancelInput);
 
-      inx.set_unlocking_script(
-        Script.from_asm_string(
-          `${sig.to_hex()} ${PrivateKey.from_wif(payPk.value)
-            .to_public_key()
-            .to_hex()}`
-        )
-      );
+    // // sign the funding inputs
+    // let idx = 1;
+    // for (const u of paymentUtxos) {
+    //   const inx = cancelTx.get_input(idx);
 
-      cancelTx.set_input(idx, inx);
-      idx++;
-    }
+    //   if (!inx) {
+    //     cancelling.value = false;
+    //     return;
+    //   }
+
+    //   const sig = cancelTx.sign(
+    //     PrivateKey.from_wif(payPk.value),
+    //     SigHash.InputOutputs,
+    //     idx,
+    //     Script.from_asm_string(u.script),
+    //     BigInt(u.satoshis)
+    //   );
+
+    //   inx.set_unlocking_script(
+    //     Script.from_asm_string(
+    //       `${sig.to_hex()} ${PrivateKey.from_wif(payPk.value)
+    //         .to_public_key()
+    //         .to_hex()}`
+    //     )
+    //   );
+
+    //   cancelTx.set_input(idx, inx);
+    //   idx++;
+    // }
 
     const pendingTx = {
-      rawTx: cancelTx.to_hex(),
-      txid: cancelTx.get_id_hex(),
+      rawTx: tx.toHex(),
+      txid: tx.id('hex'),
+      spentOutpoints,
+      payChange,
     } as PendingTransaction;
 
-    pendingTxs.value = [pendingTx];
+    setPendingTxs([pendingTx]);
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
-    pendingTxs.value =
-      pendingTxs.value?.filter((t) => t.txid !== listing.txid) || [];
+    setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== listing.txid) || []);
     toast.success("Listing canceled.", toastProps);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [listing, utxos.value, payPk.value, ordPk.value, ordAddress.value, pendingTxs.value, cancelling.value, indexerAddress]);
+  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, listing, pendingTxs.value, onCancelled]);
 
   return (
     <dialog
@@ -459,7 +492,7 @@ export const broadcast = async ({
     await promise;
     
     toast.success("Transaction broadcasted.", toastProps);
-    pendingTxs.value = pendingTxs.value?.filter((t) => t.txid !== txid) || [];
+    setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== txid) || []);
    } catch (e) {
     console.error(e);
     toast.error("Error broadcasting transaction.", toastErrorProps);
