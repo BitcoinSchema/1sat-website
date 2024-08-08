@@ -4,6 +4,7 @@ import { Spotlight } from "@/components/ui/spotlights";
 import { toastProps } from "@/constants";
 import TanstackProvider from "@/providers/TanstackProvider";
 import type { Metadata } from "next";
+import { Analytics } from '@vercel/analytics/react';
 import { Inter, Ubuntu, Ubuntu_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
@@ -57,6 +58,7 @@ export default function RootLayout({
           <Header ubuntu={ubuntu} />
           {/* <Tabs className={`absolute md:relative m-0 md:my-8 bottom-0 left-0 w-full md:w-fit mx-auto ${ubuntuMono.className}`} /> */}
           {children}
+          <Analytics />
           <Footer />
           <Toaster
             position="bottom-left"
