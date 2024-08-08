@@ -81,7 +81,7 @@ const RoyaltyForm: React.FC<RoyaltyFormProps> = ({
 						<input
 							type="text"
 							className="input input-bordered w-full"
-							value={royalty.percentage}
+							value={royalty.percentage && Number(royalty.percentage) > 0 ? royalty.percentage : ""}
 							onChange={(e) =>
 								updateRoyalty(index, "percentage", e.target.value)
 							}
