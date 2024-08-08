@@ -158,7 +158,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         changeAddress: address,
       }
 
-      const { tx, spentOutpoints } = await sendUtxos(config)
+      const { tx, spentOutpoints, payChange } = await sendUtxos(config)
       const rawTx = tx.toHex();
 			setPendingTxs([
 				{
@@ -169,6 +169,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					numOutputs: tx.outputs.length,
 					txid: tx.id('hex'),
 					spentOutpoints,
+          payChange,
           returnTo: "/",
 				},
 			])
