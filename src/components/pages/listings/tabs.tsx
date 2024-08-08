@@ -8,9 +8,8 @@ const ListingsTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
       <Link
         href={`/listings/${AssetType.Ordinals}`}
         role="tab"
-        className={`tab ${
-          selectedTab === AssetType.Ordinals ? "tab-active" : ""
-        }`}
+        className={`tab ${selectedTab === AssetType.Ordinals ? "tab-active" : ""
+          }`}
         aria-label="Ordinals"
       >
         Ordinals
@@ -19,31 +18,18 @@ const ListingsTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
       <Link
         href={`/listings/${AssetType.BSV20}`}
         role="tab"
-        className={`tab ${
-          selectedTab === AssetType.BSV20 ? "tab-active" : ""
-        }`}
+        className={`tab ${selectedTab === AssetType.BSV20 ? "tab-active" : ""
+          }`}
         aria-label="BSV20"
       >
         BSV20
       </Link>
 
       <Link
-        href={`/listings/${AssetType.LRC20}`}
-        role="tab"
-        className={`tab ${
-          selectedTab === AssetType.LRC20 ? "tab-active" : ""
-        }`}
-        aria-label="LRC20"
-      >
-        LRC20
-      </Link>
-
-      <Link
         href={`/listings/${AssetType.BSV21}`}
         role="tab"
-        className={`tab ${
-          selectedTab === AssetType.BSV21 ? "tab-active" : ""
-        }`}
+        className={`tab ${selectedTab === AssetType.BSV21 ? "tab-active" : ""
+          }`}
         aria-label="BSV21"
       >
         BSV21

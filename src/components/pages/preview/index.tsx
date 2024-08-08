@@ -8,6 +8,7 @@ import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
 import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { stringifyMetaData } from "js-1sat-ord";
 import { head } from "lodash";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -173,16 +174,33 @@ Preview`}
 								<div className="flex justify-between">
 									<div>Metadata</div>
 									<div>
-										{Object.keys(pendingTx.value?.metadata).map((k) => {
-											const v =
-												pendingTx.value?.metadata?.[k];
-											return (
-												<div key={k} className="flex justify-between">
-													<div className="mr-2 text-[#555]">{k}</div>
-													<div className="ml-2">{v}</div>
-												</div>
-											);
-										})}
+										{pendingTx.value?.metadata &&
+											Object.keys(pendingTx.value.metadata).map((k) => {
+												let meta = pendingTx.value?.metadata;
+												if (pendingTx.value && typeof k === "object") {
+													meta = stringifyMetaData(pendingTx.value.metadata);
+												}
+												const v = meta?.[k];
+												return (
+													<div key={k} className="flex justify-between">
+														<div className="mr-2 text-[#555]">{k}</div>
+														<div className="ml-2">
+															{typeof v === "object" ? 
+																Object.keys(v).map((k2) => {
+																	return (
+																		<div key={k2} className="flex justify-between">
+																			<div className="mr-2 text-[#555]">{k2}</div>
+																			<div className="ml-2">{v[k2]}</div>
+																		</div>
+																	);
+																}
+															) : (
+																<div>{v}</div>
+															)}
+														</div>
+													</div>
+												);
+											})}
 									</div>
 								</div>
 							</>

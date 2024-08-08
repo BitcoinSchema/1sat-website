@@ -48,7 +48,7 @@ const FeaturedCollections = () => {
           <div key={`c-${collection.origin}`}>
             <Link href={`/collection/${collection.origin}`}>
               <Image
-                src={collection.previewUrl || `${ORDFS}/${collection.origin}`}
+                src={`${ORDFS}/${collection.origin|| collection.previewUrl} `}
                 alt={collection.name}
                 width={300}
                 height={300}

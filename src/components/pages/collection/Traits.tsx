@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CollectionSubTypeData, MAP } from "js-1sat-ord";
+import type { CollectionSubTypeData, CollectionTraits, CreateOrdinalsCollectionMetadata, MAP, PreMAP } from "js-1sat-ord";
 
 interface TraitsProps {
-	collection: Collection;
+	collection: PreMAP;
 }
 
 export type Collection = MAP & {

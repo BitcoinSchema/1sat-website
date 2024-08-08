@@ -54,9 +54,8 @@ const Fund = ({ ticker }: { ticker: any }) => {
               Listing Price{" "}
               <div
                 className="tooltip"
-                data-tip={`This fee covers including ${
-                  ticker.tick || ticker.sym
-                } on 1satordinals.com. Listing fee will be used to process pending actions.`}
+                data-tip={`This fee covers including ${ticker.tick || ticker.sym
+                  } on 1sat.market. Listing fee will be used to process pending actions.`}
               >
                 <FaQuestionCircle className="inline" />
               </div>

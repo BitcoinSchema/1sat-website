@@ -14,6 +14,7 @@ import {
 	type Payment,
 	type RemoteSigner,
 	type Utxo,
+  type LocalSigner,
 } from "js-1sat-ord";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
@@ -28,6 +29,7 @@ export const handleInscribing = async (
 	utxos: Utxo[],
 	metaData?: PreMAP, // MAP,
 	additionalPayments: Payment[] = [],
+  idWif?: string,
 ) => {
 	const paymentPk = PrivateKey.fromWif(payPk);
 
@@ -40,11 +42,21 @@ export const handleInscribing = async (
 	// const idKey = PrivateKey.from_wif(
 	//   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
 	// );
+  let signer: LocalSigner | undefined;
+  if (idWif) {
+    const idKey = PrivateKey.fromWif(idWif);
+    console.log("Inscribing with", { metaData });
+    signer = {
+      idKey // optional id key
+      // keyHost: "http://localhost:21000",
+    } as LocalSigner; // RemoteSigner;
+  }
+  
 	console.log("Inscribing with", { metaData });
-	const signer = {
-		// idKey // optional id key
-		keyHost: "http://localhost:21000",
-	} as RemoteSigner;
+	// const signer = {
+	// 	// idKey // optional id key
+	// 	keyHost: "http://localhost:21000",
+	// } as RemoteSigner;
 
 	const destinations: Destination[] = [
 		{
@@ -52,7 +64,6 @@ export const handleInscribing = async (
       inscription
 		},
 	];
-
 
   // [fundingUtxo],
   // ordAddress,
@@ -70,6 +81,7 @@ export const handleInscribing = async (
 		paymentPk,
     metaData,
     additionalPayments,
+    signer,
 	};
 	const { spentOutpoints, tx, payChange } = await createOrdinals(config);
 	return { spentOutpoints, tx, payChange};
@@ -122,6 +134,7 @@ export const handleBulkInscribingWithData = async (
 ) => {
 	const paymentPk = PrivateKey.fromWif(payPk);
 
+  // TODO: implement sigma signing
 	const signer = {
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;

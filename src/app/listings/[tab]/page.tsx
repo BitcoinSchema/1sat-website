@@ -1,6 +1,6 @@
 import ListingsPage from "@/components/pages/listings";
 import { API_HOST, AssetType } from "@/constants";
-import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
+import type { BSV20TXO } from "@/types/ordinals";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 import * as http from "@/utils/httpClient";
 

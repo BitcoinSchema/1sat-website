@@ -6,7 +6,8 @@ import Link from "next/link";
 import { FaChevronLeft } from "react-icons/fa";
 import { CollectionList } from "./CollectionList";
 import { CollectionNavigation } from "./CollectionNavigation";
-import Traits, { type Collection } from "./Traits";
+import Traits from "./Traits";
+import type { CreateOrdinalsCollectionMetadata, PreMAP } from "js-1sat-ord";
 
 interface Props {
   stats: CollectionStats;
@@ -56,7 +57,7 @@ const CollectionPage = async ({ stats, collection, bannerImage }: Props) => {
       )}
 
       <CollectionNavigation />
-      {collection.origin?.data?.map && <Traits collection={collection.origin.data.map as Collection} />}
+      {collection.origin?.data?.map && <Traits collection={collection.origin.data.map as PreMAP} />}
       <CollectionList collectionId={collection.outpoint} />
     </div>
   );
