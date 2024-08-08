@@ -25,7 +25,7 @@ const FlowLoader = async ({ artifact }: { artifact?: OrdUtxo }) => {
   return (
     <FlowGrid
       artifacts={artifacts}
-      className="rounded-lg shadow-2xl min-h-96 mx-auto px-4 max-w-[100rem] h-full"
+      className="rounded-lg shadow-2xl min-h-96 mx-auto px-4 max-w-[100rem] h-full w-full"
     />
   );
 };

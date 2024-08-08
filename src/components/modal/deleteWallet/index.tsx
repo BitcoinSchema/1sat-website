@@ -1,5 +1,6 @@
 "use client";
 
+import { removeIdentity } from "@/signals/bapIdentity/client";
 import {
 	bsv20Balances,
 	bsv20Utxos,
@@ -60,6 +61,8 @@ const DeleteWalletModal = ({
 
 		showUnlockWalletButton.value = false;
 		createWalletStep.value = CreateWalletStep.Create;
+
+    removeIdentity();
 		console.log("Cleared keys");
 	}, []);
 
