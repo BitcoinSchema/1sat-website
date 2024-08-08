@@ -74,7 +74,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
       tokenID: id,
     }
 
-    const { tx, spentOutpoints, tokenChange } = await cancelOrdTokenListings(config);
+    const { tx, spentOutpoints, tokenChange, payChange } = await cancelOrdTokenListings(config);
 
     bsv20Utxos.value = bsv20Utxos.value?.filter((u) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1) || [];
     bsv20Utxos.value = bsv20Utxos.value?.concat({
@@ -247,6 +247,9 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     const pendingTx = {
       rawTx: tx.toHex(),
       txid: tx.id('hex'),
+      spentOutpoints,
+      payChange,
+      tokenChange,
     } as PendingTransaction;
     setPendingTxs([pendingTx]);
 
@@ -420,12 +423,11 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     setPendingTxs([pendingTx]);
     console.log("pending tx", pendingTx);
     await broadcast(pendingTx);
-    setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== listing.txid) || []);
     toast.success("Listing canceled.", toastProps);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
-  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, listing, pendingTxs.value, onCancelled]);
+  }, [fundingAddress.value, cancelling, utxos.value, payPk.value, ordPk.value, ordAddress.value, listing, onCancelled]);
 
   return (
     <dialog
