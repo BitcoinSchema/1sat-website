@@ -1,17 +1,16 @@
 "use client";
 
 import { API_HOST, FetchStatus, toastProps } from "@/constants";
-import { pendingTxs, usdRate } from "@/signals/wallet";
-import { fundingAddress } from "@/signals/wallet/address";
-import { PendingTransaction } from "@/types/preview";
+import { ordUtxos, pendingTxs, usdRate, utxos } from "@/signals/wallet";
+import { setPendingTxs } from "@/signals/wallet/client";
+import type { PendingTransaction } from "@/types/preview";
 import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
-import { computed, effect } from "@preact/signals-react";
+import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import { P2PKHAddress, Transaction } from "bsv-wasm-web";
 import { head } from "lodash";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FaCopy } from "react-icons/fa";
 import { toBitcoin } from "satoshi-bitcoin-ts";
@@ -23,15 +22,17 @@ const PreviewPage = () => {
 	const router = useRouter();
 	const txs = useSignal<PendingTransaction[] | null>(pendingTxs.value);
 	const pendingTx = useSignal<PendingTransaction | null>(
-		head(txs.value) || null
+		head(txs.value) || null,
 	);
 
-	effect(() => {
-		txs.value = pendingTxs.value;
-		pendingTx.value = head(txs.value) || null;
-	});
+	useEffect(() => {
+    if(pendingTxs.value?.length) {
+      txs.value = pendingTxs.value;
+      pendingTx.value = head(txs.value) || null;
+    }
+	}, [pendingTx, pendingTxs.value, txs]);
 
-	const feeUsd = computed(() => {
+	const feeUsd = useMemo(() => {
 		if (!pendingTx.value?.fee) {
 			return null;
 		}
@@ -39,12 +40,12 @@ const PreviewPage = () => {
 		// const feeUsd = fee / 100000000 / 100000000;
 		const feeUsd = fee / usdRate.value;
 		return feeUsd.toFixed(2);
-	});
+	}, [pendingTx.value?.fee, usdRate.value]);
 
 	const [broadcastStatus, setBroadcastStatus] = useState<FetchStatus>(
-		FetchStatus.Idle
+		FetchStatus.Idle,
 	);
-	
+
 	const broadcast = useCallback(async () => {
 		const tx = pendingTx.value;
 		if (!tx) {
@@ -65,9 +66,14 @@ const PreviewPage = () => {
 			toast.success("Transaction broadcasted.", toastProps);
 
 			const returnTo = pendingTx.value?.returnTo;
-			pendingTxs.value =
-				pendingTxs.value?.filter((t) => t.txid !== tx.txid) || [];
+			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== tx.txid) || []);
 
+			utxos.value = (utxos.value || []).filter(
+				(u) => !tx.spentOutpoints.includes(`${u.txid}_${u.vout}`),
+			);
+			ordUtxos.value = (ordUtxos.value || []).filter(
+				(u) => !tx.spentOutpoints.includes(`${u.txid}_${u.vout}`),
+			);
 			if (returnTo) {
 				router.push(returnTo);
 			} else {
@@ -76,73 +82,52 @@ const PreviewPage = () => {
 		} catch {
 			setBroadcastStatus(FetchStatus.Error);
 		}
-	}, [pendingTx.value, router, setBroadcastStatus]);
+	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
 
-	const change = computed(() => {
-		if (!pendingTx.value?.numOutputs) {
-			return 0n;
+	const change = useMemo(() => {
+    if (pendingTx.value?.payChange) {
+      console.log({change: pendingTx.value.payChange.satoshis})
+      return pendingTx.value.payChange.satoshis
+    }
+    if (!pendingTx.value?.rawTx) {
+			return 0;
 		}
-		const tx = Transaction.from_hex(pendingTx.value?.rawTx);
-		// find the output going back to the fundingAddress
-		// iterate pendingTx.value?.numOutputs times
-		let totalChange = 0n;
-		for (let i = 0; i < pendingTx.value?.numOutputs; i++) {
-			const out = tx.get_output(i);
-			const pubKeyHash = out
-				?.get_script_pub_key()
-				.to_asm_string()
-				.split(" ")[2]!;
+    const tx = Transaction.fromHex(pendingTx.value.rawTx)
+    const changeOut = tx.outputs.find((o) => o.change)
+    console.log({changeOut, pendingTx: pendingTx.value})
 
-			if (pubKeyHash.length !== 40) {
-				continue;
-			}
+		return changeOut?.satoshis || 0;
+	}, [pendingTx.value]);
 
-			const address = P2PKHAddress.from_pubkey_hash(
-				Buffer.from(pubKeyHash, "hex")
-			).to_string();
-			if (address === fundingAddress.value) {
-				totalChange += out?.get_satoshis()!;
-			}
-		}
-		return totalChange;
-	});
-
-	const usdPrice = computed(() => {
+	const usdPrice = useMemo(() => {
 		if (!pendingTx.value?.rawTx || !usdRate.value) {
 			return null;
 		}
 
-		const tx = Transaction.from_hex(pendingTx.value.rawTx);
-		const numOutputs = pendingTx.value.numOutputs;
-		let totalOut = 0n;
-		for (let i = 0; i < numOutputs; i++) {
-			const out = tx.get_output(i)!;
-			totalOut += out.get_satoshis()!;
+		const tx = Transaction.fromHex(pendingTx.value.rawTx);
+
+		let totalOut = 0;
+		for (const out of tx.outputs) {
+			totalOut += out.satoshis || 0;
 		}
-		const cost = Number(totalOut - change.value);
+		const cost = totalOut - change
 		return (cost / usdRate.value).toFixed(2);
-	});
+	}, [change, pendingTx.value, usdRate.value]);
 
-	// useEffect(() => {
-	// 	console.log({ usdPrice: usdPrice.value, change: change.value });
-	// }, [usdPrice.value, change.value]);
-
-	const content = computed(() => (
+	return (
 		<>
 			<h1 className="text-center text-2xl">
 				{`${
 					pendingTx.value?.numOutputs === 1
 						? "Refund"
 						: pendingTx.value?.numOutputs === 2 &&
-						  pendingTx.value?.numInputs === 2
-						? "Transfer"
-						: "Inscription"
+								pendingTx.value?.numInputs === 2
+							? "Transfer"
+							: "Inscription"
 				}
 Preview`}
 			</h1>
-			<div className="text-center text-[#aaa] mt-2">
-				Broadcast to finalize.
-			</div>
+			<div className="text-center text-[#aaa] mt-2">Broadcast to finalize.</div>
 			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs mt-4 mb-8 relative">
 				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
 					<div className="px-2">
@@ -152,27 +137,19 @@ Preview`}
 						</div>
 						<div className="flex justify-between">
 							<div>Size</div>
-							<div>
-								{formatBytes(
-									pendingTx.value?.rawTx.length! / 2
-								)}
-							</div>
+							<div>{pendingTx.value?.rawTx.length ? formatBytes(pendingTx.value?.rawTx.length / 2) : ""}</div>
 						</div>
 						{(pendingTx.value?.price || 0) > 0 && (
 							<div className="flex justify-between">
 								<div>Market Price</div>
-								<div>
-									{toBitcoin(pendingTx.value?.price || 0)} BSV
-								</div>
+								<div>{toBitcoin(pendingTx.value?.price || 0)} BSV</div>
 							</div>
 						)}
 
 						<div className="divider">Network Fees</div>
 						<div className="flex justify-between">
 							<div>Network Fee</div>
-							<div>
-								{pendingTx.value?.fee.toLocaleString()} Satoshis
-							</div>
+							<div>{pendingTx.value?.fee.toLocaleString()} Satoshis</div>
 						</div>
 						<div className="flex justify-between">
 							<div>Network Fee USD</div>
@@ -196,23 +173,13 @@ Preview`}
 								<div className="flex justify-between">
 									<div>Metadata</div>
 									<div>
-										{Object.keys(
-											pendingTx.value?.metadata
-										).map((k) => {
+										{Object.keys(pendingTx.value?.metadata).map((k) => {
 											const v =
-												pendingTx.value?.metadata &&
-												pendingTx.value.metadata[k];
+												pendingTx.value?.metadata?.[k];
 											return (
-												<div
-													key={k}
-													className="flex justify-between"
-												>
-													<div className="mr-2 text-[#555]">
-														{k}
-													</div>
-													<div className="ml-2">
-														{v}
-													</div>
+												<div key={k} className="flex justify-between">
+													<div className="mr-2 text-[#555]">{k}</div>
+													<div className="ml-2">{v}</div>
 												</div>
 											);
 										})}
@@ -228,33 +195,26 @@ Preview`}
 									<div>
 										{pendingTx.value.marketFee <= 50000
 											? `${pendingTx.value.marketFee.toLocaleString()} Satoshis`
-											: `${toBitcoin(
-													pendingTx.value.marketFee
-											  )} BSV`}
+											: `${toBitcoin(pendingTx.value.marketFee)} BSV`}
 									</div>
 								</div>
 							</>
 						) : null}
-						{pendingTx.value?.iterations &&
-							pendingTx.value?.iterations > 1 && (
-								<>
-									<div className="divider">Indexing</div>
-									<div className="flex justify-between">
-										<div>Operations</div>{" "}
-										<div>{pendingTx.value.iterations}</div>
+						{pendingTx.value?.iterations && pendingTx.value?.iterations > 1 && (
+							<>
+								<div className="divider">Indexing</div>
+								<div className="flex justify-between">
+									<div>Operations</div> <div>{pendingTx.value.iterations}</div>
+								</div>
+								<div className="flex justify-between">
+									<div>Indexing Fee</div>{" "}
+									<div>
+										{toBitcoin(pendingTx.value.iterations * 1000)}
+										BSV
 									</div>
-									<div className="flex justify-between">
-										<div>Indexing Fee</div>{" "}
-										<div>
-											{toBitcoin(
-												pendingTx.value.iterations *
-													1000
-											)}
-											BSV
-										</div>
-									</div>
-								</>
-							)}
+								</div>
+							</>
+						)}
 					</div>
 					<div className="divider" />
 					<div className="mx-auto text-center text-teal-700 mb-2">
@@ -292,7 +252,7 @@ Preview`}
 							type="button"
 							className="btn btn-warning w-full"
 							onClick={broadcast}
-							disabled={broadcastStatus === FetchStatus.Loading}
+							disabled={usdPrice === null || broadcastStatus === FetchStatus.Loading}
 						>
 							{broadcastStatus === FetchStatus.Loading
 								? "Broadcasting..."
@@ -302,9 +262,7 @@ Preview`}
 				</div>
 			</div>
 		</>
-	));
-
-	return content;
+	);
 };
 
 export default PreviewPage;

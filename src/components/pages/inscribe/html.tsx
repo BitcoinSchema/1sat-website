@@ -3,9 +3,10 @@
 import { FetchStatus } from "@/constants";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import { getUtxos } from "@/utils/address";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import type { Utxo } from "@/utils/js-1sat-ord";
+import type { Utxo } from "js-1sat-ord";
 import { toBase64 } from "@/utils/string";
 import { useSignals } from "@preact/signals-react/runtime";
 import { head } from "lodash";
@@ -62,7 +63,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
         setInscribeStatus(FetchStatus.Success);
 
         if (pendingTx) {
-          pendingTxs.value = [pendingTx];
+          setPendingTxs([pendingTx]);
           inscribedCallback();
         }
       } catch (e) {

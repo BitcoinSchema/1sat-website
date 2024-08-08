@@ -1,7 +1,7 @@
 "use client";
 
 import Inscribe from "@/components/pages/inscribe/inscribe";
-import { bsvWasmReady, payPk, utxos } from "@/signals/wallet";
+import { payPk, utxos } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
@@ -15,10 +15,11 @@ const InscribePage: React.FC = () => {
   const generated = params.get("generated") === "true";
   return (
     <>
-      {bsvWasmReady.value && payPk.value && utxos.value && <Inscribe tab={tab} generated={generated} />}
+      {payPk.value && utxos.value && <Inscribe tab={tab} generated={generated} />}
       <div className="p-2 md:p-4">
-        {bsvWasmReady.value && (!payPk.value || !utxos.value) && (
-          <div
+        {(!payPk.value || !utxos.value) && (
+          // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<div
             className="rounded bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-4 md:p-8"
             onClick={() => router.push("./wallet")}
           >

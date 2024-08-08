@@ -5,12 +5,14 @@ import { FetchStatus } from "@/constants";
 import { generatedImage } from "@/signals/ai";
 import { payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import { setPendingTxs } from "@/signals/wallet/client";
 import type { FileEvent } from "@/types/file";
 import type { TxoData } from "@/types/ordinals";
 import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
 import { useSignals } from "@preact/signals-react/runtime";
+import type { PreMAP } from "js-1sat-ord";
 import { head } from "lodash";
 import * as mime from "mime";
 import type React from "react";
@@ -119,7 +121,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     const md = metadata?.reduce((acc, curr) => {
       acc[curr.key] = curr.value;
       return acc;
-    }, {} as { [key: string]: string });
+    }, {} as PreMAP);
     if (md) {
       md.app = "1satordinals.com";
       md.type = "ord";
@@ -133,15 +135,6 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     }
 
     const utxos = await getUtxos(fundingAddress.value);
-    const sortedUtxos = utxos.sort((a, b) =>
-      a.satoshis > b.satoshis ? -1 : 1
-    );
-    const u = head(sortedUtxos);
-    if (!u) {
-      console.log("no utxo");
-      return;
-    }
-
     // metadata
     const m =
       metadata && Object.keys(metadata).length > 0 ? mapData : undefined;
@@ -156,9 +149,9 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
     if (!file) {
       file = selectedFile;
     }
-    const pendingTx = await inscribeFile(u, file, m);
+    const pendingTx = await inscribeFile(utxos, file, m);
     if (pendingTx) {
-      pendingTxs.value = [pendingTx];
+      setPendingTxs([pendingTx]);
       inscribedCallback();
     }
   }, [selectedFile, payPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, inscribedCallback]);

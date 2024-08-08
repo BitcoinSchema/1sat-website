@@ -31,9 +31,9 @@ export function TokenMarketMySales({ ticker, type }: Props) {
       if (newSalesOffset.value === 0) {
         mySales.value = [];
       }
-      let urlMarket = `${API_HOST}/api/bsv20/${address}/tick/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
+      let urlMarket = `${API_HOST}/api/bsv20/${address}/tick/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&sale=true`;
       if (type === AssetType.BSV21) {
-        urlMarket = `${API_HOST}/api/bsv20/${address}/id/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&listing=true`;
+        urlMarket = `${API_HOST}/api/bsv20/${address}/id/${id}/history?dir=desc&limit=20&offset=${newSalesOffset.value}&sale=true`;
       }
       newSalesOffset.value += 20;
       const { promise: promiseBsv20v1Market } =

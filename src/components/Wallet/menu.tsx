@@ -3,7 +3,6 @@
 import { FetchStatus, MARKET_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
   bsv20Balances,
-  bsvWasmReady,
   chainInfo,
   encryptedBackup,
   exchangeRate,
@@ -31,7 +30,6 @@ import { getUtxos } from "@/utils/address";
 import { useLocalStorage } from "@/utils/storage";
 import { computed, effect } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import init from "bsv-wasm-web";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -53,7 +51,6 @@ import ImportWalletModal from "../modal/importWallet";
 import ProtectKeysModal from "../modal/protectKeys";
 import WithdrawalModal from "../modal/withdrawal";
 import { backupKeys } from "@/utils/wallet";
-let initAttempted = false;
 
 const WalletMenu: React.FC = () => {
   useSignals();
@@ -81,14 +78,14 @@ const WalletMenu: React.FC = () => {
 
   // useEffect needed so that we can use localStorage
   useEffect(() => {
-    if (bsvWasmReady.value && payPk.value && ordPk.value) {
+    if (payPk.value && ordPk.value) {
       const localTxsStr = localStorage.getItem("1satpt");
       const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
       if (localTxs) {
         pendingTxs.value = localTxs as PendingTransaction[];
       }
     }
-  }, [bsvWasmReady.value, ordPk.value, payPk.value]);
+  }, [ ordPk.value, payPk.value]);
 
   useEffect(() => {
     loadKeysFromSessionStorage();
@@ -140,11 +137,10 @@ const WalletMenu: React.FC = () => {
       }
     };
 
-    // console.log({ bsvWasmReady, address, bsv20Balances })
-    if (bsvWasmReady.value && address && !bsv20Balances.value) {
+    if (address && !bsv20Balances.value) {
       fire();
     }
-  }, [bsvWasmReady.value, ordAddress.value, bsv20Balances.value]);
+  }, [ordAddress.value, bsv20Balances.value]);
 
   useEffect(() => {
     const fire = async () => {
@@ -171,7 +167,7 @@ const WalletMenu: React.FC = () => {
     if (fetchRateStatus.value === FetchStatus.Idle) {
       fire();
     }
-  }, [fetchRateStatus])
+  }, [fetchRateStatus.value]);
 
   useEffect(() => {
     const fire = async (a: string) => {
@@ -179,24 +175,13 @@ const WalletMenu: React.FC = () => {
       utxos.value = await getUtxos(a);
     };
 
-    if (bsvWasmReady.value && fundingAddress && !utxos.value) {
+    if (fundingAddress && !utxos.value) {
       const address = fundingAddress.value;
       if (address) {
         fire(address);
       }
     }
-  }, [bsvWasmReady.value, fundingAddress.value, utxos.value]);
-
-  effect(() => {
-    const fire = async () => {
-      await init();
-      bsvWasmReady.value = true;
-    };
-    if (!initAttempted && bsvWasmReady.value === false) {
-      initAttempted = true;
-      fire();
-    }
-  });
+  }, [fundingAddress.value, utxos.value]);
 
   // const importKeys = (e: SyntheticEvent) => {
   // 	e.preventDefault();

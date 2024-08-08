@@ -45,7 +45,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       )}
     </div>
-  }, [artifact.data?.list, usdRate.value, ordAddress.value]);
+  }, [ordAddress.value, usdRate.value, artifact.data?.list, artifact.data?.bsv20, artifact.outpoint, isOwner]);
 
   return (
     <div>

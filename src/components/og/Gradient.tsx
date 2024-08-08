@@ -1,11 +1,12 @@
 import type { PropsWithChildren } from "react";
 
-export function Container({ children }: PropsWithChildren) {
+
+export function Gradient({ children }: PropsWithChildren) {
   return (
     <div
       style={{
         fontSize: 48,
-        background: "black",
+        background: "linear-gradient(to bottom, transparent, black)",
         color: "white",
         width: "100%",
         height: "100%",
@@ -13,8 +14,10 @@ export function Container({ children }: PropsWithChildren) {
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "Noto Serif",
-        position: "relative",
-        textTransform: "capitalize",
+        position: "absolute",
+        top: 0,
+        left: 0,
+        zIndex: 10,
       }}
     >
       {children}

@@ -1,10 +1,12 @@
 "use client";
 
-import type { IODisplay, InputOutpoint } from "@/app/outpoint/[outpoint]/[tab]/page";
-import { bsvWasmReady } from "@/signals/wallet";
+import type {
+  IODisplay,
+  InputOutpoint,
+} from "@/app/outpoint/[outpoint]/[tab]/page";
+import { Hash, Transaction, Utils } from "@bsv/sdk";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { P2PKHAddress, PublicKey, Transaction } from "bsv-wasm-web";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
@@ -14,7 +16,7 @@ import { toBitcoin } from "satoshi-bitcoin-ts";
 import { showDetails } from ".";
 import JDenticon from "../JDenticon";
 import { iterationFee } from "../pages/inscribe/bsv20";
-
+const { toBase58Check } = Utils;
 interface DisplayIOProps {
   rawtx?: string;
   inputOutpoints: InputOutpoint[];
@@ -39,32 +41,28 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
   effect(() => {
     const fire = async (rawTx: string) => {
       // console.log({ rawtx });
-      const tx = Transaction.from_hex(rawTx);
-
-      const numInputs = tx.get_ninputs();
-      const numOutputs = tx.get_noutputs();
+      const tx = Transaction.fromHex(rawTx);
       ioIns.value = [];
-      for (let i = 0; i < numInputs; i++) {
-        const input = tx.get_input(i)!;
-        const inScript = input?.get_unlocking_script()?.to_asm_string();
-        const pubKeyHash = inScript?.split(" ")[1]!;
-        console.log({ inScript, pubKeyHash });
-        if (!pubKeyHash || pubKeyHash.length !== 66) {
+      for (const [index, input] of tx.inputs.entries()) {
+
+        const inScript = input?.unlockingScript;
+        const data = inScript?.chunks[1].data;
+
+        if (!inScript || !data || data.length !== 33) {
           continue;
         }
-        const address = P2PKHAddress.from_pubkey(
-          PublicKey.from_hex(pubKeyHash)
-        ).to_string();
-        const txid = input.get_prev_tx_id_hex();
-        const amount = input.get_satoshis()!;
-        ioIns.value.push({ address, index: i, txid, amount });
+        const hash = Hash.ripemd160(data);
+        const address = toBase58Check(hash);
+
+        const txid = input.sourceTXID as string;
+        // TODO: This would need to be looked up.
+        const amount = 0; // input.get_satoshis()!;
+        ioIns.value.push({ address, index, txid, amount });
       }
 
       ioOuts.value = [];
-      for (let i = 0; i < numOutputs; i++) {
-        const output = tx.get_output(i)!;
-        // decode p2pkh output
-        const outScript = output?.get_script_pub_key().to_asm_string();
+      for (const [index, output] of tx.outputs.entries()) {
+        const outScript = output?.lockingScript.toASM();
 
         if (
           outScript.startsWith("OP_RETURN") ||
@@ -75,40 +73,39 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
           const isRun = parts[2] === Buffer.from("run").toString("hex");
           ioOuts.value.push({
             script: isRun ? "Run (OP_RETURN)" : "OP_RETURN",
-            index: i,
-            txid: tx.get_id_hex(),
-            amount: BigInt(0),
+            index,
+            txid: tx.id("hex"),
+            amount: output.satoshis || 0,
           });
           continue;
         }
         if (outScript.startsWith("OP_DUP OP_HASH160")) {
           // Look for p2pkh output
-          const pubKeyHash = outScript.split(" ")[2];
-
-          const address = P2PKHAddress.from_pubkey_hash(
-            Buffer.from(pubKeyHash, "hex")
-          ).to_string();
-
-          const index = i;
-          const txid = tx.get_id_hex();
-          const amount = output.get_satoshis();
+          const data = output.lockingScript.chunks[2].data;
+          if (!data || data.length !== 20) {
+            console.log("DATA LEN", data?.length);
+            continue;
+          }
+          const address = toBase58Check(data);
+          const txid = tx.id("hex");
+          const amount = output.satoshis || 0;
           ioOuts.value.push({ address, index, txid, amount });
         } else {
-          const amount = output.get_satoshis();
+          const amount = output.satoshis || 0;
 
           ioOuts.value.push({
             script: `Script: ${outScript.slice(
               0,
-              20
+              20,
             )}...${outScript.slice(-20)}`,
-            index: i,
-            txid: tx.get_id_hex(),
+            index,
+            txid: tx.id("hex"),
             amount,
           });
         }
       }
     };
-    if (showDetails.value && !attempted.value && rawtx && bsvWasmReady.value) {
+    if (showDetails.value && !attempted.value && rawtx) {
       attempted.value = true;
       fire(rawtx);
     }
@@ -116,21 +113,19 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 
   const inputs = computed(() => {
     return (
-      inputOutpoints.length > 0 && ioIns.value && (
+      inputOutpoints.length > 0 &&
+      ioIns.value && (
         <ul className="rounded bg-gradient-to-b from-[#010101] to-black">
           {ioIns.value?.map((io, i) => {
             const sats = inputOutpoints[io.index].satoshis;
             const itemClass =
               "cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative hover:bg-neutral/50";
             return (
+              // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
               <li
-                key={i}
+                key={`input-${io.txid}-${io.index}`}
                 className={itemClass}
-                onClick={() =>
-                  router.push(
-                    `/outpoint/${io.txid}_${io.index}`
-                  )
-                }
+                onClick={() => router.push(`/outpoint/${io.txid}_${io.index}`)}
               >
                 <span className="md:text-xl font-mono flex items-center gap-1">
                   <FaHashtag />
@@ -155,12 +150,8 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
                     >
                       <button
                         type="button"
-                        className={`${io.address
-                          ? "md:text-base"
-                          : ""
-                          } btn-outline ${io.index === vout
-                            ? "text-white"
-                            : "text-white/50"
+                        className={`${io.address ? "md:text-base" : ""
+                          } btn-outline ${io.index === vout ? "text-white" : "text-white/50"
                           } rounded font-mono flex items-center px-1 gap-1`}
                       >
                         {io.address || io.script}
@@ -174,8 +165,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
                         type="button"
                         className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
                       >
-                        via {truncate(io.txid)} [
-                        {io.index}]
+                        via {truncate(io.txid)} [{io.index}]
                       </button>
                     </Link>
                   </div>
@@ -199,17 +189,14 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
       <ul className="rounded bg-gradient-to-b from-[#010101] to-black">
         {ioOuts.value?.map((io, i) => {
           const sats = io.amount;
-          const itemClass = `cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative ${vout === i
-            ? "bg-neutral text-warning"
-            : "hover:bg-neutral/50 "
+          const itemClass = `cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative ${vout === i ? "bg-neutral text-warning" : "hover:bg-neutral/50 "
             }`;
           return (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <li
-              key={i}
+              key={`output-${io.txid}-${io.index}`}
               className={itemClass}
-              onClick={() =>
-                router.push(`/outpoint/${io.txid}_${io.index}`)
-              }
+              onClick={() => router.push(`/outpoint/${io.txid}_${io.index}`)}
             >
               <span
                 className={`md:text-xl font-mono flex items-center gap-1 ${io.index === vout ? "" : ""
@@ -238,9 +225,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
                     <button
                       type="button"
                       className={`${io.address ? "md:text-base" : ""
-                        } btn-outline ${io.index === vout
-                          ? "text-white"
-                          : "text-white/50"
+                        } btn-outline ${io.index === vout ? "text-white" : "text-white/50"
                         } rounded font-mono flex items-center px-1 gap-1`}
                     >
                       {io.address || io.script}
@@ -249,18 +234,13 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
                   {outputSpends[io.index] && (
                     <Link
                       className="text-xs w-fit text-[#555]"
-                      href={`/outpoint/${outputSpends[io.index]
-                        }`}
+                      href={`/outpoint/${outputSpends[io.index]}`}
                     >
                       <button
                         type="button"
                         className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
                       >
-                        Spend{" "}
-                        {truncate(
-                          outputSpends[io.index]
-                        )}{" "}
-                        [{io.index}]
+                        Spend {truncate(outputSpends[io.index])} [{io.index}]
                       </button>
                     </Link>
                   )}
@@ -284,15 +264,11 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
       outputs.value && (
         <>
           <div className="md:flex-1 md:w-1/2">
-            <h2 className="my-4 text-xl font-mono font-semibold">
-              Inputs
-            </h2>
+            <h2 className="my-4 text-xl font-mono font-semibold">Inputs</h2>
             {inputs}
           </div>
           <div className="md:flex-1 md:w-1/2">
-            <h2 className="my-4 text-xl font-mono font-semibold">
-              Outputs
-            </h2>
+            <h2 className="my-4 text-xl font-mono font-semibold">Outputs</h2>
             {outputs}
           </div>
         </>
@@ -308,12 +284,14 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
     );
   }
 
-  return showDetails.value && (
-    <>
-      <div className="w-full rounded gap-4 mb-4 flex-col md:flex-row flex overflow-x-auto">
-        {details.value}
-      </div>
-    </>
+  return (
+    showDetails.value && (
+      <>
+        <div className="w-full rounded gap-4 mb-4 flex-col md:flex-row flex overflow-x-auto">
+          {details.value}
+        </div>
+      </>
+    )
   );
 };
 

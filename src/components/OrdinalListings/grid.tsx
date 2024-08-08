@@ -15,6 +15,7 @@ import { selectedType } from "../Wallet/filter";
 import { ArtifactType, artifactTypeMap } from "../artifact";
 import Ordinals from "../ordinals";
 import { checkOutpointFormat } from "./helpers";
+import { uniq } from "lodash";
 
 interface Props {
   address: string;
@@ -84,7 +85,6 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, listings, data?.pages[data.pages.length - 1]]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     const newPageData = data?.pages[data.pages.length - 1];
     if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
@@ -94,13 +94,13 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
   }, [isInView]);
 
   const collectionIds = computed(() =>
-    listings.value.reduce((i, v) => {
+    uniq(listings.value.reduce((i, v) => {
       const cid = v.origin?.data?.map?.subTypeData?.collectionId;
       if (cid && checkOutpointFormat(cid)) {
         i.push(cid);
       }
       return i;
-    }, [] as string[])
+    }, [] as string[]))
   );
 
   const { data: collectionData } = useQuery({

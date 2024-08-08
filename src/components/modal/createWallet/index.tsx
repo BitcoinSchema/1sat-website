@@ -1,13 +1,12 @@
 "use client";
 
-import { bsvWasmReady, createWalletStep } from "@/signals/wallet";
+import { createWalletStep } from "@/signals/wallet";
 import { loadKeysFromSessionStorage } from "@/signals/wallet/client";
 import { CreateWalletStep } from "@/types/wallet";
 import { useLocalStorage } from "@/utils/storage";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { FaSpinner } from "react-icons/fa6";
 import { CreateStep } from "./steps/CreateStep";
 import { CreatedStep } from "./steps/CreatedStep";
 import { EnterPassphraseStep } from "./steps/EnterPassphraseStep";
@@ -45,10 +44,6 @@ const CreateWalletModal = ({
       <div className="modal-box h-fit">
         <h3 className="font-bold text-lg">Create New Wallet</h3>
 
-        {!bsvWasmReady.value && (
-          <div className="rounded flex w-full h-full items-center justify-center"><FaSpinner className="animate-spin" /></div>
-        )}
-
         {alreadyHasKey.value && (<div className="mt-4">
           <div className="text-neutral-content p-4 rounded-box bg-neutral">
             You already have a wallet! If you really want to make a new
@@ -72,7 +67,7 @@ const CreateWalletModal = ({
           </form>
         </div>)}
 
-        {!alreadyHasKey.value && bsvWasmReady.value && (
+        {!alreadyHasKey.value && (
           <>
             {createWalletStep.value === CreateWalletStep.Create && (
               <CreateStep onClose={close} />

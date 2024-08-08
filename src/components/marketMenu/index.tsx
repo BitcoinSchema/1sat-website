@@ -1,30 +1,17 @@
 "use client";
 
-import { bsvWasmReady, exchangeRate } from "@/signals/wallet";
+import { exchangeRate } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
-import { effect } from "@preact/signals-react";
+
 import { useSignals } from "@preact/signals-react/runtime";
-import init from "bsv-wasm-web";
 import Link from "next/link";
 import { CgSpinner } from "react-icons/cg";
 import { FaStore } from "react-icons/fa";
-let initAttempted = false;
 
 const MarketMenu: React.FC = () => {
   useSignals();
   const address = ordAddress.value;
-
-  effect(() => {
-    const fire = async () => {
-      await init();
-      bsvWasmReady.value = true;
-    };
-    if (!initAttempted && bsvWasmReady.value === false) {
-      initAttempted = true;
-      fire();
-    }
-  });
-
+  
   return (
     <>
       <div className="hidden md:block dropdown dropdown-end">
