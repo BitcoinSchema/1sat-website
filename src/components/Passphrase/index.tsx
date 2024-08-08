@@ -3,14 +3,10 @@
 import { encryptionPrefix, toastErrorProps, toastProps } from "@/constants";
 import {
   ImportWalletFromBackupJsonStep,
-  changeAddressPath,
   encryptionKey,
-  identityAddressPath,
-  identityPk,
   importWalletFromBackupJsonStep,
   migrating,
   mnemonic,
-  ordAddressPath,
   ordPk,
   passphrase,
   payPk,
@@ -28,11 +24,14 @@ import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import randomBytes from "randombytes";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
 import { TbDice } from "react-icons/tb";
 import { useCopyToClipboard } from "usehooks-ts";
+import { hasIdentityBackup } from "@/signals/bapIdentity/index";
+import { loadAvailableIdentitiesFromEncryptedStorage, loadIdentityFromEncryptedStorage } from "@/signals/bapIdentity/client";
 
 type Props = {
   mode: EncryptDecrypt;
@@ -115,13 +114,8 @@ const EnterPassphrase: React.FC<Props> = ({
         const encrypted = await encryptData(
           Buffer.from(
             JSON.stringify({
-			  mnemonic: mnemonic.value,
               payPk: payPk.value,
               ordPk: ordPk.value,
-			  payDerivationPath: changeAddressPath.value,
-			  ordDerivationPath: ordAddressPath.value,
-			  ...(!!identityPk.value && { identityPk: identityPk.value }),
-  			  ...(!!identityAddressPath.value && { identityDerivationPath: identityAddressPath.value }),
             }),
             "utf-8"
           ),
@@ -131,7 +125,8 @@ const EnterPassphrase: React.FC<Props> = ({
 
         const encryptedBackup =
           encryptionPrefix +
-          Buffer.concat([iv, encrypted]).toString("base64");
+          // Buffer.concat([iv, encrypted]).toString("base64");
+          Buffer.from(encrypted).toString("base64");
 
         const keys: EncryptedBackupJson = {
           encryptedBackup,
@@ -163,27 +158,20 @@ const EnterPassphrase: React.FC<Props> = ({
         toast.error("Failed to encrypt keys", toastErrorProps);
       }
     }
-  }, [
-	download,
-	encryptionKey.value,
-	hasDownloadedKeys,
-	migrating.value,
-	ordPk.value,
-	passphrase.value,
-	payPk.value,
-	mnemonic.value,
-	changeAddressPath.value,
-	ordAddressPath.value,
-	identityPk.value,
-	identityAddressPath.value
-  ]);
+  }, [download, encryptionKey.value, hasDownloadedKeys, migrating.value, ordPk.value, passphrase.value, payPk.value]);
 
   const handleClickDecrypt = async () => {
     if (passphrase.value) {
-      console.log("decrypt keys w passphrase");
-
       try {
-        await loadKeysFromEncryptedStorage(passphrase.value);
+        const succeeded = await loadKeysFromEncryptedStorage(passphrase.value);
+        if (succeeded && !!hasIdentityBackup.value) {
+          const decryptedId = await loadIdentityFromEncryptedStorage(passphrase.value);
+          const decryptedIdentities = await loadAvailableIdentitiesFromEncryptedStorage(passphrase.value);
+
+          if (!decryptedId || !decryptedIdentities) {
+            toast.error("Failed to decrypt identity, please import it again.", toastErrorProps);
+          }
+        }
         onSubmit();
       } catch (e) {
         console.error(e);
@@ -269,16 +257,6 @@ const EnterPassphrase: React.FC<Props> = ({
       </div>
 
       <div className="flex gap-2 justify-end">
-        {!migrating.value && !download && (
-          <button
-            type="button"
-            className="btn btn-error"
-            onClick={() => onSubmit()}
-          >
-            Skip
-          </button>
-        )}
-
         <button
           disabled={(passphrase.value?.length || 0) < 6}
           className="btn btn-primary"
