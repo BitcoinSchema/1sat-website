@@ -35,7 +35,7 @@ const List = async ({ type }: { type: AssetType.BSV20 | AssetType.BSV21 }) => {
 								{listingName(listing)}
 							</th>
 							<td>{listingAmount(listing)}</td>
-							<td className="w-full text-right">
+							<td className="w-full text-right text-[#555]">
 								{satsPerToken(listing)}
 							</td>
 							<td className="break-normal text-right w-96">
