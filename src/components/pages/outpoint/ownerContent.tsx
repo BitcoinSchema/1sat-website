@@ -21,7 +21,7 @@ import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { Hash, P2PKH, PrivateKey, Script, Transaction, TransactionInput, Utils } from "@bsv/sdk";
-import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig } from "js-1sat-ord";
+import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig, burnOrdinals, BurnOrdinalsConfig, BurnMAP } from "js-1sat-ord";
 import { toastErrorProps } from "@/constants";
 import { FaChevronRight, FaFire, FaPaperPlane, FaPlane } from "react-icons/fa6";
 const { toBase58Check } = Utils
@@ -181,38 +181,43 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 	);
 
 
-  // const burnOrdinal = useCallback(async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, meta: MAP) => {
-  //   if (!ordPk.value) {
-  //     toast.error("No ord key", toastErrorProps)
-  //     return
-  //   }
-  //   console.log("burning ordinal", artifact)
-  //   const burnOrdinalsConfig: BurnOrdinalsConfig = {
-  //     ordinals: [{
-  //       txid: artifact.txid,
-  //       vout: artifact.vout,
-  //       satoshis: artifact.satoshis,
-  //       script: artifact.script,
-  //     }],
-  //     ordPk: PrivateKey.fromWif(ordPk.value),
-  //     metaData: meta,
-  //   }
-  //   const { tx } = await burnOrdinals(burnOrdinalsConfig)
+  const burnOrdinal = useCallback(async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, meta: BurnMAP) => {
+    if (!ordPk.value) {
+      toast.error("No ord key", toastErrorProps)
+      return
+    }
+    console.log("burning ordinal", artifact)
+    const burnOrdinalsConfig: BurnOrdinalsConfig = {
+      ordinals: [{
+        txid: artifact.txid,
+        vout: artifact.vout,
+        satoshis: artifact.satoshis,
+        script: artifact.script,
+      }],
+      ordPk: PrivateKey.fromWif(ordPk.value),
+      metaData: meta,
+    }
+    const { tx, spentOutpoints } = await burnOrdinals(burnOrdinalsConfig)
 
-  //   setPendingTxs([
-  //     {
-  //       rawTx: tx.toHex(),
-  //       fee: tx.getFee(),
-  //       txid: tx.id('hex'),
-  //       metadata: meta
-  //     } as PendingTransaction,
-  //   ])
+    setPendingTxs([
+      {
+        rawTx: tx.toHex(),
+        fee: tx.getFee(),
+        txid: tx.id('hex'),
+        metadata: meta,
+        size: tx.toBinary().length,
+        numInputs: tx.inputs.length,
+        numOutputs: tx.outputs.length,
+        spentOutpoints,
+        returnTo: "/wallet/ordinals",
+      } as PendingTransaction,
+    ])
 
-  //   router.push("/preview")
+    router.push("/preview")
 
-  //   console.log({tx})
+    console.log({tx})
 
-  // }, [artifact, ordPk.value, router])
+  }, [artifact, ordPk.value, router])
 
 	const recoverUtxo = useCallback(
 		async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -335,21 +340,26 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				</button>
 			)}
 
-      {/* {!isUtxo.value && (<button type="button" className="btn btn-error my-2 ml-2" onClick={(e) => {
+      {!isUtxo.value && (<button type="button" className="btn btn-error my-2 ml-2" onClick={(e) => {
         	if (artifact.data?.bsv20) {
             alert("Burn BSV20 tokens from your wallet page");
             router.push(`/wallet/${artifact.data.bsv20.id ? "bsv21" : "bsv20"}`);
             return;
           }
 
-          const meta: MAP = {
+          const meta: BurnMAP = {
             app: "1sat.market",
             type: "ord",
             op: "burn",
           };
 
+          const confirm = window.confirm("Are you sure you want to burn this ordinal?");
+          if (!confirm) {
+            return;
+          }
+
           burnOrdinal(e, meta);
-      }}><FaFire className="w-4 mr-1"/> Burn Ordinal</button>)} */}
+      }}><FaFire className="w-4 mr-1"/> Burn Ordinal</button>)}
 
 			{/* <button
 				type="button"
