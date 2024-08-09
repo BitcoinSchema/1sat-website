@@ -20,6 +20,7 @@ export const getBalanceText = (balance: number, numDecimals: number) => {
 };
 
 export const backupKeys = () => {
+  debugger
 	let payPkDerivationPath = changeAddressPath.value;
 	let ordPkDerivationPath = ordAddressPath.value;
 

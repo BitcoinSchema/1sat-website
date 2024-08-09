@@ -20,10 +20,10 @@ import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import { setPendingTxs } from "@/signals/wallet/client";
-import { Hash, P2PKH, PrivateKey, Script, Transaction, TransactionInput, Utils } from "@bsv/sdk";
-import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig, burnOrdinals, BurnOrdinalsConfig, BurnMAP } from "js-1sat-ord";
+import { PrivateKey, Script, Utils } from "@bsv/sdk";
+import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig, burnOrdinals, type BurnOrdinalsConfig, type BurnMAP } from "js-1sat-ord";
 import { toastErrorProps } from "@/constants";
-import { FaChevronRight, FaFire, FaPaperPlane, FaPlane } from "react-icons/fa6";
+import { FaFire, FaPaperPlane, FaPlane } from "react-icons/fa6";
 const { toBase58Check } = Utils
 
 const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
