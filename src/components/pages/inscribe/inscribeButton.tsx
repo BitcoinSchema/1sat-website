@@ -4,11 +4,11 @@ import { ordPk, payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { getUtxos } from "@/utils/address";
 import { inscribeFile } from "@/utils/inscribe";
-import { head } from "lodash";
 import * as mime from "mime";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import type { MetaMap } from "./image";
+import type { PreMAP } from "js-1sat-ord";
 
 interface InscribeButtonProps {
   selectedFile: File | null;
@@ -51,9 +51,7 @@ const InscribeButton: React.FC<InscribeButtonProps> = ({
     }
 
     const utxos = await getUtxos(fundingAddress.value);
-    const sortedUtxos = utxos.sort((a, b) => (a.satoshis > b.satoshis ? -1 : 1));
-    const u = head(sortedUtxos);
-    if (!u) {
+    if (!utxos) {
       console.error("no utxo");
       return;
     }
@@ -70,12 +68,12 @@ const InscribeButton: React.FC<InscribeButtonProps> = ({
     if (!file) {
       file = selectedFile;
     }
-    const pendingTx = await inscribeFile(u, file, m, ordPk.value);
+    const pendingTx = await inscribeFile(utxos, file, m as PreMAP);
     if (pendingTx) {
       pendingTxs.value = [pendingTx];
       inscribedCallback();
     }
-  }, [mapData, metadata, inscribedCallback, selectedFile]);
+  }, [selectedFile, payPk.value, ordPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, inscribedCallback]);
 
   const submitDisabled = useMemo(() => {
     return !selectedFile || inscribeStatus === FetchStatus.Loading;

@@ -22,12 +22,13 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
 		(
 			traitName: string,
 			field: keyof CollectionTrait,
-			value: string | string[],
+			value: string[],
 		) => {
 			if (!collectionTraits) {
 				return;
 			}
 
+      console.log({traitName, field, value});
 			let processedValue = value;
 			if (field === "occurancePercentages" && Array.isArray(value)) {
 				processedValue = value.map((v) =>
@@ -128,14 +129,17 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
 							</div>
 							<input
 								type="text"
+                name="traitValues"
 								className="input input-bordered w-full mt-2"
-								value={trait.values.join(", ")}
-								onChange={(e) =>
-									updateTrait(traitName, "values", e.target.value.split(", "))
-								}
+								value={trait.values.join(",")}
+								onChange={(e) => {
+                  const values = e.target.value.split(",").map((v) => v.trim());  
+                  updateTrait(traitName, "values", values)
+								}}
 								placeholder="Trait Values (comma-separated)"
 							/>
 							<input
+                name="traitPercentages"
 								type="text"
 								className="input input-bordered w-full mt-2"
 								value={
@@ -165,7 +169,7 @@ export const validateTraits = (collectionTraits: CollectionTraits) => {
 	for (const [traitName, trait] of Object.entries(collectionTraits)) {
     console.log({traitName, trait});
 		if (trait.values.length !== trait.occurancePercentages.length) {
-			return `The number of trait values and occurance percentages must match for trait "${traitName}".`;
+			return `The number of trait values and occurance percentages must match for trait "${traitName}". The trait has ${trait.values.length} values and ${trait.occurancePercentages.length} percentages. JSON: ${JSON.stringify(trait)}`;
 		}
 
 		const totalPercentage = trait.occurancePercentages.reduce(

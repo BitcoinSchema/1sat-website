@@ -32,7 +32,7 @@ const Inscribe: React.FC<InscribeProps> = ({ className, tab, generated }) => {
   const inscribedCallback = useCallback(() => {
     if (pendingTxs.value) {
       const tx = pendingTxs.value[0];
-      console.log("Inscribed", `${tx.txid}`);
+      console.log("Inscribed", { tx });
       debugger;
       router.push("/preview");
     } else {

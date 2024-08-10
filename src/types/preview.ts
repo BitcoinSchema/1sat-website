@@ -1,4 +1,4 @@
-import type { MAP } from "js-1sat-ord";
+import type { MAP, PreMAP } from "js-1sat-ord";
 import type { TokenUtxo, Utxo } from "js-1sat-ord";
 
 export type PendingTransaction = {
@@ -15,6 +15,6 @@ export type PendingTransaction = {
 	price?: number;
 	marketFee?: number;
 	iterations?: number;
-	metadata?: MAP;
+	metadata?: PreMAP;
 	returnTo?: string;
 };

@@ -135,8 +135,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         }
       }
 
-      const { tx, spentOutpoints, payChange } =
-        await purchaseOrdListing(config);
+      const { tx, spentOutpoints, payChange } = await purchaseOrdListing(config);
 
       setPendingTxs([
         {

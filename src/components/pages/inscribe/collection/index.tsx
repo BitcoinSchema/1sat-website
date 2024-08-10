@@ -2,7 +2,7 @@
 
 import Artifact from "@/components/artifact";
 import { knownImageTypes, toastErrorProps } from "@/constants";
-import { ordPk, payPk, pendingTxs } from "@/signals/wallet";
+import { ordPk, payPk } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { FileEvent } from "@/types/file";
 import type { TxoData } from "@/types/ordinals";
@@ -30,6 +30,7 @@ import {
 import { PrivateKey } from "@bsv/sdk";
 import type { PendingTransaction } from "@/types/preview";
 import { useLocalStorage } from "@/utils/storage";
+import { setPendingTxs } from "@/signals/wallet/client";
 
 interface InscribeCollectionProps {
 	inscribedCallback: () => void;
@@ -59,27 +60,6 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 	const [mintError, setMintError] = useState<string>();
   const [iconFileName, setIconFileName] = useLocalStorage<string>("isc-ifn", "icon");
 	const fileInputRef = useRef<HTMLInputElement>(null);
-
-	// useEffect(() => {
-	// 	if (preview && typeof preview === "string") {
-	// 		const img = new Image();
-	// 		img.onload = () => {
-	// 			setIsImage(true);
-	// 			setCollectionCoverImage(dataURLtoFile(preview, "icon"));
-	// 		};
-	// 		img.src = preview;
-
-	// 		// Set the filename using the ref
-	// 		if (fileInputRef.current && collectionCoverImage) {
-	// 			// Create a DataTransfer object and add the file
-	// 			const dataTransfer = new DataTransfer();
-	// 			dataTransfer.items.add(collectionCoverImage as File);
-
-	// 			// Set the files property of the input element
-	// 			fileInputRef.current.files = dataTransfer.files;
-	// 		}
-	// 	}
-	// }, [collectionCoverImage, preview, setIsImage]);
 
   useEffect(() => {
     if (preview && typeof preview === "string") {
@@ -112,13 +92,13 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			}
 		}
 
-		const rarityError = validateRarities(collectionRarities);
+		const rarityError = validateRarities(collectionRarities || []);
 		if (rarityError) {
 			toast.error(rarityError, toastErrorProps);
 			throw new Error(rarityError);
 		}
 
-		const royaltyError = validateRoyalties(collectionRoyalties);
+		const royaltyError = validateRoyalties(collectionRoyalties || []);
 		if (royaltyError) {
 			toast.error(royaltyError, toastErrorProps);
 			throw new Error(royaltyError);
@@ -175,6 +155,8 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			return;
 		}
 
+    
+
 		try {
 			validateForm();
 		} catch (e) {
@@ -191,7 +173,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			name: collectionName,
 		} as CreateOrdinalsCollectionMetadata;
 
-		if (collectionRoyalties.length > 0) {
+		if (collectionRoyalties && collectionRoyalties.length > 0) {
 			metaData.royalties = collectionRoyalties;
 		}
 
@@ -204,7 +186,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			subTypeData.quantity = undefined;
 		}
 
-		if (collectionRarities.length > 0) {
+		if (collectionRarities && collectionRarities.length > 0) {
 			subTypeData.rarityLabels = collectionRarities;
 		}
 
@@ -255,7 +237,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 		const { tx, spentOutpoints, payChange } = await createOrdinals(config);
 		console.log("TX", tx.toHex());
 		if (tx) {
-			pendingTxs.value = [
+			setPendingTxs([
 				{
 					txid: tx.id("hex"),
 					rawTx: tx.toHex(),
@@ -270,8 +252,8 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 					spentOutpoints,
 					payChange,
 				} as PendingTransaction,
-			];
-			resetForm();
+			])
+			// resetForm();
 			inscribedCallback();
 		}
 	}, [
@@ -287,7 +269,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 		ordAddress.value,
 		ordPk.value,
 		payPk.value,
-		resetForm,
+		// resetForm,
 		validateForm,
 	]);
 
@@ -472,7 +454,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			<div className="divider" />
 
 			<RarityLabelForm
-				collectionRarities={collectionRarities}
+				collectionRarities={collectionRarities || []}
 				setCollectionRarities={setCollectionRarities}
 			/>
 
@@ -486,7 +468,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			<div className="divider" />
 
 			<RoyaltyForm
-				collectionRoyalties={collectionRoyalties}
+				collectionRoyalties={collectionRoyalties || []}
 				setCollectionRoyalties={setCollectionRoyalties}
 			/>
 
