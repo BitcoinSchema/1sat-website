@@ -126,10 +126,10 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 								className="flex flex-col py-1"
 							>
 								<span className="text-secondary-content/75">{qtyStr}</span>
-								<span className="text-accent text-xs">
+								<span className="text-base-content/50 text-xs">
 									{pricePer}{" "}
 									{currencyDisplay.value === CurrencyDisplay.BSV
-										? "sat/"
+										? "/ "
 										: " / "}
 									token
 								</span>

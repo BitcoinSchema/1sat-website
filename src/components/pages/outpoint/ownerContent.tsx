@@ -20,9 +20,10 @@ import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import { setPendingTxs } from "@/signals/wallet/client";
-import { Hash, PrivateKey, Script, Utils } from "@bsv/sdk";
-import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig } from "js-1sat-ord";
+import { PrivateKey, Script, Utils } from "@bsv/sdk";
+import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig, burnOrdinals, type BurnOrdinalsConfig, type BurnMAP } from "js-1sat-ord";
 import { toastErrorProps } from "@/constants";
+import { FaFire, FaPaperPlane, FaPlane } from "react-icons/fa6";
 const { toBase58Check } = Utils
 
 const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
@@ -179,6 +180,45 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 		[ordPk.value, utxos.value, router],
 	);
 
+
+  const burnOrdinal = useCallback(async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, meta: BurnMAP) => {
+    if (!ordPk.value) {
+      toast.error("No ord key", toastErrorProps)
+      return
+    }
+    console.log("burning ordinal", artifact)
+    const burnOrdinalsConfig: BurnOrdinalsConfig = {
+      ordinals: [{
+        txid: artifact.txid,
+        vout: artifact.vout,
+        satoshis: artifact.satoshis,
+        script: artifact.script,
+      }],
+      ordPk: PrivateKey.fromWif(ordPk.value),
+      metaData: meta,
+    }
+    const { tx, spentOutpoints } = await burnOrdinals(burnOrdinalsConfig)
+
+    setPendingTxs([
+      {
+        rawTx: tx.toHex(),
+        fee: tx.getFee(),
+        txid: tx.id('hex'),
+        metadata: meta,
+        size: tx.toBinary().length,
+        numInputs: tx.inputs.length,
+        numOutputs: tx.outputs.length,
+        spentOutpoints,
+        returnTo: "/wallet/ordinals",
+      } as PendingTransaction,
+    ])
+
+    router.push("/preview")
+
+    console.log({tx})
+
+  }, [artifact, ordPk.value, router])
+
 	const recoverUtxo = useCallback(
 		async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
 			console.log("recover utxo");
@@ -295,10 +335,31 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 						// Call transferOrdinal even if the user cancels adding more tags
 						transferOrdinal(e, to, meta);
 					}}
-				>
+				><FaPaperPlane className="w-4 mr-1"/> 
 					Send Ordinal
 				</button>
 			)}
+
+      {!isUtxo.value && (<button type="button" className="btn btn-error my-2 ml-2" onClick={(e) => {
+        	if (artifact.data?.bsv20) {
+            alert("Burn BSV20 tokens from your wallet page");
+            router.push(`/wallet/${artifact.data.bsv20.id ? "bsv21" : "bsv20"}`);
+            return;
+          }
+
+          const meta: BurnMAP = {
+            app: "1sat.market",
+            type: "ord",
+            op: "burn",
+          };
+
+          const confirm = window.confirm("Are you sure you want to burn this ordinal?");
+          if (!confirm) {
+            return;
+          }
+
+          burnOrdinal(e, meta);
+      }}><FaFire className="w-4 mr-1"/> Burn Ordinal</button>)}
 
 			{/* <button
 				type="button"
