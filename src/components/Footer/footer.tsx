@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BsGpuCard } from "react-icons/bs";
 import { FaBook, FaDiscord } from "react-icons/fa6";
+import Vivi from "../vivi";
 
 const Footer = () => {
   const linkClass = "hover:text-yellow-500 text-yellow-400/25 transition-color duration-1000"
