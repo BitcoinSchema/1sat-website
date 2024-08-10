@@ -24,17 +24,27 @@ const RarityLabelForm: React.FC<RarityLabelFormProps> = ({
 	};
 
 	const updateRarity = (index: number, field: keyof Rarity, value: string) => {
+    if (value === "") {
+      setCollectionRarities(
+        collectionRarities.map((rarity, i) =>
+          i === index ? { ...rarity, [field]: "" } : rarity,
+        ),
+      );
+      return
+    }
     // values are 1-100, but we want to convert to 0.01-1 string format
     let finalValue = value;
     if (field === "percentage") {
       finalValue = (Number(value) / 100).toFixed(2);
     }
+    console.log(finalValue);
 		setCollectionRarities(
 			collectionRarities.map((rarity, i) =>
 				i === index ? { ...rarity, [field]: finalValue } : rarity,
 			),
 		);
 	};
+
 
   const totalPct = useMemo(() => {
     const pct = collectionRarities.reduce((acc, curr) => {
@@ -67,7 +77,7 @@ const RarityLabelForm: React.FC<RarityLabelFormProps> = ({
 					<input
 						type="number"
 						className="input input-bordered w-full"
-						value={(Number.parseFloat(rarity.percentage) * 100).toString()}
+						value={rarity.percentage === "" ? "" : Math.round(Number(rarity.percentage) * 100)}
 						onChange={(e) => updateRarity(index, "percentage", e.target.value)}
 						placeholder="Percentage"
             max={100}
