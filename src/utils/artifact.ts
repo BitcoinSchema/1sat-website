@@ -130,7 +130,6 @@ export const displayName = (
       return `${data.json.p} ${data.json.id} ${data.json.p}`;
     }
     case ArtifactType.OPNS: {
-      //   opns?: { domain: string, status: OpNsStatus };
       const data = latest ? txo.data?.opns as OpNSData : txo.origin?.data?.opns as OpNSData;
       return `${data.domain} ${data.status === OpNsStatus.Valid ? "(Valid)" : data.status === OpNsStatus.Pending ? "(Pending)" : "(Invalid)"}`;
     }
