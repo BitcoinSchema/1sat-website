@@ -127,7 +127,7 @@ export const displayName = (
       return latest ? txo.data?.bsv20?.tick || txo?.data?.insc?.json?.sym : txo.origin?.data?.bsv20?.tick || txo.origin?.data?.insc?.json?.sym;
     case ArtifactType.LRC20: {
       const data = latest ? txo.data?.insc as Inscription : txo.origin?.data?.insc as Inscription;
-      return `${data.json.p} ${data.json.id} ${data.json.p}`;
+      return `${data.json.p} ${data.json.op} ${data.json.amt}`;
     }
     case ArtifactType.OPNS: {
       const data = latest ? txo.data?.opns as OpNSData : txo.origin?.data?.opns as OpNSData;
