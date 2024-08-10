@@ -9,7 +9,8 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-	const { messages, selectedModel } = await req.json();
+  const { messages, selectedModel } = await req.json();
+  console.log({selectedModel, messages});
 
 	// langchain method
 	// const model = new ChatOllama({

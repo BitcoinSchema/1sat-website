@@ -13,9 +13,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 
-interface Props {}
-
-export function SelectFileStep({}: Props) {
+export function SelectFileStep() {
 	useSignals();
 
 	const validateJson = (json: Record<string, string>) => {

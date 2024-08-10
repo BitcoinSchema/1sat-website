@@ -10,7 +10,7 @@ import { getUtxos } from "@/utils/address";
 import { useSignals } from "@preact/signals-react/runtime";
 import mime from "mime";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { IconWithFallback } from "../../TokenMarket/heading";
 import TraitsForm, { validateTraits } from "./traitsForm";
@@ -29,6 +29,7 @@ import {
 } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
 import type { PendingTransaction } from "@/types/preview";
+import { useLocalStorage } from "@/utils/storage";
 
 interface InscribeCollectionProps {
 	inscribedCallback: () => void;
@@ -39,20 +40,68 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 }) => {
 	useSignals();
 
-	const [collectionName, setCollectionName] = useState("");
-	const [collectionDescription, setCollectionDescription] = useState("");
-	const [collectionQuantity, setCollectionQuantity] = useState("");
-	const [collectionRarities, setCollectionRarities] = useState<RarityLabels>(
+	const [collectionName, setCollectionName] = useLocalStorage("1sc-cn", "");
+	const [collectionDescription, setCollectionDescription] = useLocalStorage("1sc-cd", "");
+	const [collectionQuantity, setCollectionQuantity] = useLocalStorage<number | undefined>("1sc-cq", undefined);
+	const [collectionRarities, setCollectionRarities] = useLocalStorage<RarityLabels>("1sc-rl",
 		[],
 	);
-	const [collectionTraits, setCollectionTraits] = useState<CollectionTraits>();
+	const [collectionTraits, setCollectionTraits] = useLocalStorage<CollectionTraits>("1sc-ct", undefined);
 	const [collectionCoverImage, setCollectionCoverImage] = useState<File | null>(
 		null,
 	);
-	const [collectionRoyalties, setCollectionRoyalties] = useState<Royalty[]>([]);
-	const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
-	const [isImage, setIsImage] = useState<boolean>(false);
+	const [collectionRoyalties, setCollectionRoyalties] = useLocalStorage<Royalty[]>("1sc-rlt", []);
+	const [preview, setPreview] = useLocalStorage<
+		string | ArrayBuffer | undefined
+	>("1sc-preview", undefined);
+
+	const [isImage, setIsImage] = useLocalStorage<boolean>("1sc-isc", false);
 	const [mintError, setMintError] = useState<string>();
+  const [iconFileName, setIconFileName] = useLocalStorage<string>("isc-ifn", "icon");
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	// useEffect(() => {
+	// 	if (preview && typeof preview === "string") {
+	// 		const img = new Image();
+	// 		img.onload = () => {
+	// 			setIsImage(true);
+	// 			setCollectionCoverImage(dataURLtoFile(preview, "icon"));
+	// 		};
+	// 		img.src = preview;
+
+	// 		// Set the filename using the ref
+	// 		if (fileInputRef.current && collectionCoverImage) {
+	// 			// Create a DataTransfer object and add the file
+	// 			const dataTransfer = new DataTransfer();
+	// 			dataTransfer.items.add(collectionCoverImage as File);
+
+	// 			// Set the files property of the input element
+	// 			fileInputRef.current.files = dataTransfer.files;
+	// 		}
+	// 	}
+	// }, [collectionCoverImage, preview, setIsImage]);
+
+  useEffect(() => {
+    if (preview && typeof preview === "string") {
+      const img = new Image();
+      img.onload = () => {
+        setIsImage(true);
+        const file = dataURLtoFile(preview, iconFileName || "icon");
+        setCollectionCoverImage(file);
+  
+        // Set the filename using the ref
+        if (fileInputRef.current) {
+          // Create a DataTransfer object and add the file
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          
+          // Set the files property of the input element
+          fileInputRef.current.files = dataTransfer.files;
+        }
+      };
+      img.src = preview;
+    }
+  }, [iconFileName, preview, setIsImage]);
 
 	const validateForm = useCallback(() => {
 		if (collectionTraits) {
@@ -84,6 +133,30 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 		collectionRarities,
 		collectionRoyalties,
 		collectionTraits,
+	]);
+
+	const resetForm = useCallback(() => {
+		setCollectionCoverImage(null);
+		setCollectionDescription("");
+		setCollectionName("");
+		setCollectionQuantity(undefined);
+		setCollectionRarities([]);
+		setCollectionRoyalties([]);
+		setCollectionTraits(undefined);
+		setMintError(undefined);
+		setPreview(undefined);
+		setIsImage(false);
+	}, [
+		setCollectionCoverImage,
+		setCollectionDescription,
+		setCollectionName,
+		setCollectionQuantity,
+		setCollectionRarities,
+		setCollectionRoyalties,
+		setCollectionTraits,
+		setMintError,
+		setPreview,
+		setIsImage,
 	]);
 
 	const inscribeCollection = useCallback(async () => {
@@ -121,9 +194,9 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 		if (collectionRoyalties.length > 0) {
 			metaData.royalties = collectionRoyalties;
 		}
-		
+
 		const subTypeData: Partial<CollectionSubTypeData> = {
-			quantity: Number.parseInt(collectionQuantity),
+			quantity: collectionQuantity,
 			description: collectionDescription,
 		};
 
@@ -179,8 +252,8 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			utxos,
 			metaData,
 		};
-		const { tx } = await createOrdinals(config);
-    console.log("TX", tx.toHex());
+		const { tx, spentOutpoints, payChange } = await createOrdinals(config);
+		console.log("TX", tx.toHex());
 		if (tx) {
 			pendingTxs.value = [
 				{
@@ -194,8 +267,11 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 					metadata: metaData,
 					size: tx.toBinary().length,
 					returnTo: "/inscribe",
+					spentOutpoints,
+					payChange,
 				} as PendingTransaction,
 			];
+			resetForm();
 			inscribedCallback();
 		}
 	}, [
@@ -211,58 +287,64 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 		ordAddress.value,
 		ordPk.value,
 		payPk.value,
+		resetForm,
 		validateForm,
 	]);
 
 	// (e) => setCollectionCoverImage(e.target.files?.[0] || null)}
 
-	const changeFile = useCallback(async (e: FileEvent) => {
-		// TODO: This reads the file twice which is pretty inefficient
-		// would be nice to get dimensions and ArrayBuffer for preview in one go
+	const changeFile = useCallback(
+		async (e: FileEvent) => {
+			// TODO: This reads the file twice which is pretty inefficient
+			// would be nice to get dimensions and ArrayBuffer for preview in one go
 
-		const file = e.target.files[0] as File;
-		// make sure the width and height are identical
-		const img = new Image();
-		img.onload = () => {
-			if (img.width !== img.height) {
-				toast.error("Image must be square", toastErrorProps);
-				setCollectionCoverImage(null);
-				setPreview(null);
-				setIsImage(false);
-				setMintError("Image must be square");
-				return;
-			}
-			// max size is 400px
-			if (img.width > 2048) {
-				toast.error("Width must be 2048px or less", toastErrorProps);
-				setCollectionCoverImage(null);
-				setPreview(null);
-				setIsImage(false);
-				setMintError("Width must be 2048px or less");
-				return;
-			}
-			if (file.size > 1024 * 1024) {
-				toast.error("Image must be less than 1MB", toastErrorProps);
-				setCollectionCoverImage(null);
-				setPreview(null);
-				setIsImage(false);
-				setMintError("Image must be less than 1MB");
-				return;
-			}
-			setMintError(undefined);
-			setCollectionCoverImage(file);
-			if (knownImageTypes.includes(file.type)) {
-				setIsImage(true);
-			}
-			const reader = new FileReader();
+			const file = e.target.files[0] as File;
 
-			reader.onloadend = () => {
-				setPreview(reader.result);
+			// make sure the width and height are identical
+			const img = new Image();
+			img.onload = () => {
+				if (img.width !== img.height) {
+					toast.error("Image must be square", toastErrorProps);
+					setCollectionCoverImage(null);
+					setPreview(undefined);
+					setIsImage(false);
+					setMintError("Image must be square");
+					return;
+				}
+				// max size is 400px
+				if (img.width > 2048) {
+					toast.error("Width must be 2048px or less", toastErrorProps);
+					setCollectionCoverImage(null);
+					setPreview(undefined);
+					setIsImage(false);
+					setMintError("Width must be 2048px or less");
+					return;
+				}
+				if (file.size > 1024 * 1024) {
+					toast.error("Image must be less than 1MB", toastErrorProps);
+					setCollectionCoverImage(null);
+					setPreview(undefined);
+					setIsImage(false);
+					setMintError("Image must be less than 1MB");
+					return;
+				}
+				setMintError(undefined);
+				setCollectionCoverImage(file);
+        setIconFileName(file.name);
+				if (knownImageTypes.includes(file.type)) {
+					setIsImage(true);
+				}
+				const reader = new FileReader();
+
+				reader.onloadend = () => {
+					setPreview(reader.result as string);
+				};
+				reader.readAsDataURL(file);
 			};
-			reader.readAsDataURL(file);
-		};
-		img.src = URL.createObjectURL(file);
-	}, [setCollectionCoverImage, setPreview]);
+			img.src = URL.createObjectURL(file);
+		},
+		[setIconFileName, setIsImage, setPreview],
+	);
 
 	const artifact = useMemo(async () => {
 		return (
@@ -272,7 +354,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 					classNames={{ media: "w-20 h-20 rounded", wrapper: "w-fit" }}
 					showFooter={false}
 					size={100}
-          latest={true}
+					latest={true}
 					artifact={{
 						data: {
 							insc: {
@@ -342,6 +424,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 						id="collectionCoverImage"
 						className="file-input file-input-bordered w-full mt-2"
 						onChange={changeFile}
+						ref={fileInputRef}
 					/>
 				</label>
 			</div>
@@ -382,7 +465,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 					id="collectionQuantity"
 					className="input input-bordered w-full"
 					value={collectionQuantity}
-					onChange={(e) => setCollectionQuantity(e.target.value)}
+					onChange={(e) => setCollectionQuantity(Number.parseInt(e.target.value))}
 				/>
 			</div>
 
@@ -425,3 +508,15 @@ export default InscribeCollection;
 
 export const removeBtnClass =
 	"btn bg-transparent hover:bg-[#010101] border-0 hover:border btn-square text-lg text-error transition";
+
+const dataURLtoFile = (dataurl: string, filename: string): File => {
+	const arr = dataurl.split(",");
+	const mime = arr[0].match(/:(.*?);/)?.[1];
+	const bstr = atob(arr[1]);
+	let n = bstr.length;
+	const u8arr = new Uint8Array(n);
+	while (n--) {
+		u8arr[n] = bstr.charCodeAt(n);
+	}
+	return new File([u8arr], filename, { type: mime });
+};
