@@ -1,8 +1,7 @@
 import TokenListingSkeleton from "@/components/skeletons/listing/Token";
-import { type AssetType, MARKET_API_HOST, SortBy } from "@/constants";
+import { type AssetType, MARKET_API_HOST, type SortBy } from "@/constants";
 import { NextRequest } from "next/server";
 import { Suspense } from "react";
-import TickerContent from "./content";
 import Details from "./details";
 import List, { type MarketData } from "./list";
 import TableHeading from "./tableHeading";
@@ -18,33 +17,24 @@ interface TokenMarketProps {
 const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, sort, dir }) => {
 
   let marketData: MarketData[] = [];
-  const url = `${MARKET_API_HOST}/market/${type}?sort=${sort || SortBy.MostRecentSale}&dir=${dir || "asc"}&limit=100`;
+  const url = `${MARKET_API_HOST}/market/${type}` // ?sort=${sort || SortBy.MostRecentSale}&dir=${dir || "asc"}&limit=100`;
   marketData = await getMarketData(new NextRequest(url), type, id, sort, dir);
 
   const ticker = marketData.find((t) => t.tick === id || t.id === id);
   return (
     <>
       {!id && <div className="w-full rounded-b-box overflow-x-auto"><table className="table font-mono">
-        <TableHeading type={type} />
+        <TableHeading type={type} sortable={true} />
         <Suspense fallback={<TokenListingSkeleton type={type}/>}>
           <List type={type} sort={sort} dir={dir} />
         </Suspense>
       </table></div>}
       {id && <>
-        <Suspense fallback={<TokenListingSkeleton type={type}/>}>
+        <Suspense fallback={<TokenListingSkeleton type={type} />}>
           <div className="overflow-x-auto w-full">
             <table className="table font-mono">
-              <TableHeading type={type} />
-              <List type={type} id={id} sort={sort} dir={dir} />
-              <tr>
-                <td colSpan={6} className="p-0">
-                  {ticker && <TickerContent
-                    ticker={ticker}
-                    show={true}
-                    type={type}
-                  />}
-                </td>
-              </tr>
+              <TableHeading type={type} sortable={false} />
+              <List type={type} id={id} sort={sort} dir={dir} ticker={ticker} />
             </table>
           </div>
           <Details type={type} id={id} 

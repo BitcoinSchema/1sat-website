@@ -95,7 +95,7 @@ export function TokenMarketMySales({ ticker, type }: Props) {
                 {ticker.tick}
               </span>
               <div className="flex items-center">
-                <span className="text-accent text-xs">
+                <span className="text-base-content/50 text-xs">
                   {sale.pricePer} / token
                 </span>
                 <span className="text-accent text-xs mx-1">

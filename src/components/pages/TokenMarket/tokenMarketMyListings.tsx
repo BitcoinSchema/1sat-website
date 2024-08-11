@@ -114,7 +114,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
               <span className="text-secondary-content/75">
                 {qtyStr}
               </span>
-              <span className="text-accent text-xs">
+              <span className="text-base-content/50 text-xs">
                 {pricePer} sat/token
               </span>
             </Link>

@@ -1,54 +1,55 @@
-"use client"
+"use client";
 
 import { MARKET_API_HOST, type SortBy, type AssetType } from "@/constants";
 import { NextRequest } from "next/server";
 import TickerHeading from "./heading";
 import { useQuery } from "@tanstack/react-query";
 import TokenListingSkeleton from "@/components/skeletons/listing/Token";
+import TickerContent from "./content";
 
 export interface Holder {
-  address: string;
-  amt: string;
+	address: string;
+	amt: string;
 }
 
 export interface TickHolder {
-  address: string;
-  amt: number;
-  pct: number;
+	address: string;
+	amt: number;
+	pct: number;
 }
 
 export interface CombinedHolder {
-  address: string;
-  totalWeightedAmt: number;
-  tokens: { [tokenTick: string]: { amt: number; weightedAmt: number } };
+	address: string;
+	totalWeightedAmt: number;
+	tokens: { [tokenTick: string]: { amt: number; weightedAmt: number } };
 }
 
 export type MarketData = {
-  accounts: number;
-  tick?: string;
-  id: string;
-  sym?: string;
-  price: number;
-  marketCap: number;
-  holders: Holder[];
-  dec: number;
-  pctChange: number;
-  fundAddress: string;
-  fundTotal: string;
-  fundUsed: string;
-  fundBalance: string;
-  included: boolean;
-  pendingOps: number;
-  icon?: string;
-  supply?: string;
-  max?: string;
-  txid: string;
-  vout: number;
-  amt?: string;
-  num: number;
-  contract?: "pow-20" | undefined;
-  difficulty?: string | undefined;
-  startingreward?: string | undefined;
+	accounts: number;
+	tick?: string;
+	id: string;
+	sym?: string;
+	price: number;
+	marketCap: number;
+	holders: Holder[];
+	dec: number;
+	pctChange: number;
+	fundAddress: string;
+	fundTotal: string;
+	fundUsed: string;
+	fundBalance: string;
+	included: boolean;
+	pendingOps: number;
+	icon?: string;
+	supply?: string;
+	max?: string;
+	txid: string;
+	vout: number;
+	amt?: string;
+	num: number;
+	contract?: "pow-20" | undefined;
+	difficulty?: string | undefined;
+	startingreward?: string | undefined;
 };
 
 // https://ordinals.gorillapool.io/api/bsv20/id/8677c7600eab310f7e5fbbdfc139cc4b168f4d079185facb868ebb2a80728ff1_0?refresh=false
@@ -85,41 +86,57 @@ export type MarketData = {
 // }
 
 const List = ({
-  type,
-  id,
-  sort,
-  dir,
+	type,
+	id,
+	sort,
+	dir,
+	ticker,
 }: {
-  type: AssetType.BSV20 | AssetType.BSV21;
-  id?: string;
-  sort?: SortBy;
-  dir?: "asc" | "desc";
+	type: AssetType.BSV20 | AssetType.BSV21;
+	id?: string;
+	sort?: SortBy;
+	dir?: "asc" | "desc";
+	ticker?: MarketData;
 }) => {
-  const { data: marketData, isLoading, error } = useQuery<MarketData[]>({
-    queryKey: ["marketData", type, id, sort, dir],
-    queryFn: async () => {
-      const url = `${MARKET_API_HOST}/market/${type}${id ? `/${id}` : ""}?sort=${sort}&dir=${dir}&limit=100`;
-      const response = await fetch(url);
-      return response.json();
-    },
-  });
+	const {
+		data: marketData,
+		isLoading,
+		error,
+	} = useQuery<MarketData[]>({
+		queryKey: ["marketData", type, id, sort, dir],
+		queryFn: async () => {
+			const url = `${MARKET_API_HOST}/market/${type}${id ? `/${id}` : ""}?sort=${sort}&dir=${dir}&limit=100`;
+			const response = await fetch(url);
+			return response.json();
+		},
+	});
 
-  if (isLoading) {
-    return <TokenListingSkeleton type={type} />;
-  }
+	if (isLoading) {
+		return <TokenListingSkeleton type={type} />;
+	}
 
-  if (error) {
-    console.error(error);
-    return <div>Error occurred while fetching market data.</div>;
-  }
+	if (error) {
+		console.error(error);
+		return <div>Error occurred while fetching market data.</div>;
+	}
 
-  return (
-    <tbody className="overflow-auto">
-      {marketData?.map((ticker, idx) => (
-        <TickerHeading key={`${ticker.tick}-${idx}`} ticker={ticker} id={id} type={type} />
-      ))}
-    </tbody>
-  );
+	return (
+		<tbody className="overflow-auto">
+			{marketData?.map((ticker, idx) => (
+				<TickerHeading
+					key={`${ticker.tick}-${idx}`}
+					ticker={ticker}
+					id={id}
+					type={type}
+				/>
+			))}
+			<tr>
+				<td colSpan={6} className="p-0">
+					{ticker && <TickerContent ticker={ticker} show={true} type={type} />}
+				</td>
+			</tr>
+		</tbody>
+	);
 };
 
 export default List;

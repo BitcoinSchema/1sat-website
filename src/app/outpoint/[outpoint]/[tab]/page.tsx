@@ -101,7 +101,7 @@ const Outpoint = async ({ params, searchParams }: { params: OutpointParams, sear
           </div>
         }
       >
-        <div className="max-w-6xl mx-auto w-full h-full">
+        <div className="max-w-6xl mx-auto w-full">
           {<TxDetails txid={txid} vout={Number.parseInt(vout)} showing={details} />}
           {content()}
         </div>

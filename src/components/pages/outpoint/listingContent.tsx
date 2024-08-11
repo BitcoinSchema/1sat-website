@@ -2,6 +2,7 @@
 
 import JDenticon from "@/components/JDenticon";
 import CancelListingModal from "@/components/modal/cancelListing";
+import { SCAM_LISTING_USER_BLACKLIST } from "@/constants";
 import { usdRate } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
@@ -9,7 +10,7 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { use, useMemo } from "react";
 import { FaSpinner } from "react-icons/fa6";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
@@ -47,6 +48,10 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
     </div>
   }, [ordAddress.value, usdRate.value, artifact.data?.list, artifact.data?.bsv20, artifact.outpoint, isOwner]);
 
+  const knownScammer = useMemo(() => {
+    return artifact.owner &&  artifact.owner && SCAM_LISTING_USER_BLACKLIST.some((u) => u.address === artifact.owner)
+  }, [artifact.owner]); 
+
   return (
     <div>
       <div>Owner</div>
@@ -57,10 +62,10 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
         />
         <div className="flex flex-col">
           <div className="text-lg">{artifact.owner}</div>
-          <div className="text-sm text-[#aaa]">
+          <div className={`text-sm ${knownScammer ? "text-red-400" :"text-[#aaa]"}`}>
             {artifact.owner === ordAddress.value
               ? "You own this item"
-              : "Random Ordinal Enjoyer"}
+              : knownScammer ? "Known Scammer" :"Random Ordinal Enjoyer"}
           </div>
         </div>
       </div>

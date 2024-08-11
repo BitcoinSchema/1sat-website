@@ -27,6 +27,12 @@ const nextConfig = {
 			},
 			{
 				protocol: "https",
+				hostname: "takeit-art-stage.s3.amazonaws.com",
+				port: "",
+				pathname: "/**",
+			},
+			{
+				protocol: "https",
 				hostname: "*.blob.core.windows.net",
 				port: "",
 				pathname: "/**",

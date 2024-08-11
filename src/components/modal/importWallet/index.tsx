@@ -1,7 +1,6 @@
 "use client";
 
 import { toastErrorProps } from "@/constants";
-import useHash from "@/hooks/useHash";
 import {
 	ImportWalletFromBackupJsonStep,
 	ImportWalletFromMnemonicStep,
@@ -13,7 +12,7 @@ import {
 	payPk,
 	selectedBackupJson,
 } from "@/signals/wallet";
-import { loadKeysFromSessionStorage, setKeys } from "@/signals/wallet/client";
+import { setKeys } from "@/signals/wallet/client";
 import { useLocalStorage } from "@/utils/storage";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
@@ -139,7 +138,7 @@ const ImportWalletModal = forwardRef<
 						{alreadyHasKey && (
 							<div>
 								<div>
-									You already have a wallet! If you really want to import a new
+									You already have a wallet!! If you really want to import a new
 									wallet, sign out first.
 								</div>
 								<form method="dialog">
