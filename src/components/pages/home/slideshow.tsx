@@ -54,7 +54,7 @@ const SlideShow = ({ artifacts, className }: Props) => {
         <div className="max-w-[600px] text-yellow-400 font-mono">
           <div className="cursor-pointer mb-8 w-full">
             <Link href="/wallet">
-              <Image
+              <img
                 style={{
                   boxShadow: "0 0 0 0 rgba(0, 0, 0, 1)",
                   transform: "scale(1)",
