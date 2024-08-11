@@ -1,6 +1,6 @@
 import MarketPage from "@/components/pages/market";
 import { API_HOST, AssetType } from "@/constants";
-import { BSV20 } from "@/types/bsv20";
+import type { BSV20 } from "@/types/bsv20";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 import { redirect } from "next/navigation";
 
@@ -19,7 +19,7 @@ const Market = async ({
       // const marketData = await promise;
       // console.log(marketData);
       // TODO: redirect to outpoint page
-      redirect(`/outpoint/${params.id}`);
+  return redirect(`/outpoint/${params.id}`);
     case AssetType.BSV20:
       return (
         <MarketPage selectedAssetType={AssetType.BSV20} id={tickOrId} />

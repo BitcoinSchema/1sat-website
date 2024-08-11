@@ -1,7 +1,8 @@
 import { FetchStatus, ORDFS } from "@/constants";
-import { BSV20 } from "@/types/bsv20";
-import { LRC20 } from "@/types/ordinals";
-import React, { useEffect, useState } from "react";
+import type { BSV20 } from "@/types/bsv20";
+import type { LRC20 } from "@/types/ordinals";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FaCode } from "react-icons/fa6";
 import { ArtifactType } from ".";
