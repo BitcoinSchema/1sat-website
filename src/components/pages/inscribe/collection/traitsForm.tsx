@@ -32,7 +32,7 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
 			let processedValue = value;
 			if (field === "occurancePercentages" && Array.isArray(value)) {
 				processedValue = value.map((v) =>
-					(Number.parseInt(v, 10) / 100).toString(),
+					(Number.parseInt(v, 10) / 100).toFixed(2),
 				);
 			}
 
@@ -143,10 +143,11 @@ const TraitsForm: React.FC<TraitsFormProps> = ({
 								type="text"
 								className="input input-bordered w-full mt-2"
 								value={
-									inputPercentages[traitName] ||
-									trait.occurancePercentages
-										.map((v) => (Number.parseFloat(v) * 100).toFixed(0))
-										.join(", ")
+									inputPercentages[traitName]
+                  //  ||
+									// trait.occurancePercentages
+									// 	.map((v) => (Number.parseFloat(v) * 100).toFixed(0))
+									// 	.join(", ")
 								}
 								onChange={(e) =>
 									handlePercentageChange(traitName, e.target.value)

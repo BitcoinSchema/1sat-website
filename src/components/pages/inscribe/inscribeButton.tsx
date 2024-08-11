@@ -27,7 +27,7 @@ const InscribeButton: React.FC<InscribeButtonProps> = ({
 }) => {
   const mapData = useMemo(() => {
     const md = metadata?.reduce((acc, curr) => {
-      acc[curr.key] = curr.value;
+      acc[curr.key] = curr.value as string;
       return acc;
     }, {} as { [key: string]: string });
     if (md) {
@@ -42,6 +42,7 @@ const InscribeButton: React.FC<InscribeButtonProps> = ({
       }
       return md;
     }
+  // eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
   }, [metadata, selectedCollection]);
 
   const clickInscribe = useCallback(async () => {
