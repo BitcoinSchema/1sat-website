@@ -17,7 +17,10 @@ const ImageWithFallback = ({
   ...props
 }: Props) => {
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element
+    // biome-ignore lint/a11y/useAltText: <explanation>
+    // @next/next/no-img-element: <explanation>
+    <img
       style={{ background: "black" }}
       alt={alt}
       onError={(e) => {

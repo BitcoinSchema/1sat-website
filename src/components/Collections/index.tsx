@@ -9,6 +9,7 @@ import Link from "next/link";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import FeaturedCollections from "./featured";
+import Artifact from "../artifact";
 
 const notoSerif = Noto_Serif({
   style: "italic",
@@ -34,13 +35,25 @@ const Collections = () => {
         {data?.map((c) => (
           <div key={c.outpoint} className="relative overflow-hidden mx-auto w-[300px] h-[300px]">
             <Link href={`/collection/${c.outpoint}`}>
-              <Image
+              {/* <Image
                 width={300}
                 height={300}
                 src={c.data?.map?.previewUrl || `${ORDFS}/${c.outpoint}`}
                 alt=""
                 className="rounded-box"
-              />
+              /> */}
+              <Artifact
+                classNames={{
+                  wrapper: "bg-transparent",
+                  media: "rounded bg-[#111] text-center p-0 h-[300px] w-[300px]",
+                }}
+                artifact={c}
+                size={300}
+                sizes={"100vw"}
+                showFooter={false}
+                priority={false}
+                to={`/collection/${c.outpoint}`}
+                />
             </Link>
             <div className="absolute bottom-0 left-0 w-full h-fit p-2 bg-black/15 text-sm font-mono">
               <Link href={`/collection/${c.outpoint}`} className="drop-shadow">
