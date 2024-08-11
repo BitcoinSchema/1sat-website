@@ -57,15 +57,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
 
   return (
     <div className="max-w-lg mx-auto">
-      {/* <CollectionItemForm
-        userCollections={userCollections}
-        selectedCollection={selectedCollection}
-        setSelectedCollection={setSelectedCollection}
-        collectionEnabled={collectionEnabled}
-        setCollectionEnabled={setCollectionEnabled}
-        setMetadata={setMetadata}
-        selectedFile={selectedFile}
-      /> */}
+   
        <CollectionItemForm
         userCollections={userCollections}
         selectedCollection={selectedCollection}

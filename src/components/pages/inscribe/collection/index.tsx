@@ -2,7 +2,7 @@
 "use client";
 
 import Artifact from "@/components/artifact";
-import { knownImageTypes, toastErrorProps } from "@/constants";
+import { knownImageTypes, marketAddress, toastErrorProps } from "@/constants";
 import { ordPk, payPk } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { FileEvent } from "@/types/file";
@@ -27,6 +27,7 @@ import {
 	type RarityLabels,
 	createOrdinals,
 	validateSubTypeData,
+  RoytaltyType,
 } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
 import type { PendingTransaction } from "@/types/preview";
@@ -52,14 +53,14 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 	const [collectionCoverImage, setCollectionCoverImage] = useState<File | null>(
 		null,
 	);
-	const [collectionRoyalties, setCollectionRoyalties] = useLocalStorage<Royalty[]>("1sc-rlt", []);
+	const [collectionRoyalties, setCollectionRoyalties] = useLocalStorage<Royalty[]>("1sc-rlt", [defaultRoyalty]);
 	const [preview, setPreview] = useLocalStorage<
 		string | ArrayBuffer | undefined
 	>("1sc-preview", undefined);
 
 	const [isImage, setIsImage] = useLocalStorage<boolean>("1sc-isc", false);
 	const [mintError, setMintError] = useState<string>();
-  const [iconFileName, setIconFileName] = useLocalStorage<string>("isc-ifn", "icon");
+  const [iconFileName, setIconFileName] = useLocalStorage<string>("1sc-ifn", "icon");
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -254,25 +255,10 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 					payChange,
 				} as PendingTransaction,
 			])
-			// resetForm();
+			resetForm();
 			inscribedCallback();
 		}
-	}, [
-		collectionCoverImage,
-		collectionDescription,
-		collectionName,
-		collectionQuantity,
-		collectionRarities,
-		collectionRoyalties,
-		collectionTraits,
-		fundingAddress.value,
-		inscribedCallback,
-		ordAddress.value,
-		ordPk.value,
-		payPk.value,
-		// resetForm,
-		validateForm,
-	]);
+	}, [collectionCoverImage, collectionDescription, collectionName, collectionQuantity, collectionRarities, collectionRoyalties, collectionTraits, fundingAddress.value, inscribedCallback, ordAddress.value, ordPk.value, payPk.value, resetForm, validateForm]);
 
 	// (e) => setCollectionCoverImage(e.target.files?.[0] || null)}
 
@@ -469,7 +455,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			<div className="divider" />
 
 			<RoyaltyForm
-				collectionRoyalties={collectionRoyalties || []}
+				collectionRoyalties={collectionRoyalties || [defaultRoyalty]}
 				setCollectionRoyalties={setCollectionRoyalties}
 			/>
 
@@ -490,7 +476,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 export default InscribeCollection;
 
 export const removeBtnClass =
-	"btn bg-transparent hover:bg-[#010101] border-0 hover:border btn-square text-lg text-error transition";
+	"btn bg-transparent hover:bg-[#010101] border-0 hover:border btn-square text-lg text-error transition disabled:opacity-50";
 
 const dataURLtoFile = (dataurl: string, filename: string): File => {
 	const arr = dataurl.split(",");
@@ -503,3 +489,9 @@ const dataURLtoFile = (dataurl: string, filename: string): File => {
 	}
 	return new File([u8arr], filename, { type: mime });
 };
+
+const defaultRoyalty: Royalty = {
+  type: RoytaltyType.Address,
+  destination: marketAddress,
+  percentage: "0.01",
+}

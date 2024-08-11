@@ -1,7 +1,8 @@
 import { IoMdClose } from "react-icons/io";
 import { removeBtnClass } from ".";
 import { useCallback } from "react";
-import type { Royalty } from "js-1sat-ord";
+import { RoytaltyType, type Royalty } from "js-1sat-ord";
+import { marketAddress } from "@/constants";
 
 interface RoyaltyFormProps {
   collectionRoyalties: Royalty[];
@@ -21,25 +22,37 @@ const RoyaltyForm: React.FC<RoyaltyFormProps> = ({
 	};
 
 	const removeRoyalty = (index: number) => {
+    if (index === 0) {
+      return;
+    }
 		setCollectionRoyalties(collectionRoyalties.filter((_, i) => i !== index));
 	};
 
-	const updateRoyalty = useCallback(
-		(index: number, field: keyof Royalty, value: string) => {
-			if (field === "percentage") {
-				const percentage = Number.parseFloat(value);
-				if (Number.isNaN(percentage) || percentage < 0 || percentage > 7) {
-					return;
-				}
-			}
-			setCollectionRoyalties(
-				collectionRoyalties.map((royalty, i) =>
-					i === index ? { ...royalty, [field]: value } : royalty,
-				),
-			);
-		},
-		[collectionRoyalties, setCollectionRoyalties],
-	);
+  const updateRoyalty = useCallback(
+    (index: number, field: keyof Royalty, value: string) => {
+      if (field === "percentage") {
+        if (value === "") {
+          // Allow empty string for percentage
+          setCollectionRoyalties(
+            collectionRoyalties.map((royalty, i) =>
+              i === index ? { ...royalty, [field]: value } : royalty
+            )
+          );
+          return;
+        }
+        const percentage = Number.parseFloat(value);
+        if (Number.isNaN(percentage) || percentage < 0 || percentage > 7) {
+          return;
+        }
+      }
+      setCollectionRoyalties(
+        collectionRoyalties.map((royalty, i) =>
+          i === index ? { ...royalty, [field]: value } : royalty
+        )
+      );
+    },
+    [collectionRoyalties, setCollectionRoyalties]
+  );
 
   return (
     <div className="mt-4">
@@ -55,6 +68,7 @@ const RoyaltyForm: React.FC<RoyaltyFormProps> = ({
 						<div className="flex items-center gap-2">
 							<select
 								className="select select-bordered w-full"
+                disabled={index === 0}
 								value={royalty.type}
 								onChange={(e) => updateRoyalty(index, "type", e.target.value)}
 							>
@@ -63,6 +77,7 @@ const RoyaltyForm: React.FC<RoyaltyFormProps> = ({
 							</select>
 							<button
 								type="button"
+                disabled={index === 0}
 								className={removeBtnClass}
 								onClick={() => removeRoyalty(index)}
 							>
