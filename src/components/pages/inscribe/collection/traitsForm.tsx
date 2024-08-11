@@ -1,3 +1,4 @@
+// collection/traitsForm.tsx
 "use client";
 
 import { useCallback, useState } from "react";

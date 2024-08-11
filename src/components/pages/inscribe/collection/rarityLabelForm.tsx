@@ -1,3 +1,5 @@
+// collection/rarityLabelForm.tsx
+
 import { IoMdClose } from "react-icons/io";
 import { removeBtnClass } from ".";
 import type { Rarity, RarityLabels } from "js-1sat-ord";

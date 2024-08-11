@@ -1,10 +1,13 @@
+// collectionItemForm.tsx
 "use client"
 
 import type { OrdUtxo } from "@/types/ordinals";
-// CollectionForm.tsx
 import { FaQuestionCircle } from "react-icons/fa";
 import type { MetaMap } from "./image";
 import { useRouter } from "next/navigation";
+import type { CollectionItemSubTypeData, CollectionSubTypeData } from "js-1sat-ord";
+import { useEffect, useState } from "react";
+import CollectionItemDataForm from "./collectionItemDataForm";
 
 interface CollectionFormProps {
   userCollections?: OrdUtxo[];
@@ -27,7 +30,26 @@ const CollectionItemForm: React.FC<CollectionFormProps> = ({
 }) => {
 
   const router = useRouter();
+  // const [subTypeData, setSubTypeData] = useState<CollectionItemSubTypeData | undefined>();
 
+  // useEffect(() => {
+  //   if (selectedCollection && subTypeData) {
+  //     setMetadata([
+  //       { key: 'app', value: '1sat.market', idx: 0 },
+  //       { key: 'type', value: 'ord', idx: 1 },
+  //       { key: 'name', value: selectedFile?.name || '', idx: 2 },
+  //       { key: 'collectionId', value: selectedCollection, idx: 3 },
+  //       { key: 'subType', value: 'collectionItem', idx: 4 },
+  //       { key: 'subTypeData', value: JSON.stringify(subTypeData), idx: 5 },
+  //     ]);
+  //   }
+  // }, [selectedCollection, subTypeData, selectedFile, setMetadata]);
+  
+  const selectedCollectionData = userCollections?.find(c => c.outpoint === selectedCollection);
+  const subTypeData = selectedCollectionData?.data?.map?.subTypeData 
+    ? JSON.parse(selectedCollectionData.data.map.subTypeData as string) as CollectionSubTypeData
+    : undefined;
+    
   return (
     <div className="my-4">
       {/* // toggle between minting a collection item or inscribing an image */}
@@ -107,6 +129,15 @@ const CollectionItemForm: React.FC<CollectionFormProps> = ({
             ))}
           </select>
         </>
+      )}
+
+    {collectionEnabled && selectedCollection && (
+   <CollectionItemDataForm
+   collectionId={selectedCollection}
+  //  setSubTypeData={setSubTypeData}
+   rarityLabels={subTypeData?.rarityLabels}
+   traits={subTypeData?.traits}
+ />
       )}
     </div>
   );

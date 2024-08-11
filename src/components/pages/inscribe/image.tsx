@@ -1,3 +1,4 @@
+// image.tsx
 "use client";
 
 import { FetchStatus } from "@/constants";
@@ -7,7 +8,7 @@ import { getCollectionUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { useSignals } from "@preact/signals-react/runtime";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { TbClick } from "react-icons/tb";
 import CollectionItemForm from "./collectionItemForm";
 import FilePreview from "./filePreview";
@@ -56,7 +57,16 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
 
   return (
     <div className="max-w-lg mx-auto">
-      <CollectionItemForm
+      {/* <CollectionItemForm
+        userCollections={userCollections}
+        selectedCollection={selectedCollection}
+        setSelectedCollection={setSelectedCollection}
+        collectionEnabled={collectionEnabled}
+        setCollectionEnabled={setCollectionEnabled}
+        setMetadata={setMetadata}
+        selectedFile={selectedFile}
+      /> */}
+       <CollectionItemForm
         userCollections={userCollections}
         selectedCollection={selectedCollection}
         setSelectedCollection={setSelectedCollection}

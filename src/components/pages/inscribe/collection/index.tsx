@@ -1,3 +1,4 @@
+// collection/index.tsx
 "use client";
 
 import Artifact from "@/components/artifact";
