@@ -26,7 +26,7 @@ const MetaForm: React.FC<MetaFormProps> = ({ metadata, setMetadata, selectedColl
             meta.idx === 0 ||
             meta.key === "type" ||
             (!!selectedCollection &&
-              (meta.key === "collectionId" || meta.key === "subType" || meta.key === "app" || meta.key === "name"))
+              (meta.key === "collectionId" || meta.key === "subType" || meta.key === "subTypeData" || meta.key === "app" || meta.key === "name"))
           }
           placeholder={
             [
@@ -68,7 +68,7 @@ const MetaForm: React.FC<MetaFormProps> = ({ metadata, setMetadata, selectedColl
           placeholder="Value"
           disabled={
             !!selectedCollection &&
-            (meta.key === "collectionId" || meta.key === "subType" || meta.key === "app" || meta.key === "type")
+            (meta.key === "collectionId" || meta.key === "subType" || meta.key === "subTypeData" || meta.key === "app" || meta.key === "type")
           }
           className="w-1/2 p-2 ml-1 my-1 rounded disabled:bg-[#010101] disabled:text-[#555]"
           value={meta.value}
@@ -89,7 +89,7 @@ const MetaForm: React.FC<MetaFormProps> = ({ metadata, setMetadata, selectedColl
             );
           }}
         />
-        {meta.idx > 2 && (
+        {meta.idx > 2 && meta.key !== "subTypeData" && meta.key !== "subType" && meta.key !== "collectionId" &&  (
           <button type="button" className={removeBtnClass} onClick={() => removeMetaRow(meta.idx)}>
             <IoMdClose />
           </button>
