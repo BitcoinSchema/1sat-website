@@ -248,6 +248,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				numOutputs: tx.outputs.length,
 				spentOutpoints,
 				payChange,
+        returnTo: `/market/bsv20/${(listing as Listing).tick || (listing as Listing).id}`,
 			},
 		]);
 
