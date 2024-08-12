@@ -210,7 +210,7 @@ export const getCollectionUtxos = async (address: string | null): Promise<OrdUtx
   ] as unknown as OrdUtxo[];
 
   // Simulating an API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // await new Promise(resolve => setTimeout(resolve, 500));
 
   return dummyCollections;
 };
