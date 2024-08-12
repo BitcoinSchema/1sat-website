@@ -28,7 +28,7 @@ const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
 							href="/"
 						>
 							<div className="relative">
-								<img
+								<Image
 									style={{
 										boxShadow: "0 0 0 0 rgba(0, 0, 0, 1)",
 										transform: "scale(1)",
