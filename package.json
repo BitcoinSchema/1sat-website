@@ -9,7 +9,7 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
-		"@bsv/sdk": "^1.1.12",
+		"@bsv/sdk": "^1.1.13",
 		"@emotion/react": "^11.11.4",
 		"@emotion/styled": "^11.11.5",
 		"@google/model-viewer": "^3.5.0",
@@ -44,7 +44,8 @@
 		"framer-motion": "^11.1.7",
 		"isomorphic-dompurify": "^2.4.0",
 		"jdenticon": "^3.2.0",
-		"js-1sat-ord": "^0.1.55",
+		"jimp": "^0.22.12",
+		"js-1sat-ord": "^0.1.58",
 		"lodash": "^4.17.21",
 		"lucide-react": "^0.378.0",
 		"mime": "^3.0.0",

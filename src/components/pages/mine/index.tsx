@@ -22,7 +22,7 @@ const MinePage: React.FC = async () => {
 						{bloodyPow}
 					</pre>
 					<div className="my-12">
-						<img
+						<Image
 							src={src}
 							height={21}
 							width={716}
