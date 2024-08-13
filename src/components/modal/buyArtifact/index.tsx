@@ -17,6 +17,7 @@ import { PrivateKey } from "@bsv/sdk";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
 	type ExistingListing,
+	type MAP,
 	type Payment,
 	type PurchaseOrdListingConfig,
 	type PurchaseOrdTokenListingConfig,
@@ -122,12 +123,19 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				},
 			];
 
+      const metaData: MAP = {
+        app: "1sat.market",
+        type: "ord",
+        op: "purchase",
+      }
+      
 			const config: PurchaseOrdListingConfig = {
 				utxos: fundingUtxos,
 				paymentPk: PrivateKey.fromWif(payPk.value),
 				listing: existingListing,
 				ordAddress: ordAddress.value,
 				additionalPayments,
+        metaData,
 			};
 
 			if (listing.origin?.data?.map?.royalties) {
@@ -224,6 +232,12 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			},
 		];
 
+    const metaData: MAP = {
+      app: "1sat.market",
+      type: "ord",
+      op: "purchase",
+    }
+    
 		const config: PurchaseOrdTokenListingConfig = {
 			utxos: fundingUtxos,
 			paymentPk: PrivateKey.fromWif(payPk.value),
@@ -234,6 +248,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 			tokenID: ((listing as Listing).tick
 				? (listing as Listing).tick
 				: (listing as Listing).id) as string,
+      metaData,
 		};
 		const { tx, spentOutpoints, payChange } =
 			await purchaseOrdTokenListing(config);

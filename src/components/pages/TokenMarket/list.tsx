@@ -1,11 +1,11 @@
 "use client";
 
 import { MARKET_API_HOST, type SortBy, type AssetType } from "@/constants";
-import { NextRequest } from "next/server";
 import TickerHeading from "./heading";
 import { useQuery } from "@tanstack/react-query";
 import TokenListingSkeleton from "@/components/skeletons/listing/Token";
 import TickerContent from "./content";
+import type { TxoData } from "@/types/ordinals";
 
 export interface Holder {
 	address: string;
@@ -33,6 +33,7 @@ export type MarketData = {
 	marketCap: number;
 	holders: Holder[];
 	dec: number;
+  data: TxoData;
 	pctChange: number;
 	fundAddress: string;
 	fundTotal: string;
@@ -47,7 +48,7 @@ export type MarketData = {
 	vout: number;
 	amt?: string;
 	num: number;
-	contract?: "pow-20" | undefined;
+	contract?: "pow-20" | "LockToMintBsv20" | undefined;
 	difficulty?: string | undefined;
 	startingreward?: string | undefined;
 };
