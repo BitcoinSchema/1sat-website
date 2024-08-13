@@ -45,7 +45,7 @@
 		"isomorphic-dompurify": "^2.4.0",
 		"jdenticon": "^3.2.0",
 		"jimp": "^0.22.12",
-		"js-1sat-ord": "^0.1.59",
+		"js-1sat-ord": "^0.1.61",
 		"lodash": "^4.17.21",
 		"lucide-react": "^0.378.0",
 		"mime": "^3.0.0",

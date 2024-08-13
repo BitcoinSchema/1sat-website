@@ -1,6 +1,6 @@
 import { ArtifactType, artifactTypeMap } from "@/components/artifact";
 import { API_HOST, ORDFS, resultsPerPage } from "@/constants";
-import { Inscription, OpNSData, OpNsStatus, TxoData, type OrdUtxo } from "@/types/ordinals";
+import { type Inscription, type OpNSData, OpNsStatus, TxoData, type OrdUtxo } from "@/types/ordinals";
 import { Hash, Utils } from "@bsv/sdk";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
