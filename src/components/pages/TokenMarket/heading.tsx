@@ -2,7 +2,7 @@
 
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
-import { AssetType, MARKET_API_HOST } from "@/constants";
+import { API_HOST, AssetType, MARKET_API_HOST } from "@/constants";
 import {
 	CurrencyDisplay,
 	bsv20Utxos,
@@ -19,13 +19,14 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { GiPlainCircle } from "react-icons/gi";
 import { toBitcoin } from "satoshi-bitcoin-ts";
 import type { MarketData } from "./list";
 import { useQuery } from "@tanstack/react-query";
+import type { OrdUtxo } from "@/types/ordinals";
 
 type IconProps = {
 	alt: string;
@@ -126,7 +127,7 @@ const TickerHeading = ({
 	const isPow20 = useMemo(() => {
 		return (
 			POW20_IDS.includes(ticker.id) ||
-      ticker.data?.insc?.json.contract === "pow-20" ||
+			ticker.data?.insc?.json.contract === "pow-20" ||
 			ticker.contract === "pow-20"
 		);
 	}, [ticker]);
@@ -135,18 +136,29 @@ const TickerHeading = ({
 		return (
 			LTM_IDS.includes(ticker.id) ||
 			ticker.data?.insc?.json.contract === "LockToMintBsv20" ||
-      ticker.contract === "LockToMintBsv20"
+			ticker.contract === "LockToMintBsv20"
 		);
 	}, [ticker]);
+  
 	// const bsv21SupplyContent = computed(() => {
 	//   const totalSupply = ticker.amt;
 	//   let text = `${totalSupply?.toLocaleString()} `;
 
-	const { data: pow20Details } = useQuery<POW20Details>({
+	const { data: pow20Details } = useQuery<OrdUtxo>({
 		queryKey: ["pow20", id],
 		queryFn: () => fetchPOW20Details(id),
 		enabled: !!id && isPow20,
 	});
+
+	const { data: ltmDetails } = useQuery<OrdUtxo>({
+		queryKey: ["ltm", id],
+		queryFn: () => fetchLtmDetails(id),
+		enabled: !!id && isLtm,
+	});
+
+  // useEffect(() => {
+  //   console.log({ltmDetails});
+  // }, [ltmDetails]);
 
 	const supplyContent = computed(() => {
 		if (type === AssetType.BSV20) {
@@ -156,14 +168,17 @@ const TickerHeading = ({
 			if (isPow20) {
 				return renderPOW20Supply();
 			}
+      if (isLtm) {
+        return renderLTMSupply();
+      }
 			return renderBSV21Supply();
 		}
 		return null;
 	});
 
 	const renderBSV20Supply = () => {
-    if (!ticker.supply) return null;
-    if (!ticker.max) return null;
+		if (!ticker.supply) return null;
+		if (!ticker.max) return null;
 		const totalSupply =
 			Number.parseInt(ticker.supply || ticker.amt || "0") /
 			(ticker.dec ? 10 ** ticker.dec : 1);
@@ -188,7 +203,7 @@ const TickerHeading = ({
 						</button>
 					</Link>
 				)}
-				<div data-tip="Circulating Supply / Max Supply" className="tooltip">
+				<div data-tip="Circulating Supply / Max Supply" className="tooltip tooltip-right">
 					{`${totalSupply.toLocaleString()} / ${maxSupply.toLocaleString()}`}
 				</div>
 			</>
@@ -202,71 +217,90 @@ const TickerHeading = ({
 
 		return (
 			<>
-				<div data-tip="Total Supply" className="tooltip">
+				<div data-tip="Total Supply" className="tooltip tooltip-right">
 					{`${totalSupply.toLocaleString()}`}
 				</div>
 			</>
 		);
 	};
 
-	// Add this function outside your component
-const calculateCurrentDifficulty = (
-  startingDifficulty: number,
-  remainingSupply: number,
-  totalSupply: number
-): number => {
-  const pctAvail = (remainingSupply * 100) / totalSupply;
-  console.log("Starting Difficulty:", startingDifficulty, "Remaining Supply:", pctAvail, "Total Supply:", totalSupply, "Current Supply:", remainingSupply);
+	const renderPOW20Supply = () => {
+		if (!pow20Details) return null;
+		if (!pow20Details.data?.bsv20) return null;
+		if (!pow20Details.origin?.data?.insc?.json.maxSupply) return null;
 
-  if (pctAvail < 20) {
-    return startingDifficulty + 4;
-  }
-  if (pctAvail < 40) {
-    return startingDifficulty + 3;
-  }
-  if (pctAvail < 60) {
-    return startingDifficulty + 2;
-  }
-  if (pctAvail < 80) {
-    return startingDifficulty + 1;
-  }
-  return startingDifficulty;
-};
+		const totalSupply = Number(pow20Details.origin.data.insc.json.maxSupply);
+		const remainingSupply = pow20Details.data.bsv20.amt;
+		const decimals = Number(pow20Details.origin.data.insc.json.decimals);
+		const startingDifficulty = Number(
+			pow20Details.origin.data.insc.json.difficulty,
+		);
 
-// In your TickerHeading component, update the renderPOW20Supply function:
-const renderPOW20Supply = () => {
-  if (!pow20Details) return null;
+		const adjustedTotalSupply = totalSupply / 10 ** decimals;
+		const adjustedRemainingSupply = Number(remainingSupply) / 10 ** decimals;
 
-  const totalSupply = Number(pow20Details.origin.data.insc.json.maxSupply);
-  const remainingSupply = pow20Details.data.bsv20.amt;
-  const decimals = Number(pow20Details.origin.data.insc.json.decimals);
-  const startingDifficulty = Number(pow20Details.origin.data.insc.json.difficulty);
+		const currentDifficulty = calculateCurrentDifficulty(
+			startingDifficulty,
+			Number(remainingSupply),
+			totalSupply,
+		);
 
-  const adjustedTotalSupply = totalSupply / (10 ** decimals);
-  const adjustedRemainingSupply = remainingSupply / (10 ** decimals);
+		const supplyText = pow20Details.owner
+			? `Minted Out / ${adjustedTotalSupply.toLocaleString()}`
+			: `${adjustedRemainingSupply.toLocaleString()} / ${adjustedTotalSupply.toLocaleString()}`;
 
-  const currentDifficulty = calculateCurrentDifficulty(startingDifficulty, remainingSupply, totalSupply);
+		return (
+			<>
+				{!pow20Details.owner && (
+					<Link href={"/mine"}>
+						<button type="button" className="btn btn-sm btn-accent mr-4">
+							Mine {ticker.sym}
+						</button>
+					</Link>
+				)}
+				<div data-tip="Remaining Supply / Total Supply" className="tooltip">
+					{supplyText}
+				</div>
+				{!pow20Details.owner && (
+					<div data-tip="Current Mining Difficulty" className="tooltip ml-4">
+						Difficulty: {currentDifficulty}
+					</div>
+				)}
+			</>
+		);
+	};
 
-  const supplyText = pow20Details.owner
-    ? `Minted Out / ${adjustedTotalSupply.toLocaleString()}`
-    : `${adjustedRemainingSupply.toLocaleString()} / ${adjustedTotalSupply.toLocaleString()}`;
+	const renderLTMSupply = () => {
+		if (!ltmDetails) return null;
+		if (!ltmDetails.data?.bsv20) return null;
+		if (!ltmDetails.origin?.data?.insc?.json.amt) return null;
 
-  return (
-    <>
-      {!pow20Details.owner && <Link href={"/mine"}>
-        <button type="button" className="btn btn-sm btn-accent mr-4">
-          Mine {ticker.sym}
-        </button>
-      </Link>}
-      <div data-tip="Remaining Supply / Total Supply" className="tooltip">
-        {supplyText}
-      </div>
-      {!pow20Details.owner && <div data-tip="Current Mining Difficulty" className="tooltip ml-4">
-        Difficulty: {currentDifficulty}
-      </div>}
-    </>
-  );
-};
+		const totalSupply = ltmDetails.origin.data.insc.json.amt;
+		const remainingSupply = ltmDetails.data.bsv20.amt;
+		const decimals = ltmDetails.origin.data.insc.json.dec;
+    console.log({totalSupply, remainingSupply, decimals});
+		const adjustedTotalSupply = totalSupply / 10 ** decimals;
+		const adjustedRemainingSupply = Number(remainingSupply) / 10 ** decimals;
+
+		const supplyText = remainingSupply === "0"
+			? `Minted Out / ${adjustedTotalSupply.toLocaleString()}`
+			: `${adjustedRemainingSupply.toLocaleString()} / ${adjustedTotalSupply.toLocaleString()}`;
+
+		return (
+			<>
+				{remainingSupply === "0" && (
+					<Link href={"https://locktomint.com"} target="_blank">
+						<button type="button" className="btn btn-sm btn-accent mr-4">
+							Mint {ticker.sym}
+						</button>
+					</Link>
+				)}
+				<div data-tip="Remaining Supply / Total Supply" className="tooltip tooltip-right">
+					{supplyText}
+				</div>
+			</>
+		);
+	};
 
 	const usdPrice = computed(() => {
 		if (!ticker.price || !usdRate.value) {
@@ -463,7 +497,7 @@ const BAMBOO_LTM_ID =
 export const LTM_IDS = [BAMBOO_LTM_ID];
 
 // Add this function to fetch POW20 details
-const fetchPOW20Details = async (id?: string): Promise<POW20Details> => {
+const fetchPOW20Details = async (id?: string): Promise<OrdUtxo> => {
 	const response = await fetch(`${MARKET_API_HOST}/mine/pow20/latest/${id}`);
 	if (!response.ok) {
 		throw new Error("Network response was not ok");
@@ -471,72 +505,44 @@ const fetchPOW20Details = async (id?: string): Promise<POW20Details> => {
 	return response.json();
 };
 
-type POW20Details = {
-	txid: string;
-	vout: number;
-	outpoint: string;
-	satoshis: number;
-	accSats: string;
-	height: number;
-	idx: string;
-	owner: string | null;
-	spend: string;
-	spend_height: number | null;
-	spend_idx: number | null;
-	origin: {
-		outpoint: string;
-		data: {
-			insc: {
-				file: {
-					hash: string;
-					size: number;
-					type: string;
-				};
-				json: {
-					p: string;
-					op: string;
-					amt: string;
-					dec: string;
-					sym: string;
-					icon: string;
-					contract: string;
-					decimals: string;
-					maxSupply: string;
-					difficulty: string;
-					startingReward: string;
-				};
-			};
-			bsv20: {
-				id: string;
-				op: string;
-				amt: number;
-				listing: boolean;
-			};
-			types: string[];
-		};
-		num: string;
-	};
-	data: {
-		insc: {
-			file: {
-				hash: string;
-				size: number;
-				type: string;
-			};
-			json: {
-				p: string;
-				id: string;
-				op: string;
-				amt: string;
-			};
-		};
-		bsv20: {
-			id: string;
-			op: string;
-			amt: number;
-			listing: boolean;
-		};
-		types: string[];
-	};
-	script: string;
+// Add this function to fetch POW20 details
+const fetchLtmDetails = async (id?: string): Promise<OrdUtxo> => {
+	const url = `${API_HOST}/api/inscriptions/${id}/latest?script=false`;
+	const response = await fetch(url);
+	if (!response.ok) {
+		throw new Error("Network response was not ok");
+	}
+	return response.json();
+};
+
+const calculateCurrentDifficulty = (
+	startingDifficulty: number,
+	remainingSupply: number,
+	totalSupply: number,
+): number => {
+	const pctAvail = (remainingSupply * 100) / totalSupply;
+	console.log(
+		"Starting Difficulty:",
+		startingDifficulty,
+		"Remaining Supply:",
+		pctAvail,
+		"Total Supply:",
+		totalSupply,
+		"Current Supply:",
+		remainingSupply,
+	);
+
+	if (pctAvail < 20) {
+		return startingDifficulty + 4;
+	}
+	if (pctAvail < 40) {
+		return startingDifficulty + 3;
+	}
+	if (pctAvail < 60) {
+		return startingDifficulty + 2;
+	}
+	if (pctAvail < 80) {
+		return startingDifficulty + 1;
+	}
+	return startingDifficulty;
 };
