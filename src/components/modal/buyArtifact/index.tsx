@@ -164,16 +164,11 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				},
 			]);
 
+      router.push("/preview");
+
 			onClose();
 		},
-		[
-			listing,
-			price,
-			fundingAddress.value,
-			ordAddress.value,
-			payPk.value,
-			onClose,
-		],
+		[listing, price, fundingAddress.value, ordAddress.value, payPk.value, router, onClose],
 	);
 
 	const buyBsv20 = useCallback(async () => {
@@ -337,18 +332,15 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 					</div>
 				)}
 				<form
-					onSubmit={
-						ordAddress.value
-							? isBsv20Listing
-								? buyBsv20
-								: buyArtifact
-							: handleUnlockWallet
-					}
-          action="/preview"
 					className="modal-action"
 				>
 					{!scamListing && <button
-						type="submit"
+						type="button"
+            onClick={ordAddress.value
+							? isBsv20Listing
+								? buyBsv20
+								: buyArtifact
+							: handleUnlockWallet}
 						className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#222]"
 					>
 						{"Buy -"}{" "}
