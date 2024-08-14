@@ -6,11 +6,12 @@ import type React from "react";
 import { useCallback, useMemo } from "react";
 import InscribeBsv20 from "./bsv20";
 import InscribeBsv21 from "./bsv21";
-import InscribeCollection from "./collection";
 import InscribeHtml from "./html";
 import InscribeImage from "./image";
 import InscriptionTabs, { InscriptionTab } from "./tabs";
 import InscribeText from "./text";
+import { pendingTxs } from "@/signals/wallet";
+import InscribeCollection from "./collection";
 
 type InscribeProps = {
   className?: string;
@@ -29,8 +30,15 @@ const Inscribe: React.FC<InscribeProps> = ({ className, tab, generated }) => {
   }, [tab]);
 
   const inscribedCallback = useCallback(() => {
-    router.push("/preview");
-  }, [router]);
+    if (pendingTxs.value) {
+      const tx = pendingTxs.value[0];
+      console.log("Inscribed", { tx });
+      debugger;
+      router.push("/preview");
+    } else {
+      console.error("pendingTxs.value is null");
+    }
+  }, [pendingTxs.value, router]);
 
   return (
     <div

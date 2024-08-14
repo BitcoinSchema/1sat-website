@@ -1,5 +1,5 @@
 import { API_HOST, AssetType } from "@/constants";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 interface TickHolder {
 	address: string;

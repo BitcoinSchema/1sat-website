@@ -40,6 +40,7 @@
 		"critters": "^0.0.20",
 		"crypto-es": "^2.1.0",
 		"daisyui": "^4.11.1",
+		"decimal.js": "^10.4.3",
 		"dompurify": "^3.0.9",
 		"framer-motion": "^11.1.7",
 		"isomorphic-dompurify": "^2.4.0",

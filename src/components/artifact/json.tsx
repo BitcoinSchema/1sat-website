@@ -1,6 +1,5 @@
 import { FetchStatus, ORDFS } from "@/constants";
 import type { BSV20 } from "@/types/bsv20";
-import type { LRC20 } from "@/types/ordinals";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
@@ -26,7 +25,6 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
 }) => {
   const [json, setJson] = useState<JSON | any>(j);
   const [bsv20, setBsv20] = useState<Partial<BSV20> | undefined>();
-  const [lrc20, setLrc20] = useState<Partial<LRC20> | undefined>(undefined);
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
@@ -45,12 +43,10 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
         setFetchTextStatus(FetchStatus.Success);
         setJson(resultText);
 
-        if (type === ArtifactType.LRC20 || type === ArtifactType.BSV20) {
+        if (type === ArtifactType.BSV20) {
           const txJson = artifact.origin;
           setFetchBsv20Status(FetchStatus.Success);
-          if (type === ArtifactType.LRC20) {
-            setLrc20(txJson);
-          } else if (type === ArtifactType.BSV20) {
+          if (type === ArtifactType.BSV20) {
             setBsv20(txJson);
           }
         }
@@ -85,9 +81,8 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
     <div className="relative w-full h-full flex">
       {!mini && (
         <pre
-          className={`overflow-hidden max-h-96 flex items-center justify-start w-full h-full transition text-xs  ${
-            className ? className : ""
-          }`}
+          className={`overflow-hidden max-h-96 flex items-center justify-start w-full h-full transition text-xs  ${className ? className : ""
+            }`}
         >
           {JSON.stringify(json, null, 2)}
         </pre>
@@ -97,25 +92,6 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
           <FaCode />
         </div>
       )}
-      {/* {!mini &&
-        type === ArtifactType.BSV20 &&
-        bsv20 &&
-        bsv20.status !== Bsv20Status.Valid && (
-          <div
-            className={`rounded bg-black bg-opacity-75 absolute bottom-0 p-2 md:p-4 ${
-              bsv20.status === Bsv20Status.Pending
-                ? "text-yellow-400"
-                : "text-red-400"
-            } left-0 font-semibold w-full flex items-center justify-center text-sm`}
-          >
-            <IoMdWarning className="mr-2 w-8" />{" "}
-            {`${
-              bsv20.status === Bsv20Status.Pending
-                ? "PENDING VALIDATION"
-                : "INVALID BSV20"
-            }`}
-          </div>
-        )} */}
     </div>
   ) : (
     <LoaderIcon className="mx-auto" />

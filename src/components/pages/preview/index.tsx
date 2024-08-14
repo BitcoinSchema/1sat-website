@@ -8,6 +8,7 @@ import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
 import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { stringifyMetaData } from "js-1sat-ord";
 import { head } from "lodash";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -89,16 +90,16 @@ const PreviewPage = () => {
 	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
 
 	const change = useMemo(() => {
-    if (pendingTx.value?.payChange) {
-      console.log({change: pendingTx.value.payChange.satoshis})
-      return pendingTx.value.payChange.satoshis
-    }
-    if (!pendingTx.value?.rawTx) {
+		if (pendingTx.value?.payChange) {
+			console.log({ change: pendingTx.value.payChange.satoshis });
+			return pendingTx.value.payChange.satoshis;
+		}
+		if (!pendingTx.value?.rawTx) {
 			return 0;
 		}
-    const tx = Transaction.fromHex(pendingTx.value.rawTx)
-    const changeOut = tx.outputs.find((o) => o.change)
-    console.log({changeOut, pendingTx: pendingTx.value})
+		const tx = Transaction.fromHex(pendingTx.value.rawTx);
+		const changeOut = tx.outputs.find((o) => o.change);
+		console.log({ changeOut, pendingTx: pendingTx.value });
 
 		return changeOut?.satoshis || 0;
 	}, [pendingTx.value]);
@@ -114,9 +115,58 @@ const PreviewPage = () => {
 		for (const out of tx.outputs) {
 			totalOut += out.satoshis || 0;
 		}
-		const cost = totalOut - change
+		const cost = totalOut - change;
 		return (cost / usdRate.value).toFixed(2);
 	}, [change, pendingTx.value, usdRate.value]);
+
+	const RenderMetadata = ({ data, depth = 0, hideArrayIndices = false }: any) => {
+		if (typeof data !== "object" || data === null) {
+			return <div className="ml-2">{String(data)}</div>;
+		}
+
+		return Object.entries(data).map(([key, value]) => {
+			// Skip rendering if it's an array index and we're hiding indices
+			if (hideArrayIndices && !Number.isNaN(Number(key))) {
+				return (
+					<div key={key} className="ml-4">
+						<RenderMetadata
+							data={value}
+							depth={depth + 1}
+							hideArrayIndices={true}
+						/>
+					</div>
+				);
+			}
+
+			return (
+				<div key={key} className="flex flex-col">
+					<div className="flex justify-between">
+						<div className={`mr-2 text-[#555] ${depth > 0 ? "ml-4" : ""}`}>
+							{key}
+						</div>
+						{!Array.isArray(value) && typeof value !== "object" && (
+							<RenderMetadata
+								data={value}
+								depth={depth + 1}
+								hideArrayIndices={hideArrayIndices}
+							/>
+						)}
+					</div>
+					{(Array.isArray(value) || typeof value === "object") && (
+						<div className="ml-4">
+							<RenderMetadata
+								data={value}
+								depth={depth + 1}
+								hideArrayIndices={
+									Array.isArray(value) || key === "rarityLabels"
+								}
+							/>
+						</div>
+					)}
+				</div>
+			);
+		});
+	};
 
 	return (
 		<>
@@ -143,7 +193,11 @@ Preview`}
 						</div>
 						<div className="flex justify-between">
 							<div>Size</div>
-							<div>{pendingTx.value?.rawTx.length ? formatBytes(pendingTx.value?.rawTx.length / 2) : ""}</div>
+							<div>
+								{pendingTx.value?.rawTx.length
+									? formatBytes(pendingTx.value?.rawTx.length / 2)
+									: ""}
+							</div>
 						</div>
 						{(pendingTx.value?.price || 0) > 0 && (
 							<div className="flex justify-between">
@@ -180,20 +234,12 @@ Preview`}
 								<div className="flex justify-between">
 									<div>Metadata</div>
 									<div>
-										{Object.keys(pendingTx.value?.metadata).map((k) => {
-											const v =
-												pendingTx.value?.metadata?.[k];
-											return (
-												<div key={k} className="flex justify-between">
-													<div className="mr-2 text-[#555]">{k}</div>
-													<div className="ml-2">{v}</div>
-												</div>
-											);
-										})}
+										<RenderMetadata data={pendingTx.value.metadata} />
 									</div>
 								</div>
 							</>
 						)}
+						
 						{pendingTx.value?.marketFee ? (
 							<>
 								<div className="divider">Market</div>

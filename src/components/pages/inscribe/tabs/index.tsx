@@ -1,10 +1,10 @@
 import Link from "next/link";
-import React from "react";
+import type React from "react";
 interface Props {
   currentTab: InscriptionTab | undefined;
   showIndicator?: boolean;
   onClickSelected?: (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement, MouseEvent>
   ) => void;
 }
 
@@ -26,61 +26,64 @@ const InscriptionTabs: React.FC<Props> = ({
   onClickSelected,
 }) => {
   return (
-    <div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8">
-      <Link href={`/inscribe`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Image ? 'tab-active' : ''}`}>
+    <div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8 overflow-x-auto w-fit">
+      <Link href={"/inscribe"} role={'tab'} className={`tab ${currentTab === InscriptionTab.Image ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-      
-          onClick={(e: any) =>
+          onClick={(e) =>
             currentTab === InscriptionTab.Image && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           Image
         </div>
       </Link>
-      <Link href={`/inscribe?tab=text`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Text ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=text"} role={'tab'} className={`tab ${currentTab === InscriptionTab.Text ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-     
-          onClick={(e: any) =>
+          onClick={(e) =>
             currentTab === InscriptionTab.Text && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           Text
         </div>
       </Link>
-      <Link href={`/inscribe?tab=html`} role={'tab'} className={`tab ${currentTab === InscriptionTab.HTML ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=html"} role={'tab'} className={`tab ${currentTab === InscriptionTab.HTML ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-  
-          onClick={(e: any) =>
+          onClick={(e) =>
             currentTab === InscriptionTab.HTML && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           HTML
         </div>
       </Link>
-      <Link href={`/inscribe?tab=bsv20`} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV20 ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=bsv20"} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV20 ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-      
-          onClick={(e: any) =>
+          className="whitespace-nowrap"
+          onClick={(e) =>
             currentTab === InscriptionTab.BSV20 && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           BSV-20
         </div>
       </Link>
-      <Link href={`/inscribe?tab=bsv21`} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV21 ? 'tab-active' : ''}`}>
+      <Link href={"/inscribe?tab=bsv21"} role={'tab'} className={`tab ${currentTab === InscriptionTab.BSV21 ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-          onClick={(e: any) =>
+          className="whitespace-nowrap"
+          onClick={(e) =>
             currentTab === InscriptionTab.BSV21 && onClickSelected
               ? onClickSelected(e)
-              : () => {}
+              : () => { }
           }
         >
           BSV-21
@@ -110,6 +113,19 @@ const InscriptionTabs: React.FC<Props> = ({
       >
         Collection
       </div> */}
+
+      <Link href={`/inscribe?tab=${InscriptionTab.Collection}`} role={'tab'} className={`tab ${currentTab === InscriptionTab.Collection ? 'tab-active' : ''}`}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+        <div
+          onClick={(e) =>
+            currentTab === InscriptionTab.Collection && onClickSelected
+              ? onClickSelected(e)
+              : () => { }
+          }
+        >
+          Collection
+        </div>
+      </Link>
       {/* <div
         $partiallyactive={currentTab === InscriptionTab.BSV20 ? "true" : "false"}
         href={`/inscribe?tab=video`}

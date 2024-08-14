@@ -1,7 +1,7 @@
 "use client";
 
 import Artifact from "@/components/artifact";
-import { FetchStatus, toastErrorProps } from "@/constants";
+import { FetchStatus, knownImageTypes, toastErrorProps } from "@/constants";
 import {
   chainInfo,
   indexers,
@@ -31,7 +31,6 @@ import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { RiSettings2Fill } from "react-icons/ri";
 import { IconWithFallback } from "../TokenMarket/heading";
-import { knownImageTypes } from "./image";
 import type { InscriptionTab } from "./tabs";
 
 const top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"];
