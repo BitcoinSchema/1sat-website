@@ -201,15 +201,16 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 		const fundingUtxos = await fetchPayUtxos(fundingAddress.value);
 		utxos.value = fundingUtxos;
 
+    const tokenType = (listing as Listing).tick ? "bsv20" : "bsv21";
+    const tickOrId = (listing as Listing).tick || (listing as Listing).id;
+
 		const listingUtxo: TokenUtxo = {
 			satoshis: 1,
 			txid: listing.txid,
 			vout: listing.vout,
 			script: listing.script,
 			amt: (listing as Listing).amt,
-			id: ((listing as Listing).id
-				? (listing as Listing).id
-				: (listing as Listing).tick) as string,
+			id: tickOrId as string,
 			payout: (listing as Listing).payout,
 			price: Number.parseInt((listing as Listing).price),
 			isListing: true,
@@ -253,6 +254,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 		const { tx, spentOutpoints, payChange } =
 			await purchaseOrdTokenListing(config);
 
+
 		setPendingTxs([
 			{
 				rawTx: tx.toHex(),
@@ -263,7 +265,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				numOutputs: tx.outputs.length,
 				spentOutpoints,
 				payChange,
-        returnTo: `/market/bsv20/${((listing as Listing).tick || (listing as Listing).id)}`,
+        returnTo: `/market/${tokenType}/${tickOrId}`,
 			},
 		]);
 
