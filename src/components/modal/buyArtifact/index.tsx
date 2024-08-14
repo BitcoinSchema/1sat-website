@@ -164,16 +164,11 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				},
 			]);
 
+      router.push("/preview");
+
 			onClose();
 		},
-		[
-			listing,
-			price,
-			fundingAddress.value,
-			ordAddress.value,
-			payPk.value,
-			onClose,
-		],
+		[listing, price, fundingAddress.value, ordAddress.value, payPk.value, router, onClose],
 	);
 
 	const buyBsv20 = useCallback(async () => {
