@@ -94,7 +94,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			}
 		}
 
-		const rarityError = validateRarities(collectionRarities || []);
+		const rarityError = validateRarities(collectionRarities || [], collectionQuantity);
 		if (rarityError) {
 			toast.error(rarityError, toastErrorProps);
 			throw new Error(rarityError);
@@ -110,12 +110,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			toast.error("Name is required", toastErrorProps);
 			throw new Error("Name is required");
 		}
-	}, [
-		collectionName,
-		collectionRarities,
-		collectionRoyalties,
-		collectionTraits,
-	]);
+	}, [collectionName, collectionQuantity, collectionRarities, collectionRoyalties, collectionTraits]);
 
 	const resetForm = useCallback(() => {
 		setCollectionCoverImage(null);
@@ -443,6 +438,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			<RarityLabelForm
 				collectionRarities={collectionRarities || []}
 				setCollectionRarities={setCollectionRarities}
+        totalItems={collectionQuantity}
 			/>
 
 			<div className="divider" />
@@ -450,6 +446,7 @@ const InscribeCollection: React.FC<InscribeCollectionProps> = ({
 			<TraitsForm
 				collectionTraits={collectionTraits}
 				setCollectionTraits={setCollectionTraits}
+        totalItems={collectionQuantity}
 			/>
 
 			<div className="divider" />
