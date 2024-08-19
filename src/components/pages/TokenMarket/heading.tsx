@@ -23,7 +23,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { GiPlainCircle } from "react-icons/gi";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
 import { useQuery } from "@tanstack/react-query";
 import type { OrdUtxo } from "@/types/ordinals";

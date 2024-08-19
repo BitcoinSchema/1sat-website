@@ -12,7 +12,7 @@ import React, { type SyntheticEvent, useMemo, useState } from "react";
 import { CheckmarkIcon, LoaderIcon } from "react-hot-toast";
 import { IoMdPricetag } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import ImageWithFallback from "../ImageWithFallback";
 import BuyArtifactModal from "../modal/buyArtifact";
 import Tooltip from "../tooltip";

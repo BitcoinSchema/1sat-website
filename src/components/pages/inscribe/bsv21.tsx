@@ -200,7 +200,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
         utxos,
         initialDistribution: {
           address: ordAddress.value,
-          amt: Number(maxSupply),
+          tokens: Number(maxSupply),
         } as Distribution,
         destinationAddress: ordAddress.value,
       };
@@ -211,8 +211,9 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 
       const { tx, spentOutpoints, payChange } = await deployBsv21Token(config);
 
+      // TODO: When inscribing new BSV21 the token isnt there yet and causes errors
       setPendingTxs([{
-        returnTo: `/market/bsv21/${tx.id('hex')}_0`,
+        returnTo: "/wallet/bsv21", // `/market/bsv21/${tx.id('hex')}_0`,
         rawTx: tx.toHex(),
         size: tx.toBinary().length,
         fee: tx.getFee(),
