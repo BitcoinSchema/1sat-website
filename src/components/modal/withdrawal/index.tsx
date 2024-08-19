@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { CgSpinner } from "react-icons/cg";
-import { toBitcoin, toSatoshi } from "satoshi-bitcoin-ts";
+import { toBitcoin, toSatoshi } from "satoshi-token";
 
 interface DespotModalProps {
 	onClose: () => void;

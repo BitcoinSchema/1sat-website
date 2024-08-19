@@ -36,7 +36,7 @@ import {
 	FaHashtag,
 	FaParachuteBox,
 } from "react-icons/fa6";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
@@ -218,7 +218,7 @@ const Bsv20List = ({
 	useEffect(() => {
 		const fire = async (address: string) => {
 			loadingNextPage.value = FetchStatus.Loading;
-			console.log("Fire", isInView);
+			// console.log("Fire", isInView);
 			if (type === WalletTab.BSV20) {
 				const urlTokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v1`;
 				console.log("Fetching", urlTokens);

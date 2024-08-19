@@ -31,7 +31,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { IoMdWarning } from "react-icons/io";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 interface BuyArtifactModalProps {
 	onClose: () => void;
 	listing: Listing | OrdUtxo;
@@ -144,6 +144,12 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				) as Royalty[];
 				if (royalties) {
 					config.royalties = royalties;
+          for (const royalty of royalties) {
+            if (royalty.type === "paymail") {
+              // TODO: resolve the paymail address, change the type to address
+              
+            }
+          }
 				}
 			}
 
@@ -164,9 +170,8 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 				},
 			]);
 
-      router.push("/preview");
-
 			onClose();
+      router.push("/preview");
 		},
 		[listing, price, fundingAddress.value, ordAddress.value, payPk.value, router, onClose],
 	);

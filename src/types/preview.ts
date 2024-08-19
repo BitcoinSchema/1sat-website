@@ -9,7 +9,7 @@ export type PendingTransaction = {
 	txid: string;
 	spentOutpoints: string[];
   payChange?: Utxo, 
-  tokenChange?: TokenUtxo,
+  tokenChange?: TokenUtxo[],
 	contentType?: string;
 	price?: number;
 	marketFee?: number;

@@ -25,7 +25,7 @@ import toast from "react-hot-toast";
 import { FaChevronLeft } from "react-icons/fa6";
 import { IoMdInformationCircle } from "react-icons/io";
 import { TbClick } from "react-icons/tb";
-import { toSatoshi } from "satoshi-bitcoin-ts";
+import { toSatoshi } from "satoshi-token";
 
 interface NewListingPageProps {
   type: AssetType;

@@ -18,7 +18,7 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { PrivateKey, Script, Utils } from "@bsv/sdk";
 import { type Payment, sendOrdinals, type Utxo, type MAP, type SendOrdinalsConfig, sendUtxos, type SendUtxosConfig, burnOrdinals, type BurnOrdinalsConfig, type BurnMAP } from "js-1sat-ord";

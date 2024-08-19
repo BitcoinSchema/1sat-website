@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 
 const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: string }) => {
     const observers = useRef<Map<string, IntersectionObserver>>(new Map());
@@ -24,9 +24,9 @@ const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: s
     }, []);
 
     useEffect(() => {
-        artifacts.forEach((artifact) => {
-            setVisible(prev => new Map(prev).set(artifact.txid, false));
-        });
+        for (const artifact of artifacts) {
+          setVisible(prev => new Map(prev).set(artifact.txid, false));
+        }
 
         return () => {
             observers.current.forEach(observer => observer.disconnect());
@@ -42,7 +42,7 @@ const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: s
                     return (
                         <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.txid}>
                             <div className={`relative mb-4 break-inside-avoid ${visible.get(artifact.txid) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
-                                <div className={`relative shadow-md bg-[#111] rounded-lg`}>
+                                <div className={"relative shadow-md bg-[#111] rounded-lg"}>
                                     <img
                                         src={`https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`}
                                         alt={`Image ${artifact.txid}`}

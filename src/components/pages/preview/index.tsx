@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { LoaderIcon } from "react-hot-toast";
 import { FaCopy } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import { useCopyToClipboard } from "usehooks-ts";
 
 const PreviewPage = () => {

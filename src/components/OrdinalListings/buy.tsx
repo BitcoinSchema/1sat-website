@@ -3,7 +3,7 @@
 import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal } from "@preact/signals-react";
 import { useCallback } from "react";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import Artifact from "../artifact";
 import BuyArtifactModal from "../modal/buyArtifact";
 

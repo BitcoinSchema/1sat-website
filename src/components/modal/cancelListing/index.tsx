@@ -77,17 +77,18 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     const { tx, spentOutpoints, tokenChange, payChange } = await cancelOrdTokenListings(config);
 
     bsv20Utxos.value = bsv20Utxos.value?.filter((u) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1) || [];
-    bsv20Utxos.value = bsv20Utxos.value?.concat({
-      satoshis: 1,
-      vout: tokenChange.vout,
-      script: tokenChange.script,
-      txid: tokenChange.txid,
-      outpoint: `${tokenChange.txid}_${tokenChange.vout}`,
-      accSats: 0,
-      height: 0,
-      idx: 0,
-      sale: false,
-    } as OrdUtxo) || [];
+    const changeOrdUtxos = tokenChange?.map((tc) => ({
+        satoshis: 1,
+        vout: tc.vout,
+        script: tc.script,
+        txid: tc.txid,
+        outpoint: `${tc.txid}_${tc.vout}`,
+        accSats: 0,
+        height: 0,
+        idx: 0,
+        sale: false,
+      } as OrdUtxo)) || [];
+    bsv20Utxos.value = bsv20Utxos.value?.concat(changeOrdUtxos) || [];
     utxos.value = utxos.value?.filter((u) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1) || [];
     // const cancelTx = new Transaction(1, 0);
     // const cancelInput = new TxIn(

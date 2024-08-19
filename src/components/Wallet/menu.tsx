@@ -42,7 +42,7 @@ import {
   FaUnlock,
 } from "react-icons/fa";
 import { FaCopy, FaWallet } from "react-icons/fa6";
-import { toBitcoin, toSatoshi } from "satoshi-bitcoin-ts";
+import { toBitcoin, toSatoshi } from "satoshi-token";
 import { useCopyToClipboard } from "usehooks-ts";
 import * as http from "../../utils/httpClient";
 import DepositModal from "../modal/deposit";
