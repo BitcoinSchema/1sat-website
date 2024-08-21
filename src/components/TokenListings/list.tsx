@@ -1,7 +1,7 @@
 import { API_HOST, AssetType } from "@/constants";
 import type { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { ReturnTypes, toBitcoin } from "satoshi-token";
 
 const List = async ({ type }: { type: AssetType.BSV20 | AssetType.BSV21 }) => {
 	let listings: BSV20TXO[] = [];
@@ -41,8 +41,8 @@ const List = async ({ type }: { type: AssetType.BSV20 | AssetType.BSV21 }) => {
 							<td className="break-normal text-right w-96">
 								{toBitcoin(
 									listing.price || "0",
-									true
-								).toString()}{" "}
+									ReturnTypes.String,
+								)}{" "}
 								BSV
 							</td>
 						</tr>

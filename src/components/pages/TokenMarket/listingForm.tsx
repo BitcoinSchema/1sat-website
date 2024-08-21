@@ -103,7 +103,7 @@ const ListingForm = ({
 
   const listBsv20 = useCallback(
     async (
-      amt: number,
+      tokens: number,
       utxos: Utxo[],
       inputTokens: BSV20TXO[], //
       paymentPk: PrivateKey,
@@ -119,7 +119,7 @@ const ListingForm = ({
         payAddress,
         price: satoshisPayout,
         ordAddress,
-        amt,
+        tokens,
       }
 
       const additionalPayments = []

@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import { FiLoader } from "react-icons/fi";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { ReturnTypes, toBitcoin } from "satoshi-token";
 import JDenticon from "../JDenticon";
 import { selectedType } from "../Wallet/filter";
 import Artifact, { ArtifactType } from "../artifact";
@@ -139,8 +139,7 @@ const List = ({ term, address, onClick }: Props) => {
 					const collection = listingCollection(listing, collectionData || []);
 					const price = `${toBitcoin(
 						listing?.data?.list?.price || "0",
-						true,
-					).toString()} BSV`;
+					)} BSV`;
 					return (
 						listing && (
 							<tr
