@@ -121,7 +121,7 @@ const TickerHeading = ({
 		//   fundTotal: ticker.fundTotal,
 		//   pendingOps: ticker.pendingOps,
 		// });
-		return toBitcoin(satoshis);
+		return satoshis ? toBitcoin(satoshis) : satoshis;
 	});
 
 	const isPow20 = useMemo(() => {

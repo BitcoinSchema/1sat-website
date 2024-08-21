@@ -21,7 +21,7 @@ export async function POST(
 	const holdersResp = await fetch(`${url}?limit=100`);
 	const holdersJson = ((await holdersResp.json()) || []) as Holder[];
   
-	const holders = holdersJson
+	const holders = holdersJson?.length && holdersJson
 		?.sort((a, b) => parseInt(b.amt) - parseInt(a.amt))
 		.map((h) => ({
 			...h,
