@@ -4,6 +4,7 @@ import {
 	importWalletFromMnemonicStep,
 	mnemonic,
 } from "@/signals/wallet";
+import { setKeys } from "@/signals/wallet/client";
 
 interface Props {}
 
@@ -25,8 +26,9 @@ export function EnterMnemonicStep({}: Props) {
 
 			<MnemonicGrid
 				mode={MnemonicGridMode.Import}
-				onSubmit={({ importedMnemonic }) =>
-					handleMnemonic(importedMnemonic)
+				onSubmit={({ importedMnemonic, keys }) =>
+					// handleMnemonic(importedMnemonic)
+          setKeys(keys)
 				}
 			/>
 		</>

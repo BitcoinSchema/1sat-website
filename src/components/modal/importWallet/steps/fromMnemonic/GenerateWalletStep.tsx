@@ -42,7 +42,7 @@ export function GenerateWalletStep() {
 		return () => {
 			isGeneratingWallet.value = false;
 		};
-	}, []);
+	}, [isGeneratingWallet, mnemonic.value]);
 
 	function handleNext() {
 		importWalletFromMnemonicStep.value =

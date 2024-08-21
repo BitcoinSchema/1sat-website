@@ -1,3 +1,4 @@
+import { createWalletIterations } from '@/signals/wallet';
 import { HD, Mnemonic } from '@bsv/sdk';
 
 export type WalletKeys = {
@@ -31,8 +32,8 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 		let found = false;
 
 		const searchForAddress = (i: number) => {
-			// console.log(`Searching for ord address with child key ${i}.`);
-
+			console.log(`Searching for ord address with child key ${i}.`);
+      createWalletIterations.value = i;
 			if (new Date().getTime() - ts > timeoutMs && !found) {
 				reject(
 					new Error(
