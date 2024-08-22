@@ -114,13 +114,13 @@ const TickerHeading = ({
 			minFee - Number(ticker.fundTotal),
 			(ticker.pendingOps || 0) * 1000 - Number.parseInt(ticker.fundBalance),
 		);
-		// console.log({
-		//   satoshis,
-		//   minFee,
-		//   fundBalance: ticker.fundBalance,
-		//   fundTotal: ticker.fundTotal,
-		//   pendingOps: ticker.pendingOps,
-		// });
+		console.log({
+		  satoshis,
+		  minFee,
+		  fundBalance: ticker.fundBalance,
+		  fundTotal: ticker.fundTotal,
+		  pendingOps: ticker.pendingOps,
+		});
 		return satoshis ? toBitcoin(satoshis) : satoshis;
 	});
 
