@@ -1,5 +1,5 @@
-import { createWalletIterations } from '@/signals/wallet';
-import { HD, Mnemonic } from '@bsv/sdk';
+import { createWalletIterations, identityPk } from "@/signals/wallet";
+import { HD, Mnemonic } from "@bsv/sdk";
 
 export type WalletKeys = {
 	ordPk: string;
@@ -11,16 +11,51 @@ export type WalletKeys = {
 	identityAddressPath?: number | string;
 };
 
+export const getKeysFromMnemonicAndPaths = (
+	mnemonic: string,
+	paths: {
+		changeAddressPath: string;
+		ordAddressPath: string;
+		identityAddressPath?: string;
+	},
+): WalletKeys => {
+	const seed = Mnemonic.fromString(mnemonic).toSeed();
+	const masterNode = HD.fromSeed(seed);
+
+  const changeAddressPath = paths.changeAddressPath.startsWith('m/') ? paths.changeAddressPath : `m/${paths.changeAddressPath}`;
+	const payPrivKey = masterNode.derive(changeAddressPath);
+	const payPk = payPrivKey.privKey.toWif();
+
+  const ordAddressPath = paths.ordAddressPath.startsWith('m/') ? paths.ordAddressPath : `m/${paths.ordAddressPath}`;
+	const ordPrivKey = masterNode.derive(ordAddressPath);
+	const ordPk = ordPrivKey.privKey.toWif();
+
+	// if (paths.identityAddressPath) {
+	//   const identityPrivKey = paths.identityAddressPath
+	//   ? masterNode.derive(`m/${paths.identityAddressPath}`)
+	//   : null;
+	//   const identityPk = identityPrivKey ? identityPrivKey.privKey.toWif() : null;
+	// }
+
+	return {
+		mnemonic,
+		payPk,
+		ordPk,
+		changeAddressPath: paths.changeAddressPath,
+		ordAddressPath: paths.ordAddressPath,
+	} as WalletKeys;
+};
+
 export const findKeysFromMnemonic = async (mnemonic: string) => {
 	return new Promise<WalletKeys>((resolve, reject) => {
 		const seed = Mnemonic.fromString(mnemonic).toSeed();
-  		const masterNode = HD.fromSeed(seed);
-		
+		const masterNode = HD.fromSeed(seed);
+
 		// const xprivWasm = ExtendedPrivateKey.from_mnemonic(
 		// 	Buffer.from(mnemonic, "utf8")
 		// );
 
-		const payPrivKey = masterNode.derive('m/0');
+		const payPrivKey = masterNode.derive("m/0");
 		const payPk = payPrivKey.privKey.toWif();
 
 		let ordPk;
@@ -33,12 +68,10 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 
 		const searchForAddress = (i: number) => {
 			console.log(`Searching for ord address with child key ${i}.`);
-      createWalletIterations.value = i;
+			createWalletIterations.value = i;
 			if (new Date().getTime() - ts > timeoutMs && !found) {
 				reject(
-					new Error(
-						"Timeout while searching for the desired address prefix."
-					)
+					new Error("Timeout while searching for the desired address prefix."),
 				);
 				return;
 			}
@@ -49,9 +82,7 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 			if (ordAddress.startsWith("1s")) {
 				ordPk = ordPrivKey.privKey.toWif();
 				found = true;
-				console.log(
-					`Ord address found! Using child key ${i} for ordinals.`
-				);
+				console.log(`Ord address found! Using child key ${i} for ordinals.`);
 
 				resolve({
 					mnemonic,
@@ -63,7 +94,7 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 
 				return;
 			}
-      setTimeout(() => searchForAddress(i + 1), 0);
+			setTimeout(() => searchForAddress(i + 1), 0);
 		};
 
 		if (!found) {

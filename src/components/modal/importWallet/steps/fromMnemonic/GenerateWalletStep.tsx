@@ -22,17 +22,19 @@ export function GenerateWalletStep() {
 
 			isGeneratingWallet.value = true;
 
-			const keys = await findKeysFromMnemonic(mnemonic.value);
+			// const keys = await findKeysFromMnemonic(mnemonic.value);
 
-			if (keys) {
-				setKeys({
-					payPk: keys.payPk,
-					ordPk: keys.ordPk,
-					mnemonic: mnemonic.value,
-					ordAddressPath: keys.ordAddressPath,
-					changeAddressPath: keys.changeAddressPath,
-				});
-			}
+			// if (keys) {
+			// 	setKeys({
+			// 		payPk: keys.payPk,
+			// 		ordPk: keys.ordPk,
+			// 		mnemonic: mnemonic.value,
+			// 		ordAddressPath: keys.ordAddressPath,
+			// 		changeAddressPath: keys.changeAddressPath,
+			// 	});
+			// }
+
+      // TODO: Kick off import utxos process for ordinals and payment utxos
 
 			isGeneratingWallet.value = false;
 		}

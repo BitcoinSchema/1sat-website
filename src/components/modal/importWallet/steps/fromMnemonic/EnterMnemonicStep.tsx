@@ -5,17 +5,20 @@ import {
 	mnemonic,
 } from "@/signals/wallet";
 import { setKeys } from "@/signals/wallet/client";
+import type { WalletKeys } from "@/utils/keys";
 
 interface Props {}
 
 export function EnterMnemonicStep({}: Props) {
-	const handleMnemonic = (importedMnemonic?: string) => {
-		if (!importedMnemonic) {
+	const handleMnemonic = (keys?: WalletKeys) => {
+		if (!keys || ! keys.mnemonic) {
+      console.log("No keys or mnemonic")
 			return;
 		}
+console.log("HERE HANDLE MNEMOINIC")
+		mnemonic.value = keys.mnemonic;
 
-		mnemonic.value = importedMnemonic;
-
+    setKeys(keys);
 		importWalletFromMnemonicStep.value =
 			ImportWalletFromMnemonicStep.GenerateWallet;
 	};
@@ -26,9 +29,8 @@ export function EnterMnemonicStep({}: Props) {
 
 			<MnemonicGrid
 				mode={MnemonicGridMode.Import}
-				onSubmit={({ importedMnemonic, keys }) =>
-					// handleMnemonic(importedMnemonic)
-          setKeys(keys)
+				onSubmit={({ keys }) =>
+					handleMnemonic(keys)
 				}
 			/>
 		</>

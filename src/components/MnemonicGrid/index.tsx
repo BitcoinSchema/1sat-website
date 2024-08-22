@@ -8,7 +8,11 @@ import { RiRestartLine } from "react-icons/ri";
 import Dropdown from "../dropdown/dropdown";
 import toast from "react-hot-toast";
 import { toastErrorProps } from "@/constants";
-import { findKeysFromMnemonic, type WalletKeys } from "@/utils/keys";
+import {
+	findKeysFromMnemonic,
+	getKeysFromMnemonicAndPaths,
+	type WalletKeys,
+} from "@/utils/keys";
 import { createWalletIterations, ordAddressPath } from "@/signals/wallet";
 import { FaSpinner } from "react-icons/fa";
 import { CgSpinner } from "react-icons/cg";
@@ -167,7 +171,12 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		setInputMnemonic(words);
 	};
 
-	const [pendingKeys, setPendingKeys] = useState<WalletKeys>();
+	const [pendingPaths, setPendingPaths] = useState<{
+		changeAddressPath: string;
+		ordAddressPath: string;
+		identityAddressPath?: string;
+	}>();
+
 	const [processing, setProcessing] = useState<boolean>(false);
 
 	useEffect(() => {
@@ -193,15 +202,15 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		};
 
 		if (
-      !useCustomPaths &&
+			!useCustomPaths &&
 			!processing &&
-			!pendingKeys &&
+			!pendingPaths &&
 			mode === MnemonicGridMode.Import &&
 			inputMnemonic.every((word) => !!word)
 		) {
 			processMnemonic();
 		}
-	}, [inputMnemonic, mode, pendingKeys, processing, useCustomPaths]);
+	}, [inputMnemonic, mode, pendingPaths, processing, useCustomPaths]);
 
 	return (
 		<div className="transition my-4 mx-auto rounded w-full text-yellow-500">
@@ -260,7 +269,8 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 					<button
 						type="button"
 						className="btn btn-primary"
-						onClick={() => onSubmit({ verified: true, keys: pendingKeys })}
+						// Add some validation on pendingKeys
+            onClick={() => onSubmit({ verified: true })}
 					>
 						Next
 					</button>
@@ -281,8 +291,8 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 											<CgSpinner className="animate-spin mx-2" />{" "}
 											{createWalletIterations.value}
 										</>
-									) : pendingKeys ? (
-										`m/0/${pendingKeys.ordAddressPath}`
+									) : pendingPaths ? (
+										`m/0/${pendingPaths.ordAddressPath}`
 									) : (
 										""
 									)}
@@ -303,14 +313,31 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 						<div>
 							<div className="mb-2">
 								<Input
-									placeholder={`Payment Derivation Path ${pendingKeys?.changeAddressPath || "m/0"}`}
-									value={pendingKeys?.changeAddressPath}
+									placeholder={`Payment Derivation Path ${pendingPaths?.changeAddressPath || "m/0"}`}
+									value={pendingPaths?.changeAddressPath}
+                  onChange={(e) => {
+                    const changeAddressPath = e.target.value;
+                    if (!changeAddressPath) return;
+                    setPendingPaths({
+                      changeAddressPath: changeAddressPath as string,
+                      ordAddressPath: pendingPaths?.ordAddressPath as string,
+                    });
+                  }}
 								/>
 							</div>
 							<div>
 								<Input
 									placeholder={`Ordinals Derivation Path: ${ordAddressPath.value || "m/0/x"}`}
-									value={pendingKeys?.ordAddressPath}
+									value={pendingPaths?.ordAddressPath}
+									onChange={(e) => {
+										const ordAddressPath = e.target.value;
+										if (!ordAddressPath) return;
+										setPendingPaths({
+											changeAddressPath:
+												pendingPaths?.changeAddressPath as string,
+											ordAddressPath: ordAddressPath as string,
+										});
+									}}
 								/>
 							</div>
 						</div>
@@ -320,11 +347,17 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 							type="button"
 							disabled={processing || inputMnemonic.some((word) => !word)}
 							className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-							onClick={() =>
-								onSubmit({
-									importedMnemonic: inputMnemonic.join(" "),
-								})
-							}
+							// Add some validation on pendingKeys
+							onClick={() => {
+                console.log({ mnemonic, pendingPaths, inputMnemonic })
+								if (!inputMnemonic) return;
+								if (!pendingPaths) return;
+								const keys = getKeysFromMnemonicAndPaths(
+									inputMnemonic.join(" "),
+									pendingPaths,
+								);
+								onSubmit({ keys });
+							}}
 						>
 							Next
 						</button>
