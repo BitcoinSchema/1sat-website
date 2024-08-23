@@ -107,7 +107,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			setShuffledWords(newShuffledWords);
 
 			// check if we're done
-			if (newClickedWords.length == 11) {
+			if (newClickedWords.length === 11) {
 				// "click" the last word
 				const lastWord = head(
 					shuffledWords.filter((w) => !newClickedWords.includes(w)),
@@ -157,7 +157,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		};
 
 	const handlePasteMnemonic = (pastedData: string) => {
-		const words = pastedData.split(" ");
+		const words = pastedData.split(" ").map((word) => word.trim());
 
 		if (words.length !== 12) {
 			return;
@@ -197,7 +197,10 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 				}
 				console.log("Found ord path", ordAddressPath);
 				setProcessing(false);
-				setPendingKeys(keys);
+				setPendingPaths({
+          ordAddressPath: keys.ordAddressPath as string,
+          changeAddressPath: keys.changeAddressPath as string,
+        });
 			});
 		};
 
@@ -270,7 +273,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 						type="button"
 						className="btn btn-primary"
 						// Add some validation on pendingKeys
-            onClick={() => onSubmit({ verified: true })}
+						onClick={() => onSubmit({ verified: true })}
 					>
 						Next
 					</button>
@@ -310,19 +313,45 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 						</div>
 					</div>
 					{useCustomPaths && (
+						<div className="flex items-center mb-2">
+							<button
+								type="button"
+                className="btn btn-sm btn-primary mr-2"
+								onClick={() => {
+                  setPendingPaths({
+                    changeAddressPath: DEFAULT_RELAYX_WALLET_PATH,
+                    ordAddressPath: DEFAULT_RELAYX_ORD_PATH,
+                    identityAddressPath: DEFAULT_RELAYX_ORD_PATH
+                  });
+								}}
+							>
+								RelayX
+							</button>
+							<button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {}}>
+								Yours
+							</button>
+              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths(undefined);
+                toggleCustomPaths();
+              }}>
+                1Sat
+              </button>
+						</div>
+					)}
+					{useCustomPaths && (
 						<div>
 							<div className="mb-2">
 								<Input
 									placeholder={`Payment Derivation Path ${pendingPaths?.changeAddressPath || "m/0"}`}
 									value={pendingPaths?.changeAddressPath}
-                  onChange={(e) => {
-                    const changeAddressPath = e.target.value;
-                    if (!changeAddressPath) return;
-                    setPendingPaths({
-                      changeAddressPath: changeAddressPath as string,
-                      ordAddressPath: pendingPaths?.ordAddressPath as string,
-                    });
-                  }}
+									onChange={(e) => {
+										const changeAddressPath = e.target.value;
+										if (!changeAddressPath) return;
+										setPendingPaths({
+											changeAddressPath: changeAddressPath as string,
+											ordAddressPath: pendingPaths?.ordAddressPath as string,
+										});
+									}}
 								/>
 							</div>
 							<div>
@@ -349,7 +378,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 							className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
 							// Add some validation on pendingKeys
 							onClick={() => {
-                console.log({ mnemonic, pendingPaths, inputMnemonic })
+								console.log({ mnemonic, pendingPaths, inputMnemonic });
 								if (!inputMnemonic) return;
 								if (!pendingPaths) return;
 								const keys = getKeysFromMnemonicAndPaths(
@@ -383,3 +412,10 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 };
 
 export default MnemonicGrid;
+
+// yours
+export const DEFAULT_WALLET_PATH = "m/44'/236'/0'/1/0";
+export const DEFAULT_ORD_PATH = "m/44'/236'/1'/0/0";
+// relayx
+export const DEFAULT_RELAYX_ORD_PATH = "m/44'/236'/0'/2/0";
+export const DEFAULT_RELAYX_WALLET_PATH = "m/44'/236'/0'/0/0";

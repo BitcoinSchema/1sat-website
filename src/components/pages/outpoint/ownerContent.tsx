@@ -41,17 +41,21 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 		return toBase58Check(pubkeyHash)
 	}, [artifact]);
 
-  console.log({address, artifact, ordAddress: ordAddress.value})
 	const isUtxo = computed(() => {
-		return !!(
-			artifact.origin === null &&
+    return !!(
+      artifact.origin === null &&
 			artifact.data === null &&
 			artifact.spend === "" &&
 			artifact.satoshis > 1 &&
 			address === ordAddress.value
 		);
 	});
-
+  
+  const isRun = computed(() => {
+    return !!artifact.origin?.outpoint && !artifact.origin.data && artifact.satoshis === 1
+  });
+  
+  console.log({address, artifact, ordAddress: ordAddress.value, isUtxo: isUtxo.value, isRun: isRun.value})
 	const transferOrdinal = useCallback(
 		async (
 			e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -241,6 +245,8 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 		[artifact, recover, fundingAddress.value],
 	);
 
+  console.log("script", Buffer.from("dqkUU0wSTSHRRED/Yg1SeW4PDsSSHouIrA==", 'base64').toString('hex'))
+
 	return (
 		<div>
 			<div className="flex items-center">
@@ -252,7 +258,6 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					</div>
 				</div>
 			</div>
-
 			{isUtxo.value ? (
 				<div className="bg-warning text-warning-content rounded p-4">
 					<p>
@@ -274,9 +279,9 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				</div>
 			) : (
 				<button
-					disabled={!!artifact.data?.list}
+					disabled={!artifact.data || !!artifact.data?.list}
 					type="button"
-					className="btn disabled:text-[#555] my-2"
+					className="btn disabled:text-[#555] disabled:cursor-default my-2"
 					onClick={(e) => {
 						// if its a bsv20, transfer with a different function
 						if (artifact.data?.bsv20) {
@@ -340,7 +345,8 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 				</button>
 			)}
 
-      {!isUtxo.value && (<button type="button" className="btn btn-error my-2 ml-2" onClick={(e) => {
+
+      {!isUtxo.value && (<button type="button" disabled={isRun.value} className="btn btn-error my-2 ml-2 disabled:text-[#555] disabled:cursor-default" onClick={(e) => {
         	if (artifact.data?.bsv20) {
             alert("Burn BSV20 tokens from your wallet page");
             router.push(`/wallet/${artifact.data.bsv20.id ? "bsv21" : "bsv20"}`);
