@@ -27,7 +27,7 @@ export const getKeysFromMnemonicAndPaths = (
 	const payPk = payPrivKey.privKey.toWif();
 
   const ordAddressPath = paths.ordAddressPath.startsWith('m/') ? paths.ordAddressPath : `m/${paths.ordAddressPath}`;
-	const ordPrivKey = masterNode.derive(ordAddressPath);
+	const ordPrivKey = paths.ordAddressPath === "m" ? masterNode : masterNode.derive(ordAddressPath);
 	const ordPk = ordPrivKey.privKey.toWif();
 
 	// if (paths.identityAddressPath) {

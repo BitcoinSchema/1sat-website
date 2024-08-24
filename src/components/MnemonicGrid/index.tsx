@@ -312,7 +312,7 @@ index}`}
 											{createWalletIterations.value}
 										</>
 									) : pendingPaths ? (
-										`m/0/${pendingPaths.ordAddressPath}`
+										pendingPaths.ordAddressPath
 									) : (
 										""
 									)}
@@ -331,6 +331,12 @@ index}`}
 					</div>
 					{useCustomPaths && (
 						<div className="flex items-center mb-2">
+              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths(undefined);
+                toggleCustomPaths();
+              }}>
+                1Sat
+              </button>
 							<button
 								type="button"
                 className="btn btn-sm btn-primary mr-2"
@@ -363,18 +369,12 @@ index}`}
 							</button>
               <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
                 setPendingPaths({
-                  changeAddressPath:  AYM_WALLET_PATH,
+                  changeAddressPath: AYM_WALLET_PATH,
                   ordAddressPath: AYM_ORD_PATH,
                 });
               }}>
 								Aym
 							</button>
-              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
-                setPendingPaths(undefined);
-                toggleCustomPaths();
-              }}>
-                1Sat
-              </button>
 						</div>
 					)}
 					{useCustomPaths && (
