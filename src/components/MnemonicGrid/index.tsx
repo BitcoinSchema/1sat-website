@@ -210,7 +210,6 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			});
 		};
 
-    console.log({ ready, useCustomPaths, processing, pendingPaths, mode, inputMnemonic });
 		if (
       ready &&
 			!useCustomPaths &&
@@ -337,16 +336,38 @@ index}`}
                 className="btn btn-sm btn-primary mr-2"
 								onClick={() => {
                   setPendingPaths({
-                    changeAddressPath: DEFAULT_RELAYX_WALLET_PATH,
-                    ordAddressPath: DEFAULT_RELAYX_ORD_PATH,
-                    identityAddressPath: DEFAULT_RELAYX_ORD_PATH
+                    changeAddressPath: RELAYX_WALLET_PATH,
+                    ordAddressPath: RELAYX_ORD_PATH,
+                    identityAddressPath: RELAYX_ID_PATH
                   });
 								}}
 							>
 								RelayX
 							</button>
-							<button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {}}>
+							<button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths({
+                  changeAddressPath:  YOURS_WALLET_PATH,
+                  ordAddressPath: YOURS_ORD_PATH,
+                  identityAddressPath: YOURS_ID_PATH
+                });
+              }}>
 								Yours
+							</button>
+              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths({
+                  changeAddressPath:  TWETCH_WALLET_PATH,
+                  ordAddressPath: TWETCH_ORD_PATH,
+                });
+              }}>
+								Twetch
+							</button>
+              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths({
+                  changeAddressPath:  AYM_WALLET_PATH,
+                  ordAddressPath: AYM_ORD_PATH,
+                });
+              }}>
+								Aym
 							</button>
               <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
                 setPendingPaths(undefined);
@@ -440,8 +461,18 @@ index}`}
 export default MnemonicGrid;
 
 // yours
-export const DEFAULT_WALLET_PATH = "m/44'/236'/0'/1/0";
-export const DEFAULT_ORD_PATH = "m/44'/236'/1'/0/0";
+export const YOURS_WALLET_PATH = "m/44'/236'/0'/1/0";
+// TODO: Is this one correct?
+export const YOURS_ID_PATH = "m/0'/236'/0'/0/0";
+export const YOURS_ORD_PATH = "m/44'/236'/1'/0/0";
 // relayx
-export const DEFAULT_RELAYX_ORD_PATH = "m/44'/236'/0'/2/0";
-export const DEFAULT_RELAYX_WALLET_PATH = "m/44'/236'/0'/0/0";
+export const RELAYX_ORD_PATH = "m/44'/236'/0'/2/0";
+export const RELAYX_ID_PATH = YOURS_ID_PATH;
+export const RELAYX_WALLET_PATH = YOURS_WALLET_PATH;
+export const SWEEP_PATH = "m/44'/236'/0'/0/0";
+
+export const TWETCH_WALLET_PATH = 'm/0/0';
+export const TWETCH_ORD_PATH = YOURS_ORD_PATH;
+
+export const AYM_WALLET_PATH = 'm/0/0';
+export const AYM_ORD_PATH = 'm';
