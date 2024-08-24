@@ -14,7 +14,6 @@ import {
 	type WalletKeys,
 } from "@/utils/keys";
 import { createWalletIterations, ordAddressPath } from "@/signals/wallet";
-import { FaSpinner } from "react-icons/fa";
 import { CgSpinner } from "react-icons/cg";
 import { useSignals } from "@preact/signals-react/runtime";
 import { Switch } from "@tremor/react";
@@ -55,9 +54,16 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 	const [inputValue, setInputValue] = useState("");
 	const [suggestedWords, setSuggestedWords] = useState<string[]>([]);
 	const [useCustomPaths, setUseCustomPaths] = useState<boolean>(false);
+  const [ready, setReady] = useState<boolean>(false);
 
 	const toggleCustomPaths = useCallback(() => {
+    if (!useCustomPaths) {
+      setReady(true);
+    } else {
+      setReady(false);
+    }
 		setUseCustomPaths(!useCustomPaths);
+    
 	}, [useCustomPaths]);
 
 	const shuffle = useCallback(() => {
@@ -180,7 +186,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 	const [processing, setProcessing] = useState<boolean>(false);
 
 	useEffect(() => {
-		const processMnemonic = () => {
+		const processMnemonic = async () => {
 			const phrase = inputMnemonic.join(" ");
 			if (inputMnemonic.some((word) => !word)) {
 				console.log("Invalid mnemonic length");
@@ -188,7 +194,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			}
 			console.log("Processing mnemonic", inputMnemonic);
 			setProcessing(true);
-			findKeysFromMnemonic(phrase).then((keys) => {
+			await findKeysFromMnemonic(phrase).then((keys) => {
 				const { ordAddressPath } = keys;
 				if (!ordAddressPath) {
 					console.log("Invalid mnemonic");
@@ -204,25 +210,29 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			});
 		};
 
+    console.log({ ready, useCustomPaths, processing, pendingPaths, mode, inputMnemonic });
 		if (
+      ready &&
 			!useCustomPaths &&
 			!processing &&
 			!pendingPaths &&
 			mode === MnemonicGridMode.Import &&
 			inputMnemonic.every((word) => !!word)
 		) {
+      console.log("Processing mnemonic");
 			processMnemonic();
 		}
-	}, [inputMnemonic, mode, pendingPaths, processing, useCustomPaths]);
+	}, [inputMnemonic, mode, ready, pendingPaths, processing, useCustomPaths]);
 
 	return (
-		<div className="transition my-4 mx-auto rounded w-full text-yellow-500">
+		<div className="transition mt-4 mx-auto rounded w-full text-yellow-500">
 			<div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
 				{mode === MnemonicGridMode.Import && (
 					<>
 						{inputMnemonic.map((word, index) => (
 							<Dropdown
-								key={`mnemonic-word-${index}`}
+								key={`mnemonic-word-${// biome-ignore lint/suspicious/noArrayIndexKey: prevent redraw on change
+index}`}
 								items={bip39words}
 								selectedItem={word}
 								onChange={handleSelectInputMnemonicWord(index)}
@@ -237,8 +247,8 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 					: mnemonic?.split(" ")
 				)?.map((w, i) => {
 					return (
-						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 						<div
+							// biome-ignore lint/suspicious/noArrayIndexKey: prevent redraw on change
 							key={i}
 							className={`select-none inline-flex p-2 rounded bg-[#1a1a1a] ${
 								mode === MnemonicGridMode.Prove
@@ -252,6 +262,12 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 									? () => handleClick(w)
 									: undefined
 							}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  mode === MnemonicGridMode.Prove
+									? () => handleClick(w)
+									: undefined                }
+              }}
 						>
 							{mode !== MnemonicGridMode.Prove && (
 								<span className={"text-[#444] mr-4"}>{i + 1}</span>
@@ -268,12 +284,14 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 				})}
 			</div>
 			{mode === MnemonicGridMode.View && (
-				<div className="w-full flex flex-col items-end my-8">
+				<div className="w-full flex flex-col items-end mt-8 mb-2">
 					<button
 						type="button"
 						className="btn btn-primary"
 						// Add some validation on pendingKeys
-						onClick={() => onSubmit({ verified: true })}
+						onClick={() => {
+              onSubmit({ verified: true })
+            }}
 					>
 						Next
 					</button>
@@ -287,7 +305,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 								<div className="text-sm text-[#555]">Payment Path: m/0</div>
 							)}
 							{!useCustomPaths && (
-								<div className="text-sm text-[#555]">
+								<div className="text-sm text-[#555] flex items-center">
 									Ordinals Path:{" "}
 									{processing ? (
 										<>
@@ -371,7 +389,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 							</div>
 						</div>
 					)}
-					<div className="w-full flex flex-col items-end my-8">
+					<div className="w-full flex flex-col items-end mt-8">
 						<button
 							type="button"
 							disabled={processing || inputMnemonic.some((word) => !word)}
@@ -380,7 +398,15 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 							onClick={() => {
 								console.log({ mnemonic, pendingPaths, inputMnemonic });
 								if (!inputMnemonic) return;
+                if (!useCustomPaths) {
+                  if (!ready) {
+                    setReady(true);
+                    return
+                  }
+                  console.log("Step 2");
+                }
 								if (!pendingPaths) return;
+       
 								const keys = getKeysFromMnemonicAndPaths(
 									inputMnemonic.join(" "),
 									pendingPaths,
