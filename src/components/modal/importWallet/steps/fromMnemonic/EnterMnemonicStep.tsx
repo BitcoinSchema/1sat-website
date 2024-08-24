@@ -7,9 +7,7 @@ import {
 import { setKeys } from "@/signals/wallet/client";
 import type { WalletKeys } from "@/utils/keys";
 
-interface Props {}
-
-export function EnterMnemonicStep({}: Props) {
+export function EnterMnemonicStep() {
 	const handleMnemonic = (keys?: WalletKeys) => {
 		if (!keys || ! keys.mnemonic) {
       console.log("No keys or mnemonic")
