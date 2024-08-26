@@ -8,6 +8,7 @@ import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
 import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { oneSatBroadcaster } from "js-1sat-ord";
 import { head } from "lodash";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -56,21 +57,16 @@ const PreviewPage = () => {
 			return;
 		}
 		setBroadcastStatus(FetchStatus.Loading);
-		const rawtx = Buffer.from(tx.rawTx, "hex").toString("base64");
+		const transaction = Transaction.fromHex(tx.rawTx);
 		try {
-			const { promise } = http.customFetch<string>(`${API_HOST}/api/tx`, {
-				method: "POST",
-				body: JSON.stringify({
-					rawtx,
-				}),
-			});
-			await promise;
+      const { txid } = await transaction.broadcast(oneSatBroadcaster());
+      console.log("Broadcasted", {txid})
 			setBroadcastStatus(FetchStatus.Success);
 
 			toast.success("Transaction broadcasted.", toastProps);
 
 			const returnTo = pendingTx.value?.returnTo;
-			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== tx.txid) || []);
+			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== txid) || []);
 
 			utxos.value = (utxos.value || []).filter(
 				(u) => !tx.spentOutpoints.includes(`${u.txid}_${u.vout}`),

@@ -12,14 +12,13 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
-import * as http from "@/utils/httpClient";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { setPendingTxs } from "@/signals/wallet/client";
-import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, Payment, TokenType, type Utxo } from "js-1sat-ord";
-import { PrivateKey } from "@bsv/sdk";
+import { cancelOrdListings, type CancelOrdListingsConfig, cancelOrdTokenListings, type CancelOrdTokenListingsConfig, oneSatBroadcaster, TokenType, type Utxo } from "js-1sat-ord";
+import { PrivateKey, type Transaction } from "@bsv/sdk";
 import type { OrdUtxo } from "@/types/ordinals";
 
 interface CancelListingModalProps {
@@ -255,7 +254,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
     setPendingTxs([pendingTx]);
 
     console.log("pending tx", pendingTx);
-    await broadcast(pendingTx);
+    await broadcast(tx);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
     onCancelled(newOutpoint);
@@ -423,7 +422,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
     setPendingTxs([pendingTx]);
     console.log("pending tx", pendingTx);
-    await broadcast(pendingTx);
+    await broadcast(tx);
     toast.success("Listing canceled.", toastProps);
     cancelling.value = false;
     const newOutpoint = `${pendingTx.txid}_0`;
@@ -476,24 +475,12 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
 export default CancelListingModal;
 
-export const broadcast = async ({
-  rawTx,
-  txid,
-}: Partial<PendingTransaction>) => {
-  if (!rawTx || !txid) {
+export const broadcast = async (tx: Transaction) => {
+  if (!tx) {
     return;
   }
-  const rawtx = Buffer.from(rawTx, "hex").toString("base64");
   try {
-
-    const { promise } = http.customFetch(`${API_HOST}/api/tx`, {
-      method: "POST",
-      body: JSON.stringify({
-        rawtx,
-      }),
-    });
-    await promise;
-    
+    const { txid } = await tx.broadcast(oneSatBroadcaster());
     toast.success("Transaction broadcasted.", toastProps);
     setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== txid) || []);
    } catch (e) {
