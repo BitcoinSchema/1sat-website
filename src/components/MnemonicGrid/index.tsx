@@ -9,6 +9,7 @@ import Dropdown from "../dropdown/dropdown";
 import toast from "react-hot-toast";
 import { toastErrorProps } from "@/constants";
 import {
+  derivePathFromMnemonic,
 	findKeysFromMnemonic,
 	getKeysFromMnemonicAndPaths,
 	type WalletKeys,
@@ -18,6 +19,8 @@ import { CgSpinner } from "react-icons/cg";
 import { useSignals } from "@preact/signals-react/runtime";
 import { Switch } from "@tremor/react";
 import { Input } from "../ui/input";
+import { sweepUtxos } from "@/utils/sweep";
+import { PrivateKey } from "@bsv/sdk";
 
 export type MnemonicResult = {
 	importedMnemonic?: string;
@@ -416,7 +419,7 @@ index}`}
 							disabled={processing || inputMnemonic.some((word) => !word)}
 							className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
 							// Add some validation on pendingKeys
-							onClick={() => {
+							onClick={async () => {
 								console.log({ mnemonic, pendingPaths, inputMnemonic });
 								if (!inputMnemonic) return;
                 if (!useCustomPaths) {
@@ -432,6 +435,17 @@ index}`}
 									inputMnemonic.join(" "),
 									pendingPaths,
 								);
+                if (keys.mnemonic && keys.changeAddressPath === RELAYX_WALLET_PATH) {
+                  const sweepKey = derivePathFromMnemonic(keys.mnemonic, RELAYX_SWEEP_PATH);
+                  const sweepAddress = sweepKey.toAddress()
+                  const payAddress = PrivateKey.fromWif(keys.payPk).toAddress();
+                  try {
+                    const amount = await sweepUtxos(sweepKey, sweepAddress, payAddress);
+                    toast.success(`Swept ${amount} BSV to ${payAddress}`);
+                  } catch (e) {
+                    console.log("Error sweeping utxos", e);
+                  }
+                }
 								onSubmit({ keys });
 							}}
 						>
@@ -469,7 +483,7 @@ export const YOURS_ORD_PATH = "m/44'/236'/1'/0/0";
 export const RELAYX_ORD_PATH = "m/44'/236'/0'/2/0";
 export const RELAYX_ID_PATH = YOURS_ID_PATH;
 export const RELAYX_WALLET_PATH = YOURS_WALLET_PATH;
-export const SWEEP_PATH = "m/44'/236'/0'/0/0";
+export const RELAYX_SWEEP_PATH = "m/44'/236'/0'/0/0";
 
 export const TWETCH_WALLET_PATH = 'm/0/0';
 export const TWETCH_ORD_PATH = YOURS_ORD_PATH;

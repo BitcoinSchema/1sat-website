@@ -1,5 +1,5 @@
 import { createWalletIterations, identityPk } from "@/signals/wallet";
-import { HD, Mnemonic } from "@bsv/sdk";
+import { HD, Mnemonic, type PrivateKey } from "@bsv/sdk";
 
 export type WalletKeys = {
 	ordPk: string;
@@ -10,6 +10,16 @@ export type WalletKeys = {
 	identityPk?: string;
 	identityAddressPath?: number | string;
 };
+
+export const derivePathFromMnemonic = ( 
+  mnemonic: string,
+  path: string,
+): PrivateKey => {
+  const seed = Mnemonic.fromString(mnemonic).toSeed();
+  const masterNode = HD.fromSeed(seed);
+  const privKey = masterNode.derive(path);
+  return privKey.privKey;
+}
 
 export const getKeysFromMnemonicAndPaths = (
 	mnemonic: string,
@@ -30,20 +40,28 @@ export const getKeysFromMnemonicAndPaths = (
 	const ordPrivKey = paths.ordAddressPath === "m" ? masterNode : masterNode.derive(ordAddressPath);
 	const ordPk = ordPrivKey.privKey.toWif();
 
-	// if (paths.identityAddressPath) {
-	//   const identityPrivKey = paths.identityAddressPath
-	//   ? masterNode.derive(`m/${paths.identityAddressPath}`)
-	//   : null;
-	//   const identityPk = identityPrivKey ? identityPrivKey.privKey.toWif() : null;
-	// }
+  let identityPk: string | null = null;
+	if (paths.identityAddressPath) {
+	  const identityPrivKey = paths.identityAddressPath
+	  ? masterNode.derive(`m/${paths.identityAddressPath}`)
+	  : null;
+	  identityPk = identityPrivKey ? identityPrivKey.privKey.toWif() : null;
+	}
 
-	return {
+	const keys = {
 		mnemonic,
 		payPk,
 		ordPk,
 		changeAddressPath: paths.changeAddressPath,
 		ordAddressPath: paths.ordAddressPath,
 	} as WalletKeys;
+
+  if (identityPk) {
+    keys.identityPk = identityPk;
+    keys.identityAddressPath = paths.identityAddressPath;
+  }
+
+  return keys;
 };
 
 export const findKeysFromMnemonic = async (mnemonic: string) => {
