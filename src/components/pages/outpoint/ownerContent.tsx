@@ -287,6 +287,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 							<div className="modal-action">
 								<button
 									type="button"
+                  disabled={!!artifact.spend && artifact.spend !== ""}
 									className="btn"
 									onClick={(e) => {
 										recoverUtxo(e);
@@ -298,7 +299,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 						</div>
 					) : (
 						<button
-							disabled={!!artifact.data?.list}
+							disabled={!!artifact.data?.list && (!!artifact.spend && artifact.spend !== "")}
 							type="button"
 							className="btn disabled:text-[#555] my-2"
 							onClick={(e) => {
@@ -368,6 +369,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 					{!isUtxo.value && (
 						<button
 							type="button"
+              disabled={!!artifact.spend && artifact.spend !== ""}
 							className="btn btn-error my-2 ml-2"
 							onClick={(e) => {
 								if (artifact.data?.bsv20) {
