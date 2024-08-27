@@ -48,17 +48,21 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 		return toBase58Check(pubkeyHash);
 	}, [artifact]);
 
-	console.log({ address, artifact, ordAddress: ordAddress.value });
 	const isUtxo = computed(() => {
-		return !!(
-			artifact.origin === null &&
+    return !!(
+      artifact.origin === null &&
 			artifact.data === null &&
 			artifact.spend === "" &&
 			artifact.satoshis > 1 &&
 			address === ordAddress.value
 		);
 	});
-
+  
+  const isRun = computed(() => {
+    return !!artifact.origin?.outpoint && !artifact.origin.data && artifact.satoshis === 1
+  });
+  
+  console.log({address, artifact, ordAddress: ordAddress.value, isUtxo: isUtxo.value, isRun: isRun.value})
 	const transferOrdinal = useCallback(
 		async (
 			e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -262,6 +266,8 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 		},
 		[artifact, recover, fundingAddress.value],
 	);
+
+  console.log("script", Buffer.from("dqkUU0wSTSHRRED/Yg1SeW4PDsSSHouIrA==", 'base64').toString('hex'))
 
 	return (
 		<div>

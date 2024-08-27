@@ -13,7 +13,7 @@
 		"@emotion/react": "^11.11.4",
 		"@emotion/styled": "^11.11.5",
 		"@google/model-viewer": "^3.5.0",
-		"@headlessui/tailwindcss": "^0.2.0",
+		"@headlessui/tailwindcss": "^0.2.1",
 		"@hookform/resolvers": "^3.3.4",
 		"@langchain/community": "^0.0.54",
 		"@langchain/core": "^0.1.61",
