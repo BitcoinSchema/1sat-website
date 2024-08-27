@@ -5,7 +5,7 @@ import { calculateIndexingFee, minFee } from "@/utils/bsv20";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { FaQuestionCircle } from "react-icons/fa";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 
 const Fund = ({ ticker }: { ticker: any }) => {
   useSignals();

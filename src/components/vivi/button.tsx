@@ -1,5 +1,6 @@
 "use client"
 
+import { FetchStatus } from "@/constants";
 import { generatedImage } from "@/signals/ai";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import type { ChatRequestOptions } from "ai";
@@ -44,7 +45,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
     const requestOptions: ChatRequestOptions = {
       options: {
         body: {
-          selectedModel: "llava",
+          selectedModel: "llama3",
         },
       },
     };
@@ -128,22 +129,31 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
     }
   };
 
+  const [generatingImage, setGeneratingImage] = useState(FetchStatus.Idle);
   const handleImageGeneration = useCallback(async () => {
     if (input) {
-      const b64Json = await generateImage(input);
-      if (b64Json) {
-        generatedImage.value = {
-          name: b64Json.created.toString(),
-          data: b64Json.data[0].b64_json,
+      setGeneratingImage(FetchStatus.Loading);
+      try {
+
+        const b64Json = await generateImage(input);
+        setGeneratingImage(FetchStatus.Success);
+        if (b64Json) {
+          generatedImage.value = {
+            name: b64Json.created.toString(),
+            data: b64Json.data[0].b64_json,
+          }
+          // Add the generated image URL to the content with a prefix
+          // const imageMessage = `[B64JSON]: ${imageUrl}`;
+          // append({ role: "assistant", content: imageMessage, id: Date.now().toString() });
+          // Navigate to the inscribe page with the imageUrl parameter
+          router.push("/inscribe?tab=image&generated=true");
         }
-        // Add the generated image URL to the content with a prefix
-        // const imageMessage = `[B64JSON]: ${imageUrl}`;
-        // append({ role: "assistant", content: imageMessage, id: Date.now().toString() });
-        // Navigate to the inscribe page with the imageUrl parameter
-        router.push("/inscribe?tab=image&generated=true");
+      } catch (error) {
+        console.error("Error generating image:", error);
+        setGeneratingImage(FetchStatus.Error);
       }
     }
-  }, [input, router, generatedImage]);
+  }, [input, router]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -171,45 +181,47 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
 
 
   return (
-    <div>
-      <div className="flex space-x-2">
+    <div className="bg-[#222] border-warning/25 border rounded-lg p-4">
+      <div className="flex space-x-2 justify-between">
         <button
           type="button"
-          className={`btn btn-ghost btn-primary ${className}`}
+          className={`text-[#aaa] btn btn-ghost btn-primary ${className}`}
           onClick={handleRecording}
         >
           {isRecording ? <FaStop /> : <FaMicrophone />}
         </button>
         <button
           type="button"
-          className={`btn btn-ghost btn-primary ${className}`}
+          disabled={generatingImage === FetchStatus.Loading}
+          className={`text-[#aaa] btn btn-ghost btn-primary disabled:text-[#555] disabled:pointer-default ${className}`}
           onClick={handleImageGeneration}
         >
           Generate Image
         </button>
       </div>
-      <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-        <input
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
-          className="input input-bordered"
-        />
+      <div className="divider" />
+      <div className="flex flex-col h-full w-full max-w-md py-24 mx-auto stretch">
         {messages.map((m) => (
-          <div key={m.id} className="whitespace-pre-wrap">
+          <div key={m.id} className="whitespace-pre-wrap h-full text-[#aaa]">
             {m.role === "user" ? "User: " : "AI: "}
             {renderMessage(m.content)}
           </div>
-        ))}
-        <form
+        ))} 
+      </div>
+      <form
           ref={formRef}
           onSubmit={(e) => {
             onSubmit(e);
           }}
         />
-      </div>
+         <input
+          type="text"
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Type your message..."
+          className="input input-bordered text-[#aaa] placeholder-[#555] mt-2"
+        />
     </div>
   );
 };

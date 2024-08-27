@@ -7,7 +7,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
 import { mySales } from "./signals";
 
@@ -95,7 +95,7 @@ export function TokenMarketMySales({ ticker, type }: Props) {
                 {ticker.tick}
               </span>
               <div className="flex items-center">
-                <span className="text-accent text-xs">
+                <span className="text-base-content/50 text-xs">
                   {sale.pricePer} / token
                 </span>
                 <span className="text-accent text-xs mx-1">

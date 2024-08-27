@@ -8,12 +8,15 @@ import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
 import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { oneSatBroadcaster } from "js-1sat-ord";
 import { head } from "lodash";
+import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
+import toast, { LoaderIcon } from "react-hot-toast";
 import { FaCopy } from "react-icons/fa";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { FaSpinner } from "react-icons/fa6";
+import { toBitcoin } from "satoshi-token";
 import { useCopyToClipboard } from "usehooks-ts";
 
 const PreviewPage = () => {
@@ -24,11 +27,13 @@ const PreviewPage = () => {
 	const pendingTx = useSignal<PendingTransaction | null>(
 		head(txs.value) || null,
 	);
+  const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
     if(pendingTxs.value?.length) {
       txs.value = pendingTxs.value;
       pendingTx.value = head(txs.value) || null;
+      setLoading(false);
     }
 	}, [pendingTx, pendingTxs.value, txs]);
 
@@ -46,27 +51,18 @@ const PreviewPage = () => {
 		FetchStatus.Idle,
 	);
 
-	const broadcast = useCallback(async () => {
-		const tx = pendingTx.value;
-		if (!tx) {
-			return;
-		}
+	const broadcast = useCallback(async (tx: PendingTransaction) => {
 		setBroadcastStatus(FetchStatus.Loading);
-		const rawtx = Buffer.from(tx.rawTx, "hex").toString("base64");
-		try {
-			const { promise } = http.customFetch<string>(`${API_HOST}/api/tx`, {
-				method: "POST",
-				body: JSON.stringify({
-					rawtx,
-				}),
-			});
-			await promise;
+		const transaction = Transaction.fromHex(tx.rawTx);
+    const { txid, status } = await transaction.broadcast(oneSatBroadcaster());
+		if (status === "success") {
+      console.log("Broadcasted", {txid})
 			setBroadcastStatus(FetchStatus.Success);
 
 			toast.success("Transaction broadcasted.", toastProps);
 
-			const returnTo = pendingTx.value?.returnTo;
-			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== tx.txid) || []);
+			const returnTo = tx.returnTo || null;
+			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== txid) || []);
 
 			utxos.value = (utxos.value || []).filter(
 				(u) => !tx.spentOutpoints.includes(`${u.txid}_${u.vout}`),
@@ -79,10 +75,11 @@ const PreviewPage = () => {
 			} else {
 				router.back();
 			}
-		} catch {
+		} else  if (status === "error") {
+      toast.error("Error broadcasting transaction.", toastProps);
 			setBroadcastStatus(FetchStatus.Error);
 		}
-	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
+	}, [ordUtxos.value, pendingTxs.value, router, utxos.value]);
 
 	const change = useMemo(() => {
     if (pendingTx.value?.payChange) {
@@ -128,9 +125,11 @@ const PreviewPage = () => {
 Preview`}
 			</h1>
 			<div className="text-center text-[#aaa] mt-2">Broadcast to finalize.</div>
-			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs mt-4 mb-8 relative">
+			<div className="w-full max-w-lg mx-auto whitespace-pre-wrap break-all font-mono rounded bg-[#111] text-xs mt-4 mb-8 relative flex">
 				<div className="p-2 md:p-6 h-full w-full text-white bg-transparent bottom-0 left-0 bg-gradient-to-t from-black from-60% to-transparent block">
-					<div className="px-2">
+          {loading && <div className="text-center h-full flex items-center justify-center"><Loader2Icon className="animate-spin w-4 h-4 m-auto" /></div>}
+
+					<div className={`${loading ? 'opacity-0': 'opacity-100'} px-2 transition-opacity duration-500`}>
 						<div className="flex justify-between">
 							<div>{pendingTx.value?.numInputs} Inputs</div>
 							<div>{pendingTx.value?.numOutputs} Outputs</div>
@@ -147,6 +146,7 @@ Preview`}
 						)}
 
 						<div className="divider">Network Fees</div>
+          
 						<div className="flex justify-between">
 							<div>Network Fee</div>
 							<div>{pendingTx.value?.fee.toLocaleString()} Satoshis</div>
@@ -215,13 +215,14 @@ Preview`}
 								</div>
 							</>
 						)}
+           
 					</div>
-					<div className="divider" />
-					<div className="mx-auto text-center text-teal-700 mb-2">
+					<div className={`${loading ? 'opacity-0': 'opacity-100'} transition-opacity duration-750 divider`} />
+					<div className={`${loading ? 'opacity-0': 'opacity-100'} transition-opacity duration-750 mx-auto text-center text-teal-700 mb-2`}>
 						{pendingTx.value?.txid}
 					</div>
 
-					<div className="flex gap-2 items-center justify-between mb-8">
+					<div className={`${loading ? 'opacity-0': 'opacity-100'} flex gap-2 items-center justify-between mb-8 transition-opacity duration-1000`}>
 						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
 							className="cursor-pointer w-full rounded bg-[#222] border flex items-center justify-center text-center text-[9px] md:text-[11px] text-[#aaa] border-[#333] py-2 relative"
@@ -247,12 +248,18 @@ Preview`}
 							Raw TX <FaCopy className="absolute right-0 mr-2" />
 						</div>
 					</div>
-					<div className="items-center justify-center gap-2">
+					<div className={`${loading ? 'opacity-0': 'opacity-100'} transition-opacity duration-3000 items-center justify-center gap-2`}>
 						<button
 							type="button"
-							className="btn btn-warning w-full"
-							onClick={broadcast}
-							disabled={usdPrice === null || broadcastStatus === FetchStatus.Loading}
+							className="btn btn-warning w-full cursor-pointer disabled:cursor-default"
+							onClick={async () => {
+                if (pendingTx.value) {
+                  await broadcast(pendingTx.value);
+                } else {
+                  toast.error("No pending transaction to broadcast", toastProps);
+                }
+              }}
+							disabled={loading || usdPrice === null || broadcastStatus === FetchStatus.Loading}
 						>
 							{broadcastStatus === FetchStatus.Loading
 								? "Broadcasting..."

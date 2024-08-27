@@ -18,6 +18,7 @@ import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
   deployBsv21Token,
+  type Distribution,
   type DeployBsv21TokenConfig,
   type IconInscription,
   type ImageContentType,
@@ -186,20 +187,21 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       // get a buffer of the file
       const fileData = await selectedFile.arrayBuffer();
 
+      console.log({contentType: selectedFile.type})
       const icon: IconInscription = {
         dataB64: Buffer.from(fileData).toString("base64"),
         contentType: selectedFile.type as ImageContentType,
       };
 
       const config: DeployBsv21TokenConfig = {
+        paymentPk,
         symbol: ticker,
         icon,
         utxos,
         initialDistribution: {
           address: ordAddress.value,
-          amt: Number(maxSupply),
-        },
-        paymentPk,
+          tokens: Number(maxSupply),
+        } as Distribution,
         destinationAddress: ordAddress.value,
       };
 
@@ -209,8 +211,9 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 
       const { tx, spentOutpoints, payChange } = await deployBsv21Token(config);
 
+      // TODO: When inscribing new BSV21 the token isnt there yet and causes errors
       setPendingTxs([{
-        returnTo: `/market/bsv21/${tx.id('hex')}_0`,
+        returnTo: "/wallet/bsv21", // `/market/bsv21/${tx.id('hex')}_0`,
         rawTx: tx.toHex(),
         size: tx.toBinary().length,
         fee: tx.getFee(),
@@ -260,7 +263,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
   });
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <form className="w-full max-w-lg mx-auto" action="/preview">
       <div className="text-white w-full p-2 rounded my-2">Deploy New Token</div>
       <div className="my-2">
         <label className="block mb-4">
@@ -391,7 +394,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       >
         Preview
       </button>
-    </div>
+    </form>
   );
 };
 

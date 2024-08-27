@@ -3,15 +3,17 @@ import React from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
 import Fund from "./fund";
 import { TokenMarketTabs } from "./tokenMarketTabs";
+import { TxoData } from "@/types/ordinals";
 
 export interface Holder {
   address: string;
   amt: string;
+  pct?: number;
 }
 
 export interface TickHolder {
   address: string;
-  amt: number;
+  amt: string;
   pct: number;
 }
 
@@ -23,6 +25,7 @@ export type MarketData = {
   price: number;
   marketCap: number;
   holders: Holder[];
+  data: TxoData;
   dec: number;
   pctChange: number;
   fundAddress: string;
@@ -38,7 +41,7 @@ export type MarketData = {
   vout: number;
   amt?: string;
   num: number;
-  contract?: "pow-20" | undefined;
+  contract?: "pow-20" | "LockToMintBsv20" | undefined;
   difficulty?: string | undefined;
   startingreward?: string | undefined;
 };

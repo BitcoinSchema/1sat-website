@@ -51,9 +51,10 @@ import {
 	FaPlus,
 	FaUnlock,
 } from "react-icons/fa";
+
 import { FaCopy } from "react-icons/fa6";
 import { MdAccountCircle } from "react-icons/md";
-import { toBitcoin, toSatoshi } from "satoshi-bitcoin-ts";
+import { toBitcoin, toSatoshi } from "satoshi-token";
 import { useCopyToClipboard } from "usehooks-ts";
 import { getImageFromGP } from "@/utils/getImageFromGP";
 import * as http from "../../utils/httpClient";

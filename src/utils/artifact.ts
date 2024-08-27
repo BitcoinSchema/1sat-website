@@ -1,6 +1,6 @@
 import { ArtifactType, artifactTypeMap } from "@/components/artifact";
 import { API_HOST, ORDFS, resultsPerPage } from "@/constants";
-import { OpNsStatus, type OrdUtxo } from "@/types/ordinals";
+import { type Inscription, type OpNSData, OpNsStatus, TxoData, type OrdUtxo } from "@/types/ordinals";
 import { Hash, Utils } from "@bsv/sdk";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
@@ -125,12 +125,14 @@ export const displayName = (
         : txo.origin?.data?.insc?.text || txo.origin?.num;
     case ArtifactType.BSV20:
       return latest ? txo.data?.bsv20?.tick || txo?.data?.insc?.json?.sym : txo.origin?.data?.bsv20?.tick || txo.origin?.data?.insc?.json?.sym;
-    case ArtifactType.LRC20:
-      return latest ? "TODO-LRC20 LATEST NAME" : "TODO LRC20 ORIGIN NAME";
-    case ArtifactType.OPNS:
-      return latest
-        ? "TODO-OPNS LATEST NAME"
-        : `${txo.origin.data?.opns?.domain} ${txo.origin.data?.opns?.status === OpNsStatus.Valid ? "(Valid)" : txo.origin.data?.opns?.status === OpNsStatus.Pending ? "(Pending)" : "(Invalid)"}`;
+    case ArtifactType.LRC20: {
+      const data = latest ? txo.data?.insc as Inscription : txo.origin?.data?.insc as Inscription;
+      return `${data.json.p} ${data.json.op} ${data.json.amt}`;
+    }
+    case ArtifactType.OPNS: {
+      const data = latest ? txo.data?.opns as OpNSData : txo.origin?.data?.opns as OpNSData;
+      return `${data.domain} ${data.status === OpNsStatus.Valid ? "(Valid)" : data.status === OpNsStatus.Pending ? "(Pending)" : "(Invalid)"}`;
+    }
     case ArtifactType.Javascript:
       return latest
         ? txo.data?.insc?.text || txo.origin?.num

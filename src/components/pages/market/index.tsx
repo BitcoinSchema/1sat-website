@@ -28,6 +28,28 @@ const notoSerif = Noto_Serif({
   subsets: ["latin"],
 });
 
+const Listings = ({ id, term, sort, dir, selectedAssetType }: { id?: string, term?: string, sort: SortBy, dir: "asc" | "desc", selectedAssetType?: AssetType }) => {
+  switch (selectedAssetType) {
+    case AssetType.Ordinals:
+      return (
+        <>
+          <OrdinalListings
+            // listings={props.imageListings!}
+            mode={OrdViewMode.List}
+            term={term}
+          />
+        </>
+      );
+    case AssetType.BSV20:
+      // console.log("Passing props to TokenMarket", { id, term, sort, dir })
+      return <TokenMarket type={AssetType.BSV20} id={id} term={term} sort={sort} dir={dir} />;
+    case AssetType.BSV21:
+      return <TokenMarket type={AssetType.BSV21} id={id} term={term} sort={sort} dir={dir} />;
+    default:
+      return null;
+  }
+};
+
 const MarketPage: React.FC<MarketPageProps> = (props) => {
   const { selectedAssetType } = props;
   let showTabs = props.showTabs;
@@ -37,27 +59,6 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
   }
 
   console.log("MarketPage", { props });
-  const Listings = ({ id, term, sort, dir }: { id?: string, term?: string, sort: SortBy, dir: "asc" | "desc" }) => {
-    switch (selectedAssetType) {
-      case AssetType.Ordinals:
-        return (
-          <>
-            <OrdinalListings
-              // listings={props.imageListings!}
-              mode={OrdViewMode.List}
-              term={term}
-            />
-          </>
-        );
-      case AssetType.BSV20:
-        console.log("Passing props to TokenMarket", { id, term, sort, dir })
-        return <TokenMarket type={AssetType.BSV20} id={id} term={term} sort={sort} dir={dir} />;
-      case AssetType.BSV21:
-        return <TokenMarket type={AssetType.BSV21} id={id} term={term} sort={sort} dir={dir} />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="w-full max-w-7xl mx-auto p-2 md:p-0">
@@ -75,7 +76,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
         </div>
       )}
       <div className="tab-content block bg-base-100 border-base-200 rounded-box">
-        <Listings id={props.id} dir={props.dir || "asc"} term={props.term} sort={props.sort || SortBy.MostRecentSale} />
+        <Listings id={props.id} dir={props.dir || "asc"} term={props.term} sort={props.sort || SortBy.MostRecentSale} selectedAssetType={selectedAssetType} />
       </div>
     </div>
   );

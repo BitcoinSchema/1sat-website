@@ -2,7 +2,7 @@ import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import Link from "next/link";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 
 const AddressPage = async ({ params }: { params: { address: string } }) => {
   const balanceUrl = `${API_HOST}/api/txos/address/${params.address}/balance`;

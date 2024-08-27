@@ -51,12 +51,14 @@ export enum OpNsStatus {
   Invalid = -1,
 }
 
+export type OpNSData = { domain: string, status: OpNsStatus }
+
 export interface TxoData extends BaseTxo {
   types?: string[];
   insc?: Inscription;
   map?: { [key: string]: any };
   b?: File;
-  opns?: { domain: string, status: OpNsStatus };
+  opns?: OpNSData;
   sigma?: SIGMA[];
   list?: {
     price: number;

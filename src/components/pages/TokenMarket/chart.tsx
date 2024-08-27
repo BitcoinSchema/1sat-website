@@ -92,7 +92,6 @@ const TremorChartComponent: FC<ChartProps> = ({
   // Define categories for the chart based on dataCategory
   const categories = useMemo(() => [dataCategory], [dataCategory]);
 
-
   // Render the chart using the Chart component from @tremor/react
   return (
     <div className="relative">

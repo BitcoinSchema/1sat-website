@@ -23,6 +23,7 @@ export enum CurrencyDisplay {
  */
 
 export const isCreatingWallet = signal<boolean>(false);
+export const createWalletIterations = signal<number>(0);
 export const createWalletStep = signal<CreateWalletStep>(
   CreateWalletStep.Create
 );
