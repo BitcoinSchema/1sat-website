@@ -21,6 +21,7 @@ import { Switch } from "@tremor/react";
 import { Input } from "../ui/input";
 import { sweepUtxos } from "@/utils/sweep";
 import { PrivateKey } from "@bsv/sdk";
+import { toBitcoin } from "satoshi-token";
 
 export type MnemonicResult = {
 	importedMnemonic?: string;
@@ -441,7 +442,9 @@ index}`}
                   const payAddress = PrivateKey.fromWif(keys.payPk).toAddress();
                   try {
                     const amount = await sweepUtxos(sweepKey, sweepAddress, payAddress);
-                    toast.success(`Swept ${amount} BSV to ${payAddress}`);
+                    if (amount) {
+                      toast.success(`Swept ${toBitcoin(amount)} BSV to ${payAddress}`);
+                    }
                   } catch (e) {
                     console.log("Error sweeping utxos", e);
                   }
