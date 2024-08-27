@@ -1,7 +1,7 @@
 "use client";
 
 import { toastErrorProps } from "@/constants";
-import { payPk, pendingTxs } from "@/signals/wallet";
+import { identityPk, payPk, pendingTxs } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { PendingTransaction } from "@/types/preview";
 import {
@@ -14,11 +14,13 @@ import {
 	type Payment,
 	type RemoteSigner,
 	type Utxo,
+  LocalSigner,
 } from "js-1sat-ord";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { PrivateKey } from "@bsv/sdk";
+import { bapIdentities } from "@/signals/bapIdentity";
 
 export const handleInscribing = async (
 	payPk: string,
@@ -41,10 +43,7 @@ export const handleInscribing = async (
 	//   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
 	// );
 	console.log("Inscribing with", { metaData });
-	const signer = {
-		// idKey // optional id key
-		keyHost: "http://localhost:21000",
-	} as RemoteSigner;
+
 
 	const destinations: Destination[] = [
 		{
@@ -64,12 +63,25 @@ export const handleInscribing = async (
   // undefined,
   // payments,
 
+  let signer: undefined | LocalSigner;
+  if (identityPk.value) {
+    signer = {
+      idKey: PrivateKey.fromWif(identityPk.value),
+    }
+  }
+
+  // TODO: TokenPass support
+  // const signer = {
+	// 	// idKey // optional id key
+	// 	keyHost: "http://localhost:21000",
+	// } as RemoteSigner;
 	const config: CreateOrdinalsConfig = {
 		utxos,
 		destinations,
 		paymentPk,
     metaData,
     additionalPayments,
+    signer,
 	};
 	const { spentOutpoints, tx, payChange } = await createOrdinals(config);
 	return { spentOutpoints, tx, payChange};

@@ -3,9 +3,9 @@
 import { useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import { MdAccountCircle } from "react-icons/md";
-import { IdentityResult } from "@/types/identity";
+import type { IdentityResult } from "@/types/identity";
 import { bapIdentities, selectedBapIdentity } from "@/signals/bapIdentity";
-import { Identity } from "@/types/identity";
+import type { Identity } from "@/types/identity";
 import { getImageFromGP } from "@/utils/getImageFromGP";
 import { hashColor } from "@/utils/hashColor";
 
