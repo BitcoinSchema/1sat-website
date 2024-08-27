@@ -106,6 +106,7 @@ export default function SelectProfileJson({ onClose }: Props) {
 			<div className="flex w-full mt-5 justify-end">
 				{activeBapIdentity.value && (
 					<button
+            type="button"
 						className="btn btn-accent mr-5"
 						onClick={handleLogout}
 					>

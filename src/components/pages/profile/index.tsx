@@ -28,7 +28,7 @@ const ProfilePage = () => {
 				router.push("/");
 			}
 		}
-	}, [activeBapIdentity.value, availableIdentities.value]);
+	}, [activeBapIdentity.value, availableIdentities.value, router]);
 
 	return availableIdentities.value ? (
 		<main className="px-4 w-full min-h-screen flex flex-col items-center">

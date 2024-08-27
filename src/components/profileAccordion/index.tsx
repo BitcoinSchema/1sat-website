@@ -136,7 +136,7 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 					<input type="radio" name="selectedId" />
 					<div className="collapse-title text-md font-medium flex align-middle">
 						{makeIdentityAvatar(
-							identity?.identity?.image,
+							identity?.identity?.image || identity?.identity?.logo,
 							identity?.idKey
 						)}
 						<p className="flex align-middle mt-1 ml-5">

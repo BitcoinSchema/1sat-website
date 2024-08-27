@@ -33,7 +33,7 @@ interface Props {
 }
 export default function EnterSelectedPassphrase({ onClose }: Props) {
 	useSignals();
-	const [password, setPassword] = useState("");
+	const [password, setPassword] = useState<string | undefined>();
 	const [error, setError] = useState(false);
 
 	const handleCancel = () => {
@@ -43,7 +43,7 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 
 	const cleanup = () => {
 		setError(false);
-		setPassword("");
+		setPassword(undefined);
 		passphrase.value = "";
 		bapIdentityRaw.value = null;
 		selectedBapIdentity.value = null;
@@ -59,7 +59,11 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 			ImportProfileFromBackupJsonStep.Done;
 	};
 
-	const passwordCanDecrypt = async () => {
+	const passwordCanDecrypt = useCallback(async () => {
+    if (!password) {
+      console.log("Missing decryption password");
+      return
+    }
 		try {
 			const succeeded = await loadKeysFromEncryptedStorage(password);
 			if (succeeded === "SUCCESS") {
@@ -69,7 +73,7 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 		} catch (e) {
 			console.error(e);
 		}
-	};
+	}, [password]);
 
 	const handleEncryptProfile = useCallback(async () => {
 		if (!passphrase.value || !payPk.value) {
@@ -165,10 +169,10 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 		}
 	}, [bapIdEncryptionKey.value, bapIdentities.value, passphrase.value, payPk.value, selectedBapIdentity.value]);
 
-	const handleDecryptEncrypt = async () => {
+	const handleDecryptEncrypt = useCallback(async () => {
 		const passwordCorrect = await passwordCanDecrypt();
 
-		if (passwordCorrect) {
+		if (passwordCorrect && password) {
 			passphrase.value = password;
 			const identityEncrypted = await handleEncryptProfile();
 			if (identityEncrypted) {
@@ -177,14 +181,13 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 		} else {
 			setError(true);
 		}
-		setPassword("");
-	};
+		setPassword(undefined);
+	}, [password, passwordCanDecrypt, handleEncryptProfile]);
 
 	return (
 		<>
 			<div className="mt-2 mb-4">
-				Enter your password (the password should be the same one used to
-				encrypt your keys):
+				Enter your encryption password:
 				<label className="input input-bordered flex items-center gap-2 mt-5">
 					{/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
           <svg
@@ -223,7 +226,7 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 				<button
           type="button"
 					className="btn btn-accent cursor-pointer ml-5"
-					disabled={password?.length < 6}
+					disabled={(password?.length || 0) < 6}
 					onClick={() => handleDecryptEncrypt()}
 				>
 					Next

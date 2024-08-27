@@ -104,9 +104,7 @@ export const getUtxos = async (address: string): Promise<Utxo[]> => {
 
 export const getOutpoints = async (ids: string[], script: boolean) => {
 	const url = `${API_HOST}/api/txos/outpoints?script=${script}`;
-	console.log("almost", url, "with", ids);
 	const uniqueIds = uniq(ids);
-	console.log("hitting", url, "with", uniqueIds);
 
 	const res = await fetch(url, {
 		method: "POST",
