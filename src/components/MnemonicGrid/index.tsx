@@ -1,15 +1,33 @@
 "use client";
 
 import { bip39words } from "@/utils/bip39words";
-import { head, isEqual } from "lodash";
-import React, { useCallback, useEffect, useState } from "react";
+import { head, isEqual, set } from "lodash";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RiRestartLine } from "react-icons/ri";
 import Dropdown from "../dropdown/dropdown";
+import toast from "react-hot-toast";
+import { toastErrorProps } from "@/constants";
+import {
+  derivePathFromMnemonic,
+	findKeysFromMnemonic,
+	getKeysFromMnemonicAndPaths,
+	type WalletKeys,
+} from "@/utils/keys";
+import { createWalletIterations, ordAddressPath } from "@/signals/wallet";
+import { CgSpinner } from "react-icons/cg";
+import { useSignals } from "@preact/signals-react/runtime";
+import { Switch } from "@tremor/react";
+import { Input } from "../ui/input";
+import { sweepUtxos } from "@/utils/sweep";
+import { PrivateKey } from "@bsv/sdk";
+import { toBitcoin } from "satoshi-token";
 
 export type MnemonicResult = {
 	importedMnemonic?: string;
 	verified?: boolean;
 	words?: string[];
+	keys?: WalletKeys;
 };
 
 interface MnemonicGridProps {
@@ -20,9 +38,9 @@ interface MnemonicGridProps {
 }
 
 export enum MnemonicGridMode {
-	View,
-	Prove,
-	Import,
+	View = 0,
+	Prove = 1,
+	Import = 2,
 }
 
 const MnemonicGrid: React.FC<MnemonicGridProps> = ({
@@ -31,13 +49,26 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 	onWordClick,
 	onSubmit,
 }) => {
+	useSignals();
 	const [inputMnemonic, setInputMnemonic] = useState<string[]>(
-		Array(12).fill("")
+		Array(12).fill(""),
 	);
 	const [shuffledWords, setShuffledWords] = useState<string[]>([]);
 	const [clickedWords, setClickedWords] = useState<string[]>([]);
 	const [inputValue, setInputValue] = useState("");
 	const [suggestedWords, setSuggestedWords] = useState<string[]>([]);
+	const [useCustomPaths, setUseCustomPaths] = useState<boolean>(false);
+  const [ready, setReady] = useState<boolean>(false);
+
+	const toggleCustomPaths = useCallback(() => {
+    if (!useCustomPaths) {
+      setReady(true);
+    } else {
+      setReady(false);
+    }
+		setUseCustomPaths(!useCustomPaths);
+    
+	}, [useCustomPaths]);
 
 	const shuffle = useCallback(() => {
 		const words = mnemonic?.split(" ") || [];
@@ -53,8 +84,8 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		if (mode === MnemonicGridMode.Import && inputValue.trim() !== "") {
 			setSuggestedWords(
 				bip39words.filter((word: string) =>
-					word.startsWith(inputValue.trim().toLowerCase())
-				)
+					word.startsWith(inputValue.trim().toLowerCase()),
+				),
 			);
 		} else {
 			setSuggestedWords([]);
@@ -69,7 +100,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 				onSubmit({ words: [...clickedWords, word] });
 			}
 		},
-		[clickedWords, setClickedWords, setInputValue, onSubmit]
+		[clickedWords, setClickedWords, setInputValue, onSubmit],
 	);
 
 	const handleClick = useCallback(
@@ -86,23 +117,16 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			setShuffledWords(newShuffledWords);
 
 			// check if we're done
-			if (newClickedWords.length == 11) {
+			if (newClickedWords.length === 11) {
 				// "click" the last word
 				const lastWord = head(
-					shuffledWords.filter((w) => !newClickedWords.includes(w))
+					shuffledWords.filter((w) => !newClickedWords.includes(w)),
 				);
 				// Fill in the last word for the user
-				if (
-					!isEqual(
-						[...newClickedWords, lastWord],
-						mnemonic?.split(" ")
-					)
-				) {
+				if (!isEqual([...newClickedWords, lastWord], mnemonic?.split(" "))) {
 					setClickedWords([]);
 					const words = mnemonic?.split(" ");
-					const shuffled = [...(words || [])].sort(
-						() => Math.random() - 0.5
-					);
+					const shuffled = [...(words || [])].sort(() => Math.random() - 0.5);
 					setShuffledWords(shuffled);
 					onSubmit({ verified: false });
 				} else {
@@ -130,7 +154,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 			shuffledWords,
 			onWordClick,
 			setShuffledWords,
-		]
+		],
 	);
 
 	const handleSelectInputMnemonicWord =
@@ -143,27 +167,75 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		};
 
 	const handlePasteMnemonic = (pastedData: string) => {
-		const words = pastedData.split(" ");
+		const words = pastedData.split(" ").map((word) => word.trim());
 
 		if (words.length !== 12) {
 			return;
 		}
 
 		if (!words.every((word) => bip39words.includes(word.toLowerCase()))) {
+			toast.error("Invalid mnemonic words", toastErrorProps);
 			return;
 		}
 
 		setInputMnemonic(words);
 	};
 
+	const [pendingPaths, setPendingPaths] = useState<{
+		changeAddressPath: string;
+		ordAddressPath: string;
+		identityAddressPath?: string;
+	}>();
+
+	const [processing, setProcessing] = useState<boolean>(false);
+
+	useEffect(() => {
+		const processMnemonic = async () => {
+			const phrase = inputMnemonic.join(" ");
+			if (inputMnemonic.some((word) => !word)) {
+				console.log("Invalid mnemonic length");
+				return;
+			}
+			console.log("Processing mnemonic", inputMnemonic);
+			setProcessing(true);
+			await findKeysFromMnemonic(phrase).then((keys) => {
+				const { ordAddressPath } = keys;
+				if (!ordAddressPath) {
+					console.log("Invalid mnemonic");
+					setProcessing(false);
+					return;
+				}
+				console.log("Found ord path", ordAddressPath);
+				setProcessing(false);
+				setPendingPaths({
+          ordAddressPath: keys.ordAddressPath as string,
+          changeAddressPath: keys.changeAddressPath as string,
+        });
+			});
+		};
+
+		if (
+      ready &&
+			!useCustomPaths &&
+			!processing &&
+			!pendingPaths &&
+			mode === MnemonicGridMode.Import &&
+			inputMnemonic.every((word) => !!word)
+		) {
+      console.log("Processing mnemonic");
+			processMnemonic();
+		}
+	}, [inputMnemonic, mode, ready, pendingPaths, processing, useCustomPaths]);
+
 	return (
-		<div className="transition my-4 mx-auto rounded w-full text-yellow-500">
+		<div className="transition mt-4 mx-auto rounded w-full text-yellow-500">
 			<div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
 				{mode === MnemonicGridMode.Import && (
 					<>
 						{inputMnemonic.map((word, index) => (
 							<Dropdown
-								key={index}
+								key={`mnemonic-word-${// biome-ignore lint/suspicious/noArrayIndexKey: prevent redraw on change
+index}`}
 								items={bip39words}
 								selectedItem={word}
 								onChange={handleSelectInputMnemonicWord(index)}
@@ -179,6 +251,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 				)?.map((w, i) => {
 					return (
 						<div
+							// biome-ignore lint/suspicious/noArrayIndexKey: prevent redraw on change
 							key={i}
 							className={`select-none inline-flex p-2 rounded bg-[#1a1a1a] ${
 								mode === MnemonicGridMode.Prove
@@ -192,17 +265,19 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 									? () => handleClick(w)
 									: undefined
 							}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  mode === MnemonicGridMode.Prove
+									? () => handleClick(w)
+									: undefined                }
+              }}
 						>
 							{mode !== MnemonicGridMode.Prove && (
-								<span className={`text-[#444] mr-4`}>
-									{i + 1}
-								</span>
+								<span className={"text-[#444] mr-4"}>{i + 1}</span>
 							)}{" "}
 							<span
 								className={`${
-									clickedWords.includes(w)
-										? "text-[#555]"
-										: ""
+									clickedWords.includes(w) ? "text-[#555]" : ""
 								} mr-4`}
 							>
 								{w}
@@ -212,32 +287,179 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 				})}
 			</div>
 			{mode === MnemonicGridMode.View && (
-				<div className="w-full flex flex-col items-end my-8">
+				<div className="w-full flex flex-col items-end mt-8 mb-2">
 					<button
+						type="button"
 						className="btn btn-primary"
-						onClick={() => onSubmit({ verified: true })}
+						// Add some validation on pendingKeys
+						onClick={() => {
+              onSubmit({ verified: true })
+            }}
 					>
 						Next
 					</button>
 				</div>
 			)}
 			{mode === MnemonicGridMode.Import && (
-				<div className="w-full flex flex-col items-end my-8">
-					<button
-						disabled={inputMnemonic.some((word) => !word)}
-						className="btn btn-primary"
-						onClick={() =>
-							onSubmit({
-								importedMnemonic: inputMnemonic.join(" "),
-							})
-						}
-					>
-						Next
-					</button>
-				</div>
+				<>
+					<div className="text-sm text-[#555] my-2 flex items-start justify-between">
+						<div className="flex items-start flex-col">
+							{!useCustomPaths && (
+								<div className="text-sm text-[#555]">Payment Path: m/0</div>
+							)}
+							{!useCustomPaths && (
+								<div className="text-sm text-[#555] flex items-center">
+									Ordinals Path:{" "}
+									{processing ? (
+										<>
+											<CgSpinner className="animate-spin mx-2" />{" "}
+											{createWalletIterations.value}
+										</>
+									) : pendingPaths ? (
+										pendingPaths.ordAddressPath
+									) : (
+										""
+									)}
+								</div>
+							)}
+						</div>
+						<div className="flex items-start">
+							Custom Derivation{" "}
+							<Switch
+								className="ml-2"
+								aria-label="Customize"
+								name="Customize"
+								onChange={toggleCustomPaths}
+							/>
+						</div>
+					</div>
+					{useCustomPaths && (
+						<div className="flex items-center mb-2">
+              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths(undefined);
+                toggleCustomPaths();
+              }}>
+                1Sat
+              </button>
+							<button
+								type="button"
+                className="btn btn-sm btn-primary mr-2"
+								onClick={() => {
+                  setPendingPaths({
+                    changeAddressPath: RELAYX_WALLET_PATH,
+                    ordAddressPath: RELAYX_ORD_PATH,
+                    identityAddressPath: RELAYX_ID_PATH
+                  });
+								}}
+							>
+								RelayX
+							</button>
+							<button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths({
+                  changeAddressPath:  YOURS_WALLET_PATH,
+                  ordAddressPath: YOURS_ORD_PATH,
+                  identityAddressPath: YOURS_ID_PATH
+                });
+              }}>
+								Yours
+							</button>
+              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths({
+                  changeAddressPath:  TWETCH_WALLET_PATH,
+                  ordAddressPath: TWETCH_ORD_PATH,
+                });
+              }}>
+								Twetch
+							</button>
+              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+                setPendingPaths({
+                  changeAddressPath: AYM_WALLET_PATH,
+                  ordAddressPath: AYM_ORD_PATH,
+                });
+              }}>
+								Aym
+							</button>
+						</div>
+					)}
+					{useCustomPaths && (
+						<div>
+							<div className="mb-2">
+								<Input
+									placeholder={`Payment Derivation Path ${pendingPaths?.changeAddressPath || "m/0"}`}
+									value={pendingPaths?.changeAddressPath}
+									onChange={(e) => {
+										const changeAddressPath = e.target.value;
+										if (!changeAddressPath) return;
+										setPendingPaths({
+											changeAddressPath: changeAddressPath as string,
+											ordAddressPath: pendingPaths?.ordAddressPath as string,
+										});
+									}}
+								/>
+							</div>
+							<div>
+								<Input
+									placeholder={`Ordinals Derivation Path: ${ordAddressPath.value || "m/0/x"}`}
+									value={pendingPaths?.ordAddressPath}
+									onChange={(e) => {
+										const ordAddressPath = e.target.value;
+										if (!ordAddressPath) return;
+										setPendingPaths({
+											changeAddressPath:
+												pendingPaths?.changeAddressPath as string,
+											ordAddressPath: ordAddressPath as string,
+										});
+									}}
+								/>
+							</div>
+						</div>
+					)}
+					<div className="w-full flex flex-col items-end mt-8">
+						<button
+							type="button"
+							disabled={processing || inputMnemonic.some((word) => !word)}
+							className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+							// Add some validation on pendingKeys
+							onClick={async () => {
+								console.log({ mnemonic, pendingPaths, inputMnemonic });
+								if (!inputMnemonic) return;
+                if (!useCustomPaths) {
+                  if (!ready) {
+                    setReady(true);
+                    return
+                  }
+                  console.log("Step 2");
+                }
+								if (!pendingPaths) return;
+       
+								const keys = getKeysFromMnemonicAndPaths(
+									inputMnemonic.join(" "),
+									pendingPaths,
+								);
+                if (keys.mnemonic && keys.changeAddressPath === RELAYX_WALLET_PATH) {
+                  const sweepKey = derivePathFromMnemonic(keys.mnemonic, RELAYX_SWEEP_PATH);
+                  const sweepAddress = sweepKey.toAddress()
+                  const payAddress = PrivateKey.fromWif(keys.payPk).toAddress();
+                  try {
+                    const amount = await sweepUtxos(sweepKey, sweepAddress, payAddress);
+                    if (amount) {
+                      toast.success(`Swept ${toBitcoin(amount)} BSV to ${payAddress}`);
+                    }
+                  } catch (e) {
+                    console.log("Error sweeping utxos", e);
+                  }
+                }
+								onSubmit({ keys });
+							}}
+						>
+							Next
+						</button>
+					</div>
+				</>
 			)}
 			{clickedWords?.length > 0 && (
 				<div className="w-full flex justify-center my-8">
+					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 					<div
 						className="btn gap-0"
 						onClick={() => {
@@ -254,3 +476,20 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 };
 
 export default MnemonicGrid;
+
+// yours
+export const YOURS_WALLET_PATH = "m/44'/236'/0'/1/0";
+// TODO: Is this one correct?
+export const YOURS_ID_PATH = "m/0'/236'/0'/0/0";
+export const YOURS_ORD_PATH = "m/44'/236'/1'/0/0";
+// relayx
+export const RELAYX_ORD_PATH = "m/44'/236'/0'/2/0";
+export const RELAYX_ID_PATH = YOURS_ID_PATH;
+export const RELAYX_WALLET_PATH = YOURS_WALLET_PATH;
+export const RELAYX_SWEEP_PATH = "m/44'/236'/0'/0/0";
+
+export const TWETCH_WALLET_PATH = 'm/0/0';
+export const TWETCH_ORD_PATH = YOURS_ORD_PATH;
+
+export const AYM_WALLET_PATH = 'm/0/0';
+export const AYM_ORD_PATH = 'm';

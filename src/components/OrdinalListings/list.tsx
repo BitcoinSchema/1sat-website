@@ -202,8 +202,7 @@ const List = ({ term, address, onClick }: Props) => {
 									</Link>
 								</td>
 								<td className="p-0 text-xs md:text-sm hidden md:table-cell">
-                  {scamListing ? <span className="text-red-500">FLAGGED</span> : knownScammer ? <span className="text-red-500">KNOWN SCAMMER</span> : price}
-									{!scamListing && listing?.data?.list?.price ? (
+                  {scamListing ? <span className="text-red-500">FLAGGED</span> : knownScammer ? <span className="text-red-500">KNOWN SCAMMER</span> : listing?.data?.list?.price ? (
 										<BuyBtn
 											satoshis={BigInt(listing.data.list.price)}
 											listing={listing}

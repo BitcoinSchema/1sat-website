@@ -1,16 +1,9 @@
-import JDenticon from "@/components/JDenticon";
 import { API_HOST, AssetType } from "@/constants";
 import type { BSV20 } from "@/types/bsv20";
-import { getBalanceText } from "@/utils/wallet";
 import Link from "next/link";
 import { NextRequest } from "next/server";
 import React from "react";
-
-interface Holder {
-	address: string;
-	amt: string;
-	pct: number;
-}
+import HoldersTable from "@/components/holders";
 
 const Page = async ({
 	params,
@@ -20,19 +13,14 @@ const Page = async ({
 	const type = params.type;
 	const id = params.id;
 
+	console.log(`type: ${type}, id: ${id}`);
+
 	const url =
 		type === AssetType.BSV20
 			? `${API_HOST}/api/bsv20/tick/${id}`
 			: `${API_HOST}/api/bsv20/id/${id}`;
 
 	const details = await getDetails(new NextRequest(url), type, id);
-	const holders = await getHolders(
-		new NextRequest(`${url}/holders`),
-		type,
-		id,
-		details
-	);
-	const numHolders = (holders || []).length > 0 ? holders.length : 0;
 
 	return (
 		<div className="mx-auto flex flex-col max-w-5xl w-full">
@@ -48,64 +36,7 @@ const Page = async ({
 				</Link>
 			)}
 			<div className="divider" />
-			<div className="w-full">
-				<div className="grid grid-template-columns-3 p-6">
-					<div className="">
-						Address ({numHolders === 100 ? "100+" : numHolders})
-					</div>
-					<div className="w-24 text-right">Holdings</div>
-					<div className="w-12 text-right">Ownership</div>
-					<div className="divider col-span-3" />
-					{((holders || []) as Holder[]).map((h) => {
-						const pctWidth = `${h.pct}%`;
-
-						const balance = Number.parseFloat(h.amt);
-						const numDecimals = details.dec || 0;
-
-						const balanceText = getBalanceText(
-							balance,
-							numDecimals
-						);
-						const tooltip =
-							balance.toString() !== balanceText.trim()
-								? balance.toLocaleString()
-								: "";
-						return (
-							<React.Fragment key={`${id}-holder-${h.address}`}>
-								<Link
-									className="flex items-center text-sm flex-1"
-									href={`/activity/${h.address}/ordinals`}
-								>
-									<JDenticon
-										hashOrValue={h.address}
-										className="w-8 h-8 mr-2"
-									/>
-									<span className="hidden md:block">
-										{h.address}
-									</span>
-								</Link>
-								<div
-									className="w-24 text-right tooltip"
-									data-tip={tooltip}
-								>
-									{balanceText}
-								</div>
-								<div className="w-24 text-right">
-									{h.pct.toFixed(4)}%
-								</div>
-								<div className="flex items-center mb-2 relative col-span-3">
-									<div
-										className="w-full bg-warning/25 rounded h-1"
-										style={{ width: pctWidth }}
-									>
-										&nbsp;
-									</div>
-								</div>
-							</React.Fragment>
-						);
-					})}
-				</div>
-			</div>
+			<HoldersTable type={type} id={id} details={details} />
 		</div>
 	);
 };
@@ -122,26 +53,6 @@ const getDetails = async (req: NextRequest, type: AssetType, id: string) => {
 	});
 	const details = (await resp.json()) as BSV20;
 	return details;
-};
-
-const getHolders = async (
-	req: NextRequest,
-	type: AssetType,
-	id: string,
-	details: BSV20
-) => {
-	const res = await import("./holders/route");
-	const json = await (
-		await res.POST(req, {
-			params: {
-				type,
-				id,
-				details,
-			},
-		})
-	).json();
-
-	return json || ([] as Holder[]);
 };
 
 export async function generateMetadata({

@@ -32,7 +32,7 @@ const SignMessagePage = ({ message }: { message: string }) => {
 
 		const pk = PrivateKey.fromWif(key);
 		// address from ptivate key
-		return pk.toPublicKey().toAddress().toString();
+		return pk.toPublicKey().toAddress();
 	});
 
 	effect(() => {

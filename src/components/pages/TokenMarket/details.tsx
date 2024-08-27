@@ -8,11 +8,12 @@ import { TxoData } from "@/types/ordinals";
 export interface Holder {
   address: string;
   amt: string;
+  pct?: number;
 }
 
 export interface TickHolder {
   address: string;
-  amt: number;
+  amt: string;
   pct: number;
 }
 

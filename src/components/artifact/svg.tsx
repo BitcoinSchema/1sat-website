@@ -101,7 +101,7 @@ const SVGArtifact: React.FC<ArtifactProps> = ({
 							height={size || "100%"}
 							width={size || "100%"}
 							scrolling="no"
-							allowTransparency={true}
+							style={{background: "transparent"}}
 						/>
 					}
 				</>

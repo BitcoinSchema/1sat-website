@@ -8,6 +8,7 @@ import { formatBytes } from "@/utils/bytes";
 import * as http from "@/utils/httpClient";
 import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { oneSatBroadcaster } from "js-1sat-ord";
 import { head } from "lodash";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -50,27 +51,18 @@ const PreviewPage = () => {
 		FetchStatus.Idle,
 	);
 
-	const broadcast = useCallback(async () => {
-		const tx = pendingTx.value;
-		if (!tx) {
-			return;
-		}
+	const broadcast = useCallback(async (tx: PendingTransaction) => {
 		setBroadcastStatus(FetchStatus.Loading);
-		const rawtx = Buffer.from(tx.rawTx, "hex").toString("base64");
-		try {
-			const { promise } = http.customFetch<string>(`${API_HOST}/api/tx`, {
-				method: "POST",
-				body: JSON.stringify({
-					rawtx,
-				}),
-			});
-			await promise;
+		const transaction = Transaction.fromHex(tx.rawTx);
+    const { txid, status } = await transaction.broadcast(oneSatBroadcaster());
+		if (status === "success") {
+      console.log("Broadcasted", {txid})
 			setBroadcastStatus(FetchStatus.Success);
 
 			toast.success("Transaction broadcasted.", toastProps);
 
-			const returnTo = pendingTx.value?.returnTo;
-			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== tx.txid) || []);
+			const returnTo = tx.returnTo || null;
+			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== txid) || []);
 
 			utxos.value = (utxos.value || []).filter(
 				(u) => !tx.spentOutpoints.includes(`${u.txid}_${u.vout}`),
@@ -83,10 +75,11 @@ const PreviewPage = () => {
 			} else {
 				router.back();
 			}
-		} catch {
+		} else  if (status === "error") {
+      toast.error("Error broadcasting transaction.", toastProps);
 			setBroadcastStatus(FetchStatus.Error);
 		}
-	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
+	}, [ordUtxos.value, pendingTxs.value, router, utxos.value]);
 
 	const change = useMemo(() => {
     if (pendingTx.value?.payChange) {
@@ -259,7 +252,13 @@ Preview`}
 						<button
 							type="button"
 							className="btn btn-warning w-full cursor-pointer disabled:cursor-default"
-							onClick={broadcast}
+							onClick={async () => {
+                if (pendingTx.value) {
+                  await broadcast(pendingTx.value);
+                } else {
+                  toast.error("No pending transaction to broadcast", toastProps);
+                }
+              }}
 							disabled={loading || usdPrice === null || broadcastStatus === FetchStatus.Loading}
 						>
 							{broadcastStatus === FetchStatus.Loading

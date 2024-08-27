@@ -8,7 +8,7 @@ export const fundingAddress = computed(() => {
     return null;
   }
   
-  return PrivateKey.fromWif(wif).toAddress().toString();
+  return PrivateKey.fromWif(wif).toAddress();
 });
 
 export const ordAddress = computed(() => {
@@ -16,5 +16,5 @@ export const ordAddress = computed(() => {
   if (!wif) {
     return null;
   }
-  return PrivateKey.fromWif(wif).toAddress().toString();
+  return PrivateKey.fromWif(wif).toAddress();
 });
