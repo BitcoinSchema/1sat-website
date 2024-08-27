@@ -51,21 +51,17 @@ const PreviewPage = () => {
 		FetchStatus.Idle,
 	);
 
-	const broadcast = useCallback(async () => {
-		const tx = pendingTx.value;
-		if (!tx) {
-			return;
-		}
+	const broadcast = useCallback(async (tx: PendingTransaction) => {
 		setBroadcastStatus(FetchStatus.Loading);
 		const transaction = Transaction.fromHex(tx.rawTx);
-		try {
-      const { txid } = await transaction.broadcast(oneSatBroadcaster());
+    const { txid, status } = await transaction.broadcast(oneSatBroadcaster());
+		if (status === "success") {
       console.log("Broadcasted", {txid})
 			setBroadcastStatus(FetchStatus.Success);
 
 			toast.success("Transaction broadcasted.", toastProps);
 
-			const returnTo = pendingTx.value?.returnTo;
+			const returnTo = tx.returnTo || null;
 			setPendingTxs(pendingTxs.value?.filter((t) => t.txid !== txid) || []);
 
 			utxos.value = (utxos.value || []).filter(
@@ -79,10 +75,11 @@ const PreviewPage = () => {
 			} else {
 				router.back();
 			}
-		} catch {
+		} else  if (status === "error") {
+      toast.error("Error broadcasting transaction.", toastProps);
 			setBroadcastStatus(FetchStatus.Error);
 		}
-	}, [ordUtxos.value, pendingTx.value, pendingTxs.value, router, utxos.value]);
+	}, [ordUtxos.value, pendingTxs.value, router, utxos.value]);
 
 	const change = useMemo(() => {
     if (pendingTx.value?.payChange) {
@@ -255,7 +252,13 @@ Preview`}
 						<button
 							type="button"
 							className="btn btn-warning w-full cursor-pointer disabled:cursor-default"
-							onClick={broadcast}
+							onClick={async () => {
+                if (pendingTx.value) {
+                  await broadcast(pendingTx.value);
+                } else {
+                  toast.error("No pending transaction to broadcast", toastProps);
+                }
+              }}
 							disabled={loading || usdPrice === null || broadcastStatus === FetchStatus.Loading}
 						>
 							{broadcastStatus === FetchStatus.Loading
