@@ -71,10 +71,10 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 		let processedValue: any = "";
 
 		if (typeof value === "object") {
-			Object.keys(value).forEach((k) => {
+			for (const k in value) {
 				processedValue += `${k}: ${value[k]}, `;
-			});
-		} else if (typeof value === "string" && value.indexOf("b://") >= 0) {
+			}
+		} else if (typeof value === "string" && (value.startsWith("b://") || value.startsWith("bitfs://"))) {
 			const imageUrl = getImageFromGP(value);
 
 			processedValue = (
@@ -97,7 +97,7 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 		return (
 			<table className="table table-zebra">
 				<tbody>
-					{Object.entries(identity!)
+					{Object.entries(identity)
 						.filter(([key, value]) => !hiddenFields.includes(key))
 						.map(([key, value], index) => (
 							<tr
@@ -119,7 +119,8 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 
 	return identities?.length
 		? identities.map((identity: IdentityResult) => (
-				<div
+				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+        <div
 					key={identity.idKey}
 					className={`${
 						canSetActiveBapIdentity &&

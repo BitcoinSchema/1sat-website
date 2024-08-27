@@ -255,9 +255,8 @@ const WalletMenu: React.FC = () => {
 	const identityColor =
 		activeBapIdentity.value && hashColor(activeBapIdentity.value.idKey);
 
-	const identityImage =
-		activeBapIdentity.value?.identity?.image &&
-		getImageFromGP(activeBapIdentity.value?.identity?.image);
+	const idImage = activeBapIdentity.value?.identity?.image || activeBapIdentity.value?.identity?.logo
+  const identityImage = idImage && getImageFromGP(idImage);
 
 	return (
 		<ul className="dropdown dropdown-end">
