@@ -1,6 +1,5 @@
-import { broadcast } from "@/components/modal/cancelListing";
 import type { PrivateKey } from "@bsv/sdk";
-import { fetchPayUtxos, type Payment, sendUtxos, type SendUtxosConfig } from "js-1sat-ord";
+import { fetchPayUtxos, oneSatBroadcaster, type Payment, sendUtxos, type SendUtxosConfig } from "js-1sat-ord";
 
 export const sweepUtxos = async (paymentPk: PrivateKey, fromAddress: string, toAddress: string) => {
   const utxos = await fetchPayUtxos(fromAddress);
@@ -18,10 +17,7 @@ export const sweepUtxos = async (paymentPk: PrivateKey, fromAddress: string, toA
     payments,
   }
   const { tx } = await sendUtxos(config)
-  const txid = tx.id('hex');
-  const rawTx = tx.toString();
-
-  await broadcast({rawTx, txid });
+  const { txid } = await tx.broadcast(oneSatBroadcaster());
 
   console.log('Change sweep:', txid);
   return amount;
