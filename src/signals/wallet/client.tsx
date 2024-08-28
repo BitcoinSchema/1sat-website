@@ -2,11 +2,10 @@
 
 import { encryptionPrefix } from "@/constants";
 import type { PendingTransaction } from "@/types/preview";
-import {
-	CreateWalletStep,
-	type Keys,
-	type DecryptedBackupJson,
-	type EncryptedBackupJson,
+import type {
+	Keys,
+	DecryptedBackupJson,
+	EncryptedBackupJson,
 } from "@/types/wallet";
 import { removeIdentity } from "@/signals/bapIdentity/client";
 import {
@@ -129,6 +128,11 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
 
 	let decryptedBackupBin: Uint8Array;
 
+  if (!encryptedKeys.encryptedBackup.startsWith(encryptionPrefix)) {
+    throw new Error("Invalid encryption prefix");
+  }
+
+  debugger
 	try {
 		decryptedBackupBin = await decryptData(
 			Buffer.from(
@@ -142,6 +146,7 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
 		return "FAILED";
 	}
 
+  debugger;
 	const decryptedBackupStr =
 		Buffer.from(decryptedBackupBin).toString("utf-8");
 

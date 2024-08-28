@@ -178,7 +178,6 @@ export const loadIdentityFromEncryptedStorage = async (passphrase: string) => {
 	if (!encryptedIdentityStr) {
 		return false;
 	}
-
 	const encryptedIdentityParts = JSON.parse(
 		encryptedIdentityStr
 	) as EncryptedIdentityJson;
@@ -225,7 +224,7 @@ export const loadIdentityFromEncryptedStorage = async (passphrase: string) => {
 	const { activeBapIdentity: activeIdentityBackup } =
 		JSON.parse(decryptedBackupStr);
 
-	if (!activeIdentityBackup || !activeIdentityBackup?.identity) {
+	if (!activeIdentityBackup?.identity) {
 		return false;
 	}
 
@@ -238,6 +237,7 @@ export const loadIdentityFromEncryptedStorage = async (passphrase: string) => {
 export const setIdentitySessionStorage = (
 	identity: IdentityResult | IdentityResult[]
 ) => {
+  console.log({identity})
 	if (!identity) return;
 	if (Array.isArray(identity)) {
 		const availablIdentitiesString = JSON.stringify(identity);

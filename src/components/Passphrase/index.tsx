@@ -6,7 +6,6 @@ import {
   encryptionKey,
   importWalletFromBackupJsonStep,
   migrating,
-  mnemonic,
   ordPk,
   passphrase,
   payPk,
@@ -22,9 +21,7 @@ import { backupKeys } from "@/utils/wallet";
 import { PrivateKey } from "@bsv/sdk";
 import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import randomBytes from "randombytes";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import CopyToClipboard from "react-copy-to-clipboard";
 import toast from "react-hot-toast";
 import { FiCopy } from "react-icons/fi";
 import { RiErrorWarningFill } from "react-icons/ri";
@@ -32,6 +29,7 @@ import { TbDice } from "react-icons/tb";
 import { useCopyToClipboard } from "usehooks-ts";
 import { hasIdentityBackup } from "@/signals/bapIdentity/index";
 import { loadAvailableIdentitiesFromEncryptedStorage, loadIdentityFromEncryptedStorage } from "@/signals/bapIdentity/client";
+import randomBytes from "randombytes";
 
 type Props = {
   mode: EncryptDecrypt;
@@ -110,24 +108,24 @@ const EnterPassphrase: React.FC<Props> = ({
           return;
         }
 
+        const plainKeys = {
+          payPk: payPk.value,
+          ordPk: ordPk.value,
+        };
+        debugger;
         const iv = new Uint8Array(randomBytes(16).buffer);
         const encrypted = await encryptData(
           Buffer.from(
-            JSON.stringify({
-              payPk: payPk.value,
-              ordPk: ordPk.value,
-            }),
+            JSON.stringify(plainKeys),
             "utf-8"
           ),
           encryptionKey.value,
           iv
         );
 
-        const encryptedBackup =
-          encryptionPrefix +
-          // Buffer.concat([iv, encrypted]).toString("base64");
-          Buffer.from(encrypted).toString("base64");
-
+        console.log({encryptionPrefix, encrypted})
+        const encryptedBackup = `${encryptionPrefix}${Buffer.concat([iv, encrypted]).toString("base64")}`;
+        debugger;
         const keys: EncryptedBackupJson = {
           encryptedBackup,
           pubKey,

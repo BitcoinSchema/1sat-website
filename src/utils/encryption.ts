@@ -1,3 +1,5 @@
+import randomBytes from "randombytes";
+
 const getKey = async (key: Uint8Array): Promise<CryptoKey> => {
   return await crypto.subtle.importKey(
     "raw",
@@ -19,6 +21,8 @@ export const encryptData = async (
     cryptoKey,
     data
   );
+
+  debugger
   
   // Combine IV and encrypted content
   // const result = new Uint8Array(iv.length + encryptedContent.byteLength);
@@ -33,8 +37,8 @@ export const decryptData = async(
   encryptedData: Uint8Array,
   key: Uint8Array
 ): Promise<Uint8Array> => {
-  const cryptoKey = await getKey(key);
   const iv = encryptedData.slice(0, 16);
+  const cryptoKey = await getKey(key);
   const encryptedContent = encryptedData.slice(16);
 
   const decryptedContent = await crypto.subtle.decrypt(
@@ -89,6 +93,5 @@ export const generateEncryptionKeyFromPassphrase = async (
   }
 
   const pubKeyBytes = new Uint8Array(Buffer.from(pubKey, "base64").buffer);
-
   return await generateEncryptionKey(passphrase, pubKeyBytes);
 }

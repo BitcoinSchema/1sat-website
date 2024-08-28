@@ -1,6 +1,6 @@
 export function fromHexString(hexString: string): Uint8Array {
   return new Uint8Array(
-    hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+    hexString.match(/.{1,2}/g)!.map((byte) => Number.parseInt(byte, 16))
   );
 }
 

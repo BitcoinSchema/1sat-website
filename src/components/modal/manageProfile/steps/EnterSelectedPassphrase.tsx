@@ -10,23 +10,20 @@ import {
 	bapIdentityRaw,
 	bapIdEncryptionKey,
 	hasIdentityBackup,
-	activeBapIdentity
+	activeBapIdentity,
 } from "@/signals/bapIdentity";
 import { setIdentitySessionStorage } from "@/signals/bapIdentity/client";
-import {
-	passphrase,
-	payPk,
-} from "@/signals/wallet";
+import { passphrase, payPk } from "@/signals/wallet";
 import {
 	encryptData,
 	generateEncryptionKeyFromPassphrase,
 } from "@/utils/encryption";
-import randomBytes from "randombytes";
 import { loadKeysFromEncryptedStorage } from "@/signals/wallet/client";
 import toast from "react-hot-toast";
 import type { EncryptedIdentityJson } from "@/types/identity";
 import { encryptionPrefix, toastErrorProps, toastProps } from "@/constants";
 import { PrivateKey } from "@bsv/sdk";
+import randomBytes from "randombytes";
 
 interface Props {
 	onClose: () => void;
@@ -60,10 +57,10 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 	};
 
 	const passwordCanDecrypt = useCallback(async () => {
-    if (!password) {
-      console.log("Missing decryption password");
-      return
-    }
+		if (!password) {
+			console.log("Missing decryption password");
+			return;
+		}
 		try {
 			const succeeded = await loadKeysFromEncryptedStorage(password);
 			if (succeeded === "SUCCESS") {
@@ -77,55 +74,47 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 
 	const handleEncryptProfile = useCallback(async () => {
 		if (!passphrase.value || !payPk.value) {
+			console.error("Missing passphrase or payPk");
 			return;
 		}
-
+		console.log("passphrase", passphrase.value);
 		try {
-			const pubKey = PrivateKey.fromWif(payPk.value)
-				.toPublicKey()
-				.toString();
+			const pubKey = PrivateKey.fromWif(payPk.value).toPublicKey().toString();
 			bapIdEncryptionKey.value =
-				(await generateEncryptionKeyFromPassphrase(
-					passphrase.value,
-					pubKey
-				)) ?? null;
+				(await generateEncryptionKeyFromPassphrase(passphrase.value, pubKey)) ??
+				null;
 
 			if (!bapIdEncryptionKey.value) {
 				console.error("No encryption key found. Unable to encrypt.");
 				return;
 			}
-
-			const iv = new Uint8Array(randomBytes(16).buffer);
-
+      const iv = new Uint8Array(randomBytes(16).buffer);
 			const encrypted = await encryptData(
 				Buffer.from(
 					JSON.stringify({
 						activeBapIdentity: selectedBapIdentity.value,
 					}),
-					"utf-8"
+					"utf-8",
 				),
 				bapIdEncryptionKey.value,
-				iv
+        iv,
 			);
+      const encryptedIdentity = `${encryptionPrefix}${Buffer.concat([iv, encrypted]).toString("base64")}`;
 
+      const iv2 = new Uint8Array(randomBytes(16).buffer);
 			const encryptedIdentitiesBackup = await encryptData(
 				Buffer.from(
 					JSON.stringify({
 						allBapIdentities: bapIdentities.value,
 					}),
-					"utf-8"
+					"utf-8",
 				),
 				bapIdEncryptionKey.value,
-				iv
+        iv2,
 			);
-
-			const encryptedIdentity =
-				encryptionPrefix +
-				Buffer.concat([iv, encrypted]).toString("base64");
-
+      
 			const encryptedAllIdentities =
-				encryptionPrefix +
-				Buffer.concat([iv, encryptedIdentitiesBackup]).toString("base64");
+				`${encryptionPrefix}${Buffer.concat([iv2, encryptedIdentitiesBackup]).toString("base64")}`;
 
 			const activeIdentityBackup: EncryptedIdentityJson = {
 				encryptedIdentity,
@@ -142,32 +131,35 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 
 			localStorage.setItem(
 				"encryptedAllIdentities",
-				encryptedAllIdentitiesString 
-			);	
+				encryptedAllIdentitiesString,
+			);
 
-			localStorage.setItem(
-				"encryptedIdentity",
-				encryptedIdentityString
-			);	
-				
+			localStorage.setItem("encryptedIdentity", encryptedIdentityString);
+
 			activeBapIdentity.value = selectedBapIdentity.value;
 			hasIdentityBackup.value = true;
-      if (!bapIdentities.value) {
-        console.error("No identities found");
-        return false;
-      }
-      if (!selectedBapIdentity.value) {
-        console.error("No selected identity found");
-        return false;
-      }
+			if (!bapIdentities.value) {
+				console.error("No identities found");
+				return false;
+			}
+			if (!selectedBapIdentity.value) {
+				console.error("No selected identity found");
+				return false;
+			}
 			setIdentitySessionStorage(selectedBapIdentity.value);
-			setIdentitySessionStorage(bapIdentities.value);			
+			setIdentitySessionStorage(bapIdentities.value);
 			return true;
 		} catch (e) {
 			console.log(e);
 			toast.error("Failed to encrypt identity", toastErrorProps);
 		}
-	}, [bapIdEncryptionKey.value, bapIdentities.value, passphrase.value, payPk.value, selectedBapIdentity.value]);
+	}, [
+		bapIdEncryptionKey.value,
+		bapIdentities.value,
+		passphrase.value,
+		payPk.value,
+		selectedBapIdentity.value,
+	]);
 
 	const handleDecryptEncrypt = useCallback(async () => {
 		const passwordCorrect = await passwordCanDecrypt();
@@ -190,7 +182,7 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 				Enter your encryption password:
 				<label className="input input-bordered flex items-center gap-2 mt-5">
 					{/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
-          <svg
+					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 16 16"
 						fill="currentColor"
@@ -224,7 +216,7 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 			<div className="flex w-full mt-5 justify-end">
 				<CancelButton handleCancel={handleCancel} />
 				<button
-          type="button"
+					type="button"
 					className="btn btn-accent cursor-pointer ml-5"
 					disabled={(password?.length || 0) < 6}
 					onClick={() => handleDecryptEncrypt()}
