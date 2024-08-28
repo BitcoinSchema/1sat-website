@@ -113,18 +113,16 @@ const EnterPassphrase: React.FC<Props> = ({
           ordPk: ordPk.value,
         };
         debugger;
-        const iv = new Uint8Array(randomBytes(16).buffer);
         const encrypted = await encryptData(
           Buffer.from(
             JSON.stringify(plainKeys),
             "utf-8"
           ),
           encryptionKey.value,
-          iv
         );
 
         console.log({encryptionPrefix, encrypted})
-        const encryptedBackup = `${encryptionPrefix}${Buffer.concat([iv, encrypted]).toString("base64")}`;
+        const encryptedBackup = `${encryptionPrefix}${encrypted}`;
         debugger;
         const keys: EncryptedBackupJson = {
           encryptedBackup,

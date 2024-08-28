@@ -88,7 +88,6 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 				console.error("No encryption key found. Unable to encrypt.");
 				return;
 			}
-      const iv = new Uint8Array(randomBytes(16).buffer);
 			const encrypted = await encryptData(
 				Buffer.from(
 					JSON.stringify({
@@ -97,11 +96,9 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 					"utf-8",
 				),
 				bapIdEncryptionKey.value,
-        iv,
 			);
-      const encryptedIdentity = `${encryptionPrefix}${Buffer.concat([iv, encrypted]).toString("base64")}`;
+      const encryptedIdentity = `${encryptionPrefix}${encrypted}`;
 
-      const iv2 = new Uint8Array(randomBytes(16).buffer);
 			const encryptedIdentitiesBackup = await encryptData(
 				Buffer.from(
 					JSON.stringify({
@@ -110,11 +107,10 @@ export default function EnterSelectedPassphrase({ onClose }: Props) {
 					"utf-8",
 				),
 				bapIdEncryptionKey.value,
-        iv2,
 			);
       
 			const encryptedAllIdentities =
-				`${encryptionPrefix}${Buffer.concat([iv2, encryptedIdentitiesBackup]).toString("base64")}`;
+				`${encryptionPrefix}${encryptedIdentitiesBackup}`;
 
 			const activeIdentityBackup: EncryptedIdentityJson = {
 				encryptedIdentity,

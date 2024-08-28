@@ -13,24 +13,16 @@ const getKey = async (key: Uint8Array): Promise<CryptoKey> => {
 export const encryptData = async (
   data: Uint8Array,
   key: Uint8Array,
-  iv: Uint8Array
-): Promise<Uint8Array> => {
+): Promise<string> => {
+  const iv = new Uint8Array(randomBytes(16).buffer);
   const cryptoKey = await getKey(key);
   const encryptedContent = await crypto.subtle.encrypt(
     { name: "AES-CBC", iv },
     cryptoKey,
     data
   );
-
-  debugger
   
-  // Combine IV and encrypted content
-  // const result = new Uint8Array(iv.length + encryptedContent.byteLength);
-  // result.set(iv);
-  // result.set(new Uint8Array(encryptedContent), iv.length);
-  
-  // They are already combined
-  return new Uint8Array(encryptedContent);
+  return Buffer.concat([iv, new Uint8Array(encryptedContent)]).toString("base64");
 }
 
 export const decryptData = async(
