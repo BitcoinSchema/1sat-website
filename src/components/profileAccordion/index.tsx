@@ -16,7 +16,7 @@ type Props = {
 
 const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 	useSignals();
-	const hiddenFields = ["@context", "@type"]; // not shown to user
+	const hiddenFields = ["@context", "@type", "image", "logo"]; // not shown to user
 
 	const handleClick = (idKey: string) => {
 		if (canSetActiveBapIdentity) {
@@ -27,23 +27,18 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 
 	const setActiveBapIdentity = (id: string) => {
 		const selectedIdentity = bapIdentities?.value?.find(
-			(identity: IdentityResult) => identity.idKey === id
+			(identity: IdentityResult) => identity.idKey === id,
 		);
 		selectedBapIdentity.value = selectedIdentity || null;
 	};
 
-	const makeIdentityAvatar = (
-		imageUrl: string | undefined,
-		idKey: string
-	) => {
+	const makeIdentityAvatar = (imageUrl: string | undefined, idKey: string) => {
 		const url = imageUrl && getImageFromGP(imageUrl);
 
 		return (
 			<div
-				className={`rounded-full border-2 w-9 h-9 ${
-					url
-						? "relative overflow-hidden"
-						: "flex align-middle justify-center"
+				className={`rounded-full border-2 w-10 h-10 ${
+					url ? "relative overflow-hidden" : "flex align-middle justify-center"
 				}`}
 				style={{
 					borderColor: `rgb(${hashColor(idKey)})`,
@@ -71,10 +66,29 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 		let processedValue: any = "";
 
 		if (typeof value === "object") {
+			const values = [];
 			for (const k in value) {
-				processedValue += `${k}: ${value[k]}, `;
+				values.push(`${k}: ${value[k]}`);
 			}
-		} else if (typeof value === "string" && (value.startsWith("b://") || value.startsWith("bitfs://"))) {
+			processedValue = values.join(", ");
+		} else if (
+			typeof value === "string" &&
+			(value.startsWith("https://") || value.startsWith("http://"))
+		) {
+			processedValue = (
+				<a
+					href={value}
+					rel="noopener noreferrer"
+					target="_blank"
+					className="hover:underline cursor-pointer text-blue-400 hover:text-blue-500"
+				>
+					{value}
+				</a>
+			);
+		} else if (
+			typeof value === "string" &&
+			(value.startsWith("b://") || value.startsWith("bitfs://"))
+		) {
 			const imageUrl = getImageFromGP(value);
 
 			processedValue = (
@@ -94,24 +108,25 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 	};
 
 	const buildTable = (identity: Identity) => {
+		console.log({ identity });
 		return (
-			<table className="table table-zebra">
+			<table className="table table-zebra mb-4">
 				<tbody>
 					{Object.entries(identity)
-						.filter(([key, value]) => !hiddenFields.includes(key))
-						.map(([key, value], index) => (
-							<tr
-								className={`text-xs ${
-									index % 2 > 0 ? "" : "bg-neutral-800"
-								}`}
-								key={index}
-							>
-								<td className="text-zinc-400 py-0 px-2">
-									{key}
-								</td>
-								{processValue(value)}
-							</tr>
-						))}
+						.filter(
+							([key, value]) => !hiddenFields.includes(key) && value !== "",
+						)
+						.map(([key, value], index) => {
+							return (
+								<tr
+									className={`text-xs ${index % 2 > 0 ? "" : "bg-[#121212]"}`}
+									key={index}
+								>
+									<td className="text-zinc-400 py-0 px-2">{key}</td>
+									{processValue(value)}
+								</tr>
+							);
+						})}
 				</tbody>
 			</table>
 		);
@@ -120,41 +135,47 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 	return identities?.length
 		? identities.map((identity: IdentityResult) => (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-        <div
+				<div
 					key={identity.idKey}
 					className={`${
 						canSetActiveBapIdentity &&
 						selectedBapIdentity.value?.idKey === identity.idKey
 							? "border border-amber-400"
 							: ""
-					} collapse  bg-base-200 rounded-none mt-5 ${
-						canSetActiveBapIdentity
-							? "collapse-plus"
-							: "collapse-open"
+					} collapse  bg-base-200 rounded-lg mt-5 ${
+						canSetActiveBapIdentity ? "collapse-plus" : "collapse-open"
 					}`}
 					onClick={() => handleClick(identity.idKey)}
 				>
 					<input type="radio" name="selectedId" />
-					<div className="collapse-title text-md font-medium flex align-middle">
+					<div className="collapse-title text-md font-medium flex items-center">
 						{makeIdentityAvatar(
 							identity?.identity?.image || identity?.identity?.logo,
-							identity?.idKey
+							identity?.idKey,
 						)}
-						<p className="flex align-middle mt-1 ml-5">
-							{identity?.identity?.alternateName}
-						</p>
+						<div className="flex flex-col ml-4">
+							<div>{identity?.identity?.alternateName}</div>
+							<div className="text-xs">
+								<a
+									href="https://sigmaidentity.com"
+									className="text-blue-400 hover:text-blue-500 hover:text-underline hover:cursor-pointer"
+									target="_blank"
+									rel="noreferrer"
+								>
+									Edit Profile
+								</a>
+							</div>
+						</div>
 					</div>
 					<div
 						className={`collapse-content  ${
-							canSetActiveBapIdentity
-								? "max-h-40 overflow-scroll"
-								: ""
+							canSetActiveBapIdentity ? "max-h-40 overflow-scroll" : ""
 						}  pb-0`}
 					>
 						{buildTable(identity?.identity)}
 					</div>
 				</div>
-		  ))
+			))
 		: null;
 };
 

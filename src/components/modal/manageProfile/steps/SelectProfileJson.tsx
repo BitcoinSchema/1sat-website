@@ -79,6 +79,7 @@ export default function SelectProfileJson({ onClose }: Props) {
 			ImportProfileFromBackupJsonStep.ChooseIdentity;
 	};
 
+  // TODO: Allow users to change identities without logging out
 	return (
 		<>
 			{activeBapIdentity.value ? (

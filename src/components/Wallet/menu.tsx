@@ -23,7 +23,7 @@ import {
 	utxos,
 } from "@/signals/wallet";
 import { activeBapIdentity, hasIdentityBackup } from "@/signals/bapIdentity";
-import {loadIdentityFromSessionStorage} from "@/signals/bapIdentity/client";
+import { loadIdentityFromSessionStorage } from "@/signals/bapIdentity/client";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import {
 	loadKeysFromBackupFiles,
@@ -52,7 +52,7 @@ import {
 	FaUnlock,
 } from "react-icons/fa";
 
-import { FaCopy } from "react-icons/fa6";
+import { FaCopy, FaX } from "react-icons/fa6";
 import { MdAccountCircle } from "react-icons/md";
 import { toBitcoin, toSatoshi } from "satoshi-token";
 import { useCopyToClipboard } from "usehooks-ts";
@@ -78,18 +78,18 @@ const WalletMenu: React.FC = () => {
 	const showDropdown = useSignal(false);
 
 	const [eb] = useLocalStorage("encryptedBackup");
-	
+
 	useEffect(() => {
 		if (!activeBapIdentity.value) {
 			loadIdentityFromSessionStorage();
 		}
-		
-	},[activeBapIdentity.value]);
+	}, [activeBapIdentity.value]);
 
-	useEffect(()=> {
-		hasIdentityBackup.value = Boolean(localStorage.getItem("encryptedIdentity"));
-	},[]);
-
+	useEffect(() => {
+		hasIdentityBackup.value = Boolean(
+			localStorage.getItem("encryptedIdentity"),
+		);
+	}, []);
 
 	const [value, copy] = useCopyToClipboard();
 	const ordAddressHover = useSignal(false);
@@ -103,16 +103,16 @@ const WalletMenu: React.FC = () => {
 		ordAddressHover.value = false;
 	};
 
-    // useEffect needed so that we can use localStorage
-    useEffect(() => {
-      if (payPk.value && ordPk.value) {
-        const localTxsStr = localStorage.getItem("1satpt");
-        const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
-        if (localTxs) {
-          pendingTxs.value = localTxs as PendingTransaction[];
-        }
-      }
-    }, [ ordPk.value, payPk.value]);
+	// useEffect needed so that we can use localStorage
+	useEffect(() => {
+		if (payPk.value && ordPk.value) {
+			const localTxsStr = localStorage.getItem("1satpt");
+			const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
+			if (localTxs) {
+				pendingTxs.value = localTxs as PendingTransaction[];
+			}
+		}
+	}, [ordPk.value, payPk.value]);
 
 	useEffect(() => {
 		loadKeysFromSessionStorage();
@@ -150,7 +150,7 @@ const WalletMenu: React.FC = () => {
 			bsv20Balances.value = [];
 			try {
 				const { promise } = http.customFetch<BSV20Balance[]>(
-					`${MARKET_API_HOST}/user/${address}/balance`
+					`${MARKET_API_HOST}/user/${address}/balance`,
 				);
 				const u = await promise;
 				bsv20Balances.value = u.sort((a, b) => {
@@ -221,7 +221,7 @@ const WalletMenu: React.FC = () => {
 		console.log("handleFileChange called", e.target.files[0]);
 		if (payPk.value || ordPk.value) {
 			const c = confirm(
-				"Are you sure you want to import this wallet? Doing so will replace your existing keys so be sure to back them up first."
+				"Are you sure you want to import this wallet? Doing so will replace your existing keys so be sure to back them up first.",
 			);
 			if (!c) {
 				return;
@@ -255,8 +255,10 @@ const WalletMenu: React.FC = () => {
 	const identityColor =
 		activeBapIdentity.value && hashColor(activeBapIdentity.value.idKey);
 
-	const idImage = activeBapIdentity.value?.identity?.image || activeBapIdentity.value?.identity?.logo
-  const identityImage = idImage && getImageFromGP(idImage);
+	const idImage =
+		activeBapIdentity.value?.identity?.image ||
+		activeBapIdentity.value?.identity?.logo;
+	const identityImage = idImage && getImageFromGP(idImage);
 
 	return (
 		<ul className="dropdown dropdown-end">
@@ -305,21 +307,25 @@ const WalletMenu: React.FC = () => {
 					onClick={() => {
 						showDropdown.value = false;
 					}}
-					className="dropdown-content menu shadow border-yellow-200/25 bg-base-100 rounded-box w-64 border"
+					className="pt-16 md:pt-0 md:dropdown-content menu z-20 md:shadow w-screen overflow-auto md:overflow-none md:h-auto h-screen fixed top-0 left-0 md:left-auto md:top-auto md:relative md:border-yellow-200/25 bg-base-100 md:rounded-box md:w-64 md:border"
 				>
+					<div className="md:hidden md:pointer-events-none absolute top-0 right-0 p-6">
+						<FaX
+							className="w-4 h-4 text-[#555]"
+							onClick={() => {
+								showDropdown.value = false;
+							}}
+						/>
+					</div>
 					{payPk.value && ordPk.value && (
 						<div>
 							<div className="text-center mb-2">
-								<div className="text-[#555] text-lg">
-									Balance
-								</div>
+								<div className="text-[#555] text-lg">Balance</div>
 								<div className="text-2xl font-mono my-2">
 									{balance.value === undefined ? (
 										"" // user has no wallet yet
 									) : usdRate.value > 0 ? (
-										`$${(
-											balance.value / usdRate.value
-										).toFixed(2)}`
+										`$${(balance.value / usdRate.value).toFixed(2)}`
 									) : (
 										<CgSpinner className="animate-spin inline-flex w-4" />
 									)}
@@ -342,10 +348,7 @@ const WalletMenu: React.FC = () => {
 								</button>
 								<button
 									type="button"
-									disabled={
-										usdRate.value <= 0 ||
-										balance.value === 0
-									}
+									disabled={usdRate.value <= 0 || balance.value === 0}
 									className="btn btn-sm btn-primary"
 									onClick={() => {
 										showWithdrawalModal.value = true;
@@ -363,12 +366,16 @@ const WalletMenu: React.FC = () => {
 										className="flex flex-row items-center justify-between w-full"
 										onClick={handleManageProfile}
 									>
-										{activeBapIdentity.value ? "Switch Profile" : "Import Profile" }
+										{activeBapIdentity.value
+											? "Switch Profile"
+											: "Import Profile"}
 									</button>
 								</li>
-								{activeBapIdentity.value && <li>
-									<Link href="/profile">Profile Details</Link>
-								</li>}
+								{activeBapIdentity.value && (
+									<li>
+										<Link href="/profile">Profile Details</Link>
+									</li>
+								)}
 							</ul>
 
 							<div className="divider">1Sat Wallet</div>
@@ -379,9 +386,7 @@ const WalletMenu: React.FC = () => {
 										showDropdown.value = false;
 									}}
 								>
-									<Link href="/wallet/ordinals">
-										Ordinals
-									</Link>
+									<Link href="/wallet/ordinals">Ordinals</Link>
 								</li>
 								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 								<li
@@ -405,29 +410,20 @@ const WalletMenu: React.FC = () => {
 								>
 									<button
 										type="button"
-										className={
-											"flex items-center justify-between w-full"
-										}
+										className={"flex items-center justify-between w-full"}
 										onClick={(e) => {
 											e.preventDefault();
 											copy(ordAddress.value || "");
-											console.log(
-												"Copied",
-												ordAddress.value
-											);
-											toast.success(
-												"Copied Ordinals Address"
-											);
+											console.log("Copied", ordAddress.value);
+											toast.success("Copied Ordinals Address");
 											showDropdown.value = false;
 										}}
 									>
 										{ordAddressHover.value
 											? `${ordAddress.value?.slice(
 													0,
-													8
-											  )}...${ordAddress.value?.slice(
-													-8
-											  )}`
+													8,
+												)}...${ordAddress.value?.slice(-8)}`
 											: "Ordinals Address"}{" "}
 										<FaCopy className="text-[#333]" />
 									</button>
@@ -437,10 +433,7 @@ const WalletMenu: React.FC = () => {
 							<div className="divider">Keys</div>
 							<ul className="p-0">
 								<li>
-									<button
-										type="button"
-										onClick={handleImportWallet}
-									>
+									<button type="button" onClick={handleImportWallet}>
 										Import Wallet
 									</button>
 								</li>
@@ -577,22 +570,22 @@ const WalletMenu: React.FC = () => {
 export default WalletMenu;
 
 export const exportKeysViaFragment = () => {
-  // redirect to https://1sat.market/wallet/import#import=<b64KeyBackupData>
-  const fk = localStorage.getItem("1satfk");
-  const ok = localStorage.getItem("1satok");
-  let data = ""
-  if (!fk || !ok) {
-    if (!payPk.value || !ordPk.value) {
-      toast.error("No keys to export. Encrypt your keys first.");
-    }
-    data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
-  } else {
-    data = JSON.stringify({ payPk: JSON.parse(fk), ordPk: JSON.parse(ok) });
-  }
-  const b64 = btoa(data);
-  const base = "http://localhost:3000" // "https://1sat.market"
-  // window.location.href = `${base}/wallet/import#import=${b64}`;
-}
+	// redirect to https://1sat.market/wallet/import#import=<b64KeyBackupData>
+	const fk = localStorage.getItem("1satfk");
+	const ok = localStorage.getItem("1satok");
+	let data = "";
+	if (!fk || !ok) {
+		if (!payPk.value || !ordPk.value) {
+			toast.error("No keys to export. Encrypt your keys first.");
+		}
+		data = JSON.stringify({ payPk: payPk.value, ordPk: ordPk.value });
+	} else {
+		data = JSON.stringify({ payPk: JSON.parse(fk), ordPk: JSON.parse(ok) });
+	}
+	const b64 = btoa(data);
+	const base = "http://localhost:3000"; // "https://1sat.market"
+	// window.location.href = `${base}/wallet/import#import=${b64}`;
+};
 
 export const swapKeys = () => {
 	// swaps paypk with ordpk values
