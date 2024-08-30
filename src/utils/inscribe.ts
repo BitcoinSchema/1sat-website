@@ -258,16 +258,11 @@ export const inscribeUtf8 = async (
 		undefined,
 		payments,
 	);
-	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
-	const satsOut = tx.outputs.reduce(
-		(acc, output) => acc + (output.satoshis || 0),
-		0,
-	);
-	const fee = satsIn - satsOut;
+
 	const result = {
 		rawTx: tx.toHex(),
 		size: tx.toBinary().length,
-		fee,
+		fee: tx.getFee(),
 		numInputs: tx.inputs.length,
 		numOutputs: tx.outputs.length,
 		txid: tx.id("hex"),
