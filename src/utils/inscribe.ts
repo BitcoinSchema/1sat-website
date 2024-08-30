@@ -14,7 +14,7 @@ import {
 	type Payment,
 	type RemoteSigner,
 	type Utxo,
-	LocalSigner,
+	type LocalSigner,
 } from "js-1sat-ord";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
@@ -100,7 +100,7 @@ export const handleBulkInscribing = async (
 	// const signer = {
 	// 	keyHost: "http://localhost:21000",
 	// } as RemoteSigner;
-  debugger;
+
 	let signer = undefined;
 	if (activeBapIdentity.value && identityPk.value) {
 		signer = {
@@ -140,9 +140,15 @@ export const handleBulkInscribingWithData = async (
 ) => {
 	const paymentPk = PrivateKey.fromWif(payPk);
 
-	const signer = {
-		keyHost: "http://localhost:21000",
-	} as RemoteSigner;
+	// const signer = {
+	// 	keyHost: "http://localhost:21000",
+	// } as RemoteSigner;
+	let signer: undefined | LocalSigner;
+	if (identityPk.value) {
+		signer = {
+			idKey: PrivateKey.fromWif(identityPk.value),
+		};
+	}
 
 	const config: CreateOrdinalsConfig = {
 		utxos: fundingUtxos,
@@ -156,6 +162,7 @@ export const handleBulkInscribingWithData = async (
 		metaData: metadata,
 		additionalPayments: payments,
 		changeAddress,
+    signer,
 	};
 
 	const { tx, spentOutpoints } = await createOrdinals(config);
