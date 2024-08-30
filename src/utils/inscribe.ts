@@ -14,13 +14,13 @@ import {
 	type Payment,
 	type RemoteSigner,
 	type Utxo,
-  LocalSigner,
+	LocalSigner,
 } from "js-1sat-ord";
 import toast from "react-hot-toast";
 import { readFileAsBase64 } from "./file";
 import { setPendingTxs } from "@/signals/wallet/client";
 import { PrivateKey } from "@bsv/sdk";
-import { bapIdentities } from "@/signals/bapIdentity";
+import { activeBapIdentity, bapIdentities } from "@/signals/bapIdentity";
 
 export const handleInscribing = async (
 	payPk: string,
@@ -44,34 +44,32 @@ export const handleInscribing = async (
 	// );
 	console.log("Inscribing with", { metaData });
 
-
 	const destinations: Destination[] = [
 		{
 			address: ordAddress,
-      inscription
+			inscription,
 		},
 	];
 
+	// [fundingUtxo],
+	// ordAddress,
+	// paymentPk,
+	// changeAddress,
+	// 0.05,
+	// [inscription],
+	// metadata, // optional metadata
+	// undefined,
+	// payments,
 
-  // [fundingUtxo],
-  // ordAddress,
-  // paymentPk,
-  // changeAddress,
-  // 0.05,
-  // [inscription],
-  // metadata, // optional metadata
-  // undefined,
-  // payments,
+	let signer: undefined | LocalSigner;
+	if (identityPk.value) {
+		signer = {
+			idKey: PrivateKey.fromWif(identityPk.value),
+		};
+	}
 
-  let signer: undefined | LocalSigner;
-  if (identityPk.value) {
-    signer = {
-      idKey: PrivateKey.fromWif(identityPk.value),
-    }
-  }
-
-  // TODO: TokenPass support
-  // const signer = {
+	// TODO: TokenPass support
+	// const signer = {
 	// 	// idKey // optional id key
 	// 	keyHost: "http://localhost:21000",
 	// } as RemoteSigner;
@@ -79,12 +77,12 @@ export const handleInscribing = async (
 		utxos,
 		destinations,
 		paymentPk,
-    metaData,
-    additionalPayments,
-    signer,
+		metaData,
+		additionalPayments,
+		signer,
 	};
 	const { spentOutpoints, tx, payChange } = await createOrdinals(config);
-	return { spentOutpoints, tx, payChange};
+	return { spentOutpoints, tx, payChange };
 };
 
 // same as haleInscribing but takes multiple utxos and multiple inscriptions
@@ -102,21 +100,29 @@ export const handleBulkInscribing = async (
 	// const signer = {
 	// 	keyHost: "http://localhost:21000",
 	// } as RemoteSigner;
+  debugger;
+	let signer = undefined;
+	if (activeBapIdentity.value && identityPk.value) {
+		signer = {
+			idKey: PrivateKey.fromWif(identityPk.value),
+		};
+	}
 
-  const destinations: Destination[] = inscriptions.map((inscription) => {
-    return {
-      address: ordAddress,
-      inscription
-    }
-  });
+	const destinations: Destination[] = inscriptions.map((inscription) => {
+		return {
+			address: ordAddress,
+			inscription,
+		};
+	});
 
 	const config: CreateOrdinalsConfig = {
 		utxos,
 		destinations,
 		paymentPk,
-    metaData,
-    additionalPayments,
-    changeAddress,
+		metaData,
+		additionalPayments,
+		changeAddress,
+		signer,
 	};
 
 	const { tx, spentOutpoints, payChange } = await createOrdinals(config);
@@ -138,20 +144,20 @@ export const handleBulkInscribingWithData = async (
 		keyHost: "http://localhost:21000",
 	} as RemoteSigner;
 
-  const config: CreateOrdinalsConfig = {
-    utxos: fundingUtxos,
-    destinations: inscriptions.map((inscription) => {
-      return {
-        address: ordAddress,
-        inscription
-      }
-    }),
-    paymentPk,
-    metaData: metadata,
-    additionalPayments: payments,
-    changeAddress,
-  };
-  
+	const config: CreateOrdinalsConfig = {
+		utxos: fundingUtxos,
+		destinations: inscriptions.map((inscription) => {
+			return {
+				address: ordAddress,
+				inscription,
+			};
+		}),
+		paymentPk,
+		metaData: metadata,
+		additionalPayments: payments,
+		changeAddress,
+	};
+
 	const { tx, spentOutpoints } = await createOrdinals(config);
 	// 	fundingUtxos,
 	// 	ordAddress,
@@ -175,9 +181,9 @@ export const inscribeFile = async (
 	if (!file?.type || !utxos.length) {
 		throw new Error("File or utxo not provided");
 	}
-  if (!payPk.value || !ordAddress.value) {
-    throw new Error("Missing payPk or ordAddress");
-  }
+	if (!payPk.value || !ordAddress.value) {
+		throw new Error("Missing payPk or ordAddress");
+	}
 
 	//   setInscribeStatus(FetchStatus.Loading);
 	try {
@@ -194,23 +200,22 @@ export const inscribeFile = async (
 				metadata,
 			);
 
-				const result = {
-					rawTx: tx.toHex(),
-					size: tx.toBinary().length,
-					fee: tx.getFee(),
-					numInputs: tx.inputs.length,
-					numOutputs: tx.outputs.length,
-					txid: tx.id('hex'),
-					spentOutpoints,
-          payChange,
-					metadata,
-				} as PendingTransaction;
-				console.log(Object.keys(result));
+			const result = {
+				rawTx: tx.toHex(),
+				size: tx.toBinary().length,
+				fee: tx.getFee(),
+				numInputs: tx.inputs.length,
+				numOutputs: tx.outputs.length,
+				txid: tx.id("hex"),
+				spentOutpoints,
+				payChange,
+				metadata,
+			} as PendingTransaction;
+			console.log(Object.keys(result));
 
-				setPendingTxs([result]);
-				//setInscribeStatus(FetchStatus.Success);
-				return result;
-			
+			setPendingTxs([result]);
+			//setInscribeStatus(FetchStatus.Success);
+			return result;
 		} catch (e) {
 			console.error(e);
 			//setInscribeStatus(FetchStatus.Error);
@@ -231,10 +236,9 @@ export const inscribeUtf8 = async (
 	iterations = 1,
 	payments: Payment[] = [],
 ) => {
-
-  if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
-    throw new Error("Missing payPk, ordAddress or fundingAddress");
-  }
+	if (!payPk.value || !ordAddress.value || !fundingAddress.value) {
+		throw new Error("Missing payPk, ordAddress or fundingAddress");
+	}
 
 	const fileAsBase64 = Buffer.from(text).toString("base64");
 	// normalize utxo to array
@@ -255,7 +259,10 @@ export const inscribeUtf8 = async (
 		payments,
 	);
 	const satsIn = utxos.reduce((acc, utxo) => acc + utxo.satoshis, 0);
-	const satsOut = tx.outputs.reduce((acc, output) => acc + (output.satoshis || 0), 0);
+	const satsOut = tx.outputs.reduce(
+		(acc, output) => acc + (output.satoshis || 0),
+		0,
+	);
 	const fee = satsIn - satsOut;
 	const result = {
 		rawTx: tx.toHex(),
@@ -263,9 +270,9 @@ export const inscribeUtf8 = async (
 		fee,
 		numInputs: tx.inputs.length,
 		numOutputs: tx.outputs.length,
-		txid: tx.id('hex'),
+		txid: tx.id("hex"),
 		spentOutpoints,
-    payChange,
+		payChange,
 		iterations,
 	} as PendingTransaction;
 	setPendingTxs([result]);

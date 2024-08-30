@@ -4,10 +4,14 @@ import { useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import { MdAccountCircle } from "react-icons/md";
 import type { IdentityResult, Identity } from "@/types/identity";
-import { bapIdentities, selectedBapIdentity } from "@/signals/bapIdentity";
+import { bapIdentities, bapIdentityRaw, selectedBapIdentity } from "@/signals/bapIdentity";
 import { getImageFromGP } from "@/utils/getImageFromGP";
 import { hashColor } from "@/utils/hashColor";
 import type { ReactNode } from "react";
+import { BAP } from "bitcoin-bap";
+import { HD } from "@bsv/sdk";
+import { identityPk } from "@/signals/wallet";
+import { setKeys } from "@/signals/wallet/client";
 
 type Props = {
 	canSetActiveBapIdentity: boolean;
@@ -30,6 +34,16 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 			(identity: IdentityResult) => identity.idKey === id,
 		);
 		selectedBapIdentity.value = selectedIdentity || null;
+
+    const bapIdRaw = bapIdentityRaw.value;
+    if (!bapIdRaw) return;
+    const bapId = new BAP(bapIdRaw.xprv);
+    bapId.importIds(bapIdRaw.ids);
+    const theBapId = bapId.getId(selectedBapIdentity.value?.idKey);
+    const hdKey = HD.fromString(bapIdRaw.xprv).derive(theBapId?.currentPath);
+    const identityWif = hdKey.privKey?.toWif();
+    console.log({theBapId, path: theBapId?.currentPath, identityWif});
+    setKeys({identityPk: identityWif});
 	};
 
 	const makeIdentityAvatar = (imageUrl: string | undefined, idKey: string) => {

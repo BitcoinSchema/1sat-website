@@ -38,7 +38,7 @@ export default function ChooseIdentity({ onClose }: Props) {
 		<>
 			{identitiesLoading.value && (
 				<div className="flex my-10 justify-center">
-					<span className="loading loading-spinner loading-lg"></span>
+					<span className="loading loading-spinner loading-lg" />
 				</div>
 			)}
 			<ProfileAccordion
@@ -49,6 +49,7 @@ export default function ChooseIdentity({ onClose }: Props) {
 			<div className="flex w-full mt-5 justify-end">
 				<CancelButton handleCancel={handleCancel} />
 				<button
+          type="button"
 					className="btn btn-accent cursor-pointer ml-5"
 					disabled={!selectedBapIdentity.value}
 					onClick={() => handleNext()}

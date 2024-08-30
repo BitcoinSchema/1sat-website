@@ -1,6 +1,6 @@
 import { signal } from "@preact/signals-react";
 
-import {
+import type {
 	IdentityResult,
 	ProfileFromJson,
 } from "@/types/identity";

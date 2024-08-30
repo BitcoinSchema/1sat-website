@@ -24,27 +24,12 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
   );
 
   const changeText = useCallback(
-    async (e: any) => {
+    async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setText(e.target.value);
     },
+    // eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
     [setText]
   );
-
-  // useEffect(() => {
-  //   const fire = async (t: string) => {
-  //     // send base64 encoded preview html to server
-  //     // https://ordfs.network/preview/<base64 encoded html>
-  //     const encoded = toBase64(t);
-  //     const previewUrl = `https://ordfs.network/preview/${encoded}`;
-  //     const result = await fetch(previewUrl);
-  //     const h = await result.text();
-  //     console.log("preview", { h });
-  //     setPreviewHtml(h);
-  //   };
-  //   if (text) {
-  //     fire(text);
-  //   }
-  // }, [text]);
 
   const submitDisabled = useMemo(() => {
     return inscribeStatus === FetchStatus.Loading;

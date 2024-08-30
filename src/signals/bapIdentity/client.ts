@@ -22,6 +22,8 @@ import {
 	hasIdentityBackup,
 	availableIdentities,
 } from "./index";
+import { HD } from "@bsv/sdk";
+import { identityPk } from "../wallet";
 
 export const setBapIdentity = (importedProfile: ProfileFromJson) => {
 	identitiesLoading.value = true;
@@ -59,8 +61,13 @@ export const extractIdentities = async () => {
 	const bapIdRaw = bapIdentityRaw.value;
 	const bapId = new BAP(bapIdRaw.xprv);
 	bapId.importIds(bapIdRaw.ids);
-	const ids = bapId.listIds();
+	// const path = bapId.lastIdPath;
+	// const key = HD.fromString(bapIdRaw.xprv).derive(path);
+	// identityPk.value = key.privKey.toWif();
+  // const addressFromLastPath = key.privKey.toAddress();
 
+	const ids = bapId.listIds();
+  
 	const resultsWithAddresses =
 		ids?.length &&
 		(await Promise.all(ids.map((id: string) => getIdentityAddress(id))));
@@ -69,10 +76,13 @@ export const extractIdentities = async () => {
 		resultsWithAddresses?.length &&
 		(await Promise.all(
 			resultsWithAddresses.map((resultObj: ResultObj) =>
-				getIdentityByAddress(resultObj)
-			)
+				getIdentityByAddress(resultObj),
+			),
 		));
 
+
+  // TODO: check that the address from the last path is the same as the address from the identity
+  
 	bapIdentities.value =
 		resultsWithIdentities.length &&
 		resultsWithIdentities.map((resultObj: ResultObj) => {
@@ -85,12 +95,12 @@ export const extractIdentities = async () => {
 };
 
 export const loadIdentityFromSessionStorage = () => {
-  const activeId = sessionStorage.getItem("activeIdentity")
+	const activeId = sessionStorage.getItem("activeIdentity");
 	if (activeId) {
 		activeBapIdentity.value = JSON.parse(activeId);
 	}
 
-  const availableId = sessionStorage.getItem("availableIdentities")
+	const availableId = sessionStorage.getItem("availableIdentities");
 	if (availableId) {
 		availableIdentities.value = JSON.parse(availableId);
 	}
@@ -117,7 +127,7 @@ export const removeIdentity = () => {
 };
 
 export const loadAvailableIdentitiesFromEncryptedStorage = async (
-	passphrase: string
+	passphrase: string,
 ) => {
 	const allIdentitiesStr = localStorage.getItem("encryptedAllIdentities");
 	if (!allIdentitiesStr) {
@@ -129,13 +139,13 @@ export const loadAvailableIdentitiesFromEncryptedStorage = async (
 		!encryptedIdentitiesParts.encryptedAllIdentities
 	) {
 		throw new Error(
-			"Load identity error - No public key or encryptedIdentities props found in encrypted backup"
+			"Load identity error - No public key or encryptedIdentities props found in encrypted backup",
 		);
 	}
 
 	const encryptionKey = await generateEncryptionKeyFromPassphrase(
 		passphrase,
-		encryptedIdentitiesParts.pubKey
+		encryptedIdentitiesParts.pubKey,
 	);
 
 	if (!encryptionKey) {
@@ -149,19 +159,18 @@ export const loadAvailableIdentitiesFromEncryptedStorage = async (
 			Buffer.from(
 				encryptedIdentitiesParts.encryptedAllIdentities.replace(
 					encryptionPrefix,
-					""
+					"",
 				),
-				"base64"
+				"base64",
 			),
-			encryptionKey
+			encryptionKey,
 		);
 	} catch (error) {
 		console.log(error);
 		return false;
 	}
 
-	const decryptedBackupStr =
-		Buffer.from(decryptedBackupBin).toString("utf-8");
+	const decryptedBackupStr = Buffer.from(decryptedBackupBin).toString("utf-8");
 
 	const { allBapIdentities: availableIdentitiesBackup } =
 		JSON.parse(decryptedBackupStr);
@@ -179,7 +188,7 @@ export const loadIdentityFromEncryptedStorage = async (passphrase: string) => {
 		return false;
 	}
 	const encryptedIdentityParts = JSON.parse(
-		encryptedIdentityStr
+		encryptedIdentityStr,
 	) as EncryptedIdentityJson;
 
 	if (
@@ -187,13 +196,13 @@ export const loadIdentityFromEncryptedStorage = async (passphrase: string) => {
 		!encryptedIdentityParts.encryptedIdentity
 	) {
 		throw new Error(
-			"Load identity error - No public key or encryptedIdentity props found in encrypted backup"
+			"Load identity error - No public key or encryptedIdentity props found in encrypted backup",
 		);
 	}
 
 	const encryptionKey = await generateEncryptionKeyFromPassphrase(
 		passphrase,
-		encryptedIdentityParts.pubKey
+		encryptedIdentityParts.pubKey,
 	);
 
 	if (!encryptionKey) {
@@ -205,21 +214,17 @@ export const loadIdentityFromEncryptedStorage = async (passphrase: string) => {
 	try {
 		decryptedBackupBin = await decryptData(
 			Buffer.from(
-				encryptedIdentityParts.encryptedIdentity.replace(
-					encryptionPrefix,
-					""
-				),
-				"base64"
+				encryptedIdentityParts.encryptedIdentity.replace(encryptionPrefix, ""),
+				"base64",
 			),
-			encryptionKey
+			encryptionKey,
 		);
 	} catch (error) {
 		console.log(error);
 		return false;
 	}
 
-	const decryptedBackupStr =
-		Buffer.from(decryptedBackupBin).toString("utf-8");
+	const decryptedBackupStr = Buffer.from(decryptedBackupBin).toString("utf-8");
 
 	const { activeBapIdentity: activeIdentityBackup } =
 		JSON.parse(decryptedBackupStr);
@@ -235,9 +240,9 @@ export const loadIdentityFromEncryptedStorage = async (passphrase: string) => {
 };
 
 export const setIdentitySessionStorage = (
-	identity: IdentityResult | IdentityResult[]
+	identity: IdentityResult | IdentityResult[],
 ) => {
-  console.log({identity})
+	console.log({ identity });
 	if (!identity) return;
 	if (Array.isArray(identity)) {
 		const availablIdentitiesString = JSON.stringify(identity);

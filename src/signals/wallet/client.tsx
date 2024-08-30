@@ -13,21 +13,14 @@ import {
 	generateEncryptionKeyFromPassphrase,
 } from "@/utils/encryption";
 import {
-	bsv20Balances,
-	bsv20Utxos,
 	changeAddressPath,
-	createWalletStep,
-	encryptedBackup,
-	encryptionKey,
-  identityAddressPath,
-  identityPk,
+	identityAddressPath,
+	identityPk,
 	mnemonic,
 	ordAddressPath,
 	ordPk,
-	passphrase,
 	payPk,
 	pendingTxs,
-	showUnlockWalletButton,
 	utxos,
 } from ".";
 
@@ -80,26 +73,39 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
 	});
 };
 
-export const setKeys = (keys: Keys) => {
-  payPk.value = keys.payPk;
-  ordPk.value = keys.ordPk;
-  mnemonic.value = keys.mnemonic ?? null;
-  changeAddressPath.value = keys.changeAddressPath ?? null;
-  ordAddressPath.value = keys.ordAddressPath ?? null;
-  identityPk.value = keys.identityPk ?? null;
-  identityAddressPath.value = keys.identityAddressPath ?? null;
-
-	sessionStorage.setItem("1satfk", keys.payPk);
-	sessionStorage.setItem("1satok", keys.ordPk);
+export const setKeys = (keys: Partial<Keys>) => {
+	if (keys.payPk) {
+		payPk.value = keys.payPk;
+		sessionStorage.setItem("1satfk", keys.payPk);
+	}
+	if (keys.ordPk) {
+		ordPk.value = keys.ordPk;
+		sessionStorage.setItem("1satok", keys.ordPk);
+	}
+	if (keys.mnemonic) {
+		mnemonic.value = keys.mnemonic;
+	}
+	if (keys.changeAddressPath) {
+		changeAddressPath.value = keys.changeAddressPath;
+	}
+	if (keys.ordAddressPath) {
+		ordAddressPath.value = keys.ordAddressPath;
+	}
+	if (keys.identityPk) {
+		identityPk.value = keys.identityPk;
+		sessionStorage.setItem("1satid", keys.identityPk);
+	}
+	if (keys.identityAddressPath) {
+		identityAddressPath.value = keys.identityAddressPath;
+	}
 };
 
 export const loadKeysFromSessionStorage = () => {
-	const payPk = sessionStorage.getItem("1satfk");
-	const ordPk = sessionStorage.getItem("1satok");
+	const payPk = sessionStorage.getItem("1satfk") || undefined;
+	const ordPk = sessionStorage.getItem("1satok") || undefined;
+	const idKey = sessionStorage.getItem("1satid") || undefined;
 
-  if (payPk && ordPk) {
-		setKeys({ payPk, ordPk });
-  }
+	setKeys({ payPk, ordPk, identityPk: idKey });
 };
 
 export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
@@ -113,13 +119,13 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
 
 	if (!encryptedKeys.pubKey || !encryptedKeys.encryptedBackup) {
 		throw new Error(
-			"Load keys error - No public key or encryptedBackup props found in encrypted backup"
+			"Load keys error - No public key or encryptedBackup props found in encrypted backup",
 		);
 	}
 
 	const encryptionKey = await generateEncryptionKeyFromPassphrase(
 		passphrase,
-		encryptedKeys.pubKey
+		encryptedKeys.pubKey,
 	);
 
 	if (!encryptionKey) {
@@ -128,46 +134,45 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
 
 	let decryptedBackupBin: Uint8Array;
 
-  if (!encryptedKeys.encryptedBackup.startsWith(encryptionPrefix)) {
-    throw new Error("Invalid encryption prefix");
-  }
+	if (!encryptedKeys.encryptedBackup.startsWith(encryptionPrefix)) {
+		throw new Error("Invalid encryption prefix");
+	}
 
-  debugger
 	try {
 		decryptedBackupBin = await decryptData(
 			Buffer.from(
 				encryptedKeys.encryptedBackup.replace(encryptionPrefix, ""),
-				"base64"
+				"base64",
 			),
-			encryptionKey
+			encryptionKey,
 		);
 	} catch (error) {
 		console.log(error);
 		return "FAILED";
 	}
 
-  debugger;
-	const decryptedBackupStr =
-		Buffer.from(decryptedBackupBin).toString("utf-8");
+	const decryptedBackupStr = Buffer.from(decryptedBackupBin).toString("utf-8");
 
-	const decryptedBackup = JSON.parse(
-		decryptedBackupStr
-	) as DecryptedBackupJson;
+	const decryptedBackup = JSON.parse(decryptedBackupStr) as DecryptedBackupJson;
 
 	if (!decryptedBackup.payPk || !decryptedBackup.ordPk) {
 		throw new Error(
-			"Load keys error - No payPk or ordPk props found in decrypted backup"
+			"Load keys error - No payPk or ordPk props found in decrypted backup",
 		);
 	}
 
 	setKeys({
 		payPk: decryptedBackup.payPk,
 		ordPk: decryptedBackup.ordPk,
-	mnemonic: decryptedBackup.mnemonic,
-	changeAddressPath: decryptedBackup.payDerivationPath,
-	ordAddressPath: decryptedBackup.ordDerivationPath,
-	...(decryptedBackup.identityPk !== undefined && { identityPk: decryptedBackup.identityPk }),
-  	...(decryptedBackup.identityDerivationPath !== undefined && { identityAddressPath: decryptedBackup.identityDerivationPath }),
+		mnemonic: decryptedBackup.mnemonic,
+		changeAddressPath: decryptedBackup.payDerivationPath,
+		ordAddressPath: decryptedBackup.ordDerivationPath,
+		...(decryptedBackup.identityPk !== undefined && {
+			identityPk: decryptedBackup.identityPk,
+		}),
+		...(decryptedBackup.identityDerivationPath !== undefined && {
+			identityAddressPath: decryptedBackup.identityDerivationPath,
+		}),
 	});
 
 	return "SUCCESS";
