@@ -32,7 +32,7 @@ const ProfilePage = () => {
 
 	return availableIdentities.value ? (
 		<main className="px-4 w-full min-h-screen flex flex-col items-center">
-			<div className="flex flex-col  w-full h-full sm:w-9/12">
+			<div className="flex flex-col w-full max-w-2xl h-full ">
 				<h2
 					className={` ${ubuntu.className} items-center text-center my-5 text-xl sm:text-2xl`}
 				>

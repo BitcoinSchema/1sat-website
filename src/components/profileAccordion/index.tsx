@@ -3,11 +3,11 @@
 import { useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import { MdAccountCircle } from "react-icons/md";
-import type { IdentityResult } from "@/types/identity";
+import type { IdentityResult, Identity } from "@/types/identity";
 import { bapIdentities, selectedBapIdentity } from "@/signals/bapIdentity";
-import type { Identity } from "@/types/identity";
 import { getImageFromGP } from "@/utils/getImageFromGP";
 import { hashColor } from "@/utils/hashColor";
+import type { ReactNode } from "react";
 
 type Props = {
 	canSetActiveBapIdentity: boolean;
@@ -62,8 +62,8 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 		);
 	};
 
-	const processValue = (value: any) => {
-		let processedValue: any = "";
+	const processValue = (value: string | Record<string, string>) => {
+		let processedValue: string | ReactNode = "";
 
 		if (typeof value === "object") {
 			const values = [];
@@ -120,7 +120,7 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 							return (
 								<tr
 									className={`text-xs ${index % 2 > 0 ? "" : "bg-[#121212]"}`}
-									key={index}
+									key={key}
 								>
 									<td className="text-zinc-400 py-0 px-2">{key}</td>
 									{processValue(value)}
@@ -140,22 +140,24 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 					className={`${
 						canSetActiveBapIdentity &&
 						selectedBapIdentity.value?.idKey === identity.idKey
-							? "border border-amber-400"
+							? "border border-[#555]"
 							: ""
 					} collapse  bg-base-200 rounded-lg mt-5 ${
 						canSetActiveBapIdentity ? "collapse-plus" : "collapse-open"
 					}`}
 					onClick={() => handleClick(identity.idKey)}
 				>
-					<input type="radio" name="selectedId" />
-					<div className="collapse-title text-md font-medium flex items-center">
+					{canSetActiveBapIdentity && <input type="radio" name="selectedId" />}
+					<div className={`${canSetActiveBapIdentity ? 'collapse-title' : 'col-start-1 row-start-1 p-4'} text-md font-medium flex items-center`}>
 						{makeIdentityAvatar(
 							identity?.identity?.image || identity?.identity?.logo,
 							identity?.idKey,
 						)}
 						<div className="flex flex-col ml-4">
 							<div>{identity?.identity?.alternateName}</div>
-							<div className="text-xs">
+              {canSetActiveBapIdentity && <div className="text-xs text-[#555]">
+                {selectedBapIdentity.value?.idKey}</div>}
+							{!canSetActiveBapIdentity && <div className="text-xs">
 								<a
 									href="https://sigmaidentity.com"
 									className="text-blue-400 hover:text-blue-500 hover:text-underline hover:cursor-pointer"
@@ -164,7 +166,7 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
 								>
 									Edit Profile
 								</a>
-							</div>
+							</div>}
 						</div>
 					</div>
 					<div

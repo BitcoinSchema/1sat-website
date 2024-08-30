@@ -371,6 +371,13 @@ const WalletMenu: React.FC = () => {
 											: "Import Profile"}
 									</button>
 								</li>
+								{!activeBapIdentity.value && (
+									<li>
+										<Link target="_blank" href="https://sigmaidentity.com">
+											Create Profile
+										</Link>
+									</li>
+								)}
 								{activeBapIdentity.value && (
 									<li>
 										<Link href="/profile">Profile Details</Link>
