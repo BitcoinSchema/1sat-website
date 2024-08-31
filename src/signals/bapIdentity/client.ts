@@ -1,6 +1,6 @@
 "use client";
 
-import { BAP } from "bitcoin-bap";
+import { BAP } from "bsv-bap";
 import { encryptionPrefix } from "@/constants";
 import {
 	decryptData,
@@ -64,32 +64,37 @@ export const extractIdentities = async () => {
 	// const path = bapId.lastIdPath;
 	// const key = HD.fromString(bapIdRaw.xprv).derive(path);
 	// identityPk.value = key.privKey.toWif();
-  // const addressFromLastPath = key.privKey.toAddress();
+	// const addressFromLastPath = key.privKey.toAddress();
 
 	const ids = bapId.listIds();
-  
-	const resultsWithAddresses =
-		ids?.length &&
-		(await Promise.all(ids.map((id: string) => getIdentityAddress(id))));
+	if (!ids.length) {
+		identitiesLoading.value = false;
+		return;
+	}
 
-	const resultsWithIdentities =
-		resultsWithAddresses?.length &&
-		(await Promise.all(
-			resultsWithAddresses.map((resultObj: ResultObj) =>
-				getIdentityByAddress(resultObj),
-			),
-		));
+	const resultsWithAddresses = await Promise.all(
+		ids.map((id: string) => getIdentityAddress(id)),
+	);
+	if (!resultsWithAddresses.length) {
+		identitiesLoading.value = false;
+		return;
+	}
 
+	const resultsWithIdentities = await Promise.all(
+		resultsWithAddresses.map((resultObj: ResultObj) =>
+			getIdentityByAddress(resultObj),
+		),
+	);
 
-  // TODO: check that the address from the last path is the same as the address from the identity
-  
-	bapIdentities.value =
-		resultsWithIdentities.length &&
-		resultsWithIdentities.map((resultObj: ResultObj) => {
-			if (resultObj.status === "OK") {
-				return resultObj.result;
-			}
-		});
+	if (!resultsWithIdentities.length) {
+		identitiesLoading.value = false;
+		return;
+	}
+
+	// TODO: check that the address from the last path is the same as the address from the identity
+	bapIdentities.value = resultsWithIdentities.filter((resultObj: ResultObj) => {
+		return resultObj.status === "OK";
+	}) as IdentityResult[];
 
 	identitiesLoading.value = false;
 };

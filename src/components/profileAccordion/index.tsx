@@ -8,7 +8,7 @@ import { bapIdentities, bapIdentityRaw, selectedBapIdentity } from "@/signals/ba
 import { getImageFromGP } from "@/utils/getImageFromGP";
 import { hashColor } from "@/utils/hashColor";
 import type { ReactNode } from "react";
-import { BAP } from "bitcoin-bap";
+import { BAP } from "bsv-bap";
 import { HD } from "@bsv/sdk";
 import { identityPk } from "@/signals/wallet";
 import { setKeys } from "@/signals/wallet/client";
@@ -39,7 +39,9 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
     if (!bapIdRaw) return;
     const bapId = new BAP(bapIdRaw.xprv);
     bapId.importIds(bapIdRaw.ids);
+    if (!selectedBapIdentity.value?.idKey) return;
     const theBapId = bapId.getId(selectedBapIdentity.value?.idKey);
+    if (!theBapId) return;
     const hdKey = HD.fromString(bapIdRaw.xprv).derive(theBapId?.currentPath);
     const identityWif = hdKey.privKey?.toWif();
     console.log({theBapId, path: theBapId?.currentPath, identityWif});
