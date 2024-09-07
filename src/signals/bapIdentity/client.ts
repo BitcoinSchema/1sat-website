@@ -57,10 +57,10 @@ const getIdentityByAddress = async (resultObj: ResultObj) => {
 
 export const extractIdentities = async () => {
 	if (!bapIdentityRaw.value) return;
-
+debugger
 	const bapIdRaw = bapIdentityRaw.value;
 	const bapId = new BAP(bapIdRaw.xprv);
-	bapId.importIds(bapIdRaw.ids);
+	bapId.importEncryptedIds(bapIdRaw.ids as string);
 	// const path = bapId.lastIdPath;
 	// const key = HD.fromString(bapIdRaw.xprv).derive(path);
 	// identityPk.value = key.privKey.toWif();
@@ -94,8 +94,9 @@ export const extractIdentities = async () => {
 	// TODO: check that the address from the last path is the same as the address from the identity
 	bapIdentities.value = resultsWithIdentities.filter((resultObj: ResultObj) => {
 		return resultObj.status === "OK";
-	}) as IdentityResult[];
+	}).map((id) => id.result) as IdentityResult[];
 
+  console.log({bapIdentities: bapIdentities.value})
 	identitiesLoading.value = false;
 };
 

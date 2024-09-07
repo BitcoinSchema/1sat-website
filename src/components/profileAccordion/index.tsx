@@ -38,7 +38,8 @@ const ProfileAccordion = ({ canSetActiveBapIdentity, identities }: Props) => {
     const bapIdRaw = bapIdentityRaw.value;
     if (!bapIdRaw) return;
     const bapId = new BAP(bapIdRaw.xprv);
-    bapId.importIds(bapIdRaw.ids);
+    debugger;
+    bapId.importEncryptedIds(bapIdRaw.ids as string);
     if (!selectedBapIdentity.value?.idKey) return;
     const theBapId = bapId.getId(selectedBapIdentity.value?.idKey);
     if (!theBapId) return;

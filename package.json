@@ -9,7 +9,7 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
-		"@bsv/sdk": "^1.1.19",
+		"@bsv/sdk": "^1.1.21",
 		"@emotion/react": "^11.11.4",
 		"@emotion/styled": "^11.11.5",
 		"@google/model-viewer": "^3.5.0",
@@ -34,7 +34,7 @@
 		"@vercel/speed-insights": "^1.0.12",
 		"ai": "^3.1.15",
 		"blurhash": "^2.0.5",
-		"bsv-bap": "^0.0.1",
+		"bsv-bap": "0.0.2",
 		"bun-copy-plugin": "^0.2.1",
 		"class-variance-authority": "^0.7.0",
 		"clsx": "^2.1.0",
