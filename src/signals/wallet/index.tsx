@@ -35,13 +35,14 @@ export const showEnterPassphrase = signal<string | null>(null);
 export const encryptedBackup = signal<string | null>(null);
 export const encryptionKey = signal<Uint8Array | null>(null);
 export const passphrase = signal<string | null>("");
+export const passphraseVerified = signal<boolean>(false);
+export const passphraseCheckInProgress = signal<boolean>(false);
 export const migrating = signal<boolean>(false);
 /**
  * Unlock Wallet
  */
 export const showUnlockWalletModal = signal<boolean>(false);
 export const showUnlockWalletButton = signal<boolean>(false);
-
 
 /**
  * Wallet keys
@@ -75,23 +76,24 @@ export const showDepositModal = signal<boolean>(false);
  * Import Wallet
  */
 export enum ImportWalletTab {
-  FromBackupJson = 0,
-  FromMnemonic = 1,
-  FromFragment = 2,
+	FromBackupJson = 0,
+	FromMnemonic = 1,
+	FromFragment = 2,
 }
 
 export enum ImportWalletFromBackupJsonStep {
-  SelectFile = 0,
-  EnterPassphrase = 1,
-  Done = 2,
+	SelectFile = 0,
+	EnterPassphrase = 1,
+	Done = 2,
 }
 
 export enum ImportWalletFromMnemonicStep {
-  EnterMnemonic = 0,
-  GenerateWallet = 1,
-  EnterPassphrase = 2,
-  Done = 3,
+	EnterMnemonic = 0,
+	GenerateWallet = 1,
+	EnterPassphrase = 2,
+	Done = 3,
 }
+
 
 export const importWalletTab = signal<ImportWalletTab | null>(null);
 export const importWalletFromBackupJsonStep =

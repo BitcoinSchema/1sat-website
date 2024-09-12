@@ -1,3 +1,5 @@
+import randomBytes from "randombytes";
+
 const getKey = async (key: Uint8Array): Promise<CryptoKey> => {
   return await crypto.subtle.importKey(
     "raw",
@@ -11,8 +13,8 @@ const getKey = async (key: Uint8Array): Promise<CryptoKey> => {
 export const encryptData = async (
   data: Uint8Array,
   key: Uint8Array,
-  iv: Uint8Array
-): Promise<Uint8Array> => {
+): Promise<string> => {
+  const iv = new Uint8Array(randomBytes(16).buffer);
   const cryptoKey = await getKey(key);
   const encryptedContent = await crypto.subtle.encrypt(
     { name: "AES-CBC", iv },
@@ -20,21 +22,15 @@ export const encryptData = async (
     data
   );
   
-  // Combine IV and encrypted content
-  // const result = new Uint8Array(iv.length + encryptedContent.byteLength);
-  // result.set(iv);
-  // result.set(new Uint8Array(encryptedContent), iv.length);
-  
-  // They are already combined
-  return new Uint8Array(encryptedContent);
+  return Buffer.concat([iv, new Uint8Array(encryptedContent)]).toString("base64");
 }
 
 export const decryptData = async(
   encryptedData: Uint8Array,
   key: Uint8Array
 ): Promise<Uint8Array> => {
-  const cryptoKey = await getKey(key);
   const iv = encryptedData.slice(0, 16);
+  const cryptoKey = await getKey(key);
   const encryptedContent = encryptedData.slice(16);
 
   const decryptedContent = await crypto.subtle.decrypt(
@@ -89,6 +85,5 @@ export const generateEncryptionKeyFromPassphrase = async (
   }
 
   const pubKeyBytes = new Uint8Array(Buffer.from(pubKey, "base64").buffer);
-
   return await generateEncryptionKey(passphrase, pubKeyBytes);
 }

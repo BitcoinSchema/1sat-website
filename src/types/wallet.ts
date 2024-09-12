@@ -6,8 +6,6 @@ export enum EncryptDecrypt {
 export interface EncryptedBackupJson {
 	encryptedBackup?: string;
 	pubKey?: string;
-	//   fundingChildKey: number;
-	//   ordChildKey: number;
 }
 
 export interface OldDecryptedBackupJson {
