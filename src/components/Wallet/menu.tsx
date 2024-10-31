@@ -10,12 +10,11 @@ import {
   indexers,
   ordPk,
   payPk,
-  pendingTxs,
   showDepositModal,
   showUnlockWalletButton,
   showUnlockWalletModal,
   usdRate,
-  utxos,
+  utxos
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import {
@@ -27,8 +26,9 @@ import type { ChainInfo, IndexerStats } from "@/types/common";
 import type { FileEvent } from "@/types/file";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
-import { useLocalStorage } from "@/utils/storage";
-import { computed, effect } from "@preact/signals-react";
+import { useIDBStorage, useLocalStorage } from "@/utils/storage";
+import { backupKeys } from "@/utils/wallet";
+import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,10 +50,13 @@ import { EnterPassphraseModal } from "../modal/enterPassphrase";
 import ImportWalletModal from "../modal/importWallet";
 import ProtectKeysModal from "../modal/protectKeys";
 import WithdrawalModal from "../modal/withdrawal";
-import { backupKeys } from "@/utils/wallet";
 
 const WalletMenu: React.FC = () => {
   useSignals();
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    []
+  );
   const router = useRouter();
 
   const fetchRateStatus = useSignal(FetchStatus.Idle);
@@ -62,7 +65,7 @@ const WalletMenu: React.FC = () => {
   const showProtectKeysModal = useSignal(false);
   const showDropdown = useSignal(false);
 
-  const [eb] = useLocalStorage("encryptedBackup");
+  const [eb] = useLocalStorage("encryptedBackup", undefined);
 
   const [value, copy] = useCopyToClipboard();
   const ordAddressHover = useSignal(false);
@@ -77,15 +80,15 @@ const WalletMenu: React.FC = () => {
   };
 
   // useEffect needed so that we can use localStorage
-  useEffect(() => {
-    if (payPk.value && ordPk.value) {
-      const localTxsStr = localStorage.getItem("1satpt");
-      const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
-      if (localTxs) {
-        pendingTxs.value = localTxs as PendingTransaction[];
-      }
-    }
-  }, [ ordPk.value, payPk.value]);
+  // useEffect(() => {
+  //   if (payPk.value && ordPk.value) {
+  //     const localTxsStr = localStorage.getItem("1satpt");
+  //     const localTxs = localTxsStr ? JSON.parse(localTxsStr) : null;
+  //     if (localTxs) {
+  //       setPendingTxs(localTxs as PendingTransaction[]);
+  //     }
+  //   }
+  // }, [ordPk.value, payPk.value, setPendingTxs]);
 
   useEffect(() => {
     loadKeysFromSessionStorage();

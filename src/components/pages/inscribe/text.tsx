@@ -1,13 +1,14 @@
 "use client"
 
 import { FetchStatus } from "@/constants";
-import { payPk, pendingTxs } from "@/signals/wallet";
+import { payPk } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
+import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import type { Utxo } from "js-1sat-ord";
+import { useIDBStorage } from "@/utils/storage";
 import { useSignals } from "@preact/signals-react/runtime";
+import type { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -19,6 +20,11 @@ interface InscribeTextProps {
 
 const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const [text, setText] = useState<string>();
 
   const changeText = useCallback(
@@ -51,12 +57,12 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
         customContentType || "text/plain",
         utxo
       );
-
+      setPendingTxs([pendingTx]);
       setInscribeStatus(FetchStatus.Success);
 
       return pendingTx;
     },
-    [customContentType]
+    [customContentType, setPendingTxs]
   );
   const toggleOptionalFields = useCallback(() => {
     setShowOptionalFields(!showOptionalFields);
@@ -97,7 +103,7 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
         inscribedCallback();
       }
     },
-    [text, payPk.value, ordAddress.value, fundingAddress.value, inscribeText, inscribedCallback]
+    [text, payPk.value, ordAddress.value, fundingAddress.value, inscribeText, setPendingTxs, inscribedCallback]
   );
 
   return (
@@ -111,7 +117,7 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
       </div>
       {!showOptionalFields && (
         // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-<div
+        <div
           className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
           onClick={toggleOptionalFields}
         >
@@ -147,7 +153,7 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
       )}
 
       {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
-<button
+      <button
         disabled={submitDisabled}
         onClick={clickInscribe}
         className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"

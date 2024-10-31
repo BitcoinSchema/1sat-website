@@ -8,14 +8,14 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { Ticker } from "@/types/bsv20";
 import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
+import { useIDBStorage } from "@/utils/storage";
 import { PrivateKey } from "@bsv/sdk";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { type Distribution, fetchTokenUtxos, type Payment, selectTokenUtxos, TokenInputMode, TokenSelectionStrategy, TokenType, type TokenUtxo, transferOrdTokens, type TransferOrdTokensConfig, type Utxo } from "js-1sat-ord";
+import { type Distribution, type Payment, TokenInputMode, TokenSelectionStrategy, TokenType, type TokenUtxo, type TransferOrdTokensConfig, type Utxo, fetchTokenUtxos, selectTokenUtxos, transferOrdTokens } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
@@ -44,6 +44,11 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
   burn
 }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const router = useRouter();
   // use signal for amount and address
   const amount = useSignal(amt?.toString());

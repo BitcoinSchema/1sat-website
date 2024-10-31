@@ -3,19 +3,19 @@
 import { getOutpoints } from "@/components/OrdinalListings/helpers";
 import Ordinals from "@/components/Wallet/ordinals";
 import Artifact from "@/components/artifact";
-import { ORDFS, toastErrorProps, type AssetType } from "@/constants";
+import { type AssetType, ORDFS, toastErrorProps } from "@/constants";
 import { ordPk, ordUtxos, payPk, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
+import { useIDBStorage } from "@/utils/storage";
 import {
   fetchOrdinal,
 } from "@/utils/transaction";
 import { PrivateKey } from "@bsv/sdk";
 import { useSignals } from "@preact/signals-react/runtime";
 import type { Utxo } from "js-1sat-ord";
-import { createOrdListings, type CreateOrdListingsConfig } from "js-1sat-ord";
+import { type CreateOrdListingsConfig, createOrdListings } from "js-1sat-ord";
 import { head } from "lodash";
 import { Noto_Serif } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -39,6 +39,11 @@ const notoSerif = Noto_Serif({
 
 const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const router = useRouter();
   const query = useSearchParams();
   const outPoint = query.get("outpoint");
@@ -163,17 +168,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
     setPendingTxs([pendingTx]);
 
     router.push("/preview");
-  }, [
-    selectedItem,
-    price,
-    utxos.value,
-    payPk.value,
-    ordPk.value,
-    fundingAddress.value,
-    ordAddress.value,
-    listOrdinal,
-    router,
-  ]);
+  }, [selectedItem, price, utxos.value, payPk.value, ordPk.value, fundingAddress.value, ordAddress.value, listOrdinal, setPendingTxs, router]);
 
   const clickSelectItem = useCallback(() => {
     setShowSelectItem(true);
@@ -299,8 +294,8 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
                     submit();
                   }}
                   className={`font-mono btn btn-ghost ${!outpoint
-                      ? "bg-neutral"
-                      : "bg-teal-500 hover:bg-teal-600 cursor-pointer"
+                    ? "bg-neutral"
+                    : "bg-teal-500 hover:bg-teal-600 cursor-pointer"
                     } w-full   transition text-white p-2 rounded disabled:bg-[#222] disabled:text-[#555]`}
                 >
                   {` ${!outpoint ? "Select an Item" : !price ? "Set a Price" : ""

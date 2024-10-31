@@ -9,20 +9,21 @@ import {
   usdRate
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { TxoData } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { calculateIndexingFee } from "@/utils/bsv20";
+import { useIDBStorage } from "@/utils/storage";
 import { PrivateKey } from "@bsv/sdk";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-  deployBsv21Token,
-  type Distribution,
   type DeployBsv21TokenConfig,
+  type Distribution,
   type IconInscription,
   type ImageContentType,
-  type Utxo
+  type Utxo,
+  deployBsv21Token
 } from "js-1sat-ord";
 import { useSearchParams } from "next/navigation";
 import type React from "react";
@@ -42,6 +43,11 @@ interface InscribeBsv21Props {
 
 const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const params = useSearchParams();
   // const { tab, tick, op } = params.query as { tab: string; tick: string; op: string };
   const tab = params.get("tab") as InscriptionTab;
@@ -187,7 +193,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       // get a buffer of the file
       const fileData = await selectedFile.arrayBuffer();
 
-      console.log({contentType: selectedFile.type})
+      console.log({ contentType: selectedFile.type })
       const icon: IconInscription = {
         dataB64: Buffer.from(fileData).toString("base64"),
         contentType: selectedFile.type as ImageContentType,
@@ -225,7 +231,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       }]);
       setInscribeStatus(FetchStatus.Success);
     },
-    [ticker, selectedFile, payPk.value, ordAddress.value, fundingAddress.value, maxSupply, decimals],
+    [ticker, selectedFile, payPk.value, ordAddress.value, fundingAddress.value, maxSupply, decimals, setPendingTxs],
   );
 
   const clickInscribe = useCallback(async () => {
@@ -358,24 +364,22 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       )}
 
       {showOptionalFields && (
-        <>
-          <div className="my-2">
-            <label className="block mb-4">
-              <div className="my-2 flex items-center justify-between">
-                Decimal Precision
-              </div>
-              <input
-                className="text-white w-full rounded p-2"
-                type="number"
-                min={0}
-                max={18}
-                value={decimals}
-                placeholder={defaultDec.toString()}
-                onChange={(e) => setDecimals(e.target.value ? Number.parseInt(e.target.value) : undefined)}
-              />
-            </label>
-          </div>
-        </>
+        <div className="my-2">
+          <label className="block mb-4">
+            <div className="my-2 flex items-center justify-between">
+              Decimal Precision
+            </div>
+            <input
+              className="text-white w-full rounded p-2"
+              type="number"
+              min={0}
+              max={18}
+              value={decimals}
+              placeholder={defaultDec.toString()}
+              onChange={(e) => setDecimals(e.target.value ? Number.parseInt(e.target.value) : undefined)}
+            />
+          </label>
+        </div>
       )}
       <div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
         <label className="block w-full">
