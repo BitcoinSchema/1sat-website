@@ -17,7 +17,6 @@ const TableHeading = ({
 
 	const handleSort = useCallback((column: SortBy) => {
 		const newDir = dir === "asc" ? "desc" : "asc";
-    debugger;
 		router.push(`/market/${type}/?sort=${column}&dir=${newDir}`);
 	}, [router, type, dir]);
 

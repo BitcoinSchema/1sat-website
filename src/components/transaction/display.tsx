@@ -67,6 +67,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
         if (
           outScript.startsWith("OP_RETURN") ||
           outScript.startsWith("OP_FALSE OP_RETURN") ||
+          outScript.startsWith("OP_0 OP_RETURN") ||
           outScript.startsWith("0 OP_RETURN")
         ) {
           const parts = outScript.slice(0, 25).split(" ");

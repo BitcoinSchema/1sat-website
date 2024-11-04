@@ -3,17 +3,17 @@
 import Artifact from "@/components/artifact";
 import { FetchStatus } from "@/constants";
 import { generatedImage } from "@/signals/ai";
-import { payPk, pendingTxs } from "@/signals/wallet";
+import { payPk } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { FileEvent } from "@/types/file";
 import type { TxoData } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
+import { useIDBStorage } from "@/utils/storage";
 import { useSignals } from "@preact/signals-react/runtime";
 import type { PreMAP } from "js-1sat-ord";
-import { head } from "lodash";
 import * as mime from "mime";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -28,6 +28,12 @@ interface InscribeImageProps {
 
 const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, generated }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
+  const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
   const [isImage, setIsImage] = useState<boolean>(false);
@@ -154,7 +160,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
       setPendingTxs([pendingTx]);
       inscribedCallback();
     }
-  }, [selectedFile, payPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, inscribedCallback]);
+  }, [selectedFile, payPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, setPendingTxs, inscribedCallback]);
 
   const Input = styled.input`
     padding: 0.5rem;
@@ -325,7 +331,7 @@ const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, genera
       >
         {!selectedFile && <TbClick className="text-6xl my-4 text-[#555]" />}
         {selectedFile ? selectedFile.name : "Choose a file to inscribe"}
-        <Input type="file" className="hidden" onChange={handleFileChange} />
+        <Input type="file" className="hidden" onChange={handleFileChange} disabled={isUploading} />
         {selectedFile && (
           <div className="text-sm text-center w-full">
             {formatBytes(selectedFile.size)} Bytes
