@@ -1,7 +1,10 @@
+"use client"
+
 import { Combobox, Transition } from "@headlessui/react";
 import { computed, useSignal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
 import clsx from "clsx";
-import { Fragment } from "react";
+import { Fragment, useCallback, useEffect } from "react";
 
 interface DropdownProps {
 	placeholder?: string;
@@ -21,6 +24,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 	renderItem,
 	onPaste,
 }) => {
+  useSignals();
 	const hasFocus = useSignal(false);
 	const isSelected = computed(() => items.includes(selectedItem));
 	const filteredItems = computed<string[]>(() =>
@@ -35,6 +39,10 @@ const Dropdown: React.FC<DropdownProps> = ({
 		onChange(item);
 	};
 
+  useEffect(() => {
+    console.log({selectedItem})
+  }, [selectedItem])
+
 	const handlePaste = (event: React.ClipboardEvent) => {
 		event.preventDefault();
 		const pastedData = event.clipboardData.getData("text");
@@ -48,22 +56,28 @@ const Dropdown: React.FC<DropdownProps> = ({
 			<Combobox
 				as="div"
 				className={clsx(
-					"relative z-[1] w-full flex-nowrap overflow-visible",
+					"relative w-full z-[10] flex-nowrap overflow-visible",
 					{
 						"z-[10]": hasFocus.value,
+            "z-[1]": !hasFocus.value
 					}
 				)}
 				nullable
 				onChange={onItemClicked}
-				onFocus={() => (hasFocus.value = true)}
-				onBlur={() => (hasFocus.value = false)}
+				onFocus={() => {
+          console.log("has focus")
+          hasFocus.value = true
+        }}
+				onBlur={() => {
+          hasFocus.value = false
+        }}
 			>
 				{({ open }) => (
 					<>
 						<Combobox.Input
 							className="input input-bordered block w-full p-2 rounded bg-[#1a1a1a] text-yellow-500"
 							placeholder={placeholder || "Select an item"}
-							value={selectedItem}
+							value={selectedItem || undefined}
 							onInput={(e) => {
 								onChange(e.currentTarget.value);
 							}}
@@ -85,10 +99,11 @@ const Dropdown: React.FC<DropdownProps> = ({
 											key={item}
 											as={"div"}
 											value={item}
-											className={`relative cursor-default select-none text-gray-900`}
+											className={"relative cursor-default select-none text-gray-900"}
 										>
 											{({ active }) => (
-												<a
+												<button
+                          type="button"
 													className={clsx(
 														"cursor-pointer select-none relative rounded inline-block text-yellow-500 w-full py-2 pl-4 pr-4",
 														active
@@ -108,7 +123,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 															{item}
 														</div>
 													)}
-												</a>
+												</button>
 											)}
 										</Combobox.Option>
 									))}

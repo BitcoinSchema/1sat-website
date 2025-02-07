@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import type React from "react";
 import { FaSpinner } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import { showDetails } from ".";
 import JDenticon from "../JDenticon";
 import { iterationFee } from "../pages/inscribe/bsv20";
@@ -67,6 +67,7 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
         if (
           outScript.startsWith("OP_RETURN") ||
           outScript.startsWith("OP_FALSE OP_RETURN") ||
+          outScript.startsWith("OP_0 OP_RETURN") ||
           outScript.startsWith("0 OP_RETURN")
         ) {
           const parts = outScript.slice(0, 25).split(" ");

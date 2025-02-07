@@ -20,7 +20,11 @@ const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, sort, dir }) 
   const url = `${MARKET_API_HOST}/market/${type}` // ?sort=${sort || SortBy.MostRecentSale}&dir=${dir || "asc"}&limit=100`;
   marketData = await getMarketData(new NextRequest(url), type, id, sort, dir);
 
-  const ticker = marketData.find((t) => t.tick === id || t.id === id);
+  if (!marketData.length) {
+    return <div className="text-center">No data found</div>;
+  }
+  
+  const ticker = (marketData || []).find((t) => t.tick === id || t.id === id);
   return (
     <>
       {!id && <div className="w-full rounded-b-box overflow-x-auto"><table className="table font-mono">

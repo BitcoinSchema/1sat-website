@@ -14,12 +14,11 @@ import {
 } from "@/constants";
 import { ordPk, payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { Ticker } from "@/types/bsv20";
-import type { BSV20TXO } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
-import { PrivateKey, Script } from "@bsv/sdk";
+import { useIDBStorage } from "@/utils/storage";
+import { PrivateKey } from "@bsv/sdk";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import type {
@@ -29,12 +28,19 @@ import type {
   TransferOrdTokensConfig,
   Utxo,
 } from "js-1sat-ord";
-import { TokenType, transferOrdTokens } from "js-1sat-ord";
+import {
+  TokenInputMode,
+  TokenSelectionStrategy,
+  TokenType,
+  fetchTokenUtxos,
+  selectTokenUtxos,
+  transferOrdTokens,
+} from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FaQuestion } from "react-icons/fa";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin, toToken, toTokenSat } from "satoshi-token";
 
 interface TransferModalProps {
   onClose: () => void;
@@ -100,9 +106,13 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
   const isEqualAllocation = allocation.value === Allocation.Equal;
   const reviewMode = useSignal(false);
   const destinations = useSignal<Destination[]>([]);
-  const changeTokenAmount = useSignal(0);
+  const changeTokenAmount = useSignal(0n);
   const indexingFees = useSignal(0);
 
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const setAmountToBalance = useCallback(() => {
     amount.value = balance.toString();
   }, [amount, balance]);
@@ -117,7 +127,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
   const airdropBsv20 = useCallback(
     async (
-      sendAmount: number,
+      tokensToSend: number,
+      protocol: TokenType,
       paymentUtxos: Utxo[],
       inputTokens: TokenUtxo[],
       paymentPk: PrivateKey,
@@ -130,7 +141,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
     ): Promise<PendingTransaction> => {
       // totals for airdrop review
       indexingFees.value = 0;
-      changeTokenAmount.value = 0;
+      changeTokenAmount.value = 0n;
 
       if (
         destinationTickers.value.length === 0 &&
@@ -160,27 +171,29 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
       }
       if (isEqualAllocation) {
         distributions = await calculateEqualDistributions(
-          sendAmount,
+          toTokenSat(tokensToSend, ticker.dec || 0),
           destinationTickers.value,
           destinationBsv21Ids.value,
           Number.parseInt(numOfHolders.value),
           plusAddresses,
           omitAddresses,
+          ticker.dec || 0,
         );
       } else {
         distributions = await calculateWeightedDistributions(
-          sendAmount,
+          toTokenSat(tokensToSend, ticker.dec || 0),
           destinationTickers.value,
           destinationBsv21Ids.value,
           Number.parseInt(numOfHolders.value),
           omitAddresses,
+          ticker.dec || 0,
         );
       }
 
       // Update the destinations signal
       destinations.value = distributions.map((d) => ({
         address: d.address,
-        receiveAmt: Number(d.amt),
+        receiveAmt: Number(d.tokens),
       }));
 
       const indexerAddress = ticker.fundAddress;
@@ -196,19 +209,28 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         paymentPk,
         ordPk,
         distributions,
-        protocol: ticker.tick ? TokenType.BSV20 : TokenType.BSV21,
+        protocol,
         tokenID: (ticker.tick || ticker.id) as string,
         utxos: paymentUtxos,
         additionalPayments,
         changeAddress,
         tokenChangeAddress: ordAddress,
         decimals: ticker.dec || 0,
+        tokenInputMode: TokenInputMode.Needed,
+        splitConfig: {
+          outputs: 2,
+          threshold: 900,
+        }
       };
 
       const { tx, spentOutpoints, payChange, tokenChange } =
         await transferOrdTokens(transferConfig);
-
-      changeTokenAmount.value = Number.parseInt(tokenChange?.amt || "0");
+      console.log({ tokenChange })
+      changeTokenAmount.value =
+        tokenChange?.reduce(
+          (acc, tc) => BigInt(tc?.amt || "0") + acc,
+          0n,
+        ) || 0n;
       indexingFees.value = tx.outputs[tx.outputs.length - 2].satoshis || 0;
       return {
         rawTx: tx.toHex(),
@@ -254,7 +276,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         return;
       }
 
-      if (Number.parseFloat(amount.value) > balance) {
+      if (Number(amount.value) > balance) {
         toast.error("Not enough Bitcoin!", toastErrorProps);
         return;
       }
@@ -262,8 +284,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
       airdroppingStatus.value = FetchStatus.Loading;
 
       console.log(amount.value, addresses.value);
-      const amt = Math.floor(Number.parseFloat(amount.value) * 10 ** dec);
-      if (amt <= 0) {
+      if (Number(amount.value) <= 0) {
         toast.error("Amount must be greater than 0", toastErrorProps);
         airdroppingStatus.value = FetchStatus.Error;
         return;
@@ -275,23 +296,23 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         );
         const ticker = await promiseTickerDetails;
 
-        const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${type === AssetType.BSV20 ? "tick" : "id"}/${id}?listing=false`;
-        const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
+        //const bsv20TxoUrl = `${API_HOST}/api/bsv20/${ordAddress.value}/${type === AssetType.BSV20 ? "tick" : "id"}/${id}?listing=false`;
+        // const { promise } = http.customFetch<BSV20TXO[]>(bsv20TxoUrl);
 
-        const tokenUtxos = (await promise) || [];
+        // const tokenUtxos = (await promise) || [];
 
-        const inputTokens = tokenUtxos.map((txo) => {
-          console.log("InputTokens", { txo });
-          // Convert ASM to a base64 encoded script
-          return {
-            txid: txo.txid,
-            vout: txo.vout,
-            amt: txo.amt.toString(),
-            id: txo.tick || txo.id,
-            script: txo.script,
-            satoshis: 1,
-          } as TokenUtxo;
-        });
+        // const inputTokens = tokenUtxos.map((txo) => {
+        //   console.log("InputTokens", { txo });
+        //   // Convert ASM to a base64 encoded script
+        //   return {
+        //     txid: txo.txid,
+        //     vout: txo.vout,
+        //     amt: txo.amt.toString(),
+        //     id: txo.tick || txo.id,
+        //     script: txo.script,
+        //     satoshis: 1,
+        //   } as TokenUtxo;
+        // });
 
         if (!payPk.value) {
           throw new Error("Missing payment private key");
@@ -311,22 +332,47 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         const paymentPk = PrivateKey.fromWif(payPk.value);
         // const payScript = Buffer.from(new P2PKH().lock(fundingAddress.value).toHex(), 'hex').toString('base64')
         // console.log({payScript})
-        const paymentUtxos = (utxos.value || []).map((txo) => {
-          console.log("Payments", { txo });
-          const script = Buffer.from(
-            Script.fromASM(txo.script).toHex(),
-            "hex",
-          ).toString("base64");
-          return {
-            txid: txo.txid,
-            vout: txo.vout,
-            satoshis: txo.satoshis,
-            script,
-          } as Utxo;
-        });
+        const paymentUtxos = utxos.value || [];
+
+        // prepare inputs
+        let enough = false;
+        const protocol = ticker.tick ? TokenType.BSV20 : TokenType.BSV21;
+        let offset = 0;
+        const inputTokens: TokenUtxo[] = [];
+        while (!enough && amount.value) {
+          const utxos = await fetchTokenUtxos(
+            protocol,
+            (ticker.tick || ticker.id) as string,
+            ordAddress.value,
+            100,
+            offset,
+          );
+          inputTokens.push(...utxos);
+          offset += utxos.length;
+
+          const results = selectTokenUtxos(
+            inputTokens,
+            Number(amount.value),
+            ticker.dec || 0,
+            {
+              inputStrategy: TokenSelectionStrategy.LargestFirst,
+              outputStrategy: TokenSelectionStrategy.LargestFirst,
+            },
+          );
+          console.log({ results });
+
+          enough = results.isEnough;
+          if (utxos.length === 0) {
+            console.log("No more utxos to select");
+            break;
+          }
+        }
+
+        // const sendAmountTokenSats = Math.floor(Number(amount.value) * 10 ** dec);
 
         const transferTx = await airdropBsv20(
-          amt,
+          Number(amount.value),
+          protocol,
           paymentUtxos,
           inputTokens,
           paymentPk,
@@ -353,28 +399,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         airdroppingStatus.value = FetchStatus.Error;
       }
     },
-    [
-      reviewMode.value,
-      destinationTickers.value,
-      destinationBsv21Ids.value,
-      isEqualAllocation,
-      addresses.value,
-      amount.value,
-      balance,
-      airdroppingStatus,
-      dec,
-      router,
-      type,
-      id,
-      ordAddress.value,
-      payPk.value,
-      ordPk.value,
-      fundingAddress.value,
-      utxos.value,
-      airdropBsv20,
-      excludeAdresses.value,
-      handleReview,
-    ],
+    [reviewMode.value, destinationTickers.value, destinationBsv21Ids.value, isEqualAllocation, addresses.value, amount.value, balance, airdroppingStatus, router, type, id, payPk.value, ordPk.value, fundingAddress.value, ordAddress.value, utxos.value, airdropBsv20, excludeAdresses.value, setPendingTxs, handleReview],
   );
 
   const loadTemplate = useCallback(async () => {
@@ -599,7 +624,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                     >
                       <span>{dest.address}</span>
                       <span className="whitespace-nowrap">
-                        {(dest.receiveAmt / 10 ** dec).toFixed(dec)} {sym || id}
+                        {dest.receiveAmt} {sym || id}
                       </span>
                     </div>
                   ))}
@@ -614,7 +639,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                       Change Tokens
                     </div>
                     <div>
-                      {changeTokenAmount.value / 10 ** dec} {sym || id}
+                      {changeTokenAmount.value.toString()} {sym || id}
                     </div>
                   </div>
                 )}
@@ -671,12 +696,13 @@ async function fetchHolders(
 }
 
 const calculateEqualDistributions = async (
-  sendAmount: number,
+  sendAmountTokenSats: number,
   bsv20Tickers: string,
   bsv21Ids: string,
   numHolders: number,
   additionalAddresses: string[],
   excludeAdresses: string[],
+  decimals: number,
 ): Promise<Distribution[]> => {
   const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")]
     .map((t) => t.trim())
@@ -701,13 +727,13 @@ const calculateEqualDistributions = async (
 
   const totalHolders = finalHolders.length;
 
-  const amountPerHolder = Math.floor(sendAmount / totalHolders);
+  const tsatPerHolder = Math.floor(sendAmountTokenSats / totalHolders);
   const distributions: Distribution[] = [];
 
   for (const holder of finalHolders) {
     distributions.push({
       address: holder.address,
-      amt: amountPerHolder,
+      tokens: toToken(tsatPerHolder, decimals),
     });
   }
 
@@ -715,11 +741,12 @@ const calculateEqualDistributions = async (
 };
 
 const calculateWeightedDistributions = async (
-  sendAmount: number,
+  sendAmountTokenSats: number,
   bsv20Tickers: string,
   bsv21Ids: string,
   numHolders: number,
   excludeAdresses: string[],
+  decimals: number,
 ): Promise<Distribution[]> => {
   const allTokens = [...bsv20Tickers.split(","), ...bsv21Ids.split(",")]
     .map((t) => t.trim())
@@ -773,12 +800,12 @@ const calculateWeightedDistributions = async (
 
   for (const holder of allHolders) {
     const weightedAmt = Math.floor(
-      (sendAmount * holder.totalWeightedAmt) / totalWeightedHoldings,
+      (sendAmountTokenSats * holder.totalWeightedAmt) / totalWeightedHoldings,
     );
     if (weightedAmt > 0) {
       distributions.push({
         address: holder.address,
-        amt: weightedAmt,
+        tokens: toToken(weightedAmt, decimals),
       });
       totalAllocated += weightedAmt;
     }

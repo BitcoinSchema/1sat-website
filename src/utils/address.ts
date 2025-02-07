@@ -8,7 +8,7 @@ import { PrivateKey } from "@bsv/sdk";
 
 export const addressFromWif = (payPk: string) => {
 	const pk = PrivateKey.fromWif(payPk);
-	return pk && payPk && pk.toAddress().toString();
+	return pk && payPk && pk.toAddress();
 };
 
 export const getBsv21Utxos = async (

@@ -24,7 +24,7 @@ const CreateWalletModal = ({
   useSignals();
   const router = useRouter();
   const alreadyHasKey = useSignal(false);
-  const [encryptedBackup] = useLocalStorage("encryptedBackup");
+  const [encryptedBackup] = useLocalStorage("encryptedBackup", undefined);
 
   useEffect(() => {
     loadKeysFromSessionStorage();
@@ -62,7 +62,7 @@ const CreateWalletModal = ({
               </button>
               <button className="btn btn-primary" type="button" onClick={() => {
                 router.push("/wallet/delete")
-              }}> Sign Out</button>
+              }}>Sign Out</button>
             </div>
           </form>
         </div>)}

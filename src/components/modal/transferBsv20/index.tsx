@@ -8,14 +8,14 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { Ticker } from "@/types/bsv20";
 import type { PendingTransaction } from "@/types/preview";
 import * as http from "@/utils/httpClient";
+import { useIDBStorage } from "@/utils/storage";
 import { PrivateKey } from "@bsv/sdk";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { type Distribution, fetchTokenUtxos, type Payment, TokenType, type TokenUtxo, transferOrdTokens, type TransferOrdTokensConfig, type Utxo } from "js-1sat-ord";
+import { type Distribution, type Payment, TokenInputMode, TokenSelectionStrategy, TokenType, type TokenUtxo, type TransferOrdTokensConfig, type Utxo, fetchTokenUtxos, selectTokenUtxos, transferOrdTokens } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
@@ -44,6 +44,11 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
   burn
 }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const router = useRouter();
   // use signal for amount and address
   const amount = useSignal(amt?.toString());
@@ -58,7 +63,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
     async (
       sendAmount: number,
       paymentUtxos: Utxo[],
-      inputTokens: TokenUtxo[],
+      tokenUtxos: TokenUtxo[],
       paymentPk: PrivateKey,
       changeAddress: string,
       ordPk: PrivateKey,
@@ -68,13 +73,18 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
     ): Promise<PendingTransaction> => {
       const distributions: Distribution[] = [{
         address: burn ? changeAddress : payoutAddress,
-        amt: sendAmount
+        tokens: sendAmount
       }]
 
       const additionalPayments: Payment[] = [{
         to: ticker.fundAddress,
         amount: 2000, // 1000 * 2 inscriptions
       }]
+
+      const { selectedUtxos: inputTokens } = selectTokenUtxos(tokenUtxos, sendAmount, ticker.dec || 0, {
+        inputStrategy: TokenSelectionStrategy.SmallestFirst,
+        outputStrategy: TokenSelectionStrategy.LargestFirst,
+      })
 
       const config: TransferOrdTokensConfig = {
         protocol: ticker.tick ? TokenType.BSV20 : TokenType.BSV21,
@@ -88,6 +98,11 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         ordPk,
         additionalPayments,
         decimals: ticker.dec || 0,
+        inputMode: TokenInputMode.Needed,
+        splitConfig: {
+          outputs: inputTokens.length === 1 ? 2 : 1,
+          threshold: sendAmount,
+        }
       }
       console.log({ config })
       const { tx, spentOutpoints, tokenChange, payChange } = await transferOrdTokens(config)

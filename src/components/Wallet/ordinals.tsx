@@ -26,7 +26,7 @@ const WalletOrdinals = ({
 }) => {
   useSignals();
   const [encryptedBackup] = useLocalStorage<string | undefined>(
-    "encryptedBackup"
+    "encryptedBackup", undefined
   );
   console.log({ ordAddress: ordAddress.value, addressProp, encryptedBackup });
 

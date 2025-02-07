@@ -1,40 +1,31 @@
 "use client";
 
 import { encryptionPrefix } from "@/constants";
-import type { PendingTransaction } from "@/types/preview";
-import {
-  CreateWalletStep,
-  type Keys,
-  type DecryptedBackupJson,
-  type EncryptedBackupJson,
+import type {
+  DecryptedBackupJson,
+  EncryptedBackupJson,
+  Keys
 } from "@/types/wallet";
 import {
   decryptData,
   generateEncryptionKeyFromPassphrase,
 } from "@/utils/encryption";
 import {
-  bsv20Balances,
-  bsv20Utxos,
   changeAddressPath,
-  createWalletStep,
-  encryptedBackup,
-  encryptionKey,
   identityAddressPath,
   identityPk,
   mnemonic,
   ordAddressPath,
   ordPk,
-  passphrase,
   payPk,
-  pendingTxs,
-  showUnlockWalletButton,
-  utxos,
+  utxos
 } from ".";
 
-export const setPendingTxs = (txs: PendingTransaction[]) => {
-  pendingTxs.value = [...txs];
-  localStorage.setItem("1satpt", JSON.stringify(txs));
-};
+
+// export const setPendingTxs = (txs: PendingTransaction[]) => {
+//   pendingTxs.value = [...txs];
+//   localStorage.setItem("1satpt", JSON.stringify(txs));
+// };
 
 export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -66,7 +57,8 @@ export const loadKeysFromBackupFiles = (backupFile: File): Promise<void> => {
       };
       // console.log({ backup });
 
-      setPendingTxs([]);
+      // TODO: clear pending transactions
+      // setPendingTxs([]);
       utxos.value = null;
       payPk.value = backup.payPk;
       ordPk.value = backup.ordPk;
@@ -151,10 +143,10 @@ export const loadKeysFromEncryptedStorage = async (passphrase: string) => {
   setKeys({
     payPk: decryptedBackup.payPk,
     ordPk: decryptedBackup.ordPk,
-	mnemonic: decryptedBackup.mnemonic,
-	changeAddressPath: decryptedBackup.payDerivationPath,
-	ordAddressPath: decryptedBackup.ordDerivationPath,
-	...(decryptedBackup.identityPk !== undefined && { identityPk: decryptedBackup.identityPk }),
-  	...(decryptedBackup.identityDerivationPath !== undefined && { identityAddressPath: decryptedBackup.identityDerivationPath }),
+    mnemonic: decryptedBackup.mnemonic,
+    changeAddressPath: decryptedBackup.payDerivationPath,
+    ordAddressPath: decryptedBackup.ordDerivationPath,
+    ...(decryptedBackup.identityPk !== undefined && { identityPk: decryptedBackup.identityPk }),
+    ...(decryptedBackup.identityDerivationPath !== undefined && { identityAddressPath: decryptedBackup.identityDerivationPath }),
   });
 };
