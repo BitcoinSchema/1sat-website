@@ -1,14 +1,15 @@
 "use client"
 
 import { FetchStatus } from "@/constants";
-import { payPk, pendingTxs } from "@/signals/wallet";
+import { payPk } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
+import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { inscribeUtf8 } from "@/utils/inscribe";
-import type { Utxo } from "js-1sat-ord";
+import { useIDBStorage } from "@/utils/storage";
 import { toBase64 } from "@/utils/string";
 import { useSignals } from "@preact/signals-react/runtime";
+import type { Utxo } from "js-1sat-ord";
 import { head } from "lodash";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -18,6 +19,11 @@ interface InscribeHtmlProps {
 
 const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const [text, setText] = useState<string>();
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
@@ -71,7 +77,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
         setInscribeStatus(FetchStatus.Error);
       }
     },
-    [inscribedCallback, text]
+    [inscribedCallback, setPendingTxs, text]
   );
 
   const clickInscribe = useCallback(async () => {

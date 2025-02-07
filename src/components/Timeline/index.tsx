@@ -2,7 +2,7 @@ import { default as JDenticon } from "@/components/JDenticon";
 import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { TbTag } from "react-icons/tb";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 
 interface Props {
 	history: OrdUtxo[];

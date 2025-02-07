@@ -9,6 +9,8 @@ import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import type { MetaMap } from "./image";
 import type { PreMAP } from "js-1sat-ord";
+import { useIDBStorage } from "@/utils/storage";
+import { PendingTransaction } from "@/types/preview";
 
 interface InscribeButtonProps {
   selectedFile: File | null;
@@ -25,11 +27,12 @@ const InscribeButton: React.FC<InscribeButtonProps> = ({
   metadata,
   inscribedCallback,
 }) => {
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>("1sat-pts", []);
   const mapData = useMemo(() => {
     const md = metadata?.reduce((acc, curr) => {
       acc[curr.key] = curr.value as string;
       return acc;
-    }, {} as { [key: string]: string });
+    }, {} as PreMAP);
     if (md) {
       md.app = "1sat.market";
       md.type = "ord";
@@ -71,10 +74,10 @@ const InscribeButton: React.FC<InscribeButtonProps> = ({
     }
     const pendingTx = await inscribeFile(utxos, file, m as PreMAP);
     if (pendingTx) {
-      pendingTxs.value = [pendingTx];
+      setPendingTxs([pendingTx]);
       inscribedCallback();
     }
-  }, [selectedFile, payPk.value, ordPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, inscribedCallback]);
+  }, [selectedFile, payPk.value, ordPk.value, ordAddress.value, fundingAddress.value, metadata, mapData, setPendingTxs, inscribedCallback]);
 
   const submitDisabled = useMemo(() => {
     return !selectedFile || inscribeStatus === FetchStatus.Loading;

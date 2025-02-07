@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import { FiLoader } from "react-icons/fi";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { ReturnTypes, toBitcoin } from "satoshi-token";
 import JDenticon from "../JDenticon";
 import { selectedType } from "../Wallet/filter";
 import Artifact, { ArtifactType } from "../artifact";
@@ -139,8 +139,7 @@ const List = ({ term, address, onClick }: Props) => {
 					const collection = listingCollection(listing, collectionData || []);
 					const price = `${toBitcoin(
 						listing?.data?.list?.price || "0",
-						true,
-					).toString()} BSV`;
+					)} BSV`;
 					return (
 						listing && (
 							<tr
@@ -203,8 +202,7 @@ const List = ({ term, address, onClick }: Props) => {
 									</Link>
 								</td>
 								<td className="p-0 text-xs md:text-sm hidden md:table-cell">
-                  {scamListing ? <span className="text-red-500">FLAGGED</span> : knownScammer ? <span className="text-red-500">KNOWN SCAMMER</span> : price}
-									{!scamListing && listing?.data?.list?.price ? (
+                  {scamListing ? <span className="text-red-500">FLAGGED</span> : knownScammer ? <span className="text-red-500">KNOWN SCAMMER</span> : listing?.data?.list?.price ? (
 										<BuyBtn
 											satoshis={BigInt(listing.data.list.price)}
 											listing={listing}

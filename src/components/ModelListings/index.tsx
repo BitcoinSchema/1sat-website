@@ -1,7 +1,7 @@
 "use client";
 
-import { OrdUtxo } from "@/types/ordinals";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import type { OrdUtxo } from "@/types/ordinals";
+import { ReturnTypes, toBitcoin } from "satoshi-token";
 
 interface ModelListingsProps {
   listings: OrdUtxo[];
@@ -52,7 +52,7 @@ const ModelListings: React.FC<ModelListingsProps> = ({ listings }) => {
                   <td>{listingAmount(listing)}</td>
                   <td>{satsPerModel(listing)}</td>
                   <td className="break-normal">
-                    {toBitcoin(listing.data?.list?.price || "0", true).toString()}{" "}
+                    {toBitcoin(listing.data?.list?.price || "0", ReturnTypes.String)}{" "}
                     BSV
                   </td>
                 </tr>

@@ -2,16 +2,16 @@
 
 import Artifact from "@/components/artifact";
 import { FetchStatus } from "@/constants";
-import { payPk, pendingTxs } from "@/signals/wallet";
+import { payPk } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { FileEvent } from "@/types/file";
 import type { OrdUtxo, TxoData } from "@/types/ordinals";
+import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import { formatBytes } from "@/utils/bytes";
 import { inscribeFile } from "@/utils/inscribe";
+import { useIDBStorage } from "@/utils/storage";
 import { useSignals } from "@preact/signals-react/runtime";
-import { head } from "lodash";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { TbClick } from "react-icons/tb";
@@ -23,6 +23,11 @@ interface InscribeImageProps {
 
 const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 
@@ -60,7 +65,7 @@ const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
       setPendingTxs([pendingTx]);
       inscribedCallback();
     }
-  }, [fundingAddress.value, inscribedCallback, payPk.value, selectedFile]);
+  }, [fundingAddress.value, inscribedCallback, payPk.value, selectedFile, setPendingTxs]);
 
   const Input = styled.input`
     padding: 0.5rem;

@@ -11,11 +11,11 @@ import {
   utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import { setPendingTxs } from "@/signals/wallet/client";
 import type { BSV20TXO } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import { getUtxos } from "@/utils/address";
 import * as http from "@/utils/httpClient";
+import { useIDBStorage } from "@/utils/storage";
 import { PrivateKey } from "@bsv/sdk";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -37,6 +37,11 @@ const ListingForm = ({
   listedCallback: () => void;
 }) => {
   useSignals();
+
+  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+    "1sat-pts",
+    [],
+  );
   const router = useRouter();
   const listingPrice = useSignal<string | null>(null);
   const listingAmount = useSignal<string | null>(null);
@@ -103,7 +108,7 @@ const ListingForm = ({
 
   const listBsv20 = useCallback(
     async (
-      amt: number,
+      tokens: number,
       utxos: Utxo[],
       inputTokens: BSV20TXO[], //
       paymentPk: PrivateKey,
@@ -119,7 +124,7 @@ const ListingForm = ({
         payAddress,
         price: satoshisPayout,
         ordAddress,
-        amt,
+        tokens,
       }
 
       const additionalPayments = []
@@ -249,7 +254,7 @@ const ListingForm = ({
       //   return;
       // }
     },
-    [ticker, listingPrice.value, listingAmount.value, utxos.value, payPk.value, ordPk.value, fundingAddress.value, ordAddress.value, listBsv20, router],
+    [ticker, listingPrice.value, listingAmount.value, utxos.value, payPk.value, ordPk.value, fundingAddress.value, ordAddress.value, listBsv20, setPendingTxs, router],
   );
 
   const listDisabled = useMemo(

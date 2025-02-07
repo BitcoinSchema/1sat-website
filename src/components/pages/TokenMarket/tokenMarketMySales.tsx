@@ -7,7 +7,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { toBitcoin } from "satoshi-bitcoin-ts";
+import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
 import { mySales } from "./signals";
 
