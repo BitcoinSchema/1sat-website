@@ -1,8 +1,6 @@
 export const ORDFS = "https://ordfs.network";
 export const API_HOST = "https://ordinals.gorillapool.io";
 export const MARKET_API_HOST = "https://1sat-api-production.up.railway.app"; // "https://api.1sat.market";
-export const WOC_EXCHANGE_RATE_URL =
-  "https://api.whatsonchain.com/v1/bsv/main/exchangerate";
 
 export type UserBlacklist = {
 	address: string;

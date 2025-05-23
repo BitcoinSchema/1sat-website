@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  FetchStatus,
-  MARKET_API_HOST,
-  OLD_ORD_PK_KEY,
-  OLD_PAY_PK_KEY,
-  WOC_EXCHANGE_RATE_URL,
-} from "@/constants";
+import { FetchStatus, MARKET_API_HOST, OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
 import {
   bsv20Balances,
   chainInfo,
@@ -154,20 +148,18 @@ const WalletMenu: React.FC = () => {
   useEffect(() => {
     const fire = async () => {
       fetchRateStatus.value = FetchStatus.Loading;
-      const statusUrl = `${MARKET_API_HOST}/status`;
+      const statusUrl =
+        `${MARKET_API_HOST}/status`;
       const { promise: promiseStatus } = http.customFetch<{
+        exchangeRate: number;
         chainInfo: ChainInfo;
         indexers: IndexerStats;
       }>(statusUrl);
-      const { chainInfo: info, indexers: indx } = await promiseStatus;
-
-      const { promise: wocPromise } = http.customFetch<{
-        currency: string;
-        rate: string;
-        time: number;
-      }>(WOC_EXCHANGE_RATE_URL);
-      const wocRate = await wocPromise;
-      const er = parseFloat(wocRate.rate);
+      const {
+        chainInfo: info,
+        exchangeRate: er,
+        indexers: indx,
+      } = await promiseStatus;
       fetchRateStatus.value = FetchStatus.Success;
       // console.log({ info, exchangeRate, indexers });
       chainInfo.value = info;
