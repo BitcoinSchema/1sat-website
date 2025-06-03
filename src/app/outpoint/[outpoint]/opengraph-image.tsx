@@ -28,7 +28,13 @@ export default async function Image({
   const notoSerif = await getNotoSerifItalicFont();
 
   const details = await fetch(
-    `${API_HOST}/api/inscriptions/${params.outpoint}`
+    `${API_HOST}/api/inscriptions/${params.outpoint}`,
+    {
+      next: { revalidate: 86400 }, // Cache for 24 hours - opengraph images rarely change
+      headers: { 
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' 
+      }
+    }
   ).then((res) => res.json() as Promise<OrdUtxo>);
 
   const isImageInscription =

@@ -79,7 +79,7 @@ export const json = (body: Object) => {
 
 export const customFetch = <T>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit & { next?: { revalidate?: number } } = {}
 ): FetchResponse<T> => {
   // Cancel logic
   const controller = new AbortController();
@@ -87,11 +87,17 @@ export const customFetch = <T>(
   // Inject default headers
   const headers = options?.headers || defaultHeaders;
 
+  // Add default caching for API calls to reduce function invocations
+  const cacheOptions = url.includes('/api/inscriptions/') || url.includes('/api/bsv20/') 
+    ? { next: { revalidate: 300 }, ...options.next } // 5 min cache for critical endpoints
+    : options.next;
+
   // do fetch
   let responsePromise: Promise<Response> = fetch(url, {
     ...options,
     headers,
     signal: controller.signal,
+    next: cacheOptions,
   });
 
   // Register response interceptors
