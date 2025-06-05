@@ -46,7 +46,7 @@ export async function POST(
   } else {
     // aggregated market data from the API
     const urlV2Market = `${MARKET_API_HOST}/market/bsv21${params.id ? `/${params.id}` : params.term ? `/search/${params.term}` : ""
-      }?limit=100&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
+      }?limit=500&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
 
     // console.log({ urlV2Market })
     const promiseBsv21Market = await fetch(urlV2Market);
