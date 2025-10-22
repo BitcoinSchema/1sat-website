@@ -114,7 +114,7 @@ const SignMessagePage = ({
 				`Signing error: ${error instanceof Error ? error.message : "Unknown error"}`,
 			);
 		}
-	}, [ordPk.value, locked.value, activeKey.value, message, callback, state]);
+	}, [ordPk.value, locked.value, activeKey.value, message, callback, state, proof]);
 
 	const toggleActiveKey = () => {
 		showActiveKeySwitcher.value = !showActiveKeySwitcher.value;
