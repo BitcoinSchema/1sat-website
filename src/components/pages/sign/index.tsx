@@ -9,14 +9,23 @@ import {
 } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
 import { PrivateKey, Utils } from "@bsv/sdk";
+import { getAuthToken, parseAuthToken, type AuthConfig } from "bitcoin-auth";
 import { computed, effect } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { FaChevronDown, FaCircle } from "react-icons/fa6";
 import { useCopyToClipboard } from "usehooks-ts";
 
-const SignMessagePage = ({ message }: { message: string }) => {
+const SignMessagePage = ({
+	message,
+	callback,
+	state,
+}: {
+	message: string;
+	callback?: string;
+	state?: string;
+}) => {
 	useSignals();
 	const [value, copy] = useCopyToClipboard();
 	const activeKey = useSignal<string | undefined>(undefined);
@@ -44,19 +53,68 @@ const SignMessagePage = ({ message }: { message: string }) => {
 	});
 
 	const signChallenge = useCallback(async () => {
-		// sign chalenge with BSM
-		if (ordPk.value && activeKey.value) {
-			if (locked.value) {
-				showUnlockWalletModal.value = true;
-				return;
+		if (!ordPk.value || !activeKey.value) {
+			return;
+		}
+
+		if (locked.value) {
+			showUnlockWalletModal.value = true;
+			return;
+		}
+
+		try {
+			// Decode hex message to UTF-8 using Utils
+			const decodedMessage = Utils.toUTF8(Utils.toArray(message, "hex"));
+			const [requestPath, timestamp] = decodedMessage.split("|");
+
+			// Generate authToken using bitcoin-auth
+			const authConfig: AuthConfig = {
+				privateKeyWif: activeKey.value,
+				requestPath,
+				timestamp,
+				scheme: "bsm",
+			};
+			const authToken = getAuthToken(authConfig);
+
+			// Parse token to extract signature for display
+			const parsed = parseAuthToken(authToken);
+			if (parsed) {
+				proof.value = parsed.signature;
 			}
 
-			const pk = PrivateKey.fromWif(activeKey.value);
-      
-			// sign
-			proof.value = pk.sign(message, "hex").toString("base64") as string;
+			// If callback URL is present, POST authToken to callback
+			if (callback) {
+				const keyType = activeKey.value === ordPk.value ? "ordinals" : "payment";
+
+				const response = await fetch(callback, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						authToken,
+						state,
+						provider: "1sat",
+						keyType,
+					}),
+				});
+
+				if (response.ok) {
+					const result = await response.json();
+					if (result.redirectUrl) {
+						window.location.href = result.redirectUrl;
+					} else {
+						toast.success("Wallet connected successfully!");
+					}
+				} else {
+					const error = await response.json();
+					toast.error(`Connection failed: ${error.message || "Unknown error"}`);
+				}
+			}
+		} catch (error) {
+			toast.error(
+				`Signing error: ${error instanceof Error ? error.message : "Unknown error"}`,
+			);
 		}
-	}, [ordPk.value, locked.value, activeKey.value, proof, message]);
+	}, [ordPk.value, locked.value, activeKey.value, message, callback, state]);
 
 	const toggleActiveKey = () => {
 		showActiveKeySwitcher.value = !showActiveKeySwitcher.value;
@@ -84,8 +142,6 @@ const SignMessagePage = ({ message }: { message: string }) => {
 		},
 		[activeKey, ordPk.value, payPk.value, proof],
 	);
-
-	const decodedMessage = Buffer.from(message, "hex").toString("utf-8");
 
 	return locked.value ? (
 		<SAFU />

@@ -33,6 +33,7 @@
 		"@vercel/analytics": "^1.3.2",
 		"@vercel/speed-insights": "^1.0.14",
 		"ai": "^3.4.33",
+		"bitcoin-auth": "^0.0.5",
 		"blurhash": "^2.0.5",
 		"bun-copy-plugin": "^0.2.1",
 		"class-variance-authority": "^0.7.0",
