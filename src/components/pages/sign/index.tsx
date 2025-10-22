@@ -99,6 +99,19 @@ const SignMessagePage = ({
 
 				if (response.ok) {
 					const result = await response.json();
+
+					// Notify opener window (if in popup) before redirecting
+					if (window.opener && state) {
+						window.opener.postMessage(
+							{
+								type: "wallet-connected",
+								state,
+								provider: "1sat",
+							},
+							"*",
+						);
+					}
+
 					if (result.redirectUrl) {
 						window.location.href = result.redirectUrl;
 					} else {
