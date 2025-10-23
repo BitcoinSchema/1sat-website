@@ -5,6 +5,7 @@ import {
 	encryptedBackup,
 	ordPk,
 	payPk,
+	showUnlockWalletButton,
 	showUnlockWalletModal,
 } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
@@ -32,7 +33,17 @@ const SignMessagePage = ({
 	const proof = useSignal<string | undefined>(undefined);
 	const showActiveKeySwitcher = useSignal(false);
 
-	const locked = computed(() => !ordAddress.value && !!encryptedBackup.value);
+	const locked = computed(() => {
+		// Wallet is locked if we have encrypted backup but no keys loaded
+		if (!ordAddress.value && !!encryptedBackup.value) {
+			return true;
+		}
+		// Also check if menu component detected lock state via localStorage
+		if (showUnlockWalletButton.value && !ordPk.value) {
+			return true;
+		}
+		return false;
+	});
 	const activeAddress = computed(() => {
 		const key = activeKey.value || ordPk.value;
 		if (!key) {
