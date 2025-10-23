@@ -26,6 +26,12 @@ export default async function Image({
   const detailsUrl = `${API_HOST}/api/inscriptions/${params.outpoint}`
   const details = await fetch(
     detailsUrl,
+    {
+      next: { revalidate: 86400 }, // Cache for 24 hours - opengraph images rarely change
+      headers: { 
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' 
+      }
+    }
   ).then((res) => {
     if (!res.ok) {
       throw new Error(`Error fetching JSON from ${detailsUrl}`);

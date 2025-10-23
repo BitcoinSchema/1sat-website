@@ -27,7 +27,7 @@ export async function POST(
     // const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
     // listings = await promiseBsv20;
     const urlV1Market = `${MARKET_API_HOST}/market/bsv20${id ? `/${id}` : term ? `/search/${term}` : ""
-      }?limit=100&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
+      }?limit=500&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
 
       // console.log({ urlV1Market, params })
     const promiseBsv20v1Market = await fetch(urlV1Market);
@@ -48,7 +48,7 @@ export async function POST(
   } else {
     // aggregated market data from the API
     const urlV2Market = `${MARKET_API_HOST}/market/bsv21${id ? `/${id}` : term ? `/search/${term}` : ""
-      }?limit=100&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
+      }?limit=500&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
 
     // console.log({ urlV2Market })
     const promiseBsv21Market = await fetch(urlV2Market);
