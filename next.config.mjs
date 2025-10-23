@@ -3,6 +3,9 @@
 const nextConfig = {
 	reactStrictMode: true,
 	transpilePackages: [
+		'react-markdown',
+		'remark-parse',
+		'mdast-util-from-markdown',
 		'decode-named-character-reference',
 		'character-entities',
 	],
@@ -60,6 +63,13 @@ const nextConfig = {
 		}
 
 		return config;
+	},
+	experimental: {
+		turbo: {
+			resolveAlias: {
+				'decode-named-character-reference': 'decode-named-character-reference/index.js',
+			},
+		},
 	},
 };
 
