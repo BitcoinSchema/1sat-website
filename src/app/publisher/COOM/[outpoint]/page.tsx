@@ -9,8 +9,9 @@ import {
 	COOM_SLUGS_AND_OUTPOINTS,
 } from "../constants";
 
-const CoOMCollection = async ({ params }: { params: { outpoint: string } }) => {
-	let outpoint = params.outpoint;
+const CoOMCollection = async ({ params }: { params: Promise<{ outpoint: string }> }) => {
+	const { outpoint: outpointParam } = await params;
+	let outpoint = outpointParam;
 	const isCoom = COOM_SLUGS_AND_OUTPOINTS.includes(outpoint);
 	const isCoomSlug = isCoom && !!COOM_OUTPOINTS_BY_SLUGS[outpoint];
 
@@ -60,9 +61,10 @@ export default CoOMCollection;
 export async function generateMetadata({
 	params,
 }: {
-	params: { outpoint: string };
+	params: Promise<{ outpoint: string }>;
 }) {
-	let outpoint = params.outpoint;
+	const { outpoint: outpointParam } = await params;
+	let outpoint = outpointParam;
 	const isCoom = COOM_SLUGS_AND_OUTPOINTS.includes(outpoint);
 	const isCoomSlug = isCoom && !!COOM_OUTPOINTS_BY_SLUGS[outpoint];
 

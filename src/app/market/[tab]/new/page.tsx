@@ -2,8 +2,9 @@ import NewListingPage from "@/components/pages/market/new";
 import type { AssetType } from "@/constants";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 
-const Market = async ({ params }: { params: { tab: AssetType } }) => {
-  // switch (params.tab) {
+const Market = async ({ params }: { params: Promise<{ tab: AssetType }> }) => {
+  const { tab } = await params;
+  // switch (tab) {
   //   case AssetType.Ordinals:
   //     // TODO: Featured ordinals
   //     const urlImages = `${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&type=image/png`;
@@ -62,16 +63,17 @@ const Market = async ({ params }: { params: { tab: AssetType } }) => {
   //   default:
   //     return null;
   // }
-  return <NewListingPage type={params.tab} />;
+  return <NewListingPage type={tab} />;
 };
 export default Market;
 
 export async function generateMetadata({
   params,
 }: {
-  params: { tab: AssetType };
+  params: Promise<{ tab: AssetType }>;
 }) {
-  const assetType = getCapitalizedAssetType(params.tab);
+  const { tab } = await params;
+  const assetType = getCapitalizedAssetType(tab);
 
   return {
     title: `Create New ${assetType} Listing - 1SatOrdinals`,

@@ -6,8 +6,9 @@ import * as http from "@/utils/httpClient";
 const Search = async ({
   params,
 }: {
-  params: { term: string; bsv20Matches?: string };
+  params: Promise<{ term: string; bsv20Matches?: string }>;
 }) => {
+  const { term, bsv20Matches } = await params;
   // &q=${btoa(JSON.stringify({
   //   insc: {
   //     json: {
@@ -16,20 +17,20 @@ const Search = async ({
   //   },
   // }))}
 
-  console.log("term", params.term);
-  // &bsv20Matches=${params.bsv20Matches}
+  console.log("term", term);
+  // &bsv20Matches=${bsv20Matches}
   const { promise } = http.customFetch<OrdUtxo[]>(`
-    ${API_HOST}/api/market?dir=desc&limit=20&offset=0&text=${decodeURIComponent(params.term)}
+    ${API_HOST}/api/market?dir=desc&limit=20&offset=0&text=${decodeURIComponent(term)}
   `, {
     method: "POST"
   });
   const artifacts = await promise;
 
-  const matches = params.bsv20Matches ? params.bsv20Matches.split(",") : [];
+  const matches = bsv20Matches ? bsv20Matches.split(",") : [];
 
   return (
     <SearchPage
-      title={decodeURIComponent(params.term)}
+      title={decodeURIComponent(term)}
       imageListings={artifacts}
       selectedAssetType={AssetType.Ordinals}
       bsv20Matches={matches}
@@ -42,9 +43,10 @@ export default Search;
 export async function generateMetadata({
   params,
 }: {
-  params: { term: string };
+  params: Promise<{ term: string }>;
 }) {
-  const searchTerm = params.term;
+  const { term } = await params;
+  const searchTerm = term;
 
   return {
     title: `Search Results for "${searchTerm}" - 1SatOrdinals`,

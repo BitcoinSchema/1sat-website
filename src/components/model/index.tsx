@@ -1,6 +1,24 @@
 "use client";
 
 import "@google/model-viewer";
+import type React from 'react';
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        src?: string;
+        alt?: string;
+        poster?: string;
+        'environment-image'?: string;
+        'shadow-intensity'?: string;
+        'shadow-softness'?: string;
+        'tone-mapping'?: string;
+        'skybox-image'?: string;
+      };
+    }
+  }
+}
 
 type ModelProps = {
   src: string;

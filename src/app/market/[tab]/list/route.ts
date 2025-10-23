@@ -6,25 +6,27 @@ export const dynamic = "force-dynamic"; // defaults to auto
 
 export async function POST(
   request: NextRequest,
-  {
-    params,
-  }: {
-    params: { type: AssetType; id?: string, term?: string};
+  context: {
+    params: Promise<{ tab: string; type?: string; id?: string; term?: string }>;
   }
 ) {
-  const { type } = params;
+  const params = await context.params;
+  const tab = params.tab || params.type;
+  const type = tab as AssetType;
+  const id = params.id;
+  const term = params.term;
   const searchParams = request.nextUrl.searchParams;
   // console.log("here", {searchParams, params})
   const sort = searchParams.get("sort") as SortBy;
   const dir = searchParams.get("dir") as "asc" | "desc";
 
   let marketData: MarketData[] = [];
-  
+
   if (type === AssetType.BSV20) {
     // const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
     // const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
     // listings = await promiseBsv20;
-    const urlV1Market = `${MARKET_API_HOST}/market/bsv20${params.id ? `/${params.id}` : params.term ? `/search/${params.term}` : ""
+    const urlV1Market = `${MARKET_API_HOST}/market/bsv20${id ? `/${id}` : term ? `/search/${term}` : ""
       }?limit=100&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
 
       // console.log({ urlV1Market, params })
@@ -45,7 +47,7 @@ export async function POST(
     // });
   } else {
     // aggregated market data from the API
-    const urlV2Market = `${MARKET_API_HOST}/market/bsv21${params.id ? `/${params.id}` : params.term ? `/search/${params.term}` : ""
+    const urlV2Market = `${MARKET_API_HOST}/market/bsv21${id ? `/${id}` : term ? `/search/${term}` : ""
       }?limit=100&sort=${sort ? sort : "most_recent_sale"}&dir=${dir ? dir : "asc"}&offset=0`;
 
     // console.log({ urlV2Market })

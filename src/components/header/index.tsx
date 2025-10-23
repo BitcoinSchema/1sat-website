@@ -6,8 +6,8 @@ import SearchBar from "../SearchBar";
 import Wallet from "../Wallet/menu";
 import MarketMenu from "../marketMenu";
 
-const Header = ({ ubuntu }: { ubuntu: { className: string } }) => {
-	const headersList = headers();
+const Header = async ({ ubuntu }: { ubuntu: { className: string } }) => {
+	const headersList = await headers();
 	const hostname = headersList.get("host") || "";
 
 	// if the domain is 1sat.market, isMarket will be true

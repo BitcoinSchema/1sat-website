@@ -40,7 +40,7 @@ export const decryptData = async(
   const encryptedContent = encryptedData.slice(16);
 
   const decryptedContent = await crypto.subtle.decrypt(
-    { name: "AES-CBC", iv: iv as BufferSource },
+    { name: "AES-CBC", iv: iv },
     cryptoKey,
     encryptedContent as BufferSource
   );

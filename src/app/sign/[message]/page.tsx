@@ -4,14 +4,16 @@ const Prove = async ({
 	params,
 	searchParams,
 }: {
-	params: { message: string };
-	searchParams: { callback?: string; state?: string };
+	params: Promise<{ message: string }>;
+	searchParams: Promise<{ callback?: string; state?: string }>;
 }) => {
+	const { message } = await params;
+	const { callback, state } = await searchParams;
 	return (
 		<SignMessagePage
-			message={params.message}
-			callback={searchParams.callback}
-			state={searchParams.state}
+			message={message}
+			callback={callback}
+			state={state}
 		/>
 	);
 };

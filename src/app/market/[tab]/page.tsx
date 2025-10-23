@@ -2,21 +2,23 @@ import MarketPage from "@/components/pages/market";
 import { AssetType, type SortBy } from "@/constants";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 
-const Market = async ({ params, searchParams }: { params: { tab: AssetType,  }, searchParams: { sort: SortBy, dir: "asc" | "desc" } }) => {
-  console.log("APP/MARKET/[TAB]/page", { params, searchParams });
-  switch (params.tab) {
+const Market = async ({ params, searchParams }: { params: Promise<{ tab: AssetType }>, searchParams: Promise<{ sort: SortBy, dir: "asc" | "desc" }> }) => {
+  const { tab } = await params;
+  const { sort, dir } = await searchParams;
+  console.log("APP/MARKET/[TAB]/page", { tab, sort, dir });
+  switch (tab) {
     case AssetType.Ordinals:
       return (
         <MarketPage
           selectedAssetType={AssetType.Ordinals}
-          sort={searchParams.sort}
-          dir={searchParams.dir}
+          sort={sort}
+          dir={dir}
         />
       );
     case AssetType.BSV20:
-      return <MarketPage selectedAssetType={AssetType.BSV20} sort={searchParams.sort} dir={searchParams.dir} />;
+      return <MarketPage selectedAssetType={AssetType.BSV20} sort={sort} dir={dir} />;
     case AssetType.BSV21:
-      return <MarketPage selectedAssetType={AssetType.BSV21} sort={searchParams.sort} dir={searchParams.dir} />;
+      return <MarketPage selectedAssetType={AssetType.BSV21} sort={sort} dir={dir} />;
     default:
       return null;
   }
@@ -26,9 +28,10 @@ export default Market;
 export async function generateMetadata({
   params,
 }: {
-  params: { tab: AssetType };
+  params: Promise<{ tab: AssetType }>;
 }) {
-  const assetType = getCapitalizedAssetType(params.tab);
+  const { tab } = await params;
+  const assetType = getCapitalizedAssetType(tab);
 
   return {
     title: `${assetType} Market Listings - 1SatOrdinals`,

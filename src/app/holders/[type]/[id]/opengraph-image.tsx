@@ -70,10 +70,10 @@ export default async function Image({
 const getDetails = async (req: NextRequest, type: AssetType, id: string) => {
 	const res = await import("./details/route");
 	const resp = await res.GET(req, {
-		params: {
+		params: Promise.resolve({
 			type,
 			id,
-		},
+		}),
 	});
 	const details = (await resp.json()) as BSV20;
 	return details;
