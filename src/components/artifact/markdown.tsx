@@ -1,56 +1,65 @@
-import { FetchStatus, ORDFS } from "@/constants";
+"use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { FetchStatus, ORDFS } from "@/constants";
+import { MDXClient } from "next-mdx-remote-client/csr";
+import type { SerializeResult } from "next-mdx-remote-client/serialize";
+import { serialize } from "next-mdx-remote-client/serialize";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
-import ReactMarkdown from "react-markdown";
 
 type MarkdownArtifactProps = {
-  origin?: string;
-  className?: string;
+	origin?: string;
+	className?: string;
 };
 
 const MarkdownArtifact: React.FC<MarkdownArtifactProps> = ({
-  origin,
-  className,
+	origin,
+	className,
 }) => {
-  const [text, setText] = useState<string>();
-  const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
-    FetchStatus.Idle
-  );
+	const [mdxSource, setMdxSource] = useState<SerializeResult | null>(null);
+	const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
+		FetchStatus.Idle,
+	);
 
-  useEffect(() => {
-    const fire = async () => {
-      try {
-        setFetchTextStatus(FetchStatus.Loading);
-        const result = await fetch(`${ORDFS}/${origin}`);
-        const resultText = await result.text();
-        setFetchTextStatus(FetchStatus.Success);
-        setText(resultText);
-      } catch (e) {
-        console.error("Failed to fetch inscription", e);
-        setFetchTextStatus(FetchStatus.Error);
-      }
-    };
-    if (!text && fetchTextStatus === FetchStatus.Idle) {
-      fire();
-    }
-  }, [text, fetchTextStatus, origin, setText, setFetchTextStatus]);
+	useEffect(() => {
+		const fire = async () => {
+			try {
+				setFetchTextStatus(FetchStatus.Loading);
+				const result = await fetch(`${ORDFS}/${origin}`);
+				const resultText = await result.text();
 
-  const markdown = useMemo(() => {
-    return text && <ReactMarkdown>{text}</ReactMarkdown>;
-  }, [text]);
+				const mdxSource = await serialize({
+					source: resultText,
+					options: {
+						mdxOptions: {
+							remarkPlugins: [],
+							rehypePlugins: [],
+						},
+					},
+				});
 
-  return fetchTextStatus === FetchStatus.Success ? (
-    <pre
-      className={`flex items-center justify-center w-full h-full transition  ${
-        className ? className : ""
-      }`}
-    >
-      {markdown}
-    </pre>
-  ) : (
-    <LoaderIcon className="mx-auto" />
-  );
+				setMdxSource(mdxSource);
+				setFetchTextStatus(FetchStatus.Success);
+			} catch (e) {
+				console.error("Failed to fetch inscription", e);
+				setFetchTextStatus(FetchStatus.Error);
+			}
+		};
+		if (!mdxSource && fetchTextStatus === FetchStatus.Idle) {
+			fire();
+		}
+	}, [mdxSource, fetchTextStatus, origin]);
+
+	return fetchTextStatus === FetchStatus.Success && mdxSource && "compiledSource" in mdxSource ? (
+		<div
+			className={`flex items-center justify-center w-full h-full transition ${className || ""}`}
+		>
+			<MDXClient {...mdxSource} />
+		</div>
+	) : (
+		<LoaderIcon className="mx-auto" />
+	);
 };
 
 export default MarkdownArtifact;

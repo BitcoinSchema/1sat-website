@@ -1,14 +1,9 @@
-/** @type {import('next').NextConfig} */
+import createMDX from '@next/mdx';
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
 	reactStrictMode: true,
-	transpilePackages: [
-		'react-markdown',
-		'remark-parse',
-		'mdast-util-from-markdown',
-		'decode-named-character-reference',
-		'character-entities',
-	],
+	pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
 	images: {
 		dangerouslyAllowSVG: true,
 		contentSecurityPolicy:
@@ -64,13 +59,13 @@ const nextConfig = {
 
 		return config;
 	},
-	experimental: {
-		turbo: {
-			resolveAlias: {
-				'decode-named-character-reference': 'decode-named-character-reference/index.js',
-			},
-		},
-	},
 };
 
-export default nextConfig;
+const withMDX = createMDX({
+	options: {
+		remarkPlugins: [],
+		rehypePlugins: [],
+	},
+});
+
+export default withMDX(nextConfig);
