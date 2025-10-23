@@ -154,7 +154,18 @@ const SignMessagePage = ({
 		>
 			<div className="modal-box">
 				<div className="text-sm flex justify-between mb-4">
-					<div>Sign Message</div>
+					<div>
+						{callback ? (
+							<div>
+								<div className="text-lg font-semibold">Wallet Connection Request</div>
+								<div className="text-xs text-[#777] mt-1">
+									{new URL(callback).hostname} is requesting access
+								</div>
+							</div>
+						) : (
+							<div>Sign Message</div>
+						)}
+					</div>
 					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 					<div
 						onClick={toggleActiveKey}
@@ -200,29 +211,46 @@ const SignMessagePage = ({
 						<span className="text-[#555] mr-2">Message</span> {message}
 					</p>
 		
-					<p className={`${proof.value ? 'opacity-100' : 'opacity-0'} transition text-xs border bg-[#111] border-[#222] rounded p-2 h-16 break-all leading-loose`}>
-					<span className="text-[#555] mr-2">{proof.value ? "Signature": ""}</span> {proof.value}
-					</p>
+					{!callback && (
+						<p className={`${proof.value ? 'opacity-100' : 'opacity-0'} transition text-xs border bg-[#111] border-[#222] rounded p-2 h-16 break-all leading-loose`}>
+						<span className="text-[#555] mr-2">{proof.value ? "Signature": ""}</span> {proof.value}
+						</p>
+					)}
 	
 				<form method="dialog">
 					<div className="modal-action">
-						<button
-							type="button"
-							className="btn"
-							onClick={() => {
-								if (proof.value) {
-									copy(proof.value);
-									toast.success("Signature copied!");
-								}
-								signChallenge();
-							}}
-						>
-							{locked.value
-								? "Unlock Wallet"
-								: proof.value
-									? "Copy Signature"
-									: "Sign Challenge"}
-						</button>
+						{callback ? (
+							<button
+								type="button"
+								className="btn btn-primary"
+								onClick={signChallenge}
+								disabled={locked.value || !!proof.value}
+							>
+								{locked.value
+									? "Unlock Wallet"
+									: proof.value
+										? "Redirecting..."
+										: "Sign and Connect"}
+							</button>
+						) : (
+							<button
+								type="button"
+								className="btn"
+								onClick={() => {
+									if (proof.value) {
+										copy(proof.value);
+										toast.success("Signature copied!");
+									}
+									signChallenge();
+								}}
+							>
+								{locked.value
+									? "Unlock Wallet"
+									: proof.value
+										? "Copy Signature"
+										: "Sign Challenge"}
+							</button>
+						)}
 					</div>
 				</form>
 			</div>
