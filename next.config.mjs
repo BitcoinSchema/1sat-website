@@ -2,6 +2,10 @@
 
 const nextConfig = {
 	reactStrictMode: true,
+	transpilePackages: [
+		'decode-named-character-reference',
+		'character-entities',
+	],
 	images: {
 		dangerouslyAllowSVG: true,
 		contentSecurityPolicy:
