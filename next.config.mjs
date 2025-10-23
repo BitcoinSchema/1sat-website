@@ -1,5 +1,3 @@
-import createMDX from '@next/mdx';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	reactStrictMode: true,
@@ -61,12 +59,4 @@ const nextConfig = {
 	},
 };
 
-const withMDX = createMDX({
-	extension: /\.(md|mdx)$/,
-	options: {
-		remarkPlugins: [],
-		rehypePlugins: [],
-	},
-});
-
-export default withMDX(nextConfig);
+export default nextConfig;
