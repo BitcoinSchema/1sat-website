@@ -37,12 +37,14 @@ export type InputOutpoint = {
 
 
 
-const Outpoint = async ({ params, searchParams }: { params: OutpointParams, searchParams: { [key: string]: string | string[] | undefined } }) => {
+const Outpoint = async ({ params, searchParams }: { params: Promise<OutpointParams>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) => {
+  const { outpoint, tab } = await params;
+  const queryParams = await searchParams;
   // get tx details
-  const parts = params.outpoint.split("_");
+  const parts = outpoint.split("_");
   const txid = parts[0];
   const vout = parts.length > 1 ? parts[1] : "0";
-  const details = searchParams.details === "true";
+  const details = queryParams.details === "true";
 
   // try {
   // 	const spendResponse = await fetch(
@@ -65,21 +67,21 @@ const Outpoint = async ({ params, searchParams }: { params: OutpointParams, sear
   // }
 
   const content = () => {
-    const outpoint = `${txid}_${vout}`;
-    const tab = params.tab as OutpointTab;
-    switch (tab as OutpointTab) {
+    const outpointId = `${txid}_${vout}`;
+    const currentTab = tab as OutpointTab;
+    switch (currentTab as OutpointTab) {
       case OutpointTab.Timeline:
-        return <OutpointTimeline outpoint={outpoint} />;
+        return <OutpointTimeline outpoint={outpointId} />;
       case OutpointTab.Inscription:
-        return <OutpointInscription outpoint={outpoint} />;
+        return <OutpointInscription outpoint={outpointId} />;
       case OutpointTab.Token:
-        return <OutpointToken outpoint={outpoint} />;
+        return <OutpointToken outpoint={outpointId} />;
       case OutpointTab.Listing:
-        return <OutpointListing outpoint={outpoint} />;
+        return <OutpointListing outpoint={outpointId} />;
       case OutpointTab.Collection:
-        return <OutpointCollection outpoint={outpoint} />;
+        return <OutpointCollection outpoint={outpointId} />;
       case OutpointTab.Owner:
-        return <OutpointOwner outpoint={outpoint} />;
+        return <OutpointOwner outpoint={outpointId} />;
     }
   };
 
@@ -115,10 +117,11 @@ export default Outpoint;
 export async function generateMetadata({
   params,
 }: {
-  params: { outpoint: string; tab: string };
+  params: Promise<{ outpoint: string; tab: string }>;
 }) {
+  const { outpoint } = await params;
   const details = await fetch(
-    `${API_HOST}/api/inscriptions/${params.outpoint}`
+    `${API_HOST}/api/inscriptions/${outpoint}`
   ).then((res) => res.json() as Promise<OrdUtxo>);
 
   const isImageInscription =
@@ -142,7 +145,7 @@ export async function generateMetadata({
       } on 1SatOrdinals.`,
     openGraph: {
       title,
-      description: `Explore item details for ${isImageInscription ? `image ${params.outpoint}` : name
+      description: `Explore item details for ${isImageInscription ? `image ${outpoint}` : name
         } on 1SatOrdinals.`,
       type: "website",
     },

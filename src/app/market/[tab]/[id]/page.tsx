@@ -7,19 +7,20 @@ import { redirect } from "next/navigation";
 const Market = async ({
   params,
 }: {
-  params: { tab: AssetType; id: string };
+  params: Promise<{ tab: AssetType; id: string }>;
 }) => {
+  const { tab, id } = await params;
   // hit the details request
 
-  const tickOrId = decodeURIComponent(params.id);
-  switch (params.tab) {
+  const tickOrId = decodeURIComponent(id);
+  switch (tab) {
     case AssetType.Ordinals:
-      //       const urlImages = `${MARKET_API_HOST}/market/${params.tab}/${params.id}`;
+      //       const urlImages = `${MARKET_API_HOST}/market/${tab}/${id}`;
       // const { promise } = http.customFetch(urlImages);
       // const marketData = await promise;
       // console.log(marketData);
       // TODO: redirect to outpoint page
-  return redirect(`/outpoint/${params.id}`);
+  return redirect(`/outpoint/${id}`);
     case AssetType.BSV20:
       return (
         <MarketPage selectedAssetType={AssetType.BSV20} id={tickOrId} />
@@ -37,15 +38,16 @@ export default Market;
 export async function generateMetadata({
   params,
 }: {
-  params: { tab: AssetType; id: string };
+  params: Promise<{ tab: AssetType; id: string }>;
 }) {
+  const { tab, id } = await params;
   let ticker: string | undefined;
   let icon: string | undefined;
-  const assetType = getCapitalizedAssetType(params.tab);
-  if (params.tab === AssetType.BSV20) {
-    ticker = params.id;
-  } else if (params.tab === AssetType.BSV21) {
-    const detailsUrl = `${API_HOST}/api/bsv20/id/${params.id}`;
+  const assetType = getCapitalizedAssetType(tab);
+  if (tab === AssetType.BSV20) {
+    ticker = id;
+  } else if (tab === AssetType.BSV21) {
+    const detailsUrl = `${API_HOST}/api/bsv20/id/${id}`;
     const details = await fetch(detailsUrl).then(
       (res) => res.json() as Promise<BSV20>
     );

@@ -11,8 +11,9 @@ export const dynamic = "auto"; // defaults to auto
 
 export async function GET(
 	request: NextRequest,
-  { params: {type, id }}: { params: { type: string; id: string }},
+  { params }: { params: Promise<{ type: string; id: string }> },
 ) {
+  const { type, id } = await params;
   const url = type === AssetType.BSV20
     ? `${API_HOST}/api/bsv20/tick/${id}`
     : `${API_HOST}/api/bsv20/id/${id}`;

@@ -1,10 +1,12 @@
 import MarketPage from "@/components/pages/market";
 import { AssetType, SortBy } from "@/constants";
 
-const Search = async ({ params, searchParams }: { params: { term: string }, searchParams: { 
-  sort: SortBy, 
+const Search = async ({ params, searchParams }: { params: Promise<{ term: string }>, searchParams: Promise<{
+  sort: SortBy,
   dir: "asc" | "desc"
-} }) => {
+}> }) => {
+  const { term } = await params;
+  const { sort, dir } = await searchParams;
   // &q=${btoa(JSON.stringify({
   //   insc: {
   //     json: {
@@ -14,17 +16,17 @@ const Search = async ({ params, searchParams }: { params: { term: string }, sear
   // }))}
 
   // const { promise } = http.customFetch<OrdUtxo[]>(`
-  //   ${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&text=${params.term}
+  //   ${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&text=${term}
   // `);
   // const artifacts = await promise;
 
   return (
     <MarketPage
       showTabs={false}
-      title={params.term}
-      term={params.term}
-      sort={searchParams.sort || SortBy.MostRecentSale}
-      dir={searchParams.dir || "asc"}
+      title={term}
+      term={term}
+      sort={sort || SortBy.MostRecentSale}
+      dir={dir || "asc"}
       // imageListings={artifacts}
       selectedAssetType={AssetType.Ordinals}
     />
@@ -36,9 +38,10 @@ export default Search;
 export async function generateMetadata({
   params,
 }: {
-  params: { term: string };
+  params: Promise<{ term: string }>;
 }) {
-  const searchTerm = params.term;
+  const { term } = await params;
+  const searchTerm = term;
 
   return {
     title: `Search Results for "${searchTerm}" - 1SatOrdinals`,

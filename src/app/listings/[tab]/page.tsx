@@ -4,8 +4,9 @@ import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 import * as http from "@/utils/httpClient";
 
-const Listings = async ({ params }: { params: { tab: AssetType } }) => {
-  switch (params.tab) {
+const Listings = async ({ params }: { params: Promise<{ tab: AssetType }> }) => {
+  const { tab } = await params;
+  switch (tab) {
     case AssetType.Ordinals:
       // const urlImages = `${API_HOST}/api/market?sort=recent&dir=desc&limit=20&offset=0&type=image/png`;
       // const { promise } = http.customFetch<OrdUtxo[]>(urlImages);
@@ -38,9 +39,9 @@ export default Listings;
 export async function generateMetadata({
   params,
 }: {
-  params: { tab: AssetType };
+  params: Promise<{ tab: AssetType }>;
 }) {
-  const { tab } = params;
+  const { tab } = await params;
   const assetType = getCapitalizedAssetType(tab);
 
   return {

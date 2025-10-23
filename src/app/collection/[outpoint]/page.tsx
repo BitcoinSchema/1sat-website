@@ -4,10 +4,11 @@ import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
-const Collection = async ({ params }: { params: { outpoint: string } }) => {
+const Collection = async ({ params }: { params: Promise<{ outpoint: string }> }) => {
+	const { outpoint } = await params;
 	// Get the Ordinal TXO
 	let collection: OrdUtxo | undefined;
-	const collectionUrl = `${API_HOST}/api/txos/${params.outpoint}`;
+	const collectionUrl = `${API_HOST}/api/txos/${outpoint}`;
 	try {
 		const { promise: promiseCollection } =
 			http.customFetch<OrdUtxo>(collectionUrl);
@@ -18,7 +19,7 @@ const Collection = async ({ params }: { params: { outpoint: string } }) => {
 
 	// Get the collection stats
 	let stats: CollectionStats | undefined;
-	const collectionStatsUrl = `${API_HOST}/api/collections/${params.outpoint}/stats`;
+	const collectionStatsUrl = `${API_HOST}/api/collections/${outpoint}/stats`;
 	try {
 		const { promise } =
 			http.customFetch<CollectionStats>(collectionStatsUrl);
@@ -38,10 +39,11 @@ export default Collection;
 export async function generateMetadata({
 	params,
 }: {
-	params: { outpoint: string };
+	params: Promise<{ outpoint: string }>;
 }) {
+	const { outpoint } = await params;
 	const details = await fetch(
-		`${API_HOST}/api/inscriptions/${params.outpoint}`
+		`${API_HOST}/api/inscriptions/${outpoint}`
 	).then((res) => res.json() as Promise<OrdUtxo>);
 
 	const collectionName =

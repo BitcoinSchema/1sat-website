@@ -11,7 +11,7 @@ export default async function Home() {
 }
 
 export async function generateMetadata() {
-	const headersList = headers();
+	const headersList = await headers();
 	const hostname = headersList.get("host") || "";
 
 	const isAlpha = hostname === "alpha.1satordinals.com" || hostname === "alpha.1sat.market";

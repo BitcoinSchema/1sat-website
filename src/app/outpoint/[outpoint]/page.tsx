@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 
-const Outpoint = async ({ params }: { params: { outpoint: string } })  => {
-  redirect(`/outpoint/${params.outpoint}/timeline`)
+const Outpoint = async ({ params }: { params: Promise<{ outpoint: string }> })  => {
+  const { outpoint } = await params;
+  redirect(`/outpoint/${outpoint}/timeline`)
 };
 
 export default Outpoint;

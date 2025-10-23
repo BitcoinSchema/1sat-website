@@ -70,10 +70,11 @@ const getMarketData = async (
   const res = await import("../../../app/market/[tab]/list/route");
   const json = await (
     await res.POST(modifiedRequest, {
-      params: {
+      params: Promise.resolve({
+        tab: type,
         type,
         id,
-      },
+      }),
     })
   ).json();
 
