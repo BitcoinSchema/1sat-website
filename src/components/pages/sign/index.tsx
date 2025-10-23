@@ -63,8 +63,8 @@ const SignMessagePage = ({
 		}
 
 		try {
-			// Decode hex message to UTF-8 using Utils
-			const decodedMessage = Utils.toUTF8(Utils.toArray(message, "hex"));
+			// Decode base64 message to UTF-8 using Utils
+			const decodedMessage = Utils.toUTF8(Utils.toArray(message, "base64"));
 			const [requestPath, timestamp] = decodedMessage.split("|");
 
 			// Generate authToken using bitcoin-auth
@@ -82,45 +82,33 @@ const SignMessagePage = ({
 				proof.value = parsed.signature;
 			}
 
-			// If callback URL is present, POST authToken to callback
+			// If callback URL is present, redirect with authToken in query params
 			if (callback) {
 				const keyType = activeKey.value === ordPk.value ? "ordinals" : "payment";
 
-				const response = await fetch(callback, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						authToken,
-						state,
-						provider: "1sat",
-						keyType,
-					}),
-				});
-
-				if (response.ok) {
-					const result = await response.json();
-
-					// Notify opener window (if in popup) before redirecting
-					if (window.opener && state) {
-						window.opener.postMessage(
-							{
-								type: "wallet-connected",
-								state,
-								provider: "1sat",
-							},
-							"*",
-						);
-					}
-
-					if (result.redirectUrl) {
-						window.location.href = result.redirectUrl;
-					} else {
-						toast.success("Wallet connected successfully!");
-					}
-				} else {
-					const error = await response.json();
-					toast.error(`Connection failed: ${error.message || "Unknown error"}`);
+				// Build callback URL with query params
+				const callbackUrl = new URL(callback);
+				callbackUrl.searchParams.set("authToken", authToken);
+				if (state) {
+					callbackUrl.searchParams.set("state", state);
 				}
+				callbackUrl.searchParams.set("provider", "1sat");
+				callbackUrl.searchParams.set("keyType", keyType);
+
+				// Notify opener window (if in tab/popup) before redirecting
+				if (window.opener && state) {
+					window.opener.postMessage(
+						{
+							type: "wallet-connected",
+							state,
+							provider: "1sat",
+						},
+						"*",
+					);
+				}
+
+				// Redirect to callback URL
+				window.location.href = callbackUrl.toString();
 			}
 		} catch (error) {
 			toast.error(
