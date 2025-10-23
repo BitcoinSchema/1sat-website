@@ -94,6 +94,7 @@
 		"autoprefixer": "^10.4.21",
 		"babel-plugin-macros": "^3.1.0",
 		"buffer": "^6.0.3",
+		"character-entities": "^2.0.0",
 		"eslint": "^8.57.1",
 		"eslint-config-next": "14.0.4",
 		"eslint-plugin-react-hooks-signals": "^1.0.0",
