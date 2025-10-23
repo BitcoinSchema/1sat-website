@@ -1,7 +1,9 @@
+import { Utils } from "@bsv/sdk";
+
 const getKey = async (key: Uint8Array): Promise<CryptoKey> => {
   return await crypto.subtle.importKey(
     "raw",
-    key,
+    key as BufferSource,
     { name: "AES-CBC" },
     false,
     ["encrypt", "decrypt"]
@@ -15,9 +17,9 @@ export const encryptData = async (
 ): Promise<Uint8Array> => {
   const cryptoKey = await getKey(key);
   const encryptedContent = await crypto.subtle.encrypt(
-    { name: "AES-CBC", iv },
+    { name: "AES-CBC", iv: iv as BufferSource },
     cryptoKey,
-    data
+    data as BufferSource
   );
   
   // Combine IV and encrypted content
@@ -38,9 +40,9 @@ export const decryptData = async(
   const encryptedContent = encryptedData.slice(16);
 
   const decryptedContent = await crypto.subtle.decrypt(
-    { name: "AES-CBC", iv },
+    { name: "AES-CBC", iv: iv as BufferSource },
     cryptoKey,
-    encryptedContent
+    encryptedContent as BufferSource
   );
   return new Uint8Array(decryptedContent);
 }
@@ -50,11 +52,11 @@ export const generateEncryptionKey = async (
   publicKey: Uint8Array
 ): Promise<Uint8Array> => {
   const encoder = new TextEncoder();
-  const salt = await crypto.subtle.digest("SHA-256", publicKey);
-  
+  const salt = await crypto.subtle.digest("SHA-256", publicKey as BufferSource);
+
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    encoder.encode(passphrase),
+    encoder.encode(passphrase) as BufferSource,
     { name: "PBKDF2" },
     false,
     ["deriveBits"]
@@ -88,7 +90,9 @@ export const generateEncryptionKeyFromPassphrase = async (
     return;
   }
 
-  const pubKeyBytes = new Uint8Array(Buffer.from(pubKey, "base64").buffer);
+  // Decode base64 to bytes using BSV SDK Utils
+  const pubKeyArray = Utils.toArray(pubKey, "base64");
+  const pubKeyBytes = new Uint8Array(pubKeyArray);
 
   return await generateEncryptionKey(passphrase, pubKeyBytes);
 }

@@ -3,14 +3,12 @@
 import { FetchStatus } from "@/constants";
 import { generatedImage } from "@/signals/ai";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import type { ChatRequestOptions } from "ai";
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useState, type ChangeEvent, type FormEvent } from "react";
 import { FaMicrophone } from "react-icons/fa";
 import { FaStop } from "react-icons/fa6";
-import { v4 as uuidv4 } from "uuid";
 
 interface ViviBtnProps {
   className?: string;
@@ -20,39 +18,32 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
   useSignals();
   const router = useRouter();
   const formRef = React.createRef<HTMLFormElement>();
-  const { append, setMessages, messages, input, handleInputChange, handleSubmit } = useChat();
-  const [chatId, setChatId] = React.useState<string>("");
+  const { sendMessage, messages } = useChat();
+  const [input, setInput] = React.useState<string>("");
   const audioChunks = useSignal<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null
   );
-  const [loadingSubmit, setLoadingSubmit] = React.useState(false);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  }, []);
 
   const onSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoadingSubmit(true);
 
-    if (messages.length === 0) {
-      // Generate a random id for the chat
-      const id = uuidv4();
-      setChatId(id);
+    // Send the message using the new AI SDK v5 API
+    if (input.trim()) {
+      sendMessage({
+        role: "user",
+        parts: [{ type: "text", text: input }],
+      });
     }
 
-    setMessages([...messages]);
-
-    // Prepare the options object with additional body data, to pass the model.
-    const requestOptions: ChatRequestOptions = {
-      options: {
-        body: {
-          selectedModel: "llama3",
-        },
-      },
-    };
-
-    // Call the handleSubmit function with the options
-    handleSubmit(e, requestOptions);
-  }, [messages, setMessages, handleSubmit]);
+    // Clear input after sending
+    setInput("");
+  }, [input, sendMessage]);
 
   const doneRecording = useCallback(
     async (audioFile: File) => {
@@ -204,9 +195,14 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
         {messages.map((m) => (
           <div key={m.id} className="whitespace-pre-wrap h-full text-[#aaa]">
             {m.role === "user" ? "User: " : "AI: "}
-            {renderMessage(m.content)}
+            {m.parts.map((part, i) => {
+              if (typeof part === "object" && "text" in part && part.text) {
+                return <span key={`${m.id}-${i}`}>{renderMessage(part.text)}</span>;
+              }
+              return null;
+            })}
           </div>
-        ))} 
+        ))}
       </div>
       <form
           ref={formRef}
