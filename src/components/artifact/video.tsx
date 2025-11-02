@@ -12,14 +12,13 @@ const VideoArtifact: React.FC<VideoArtifactProps> = ({
   src,
   className,
 }) => {
+  // Check if we need to constrain height (non-scrollable in modal)
+  const needsHeightConstraint = className?.includes('h-full');
+
   return (
     <video
       className={`transition ${className ? className : ""}`}
-      style={{
-        minHeight: '60vh',
-        width: '100%',
-        objectFit: 'contain'
-      }}
+      style={needsHeightConstraint ? { maxHeight: 'calc(90vh - 4rem)', maxWidth: '100%' } : undefined}
       src={src ? src : `${ORDFS}/${origin}`}
       controls={true}
       preload="auto"

@@ -333,7 +333,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
 
                     <div
                         ref={scrollContainerRef}
-                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 grid place-items-center ${allowScroll ? 'overflow-auto' : 'overflow-hidden'}`}
+                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 ${allowScroll ? 'grid place-items-center overflow-auto' : 'flex items-center justify-center overflow-hidden'}`}
                         onMouseDown={allowScroll ? handleMouseDown : undefined}
                         onMouseMove={allowScroll ? handleMouseMove : undefined}
                         onMouseUp={allowScroll ? handleMouseUp : undefined}
@@ -343,25 +343,21 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                         } as React.CSSProperties}
                     >
                         {requiresFlipButton ? (
-                            <div
-                                className={allowScroll ? "max-w-full" : "max-w-full max-h-full"}
+                            <Artifact
+                                artifact={selectedArtifact}
+                                size={800}
+                                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
+                                showFooter={false}
+                                showListingTag={false}
+                                clickToZoom={false}
+                                classNames={{
+                                    wrapper: allowScroll ? "" : "max-w-full max-h-full w-full h-full",
+                                    media: allowScroll ? "max-w-full h-auto object-contain" : "max-w-full max-h-full w-full h-full object-contain"
+                                }}
                                 style={{
                                     viewTransitionName: `artifact-${selectedArtifact.outpoint}`
                                 } as React.CSSProperties}
-                            >
-                                <Artifact
-                                    artifact={selectedArtifact}
-                                    size={800}
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
-                                    showFooter={false}
-                                    showListingTag={false}
-                                    clickToZoom={false}
-                                    classNames={{
-                                        wrapper: allowScroll ? "" : "max-h-full",
-                                        media: allowScroll ? "max-w-full h-auto object-contain" : "max-w-full max-h-full object-contain"
-                                    }}
-                                />
-                            </div>
+                            />
                         ) : (
                             <img
                                 src={`https://ordfs.network/${selectedArtifact.origin?.outpoint}`}
