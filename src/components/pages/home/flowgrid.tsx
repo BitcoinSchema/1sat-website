@@ -82,14 +82,23 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
         e.preventDefault();
         if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-            const transition = (document as any).startViewTransition(() => {
-                flushSync(() => {
-                    setSelectedArtifact(artifact);
+            try {
+                const transition = (document as any).startViewTransition(() => {
+                    flushSync(() => {
+                        setSelectedArtifact(artifact);
+                    });
                 });
-            });
-            transition.ready.then(() => {
+                transition.ready.then(() => {
+                    setShowBackdrop(true);
+                }).catch(() => {
+                    // Transition aborted, ensure modal still shows
+                    setShowBackdrop(true);
+                });
+            } catch (err) {
+                // Fallback if transition fails
+                setSelectedArtifact(artifact);
                 setShowBackdrop(true);
-            });
+            }
         } else {
             setSelectedArtifact(artifact);
             setShowBackdrop(true);
@@ -296,7 +305,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                 onClick={closeModal}
             >
                 <div
-                    className="relative flex flex-col w-[90vw] h-[90vh]"
+                    className="relative flex flex-col w-[90vw] h-[96vh]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex items-center justify-end mb-2 shrink-0">

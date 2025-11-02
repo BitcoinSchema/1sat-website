@@ -18,7 +18,7 @@ const VideoArtifact: React.FC<VideoArtifactProps> = ({
   return (
     <video
       className={`transition ${className ? className : ""}`}
-      style={needsHeightConstraint ? { maxHeight: 'calc(90vh - 4rem)', maxWidth: '100%' } : undefined}
+      style={needsHeightConstraint ? { maxHeight: 'calc(96vh - 4rem)', maxWidth: '100%' } : undefined}
       src={src ? src : `${ORDFS}/${origin}`}
       controls={true}
       preload="auto"
