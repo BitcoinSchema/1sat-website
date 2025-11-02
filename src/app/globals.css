@@ -187,6 +187,11 @@ h1 {
 ::view-transition-old(root),
 ::view-transition-new(root) {
 	animation-duration: 0.3s;
+	z-index: -1;
+}
+
+::view-transition-group(root) {
+	z-index: -1;
 }
 
 /* For any named elements (our artifact cards/modals) */
@@ -195,15 +200,13 @@ h1 {
 ::view-transition-group(*) {
 	animation-duration: 0.4s;
 	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	z-index: 1;
+	z-index: 9999;
 }
 
-::view-transition-old(*) {
-	animation-duration: 0.4s;
-	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+::view-transition-old(*),
 ::view-transition-new(*) {
 	animation-duration: 0.4s;
 	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	mix-blend-mode: normal;
+	z-index: 9999;
 }

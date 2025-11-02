@@ -9,6 +9,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import Artifact from "@/components/artifact";
 import { SquareArrowOutUpRight, X, Play, ShoppingCart } from "lucide-react";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
@@ -24,7 +26,17 @@ const needsFlipButton = (artifact: OrdUtxo): boolean => {
     const contentType = artifact.origin?.data?.insc?.file.type || '';
     return contentType.startsWith('video/') ||
            contentType.includes('model/') ||
-           contentType.includes('gltf');
+           contentType.includes('gltf') ||
+           contentType.startsWith('audio/');
+};
+
+const shouldAllowScroll = (artifact: OrdUtxo): boolean => {
+    const contentType = artifact.origin?.data?.insc?.file.type || '';
+    // Only images and text types allow scrolling
+    // Videos, audio, 3D models must fit within container
+    return contentType.startsWith('image/') ||
+           contentType.startsWith('text/') ||
+           contentType.includes('html');
 };
 
 const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[], className: string }) => {
@@ -203,10 +215,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                         return (
                             <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.outpoint}>
                                 <div
-                                    className={`relative mb-4 break-inside-avoid group ${visible.get(artifact.outpoint) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
-                                    style={{
-                                        viewTransitionName: isInModal ? 'none' : `artifact-${artifact.outpoint}`
-                                    } as React.CSSProperties}
+                                    className={`relative mb-4 break-inside-avoid group ${visible.get(artifact.outpoint) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500 hover:z-[100]`}
                                     onClick={(e) => handleCardClick(e, artifact)}
                                 >
                                     <div className={"relative shadow-md bg-[#111] rounded-lg"}>
@@ -234,6 +243,9 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                                 width={375}
                                                 muted
                                                 playsInline
+                                                style={{
+                                                    viewTransitionName: isInModal ? 'none' : `artifact-${artifact.outpoint}`
+                                                } as React.CSSProperties}
                                                 ref={(el) => {
                                                     if (!el) return;
                                                     observeImage(el as any, artifact)
@@ -245,6 +257,9 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                                 alt={`Image ${artifact.txid}`}
                                                 className='w-full h-auto rounded-lg'
                                                 width={375}
+                                                style={{
+                                                    viewTransitionName: isInModal ? 'none' : `artifact-${artifact.outpoint}`
+                                                } as React.CSSProperties}
                                                 ref={(el) => {
                                                     if (!el) return;
                                                     observeImage(el, artifact)
@@ -271,6 +286,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
 
         {selectedArtifact && (() => {
             const requiresFlipButton = needsFlipButton(selectedArtifact);
+            const allowScroll = shouldAllowScroll(selectedArtifact);
             return (
             <div
                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300"
@@ -284,63 +300,77 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     className="relative flex flex-col w-[90vw] h-[90vh]"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="flex items-center justify-end gap-2 mb-2 shrink-0">
-                        {selectedArtifact.data?.list?.price && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowBuyModal(true);
-                                }}
-                                className="p-2 text-white hover:text-emerald-400 transition-colors bg-black/50 rounded-lg"
+                    <div className="flex items-center justify-end mb-2 shrink-0">
+                        <ButtonGroup>
+                            {selectedArtifact.data?.list?.price && (
+                                <Button
+                                    variant="secondary"
+                                    size="iconSm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowBuyModal(true);
+                                    }}
+                                >
+                                    <ShoppingCart className="w-4 h-4" />
+                                </Button>
+                            )}
+                            <Button
+                                variant="secondary"
+                                size="iconSm"
+                                onClick={() => window.open(`https://ordfs.network/${selectedArtifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer')}
                             >
-                                <ShoppingCart className="w-6 h-6" />
-                            </button>
-                        )}
-                        <button
-                            onClick={() => window.open(`https://ordfs.network/${selectedArtifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer')}
-                            className="p-2 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-lg"
-                        >
-                            <SquareArrowOutUpRight className="w-6 h-6" />
-                        </button>
-                        <button
-                            onClick={closeModal}
-                            className="p-2 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-lg"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
+                                <SquareArrowOutUpRight className="w-4 h-4" />
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="iconSm"
+                                onClick={closeModal}
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </ButtonGroup>
                     </div>
 
                     <div
                         ref={scrollContainerRef}
-                        className="shadow-2xl bg-[#111] rounded-lg overflow-auto flex-1 grid place-items-center"
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
+                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 grid place-items-center ${allowScroll ? 'overflow-auto' : 'overflow-hidden'}`}
+                        onMouseDown={allowScroll ? handleMouseDown : undefined}
+                        onMouseMove={allowScroll ? handleMouseMove : undefined}
+                        onMouseUp={allowScroll ? handleMouseUp : undefined}
+                        onMouseLeave={allowScroll ? handleMouseUp : undefined}
                         style={{
-                            cursor: isDragging ? 'grabbing' : 'grab',
-                            viewTransitionName: `artifact-${selectedArtifact.outpoint}`
+                            cursor: allowScroll ? (isDragging ? 'grabbing' : 'grab') : 'default'
                         } as React.CSSProperties}
                     >
                         {requiresFlipButton ? (
-                            <Artifact
-                                artifact={selectedArtifact}
-                                size={800}
-                                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
-                                showFooter={false}
-                                showListingTag={false}
-                                clickToZoom={false}
-                                classNames={{
-                                    wrapper: "",
-                                    media: "max-w-full max-h-full object-contain"
-                                }}
-                            />
+                            <div
+                                className={allowScroll ? "max-w-full" : "max-w-full max-h-full"}
+                                style={{
+                                    viewTransitionName: `artifact-${selectedArtifact.outpoint}`
+                                } as React.CSSProperties}
+                            >
+                                <Artifact
+                                    artifact={selectedArtifact}
+                                    size={800}
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
+                                    showFooter={false}
+                                    showListingTag={false}
+                                    clickToZoom={false}
+                                    classNames={{
+                                        wrapper: allowScroll ? "" : "max-h-full",
+                                        media: allowScroll ? "max-w-full h-auto object-contain" : "max-w-full max-h-full object-contain"
+                                    }}
+                                />
+                            </div>
                         ) : (
                             <img
                                 src={`https://ordfs.network/${selectedArtifact.origin?.outpoint}`}
                                 alt="Full size artifact"
                                 className="max-w-full h-auto select-none"
                                 draggable={false}
+                                style={{
+                                    viewTransitionName: `artifact-${selectedArtifact.outpoint}`
+                                } as React.CSSProperties}
                             />
                         )}
                     </div>
@@ -367,7 +397,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                 clickToZoom={false}
                                 classNames={{
                                     wrapper: "",
-                                    media: "w-full h-auto object-contain"
+                                    media: "max-w-full h-auto object-contain"
                                 }}
                             />
                         ) : (
