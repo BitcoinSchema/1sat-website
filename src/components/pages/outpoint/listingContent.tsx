@@ -10,7 +10,7 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useMemo } from "react";
+import { use, useMemo, useState, useEffect } from "react";
 import { FaSpinner } from "react-icons/fa6";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
@@ -18,14 +18,19 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
   const router = useRouter();
   const showCancelModal = useSignal(false);
   const isOwner = artifact.owner === ordAddress.value;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const priceContent = useMemo(() => {
     if (!ordAddress.value) {
       return null;
     }
 
-    if (usdRate.value === 0) {
-      return <div className="w-full text-center"><FaSpinner className="animate-spin" /></div>;
+    if (!mounted || usdRate.value === 0) {
+      return null;
     }
 
     return <div>
@@ -46,7 +51,7 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       )}
     </div>
-  }, [ordAddress.value, usdRate.value, artifact.data?.list, artifact.data?.bsv20, artifact.outpoint, isOwner]);
+  }, [mounted, ordAddress.value, usdRate.value, artifact.data?.list, artifact.data?.bsv20, artifact.outpoint, isOwner]);
 
   const knownScammer = useMemo(() => {
     return artifact.owner &&  artifact.owner && SCAM_LISTING_USER_BLACKLIST.some((u) => u.address === artifact.owner)

@@ -1,4 +1,5 @@
 import Artifact from "@/components/artifact";
+import ArtifactViewer from "./ArtifactViewer";
 import { API_HOST } from "@/constants";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
@@ -64,20 +65,13 @@ const OutpointPage = async ({
 						</h2>
 						<div className="flex flex-col md:flex-row gap-4">
 							{artifact?.origin?.data?.insc && (
-								<Artifact
-									artifact={artifact}
-									size={550}
-									sizes={"100vw"}
-									glow={true}
-									classNames={{
-										media: "overflow-hidden",
-										wrapper: `overflow-hidden h-[550px] relative ${
-											// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-2/3"
-											"w-fit"
-										}`,
-									}}
-									showListingTag={true}
-								/>
+								<div className="overflow-hidden h-[550px] relative w-fit">
+									<ArtifactViewer
+										artifact={artifact}
+										size={550}
+										className="h-full"
+									/>
+								</div>
 							)}
 							{!artifact?.origin?.data?.insc && (
 								<div className="h-full w-full text-[#aaa] flex items-center justify-center min-h-64 bg-[#111] rounded">
