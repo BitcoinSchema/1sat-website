@@ -2,11 +2,17 @@ import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import { NextRequest, NextResponse } from "next/server";
 
+// Route segment config for Next.js caching
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic'; // Disable static optimization to allow caching
+export const revalidate = 0; // Disable Next.js cache, use our own
+
 // Cached item with expiration
 type CachedItem = OrdUtxo & { _cachedAt: number };
 
 // In-memory cache for the feed pool
-// In production, this should use Redis or similar
+// Note: This works in development but on Vercel each invocation may get a fresh instance
+// Consider using Redis/Upstash for production if issues persist
 let feedPool: CachedItem[] = [];
 let isRefilling = false;
 const ITEM_TTL = 30 * 60 * 1000; // 30 minutes per item

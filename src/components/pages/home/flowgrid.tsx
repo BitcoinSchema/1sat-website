@@ -11,6 +11,7 @@ import { SquareArrowOutUpRight, X, Play, ShoppingCart, Box, Music } from "lucide
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { API_HOST } from "@/constants";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
@@ -156,15 +157,37 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     } = useInfiniteQuery({
         queryKey: ['market-flow'],
         queryFn: async ({ pageParam }) => {
-            console.log(`Fetching page at cursor ${pageParam}`);
-            const response = await fetch(`/api/feed?cursor=${pageParam}&limit=30`);
-            const result = await response.json() as { items: OrdUtxo[], nextCursor: number | null, total: number };
-            console.log(`Received ${result.items.length} items, nextCursor: ${result.nextCursor}, total: ${result.total}`);
-            result.items.forEach(item => {
+            console.log(`Fetching page at offset ${pageParam}`);
+
+            // Fetch mix of content types
+            const imageResponse = await fetch(
+                `${API_HOST}/api/market?limit=20&offset=${pageParam}&type=image`,
+                { next: { revalidate: 60 } } // Cache for 60 seconds
+            );
+            const videoResponse = await fetch(
+                `${API_HOST}/api/market?limit=5&offset=${Math.floor(pageParam / 2)}&type=video`,
+                { next: { revalidate: 60 } }
+            );
+
+            const [images, videos] = await Promise.all([
+                imageResponse.json() as Promise<OrdUtxo[]>,
+                videoResponse.json() as Promise<OrdUtxo[]>
+            ]);
+
+            const items = [...images, ...videos].filter(item =>
+                item?.outpoint && item?.origin?.outpoint
+            );
+
+            console.log(`Received ${items.length} items at offset ${pageParam}`);
+            items.forEach(item => {
                 const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
                 seenOutpoints.current.add(outpoint);
             });
-            return result;
+
+            return {
+                items,
+                nextCursor: items.length > 0 ? pageParam + 25 : null
+            };
         },
         getNextPageParam: (lastPage) => lastPage.nextCursor,
         initialPageParam: 0,
