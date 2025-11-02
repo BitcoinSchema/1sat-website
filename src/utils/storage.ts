@@ -227,7 +227,16 @@ const loadFromStorage = <T>(
   try {
     if (storage) {
       const dataStr = storage.getItem(storageKey);
-      return dataStr ? JSON.parse(dataStr, reviver) : undefined;
+      if (!dataStr) return undefined;
+
+      try {
+        return JSON.parse(dataStr, reviver);
+      } catch (parseError) {
+        // If JSON.parse fails, the value might be a raw string (e.g., WIF key)
+        // Return it as-is
+        console.warn(`Failed to parse JSON for key "${storageKey}", returning raw value`);
+        return dataStr as T;
+      }
     }
   } catch (e) {
     console.error("ERROR: Could not access browser local/session storage", e);

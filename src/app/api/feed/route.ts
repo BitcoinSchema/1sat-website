@@ -2,12 +2,16 @@ import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import { NextRequest, NextResponse } from "next/server";
 
+// Cached item with expiration
+type CachedItem = OrdUtxo & { _cachedAt: number };
+
 // In-memory cache for the feed pool
 // In production, this should use Redis or similar
-let feedPool: OrdUtxo[] = [];
-let lastRefreshTime = 0;
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
-const POOL_SIZE = 500; // Total items in pool
+let feedPool: CachedItem[] = [];
+let isRefilling = false;
+const ITEM_TTL = 10 * 60 * 1000; // 10 minutes per item
+const MIN_POOL_SIZE = 200; // Trigger refill below this
+const POOL_SIZE = 500; // Max items in pool
 
 // Seeded shuffle for deterministic but random-looking results
 function seededShuffle<T>(array: T[], seed: number): T[] {
@@ -93,17 +97,73 @@ function getWeightedOffset(): number {
   }
 }
 
-// Refresh the feed pool from API
+// Fetch items from backend and add to pool
+async function fetchAndAddItems(count: number = 100): Promise<void> {
+  try {
+    const now = Date.now();
+
+    // Generate random offsets
+    const offsets = Array.from({ length: Math.ceil(count / 40) }, () => getWeightedOffset());
+
+    // Fetch images
+    const imagePromises = offsets.map(offset =>
+      fetch(`${API_HOST}/api/market?limit=40&offset=${offset}&type=image`)
+        .then(res => res.json())
+        .catch(() => [])
+    );
+
+    // Fetch some videos too
+    const videoOffsets = [getWeightedOffset(), getWeightedOffset()];
+    const videoPromises = videoOffsets.map(offset =>
+      fetch(`${API_HOST}/api/market?limit=10&offset=${offset}&type=video`)
+        .then(res => res.json())
+        .catch(() => [])
+    );
+
+    const results = await Promise.all([...imagePromises, ...videoPromises]);
+    const allItems = results.flat() as OrdUtxo[];
+
+    // Get existing outpoints to avoid duplicates
+    const existingOutpoints = new Set(feedPool.map(item => item.outpoint));
+
+    // Add timestamp and deduplicate
+    const newItems: CachedItem[] = allItems
+      .filter(item => {
+        const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
+        return !existingOutpoints.has(outpoint);
+      })
+      .map(item => ({ ...item, _cachedAt: now }));
+
+    // Interleave new items by collection
+    const interleaved = interleaveByCollection(newItems);
+
+    // Append to pool
+    feedPool.push(...interleaved);
+
+    // Limit pool size
+    if (feedPool.length > POOL_SIZE) {
+      feedPool = feedPool.slice(0, POOL_SIZE);
+    }
+
+    console.log(`Added ${interleaved.length} new items to pool. Pool size: ${feedPool.length}`);
+  } catch (error) {
+    console.error('Error fetching items:', error);
+  }
+}
+
+// Initial pool refresh
 async function refreshFeedPool() {
   try {
+    const now = Date.now();
+
     // Always include very recent items (0-100) and then weighted random offsets
     const offsets = [
       0,    // Always include the newest
       10,   // Very recent
       25,   // Very recent
       50,   // Recent
-      ...Array.from({ length: 16 }, () => getWeightedOffset()) // 16 weighted random offsets
-    ].sort((a, b) => a - b); // Sort to avoid duplicates efficiently
+      ...Array.from({ length: 16 }, () => getWeightedOffset())
+    ].sort((a, b) => a - b);
 
     // Fetch both images and videos for content variety
     const imagePromises = offsets.map(offset =>
@@ -112,7 +172,6 @@ async function refreshFeedPool() {
         .catch(() => [])
     );
 
-    // Generate weighted video offsets (always include recent videos)
     const videoOffsets = [0, 10, 25, getWeightedOffset(), getWeightedOffset()];
     const videoPromises = videoOffsets.map(offset =>
       fetch(`${API_HOST}/api/market?limit=10&offset=${offset}&type=video`)
@@ -120,14 +179,11 @@ async function refreshFeedPool() {
         .catch(() => [])
     );
 
-    const fetchPromises = [...imagePromises, ...videoPromises];
-
-    const results = await Promise.all(fetchPromises);
+    const results = await Promise.all([...imagePromises, ...videoPromises]);
     const allItems = results.flat() as OrdUtxo[];
 
-    // Deduplicate by outpoint only - no collection limiting for larger pool
+    // Deduplicate by outpoint
     const seen = new Set<string>();
-
     const deduplicated = allItems.filter(item => {
       const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
       if (seen.has(outpoint)) return false;
@@ -138,34 +194,68 @@ async function refreshFeedPool() {
     // Interleave by collection for diversity
     const interleaved = interleaveByCollection(deduplicated);
 
-    // Shuffle with true randomness on each refresh
-    feedPool = seededShuffle(interleaved.slice(0, POOL_SIZE), Date.now());
-    lastRefreshTime = Date.now();
+    // Add timestamps and shuffle
+    const withTimestamps: CachedItem[] = interleaved.map(item => ({
+      ...item,
+      _cachedAt: now
+    }));
 
-    console.log(`Feed pool refreshed with ${feedPool.length} items from ${allItems.length} total`);
+    feedPool = seededShuffle(withTimestamps.slice(0, POOL_SIZE), Date.now());
+
+    console.log(`Feed pool initialized with ${feedPool.length} items from ${allItems.length} total`);
   } catch (error) {
     console.error('Error refreshing feed pool:', error);
   }
+}
+
+// Background refill (non-blocking)
+function backgroundRefill() {
+  if (isRefilling) {
+    console.log('Refill already in progress, skipping');
+    return;
+  }
+
+  isRefilling = true;
+  console.log('Triggering background refill');
+
+  Promise.resolve()
+    .then(() => fetchAndAddItems(100))
+    .finally(() => {
+      isRefilling = false;
+    });
 }
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const cursor = parseInt(searchParams.get('cursor') || '0', 10);
   const limit = parseInt(searchParams.get('limit') || '30', 10);
+  const now = Date.now();
 
-  // Refresh pool if needed
-  const needsRefresh = feedPool.length === 0 ||
-                      (Date.now() - lastRefreshTime > REFRESH_INTERVAL);
-
-  if (needsRefresh) {
+  // Initialize pool if empty
+  if (feedPool.length === 0) {
     await refreshFeedPool();
+  }
+
+  // Filter expired items
+  const beforeExpiration = feedPool.length;
+  feedPool = feedPool.filter(item => now - item._cachedAt < ITEM_TTL);
+
+  if (beforeExpiration > feedPool.length) {
+    console.log(`Removed ${beforeExpiration - feedPool.length} expired items. Pool: ${feedPool.length}`);
+  }
+
+  // Trigger background refill if pool is running low
+  if (feedPool.length < MIN_POOL_SIZE && !isRefilling) {
+    backgroundRefill();
   }
 
   // Return paginated results
   const start = cursor;
   const end = Math.min(start + limit, feedPool.length);
-  const items = feedPool.slice(start, end);
+  const items = feedPool.slice(start, end).map(({ _cachedAt, ...item }) => item); // Remove timestamp from response
   const nextCursor = end < feedPool.length ? end : null;
+
+  console.log(`Serving items ${start}-${end} of ${feedPool.length}. nextCursor: ${nextCursor}`);
 
   return NextResponse.json({
     items,

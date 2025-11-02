@@ -7,7 +7,8 @@ import Link from "next/link";
 import { toBitcoin } from "satoshi-token";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Artifact from "@/components/artifact";
-import { SquareArrowOutUpRight, X, Play } from "lucide-react";
+import { SquareArrowOutUpRight, X, Play, ShoppingCart } from "lucide-react";
+import BuyArtifactModal from "@/components/modal/buyArtifact";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
@@ -34,6 +35,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     const [mounted, setMounted] = useState(false);
     const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
     const [showBackdrop, setShowBackdrop] = useState(false);
+    const [showBuyModal, setShowBuyModal] = useState(false);
 
     const observeImage = useCallback((element: HTMLImageElement, artifact: OrdUtxo) => {
         if (!element) return;
@@ -98,9 +100,10 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     } = useInfiniteQuery({
         queryKey: ['market-flow'],
         queryFn: async ({ pageParam }) => {
-            const cursor = pageParam === null ? 0 : pageParam;
-            const response = await fetch(`/api/feed?cursor=${cursor}&limit=30`);
+            console.log(`Fetching page at cursor ${pageParam}`);
+            const response = await fetch(`/api/feed?cursor=${pageParam}&limit=30`);
             const result = await response.json() as { items: OrdUtxo[], nextCursor: number | null };
+            console.log(`Received ${result.items.length} items, nextCursor: ${result.nextCursor}, total: ${result.total}`);
             result.items.forEach(item => {
                 const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
                 seenOutpoints.current.add(outpoint);
@@ -108,17 +111,25 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
             return result;
         },
         getNextPageParam: (lastPage) => lastPage.nextCursor,
-        initialPageParam: null as number | null,
+        initialPageParam: 0,
+        retry: false,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 
     const allArtifacts = data?.pages.flatMap(page => page.items) || [];
     const seen = new Set<string>();
     const artifacts = allArtifacts.filter(artifact => {
         if (!artifact?.outpoint) return false;
+        if (!artifact.origin?.outpoint) return false;
         if (seen.has(artifact.outpoint)) return false;
         seen.add(artifact.outpoint);
         return true;
     });
+
+    useEffect(() => {
+        console.log(`FlowGrid: ${data?.pages.length || 0} pages, ${allArtifacts.length} total artifacts, ${artifacts.length} after dedup, hasNextPage: ${hasNextPage}`);
+    }, [data?.pages.length, allArtifacts.length, artifacts.length, hasNextPage]);
 
     useEffect(() => {
         for (const artifact of artifacts) {
@@ -132,18 +143,22 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     }, [artifacts, visible]);
 
     useEffect(() => {
-        if (!sentinelRef.current) return;
+        const sentinel = sentinelRef.current;
+        if (!sentinel || !mounted) return;
+
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    console.log('Sentinel intersecting, fetching next page');
                     fetchNextPage();
                 }
             },
-            { threshold: 0.1, rootMargin: '200px' }
+            { threshold: 0, rootMargin: '0px 0px 1000px 0px' }
         );
-        observer.observe(sentinelRef.current);
+
+        observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, mounted]);
 
     return (
         <>
@@ -153,7 +168,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     <LoadingSkeleton count={20} />
                 ) : (
                     artifacts.map((artifact) => {
-                        if (!artifact || !artifact.txid || !artifact.outpoint || !artifact.origin?.outpoint) return null;
                         const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
                         const isInModal = selectedArtifact?.outpoint === artifact.outpoint;
                         const isVideo = needsFlipButton(artifact);
@@ -247,6 +261,17 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex items-center justify-end gap-2 mb-2 shrink-0">
+                        {selectedArtifact.data?.list?.price && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowBuyModal(true);
+                                }}
+                                className="p-2 text-white hover:text-emerald-400 transition-colors bg-black/50 rounded-lg"
+                            >
+                                <ShoppingCart className="w-6 h-6" />
+                            </button>
+                        )}
                         <button
                             onClick={() => window.open(`https://ordfs.network/${selectedArtifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer')}
                             className="p-2 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-lg"
@@ -285,6 +310,40 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     </div>
                 </div>
             </div>
+            );
+        })()}
+
+        {selectedArtifact && showBuyModal && selectedArtifact.data?.list?.price && (() => {
+            const requiresFlipButton = needsFlipButton(selectedArtifact);
+            return (
+                <BuyArtifactModal
+                    listing={selectedArtifact}
+                    onClose={() => setShowBuyModal(false)}
+                    price={BigInt(Math.ceil(selectedArtifact.data.list.price))}
+                    content={
+                        requiresFlipButton ? (
+                            <Artifact
+                                artifact={selectedArtifact}
+                                size={400}
+                                sizes="400px"
+                                showFooter={false}
+                                showListingTag={false}
+                                clickToZoom={false}
+                                classNames={{
+                                    wrapper: "",
+                                    media: "w-full h-auto object-contain"
+                                }}
+                            />
+                        ) : (
+                            <img
+                                src={`https://ordfs.network/${selectedArtifact.origin?.outpoint}`}
+                                alt="Artifact preview"
+                                className="w-full h-auto object-contain"
+                            />
+                        )
+                    }
+                    showLicense={true}
+                />
             );
         })()}
         </>
