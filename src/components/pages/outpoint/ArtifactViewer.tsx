@@ -115,9 +115,6 @@ const ArtifactViewer = ({ artifact, size = 550, className = "" }: ArtifactViewer
                         wrapper: "bg-transparent border-0",
                         media: "bg-[#111] text-center p-0",
                     }}
-                    style={{
-                        viewTransitionName: `artifact-${artifact.outpoint}`
-                    } as React.CSSProperties}
                 />
                 <div
                     className="absolute inset-0 cursor-pointer z-10"
@@ -200,9 +197,6 @@ const ArtifactViewer = ({ artifact, size = 550, className = "" }: ArtifactViewer
                                             wrapper: allowScroll ? "" : "max-w-full max-h-full w-full h-full",
                                             media: allowScroll ? "max-w-full h-auto object-contain" : "max-w-full max-h-full w-full h-full object-contain"
                                         }}
-                                        style={{
-                                            viewTransitionName: `artifact-${selectedArtifact.outpoint}`
-                                        } as React.CSSProperties}
                                     />
                                 ) : (
                                     <img

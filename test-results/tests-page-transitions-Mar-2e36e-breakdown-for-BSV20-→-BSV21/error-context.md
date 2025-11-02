@@ -1,0 +1,1114 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "1Sat Ordinals 1Sat Hackinals BETA" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "1Sat Ordinals" [ref=e8]
+        - generic [ref=e9]: 1Sat Hackinals
+        - generic [ref=e10]: BETA
+      - generic [ref=e14]:
+        - textbox "Search" [ref=e15]
+        - img [ref=e16] [cursor=pointer]
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic:
+            - text: 1 BSV =
+            - generic: $22.51
+        - button "Market" [ref=e21] [cursor=pointer]:
+          - generic [ref=e22]:
+            - text: Market
+            - img [ref=e23]
+        - list [ref=e25]:
+          - button "Wallet" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]:
+              - text: Wallet
+              - img [ref=e28]
+          - dialog:
+            - generic:
+              - generic:
+                - generic: Enter a password to decrypt your saved keys.
+                - generic:
+                  - textbox "your-password-here" [active]
+                - generic:
+                  - img
+                  - text: Your password unlocks your wallet each time you visit.
+                - generic:
+                  - button "Unlock Wallet" [disabled]
+          - dialog:
+            - generic:
+              - heading "Import Wallet" [level=3]
+              - generic:
+                - button "From Backup JSON":
+                  - img
+                  - text: From Backup JSON
+                - button "From Mnemonic":
+                  - img
+                  - text: From Mnemonic
+          - dialog:
+            - generic:
+              - heading "Protect Your Keys" [level=3]
+            - generic:
+              - button "close"
+  - generic [ref=e30]:
+    - generic [ref=e32]:
+      - tablist [ref=e33]:
+        - tab "Ordinals" [ref=e34] [cursor=pointer]
+        - tab "BSV20" [ref=e35] [cursor=pointer]
+        - tab "BSV21" [ref=e36] [cursor=pointer]
+      - generic [ref=e38]:
+        - text: Currency Display
+        - generic [ref=e39] [cursor=pointer]:
+          - checkbox [ref=e40]
+          - img [ref=e42]
+          - img [ref=e45]
+    - table [ref=e49]:
+      - rowgroup [ref=e50]:
+        - row "Ticker Recent Price Pct Change Market Cap Holders" [ref=e51]:
+          - cell "Ticker" [ref=e52] [cursor=pointer]:
+            - img [ref=e54]
+            - generic [ref=e56]: Ticker
+          - cell "Recent Price" [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]: Recent Price
+          - cell "Pct Change" [ref=e59] [cursor=pointer]:
+            - generic [ref=e60]: Pct Change
+          - cell "Market Cap" [ref=e61] [cursor=pointer]:
+            - generic [ref=e62]: Market Cap
+          - cell "Holders" [ref=e63] [cursor=pointer]:
+            - generic [ref=e64]: Holders
+      - rowgroup [ref=e65]:
+        - row "20 ZOID 5000 sat/token 0.00% 1,050 BSV 21" [ref=e66] [cursor=pointer]:
+          - cell "20 ZOID" [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - img [ref=e70]
+                - text: "20"
+              - generic [ref=e72]: ZOID
+          - cell "5000 sat/token" [ref=e73]
+          - cell "0.00%" [ref=e74]
+          - cell "1,050 BSV" [ref=e75]: 1,050 BSV
+          - cell "21" [ref=e76]:
+            - link "21" [ref=e77]:
+              - /url: /holders/bsv20/ZOID
+        - row "4103 BSVD 50000 sat/token +455.55% 0 BSV 8" [ref=e78] [cursor=pointer]:
+          - cell "4103 BSVD" [ref=e79]:
+            - generic [ref=e80]:
+              - generic [ref=e81]:
+                - img [ref=e82]
+                - text: "4103"
+              - generic [ref=e84]: BSVD
+          - cell "50000 sat/token" [ref=e85]
+          - cell "+455.55%" [ref=e86]
+          - cell "0 BSV" [ref=e87]: 0 BSV
+          - cell "8" [ref=e88]:
+            - link "8" [ref=e89]:
+              - /url: /holders/bsv20/BSVD
+        - row "720705 pending operations Needs 7.20704952 BSV Fund BSVD" [ref=e90]:
+          - cell "720705 pending operations Needs 7.20704952 BSV" [ref=e91]:
+            - generic [ref=e92]: 720705 pending operations Needs 7.20704952 BSV
+          - cell "Fund BSVD" [ref=e93] [cursor=pointer]:
+            - button "Fund BSVD" [ref=e94]
+        - row "5365 𝕏 1000 sat/token +100.00% 0 BSV 18" [ref=e95] [cursor=pointer]:
+          - cell "5365 𝕏" [ref=e96]:
+            - generic [ref=e97]:
+              - generic [ref=e98]:
+                - img [ref=e99]
+                - text: "5365"
+              - generic [ref=e101]: 𝕏
+          - cell "1000 sat/token" [ref=e102]
+          - cell "+100.00%" [ref=e103]
+          - cell "0 BSV" [ref=e104]: 0 BSV
+          - cell "18" [ref=e105]:
+            - link "18" [ref=e106]:
+              - /url: /holders/bsv20/𝕏
+        - row "639731 pending operations Needs 6.5982905 BSV Fund 𝕏" [ref=e107]:
+          - cell "639731 pending operations Needs 6.5982905 BSV" [ref=e108]:
+            - generic [ref=e109]: 639731 pending operations Needs 6.5982905 BSV
+          - cell "Fund 𝕏" [ref=e110] [cursor=pointer]:
+            - button "Fund 𝕏" [ref=e111]
+        - row "883 SHRG 1000 sat/token -99.00% 210,000 BSV 56" [ref=e112] [cursor=pointer]:
+          - cell "883 SHRG" [ref=e113]:
+            - generic [ref=e114]:
+              - generic [ref=e115]:
+                - img [ref=e116]
+                - text: "883"
+              - generic [ref=e118]: SHRG
+          - cell "1000 sat/token" [ref=e119]
+          - cell "-99.00%" [ref=e120]
+          - cell "210,000 BSV" [ref=e121]: 210,000 BSV
+          - cell "56" [ref=e122]:
+            - link "56" [ref=e123]:
+              - /url: /holders/bsv20/SHRG
+        - row "29506 pending operations Needs 0.29506 BSV Fund SHRG" [ref=e124]:
+          - cell "29506 pending operations Needs 0.29506 BSV" [ref=e125]:
+            - generic [ref=e126]: 29506 pending operations Needs 0.29506 BSV
+          - cell "Fund SHRG" [ref=e127] [cursor=pointer]:
+            - button "Fund SHRG" [ref=e128]
+        - row "8276 PIKA 500 sat/token 0.00% 140 BSV 251" [ref=e129] [cursor=pointer]:
+          - cell "8276 PIKA" [ref=e130]:
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - img [ref=e133]
+                - text: "8276"
+              - generic [ref=e135]: PIKA
+          - cell "500 sat/token" [ref=e136]
+          - cell "0.00%" [ref=e137]
+          - cell "140 BSV" [ref=e138]: 140 BSV
+          - cell "251" [ref=e139]:
+            - link "251" [ref=e140]:
+              - /url: /holders/bsv20/PIKA
+        - row "418 RARE 150 sat/token +50.00% 31.5 BSV 87" [ref=e141] [cursor=pointer]:
+          - cell "418 RARE" [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - img [ref=e145]
+                - text: "418"
+              - generic [ref=e147]: RARE
+          - cell "150 sat/token" [ref=e148]
+          - cell "+50.00%" [ref=e149]
+          - cell "31.5 BSV" [ref=e150]: 31.5 BSV
+          - cell "87" [ref=e151]:
+            - link "87" [ref=e152]:
+              - /url: /holders/bsv20/RARE
+        - row "2371 TOPG 110 sat/token -42.11% 23.1 BSV 62" [ref=e153] [cursor=pointer]:
+          - cell "2371 TOPG" [ref=e154]:
+            - generic [ref=e155]:
+              - generic [ref=e156]:
+                - img [ref=e157]
+                - text: "2371"
+              - generic [ref=e159]: TOPG
+          - cell "110 sat/token" [ref=e160]
+          - cell "-42.11%" [ref=e161]
+          - cell "23.1 BSV" [ref=e162]: 23.1 BSV
+          - cell "62" [ref=e163]:
+            - link "62" [ref=e164]:
+              - /url: /holders/bsv20/TOPG
+        - row "50 MAGA 899.8 sat/token -10.02% 404.91 BSV 41" [ref=e165] [cursor=pointer]:
+          - cell "50 MAGA" [ref=e166]:
+            - generic [ref=e167]:
+              - generic [ref=e168]:
+                - img [ref=e169]
+                - text: "50"
+              - generic [ref=e171]: MAGA
+          - cell "899.8 sat/token" [ref=e172]
+          - cell "-10.02%" [ref=e173]
+          - cell "404.91 BSV" [ref=e174]: 404.91 BSV
+          - cell "41" [ref=e175]:
+            - link "41" [ref=e176]:
+              - /url: /holders/bsv20/MAGA
+        - row "738 CAAL 100 sat/token 0.00% 21 BSV 67" [ref=e177] [cursor=pointer]:
+          - cell "738 CAAL" [ref=e178]:
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - img [ref=e181]
+                - text: "738"
+              - generic [ref=e183]: CAAL
+          - cell "100 sat/token" [ref=e184]
+          - cell "0.00%" [ref=e185]
+          - cell "21 BSV" [ref=e186]: 21 BSV
+          - cell "67" [ref=e187]:
+            - link "67" [ref=e188]:
+              - /url: /holders/bsv20/CAAL
+        - row "10303 FCKU 0.5 sat/token 0.00% 2,102.102 BSV 230" [ref=e189] [cursor=pointer]:
+          - cell "10303 FCKU" [ref=e190]:
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - img [ref=e193]
+                - text: "10303"
+              - generic [ref=e195]: FCKU
+          - cell "0.5 sat/token" [ref=e196]
+          - cell "0.00%" [ref=e197]
+          - cell "2,102.102 BSV" [ref=e198]: 2,102.102 BSV
+          - cell "230" [ref=e199]:
+            - link "230" [ref=e200]:
+              - /url: /holders/bsv20/FCKU
+        - row "75 WEED 400 sat/token +852.38% 84 BSV 65" [ref=e201] [cursor=pointer]:
+          - cell "75 WEED" [ref=e202]:
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - img [ref=e205]
+                - text: "75"
+              - generic [ref=e207]: WEED
+          - cell "400 sat/token" [ref=e208]
+          - cell "+852.38%" [ref=e209]
+          - cell "84 BSV" [ref=e210]: 84 BSV
+          - cell "65" [ref=e211]:
+            - link "65" [ref=e212]:
+              - /url: /holders/bsv20/WEED
+        - row "1090 JEDI 5000 sat/token +499900.00% 1,050 BSV 145" [ref=e213] [cursor=pointer]:
+          - cell "1090 JEDI" [ref=e214]:
+            - generic [ref=e215]:
+              - generic [ref=e216]:
+                - img [ref=e217]
+                - text: "1090"
+              - generic [ref=e219]: JEDI
+          - cell "5000 sat/token" [ref=e220]
+          - cell "+499900.00%" [ref=e221]
+          - cell "1,050 BSV" [ref=e222]: 1,050 BSV
+          - cell "145" [ref=e223]:
+            - link "145" [ref=e224]:
+              - /url: /holders/bsv20/JEDI
+        - row "4605 COCO 1000000 sat/token 0.00% 0 BSV 71" [ref=e225] [cursor=pointer]:
+          - cell "4605 COCO" [ref=e226]:
+            - generic [ref=e227]:
+              - generic [ref=e228]:
+                - img [ref=e229]
+                - text: "4605"
+              - generic [ref=e231]: COCO
+          - cell "1000000 sat/token" [ref=e232]
+          - cell "0.00%" [ref=e233]
+          - cell "0 BSV" [ref=e234]: 0 BSV
+          - cell "71" [ref=e235]:
+            - link "71" [ref=e236]:
+              - /url: /holders/bsv20/COCO
+        - row "853 LOL 600 sat/token -40.00% 126 BSV 208" [ref=e237] [cursor=pointer]:
+          - cell "853 LOL" [ref=e238]:
+            - generic [ref=e239]:
+              - generic [ref=e240]:
+                - img [ref=e241]
+                - text: "853"
+              - generic [ref=e243]: LOL
+          - cell "600 sat/token" [ref=e244]
+          - cell "-40.00%" [ref=e245]
+          - cell "126 BSV" [ref=e246]: 126 BSV
+          - cell "208" [ref=e247]:
+            - link "208" [ref=e248]:
+              - /url: /holders/bsv20/LOL
+        - row "9430 GSTC 690 sat/token -65.50% 144.9 BSV 56" [ref=e249] [cursor=pointer]:
+          - cell "9430 GSTC" [ref=e250]:
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - img [ref=e253]
+                - text: "9430"
+              - generic [ref=e255]: GSTC
+          - cell "690 sat/token" [ref=e256]
+          - cell "-65.50%" [ref=e257]
+          - cell "144.9 BSV" [ref=e258]: 144.9 BSV
+          - cell "56" [ref=e259]:
+            - link "56" [ref=e260]:
+              - /url: /holders/bsv20/GSTC
+        - row "2355 ATAY 4200 sat/token 0.00% 882 BSV 243" [ref=e261] [cursor=pointer]:
+          - cell "2355 ATAY" [ref=e262]:
+            - generic [ref=e263]:
+              - generic [ref=e264]:
+                - img [ref=e265]
+                - text: "2355"
+              - generic [ref=e267]: ATAY
+          - cell "4200 sat/token" [ref=e268]
+          - cell "0.00%" [ref=e269]
+          - cell "882 BSV" [ref=e270]: 882 BSV
+          - cell "243" [ref=e271]:
+            - link "243" [ref=e272]:
+              - /url: /holders/bsv20/ATAY
+        - row "10486 ROSS 100000 sat/token 0.00% 21,000 BSV 4" [ref=e273] [cursor=pointer]:
+          - cell "10486 ROSS" [ref=e274]:
+            - generic [ref=e275]:
+              - generic [ref=e276]:
+                - img [ref=e277]
+                - text: "10486"
+              - generic [ref=e279]: ROSS
+          - cell "100000 sat/token" [ref=e280]
+          - cell "0.00%" [ref=e281]
+          - cell "21,000 BSV" [ref=e282]: 21,000 BSV
+          - cell "4" [ref=e283]:
+            - link "4" [ref=e284]:
+              - /url: /holders/bsv20/ROSS
+        - row "9079 pending operations Needs 0.09079 BSV Fund ROSS" [ref=e285]:
+          - cell "9079 pending operations Needs 0.09079 BSV" [ref=e286]:
+            - generic [ref=e287]: 9079 pending operations Needs 0.09079 BSV
+          - cell "Fund ROSS" [ref=e288] [cursor=pointer]:
+            - button "Fund ROSS" [ref=e289]
+        - row "4619 LUNC 10 sat/token -99.00% 0.1 BSV 32" [ref=e290] [cursor=pointer]:
+          - cell "4619 LUNC" [ref=e291]:
+            - generic [ref=e292]:
+              - generic [ref=e293]:
+                - img [ref=e294]
+                - text: "4619"
+              - generic [ref=e296]: LUNC
+          - cell "10 sat/token" [ref=e297]
+          - cell "-99.00%" [ref=e298]
+          - cell "0.1 BSV" [ref=e299]: 0.1 BSV
+          - cell "32" [ref=e300]:
+            - link "32" [ref=e301]:
+              - /url: /holders/bsv20/LUNC
+        - row "2947 VOTE 0.1 sat/token 0.00% 0.021 BSV 10" [ref=e302] [cursor=pointer]:
+          - cell "2947 VOTE" [ref=e303]:
+            - generic [ref=e304]:
+              - generic [ref=e305]:
+                - img [ref=e306]
+                - text: "2947"
+              - generic [ref=e308]: VOTE
+          - cell "0.1 sat/token" [ref=e309]
+          - cell "0.00%" [ref=e310]
+          - cell "0.021 BSV" [ref=e311]: 0.021 BSV
+          - cell "10" [ref=e312]:
+            - link "10" [ref=e313]:
+              - /url: /holders/bsv20/VOTE
+        - row "9728 pending operations Needs 0.09728 BSV Fund VOTE" [ref=e314]:
+          - cell "9728 pending operations Needs 0.09728 BSV" [ref=e315]:
+            - generic [ref=e316]: 9728 pending operations Needs 0.09728 BSV
+          - cell "Fund VOTE" [ref=e317] [cursor=pointer]:
+            - button "Fund VOTE" [ref=e318]
+        - row "3143 $1 0.02 sat/token -99.98% 0.18 BSV 20" [ref=e319] [cursor=pointer]:
+          - cell "3143 $1" [ref=e320]:
+            - generic [ref=e321]:
+              - generic [ref=e322]:
+                - img [ref=e323]
+                - text: "3143"
+              - generic [ref=e325]: $1
+          - cell "0.02 sat/token" [ref=e326]
+          - cell "-99.98%" [ref=e327]
+          - cell "0.18 BSV" [ref=e328]: 0.18 BSV
+          - cell "20" [ref=e329]:
+            - link "20" [ref=e330]:
+              - /url: /holders/bsv20/$1
+        - row "1522 TRMP 475 sat/token 0.00% 223.25 BSV 28" [ref=e331] [cursor=pointer]:
+          - cell "1522 TRMP" [ref=e332]:
+            - generic [ref=e333]:
+              - generic [ref=e334]:
+                - img [ref=e335]
+                - text: "1522"
+              - generic [ref=e337]: TRMP
+          - cell "475 sat/token" [ref=e338]
+          - cell "0.00%" [ref=e339]
+          - cell "223.25 BSV" [ref=e340]: 223.25 BSV
+          - cell "28" [ref=e341]:
+            - link "28" [ref=e342]:
+              - /url: /holders/bsv20/TRMP
+        - row "148 420 70 sat/token +250.00% 15.415 BSV 119" [ref=e343] [cursor=pointer]:
+          - cell "148 420" [ref=e344]:
+            - generic [ref=e345]:
+              - generic [ref=e346]:
+                - img [ref=e347]
+                - text: "148"
+              - generic [ref=e349]: "420"
+          - cell "70 sat/token" [ref=e350]
+          - cell "+250.00%" [ref=e351]
+          - cell "15.415 BSV" [ref=e352]: 15.415 BSV
+          - cell "119" [ref=e353]:
+            - link "119" [ref=e354]:
+              - /url: /holders/bsv20/420
+        - row "675 🥚 10000 sat/token +900.00% 500 BSV 17" [ref=e355] [cursor=pointer]:
+          - cell "675 🥚" [ref=e356]:
+            - generic [ref=e357]:
+              - generic [ref=e358]:
+                - img [ref=e359]
+                - text: "675"
+              - generic [ref=e361]: 🥚
+          - cell "10000 sat/token" [ref=e362]
+          - cell "+900.00%" [ref=e363]
+          - cell "500 BSV" [ref=e364]: 500 BSV
+          - cell "17" [ref=e365]:
+            - link "17" [ref=e366]:
+              - /url: /holders/bsv20/🥚
+        - row "140 POOR 500 sat/token -27.97% 105 BSV 44" [ref=e367] [cursor=pointer]:
+          - cell "140 POOR" [ref=e368]:
+            - generic [ref=e369]:
+              - generic [ref=e370]:
+                - img [ref=e371]
+                - text: "140"
+              - generic [ref=e373]: POOR
+          - cell "500 sat/token" [ref=e374]
+          - cell "-27.97%" [ref=e375]
+          - cell "105 BSV" [ref=e376]: 105 BSV
+          - cell "44" [ref=e377]:
+            - link "44" [ref=e378]:
+              - /url: /holders/bsv20/POOR
+        - row "76 HASH 8880.00238095 sat/token +14.29% 1,864.8 BSV 269" [ref=e379] [cursor=pointer]:
+          - cell "76 HASH" [ref=e380]:
+            - generic [ref=e381]:
+              - generic [ref=e382]:
+                - img [ref=e383]
+                - text: "76"
+              - generic [ref=e385]: HASH
+          - cell "8880.00238095 sat/token" [ref=e386]
+          - cell "+14.29%" [ref=e387]
+          - cell "1,864.8 BSV" [ref=e388]: 1,864.8 BSV
+          - cell "269" [ref=e389]:
+            - link "269" [ref=e390]:
+              - /url: /holders/bsv20/HASH
+        - row "170 EGG 40000 sat/token +344.44% 8,400 BSV 1,204" [ref=e391] [cursor=pointer]:
+          - cell "170 EGG" [ref=e392]:
+            - generic [ref=e393]:
+              - generic [ref=e394]:
+                - img [ref=e395]
+                - text: "170"
+              - generic [ref=e397]: EGG
+          - cell "40000 sat/token" [ref=e398]
+          - cell "+344.44%" [ref=e399]
+          - cell "8,400 BSV" [ref=e400]: 8,400 BSV
+          - cell "1,204" [ref=e401]:
+            - link "1,204" [ref=e402]:
+              - /url: /holders/bsv20/EGG
+        - row "9 PEPE 1100 sat/token +120.00% 4,627.59 BSV 10,114" [ref=e403] [cursor=pointer]:
+          - cell "9 PEPE" [ref=e404]:
+            - generic [ref=e405]:
+              - generic [ref=e406]:
+                - img [ref=e407]
+                - text: "9"
+              - generic [ref=e409]: PEPE
+          - cell "1100 sat/token" [ref=e410]
+          - cell "+120.00%" [ref=e411]
+          - cell "4,627.59 BSV" [ref=e412]: 4,627.59 BSV
+          - cell "10,114" [ref=e413]:
+            - link "10,114" [ref=e414]:
+              - /url: /holders/bsv20/PEPE
+        - row "3 ICXC 777 sat/token -97.41% 163.17 BSV 79" [ref=e415] [cursor=pointer]:
+          - cell "3 ICXC" [ref=e416]:
+            - generic [ref=e417]:
+              - generic [ref=e418]:
+                - img [ref=e419]
+                - text: "3"
+              - generic [ref=e421]: ICXC
+          - cell "777 sat/token" [ref=e422]
+          - cell "-97.41%" [ref=e423]
+          - cell "163.17 BSV" [ref=e424]: 163.17 BSV
+          - cell "79" [ref=e425]:
+            - link "79" [ref=e426]:
+              - /url: /holders/bsv20/ICXC
+        - row "2 WOKE 2180 sat/token +900.00% 457.8 BSV 21" [ref=e427] [cursor=pointer]:
+          - cell "2 WOKE" [ref=e428]:
+            - generic [ref=e429]:
+              - generic [ref=e430]:
+                - img [ref=e431]
+                - text: "2"
+              - generic [ref=e433]: WOKE
+          - cell "2180 sat/token" [ref=e434]
+          - cell "+900.00%" [ref=e435]
+          - cell "457.8 BSV" [ref=e436]: 457.8 BSV
+          - cell "21" [ref=e437]:
+            - link "21" [ref=e438]:
+              - /url: /holders/bsv20/WOKE
+        - row "42 WOW 10000 sat/token 0.00% 2,100 BSV 23" [ref=e439] [cursor=pointer]:
+          - cell "42 WOW" [ref=e440]:
+            - generic [ref=e441]:
+              - generic [ref=e442]:
+                - img [ref=e443]
+                - text: "42"
+              - generic [ref=e445]: WOW
+          - cell "10000 sat/token" [ref=e446]
+          - cell "0.00%" [ref=e447]
+          - cell "2,100 BSV" [ref=e448]: 2,100 BSV
+          - cell "23" [ref=e449]:
+            - link "23" [ref=e450]:
+              - /url: /holders/bsv20/WOW
+        - row "33 FROG 500 sat/token -43.69% 105 BSV 82" [ref=e451] [cursor=pointer]:
+          - cell "33 FROG" [ref=e452]:
+            - generic [ref=e453]:
+              - generic [ref=e454]:
+                - img [ref=e455]
+                - text: "33"
+              - generic [ref=e457]: FROG
+          - cell "500 sat/token" [ref=e458]
+          - cell "-43.69%" [ref=e459]
+          - cell "105 BSV" [ref=e460]: 105 BSV
+          - cell "82" [ref=e461]:
+            - link "82" [ref=e462]:
+              - /url: /holders/bsv20/FROG
+        - row "708 MANA 500 sat/token +4900.00% 105 BSV 34" [ref=e463] [cursor=pointer]:
+          - cell "708 MANA" [ref=e464]:
+            - generic [ref=e465]:
+              - generic [ref=e466]:
+                - img [ref=e467]
+                - text: "708"
+              - generic [ref=e469]: MANA
+          - cell "500 sat/token" [ref=e470]
+          - cell "+4900.00%" [ref=e471]
+          - cell "105 BSV" [ref=e472]: 105 BSV
+          - cell "34" [ref=e473]:
+            - link "34" [ref=e474]:
+              - /url: /holders/bsv20/MANA
+        - row "4740 DRAG 11000 sat/token -89.00% 2,310 BSV 320" [ref=e475] [cursor=pointer]:
+          - cell "4740 DRAG" [ref=e476]:
+            - generic [ref=e477]:
+              - generic [ref=e478]:
+                - img [ref=e479]
+                - text: "4740"
+              - generic [ref=e481]: DRAG
+          - cell "11000 sat/token" [ref=e482]
+          - cell "-89.00%" [ref=e483]
+          - cell "2,310 BSV" [ref=e484]: 2,310 BSV
+          - cell "320" [ref=e485]:
+            - link "320" [ref=e486]:
+              - /url: /holders/bsv20/DRAG
+        - row "752 BEAN 2180 sat/token +118.00% 45.78 BSV 38" [ref=e487] [cursor=pointer]:
+          - cell "752 BEAN" [ref=e488]:
+            - generic [ref=e489]:
+              - generic [ref=e490]:
+                - img [ref=e491]
+                - text: "752"
+              - generic [ref=e493]: BEAN
+          - cell "2180 sat/token" [ref=e494]
+          - cell "+118.00%" [ref=e495]
+          - cell "45.78 BSV" [ref=e496]: 45.78 BSV
+          - cell "38" [ref=e497]:
+            - link "38" [ref=e498]:
+              - /url: /holders/bsv20/BEAN
+        - row "741 REEE 400 sat/token -88.24% 84 BSV 256" [ref=e499] [cursor=pointer]:
+          - cell "741 REEE" [ref=e500]:
+            - generic [ref=e501]:
+              - generic [ref=e502]:
+                - img [ref=e503]
+                - text: "741"
+              - generic [ref=e505]: REEE
+          - cell "400 sat/token" [ref=e506]
+          - cell "-88.24%" [ref=e507]
+          - cell "84 BSV" [ref=e508]: 84 BSV
+          - cell "256" [ref=e509]:
+            - link "256" [ref=e510]:
+              - /url: /holders/bsv20/REEE
+        - row "47 FREN 500 sat/token -50.00% 105 BSV 82" [ref=e511] [cursor=pointer]:
+          - cell "47 FREN" [ref=e512]:
+            - generic [ref=e513]:
+              - generic [ref=e514]:
+                - img [ref=e515]
+                - text: "47"
+              - generic [ref=e517]: FREN
+          - cell "500 sat/token" [ref=e518]
+          - cell "-50.00%" [ref=e519]
+          - cell "105 BSV" [ref=e520]: 105 BSV
+          - cell "82" [ref=e521]:
+            - link "82" [ref=e522]:
+              - /url: /holders/bsv20/FREN
+        - row "8 LOVE 887 sat/token -91.13% 186.27 BSV 108" [ref=e523] [cursor=pointer]:
+          - cell "8 LOVE" [ref=e524]:
+            - generic [ref=e525]:
+              - generic [ref=e526]:
+                - img [ref=e527]
+                - text: "8"
+              - generic [ref=e529]: LOVE
+          - cell "887 sat/token" [ref=e530]
+          - cell "-91.13%" [ref=e531]
+          - cell "186.27 BSV" [ref=e532]: 186.27 BSV
+          - cell "108" [ref=e533]:
+            - link "108" [ref=e534]:
+              - /url: /holders/bsv20/LOVE
+        - row "1 1SAT 250000 sat/token 0.00% 52,500 BSV 228" [ref=e535] [cursor=pointer]:
+          - cell "1 1SAT" [ref=e536]:
+            - generic [ref=e537]:
+              - generic [ref=e538]:
+                - img [ref=e539]
+                - text: "1"
+              - generic [ref=e541]: 1SAT
+          - cell "250000 sat/token" [ref=e542]
+          - cell "0.00%" [ref=e543]
+          - cell "52,500 BSV" [ref=e544]: 52,500 BSV
+          - cell "228" [ref=e545]:
+            - link "228" [ref=e546]:
+              - /url: /holders/bsv20/1SAT
+        - row "1211 DOMO 98999 sat/token -1.00% 989.99 BSV 197" [ref=e547] [cursor=pointer]:
+          - cell "1211 DOMO" [ref=e548]:
+            - generic [ref=e549]:
+              - generic [ref=e550]:
+                - img [ref=e551]
+                - text: "1211"
+              - generic [ref=e553]: DOMO
+          - cell "98999 sat/token" [ref=e554]
+          - cell "-1.00%" [ref=e555]
+          - cell "989.99 BSV" [ref=e556]: 989.99 BSV
+          - cell "197" [ref=e557]:
+            - link "197" [ref=e558]:
+              - /url: /holders/bsv20/DOMO
+        - row "514 FIRE 20000 sat/token +122.22% 4,200 BSV 197" [ref=e559] [cursor=pointer]:
+          - cell "514 FIRE" [ref=e560]:
+            - generic [ref=e561]:
+              - generic [ref=e562]:
+                - img [ref=e563]
+                - text: "514"
+              - generic [ref=e565]: FIRE
+          - cell "20000 sat/token" [ref=e566]
+          - cell "+122.22%" [ref=e567]
+          - cell "4,200 BSV" [ref=e568]: 4,200 BSV
+          - cell "197" [ref=e569]:
+            - link "197" [ref=e570]:
+              - /url: /holders/bsv20/FIRE
+        - row "9734 BSVS 4000 sat/token +0.03% 840 BSV 1,035" [ref=e571] [cursor=pointer]:
+          - cell "9734 BSVS" [ref=e572]:
+            - generic [ref=e573]:
+              - generic [ref=e574]:
+                - img [ref=e575]
+                - text: "9734"
+              - generic [ref=e577]: BSVS
+          - cell "4000 sat/token" [ref=e578]
+          - cell "+0.03%" [ref=e579]
+          - cell "840 BSV" [ref=e580]: 840 BSV
+          - cell "1,035" [ref=e581]:
+            - link "1,035" [ref=e582]:
+              - /url: /holders/bsv20/BSVS
+        - row "32 SHUA 10000 sat/token +647.94% 1,900 BSV 10,013" [ref=e583] [cursor=pointer]:
+          - cell "32 SHUA" [ref=e584]:
+            - generic [ref=e585]:
+              - generic [ref=e586]:
+                - img [ref=e587]
+                - text: "32"
+              - generic [ref=e589]: SHUA
+          - cell "10000 sat/token" [ref=e590]
+          - cell "+647.94%" [ref=e591]
+          - cell "1,900 BSV" [ref=e592]: 1,900 BSV
+          - cell "10,013" [ref=e593]:
+            - link "10,013" [ref=e594]:
+              - /url: /holders/bsv20/SHUA
+        - row "179 UTXO 140 sat/token +8833900.00% 29.4 BSV 187" [ref=e595] [cursor=pointer]:
+          - cell "179 UTXO" [ref=e596]:
+            - generic [ref=e597]:
+              - generic [ref=e598]:
+                - img [ref=e599]
+                - text: "179"
+              - generic [ref=e601]: UTXO
+          - cell "140 sat/token" [ref=e602]
+          - cell "+8833900.00%" [ref=e603]
+          - cell "29.4 BSV" [ref=e604]: 29.4 BSV
+          - cell "187" [ref=e605]:
+            - link "187" [ref=e606]:
+              - /url: /holders/bsv20/UTXO
+        - row "4 HCXC 692 sat/token +1437.78% 145.32 BSV 112" [ref=e607] [cursor=pointer]:
+          - cell "4 HCXC" [ref=e608]:
+            - generic [ref=e609]:
+              - generic [ref=e610]:
+                - img [ref=e611]
+                - text: "4"
+              - generic [ref=e613]: HCXC
+          - cell "692 sat/token" [ref=e614]
+          - cell "+1437.78%" [ref=e615]
+          - cell "145.32 BSV" [ref=e616]: 145.32 BSV
+          - cell "112" [ref=e617]:
+            - link "112" [ref=e618]:
+              - /url: /holders/bsv20/HCXC
+        - row "7968 BIZA 1000 sat/token -94.12% 210 BSV 361" [ref=e619] [cursor=pointer]:
+          - cell "7968 BIZA" [ref=e620]:
+            - generic [ref=e621]:
+              - generic [ref=e622]:
+                - img [ref=e623]
+                - text: "7968"
+              - generic [ref=e625]: BIZA
+          - cell "1000 sat/token" [ref=e626]
+          - cell "-94.12%" [ref=e627]
+          - cell "210 BSV" [ref=e628]: 210 BSV
+          - cell "361" [ref=e629]:
+            - link "361" [ref=e630]:
+              - /url: /holders/bsv20/BIZA
+        - row "6 $OWL 2000 sat/token +100.00% 420 BSV 159" [ref=e631] [cursor=pointer]:
+          - cell "6 $OWL" [ref=e632]:
+            - generic [ref=e633]:
+              - generic [ref=e634]:
+                - img [ref=e635]
+                - text: "6"
+              - generic [ref=e637]: $OWL
+          - cell "2000 sat/token" [ref=e638]
+          - cell "+100.00%" [ref=e639]
+          - cell "420 BSV" [ref=e640]: 420 BSV
+          - cell "159" [ref=e641]:
+            - link "159" [ref=e642]:
+              - /url: /holders/bsv20/$OWL
+        - row "29 $BTC 694.201 sat/token -92.69% 145.782 BSV 106" [ref=e643] [cursor=pointer]:
+          - cell "29 $BTC" [ref=e644]:
+            - generic [ref=e645]:
+              - generic [ref=e646]:
+                - img [ref=e647]
+                - text: "29"
+              - generic [ref=e649]: $BTC
+          - cell "694.201 sat/token" [ref=e650]
+          - cell "-92.69%" [ref=e651]
+          - cell "145.782 BSV" [ref=e652]: 145.782 BSV
+          - cell "106" [ref=e653]:
+            - link "106" [ref=e654]:
+              - /url: /holders/bsv20/$BTC
+        - row "206 $BSV 40000 sat/token -18.37% 8,400 BSV 89" [ref=e655] [cursor=pointer]:
+          - cell "206 $BSV" [ref=e656]:
+            - generic [ref=e657]:
+              - generic [ref=e658]:
+                - img [ref=e659]
+                - text: "206"
+              - generic [ref=e661]: $BSV
+          - cell "40000 sat/token" [ref=e662]
+          - cell "-18.37%" [ref=e663]
+          - cell "8,400 BSV" [ref=e664]: 8,400 BSV
+          - cell "89" [ref=e665]:
+            - link "89" [ref=e666]:
+              - /url: /holders/bsv20/$BSV
+        - row "34 GOLD 2010 sat/token +65.02% 422.1 BSV 119" [ref=e667] [cursor=pointer]:
+          - cell "34 GOLD" [ref=e668]:
+            - generic [ref=e669]:
+              - generic [ref=e670]:
+                - img [ref=e671]
+                - text: "34"
+              - generic [ref=e673]: GOLD
+          - cell "2010 sat/token" [ref=e674]
+          - cell "+65.02%" [ref=e675]
+          - cell "422.1 BSV" [ref=e676]: 422.1 BSV
+          - cell "119" [ref=e677]:
+            - link "119" [ref=e678]:
+              - /url: /holders/bsv20/GOLD
+        - row "1588 TSLA 27 sat/token +539900.00% 56.7 BSV 72" [ref=e679] [cursor=pointer]:
+          - cell "1588 TSLA" [ref=e680]:
+            - generic [ref=e681]:
+              - generic [ref=e682]:
+                - img [ref=e683]
+                - text: "1588"
+              - generic [ref=e685]: TSLA
+          - cell "27 sat/token" [ref=e686]
+          - cell "+539900.00%" [ref=e687]
+          - cell "56.7 BSV" [ref=e688]: 56.7 BSV
+          - cell "72" [ref=e689]:
+            - link "72" [ref=e690]:
+              - /url: /holders/bsv20/TSLA
+        - row "26996 pending operations Needs 0.27027 BSV Fund TSLA" [ref=e691]:
+          - cell "26996 pending operations Needs 0.27027 BSV" [ref=e692]:
+            - generic [ref=e693]: 26996 pending operations Needs 0.27027 BSV
+          - cell "Fund TSLA" [ref=e694] [cursor=pointer]:
+            - button "Fund TSLA" [ref=e695]
+        - row "2834 XPAY 50 sat/token 0.00% 50 BSV 10" [ref=e696] [cursor=pointer]:
+          - cell "2834 XPAY" [ref=e697]:
+            - generic [ref=e698]:
+              - generic [ref=e699]:
+                - img [ref=e700]
+                - text: "2834"
+              - generic [ref=e702]: XPAY
+          - cell "50 sat/token" [ref=e703]
+          - cell "0.00%" [ref=e704]
+          - cell "50 BSV" [ref=e705]: 50 BSV
+          - cell "10" [ref=e706]:
+            - link "10" [ref=e707]:
+              - /url: /holders/bsv20/XPAY
+        - row "308 GM 1000 sat/token +185.71% 210 BSV 444" [ref=e708] [cursor=pointer]:
+          - cell "308 GM" [ref=e709]:
+            - generic [ref=e710]:
+              - generic [ref=e711]:
+                - img [ref=e712]
+                - text: "308"
+              - generic [ref=e714]: GM
+          - cell "1000 sat/token" [ref=e715]
+          - cell "+185.71%" [ref=e716]
+          - cell "210 BSV" [ref=e717]: 210 BSV
+          - cell "444" [ref=e718]:
+            - link "444" [ref=e719]:
+              - /url: /holders/bsv20/GM
+        - row "504 😂 250 sat/token +66.67% 52.5 BSV 170" [ref=e720] [cursor=pointer]:
+          - cell "504 😂" [ref=e721]:
+            - generic [ref=e722]:
+              - generic [ref=e723]:
+                - img [ref=e724]
+                - text: "504"
+              - generic [ref=e726]: 😂
+          - cell "250 sat/token" [ref=e727]
+          - cell "+66.67%" [ref=e728]
+          - cell "52.5 BSV" [ref=e729]: 52.5 BSV
+          - cell "170" [ref=e730]:
+            - link "170" [ref=e731]:
+              - /url: /holders/bsv20/😂
+        - row "888 MULE 0 sat/token 0.00% 0 BSV 7" [ref=e732] [cursor=pointer]:
+          - cell "888 MULE" [ref=e733]:
+            - generic [ref=e734]:
+              - generic [ref=e735]:
+                - img [ref=e736]
+                - text: "888"
+              - generic [ref=e738]: MULE
+          - cell "0 sat/token" [ref=e739]
+          - cell "0.00%" [ref=e740]
+          - cell "0 BSV" [ref=e741]: 0 BSV
+          - cell "7" [ref=e742]:
+            - link "7" [ref=e743]:
+              - /url: /holders/bsv20/MULE
+        - row "9349 pending operations Needs 0.09349 BSV Fund MULE" [ref=e744]:
+          - cell "9349 pending operations Needs 0.09349 BSV" [ref=e745]:
+            - generic [ref=e746]: 9349 pending operations Needs 0.09349 BSV
+          - cell "Fund MULE" [ref=e747] [cursor=pointer]:
+            - button "Fund MULE" [ref=e748]
+        - row "10304 S₳TS 0 sat/token 0.00% 0 BSV 3" [ref=e749] [cursor=pointer]:
+          - cell "10304 S₳TS" [ref=e750]:
+            - generic [ref=e751]:
+              - generic [ref=e752]:
+                - img [ref=e753]
+                - text: "10304"
+              - generic [ref=e755]: S₳TS
+          - cell "0 sat/token" [ref=e756]
+          - cell "0.00%" [ref=e757]
+          - cell "0 BSV" [ref=e758]: 0 BSV
+          - cell "3" [ref=e759]:
+            - link "3" [ref=e760]:
+              - /url: /holders/bsv20/S₳TS
+        - row "2488 POKE 0 sat/token 0.00% 0 BSV 252" [ref=e761] [cursor=pointer]:
+          - cell "2488 POKE" [ref=e762]:
+            - generic [ref=e763]:
+              - generic [ref=e764]:
+                - img [ref=e765]
+                - text: "2488"
+              - generic [ref=e767]: POKE
+          - cell "0 sat/token" [ref=e768]
+          - cell "0.00%" [ref=e769]
+          - cell "0 BSV" [ref=e770]: 0 BSV
+          - cell "252" [ref=e771]:
+            - link "252" [ref=e772]:
+              - /url: /holders/bsv20/POKE
+        - row "2132 RIFF 0 sat/token 0.00% 0 BSV 3" [ref=e773] [cursor=pointer]:
+          - cell "2132 RIFF" [ref=e774]:
+            - generic [ref=e775]:
+              - generic [ref=e776]:
+                - img [ref=e777]
+                - text: "2132"
+              - generic [ref=e779]: RIFF
+          - cell "0 sat/token" [ref=e780]
+          - cell "0.00%" [ref=e781]
+          - cell "0 BSV" [ref=e782]: 0 BSV
+          - cell "3" [ref=e783]:
+            - link "3" [ref=e784]:
+              - /url: /holders/bsv20/RIFF
+        - row "2082 SUGA 0 sat/token 0.00% 0 BSV 5" [ref=e785] [cursor=pointer]:
+          - cell "2082 SUGA" [ref=e786]:
+            - generic [ref=e787]:
+              - generic [ref=e788]:
+                - img [ref=e789]
+                - text: "2082"
+              - generic [ref=e791]: SUGA
+          - cell "0 sat/token" [ref=e792]
+          - cell "0.00%" [ref=e793]
+          - cell "0 BSV" [ref=e794]: 0 BSV
+          - cell "5" [ref=e795]:
+            - link "5" [ref=e796]:
+              - /url: /holders/bsv20/SUGA
+        - row "1451 NIKE 0 sat/token 0.00% 0 BSV 267" [ref=e797] [cursor=pointer]:
+          - cell "1451 NIKE" [ref=e798]:
+            - generic [ref=e799]:
+              - generic [ref=e800]:
+                - img [ref=e801]
+                - text: "1451"
+              - generic [ref=e803]: NIKE
+          - cell "0 sat/token" [ref=e804]
+          - cell "0.00%" [ref=e805]
+          - cell "0 BSV" [ref=e806]: 0 BSV
+          - cell "267" [ref=e807]:
+            - link "267" [ref=e808]:
+              - /url: /holders/bsv20/NIKE
+        - row "589 MAGE 0 sat/token 0.00% 0 BSV 2" [ref=e809] [cursor=pointer]:
+          - cell "589 MAGE" [ref=e810]:
+            - generic [ref=e811]:
+              - generic [ref=e812]:
+                - img [ref=e813]
+                - text: "589"
+              - generic [ref=e815]: MAGE
+          - cell "0 sat/token" [ref=e816]
+          - cell "0.00%" [ref=e817]
+          - cell "0 BSV" [ref=e818]: 0 BSV
+          - cell "2" [ref=e819]:
+            - link "2" [ref=e820]:
+              - /url: /holders/bsv20/MAGE
+        - row "225 SHIB 0 sat/token 0.00% 0 BSV 280" [ref=e821] [cursor=pointer]:
+          - cell "225 SHIB" [ref=e822]:
+            - generic [ref=e823]:
+              - generic [ref=e824]:
+                - img [ref=e825]
+                - text: "225"
+              - generic [ref=e827]: SHIB
+          - cell "0 sat/token" [ref=e828]
+          - cell "0.00%" [ref=e829]
+          - cell "0 BSV" [ref=e830]: 0 BSV
+          - cell "280" [ref=e831]:
+            - link "280" [ref=e832]:
+              - /url: /holders/bsv20/SHIB
+        - row "224 PUNK 0 sat/token 0.00% 0 BSV 288" [ref=e833] [cursor=pointer]:
+          - cell "224 PUNK" [ref=e834]:
+            - generic [ref=e835]:
+              - generic [ref=e836]:
+                - img [ref=e837]
+                - text: "224"
+              - generic [ref=e839]: PUNK
+          - cell "0 sat/token" [ref=e840]
+          - cell "0.00%" [ref=e841]
+          - cell "0 BSV" [ref=e842]: 0 BSV
+          - cell "288" [ref=e843]:
+            - link "288" [ref=e844]:
+              - /url: /holders/bsv20/PUNK
+        - row "210 RUG 0 sat/token 0.00% 0 BSV 11" [ref=e845] [cursor=pointer]:
+          - cell "210 RUG" [ref=e846]:
+            - generic [ref=e847]:
+              - generic [ref=e848]:
+                - img [ref=e849]
+                - text: "210"
+              - generic [ref=e851]: RUG
+          - cell "0 sat/token" [ref=e852]
+          - cell "0.00%" [ref=e853]
+          - cell "0 BSV" [ref=e854]: 0 BSV
+          - cell "11" [ref=e855]:
+            - link "11" [ref=e856]:
+              - /url: /holders/bsv20/RUG
+        - row "207 EPIC 0 sat/token 0.00% 0 BSV 52" [ref=e857] [cursor=pointer]:
+          - cell "207 EPIC" [ref=e858]:
+            - generic [ref=e859]:
+              - generic [ref=e860]:
+                - img [ref=e861]
+                - text: "207"
+              - generic [ref=e863]: EPIC
+          - cell "0 sat/token" [ref=e864]
+          - cell "0.00%" [ref=e865]
+          - cell "0 BSV" [ref=e866]: 0 BSV
+          - cell "52" [ref=e867]:
+            - link "52" [ref=e868]:
+              - /url: /holders/bsv20/EPIC
+        - row "201 MINT 0 sat/token 0.00% 0 BSV 28" [ref=e869] [cursor=pointer]:
+          - cell "201 MINT" [ref=e870]:
+            - generic [ref=e871]:
+              - generic [ref=e872]:
+                - img [ref=e873]
+                - text: "201"
+              - generic [ref=e875]: MINT
+          - cell "0 sat/token" [ref=e876]
+          - cell "0.00%" [ref=e877]
+          - cell "0 BSV" [ref=e878]: 0 BSV
+          - cell "28" [ref=e879]:
+            - link "28" [ref=e880]:
+              - /url: /holders/bsv20/MINT
+        - row "126 HEMP 0 sat/token 0.00% 0 BSV 31" [ref=e881] [cursor=pointer]:
+          - cell "126 HEMP" [ref=e882]:
+            - generic [ref=e883]:
+              - generic [ref=e884]:
+                - img [ref=e885]
+                - text: "126"
+              - generic [ref=e887]: HEMP
+          - cell "0 sat/token" [ref=e888]
+          - cell "0.00%" [ref=e889]
+          - cell "0 BSV" [ref=e890]: 0 BSV
+          - cell "31" [ref=e891]:
+            - link "31" [ref=e892]:
+              - /url: /holders/bsv20/HEMP
+        - row "10320 PLUR 0 sat/token 0.00% 0 BSV 1" [ref=e893] [cursor=pointer]:
+          - cell "10320 PLUR" [ref=e894]:
+            - generic [ref=e895]:
+              - generic [ref=e896]:
+                - img [ref=e897]
+                - text: "10320"
+              - generic [ref=e899]: PLUR
+          - cell "0 sat/token" [ref=e900]
+          - cell "0.00%" [ref=e901]
+          - cell "0 BSV" [ref=e902]: 0 BSV
+          - cell "1" [ref=e903]:
+            - link "1" [ref=e904]:
+              - /url: /holders/bsv20/PLUR
+        - row "10225 BIRB 0 sat/token 0.00% 0 BSV 2" [ref=e905] [cursor=pointer]:
+          - cell "10225 BIRB" [ref=e906]:
+            - generic [ref=e907]:
+              - generic [ref=e908]:
+                - img [ref=e909]
+                - text: "10225"
+              - generic [ref=e911]: BIRB
+          - cell "0 sat/token" [ref=e912]
+          - cell "0.00%" [ref=e913]
+          - cell "0 BSV" [ref=e914]: 0 BSV
+          - cell "2" [ref=e915]:
+            - link "2" [ref=e916]:
+              - /url: /holders/bsv20/BIRB
+        - row "9919 OJBK 0 sat/token 0.00% 0 BSV 64" [ref=e917] [cursor=pointer]:
+          - cell "9919 OJBK" [ref=e918]:
+            - generic [ref=e919]:
+              - generic [ref=e920]:
+                - img [ref=e921]
+                - text: "9919"
+              - generic [ref=e923]: OJBK
+          - cell "0 sat/token" [ref=e924]
+          - cell "0.00%" [ref=e925]
+          - cell "0 BSV" [ref=e926]: 0 BSV
+          - cell "64" [ref=e927]:
+            - link "64" [ref=e928]:
+              - /url: /holders/bsv20/OJBK
+        - row "2671582979 pending operations Needs 26715.82979 BSV Fund OJBK" [ref=e929]:
+          - cell "2671582979 pending operations Needs 26715.82979 BSV" [ref=e930]:
+            - generic [ref=e931]: 2671582979 pending operations Needs 26715.82979 BSV
+          - cell "Fund OJBK" [ref=e932] [cursor=pointer]:
+            - button "Fund OJBK" [ref=e933]
+        - row "2875 PEP$ 0 sat/token 0.00% 0 BSV 1" [ref=e934] [cursor=pointer]:
+          - cell "2875 PEP$" [ref=e935]:
+            - generic [ref=e936]:
+              - generic [ref=e937]:
+                - img [ref=e938]
+                - text: "2875"
+              - generic [ref=e940]: PEP$
+          - cell "0 sat/token" [ref=e941]
+          - cell "0.00%" [ref=e942]
+          - cell "0 BSV" [ref=e943]: 0 BSV
+          - cell "1" [ref=e944]:
+            - link "1" [ref=e945]:
+              - /url: /holders/bsv20/PEP$
+        - row "10465 MDEW 0 sat/token 0.00% 0 BSV 5" [ref=e946] [cursor=pointer]:
+          - cell "10465 MDEW" [ref=e947]:
+            - generic [ref=e948]:
+              - generic [ref=e949]:
+                - img [ref=e950]
+                - text: "10465"
+              - generic [ref=e952]: MDEW
+          - cell "0 sat/token" [ref=e953]
+          - cell "0.00%" [ref=e954]
+          - cell "0 BSV" [ref=e955]: 0 BSV
+          - cell "5" [ref=e956]:
+            - link "5" [ref=e957]:
+              - /url: /holders/bsv20/MDEW
+        - row "7931 $2 0 sat/token 0.00% 0 BSV 6" [ref=e958] [cursor=pointer]:
+          - cell "7931 $2" [ref=e959]:
+            - generic [ref=e960]:
+              - generic [ref=e961]:
+                - img [ref=e962]
+                - text: "7931"
+              - generic [ref=e964]: $2
+          - cell "0 sat/token" [ref=e965]
+          - cell "0.00%" [ref=e966]
+          - cell "0 BSV" [ref=e967]: 0 BSV
+          - cell "6" [ref=e968]:
+            - link "6" [ref=e969]:
+              - /url: /holders/bsv20/$2
+        - row "25108 pending operations Needs 0.32472 BSV Fund $2" [ref=e970]:
+          - cell "25108 pending operations Needs 0.32472 BSV" [ref=e971]:
+            - generic [ref=e972]: 25108 pending operations Needs 0.32472 BSV
+          - cell "Fund $2" [ref=e973] [cursor=pointer]:
+            - button "Fund $2" [ref=e974]
+        - row "10296 BS20 0 sat/token 0.00% 0 BSV 1" [ref=e975] [cursor=pointer]:
+          - cell "10296 BS20" [ref=e976]:
+            - generic [ref=e977]:
+              - generic [ref=e978]:
+                - img [ref=e979]
+                - text: "10296"
+              - generic [ref=e981]: BS20
+          - cell "0 sat/token" [ref=e982]
+          - cell "0.00%" [ref=e983]
+          - cell "0 BSV" [ref=e984]: 0 BSV
+          - cell "1" [ref=e985]:
+            - link "1" [ref=e986]:
+              - /url: /holders/bsv20/BS20
+        - row "2876 ETH$ 0 sat/token 0.00% 0 BSV 2" [ref=e987] [cursor=pointer]:
+          - cell "2876 ETH$" [ref=e988]:
+            - generic [ref=e989]:
+              - generic [ref=e990]:
+                - img [ref=e991]
+                - text: "2876"
+              - generic [ref=e993]: ETH$
+          - cell "0 sat/token" [ref=e994]
+          - cell "0.00%" [ref=e995]
+          - cell "0 BSV" [ref=e996]: 0 BSV
+          - cell "2" [ref=e997]:
+            - link "2" [ref=e998]:
+              - /url: /holders/bsv20/ETH$
+        - row [ref=e999]:
+          - cell [ref=e1000]
+  - generic [ref=e1001]:
+    - link "Protocol" [ref=e1002] [cursor=pointer]:
+      - /url: https://docs.1satordinals.com
+      - img [ref=e1003]
+      - text: Protocol
+    - generic [ref=e1005]: •
+    - link "Mine Pow20" [ref=e1006] [cursor=pointer]:
+      - /url: /mine
+      - img [ref=e1007]
+      - text: Mine Pow20
+    - generic [ref=e1011]: •
+    - link "Discord" [ref=e1012] [cursor=pointer]:
+      - /url: https://discord.gg/t5AsAsQxGT
+      - img [ref=e1013]
+      - text: Discord
+    - generic [ref=e1015]: •
+    - link "1Sat.Market on X 1Sat.Market" [ref=e1016] [cursor=pointer]:
+      - /url: https://x.com/1SatMarket
+      - img "1Sat.Market on X" [ref=e1017]
+      - text: 1Sat.Market
+  - button "Open Next.js Dev Tools" [ref=e1024] [cursor=pointer]:
+    - img [ref=e1025]
+  - alert [ref=e1028]
+```

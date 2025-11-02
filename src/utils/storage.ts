@@ -392,8 +392,9 @@ const deleteFromIDB = async (key: string): Promise<void> => {
 };
 
 // BroadcastChannel for Cross-Tab Synchronization
+// Check for both window and BroadcastChannel availability to avoid Edge Runtime errors
 const broadcastChannel =
-  typeof window !== "undefined"
+  typeof window !== "undefined" && typeof BroadcastChannel !== "undefined"
     ? new BroadcastChannel("idb_storage_sync")
     : null;
 

@@ -158,7 +158,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         queryFn: async ({ pageParam }) => {
             console.log(`Fetching page at cursor ${pageParam}`);
             const response = await fetch(`/api/feed?cursor=${pageParam}&limit=30`);
-            const result = await response.json() as { items: OrdUtxo[], nextCursor: number | null };
+            const result = await response.json() as { items: OrdUtxo[], nextCursor: number | null, total: number };
             console.log(`Received ${result.items.length} items, nextCursor: ${result.nextCursor}, total: ${result.total}`);
             result.items.forEach(item => {
                 const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
@@ -392,9 +392,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                     wrapper: allowScroll ? "" : "max-w-full max-h-full w-full h-full",
                                     media: allowScroll ? "max-w-full h-auto object-contain" : "max-w-full max-h-full w-full h-full object-contain"
                                 }}
-                                style={{
-                                    viewTransitionName: `artifact-${selectedArtifact.outpoint}`
-                                } as React.CSSProperties}
                             />
                         ) : (
                             <img
