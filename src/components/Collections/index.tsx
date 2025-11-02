@@ -34,26 +34,24 @@ const Collections = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
         {data?.map((c) => (
           <div key={c.outpoint} className="relative overflow-hidden mx-auto w-[300px] h-[300px]">
-            <Link href={`/collection/${c.outpoint}`}>
-              {/* <Image
-                width={300}
-                height={300}
-                src={c.data?.map?.previewUrl || `${ORDFS}/${c.outpoint}`}
-                alt=""
-                className="rounded-box"
-              /> */}
-              <Artifact
-                classNames={{
-                  wrapper: "bg-transparent",
-                  media: "rounded bg-[#111] text-center p-0 h-[300px] w-[300px]",
-                }}
-                artifact={c}
-                size={300}
-                sizes={"100vw"}
-                showFooter={false}
-                to={`/collection/${c.outpoint}`}
-                />
-            </Link>
+            {/* <Image
+              width={300}
+              height={300}
+              src={c.data?.map?.previewUrl || `${ORDFS}/${c.outpoint}`}
+              alt=""
+              className="rounded-box"
+            /> */}
+            <Artifact
+              classNames={{
+                wrapper: "bg-transparent",
+                media: "rounded bg-[#111] text-center p-0 h-[300px] w-[300px]",
+              }}
+              artifact={c}
+              size={300}
+              sizes={"100vw"}
+              showFooter={false}
+              to={`/collection/${c.outpoint}`}
+              />
             <div className="absolute bottom-0 left-0 w-full h-fit p-2 bg-black/15 text-sm font-mono">
               <Link href={`/collection/${c.outpoint}`} className="drop-shadow">
                 {c.data?.map?.name}
