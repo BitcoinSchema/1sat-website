@@ -123,7 +123,15 @@ async function fetchAndAddItems(count: number = 100): Promise<void> {
         .catch(() => [])
     );
 
-    const results = await Promise.all([...imagePromises, ...videoPromises]);
+    // Fetch some 3D models
+    const modelOffsets = [getWeightedOffset()];
+    const modelPromises = modelOffsets.map(offset =>
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=model`)
+        .then(res => res.json())
+        .catch(() => [])
+    );
+
+    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises]);
     const allItems = results.flat() as OrdUtxo[];
 
     // Get existing outpoints to avoid duplicates
@@ -182,7 +190,14 @@ async function refreshFeedPool() {
         .catch(() => [])
     );
 
-    const results = await Promise.all([...imagePromises, ...videoPromises]);
+    const modelOffsets = [0, getWeightedOffset()];
+    const modelPromises = modelOffsets.map(offset =>
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=model`)
+        .then(res => res.json())
+        .catch(() => [])
+    );
+
+    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises]);
     const allItems = results.flat() as OrdUtxo[];
 
     // Deduplicate by outpoint
