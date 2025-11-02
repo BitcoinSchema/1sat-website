@@ -7,7 +7,7 @@ import Link from "next/link";
 import { toBitcoin } from "satoshi-token";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Artifact from "@/components/artifact";
-import { SquareArrowOutUpRight, X, Play, ShoppingCart } from "lucide-react";
+import { SquareArrowOutUpRight, X, Play, ShoppingCart, Cube, Music } from "lucide-react";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -37,6 +37,14 @@ const shouldAllowScroll = (artifact: OrdUtxo): boolean => {
     return contentType.startsWith('image/') ||
            contentType.startsWith('text/') ||
            contentType.includes('html');
+};
+
+const getContentType = (artifact: OrdUtxo): 'video' | 'audio' | '3d' | 'image' => {
+    const contentType = artifact.origin?.data?.insc?.file.type || '';
+    if (contentType.startsWith('video/')) return 'video';
+    if (contentType.startsWith('audio/')) return 'audio';
+    if (contentType.includes('model/') || contentType.includes('gltf')) return '3d';
+    return 'image';
 };
 
 const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[], className: string }) => {
@@ -219,8 +227,8 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                         {artifacts.map((artifact) => {
                             const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
                             const isInModal = selectedArtifact?.outpoint === artifact.outpoint;
-                            const isVideo = needsFlipButton(artifact);
-                            const imgSrc = isVideo ? src : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`;
+                            const contentType = getContentType(artifact);
+                            const imgSrc = contentType === 'image' ? `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}` : src;
 
                             return (
                                 <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.outpoint}>
@@ -239,14 +247,14 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                             >
                                                 <SquareArrowOutUpRight className="w-4 h-4 text-white" />
                                             </button>
-                                            {isVideo && (
+                                            {contentType === 'video' && (
                                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                                                     <div className="p-4 bg-black/60 rounded-full">
                                                         <Play className="w-12 h-12 text-white fill-white" />
                                                     </div>
                                                 </div>
                                             )}
-                                            {isVideo ? (
+                                            {contentType === 'video' ? (
                                                 <video
                                                     src={src}
                                                     className='w-full h-auto rounded-lg'
@@ -261,6 +269,24 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                                         observeImage(el as any, artifact)
                                                     }}
                                                 />
+                                            ) : contentType === '3d' ? (
+                                                <div
+                                                    className='w-full aspect-square rounded-lg bg-gradient-to-br from-purple-900/30 to-blue-900/30 flex items-center justify-center'
+                                                    style={{
+                                                        viewTransitionName: `artifact-${artifact.outpoint}`
+                                                    } as React.CSSProperties}
+                                                >
+                                                    <Cube className="w-24 h-24 text-purple-300/50" />
+                                                </div>
+                                            ) : contentType === 'audio' ? (
+                                                <div
+                                                    className='w-full aspect-square rounded-lg bg-gradient-to-br from-pink-900/30 to-orange-900/30 flex items-center justify-center'
+                                                    style={{
+                                                        viewTransitionName: `artifact-${artifact.outpoint}`
+                                                    } as React.CSSProperties}
+                                                >
+                                                    <Music className="w-24 h-24 text-pink-300/50" />
+                                                </div>
                                             ) : (
                                                 <img
                                                     src={imgSrc}
