@@ -7,7 +7,7 @@ import Link from "next/link";
 import { toBitcoin } from "satoshi-token";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Artifact from "@/components/artifact";
-import { SquareArrowOutUpRight, X, Play, ShoppingCart, Cube, Music } from "lucide-react";
+import { SquareArrowOutUpRight, X, Play, ShoppingCart, Box, Music } from "lucide-react";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -276,7 +276,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                                         viewTransitionName: `artifact-${artifact.outpoint}`
                                                     } as React.CSSProperties}
                                                 >
-                                                    <Cube className="w-24 h-24 text-purple-300/50" />
+                                                    <Box className="w-24 h-24 text-purple-300/50" />
                                                 </div>
                                             ) : contentType === 'audio' ? (
                                                 <div
@@ -321,6 +321,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         {selectedArtifact && (() => {
             const requiresFlipButton = needsFlipButton(selectedArtifact);
             const allowScroll = shouldAllowScroll(selectedArtifact);
+            const ordinalName = selectedArtifact.data?.map?.name || selectedArtifact.origin?.data?.map?.name;
             return (
             <div
                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300"
@@ -334,7 +335,12 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     className="relative flex flex-col w-[90vw] h-[96vh]"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="flex items-center justify-end mb-2 shrink-0">
+                    <div className="flex items-center justify-between mb-2 shrink-0">
+                        {ordinalName && (
+                            <h2 className="text-lg font-semibold text-white truncate mr-4">
+                                {ordinalName}
+                            </h2>
+                        )}
                         <ButtonGroup>
                             {selectedArtifact.data?.list?.price && (
                                 <Button
