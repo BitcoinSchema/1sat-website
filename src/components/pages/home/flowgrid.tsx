@@ -188,15 +188,20 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     }, [data?.pages.length, allArtifacts.length, artifacts.length, hasNextPage]);
 
     useEffect(() => {
+        // Initialize all new artifacts as visible immediately
+        // IntersectionObserver lazy loading was causing items to stay invisible
         for (const artifact of artifacts) {
-            if (!visible.has(artifact.outpoint)) {
-                setVisible(prev => new Map(prev).set(artifact.outpoint, false));
-            }
+            setVisible(prev => {
+                if (!prev.has(artifact.outpoint)) {
+                    return new Map(prev).set(artifact.outpoint, true);
+                }
+                return prev;
+            });
         }
         return () => {
             observers.current.forEach(observer => observer.disconnect());
         };
-    }, [artifacts, visible]);
+    }, [artifacts]);
 
     useEffect(() => {
         const sentinel = sentinelRef.current;
