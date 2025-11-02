@@ -36,6 +36,10 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
     const [showBackdrop, setShowBackdrop] = useState(false);
     const [showBuyModal, setShowBuyModal] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 });
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const observeImage = useCallback((element: HTMLImageElement, artifact: OrdUtxo) => {
         if (!element) return;
@@ -83,6 +87,29 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     const closeModal = () => {
         setShowBackdrop(false);
         setSelectedArtifact(null);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!scrollContainerRef.current) return;
+        setIsDragging(true);
+        setDragStart({ x: e.clientX, y: e.clientY });
+        setScrollStart({
+            x: scrollContainerRef.current.scrollLeft,
+            y: scrollContainerRef.current.scrollTop
+        });
+        e.preventDefault();
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !scrollContainerRef.current) return;
+        const dx = e.clientX - dragStart.x;
+        const dy = e.clientY - dragStart.y;
+        scrollContainerRef.current.scrollLeft = scrollStart.x - dx;
+        scrollContainerRef.current.scrollTop = scrollStart.y - dy;
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
     };
 
     useEffect(() => {
@@ -254,10 +281,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                 onClick={closeModal}
             >
                 <div
-                    className="relative flex flex-col max-w-[90vw] max-h-[90vh]"
-                    style={{
-                        viewTransitionName: `artifact-${selectedArtifact.outpoint}`
-                    } as React.CSSProperties}
+                    className="relative flex flex-col w-[90vw] h-[90vh]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex items-center justify-end gap-2 mb-2 shrink-0">
@@ -286,7 +310,18 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                         </button>
                     </div>
 
-                    <div className="shadow-2xl bg-[#111] rounded-lg overflow-auto">
+                    <div
+                        ref={scrollContainerRef}
+                        className="shadow-2xl bg-[#111] rounded-lg overflow-auto flex-1 grid place-items-center"
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        style={{
+                            cursor: isDragging ? 'grabbing' : 'grab',
+                            viewTransitionName: `artifact-${selectedArtifact.outpoint}`
+                        } as React.CSSProperties}
+                    >
                         {requiresFlipButton ? (
                             <Artifact
                                 artifact={selectedArtifact}
@@ -297,14 +332,15 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                 clickToZoom={false}
                                 classNames={{
                                     wrapper: "",
-                                    media: "w-full h-full object-contain"
+                                    media: "max-w-full max-h-full object-contain"
                                 }}
                             />
                         ) : (
                             <img
                                 src={`https://ordfs.network/${selectedArtifact.origin?.outpoint}`}
                                 alt="Full size artifact"
-                                className="max-w-full h-auto cursor-grab active:cursor-grabbing"
+                                className="max-w-full h-auto select-none"
+                                draggable={false}
                             />
                         )}
                     </div>
