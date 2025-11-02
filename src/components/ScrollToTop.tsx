@@ -7,7 +7,7 @@ export default function ScrollToTop() {
 
     useEffect(() => {
         const handleScroll = () => {
-            setShowScrollTop(window.scrollY > 500);
+            setShowScrollTop(window.scrollY > 300);
         };
 
         window.addEventListener('scroll', handleScroll);
@@ -25,8 +25,7 @@ export default function ScrollToTop() {
     return (
         <button
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 btn btn-circle btn-primary shadow-lg hover:scale-110 transition-transform"
-            style={{ zIndex: 99999 }}
+            className="fixed bottom-8 right-8 z-[60] btn btn-circle btn-primary shadow-lg hover:scale-110 transition-transform"
             aria-label="Scroll to top"
         >
             <svg

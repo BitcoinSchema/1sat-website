@@ -194,19 +194,23 @@ h1 {
 	z-index: -1;
 }
 
-/* For any named elements (our artifact cards/modals) */
-/* The browser will automatically handle position/size morphing */
-/* We just customize the timing and ensure proper stacking */
-::view-transition-group(*) {
+/* Grid items in their normal state - lower z-index */
+::view-transition-group(grid-item-*) {
 	animation-duration: 0.4s;
 	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	z-index: 9999;
+	z-index: 1;
 }
 
-::view-transition-old(*),
-::view-transition-new(*) {
+/* The actual artifact image/video being transitioned - highest z-index */
+::view-transition-group(artifact-*) {
+	animation-duration: 0.4s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	z-index: 100;
+}
+
+::view-transition-old(artifact-*),
+::view-transition-new(artifact-*) {
 	animation-duration: 0.4s;
 	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 	mix-blend-mode: normal;
-	z-index: 9999;
 }

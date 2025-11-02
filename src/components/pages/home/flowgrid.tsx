@@ -206,82 +206,84 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                 {!mounted || artifacts.length === 0 ? (
                     <LoadingSkeleton count={20} />
                 ) : (
-                    artifacts.map((artifact) => {
-                        const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
-                        const isInModal = selectedArtifact?.outpoint === artifact.outpoint;
-                        const isVideo = needsFlipButton(artifact);
-                        const imgSrc = isVideo ? src : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`;
+                    <>
+                        {artifacts.map((artifact) => {
+                            const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
+                            const isInModal = selectedArtifact?.outpoint === artifact.outpoint;
+                            const isVideo = needsFlipButton(artifact);
+                            const imgSrc = isVideo ? src : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`;
 
-                        return (
-                            <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.outpoint}>
-                                <div
-                                    className={`relative mb-4 break-inside-avoid group ${visible.get(artifact.outpoint) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500 hover:z-[100]`}
-                                    onClick={(e) => handleCardClick(e, artifact)}
-                                >
-                                    <div className={"relative shadow-md bg-[#111] rounded-lg"}>
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                window.open(`https://ordfs.network/${artifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer');
-                                            }}
-                                            className="absolute top-2 right-2 z-10 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <SquareArrowOutUpRight className="w-4 h-4 text-white" />
-                                        </button>
-                                        {isVideo && (
-                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                                <div className="p-4 bg-black/60 rounded-full">
-                                                    <Play className="w-12 h-12 text-white fill-white" />
+                            return (
+                                <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.outpoint}>
+                                    <div
+                                        className={`relative mb-4 break-inside-avoid group ${visible.get(artifact.outpoint) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+                                        onClick={(e) => handleCardClick(e, artifact)}
+                                        style={{
+                                            viewTransitionName: isInModal ? 'none' : `grid-item-${artifact.outpoint}`
+                                        } as React.CSSProperties}
+                                    >
+                                        <div className={"relative shadow-md bg-[#111] rounded-lg"}>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    window.open(`https://ordfs.network/${artifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer');
+                                                }}
+                                                className="absolute top-2 right-2 z-10 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                            >
+                                                <SquareArrowOutUpRight className="w-4 h-4 text-white" />
+                                            </button>
+                                            {isVideo && (
+                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                                    <div className="p-4 bg-black/60 rounded-full">
+                                                        <Play className="w-12 h-12 text-white fill-white" />
+                                                    </div>
                                                 </div>
+                                            )}
+                                            {isVideo ? (
+                                                <video
+                                                    src={src}
+                                                    className='w-full h-auto rounded-lg'
+                                                    width={375}
+                                                    muted
+                                                    playsInline
+                                                    style={{
+                                                        viewTransitionName: `artifact-${artifact.outpoint}`
+                                                    } as React.CSSProperties}
+                                                    ref={(el) => {
+                                                        if (!el) return;
+                                                        observeImage(el as any, artifact)
+                                                    }}
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={imgSrc}
+                                                    alt={`Image ${artifact.txid}`}
+                                                    className='w-full h-auto rounded-lg'
+                                                    width={375}
+                                                    style={{
+                                                        viewTransitionName: `artifact-${artifact.outpoint}`
+                                                    } as React.CSSProperties}
+                                                    ref={(el) => {
+                                                        if (!el) return;
+                                                        observeImage(el, artifact)
+                                                    }}
+                                                />
+                                            )}
+                                            <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none'>
+                                                <p className='text-base font-bold'>{toBitcoin(artifact.data?.list?.price || 0)} BSV</p>
+                                                <p className='text-sm'>{artifact.data?.map?.name}</p>
                                             </div>
-                                        )}
-                                        {isVideo ? (
-                                            <video
-                                                src={src}
-                                                className='w-full h-auto rounded-lg'
-                                                width={375}
-                                                muted
-                                                playsInline
-                                                style={{
-                                                    viewTransitionName: isInModal ? 'none' : `artifact-${artifact.outpoint}`
-                                                } as React.CSSProperties}
-                                                ref={(el) => {
-                                                    if (!el) return;
-                                                    observeImage(el as any, artifact)
-                                                }}
-                                            />
-                                        ) : (
-                                            <img
-                                                src={imgSrc}
-                                                alt={`Image ${artifact.txid}`}
-                                                className='w-full h-auto rounded-lg'
-                                                width={375}
-                                                style={{
-                                                    viewTransitionName: isInModal ? 'none' : `artifact-${artifact.outpoint}`
-                                                } as React.CSSProperties}
-                                                ref={(el) => {
-                                                    if (!el) return;
-                                                    observeImage(el, artifact)
-                                                }}
-                                            />
-                                        )}
-                                        <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none'>
-                                            <p className='text-base font-bold'>{toBitcoin(artifact.data?.list?.price || 0)} BSV</p>
-                                            <p className='text-sm'>{artifact.data?.map?.name}</p>
                                         </div>
                                     </div>
-                                </div>
-                            </Link>
-                        );
-                    })
+                                </Link>
+                            );
+                        })}
+                        {isFetchingNextPage && <LoadingSkeleton count={30} />}
+                    </>
                 )}
             </div>
-            <div ref={sentinelRef} className="h-20 flex items-center justify-center">
-                {isFetchingNextPage && (
-                    <div className="loading loading-spinner loading-lg"></div>
-                )}
-            </div>
+            <div ref={sentinelRef} className="h-20" />
         </div>
 
         {selectedArtifact && (() => {
