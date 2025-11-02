@@ -13,8 +13,7 @@ const JDenticon = ({ className, hashOrValue }: JDenticonProps) => {
     hashOrValue = "0";
   }
   const svgStr = toSvg(hashOrValue, 300);
-  const svg = new Blob([svgStr], { type: "image/svg+xml" });
-  const imageUrl = URL.createObjectURL(svg);
+  const imageUrl = `data:image/svg+xml,${encodeURIComponent(svgStr)}`;
   return (
     <Image alt="" src={imageUrl} className={className ?? ""} width={0} height={0} />
   );
