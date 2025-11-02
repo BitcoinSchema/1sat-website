@@ -336,11 +336,9 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex items-center justify-between gap-2 shrink-0">
-                        {ordinalName && (
-                            <p className="text-sm font-medium text-white/90 truncate">
-                                {ordinalName}
-                            </p>
-                        )}
+                        <p className="text-sm font-medium text-white/90 truncate">
+                            {ordinalName || '\u00A0'}
+                        </p>
                         <ButtonGroup>
                             {selectedArtifact.data?.list?.price && (
                                 <Button
