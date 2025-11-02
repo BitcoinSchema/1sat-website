@@ -88,7 +88,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
   }, [data, generatedImage, outPoint]);
 
   return (
-    <div className="relative h- full w-full">
+    <div className="relative h-full w-full flex flex-col items-center justify-center">
       {bh && (
         <Blurhash
           hash={bh}
@@ -104,7 +104,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
       {/* biome-ignore lint/a11y/useMediaCaption: <explanation> */}
       <audio
         className={`w-full transition ${className ? className : ""}`}
-        src={src ? src : `${ORDFS}/${origin}`}
+        src={src ? src : `${ORDFS}/${outPoint}`}
         id={`${src ? src : outPoint}_audio`}
         onPlaying={(e) => {
           console.log("playing", e);

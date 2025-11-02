@@ -131,7 +131,15 @@ async function fetchAndAddItems(count: number = 100): Promise<void> {
         .catch(() => [])
     );
 
-    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises]);
+    // Fetch some audio
+    const audioOffsets = [getWeightedOffset()];
+    const audioPromises = audioOffsets.map(offset =>
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=audio`)
+        .then(res => res.json())
+        .catch(() => [])
+    );
+
+    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises, ...audioPromises]);
     const allItems = results.flat() as OrdUtxo[];
 
     // Get existing outpoints to avoid duplicates
@@ -197,7 +205,14 @@ async function refreshFeedPool() {
         .catch(() => [])
     );
 
-    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises]);
+    const audioOffsets = [0, getWeightedOffset()];
+    const audioPromises = audioOffsets.map(offset =>
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=audio`)
+        .then(res => res.json())
+        .catch(() => [])
+    );
+
+    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises, ...audioPromises]);
     const allItems = results.flat() as OrdUtxo[];
 
     // Deduplicate by outpoint
