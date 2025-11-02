@@ -13,8 +13,7 @@ const nextConfig = {
 			"default-src 'self'; script-src 'none'; sandbox;",
 		localPatterns: [
 			{
-				pathname: '/api/sanitize',
-				search: '**',
+				pathname: '/api/sanitize**',
 			},
 		],
 		remotePatterns: [
