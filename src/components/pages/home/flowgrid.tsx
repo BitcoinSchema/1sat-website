@@ -1,69 +1,293 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { toBitcoin } from "satoshi-token";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import Artifact from "@/components/artifact";
+import { SquareArrowOutUpRight, X, Play } from "lucide-react";
 
-const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: string }) => {
+const LoadingSkeleton = ({ count }: { count: number }) => (
+    <>
+        {Array.from({ length: count }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="relative mb-4 break-inside-avoid">
+                <div className="skeleton h-64 w-full rounded-lg bg-[#222]"></div>
+            </div>
+        ))}
+    </>
+);
+
+const needsFlipButton = (artifact: OrdUtxo): boolean => {
+    const contentType = artifact.origin?.data?.insc?.file.type || '';
+    return contentType.startsWith('video/') ||
+           contentType.includes('model/') ||
+           contentType.includes('gltf');
+};
+
+const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[], className: string }) => {
     const observers = useRef<Map<string, IntersectionObserver>>(new Map());
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    const seenOutpoints = useRef<Set<string>>(new Set());
     const [visible, setVisible] = useState<Map<string, boolean>>(new Map());
+    const [mounted, setMounted] = useState(false);
+    const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
+    const [showBackdrop, setShowBackdrop] = useState(false);
 
     const observeImage = useCallback((element: HTMLImageElement, artifact: OrdUtxo) => {
         if (!element) return;
-
         const observer = new IntersectionObserver(([entry]) => {
             if (entry.isIntersecting) {
-                setVisible(prev => new Map(prev).set(artifact.txid, true));
+                setVisible(prev => new Map(prev).set(artifact.outpoint, true));
                 observer.disconnect();
             }
         }, { threshold: 0.1 });
-
         observer.observe(element);
-        observers.current.set(artifact.txid, observer);
+        observers.current.set(artifact.outpoint, observer);
     }, []);
 
     useEffect(() => {
-        for (const artifact of artifacts) {
-          setVisible(prev => new Map(prev).set(artifact.txid, false));
-        }
+        setMounted(true);
+    }, []);
 
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && selectedArtifact) {
+                closeModal();
+            }
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [selectedArtifact]);
+
+    const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
+        e.preventDefault();
+        if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+            const transition = (document as any).startViewTransition(() => {
+                flushSync(() => {
+                    setSelectedArtifact(artifact);
+                });
+            });
+            transition.ready.then(() => {
+                setShowBackdrop(true);
+            });
+        } else {
+            setSelectedArtifact(artifact);
+            setShowBackdrop(true);
+        }
+    };
+
+    const closeModal = () => {
+        setShowBackdrop(false);
+        setSelectedArtifact(null);
+    };
+
+    useEffect(() => {
+        initialArtifacts.forEach(a => {
+            const outpoint = a.outpoint || `${a.txid}_${a.vout}`;
+            seenOutpoints.current.add(outpoint);
+        });
+    }, [initialArtifacts]);
+
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useInfiniteQuery({
+        queryKey: ['market-flow'],
+        queryFn: async ({ pageParam }) => {
+            const cursor = pageParam === null ? 0 : pageParam;
+            const response = await fetch(`/api/feed?cursor=${cursor}&limit=30`);
+            const result = await response.json() as { items: OrdUtxo[], nextCursor: number | null };
+            result.items.forEach(item => {
+                const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
+                seenOutpoints.current.add(outpoint);
+            });
+            return result;
+        },
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        initialPageParam: null as number | null,
+    });
+
+    const allArtifacts = data?.pages.flatMap(page => page.items) || [];
+    const seen = new Set<string>();
+    const artifacts = allArtifacts.filter(artifact => {
+        if (!artifact?.outpoint) return false;
+        if (seen.has(artifact.outpoint)) return false;
+        seen.add(artifact.outpoint);
+        return true;
+    });
+
+    useEffect(() => {
+        for (const artifact of artifacts) {
+            if (!visible.has(artifact.outpoint)) {
+                setVisible(prev => new Map(prev).set(artifact.outpoint, false));
+            }
+        }
         return () => {
             observers.current.forEach(observer => observer.disconnect());
         };
-    }, [artifacts]);
+    }, [artifacts, visible]);
+
+    useEffect(() => {
+        if (!sentinelRef.current) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage();
+                }
+            },
+            { threshold: 0.1, rootMargin: '200px' }
+        );
+        observer.observe(sentinelRef.current);
+        return () => observer.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
+        <>
         <div className={`relative text-center ${className}`}>
             <div className='columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4'>
-                {artifacts.map((artifact) => {
-                    const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
+                {!mounted || artifacts.length === 0 ? (
+                    <LoadingSkeleton count={20} />
+                ) : (
+                    artifacts.map((artifact) => {
+                        if (!artifact || !artifact.txid || !artifact.outpoint || !artifact.origin?.outpoint) return null;
+                        const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
+                        const isInModal = selectedArtifact?.outpoint === artifact.outpoint;
+                        const isVideo = needsFlipButton(artifact);
+                        const imgSrc = isVideo ? src : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`;
 
-                    return (
-                        <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.txid}>
-                            <div className={`relative mb-4 break-inside-avoid ${visible.get(artifact.txid) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
-                                <div className={"relative shadow-md bg-[#111] rounded-lg"}>
-                                    <img
-                                        src={`https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`}
-                                        alt={`Image ${artifact.txid}`}
-                                        className='w-full h-auto rounded-lg'
-                                        width={375}
-                                        ref={(el) => {
-                                            if (!el) return;
-                                            observeImage(el, artifact)
-                                        }}
-                                    />
-                                    <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100'>
-                                        <p className='text-base font-bold'>{toBitcoin(artifact.data?.list?.price || 0)} BSV</p>
-                                        <p className='text-sm'>{artifact.data?.map?.name}</p>
+                        return (
+                            <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.outpoint}>
+                                <div
+                                    className={`relative mb-4 break-inside-avoid group ${visible.get(artifact.outpoint) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+                                    style={{
+                                        viewTransitionName: isInModal ? 'none' : `artifact-${artifact.outpoint}`
+                                    } as React.CSSProperties}
+                                    onClick={(e) => handleCardClick(e, artifact)}
+                                >
+                                    <div className={"relative shadow-md bg-[#111] rounded-lg"}>
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                window.open(`https://ordfs.network/${artifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer');
+                                            }}
+                                            className="absolute top-2 right-2 z-10 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                        >
+                                            <SquareArrowOutUpRight className="w-4 h-4 text-white" />
+                                        </button>
+                                        {isVideo && (
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                                <div className="p-4 bg-black/60 rounded-full">
+                                                    <Play className="w-12 h-12 text-white fill-white" />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {isVideo ? (
+                                            <video
+                                                src={src}
+                                                className='w-full h-auto rounded-lg'
+                                                width={375}
+                                                muted
+                                                playsInline
+                                                ref={(el) => {
+                                                    if (!el) return;
+                                                    observeImage(el as any, artifact)
+                                                }}
+                                            />
+                                        ) : (
+                                            <img
+                                                src={imgSrc}
+                                                alt={`Image ${artifact.txid}`}
+                                                className='w-full h-auto rounded-lg'
+                                                width={375}
+                                                ref={(el) => {
+                                                    if (!el) return;
+                                                    observeImage(el, artifact)
+                                                }}
+                                            />
+                                        )}
+                                        <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none'>
+                                            <p className='text-base font-bold'>{toBitcoin(artifact.data?.list?.price || 0)} BSV</p>
+                                            <p className='text-sm'>{artifact.data?.map?.name}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </Link>
-                    );
-                })}
+                            </Link>
+                        );
+                    })
+                )}
+            </div>
+            <div ref={sentinelRef} className="h-20 flex items-center justify-center">
+                {isFetchingNextPage && (
+                    <div className="loading loading-spinner loading-lg"></div>
+                )}
             </div>
         </div>
+
+        {selectedArtifact && (() => {
+            const requiresFlipButton = needsFlipButton(selectedArtifact);
+            return (
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300"
+                style={{
+                    opacity: showBackdrop ? 1 : 0,
+                    viewTransitionName: 'none'
+                } as React.CSSProperties}
+                onClick={closeModal}
+            >
+                <div
+                    className="relative flex flex-col max-w-[90vw] max-h-[90vh]"
+                    style={{
+                        viewTransitionName: `artifact-${selectedArtifact.outpoint}`
+                    } as React.CSSProperties}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="flex items-center justify-end gap-2 mb-2 shrink-0">
+                        <button
+                            onClick={() => window.open(`https://ordfs.network/${selectedArtifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer')}
+                            className="p-2 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-lg"
+                        >
+                            <SquareArrowOutUpRight className="w-6 h-6" />
+                        </button>
+                        <button
+                            onClick={closeModal}
+                            className="p-2 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-lg"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <div className="shadow-2xl bg-[#111] rounded-lg overflow-auto">
+                        {requiresFlipButton ? (
+                            <Artifact
+                                artifact={selectedArtifact}
+                                size={800}
+                                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
+                                showFooter={false}
+                                showListingTag={false}
+                                clickToZoom={false}
+                                classNames={{
+                                    wrapper: "",
+                                    media: "w-full h-full object-contain"
+                                }}
+                            />
+                        ) : (
+                            <img
+                                src={`https://ordfs.network/${selectedArtifact.origin?.outpoint}`}
+                                alt="Full size artifact"
+                                className="max-w-full h-auto cursor-grab active:cursor-grabbing"
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+            );
+        })()}
+        </>
     );
 };
 

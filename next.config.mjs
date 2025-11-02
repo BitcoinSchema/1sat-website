@@ -2,10 +2,21 @@
 const nextConfig = {
 	reactStrictMode: true,
 	pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+	// Turbopack is now default in Next.js 16
+	turbopack: {},
+	experimental: {
+		viewTransition: true,
+	},
 	images: {
 		dangerouslyAllowSVG: true,
 		contentSecurityPolicy:
 			"default-src 'self'; script-src 'none'; sandbox;",
+		localPatterns: [
+			{
+				pathname: '/api/sanitize',
+				search: '**',
+			},
+		],
 		remotePatterns: [
 			{
 				protocol: "https",
@@ -38,24 +49,6 @@ const nextConfig = {
 				pathname: "/**",
 			},
 		],
-	},
-	webpack: (config, { isServer }) => {
-		if (!isServer) {
-			config.resolve.fallback = {
-				dns: false,
-				fs: false,
-				module: false,
-				// crypto: false,
-				os: false,
-				stream: false,
-				http: false,
-				https: false,
-				net: false,
-				process: "process/browser",
-			};
-		}
-
-		return config;
 	},
 };
 

@@ -15,6 +15,10 @@ declare module 'react' {
         'shadow-softness'?: string;
         'tone-mapping'?: string;
         'skybox-image'?: string;
+        'auto-rotate'?: string;
+        'camera-controls'?: string;
+        'camera-orbit'?: string;
+        'seamless-poster'?: string;
       };
     }
   }
@@ -47,10 +51,10 @@ const Model: React.FC<ModelProps> = ({ src, size }) => {
       onError={() => {
         console.log("on model error");
       }}
-      auto-rotate
-      camera-controls
+      auto-rotate=""
+      camera-controls=""
       camera-orbit="0deg 90deg 0deg 8.37364m"
-      seamless-poster
+      seamless-poster=""
     />
   );
 };

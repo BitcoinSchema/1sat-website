@@ -14,9 +14,16 @@ const VideoArtifact: React.FC<VideoArtifactProps> = ({
 }) => {
   return (
     <video
-      className={`transition  ${className ? className : ""}`}
+      className={`transition ${className ? className : ""}`}
+      style={{
+        minHeight: '60vh',
+        width: '100%',
+        objectFit: 'contain'
+      }}
       src={src ? src : `${ORDFS}/${origin}`}
       controls={true}
+      preload="auto"
+      onClick={(e) => e.stopPropagation()}
     />
   );
 };

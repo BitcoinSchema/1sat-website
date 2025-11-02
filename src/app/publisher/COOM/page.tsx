@@ -3,7 +3,7 @@ import Image from "next/image";
 import { COOM_COLLECTIONS } from "./constants";
 
 const Publisher = async () => {
-	const src = await import("/src/assets/images/coom/coom_logo.png");
+	const src = await import("@/assets/images/coom/coom_logo.png");
 
 	return (
 		<div className="sm:container sm:mx-auto px-8">

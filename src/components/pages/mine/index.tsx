@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
-import src from "/src/assets/images/pow20/collapsed.png";
+import src from "@/assets/images/pow20/collapsed.png";
 
 const COLOR1 = "#2A1603"; // Replace with your desired color1
 const COLOR2 = "#DB8738"; // Replace with your desired color2

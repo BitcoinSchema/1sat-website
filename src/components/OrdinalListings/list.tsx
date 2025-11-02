@@ -155,7 +155,6 @@ const List = ({ term, address, onClick }: Props) => {
 										size={size}
 										sizes={"100vw"}
 										showFooter={false}
-										priority={false}
 										to={`/outpoint/${listing?.outpoint}/listing`}
 									/>
 								</td>

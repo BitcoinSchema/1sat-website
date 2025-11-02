@@ -392,7 +392,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         href={to || "#"}
         draggable={false}
         onClick={(e) => {
-          if (!to) {
+          if (!to && !clickToZoom) {
             e.stopPropagation();
             e.preventDefault();
             if (txid && onClick) {

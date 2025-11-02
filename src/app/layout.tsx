@@ -1,5 +1,6 @@
 import Footer from "@/components/Footer/footer";
 import Header from "@/components/header";
+import ScrollToTop from "@/components/ScrollToTop";
 import { Spotlight } from "@/components/ui/spotlights";
 import { toastProps } from "@/constants";
 import TanstackProvider from "@/providers/TanstackProvider";
@@ -68,6 +69,7 @@ export default function RootLayout({
             reverseOrder={false}
             toastOptions={toastProps}
           />
+          <ScrollToTop />
         </TanstackProvider>
       </body>
     </html>

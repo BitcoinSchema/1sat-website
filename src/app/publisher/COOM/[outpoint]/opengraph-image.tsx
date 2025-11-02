@@ -40,7 +40,7 @@ export default async function Image({
 		case "generation_1_cards.png":
 			imageData = await fetch(
 				new URL(
-					"/src/assets/images/coom/generation_1_cards.png",
+					"../../../../assets/images/coom/generation_1_cards.png",
 					import.meta.url
 				)
 			).then((res) => res.arrayBuffer());
@@ -50,7 +50,7 @@ export default async function Image({
 			// so I switched gen 2 to use the gen1 image for now
 			imageData = await fetch(
 				new URL(
-					"/src/assets/images/coom/generation_1_cards.png",
+					"../../../../assets/images/coom/generation_1_cards.png",
 					import.meta.url
 				)
 			).then((res) => res.arrayBuffer());
@@ -58,7 +58,7 @@ export default async function Image({
 		case "generation_3_cards.png":
 			imageData = await fetch(
 				new URL(
-					"/src/assets/images/coom/generation_3_cards.png",
+					"../../../../assets/images/coom/generation_3_cards.png",
 					import.meta.url
 				)
 			).then((res) => res.arrayBuffer());
@@ -66,7 +66,7 @@ export default async function Image({
 		case "generation_3_packs.jpeg":
 			imageData = await fetch(
 				new URL(
-					"/src/assets/images/coom/generation_3_packs.jpeg",
+					"../../../../assets/images/coom/generation_3_packs.jpeg",
 					import.meta.url
 				)
 			).then((res) => res.arrayBuffer());

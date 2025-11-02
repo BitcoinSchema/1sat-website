@@ -48,7 +48,6 @@ const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
 			artifact={listing}
 			sizes={"100vw"}
 			showFooter={false}
-			priority={false}
 			showListingTag={false}
 			to={`/outpoint/${listing?.outpoint}`}
 		/>

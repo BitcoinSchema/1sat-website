@@ -13,6 +13,23 @@
 		-ms-overflow-style: none; /* IE and Edge */
 		scrollbar-width: none; /* Firefox */
 	}
+
+	/* 3D Flip Card */
+	.perspective-1000 {
+		perspective: 1000px;
+	}
+
+	.transform-style-3d {
+		transform-style: preserve-3d;
+	}
+
+	.backface-hidden {
+		backface-visibility: hidden;
+	}
+
+	.rotate-y-180 {
+		transform: rotateY(180deg);
+	}
 }
 
 body,
@@ -158,4 +175,35 @@ h1 {
 	background: linear-gradient(270deg, #ffa60f85, #942fff66);
 	background-size: 200% 200%;
 	animation: animateGlow 10s ease infinite;
+}
+
+/* View Transitions for artifact modal */
+/* Ensure transition layer is above everything */
+::view-transition {
+	z-index: 9999;
+}
+
+/* Root transition (everything else) - quick fade */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 0.3s;
+}
+
+/* For any named elements (our artifact cards/modals) */
+/* The browser will automatically handle position/size morphing */
+/* We just customize the timing and ensure proper stacking */
+::view-transition-group(*) {
+	animation-duration: 0.4s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	z-index: 1;
+}
+
+::view-transition-old(*) {
+	animation-duration: 0.4s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-new(*) {
+	animation-duration: 0.4s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

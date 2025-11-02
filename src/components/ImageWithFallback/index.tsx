@@ -16,6 +16,19 @@ const ImageWithFallback = ({
   src = fallbackImage,
   ...props
 }: Props) => {
+  // Filter out Next.js Image-specific props that aren't valid on regular img elements
+  const {
+    placeholder,
+    blurDataURL,
+    priority,
+    quality,
+    sizes,
+    fill,
+    loading,
+    unoptimized,
+    ...imgProps
+  } = props as any;
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     // biome-ignore lint/a11y/useAltText: <explanation>
@@ -31,8 +44,8 @@ const ImageWithFallback = ({
       }}
       // onError={(e) => (e ? setError(e) : null)}
       src={src.endsWith("/undefined") || src.endsWith("/null") ? fallbackImage : src}
-      {...props}
-      className={`pointer-events-none ${props.className || ""}`}
+      {...imgProps}
+      className={`pointer-events-none ${imgProps.className || ""}`}
     />
   );
 };

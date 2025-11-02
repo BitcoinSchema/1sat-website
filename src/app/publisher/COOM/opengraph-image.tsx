@@ -15,7 +15,7 @@ export const contentType = "image/png";
 export default async function Image() {
 	const notoSerif = await getNotoSerifItalicFont();
 	const imageData = await fetch(
-		new URL("/src/assets/images/coom/coom_logo.png", import.meta.url)
+		new URL("../../../assets/images/coom/coom_logo.png", import.meta.url)
 	).then((res) => res.arrayBuffer());
 
 	return new ImageResponse(

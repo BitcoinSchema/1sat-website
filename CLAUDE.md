@@ -19,9 +19,9 @@ bun update       # Update all dependencies
 ## Architecture Overview
 
 ### Tech Stack
-- **Framework**: Next.js 14.2.10 with App Router
+- **Framework**: Next.js 16 with App Router
 - **Language**: TypeScript (strict mode)
-- **State Management**: Preact Signals for reactive wallet state
+- **State Management**: Preact Signals v3 for reactive wallet state
 - **Data Fetching**: TanStack Query
 - **Styling**: TailwindCSS + DaisyUI (luxury theme)
 - **Bitcoin Integration**: @bsv/sdk and js-1sat-ord

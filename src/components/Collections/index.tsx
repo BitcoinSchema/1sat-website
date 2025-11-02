@@ -51,7 +51,6 @@ const Collections = () => {
                 size={300}
                 sizes={"100vw"}
                 showFooter={false}
-                priority={false}
                 to={`/collection/${c.outpoint}`}
                 />
             </Link>
