@@ -145,26 +145,31 @@ async function fetchAndAddItems(count: number = 100): Promise<void> {
     // Get existing outpoints to avoid duplicates
     const existingOutpoints = new Set(feedPool.map(item => item.outpoint));
 
-    // Add timestamp and deduplicate
-    const newItems: CachedItem[] = allItems
+    // Deduplicate
+    const newItems = allItems
       .filter(item => {
         const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
         return !existingOutpoints.has(outpoint);
-      })
-      .map(item => ({ ...item, _cachedAt: now }));
+      });
 
     // Interleave new items by collection
     const interleaved = interleaveByCollection(newItems);
 
+    // Add timestamps
+    const withTimestamps: CachedItem[] = interleaved.map(item => ({
+      ...item,
+      _cachedAt: now
+    }));
+
     // Append to pool
-    feedPool.push(...interleaved);
+    feedPool.push(...withTimestamps);
 
     // Limit pool size
     if (feedPool.length > POOL_SIZE) {
       feedPool = feedPool.slice(0, POOL_SIZE);
     }
 
-    console.log(`Added ${interleaved.length} new items to pool. Pool size: ${feedPool.length}`);
+    console.log(`Added ${withTimestamps.length} new items to pool. Pool size: ${feedPool.length}`);
   } catch (error) {
     console.error('Error fetching items:', error);
   }

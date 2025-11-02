@@ -52,7 +52,7 @@ const MarketMenu: React.FC = () => {
               href="/market/ordinals"
               className="flex items-center justify-between"
             >
-              <div>Market Listings</div>
+              <div>Ordinals</div>
               <div className="text-[#555]">NFT</div>
             </Link>
           </li>
