@@ -19,7 +19,7 @@ const Header = async ({ ubuntu }: { ubuntu: { className: string } }) => {
 	const isLocal = hostname === "localhost:3000";
 
 	return (
-		<header className="mb-12 z-10">
+		<header className="mb-12 z-10" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
 			<div className="navbar bg-base-100 relative p-0">
 				<div className="navbar-start">
 					<div className="px-2 min-w-12">
