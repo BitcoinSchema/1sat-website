@@ -193,24 +193,3 @@ h1 {
 ::view-transition-group(root) {
 	z-index: -1;
 }
-
-/* Grid items in their normal state - lower z-index */
-::view-transition-group(grid-item-*) {
-	animation-duration: 0.4s;
-	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	z-index: 1;
-}
-
-/* The actual artifact image/video being transitioned - highest z-index */
-::view-transition-group(artifact-*) {
-	animation-duration: 0.4s;
-	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	z-index: 100;
-}
-
-::view-transition-old(artifact-*),
-::view-transition-new(artifact-*) {
-	animation-duration: 0.4s;
-	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-	mix-blend-mode: normal;
-}

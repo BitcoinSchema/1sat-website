@@ -218,9 +218,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                     <div
                                         className={`relative mb-4 break-inside-avoid group ${visible.get(artifact.outpoint) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
                                         onClick={(e) => handleCardClick(e, artifact)}
-                                        style={{
-                                            viewTransitionName: isInModal ? 'none' : `grid-item-${artifact.outpoint}`
-                                        } as React.CSSProperties}
                                     >
                                         <div className={"relative shadow-md bg-[#111] rounded-lg"}>
                                             <button
