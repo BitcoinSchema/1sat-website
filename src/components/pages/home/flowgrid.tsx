@@ -324,7 +324,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
             const ordinalName = selectedArtifact.data?.map?.name || selectedArtifact.origin?.data?.map?.name;
             return (
             <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-300"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm transition-opacity duration-300"
                 style={{
                     opacity: showBackdrop ? 1 : 0,
                     viewTransitionName: 'none'
@@ -335,11 +335,11 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     className="relative flex flex-col w-[90vw] h-[96vh]"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="flex items-center justify-between mb-2 shrink-0">
+                    <div className="flex items-center justify-between gap-2 shrink-0">
                         {ordinalName && (
-                            <h2 className="text-lg font-semibold text-white truncate mr-4">
+                            <p className="text-sm font-medium text-white/90 truncate">
                                 {ordinalName}
-                            </h2>
+                            </p>
                         )}
                         <ButtonGroup>
                             {selectedArtifact.data?.list?.price && (
