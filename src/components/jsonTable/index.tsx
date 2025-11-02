@@ -36,12 +36,26 @@ const JsonTable: React.FC<JsonTableProps> = ({ data }) => {
               )}
               {Number.isNaN(parseInt(key)) && (
                 <td className="px-5 py-2 text-xs">
-                  <p className="whitespace-no-wrap font-mono text-[#aaa]">
-                    {renderValue(value)}
-                  </p>
+                  {typeof value === "object" && value !== null && !Array.isArray(value) ? (
+                    renderValue(value)
+                  ) : (
+                    <p className="whitespace-no-wrap font-mono text-[#aaa]">
+                      {renderValue(value)}
+                    </p>
+                  )}
                 </td>
               )}
-              {!Number.isNaN(parseInt(key)) && renderValue(value)}
+              {!Number.isNaN(parseInt(key)) && (
+                <td className="px-5 py-2 text-xs" colSpan={2}>
+                  {typeof value === "object" && value !== null && !Array.isArray(value) ? (
+                    renderValue(value)
+                  ) : (
+                    <p className="whitespace-no-wrap font-mono text-[#aaa]">
+                      {renderValue(value)}
+                    </p>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
