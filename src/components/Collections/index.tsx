@@ -32,7 +32,7 @@ const Collections = () => {
       <FeaturedCollections />
       <h1 className={`text-2xl px-2 mb-4 ${notoSerif.className}`}>Current Hype</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
-        {data?.map((c) => (
+        {data?.filter(c => c.outpoint && typeof c.outpoint === 'string').map((c) => (
           <div key={c.outpoint} className="relative overflow-hidden mx-auto w-[300px] h-[300px]">
             {/* <Image
               width={300}
