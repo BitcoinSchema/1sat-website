@@ -9,9 +9,9 @@ type CachedItem = OrdUtxo & { _cachedAt: number };
 // In production, this should use Redis or similar
 let feedPool: CachedItem[] = [];
 let isRefilling = false;
-const ITEM_TTL = 10 * 60 * 1000; // 10 minutes per item
-const MIN_POOL_SIZE = 200; // Trigger refill below this
-const POOL_SIZE = 500; // Max items in pool
+const ITEM_TTL = 30 * 60 * 1000; // 30 minutes per item
+const MIN_POOL_SIZE = 800; // Trigger refill below this
+const POOL_SIZE = 2000; // Max items in pool
 
 // Seeded shuffle for deterministic but random-looking results
 function seededShuffle<T>(array: T[], seed: number): T[] {
@@ -48,7 +48,7 @@ function getCollectionId(item: OrdUtxo): string {
 function interleaveByCollection(items: OrdUtxo[]): OrdUtxo[] {
   const byCollection = new Map<string, OrdUtxo[]>();
   const collectionCounts = new Map<string, number>();
-  const maxPerCollection = 20; // Limit per collection in the pool
+  const maxPerCollection = 50; // Limit per collection in the pool
 
   items.forEach(item => {
     const collectionId = getCollectionId(item);
@@ -81,19 +81,22 @@ function interleaveByCollection(items: OrdUtxo[]): OrdUtxo[] {
 
 // Generate weighted random offset favoring recent items
 function getWeightedOffset(): number {
-  // Use exponential distribution to favor lower offsets (more recent items)
-  // This gives us ~70% from first 200 items, ~20% from 200-500, ~10% from 500+
+  // Rebalanced distribution to spread load across more items
+  // 40% recent, 30% mid, 20% older, 10% very old
   const random = Math.random();
 
-  if (random < 0.7) {
-    // 70% chance: very recent (0-200)
+  if (random < 0.4) {
+    // 40% chance: recent (0-200)
     return Math.floor(Math.random() * 200);
-  } else if (random < 0.9) {
-    // 20% chance: recent (200-500)
+  } else if (random < 0.7) {
+    // 30% chance: mid (200-500)
     return 200 + Math.floor(Math.random() * 300);
+  } else if (random < 0.9) {
+    // 20% chance: older (500-1500)
+    return 500 + Math.floor(Math.random() * 1000);
   } else {
-    // 10% chance: older (500-1000)
-    return 500 + Math.floor(Math.random() * 500);
+    // 10% chance: very old (1500-3000)
+    return 1500 + Math.floor(Math.random() * 1500);
   }
 }
 
@@ -162,7 +165,7 @@ async function refreshFeedPool() {
       10,   // Very recent
       25,   // Very recent
       50,   // Recent
-      ...Array.from({ length: 16 }, () => getWeightedOffset())
+      ...Array.from({ length: 30 }, () => getWeightedOffset())
     ].sort((a, b) => a - b);
 
     // Fetch both images and videos for content variety
@@ -219,7 +222,7 @@ function backgroundRefill() {
   console.log('Triggering background refill');
 
   Promise.resolve()
-    .then(() => fetchAndAddItems(100))
+    .then(() => fetchAndAddItems(500))
     .finally(() => {
       isRefilling = false;
     });
@@ -255,7 +258,7 @@ export async function GET(request: NextRequest) {
   const items = feedPool.slice(start, end).map(({ _cachedAt, ...item }) => item); // Remove timestamp from response
   const nextCursor = end < feedPool.length ? end : null;
 
-  console.log(`Serving items ${start}-${end} of ${feedPool.length}. nextCursor: ${nextCursor}`);
+  console.log(`[Feed API] Serving items ${start}-${end} of ${feedPool.length} | nextCursor: ${nextCursor} | refilling: ${isRefilling}`);
 
   return NextResponse.json({
     items,
