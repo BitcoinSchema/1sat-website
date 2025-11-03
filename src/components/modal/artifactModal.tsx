@@ -144,8 +144,8 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 showListingTag={false}
                                 clickToZoom={false}
                                 classNames={{
-                                    wrapper: allowScroll ? "" : "max-w-full max-h-full w-full h-full",
-                                    media: allowScroll ? "max-w-full h-auto object-contain" : "max-w-full max-h-full w-full h-full object-contain"
+                                    wrapper: "w-full h-full",
+                                    media: allowScroll ? "w-full h-auto" : "max-w-full max-h-full w-full h-full object-contain"
                                 }}
                             />
                         ) : (
