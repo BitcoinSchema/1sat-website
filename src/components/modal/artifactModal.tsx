@@ -126,7 +126,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
 
                     <div
                         ref={scrollContainerRef}
-                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 flex items-center justify-center ${allowScroll ? 'overflow-auto' : 'overflow-hidden'}`}
+                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 flex ${allowScroll ? 'items-start overflow-auto' : 'items-center overflow-hidden'} justify-center`}
                         onMouseDown={allowScroll ? handleMouseDown : undefined}
                         onMouseMove={allowScroll ? handleMouseMove : undefined}
                         onMouseUp={allowScroll ? handleMouseUp : undefined}
@@ -144,19 +144,21 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 clickToZoom={false}
                                 classNames={{
                                     wrapper: "w-full h-full",
-                                    media: "max-w-full max-h-full object-contain"
+                                    media: "w-full h-full"
                                 }}
                             />
                         ) : (
-                            <img
-                                src={`https://ordfs.network/${artifact.origin?.outpoint}`}
-                                alt="Full size artifact"
-                                className="max-w-full max-h-full object-contain select-none"
-                                draggable={false}
-                                style={{
-                                    viewTransitionName: `artifact-${artifact.outpoint}`
-                                } as React.CSSProperties}
-                            />
+                            <div className={allowScroll ? "flex items-center justify-center min-h-full w-full" : "contents"}>
+                                <img
+                                    src={`https://ordfs.network/${artifact.origin?.outpoint}`}
+                                    alt="Full size artifact"
+                                    className={allowScroll ? "min-w-full h-auto select-none" : "max-w-full max-h-full object-contain select-none"}
+                                    draggable={false}
+                                    style={{
+                                        viewTransitionName: `artifact-${artifact.outpoint}`
+                                    } as React.CSSProperties}
+                                />
+                            </div>
                         )}
                     </div>
                 </div>
