@@ -2,16 +2,12 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
-import { useRouter } from "next/navigation";
 import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { toBitcoin } from "satoshi-token";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import Artifact from "@/components/artifact";
-import { SquareArrowOutUpRight, X, Play, ShoppingCart, Box, Music, Info } from "lucide-react";
-import BuyArtifactModal from "@/components/modal/buyArtifact";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
+import { SquareArrowOutUpRight, Play, Box, Music } from "lucide-react";
+import ArtifactModal from "@/components/modal/artifactModal";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
@@ -23,25 +19,6 @@ const LoadingSkeleton = ({ count }: { count: number }) => (
     </>
 );
 
-const needsFlipButton = (artifact: OrdUtxo): boolean => {
-    const contentType = artifact.origin?.data?.insc?.file.type || '';
-    return contentType.startsWith('video/') ||
-           contentType.includes('model/') ||
-           contentType.includes('gltf') ||
-           contentType.startsWith('audio/') ||
-           contentType.startsWith('text/') ||
-           contentType.includes('html');
-};
-
-const shouldAllowScroll = (artifact: OrdUtxo): boolean => {
-    const contentType = artifact.origin?.data?.insc?.file.type || '';
-    // Only images and text types allow scrolling
-    // Videos, audio, 3D models must fit within container
-    return contentType.startsWith('image/') ||
-           contentType.startsWith('text/') ||
-           contentType.includes('html');
-};
-
 const getContentType = (artifact: OrdUtxo): 'video' | 'audio' | '3d' | 'image' => {
     const contentType = artifact.origin?.data?.insc?.file.type || '';
     if (contentType.startsWith('video/')) return 'video';
@@ -51,7 +28,6 @@ const getContentType = (artifact: OrdUtxo): 'video' | 'audio' | '3d' | 'image' =
 };
 
 const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[], className: string }) => {
-    const router = useRouter();
     const observers = useRef<Map<string, IntersectionObserver>>(new Map());
     const sentinelRef = useRef<HTMLDivElement>(null);
     const seenOutpoints = useRef<Set<string>>(new Set());
@@ -59,11 +35,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     const [mounted, setMounted] = useState(false);
     const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
     const [showBackdrop, setShowBackdrop] = useState(false);
-    const [showBuyModal, setShowBuyModal] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 });
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const observeImage = useCallback((element: HTMLImageElement, artifact: OrdUtxo) => {
         if (!element) return;
@@ -120,29 +91,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     const closeModal = () => {
         setShowBackdrop(false);
         setSelectedArtifact(null);
-    };
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (!scrollContainerRef.current) return;
-        setIsDragging(true);
-        setDragStart({ x: e.clientX, y: e.clientY });
-        setScrollStart({
-            x: scrollContainerRef.current.scrollLeft,
-            y: scrollContainerRef.current.scrollTop
-        });
-        e.preventDefault();
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging || !scrollContainerRef.current) return;
-        const dx = e.clientX - dragStart.x;
-        const dy = e.clientY - dragStart.y;
-        scrollContainerRef.current.scrollLeft = scrollStart.x - dx;
-        scrollContainerRef.current.scrollTop = scrollStart.y - dy;
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
     };
 
     useEffect(() => {
@@ -331,138 +279,11 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
             <div ref={sentinelRef} className="h-20" />
         </div>
 
-        {selectedArtifact && (() => {
-            const requiresFlipButton = needsFlipButton(selectedArtifact);
-            const allowScroll = shouldAllowScroll(selectedArtifact);
-            const ordinalName = selectedArtifact.data?.map?.name || selectedArtifact.origin?.data?.map?.name;
-            return (
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm transition-opacity duration-300"
-                style={{
-                    opacity: showBackdrop ? 1 : 0,
-                    viewTransitionName: 'none'
-                } as React.CSSProperties}
-                onClick={closeModal}
-            >
-                <div
-                    className="relative flex flex-col w-[90vw] h-[96vh]"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="flex items-center justify-between gap-2 shrink-0">
-                        <p className="text-sm font-medium text-white/90 truncate">
-                            {ordinalName || '\u00A0'}
-                        </p>
-                        <ButtonGroup>
-                            {selectedArtifact.data?.list?.price && (
-                                <Button
-                                    variant="secondary"
-                                    size="iconSm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowBuyModal(true);
-                                    }}
-                                >
-                                    <ShoppingCart className="w-4 h-4" />
-                                </Button>
-                            )}
-                            <Button
-                                variant="secondary"
-                                size="iconSm"
-                                onClick={() => router.push(`/outpoint/${selectedArtifact.origin?.outpoint}`)}
-                            >
-                                <Info className="w-4 h-4" />
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                size="iconSm"
-                                onClick={() => window.open(`https://ordfs.network/${selectedArtifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer')}
-                            >
-                                <SquareArrowOutUpRight className="w-4 h-4" />
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                size="iconSm"
-                                onClick={closeModal}
-                            >
-                                <X className="w-4 h-4" />
-                            </Button>
-                        </ButtonGroup>
-                    </div>
-
-                    <div
-                        ref={scrollContainerRef}
-                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 ${allowScroll ? 'grid place-items-center overflow-auto' : 'flex items-center justify-center overflow-hidden'}`}
-                        onMouseDown={allowScroll ? handleMouseDown : undefined}
-                        onMouseMove={allowScroll ? handleMouseMove : undefined}
-                        onMouseUp={allowScroll ? handleMouseUp : undefined}
-                        onMouseLeave={allowScroll ? handleMouseUp : undefined}
-                        style={{
-                            cursor: allowScroll ? (isDragging ? 'grabbing' : 'grab') : 'default'
-                        } as React.CSSProperties}
-                    >
-                        {requiresFlipButton ? (
-                            <Artifact
-                                artifact={selectedArtifact}
-                                size={800}
-                                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
-                                showFooter={false}
-                                showListingTag={false}
-                                clickToZoom={false}
-                                classNames={{
-                                    wrapper: allowScroll ? "" : "max-w-full max-h-full w-full h-full",
-                                    media: allowScroll ? "max-w-full h-auto object-contain" : "max-w-full max-h-full w-full h-full object-contain"
-                                }}
-                            />
-                        ) : (
-                            <img
-                                src={`https://ordfs.network/${selectedArtifact.origin?.outpoint}`}
-                                alt="Full size artifact"
-                                className="max-w-full h-auto select-none"
-                                draggable={false}
-                                style={{
-                                    viewTransitionName: `artifact-${selectedArtifact.outpoint}`
-                                } as React.CSSProperties}
-                            />
-                        )}
-                    </div>
-                </div>
-            </div>
-            );
-        })()}
-
-        {selectedArtifact && showBuyModal && selectedArtifact.data?.list?.price && (() => {
-            const requiresFlipButton = needsFlipButton(selectedArtifact);
-            return (
-                <BuyArtifactModal
-                    listing={selectedArtifact}
-                    onClose={() => setShowBuyModal(false)}
-                    price={BigInt(Math.ceil(selectedArtifact.data.list.price))}
-                    content={
-                        requiresFlipButton ? (
-                            <Artifact
-                                artifact={selectedArtifact}
-                                size={400}
-                                sizes="400px"
-                                showFooter={false}
-                                showListingTag={false}
-                                clickToZoom={false}
-                                classNames={{
-                                    wrapper: "",
-                                    media: "max-w-full h-auto object-contain"
-                                }}
-                            />
-                        ) : (
-                            <img
-                                src={`https://ordfs.network/${selectedArtifact.origin?.outpoint}`}
-                                alt="Artifact preview"
-                                className="w-full h-auto object-contain"
-                            />
-                        )
-                    }
-                    showLicense={true}
-                />
-            );
-        })()}
+        <ArtifactModal
+            artifact={selectedArtifact}
+            showBackdrop={showBackdrop}
+            onClose={closeModal}
+        />
         </>
     );
 };
