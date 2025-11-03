@@ -152,7 +152,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 <img
                                     src={`https://ordfs.network/${artifact.origin?.outpoint}`}
                                     alt="Full size artifact"
-                                    className={allowScroll ? "min-w-full h-auto select-none" : "max-w-full max-h-full object-contain select-none"}
+                                    className={allowScroll ? "w-auto h-auto select-none" : "max-w-full max-h-full object-contain select-none"}
                                     draggable={false}
                                     style={{
                                         viewTransitionName: `artifact-${artifact.outpoint}`
