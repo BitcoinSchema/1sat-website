@@ -94,6 +94,7 @@
 		"ajv": "^8.17.1",
 		"autoprefixer": "^10.4.21",
 		"babel-plugin-macros": "^3.1.0",
+		"babel-plugin-react-compiler": "^1.0.0",
 		"buffer": "^6.0.3",
 		"character-entities": "^2.0.0",
 		"eslint": "^8.57.1",

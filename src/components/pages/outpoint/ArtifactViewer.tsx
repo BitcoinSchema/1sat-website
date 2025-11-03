@@ -2,8 +2,9 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
+import { useRouter } from "next/navigation";
 import type { OrdUtxo } from "@/types/ordinals";
-import { SquareArrowOutUpRight, X, ShoppingCart } from "lucide-react";
+import { SquareArrowOutUpRight, X, ShoppingCart, Info } from "lucide-react";
 import Artifact from "@/components/artifact";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ interface ArtifactViewerProps {
 }
 
 const ArtifactViewer = ({ artifact, size = 550, className = "" }: ArtifactViewerProps) => {
+    const router = useRouter();
     const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
     const [showBackdrop, setShowBackdrop] = useState(false);
     const [showBuyModal, setShowBuyModal] = useState(false);
@@ -157,6 +159,13 @@ const ArtifactViewer = ({ artifact, size = 550, className = "" }: ArtifactViewer
                                             <ShoppingCart className="w-4 h-4" />
                                         </Button>
                                     )}
+                                    <Button
+                                        variant="secondary"
+                                        size="iconSm"
+                                        onClick={() => router.push(`/outpoint/${selectedArtifact.origin?.outpoint}`)}
+                                    >
+                                        <Info className="w-4 h-4" />
+                                    </Button>
                                     <Button
                                         variant="secondary"
                                         size="iconSm"

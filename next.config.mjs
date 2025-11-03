@@ -4,6 +4,8 @@ const nextConfig = {
 	pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
 	// Turbopack is now default in Next.js 16
 	turbopack: {},
+	// React Compiler for automatic memoization
+	reactCompiler: true,
 	experimental: {
 		viewTransition: true,
 	},
