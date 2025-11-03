@@ -223,7 +223,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           mini={(size || 300) < 300}
           origin={origin}
           className={{
-            wrapper: `${clickToZoom ? "cursor-pointer" : ""} w-full`,
+            wrapper: `${clickToZoom ? "cursor-pointer" : ""} w-full h-full`,
             iframe: "",
           }}
           size={size}
