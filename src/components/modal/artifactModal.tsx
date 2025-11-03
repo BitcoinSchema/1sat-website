@@ -144,14 +144,14 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 clickToZoom={false}
                                 classNames={{
                                     wrapper: "w-full h-full",
-                                    media: "w-full h-full"
+                                    media: "max-w-full max-h-full object-contain"
                                 }}
                             />
                         ) : (
                             <img
                                 src={`https://ordfs.network/${artifact.origin?.outpoint}`}
                                 alt="Full size artifact"
-                                className="max-w-full h-auto select-none"
+                                className="max-w-full max-h-full object-contain select-none"
                                 draggable={false}
                                 style={{
                                     viewTransitionName: `artifact-${artifact.outpoint}`
