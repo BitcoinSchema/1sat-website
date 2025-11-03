@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
+import { useRouter } from "next/navigation";
 import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
 import { toBitcoin } from "satoshi-token";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Artifact from "@/components/artifact";
-import { SquareArrowOutUpRight, X, Play, ShoppingCart, Box, Music } from "lucide-react";
+import { SquareArrowOutUpRight, X, Play, ShoppingCart, Box, Music, Info } from "lucide-react";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -27,7 +28,9 @@ const needsFlipButton = (artifact: OrdUtxo): boolean => {
     return contentType.startsWith('video/') ||
            contentType.includes('model/') ||
            contentType.includes('gltf') ||
-           contentType.startsWith('audio/');
+           contentType.startsWith('audio/') ||
+           contentType.startsWith('text/') ||
+           contentType.includes('html');
 };
 
 const shouldAllowScroll = (artifact: OrdUtxo): boolean => {
@@ -48,6 +51,7 @@ const getContentType = (artifact: OrdUtxo): 'video' | 'audio' | '3d' | 'image' =
 };
 
 const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[], className: string }) => {
+    const router = useRouter();
     const observers = useRef<Map<string, IntersectionObserver>>(new Map());
     const sentinelRef = useRef<HTMLDivElement>(null);
     const seenOutpoints = useRef<Set<string>>(new Set());
@@ -361,6 +365,13 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                     <ShoppingCart className="w-4 h-4" />
                                 </Button>
                             )}
+                            <Button
+                                variant="secondary"
+                                size="iconSm"
+                                onClick={() => router.push(`/outpoint/${selectedArtifact.origin?.outpoint}`)}
+                            >
+                                <Info className="w-4 h-4" />
+                            </Button>
                             <Button
                                 variant="secondary"
                                 size="iconSm"
