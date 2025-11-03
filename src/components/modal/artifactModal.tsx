@@ -138,7 +138,6 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                         {requiresFlipButton ? (
                             <Artifact
                                 artifact={artifact}
-                                size={800}
                                 sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
                                 showFooter={false}
                                 showListingTag={false}
