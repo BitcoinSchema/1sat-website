@@ -126,7 +126,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
 
                     <div
                         ref={scrollContainerRef}
-                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 ${allowScroll ? 'grid place-items-center overflow-auto' : 'flex items-center justify-center overflow-hidden'}`}
+                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 flex items-center justify-center ${allowScroll ? 'overflow-auto' : 'overflow-hidden'}`}
                         onMouseDown={allowScroll ? handleMouseDown : undefined}
                         onMouseMove={allowScroll ? handleMouseMove : undefined}
                         onMouseUp={allowScroll ? handleMouseUp : undefined}
@@ -145,7 +145,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 clickToZoom={false}
                                 classNames={{
                                     wrapper: "w-full h-full",
-                                    media: allowScroll ? "w-full h-auto" : "max-w-full max-h-full w-full h-full object-contain"
+                                    media: "w-full h-full"
                                 }}
                             />
                         ) : (
