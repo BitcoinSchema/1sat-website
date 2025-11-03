@@ -97,7 +97,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 							onLoad={onLoad as ReactEventHandler<HTMLIFrameElement>}
 							title="html artifact"
 							className={`pointer-events-none bg-none overflow-hidden no-scrollbar ${
-								size ? `w-[${size}px] h-[${size}px]` : "h-full w-full"
+								size ? `w-[${size}px] h-[${size}px]` : "h-full w-full min-h-full min-w-full"
 							}`}
 							src={src.value}
 							// sandbox=" "
