@@ -88,9 +88,13 @@ export const customFetch = <T>(
   const headers = options?.headers || defaultHeaders;
 
   // Add default caching for API calls to reduce function invocations
-  const cacheOptions = url.includes('/api/inscriptions/') || url.includes('/api/bsv20/') 
-    ? { next: { revalidate: 300 }, ...options.next } // 5 min cache for critical endpoints
-    : options.next;
+  // Keep listing data uncached (needs latest price data)
+  const isListingEndpoint = url.includes('/api/bsv20/outpoint/');
+  const cacheOptions = isListingEndpoint
+    ? { cache: 'no-store' as RequestCache, ...options.next }
+    : url.includes('/api/inscriptions/') || url.includes('/api/bsv20/')
+      ? { next: { revalidate: 300 }, ...options.next } // 5 min cache for inscriptions/collection data
+      : options.next;
 
   // do fetch
   let responsePromise: Promise<Response> = fetch(url, {

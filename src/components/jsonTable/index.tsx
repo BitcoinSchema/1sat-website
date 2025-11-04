@@ -29,7 +29,7 @@ const JsonTable: React.FC<JsonTableProps> = ({ data }) => {
                 <td className="px-5 py-2 text-xs font-semibold tracking-wide text-[#555]">
                   <div className="flex items-center">
                     <div className="ml-3">
-                      <p className="whitespace-no-wrap font-mono">{key}</p>
+                      <div className="whitespace-no-wrap font-mono">{key}</div>
                     </div>
                   </div>
                 </td>
@@ -39,9 +39,9 @@ const JsonTable: React.FC<JsonTableProps> = ({ data }) => {
                   {typeof value === "object" && value !== null && !Array.isArray(value) ? (
                     renderValue(value)
                   ) : (
-                    <p className="whitespace-no-wrap font-mono text-[#aaa]">
+                    <div className="whitespace-no-wrap font-mono text-[#aaa]">
                       {renderValue(value)}
-                    </p>
+                    </div>
                   )}
                 </td>
               )}
@@ -50,9 +50,9 @@ const JsonTable: React.FC<JsonTableProps> = ({ data }) => {
                   {typeof value === "object" && value !== null && !Array.isArray(value) ? (
                     renderValue(value)
                   ) : (
-                    <p className="whitespace-no-wrap font-mono text-[#aaa]">
+                    <div className="whitespace-no-wrap font-mono text-[#aaa]">
                       {renderValue(value)}
-                    </p>
+                    </div>
                   )}
                 </td>
               )}
