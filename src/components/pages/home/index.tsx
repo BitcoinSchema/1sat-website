@@ -11,7 +11,7 @@ const HomePage: React.FC = async () => {
       <div className="flex flex-col items-center w-full h-full">
         <Suspense
           fallback={
-            <div className="w-96 h-fit flex items-center justify-center">
+            <div className="w-96 min-h-[calc(100dvh-15rem)] flex items-center justify-center">
               <LoaderIcon />
             </div>
           }

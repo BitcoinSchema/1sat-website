@@ -103,7 +103,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                             <Button
                                 variant="secondary"
                                 size="iconSm"
-                                onClick={() => router.push(`/outpoint/${artifact.origin?.outpoint}`)}
+                                onClick={() => router.push(`/outpoint/${artifact.outpoint}`)}
                             >
                                 <Info className="w-4 h-4" />
                             </Button>

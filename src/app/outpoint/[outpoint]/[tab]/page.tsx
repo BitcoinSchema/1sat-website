@@ -1,115 +1,39 @@
-import dynamic from 'next/dynamic';
-import Head from "next/head";
-import { Suspense } from "react";
-import { FaSpinner } from "react-icons/fa";
 import { API_HOST } from "@/constants";
 import { OutpointTab } from "@/types/common";
 import type { OrdUtxo } from "@/types/ordinals";
-
-const TxDetails = dynamic(() => import("@/components/transaction"));
-const OutpointTimeline = dynamic(() => import("@/components/pages/outpoint/timeline"));
-const OutpointInscription = dynamic(() => import("@/components/pages/outpoint/inscription"));
-const OutpointToken = dynamic(() => import("@/components/pages/outpoint/token"));
-const OutpointListing = dynamic(() => import("@/components/pages/outpoint/listing"));
-const OutpointCollection = dynamic(() => import("@/components/pages/outpoint/collection"));
-const OutpointOwner = dynamic(() => import("@/components/pages/outpoint/owner"));
-
+import TimelineContent from "@/components/pages/outpoint/timelineContent";
+import InscriptionContent from "@/components/pages/outpoint/inscriptionContent";
+import TokenContent from "@/components/pages/outpoint/tokenContent";
+import ListingServer from "@/components/pages/outpoint/listingServer";
+import CollectionServer from "@/components/pages/outpoint/collectionServer";
+import OwnerServer from "@/components/pages/outpoint/ownerServer";
 
 type OutpointParams = {
   outpoint: string;
   tab: string;
 };
 
-export type IODisplay = {
-  address?: string;
-  script?: string;
-  index: number;
-  txid: string;
-  amount: number;
-};
-
-export type InputOutpoint = {
-  script: string;
-  satoshis: bigint;
-  txid: string;
-  vout: number;
-};
-
-
-
-const Outpoint = async ({ params, searchParams }: { params: Promise<OutpointParams>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) => {
+const Outpoint = async ({ params }: { params: Promise<OutpointParams> }) => {
   const { outpoint, tab } = await params;
-  const queryParams = await searchParams;
-  // get tx details
-  const parts = outpoint.split("_");
-  const txid = parts[0];
-  const vout = parts.length > 1 ? parts[1] : "0";
-  const details = queryParams.details === "true";
+  const currentTab = tab as OutpointTab;
 
-  // try {
-  // 	const spendResponse = await fetch(
-  // 		`https://junglebus.gorillapool.io/v1/txo/spend/${txid}_${vout}`,
-  // 		{
-  // 			headers: {
-  // 				Accept: "application/octet-stream",
-  // 			},
-  // 		}
-  // 	);
-  // 	// if spendTxid is empty here, this is not spent. if its populated, its a binary txid where it was spent
-  // 	const buffer = await spendResponse.arrayBuffer();
-  // 	if (!buffer.byteLength) {
-  // 		console.log("not spent");
-  // 	}
-  // 	const spendTxid = Buffer.from(buffer).toString("hex");
-  // 	console.log({ spendTxid });
-  // } catch (e) {
-  // 	console.error(e);
-  // }
-
-  const content = () => {
-    const outpointId = `${txid}_${vout}`;
-    const currentTab = tab as OutpointTab;
-    switch (currentTab as OutpointTab) {
-      case OutpointTab.Timeline:
-        return <OutpointTimeline outpoint={outpointId} />;
-      case OutpointTab.Inscription:
-        return <OutpointInscription outpoint={outpointId} />;
-      case OutpointTab.Token:
-        return <OutpointToken outpoint={outpointId} />;
-      case OutpointTab.Listing:
-        return <OutpointListing outpoint={outpointId} />;
-      case OutpointTab.Collection:
-        return <OutpointCollection outpoint={outpointId} />;
-      case OutpointTab.Owner:
-        return <OutpointOwner outpoint={outpointId} />;
-    }
-  };
-
-  // console.log({ rawTx, inputOutpoints, outputSpends });
-
-  return (
-    <>
-      <Head>
-        <meta property="og:image" content="<generated>" />
-        <meta
-          property="og:image:alt"
-          content={`Outpoint ${txid}_${vout}`}
-        />
-      </Head>
-      <Suspense
-        fallback={
-          <div className="mx-auto h-full">
-            <FaSpinner className="animate-spin" />
-          </div>
-        }
-      >
-        <div className="max-w-6xl mx-auto w-full">
-          {<TxDetails txid={txid} vout={Number.parseInt(vout)} showing={details} />}
-          {content()}
-        </div>
-      </Suspense>
-    </>
-  );
+  // Render just the tab content - layout handles the rest
+  switch (currentTab) {
+    case OutpointTab.Timeline:
+      return <TimelineContent outpoint={outpoint} />;
+    case OutpointTab.Inscription:
+      return <InscriptionContent outpoint={outpoint} />;
+    case OutpointTab.Token:
+      return <TokenContent outpoint={outpoint} />;
+    case OutpointTab.Listing:
+      return <ListingServer outpoint={outpoint} />;
+    case OutpointTab.Collection:
+      return <CollectionServer outpoint={outpoint} />;
+    case OutpointTab.Owner:
+      return <OwnerServer outpoint={outpoint} />;
+    default:
+      return <div>Unknown tab</div>;
+  }
 };
 
 export default Outpoint;

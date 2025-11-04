@@ -27,7 +27,7 @@ import {
   sendUtxos,
 } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FaFire, FaPaperPlane } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-token";
@@ -44,8 +44,18 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
   const showSendModal = useSignal<string | undefined>(undefined);
   const router = useRouter();
 
+  // Track if we're on the client to avoid hydration mismatch
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const address = useMemo(() => {
     const script = Script.fromBinary(Utils.toArray(artifact.script, "base64"));
+    // P2PKH scripts have the pubkey hash at chunks[2]
+    if (!script.chunks || script.chunks.length < 3 || !script.chunks[2]) {
+      return undefined;
+    }
     const pubkeyHash = script.chunks[2].data;
     if (!pubkeyHash || pubkeyHash.length !== 20) {
       return undefined;
@@ -270,11 +280,11 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         <div className="flex flex-col">
           <div className="text-lg">{artifact.owner}</div>
           <div className="text-sm text-[#aaa] mb-4">
-            {artifact.owner === ordAddress.value ? "You own this item" : ""}
+            {isClient && artifact.owner === ordAddress.value ? "You own this item" : ""}
           </div>
         </div>
       </div>
-      {artifact.owner === ordAddress.value && (
+      {isClient && artifact.owner === ordAddress.value && (
         <div>
           {isUtxo.value ? (
             <div className="bg-warning text-warning-content rounded p-4">

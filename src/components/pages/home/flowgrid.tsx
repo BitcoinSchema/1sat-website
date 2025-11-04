@@ -13,7 +13,7 @@ const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
         {Array.from({ length: count }).map((_, i) => (
             <div key={`skeleton-${i}`} className="relative mb-4 break-inside-avoid">
-                <div className="skeleton h-64 w-full rounded-lg bg-[#222]"></div>
+                <div className="skeleton w-full aspect-square rounded-lg bg-[#222]"></div>
             </div>
         ))}
     </>
@@ -131,10 +131,8 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         if (!artifact?.outpoint) return false;
         if (!artifact.origin?.outpoint) return false;
 
-        // Ensure outpoint is a string for deduplication
-        const outpointStr = typeof artifact.outpoint === 'string'
-            ? artifact.outpoint
-            : artifact.origin?.outpoint || `${artifact.txid}_${artifact.vout}`;
+        // Use artifact.outpoint directly - this is the CURRENT listing outpoint
+        const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
 
         if (seen.has(outpointStr)) return false;
         seen.add(outpointStr);
@@ -149,10 +147,8 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         // Initialize all new artifacts as visible immediately
         // IntersectionObserver lazy loading was causing items to stay invisible
         for (const artifact of artifacts) {
-            // Ensure outpoint is a string
-            const outpointStr = typeof artifact.outpoint === 'string'
-                ? artifact.outpoint
-                : artifact.origin?.outpoint || `${artifact.txid}_${artifact.vout}`;
+            // Use artifact.outpoint directly - this is the CURRENT listing outpoint
+            const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
 
             setVisible(prev => {
                 if (!prev.has(outpointStr)) {
@@ -193,10 +189,8 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                 ) : (
                     <>
                         {artifacts.map((artifact) => {
-                            // Ensure outpoint is a string
-                            const outpointStr = typeof artifact.outpoint === 'string'
-                                ? artifact.outpoint
-                                : artifact.origin?.outpoint || `${artifact.txid}_${artifact.vout}`;
+                            // Use the artifact.outpoint directly - this is the CURRENT listing outpoint, not the origin
+                            const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
 
                             const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
                             const isInModal = selectedArtifact?.outpoint === outpointStr;
@@ -204,7 +198,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                             const imgSrc = contentType === 'image' ? `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}` : src;
 
                             return (
-                                <Link href={`/outpoint/${outpointStr}/listing`} key={outpointStr}>
+                                <Link href={`/outpoint/${outpointStr}/timeline`} key={outpointStr}>
                                     <div
                                         className={`relative mb-4 break-inside-avoid group ${visible.get(outpointStr) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
                                         onClick={(e) => handleCardClick(e, artifact)}

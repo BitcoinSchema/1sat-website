@@ -1,26 +1,45 @@
 "use client";
 import { ordAddress } from "@/signals/wallet/address";
 import { useSignals } from "@preact/signals-react/runtime";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { OutpointTab } from "./tabs";
 
 const OwnerTab: React.FC<{
 	owner: string | undefined;
 	activeTab: OutpointTab;
 	outpoint: string;
-}> = ({ owner, activeTab, outpoint }) => {
+	onTabChange?: (tab: OutpointTab) => void;
+}> = ({ owner, activeTab, outpoint, onTabChange }) => {
 	useSignals();
+	const router = useRouter();
+
+	// Track if we're on the client to avoid hydration mismatch
+	const [isClient, setIsClient] = useState(false);
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	const handleClick = () => {
+		if (onTabChange) {
+			onTabChange(OutpointTab.Owner);
+		} else {
+			router.push(`/outpoint/${outpoint}/owner`);
+		}
+	};
+
 	return (
-		owner === ordAddress.value && (
-			<Link
+		isClient && owner === ordAddress.value && (
+			<button
+				type="button"
 				role="tab"
-				href={`/outpoint/${outpoint}/owner`}
 				className={`tab ${
 					activeTab === OutpointTab.Owner ? "tab-active" : ""
 				}`}
+				onClick={handleClick}
 			>
 				Owner
-			</Link>
+			</button>
 		)
 	);
 };
