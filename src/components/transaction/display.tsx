@@ -1,5 +1,9 @@
 "use client";
 
+import type {
+  IODisplay,
+  InputOutpoint,
+} from "@/app/outpoint/[outpoint]/[tab]/page";
 import { Hash, Transaction, Utils } from "@bsv/sdk";
 import { computed, effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -13,19 +17,6 @@ import { showDetails } from ".";
 import JDenticon from "../JDenticon";
 import { iterationFee } from "../pages/inscribe/bsv20";
 const { toBase58Check } = Utils;
-
-// Type definitions for transaction inputs/outputs display
-interface IODisplay {
-  address?: string;
-  script?: string;
-  index: number;
-  txid: string;
-  amount: number;
-}
-
-interface InputOutpoint {
-  satoshis: bigint;
-}
 
 interface DisplayIOProps {
   rawtx?: string;

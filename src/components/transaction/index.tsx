@@ -1,5 +1,6 @@
 "use client"
 
+import type { InputOutpoint } from "@/app/outpoint/[outpoint]/[tab]/page";
 import { API_HOST } from "@/constants";
 import { Signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -9,14 +10,6 @@ import DisplayIO from "./display";
 import { Transaction } from "@bsv/sdk";
 
 export const showDetails = new Signal<boolean>(undefined);
-
-// Type definition for input outpoint data
-interface InputOutpoint {
-  script: string;
-  satoshis: bigint;
-  txid: string;
-  vout: number;
-}
 
 export interface TxDetailsProps {
   vout: number;

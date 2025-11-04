@@ -8,6 +8,22 @@ import ListingServer from "@/components/pages/outpoint/listingServer";
 import CollectionServer from "@/components/pages/outpoint/collectionServer";
 import OwnerServer from "@/components/pages/outpoint/ownerServer";
 
+// Transaction I/O display types used by transaction components
+export type IODisplay = {
+  address?: string;
+  script?: string;
+  index: number;
+  txid: string;
+  amount: number;
+};
+
+export type InputOutpoint = {
+  script: string;
+  satoshis: bigint;
+  txid: string;
+  vout: number;
+};
+
 type OutpointParams = {
   outpoint: string;
   tab: string;
