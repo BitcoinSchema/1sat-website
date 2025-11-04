@@ -87,7 +87,6 @@ const OutpointPage = ({
 							} mx-auto`}
 						>
 							<OutpointTabs
-								activeTab={activeTab}
 								outpoint={outpoint}
 								owner={
 									artifact.spend ||
@@ -95,6 +94,7 @@ const OutpointPage = ({
 										? undefined
 										: artifact?.owner
 								}
+								actualOwner={artifact?.owner}
 								hasToken={!!artifact.origin?.data?.bsv20}
 								isListing={!!artifact.data?.list}
 								isCollection={
