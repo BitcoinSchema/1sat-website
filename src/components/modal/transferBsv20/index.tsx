@@ -1,7 +1,7 @@
 "use client";
 
 import { WalletTab } from "@/components/Wallet/tabs";
-import { API_HOST, toastErrorProps } from "@/constants";
+import { API_HOST, SATS_PER_KB, toastErrorProps } from "@/constants";
 import {
   ordPk,
   payPk,
@@ -102,7 +102,8 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
         splitConfig: {
           outputs: inputTokens.length === 1 ? 2 : 1,
           threshold: sendAmount,
-        }
+        },
+        satsPerKb: SATS_PER_KB,
       }
       console.log({ config })
       const { tx, spentOutpoints, tokenChange, payChange } = await transferOrdTokens(config)

@@ -3,7 +3,7 @@
 import { getOutpoints } from "@/components/OrdinalListings/helpers";
 import Ordinals from "@/components/Wallet/ordinals";
 import Artifact from "@/components/artifact";
-import { type AssetType, ORDFS, toastErrorProps } from "@/constants";
+import { type AssetType, ORDFS, SATS_PER_KB, toastErrorProps } from "@/constants";
 import { ordPk, ordUtxos, payPk, usdRate, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { OrdUtxo } from "@/types/ordinals";
@@ -83,6 +83,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
         ],
         paymentPk,
         ordPk,
+        satsPerKb: SATS_PER_KB,
       };
 
       const { tx, spentOutpoints, payChange } = await createOrdListings(config);
