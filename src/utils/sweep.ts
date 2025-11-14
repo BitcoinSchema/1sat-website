@@ -1,4 +1,4 @@
-import { toastProps } from "@/constants";
+import { SATS_PER_KB, toastProps } from "@/constants";
 import type { PrivateKey } from "@bsv/sdk";
 import {
 	fetchPayUtxos,
@@ -30,6 +30,7 @@ export const sweepUtxos = async (
 		utxos,
 		paymentPk,
 		payments,
+		satsPerKb: SATS_PER_KB,
 	};
 	const { tx } = await sendUtxos(config);
 	const { txid, status } = await tx.broadcast(oneSatBroadcaster());

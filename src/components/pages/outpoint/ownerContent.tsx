@@ -4,7 +4,7 @@ import JDenticon from "@/components/JDenticon";
 import { WalletTab } from "@/components/Wallet/tabs";
 import CancelListingModal from "@/components/modal/cancelListing";
 import TransferBsv20Modal from "@/components/modal/transferBsv20";
-import { toastErrorProps } from "@/constants";
+import { SATS_PER_KB, toastErrorProps } from "@/constants";
 import { ordPk, payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
@@ -113,6 +113,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         paymentPk: PrivateKey.fromWif(payPk.value),
         ordPk: PrivateKey.fromWif(ordPk.value),
         destinations: [{ address: to }],
+        satsPerKb: SATS_PER_KB,
       };
       if (meta) {
         sendOrdinalsConfig.metaData = meta;
@@ -171,6 +172,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
         paymentPk,
         payments,
         changeAddress: address,
+        satsPerKb: SATS_PER_KB,
       };
 
       const { tx, spentOutpoints, payChange } = await sendUtxos(config);
