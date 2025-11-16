@@ -55,7 +55,7 @@
 		"lodash": "^4.17.21",
 		"lucide-react": "^0.378.0",
 		"mime": "^3.0.0",
-		"next": "^16.0.1",
+		"next": "^16.0.3",
 		"next-mdx-remote-client": "^2.1.7",
 		"ollama-ai-provider-v2": "^1.5.1",
 		"openai": "^4.104.0",

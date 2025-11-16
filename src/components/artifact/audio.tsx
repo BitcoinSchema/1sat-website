@@ -1,4 +1,5 @@
 import { ORDFS } from "@/constants";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import { encode } from "blurhash";
 import { toSvg } from "jdenticon";
 import type React from "react";
@@ -41,7 +42,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
       }
       const file = new File([svg], "name");
 
-      const el = <img alt="" src={imageUrl} />;
+      const el = <ImageWithFallback alt="" src={imageUrl} />;
       if (typeof window === "undefined") {
         return el;
       }

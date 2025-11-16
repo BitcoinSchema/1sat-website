@@ -8,6 +8,7 @@ import Artifact from "@/components/artifact";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 const needsFlipButton = (artifact: OrdUtxo): boolean => {
     const contentType = artifact.origin?.data?.insc?.file.type || '';
@@ -149,7 +150,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                             />
                         ) : (
                             <div className={allowScroll ? "flex items-center justify-center min-h-full w-full" : "contents"}>
-                                <img
+                                <ImageWithFallback
                                     src={`https://ordfs.network/${artifact.origin?.outpoint}`}
                                     alt="Full size artifact"
                                     className={allowScroll ? "w-auto h-auto select-none" : "max-w-full max-h-full object-contain select-none"}
@@ -184,7 +185,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 }}
                             />
                         ) : (
-                            <img
+                            <ImageWithFallback
                                 src={`https://ordfs.network/${artifact.origin?.outpoint}`}
                                 alt="Artifact preview"
                                 className="w-full h-auto object-contain"

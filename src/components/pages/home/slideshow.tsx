@@ -2,6 +2,7 @@
 
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Artifact from "@/components/artifact";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import type { OrdUtxo } from "@/types/ordinals";
 import Image from "next/image";
 import Link from "next/link";
@@ -54,7 +55,7 @@ const SlideShow = ({ artifacts, className }: Props) => {
         <div className="max-w-[600px] text-yellow-400 font-mono">
           <div className="cursor-pointer mb-8 w-full">
             <Link href="/wallet">
-              <img
+              <ImageWithFallback
                 style={{
                   boxShadow: "0 0 0 0 rgba(0, 0, 0, 1)",
                   transform: "scale(1)",

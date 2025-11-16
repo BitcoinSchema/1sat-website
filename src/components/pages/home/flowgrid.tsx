@@ -8,6 +8,7 @@ import { toBitcoin } from "satoshi-token";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { SquareArrowOutUpRight, Play, Box, Music } from "lucide-react";
 import ArtifactModal from "@/components/modal/artifactModal";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
@@ -246,7 +247,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                                                     <Music className="w-24 h-24 text-pink-300/50" />
                                                 </div>
                                             ) : (
-                                                <img
+                                                <ImageWithFallback
                                                     src={imgSrc}
                                                     alt={`Image ${artifact.txid}`}
                                                     className='w-full h-auto rounded-lg'
