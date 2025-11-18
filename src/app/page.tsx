@@ -2,12 +2,7 @@ import HomePage from "@/components/pages/home";
 import { headers } from "next/headers";
 
 export default async function Home() {
-  try {
-    return <HomePage />;
-  } catch (e) {
-    console.error("failed to get artifact", e);
-    return null;
-  }
+  return <HomePage />;
 }
 
 export async function generateMetadata() {

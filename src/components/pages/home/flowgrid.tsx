@@ -33,7 +33,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     const sentinelRef = useRef<HTMLDivElement>(null);
     const seenOutpoints = useRef<Set<string>>(new Set());
     const [visible, setVisible] = useState<Map<string, boolean>>(new Map());
-    const [mounted, setMounted] = useState(false);
     const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
     const [showBackdrop, setShowBackdrop] = useState(false);
 
@@ -47,10 +46,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         }, { threshold: 0.1 });
         observer.observe(element);
         observers.current.set(artifact.outpoint, observer);
-    }, []);
-
-    useEffect(() => {
-        setMounted(true);
     }, []);
 
     useEffect(() => {
@@ -121,6 +116,14 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         },
         getNextPageParam: (lastPage) => lastPage.nextCursor,
         initialPageParam: 0,
+        initialData: initialArtifacts.length > 0 ? {
+            pages: [{
+                items: initialArtifacts,
+                nextCursor: initialArtifacts.length,
+                total: initialArtifacts.length
+            }],
+            pageParams: [0]
+        } : undefined,
         retry: false,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
@@ -165,7 +168,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
 
     useEffect(() => {
         const sentinel = sentinelRef.current;
-        if (!sentinel || !mounted) return;
+        if (!sentinel) return;
 
         const observer = new IntersectionObserver(
             ([entry]) => {
@@ -179,13 +182,13 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
 
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage, mounted]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
         <>
         <div className={`relative text-center ${className}`}>
             <div className='columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4'>
-                {!mounted || artifacts.length === 0 ? (
+                {artifacts.length === 0 ? (
                     <LoadingSkeleton count={20} />
                 ) : (
                     <>
