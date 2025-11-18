@@ -3,8 +3,8 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev --turbopack",
-		"build": "next build",
+		"dev": "bun run --bun next dev --turbopack",
+		"build": "bun run --bun next build",
 		"start": "next start",
 		"lint": "next lint"
 	},
