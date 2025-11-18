@@ -14,7 +14,7 @@ const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
         {Array.from({ length: count }).map((_, i) => (
             <div key={`skeleton-${i}`} className="relative mb-4 break-inside-avoid">
-                <div className="skeleton w-full aspect-square rounded-lg bg-[#222]"></div>
+                <div className="skeleton w-full aspect-square rounded-lg bg-[#333] animate-pulse"></div>
             </div>
         ))}
     </>
@@ -196,7 +196,16 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                             // Use the artifact.outpoint directly - this is the CURRENT listing outpoint, not the origin
                             const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
 
-                            const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
+                            // Ensure origin.outpoint is a string and not an object
+                            const originOutpoint = artifact.origin?.outpoint;
+                            const isValidOutpoint = originOutpoint && typeof originOutpoint === 'string' && originOutpoint.length > 0;
+
+                            if (!isValidOutpoint) {
+                                console.warn('Invalid origin outpoint for artifact:', artifact.txid, originOutpoint);
+                                return null;
+                            }
+
+                            const src = `https://ordfs.network/${originOutpoint}`;
                             const isInModal = selectedArtifact?.outpoint === outpointStr;
                             const contentType = getContentType(artifact);
                             const imgSrc = contentType === 'image' ? `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}` : src;

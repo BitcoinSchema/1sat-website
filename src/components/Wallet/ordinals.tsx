@@ -6,7 +6,6 @@ import { useLocalStorage } from "@/utils/storage";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { Noto_Serif } from "next/font/google";
-import { useState, useEffect } from "react";
 import { FaSpinner } from "react-icons/fa";
 import OrdinalListings, { OrdViewMode } from "../OrdinalListings";
 import SAFU from "./safu";
@@ -26,26 +25,11 @@ const WalletOrdinals = ({
   onClick?: (outpoint: string) => Promise<void>;
 }) => {
   useSignals();
-  const [mounted, setMounted] = useState(false);
   const [encryptedBackup] = useLocalStorage<string | undefined>(
     "encryptedBackup", undefined
   );
-  console.log({ ordAddress: ordAddress.value, addressProp, encryptedBackup });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const locked = computed(() => !ordAddress.value && !!encryptedBackup);
-
-  // Prevent hydration mismatch by waiting for client mount
-  if (!mounted) {
-    return (
-      <div className="mx-auto animate-spin w-fit flex flex-col items-center justify-center min-h-[80vh]">
-        <FaSpinner />
-      </div>
-    );
-  }
 
   if (locked.value) {
     return <SAFU />;

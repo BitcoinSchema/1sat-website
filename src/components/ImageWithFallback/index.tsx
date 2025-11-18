@@ -30,6 +30,17 @@ const ImageWithFallback = forwardRef<HTMLImageElement, Props>(({
     ...imgProps
   } = props as any;
 
+  // Detect and handle malformed URLs
+  const isValidSrc = src &&
+    typeof src === 'string' &&
+    !src.includes('[object Object]') &&
+    !src.endsWith('/undefined') &&
+    !src.endsWith('/null') &&
+    !src.includes('undefined') &&
+    !src.includes('null');
+
+  const finalSrc = isValidSrc ? src : fallbackImage;
+
   return (
     // biome-ignore lint/a11y/useAltText: alt is provided via props
     <img
@@ -42,7 +53,7 @@ const ImageWithFallback = forwardRef<HTMLImageElement, Props>(({
         target.src = fallback; // Switch to fallback image
         target.classList.add("opacity-5");
       }}
-      src={src.endsWith("/undefined") || src.endsWith("/null") ? fallbackImage : src}
+      src={finalSrc}
       {...imgProps}
       className={`pointer-events-none ${imgProps.className || ""}`}
     />

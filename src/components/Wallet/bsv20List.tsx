@@ -16,6 +16,7 @@ import { getBalanceText } from "@/utils/wallet";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -73,16 +74,16 @@ const Bsv20List = ({
 
   const ref = useRef(null);
   const isInView = useInView(ref);
-  const newOffset = useSignal(0);
-  const reachedEndOfListings = useSignal(false);
-  const balanceTab = useSignal(BalanceTab.Confirmed);
+  const parentRef = useRef<HTMLDivElement>(null);
+  const [newOffset, setNewOffset] = useState(0);
+  const [reachedEndOfListings, setReachedEndOfListings] = useState(false);
+  const [balanceTab, setBalanceTab] = useState(BalanceTab.Confirmed);
   const router = useRouter();
   const holdings = useSignal<BSV20TXO[] | null>(null);
   const addressBalances = useSignal<BSV20Balance[] | null>(null);
-  const showAirdrop = useSignal<string | undefined>(undefined);
-
-  const showSendModal = useSignal<string | undefined>(undefined);
-  const showBurnModal = useSignal<string | undefined>(undefined);
+  const [showAirdrop, setShowAirdrop] = useState<string | undefined>(undefined);
+  const [showSendModal, setShowSendModal] = useState<string | undefined>(undefined);
+  const [showBurnModal, setShowBurnModal] = useState<string | undefined>(undefined);
 
   // get unspent ordAddress
   const bsv20s = useSignal<BSV20TXO[] | null>(null);
@@ -90,6 +91,7 @@ const Bsv20List = ({
   const history = useSignal<BSV20TXO[] | null>(null);
   const fetchHistoryStatus = useSignal<FetchStatus>(FetchStatus.Idle);
   const unspentStatus = useSignal<FetchStatus>(FetchStatus.Idle);
+  const [loadingNextPage, setLoadingNextPage] = useState<FetchStatus>(FetchStatus.Idle);
 
   useEffect(() => {
     const fire = async () => {
@@ -213,59 +215,59 @@ const Bsv20List = ({
     );
   }, [bsv20s.value]);
 
-  const loadingNextPage = useSignal<FetchStatus>(FetchStatus.Idle);
-
   useEffect(() => {
     const fire = async (address: string) => {
-      loadingNextPage.value = FetchStatus.Loading;
-      // console.log("Fire", isInView);
+      setLoadingNextPage(FetchStatus.Loading);
       if (type === WalletTab.BSV20) {
-        const urlTokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v1`;
-        console.log("Fetching", urlTokens);
+        const urlTokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset}&dir=desc&type=v1`;
         const { promise: promiseBsv20 } =
           http.customFetch<BSV20TXO[]>(urlTokens);
         const newResults = await promiseBsv20;
         if (newResults.length > 0) {
           holdings.value = (holdings.value || []).concat(newResults);
-          loadingNextPage.value = FetchStatus.Idle;
-          console.log("newLength", holdings.value.length);
+          setLoadingNextPage(FetchStatus.Idle);
         } else {
-          reachedEndOfListings.value = true;
-          loadingNextPage.value = FetchStatus.Success;
+          setReachedEndOfListings(true);
+          setLoadingNextPage(FetchStatus.Success);
         }
       } else {
-        const urlV2Tokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset.value}&dir=desc&type=v2`;
+        const urlV2Tokens = `${API_HOST}/api/bsv20/${address}/history?limit=${resultsPerPage}&offset=${newOffset}&dir=desc&type=v2`;
         const { promise: promiseBsv21 } =
           http.customFetch<BSV20TXO[]>(urlV2Tokens);
         const newResults = await promiseBsv21;
         if (newResults.length > 0) {
           holdings.value = (holdings.value || []).concat(newResults);
-          console.log("newLength", holdings.value.length);
-          loadingNextPage.value = FetchStatus.Idle;
+          setLoadingNextPage(FetchStatus.Idle);
         } else {
-          reachedEndOfListings.value = true;
-          loadingNextPage.value = FetchStatus.Success;
+          setReachedEndOfListings(true);
+          setLoadingNextPage(FetchStatus.Success);
         }
       }
-      newOffset.value += resultsPerPage;
+      setNewOffset(prev => prev + resultsPerPage);
     };
-    if (
-      isInView &&
-      !reachedEndOfListings.value &&
-      loadingNextPage.value === FetchStatus.Idle
-    ) {
-      const address = addressProp || ordAddress.value;
-      if (address) {
-        fire(address);
+
+    // Debounce scroll trigger to prevent rapid-fire requests
+    const timeoutId = setTimeout(() => {
+      if (
+        isInView &&
+        !reachedEndOfListings &&
+        loadingNextPage === FetchStatus.Idle
+      ) {
+        const address = addressProp || ordAddress.value;
+        if (address) {
+          fire(address);
+        }
       }
-    }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [
     addressProp,
     holdings,
     isInView,
-    newOffset.value,
-    reachedEndOfListings.value,
-    loadingNextPage.value,
+    newOffset,
+    reachedEndOfListings,
+    loadingNextPage,
     type,
     ordAddress.value
   ]);
@@ -313,60 +315,68 @@ const Bsv20List = ({
     [ordAddress.value, balances.value],
   );
 
-  const activity = useMemo(() => {
+  const activityData = useMemo(() => {
     return (history.value || [])
       .concat(bsv20s.value || [])
-      .filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick))
-      ?.map((bsv20, index) => {
-        const decimals = getDec(bsv20.tick, bsv20.id);
-        const amount = getBalanceText(
-          Number.parseInt(bsv20.amt || "0") / 10 ** decimals,
-          decimals,
-        );
+      .filter((b) => (type === WalletTab.BSV20 ? !!b.tick : !b.tick));
+  }, [history.value, bsv20s.value, type]);
 
-        return (
-          <React.Fragment key={`act-${bsv20.tick}-${index}`}>
-            <div className="text-xs text-info">
-              <Link
-                href={`https://whatsonchain.com/tx/${bsv20.txid}`}
-                target="_blank"
-              >
-                {bsv20.height}
-              </Link>
-            </div>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            <div
-              className="flex items-center cursor-pointer hover:text-blue-400 transition"
-              onClick={() =>
-                router.push(
-                  `/market/${bsv20.tick ? `bsv20/${bsv20.tick}` : `bsv21/${bsv20?.id}`
-                  }`,
-                )
-              }
-            >
-              {bsv20.tick ||
-                getSym(bsv20.id) ||
-                bsv20.id?.slice(-8) ||
-                bsv20.id?.slice(-8)}
-            </div>
-            <div>{getAction(bsv20)}</div>
-            <div className="text-xs">{bsv20 && amount}</div>
-            <div
-              className={`text-xs ${bsv20.price ? (bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400") : "text-gray-500"}`}
-            >
-              {bsv20.price && bsv20.price !== "0"
-                ? `${toBitcoin(bsv20.price)} BSV`
-                : "-"}
-            </div>
-            <div>
-              <Link href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}>
-                <FaChevronRight />
-              </Link>
-            </div>
-          </React.Fragment>
-        );
-      });
-  }, [bsv20s.value, tickerDetails.value]);
+  const rowVirtualizer = useVirtualizer({
+    count: activityData.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 40, // Estimated row height
+    overscan: 5, // Render 5 extra items above/below viewport
+  });
+
+  const renderActivityRow = useCallback((bsv20: BSV20TXO) => {
+    const decimals = getDec(bsv20.tick, bsv20.id);
+    const amount = getBalanceText(
+      Number.parseInt(bsv20.amt || "0") / 10 ** decimals,
+      decimals,
+    );
+
+    return (
+      <>
+        <div className="text-xs text-info">
+          <Link
+            href={`https://whatsonchain.com/tx/${bsv20.txid}`}
+            target="_blank"
+          >
+            {bsv20.height}
+          </Link>
+        </div>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+        <div
+          className="flex items-center cursor-pointer hover:text-blue-400 transition"
+          onClick={() =>
+            router.push(
+              `/market/${bsv20.tick ? `bsv20/${bsv20.tick}` : `bsv21/${bsv20?.id}`
+              }`,
+            )
+          }
+        >
+          {bsv20.tick ||
+            getSym(bsv20.id) ||
+            bsv20.id?.slice(-8) ||
+            bsv20.id?.slice(-8)}
+        </div>
+        <div>{getAction(bsv20)}</div>
+        <div className="text-xs">{bsv20 && amount}</div>
+        <div
+          className={`text-xs ${bsv20.price ? (bsv20.owner === ordAddress.value ? "text-emerald-500" : "text-red-400") : "text-gray-500"}`}
+        >
+          {bsv20.price && bsv20.price !== "0"
+            ? `${toBitcoin(bsv20.price)} BSV`
+            : "-"}
+        </div>
+        <div>
+          <Link href={`/outpoint/${bsv20.txid}_${bsv20.vout}/token`}>
+            <FaChevronRight />
+          </Link>
+        </div>
+      </>
+    );
+  }, [getDec, getSym, getAction, ordAddress.value, router]);
 
   const listingBalances = computed(() => {
     return balances.value?.filter((b) => {
@@ -462,23 +472,23 @@ const Bsv20List = ({
                             className="btn btn-xs w-fit hover:border hover:border-yellow-200/25 tooltip tooltip-bottom"
                             data-tip={`Airdrop ${sym || tick}`}
                             onClick={() => {
-                              showAirdrop.value = tick || id;
+                              setShowAirdrop(tick || id);
                             }}
                           >
                             <FaParachuteBox className="w-3" />
                           </button>
-                          {showAirdrop.value === (tick || id) && (
+                          {showAirdrop === (tick || id) && (
                             <AirdropTokensModal
                               onClose={() => {
-                                showAirdrop.value = undefined;
+                                setShowAirdrop(undefined);
                               }}
                               type={id ? AssetType.BSV21 : AssetType.BSV20}
                               dec={dec}
                               id={(tick || id)!}
                               sym={sym}
                               open={
-                                (!!tick && showAirdrop.value === tick) ||
-                                (!!id && showAirdrop.value === id)
+                                (!!tick && showAirdrop === tick) ||
+                                (!!id && showAirdrop === id)
                               }
                               balance={
                                 (all.confirmed - listed.confirmed) / 10 ** dec
@@ -493,7 +503,7 @@ const Bsv20List = ({
                           className="btn btn-xs w-fit hover:border hover:border-yellow-200/25 tooltip tooltip-bottom"
                           data-tip={`Burn ${sym || tick}`}
                           onClick={() => {
-                            showBurnModal.value = tick || id;
+                            setShowBurnModal(tick || id);
                           }}
                         >
                           <FaFireFlameCurved className="w-3" />
@@ -508,23 +518,23 @@ const Bsv20List = ({
                               className="btn btn-xs w-fit hover:border hover:border-yellow-200/25 tooltip tooltip-bottom"
                               data-tip={`Send ${sym || tick}`}
                               onClick={() => {
-                                showSendModal.value = tick || id;
+                                setShowSendModal(tick || id);
                               }}
                             >
                               <IoSend className="w-3" />
                             </button>
-                            {(showSendModal.value === (tick || id) ||
-                              showBurnModal.value === (tick || id)) && (
+                            {(showSendModal === (tick || id) ||
+                              showBurnModal === (tick || id)) && (
                                 <TransferBsv20Modal
                                   onClose={() => {
-                                    showBurnModal.value = undefined;
-                                    showSendModal.value = undefined;
+                                    setShowBurnModal(undefined);
+                                    setShowSendModal(undefined);
                                   }}
                                   type={type}
                                   id={(tick || id)!}
                                   dec={dec}
                                   balance={balance}
-                                  burn={showBurnModal.value === (tick || id)}
+                                  burn={showBurnModal === (tick || id)}
                                   sym={sym}
                                 />
                               )}
@@ -637,8 +647,8 @@ const Bsv20List = ({
             role="tab"
             className="tab ml-1"
             aria-label="Confirmed"
-            checked={balanceTab.value === BalanceTab.Confirmed}
-            onChange={() => (balanceTab.value = BalanceTab.Confirmed)}
+            checked={balanceTab === BalanceTab.Confirmed}
+            onChange={() => setBalanceTab(BalanceTab.Confirmed)}
           />
           <div
             role="tabpanel"
@@ -653,8 +663,8 @@ const Bsv20List = ({
             role="tab"
             className="tab"
             aria-label="Pending"
-            checked={balanceTab.value === BalanceTab.Pending}
-            onChange={() => (balanceTab.value = BalanceTab.Pending)}
+            checked={balanceTab === BalanceTab.Pending}
+            onChange={() => setBalanceTab(BalanceTab.Pending)}
           />
           <div
             role="tabpanel"
@@ -669,8 +679,8 @@ const Bsv20List = ({
             role="tab"
             className="tab"
             aria-label="Listed"
-            checked={balanceTab.value === BalanceTab.Listed}
-            onChange={() => (balanceTab.value = BalanceTab.Listed)}
+            checked={balanceTab === BalanceTab.Listed}
+            onChange={() => setBalanceTab(BalanceTab.Listed)}
           />
           <div
             role="tabpanel"
@@ -687,8 +697,8 @@ const Bsv20List = ({
                 role="tab"
                 className="tab mr-1"
                 aria-label="UTXO"
-                checked={balanceTab.value === BalanceTab.Unindexed}
-                onChange={() => (balanceTab.value = BalanceTab.Unindexed)}
+                checked={balanceTab === BalanceTab.Unindexed}
+                onChange={() => setBalanceTab(BalanceTab.Unindexed)}
               />
               <div
                 role="tabpanel"
@@ -718,15 +728,58 @@ const Bsv20List = ({
               </div>
               <div className="text-sm text-[#555]" />
             </h1>
-            <div className="my-2 w-full text-sm grid grid-cols-[auto_1fr_auto_auto_auto_auto] p-4 gap-x-4 gap-y-2 min-w-md bg-[#111]">
-              <div className="font-semibold text-accent text-base">Height</div>
-              <div className="font-semibold text-[#777] text-base">Ticker</div>
-              <div className="font-semibold text-[#777] text-base">Op</div>
-              <div className="font-semibold text-[#777] text-base">Amount</div>
-              <div className="font-semibold text-[#777] text-base">Sale</div>
-              <div className="" />
-              {activity}
-              <div ref={ref}>.</div>
+            <div className="my-2 w-full text-sm bg-[#111]">
+              <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] p-4 gap-x-4 gap-y-2 min-w-md sticky top-0 bg-[#111] z-10">
+                <div className="font-semibold text-accent text-base">Height</div>
+                <div className="font-semibold text-[#777] text-base">Ticker</div>
+                <div className="font-semibold text-[#777] text-base">Op</div>
+                <div className="font-semibold text-[#777] text-base">Amount</div>
+                <div className="font-semibold text-[#777] text-base">Sale</div>
+                <div className="" />
+              </div>
+              <div
+                ref={parentRef}
+                className="overflow-auto"
+                style={{ height: "600px" }}
+              >
+                <div
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const item = activityData[virtualRow.index];
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        ref={rowVirtualizer.measureElement}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                        className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] p-4 gap-x-4 min-w-md"
+                      >
+                        {renderActivityRow(item)}
+                      </div>
+                    );
+                  })}
+                  <div
+                    ref={ref}
+                    style={{
+                      position: "absolute",
+                      top: `${rowVirtualizer.getTotalSize()}px`,
+                      height: "1px",
+                      width: "100%",
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
