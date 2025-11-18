@@ -16,9 +16,10 @@ export const contentType = "image/png";
 export default async function Image() {
   const notoSerif = await getNotoSerifItalicFont();
   const headersList = await headers();
-	const hostname = headersList.get("host") || "";
+	// Check multiple header sources for hostname
+	const hostname = headersList.get("x-forwarded-host") || headersList.get("host") || "";
 
-	const isAlpha = hostname === "alpha.1satordinals.com" || hostname === "alpha.1sat.market";
+	const isAlpha = hostname.includes("alpha.1satordinals.com") || hostname.includes("alpha.1sat.market");
   return new ImageResponse(
     (
       <Container>
