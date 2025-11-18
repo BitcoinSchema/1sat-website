@@ -38,6 +38,7 @@ import {
   FaParachuteBox,
 } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-token";
+import { Empty } from "@/components/ui/empty";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
@@ -397,9 +398,50 @@ const Bsv20List = ({
   });
 
   const confirmedContent = useMemo(() => {
+    // Show error state if balance fetch failed
+    if (unspentStatus.value === FetchStatus.Error) {
+      return (
+        <Empty
+          title="Failed to load balances"
+          description="Unable to fetch balance data. Please check your connection and try again."
+          icon="network"
+          action={
+            <button
+              onClick={() => {
+                unspentStatus.value = FetchStatus.Idle;
+                bsv20s.value = null;
+              }}
+              className="btn btn-sm btn-primary"
+            >
+              Retry
+            </button>
+          }
+        />
+      );
+    }
+
+    // Show loading state
+    if (unspentStatus.value === FetchStatus.Loading) {
+      return (
+        <div className="flex items-center justify-center p-8">
+          <div className="loading loading-spinner loading-lg"></div>
+        </div>
+      );
+    }
+
+    // Show empty state if no balances
+    if (!confirmedBalances?.value || confirmedBalances.value.length === 0) {
+      return (
+        <Empty
+          title="No confirmed balances"
+          description="You don't have any confirmed token balances yet."
+        />
+      );
+    }
+
     return (
       <div className="bg-[#101010] rounded-lg w-full mb-4 px-2">
-        {confirmedBalances?.value?.map(
+        {confirmedBalances.value.map(
           ({ tick, all, sym, id, dec, listed, icon, price }, idx) => {
             // TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
             const deets = find(tickerDetails.value, (t) => t.tick === tick);
@@ -553,14 +595,46 @@ const Bsv20List = ({
         )}
       </div>
     );
-  }, [confirmedBalances.value, tickerDetails.value]);
+  }, [confirmedBalances.value, tickerDetails.value, unspentStatus.value]);
 
   const pendingContent = useMemo(() => {
+    // Show error state if balance fetch failed
+    if (unspentStatus.value === FetchStatus.Error) {
+      return (
+        <Empty
+          title="Failed to load balances"
+          description="Unable to fetch balance data. Please check your connection and try again."
+          icon="network"
+          action={
+            <button
+              onClick={() => {
+                unspentStatus.value = FetchStatus.Idle;
+                bsv20s.value = null;
+              }}
+              className="btn btn-sm btn-primary"
+            >
+              Retry
+            </button>
+          }
+        />
+      );
+    }
+
+    // Show empty state if no pending balances
+    if (!pendingBalances?.value || pendingBalances.value.length === 0) {
+      return (
+        <Empty
+          title="No pending balances"
+          description="You don't have any pending token balances."
+        />
+      );
+    }
+
     return (
       <div className="grid grid-cols-2 gap-3 bg-[#222] p-4 rounded mb-4">
         <div className="text-[#777] font-semibold">Ticker</div>
         <div className="text-[#777] font-semibold">Balance</div>
-        {pendingBalances?.value?.map(({ tick, all, sym, id, dec }, idx) => (
+        {pendingBalances.value.map(({ tick, all, sym, id, dec }, idx) => (
           <React.Fragment key={`bal-pending-${tick}`}>
             <div
               className="cursor-pointer hover:text-blue-400 transition"
@@ -575,7 +649,7 @@ const Bsv20List = ({
         ))}
       </div>
     );
-  }, [pendingBalances.value, balances.value, tickerDetails.value]);
+  }, [pendingBalances.value, balances.value, tickerDetails.value, unspentStatus.value]);
 
   const listedContent = computed(() => {
     return (
