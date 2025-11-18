@@ -8,12 +8,12 @@ This document describes the environment variables needed for the 1sat.market web
 
 #### `NEXT_PUBLIC_MARKET_API_HOST`
 **Description:** Backend API for market data, balances, and token operations
-**Production:** `https://api.1sat.market` (points to Railway main branch)
-**Alpha/Testing:** `https://1sat-api-upgrade-market-api.up.railway.app` (points to upgrade/market-api branch)
+**Production:** `https://api.1sat.market` (production API)
+**Development/Alpha:** `https://api1satmarket-dev-production.up.railway.app` (dev API with upgrade/market-api branch)
 
-**Current Railway Deployments:**
-- `main` branch → `https://1sat-api-production.up.railway.app` → aliased as `api.1sat.market`
-- `upgrade/market-api` branch → `https://1sat-api-upgrade-market-api.up.railway.app` (needs verification)
+**Railway Deployments:**
+- Production: `https://api.1sat.market`
+- Development: `https://api1satmarket-dev-production.up.railway.app`
 
 #### `NEXT_PUBLIC_API_HOST`
 **Description:** Ordinals indexer API (GorillaPool)
@@ -34,16 +34,16 @@ This document describes the environment variables needed for the 1sat.market web
 
 ## Deployment Configuration
 
-### Production (1sat.market)
+### Production (1sat.market - master/main branch)
 ```
 NEXT_PUBLIC_MARKET_API_HOST=https://api.1sat.market
 NEXT_PUBLIC_API_HOST=https://ordinals.gorillapool.io
 NEXT_PUBLIC_ORDFS_URL=https://ordfs.network
 ```
 
-### Alpha (alpha.1sat.market)
+### Development/Alpha (alpha.1sat.market - alpha branch)
 ```
-NEXT_PUBLIC_MARKET_API_HOST=https://1sat-api-upgrade-market-api.up.railway.app
+NEXT_PUBLIC_MARKET_API_HOST=https://api1satmarket-dev-production.up.railway.app
 NEXT_PUBLIC_API_HOST=https://ordinals.gorillapool.io
 NEXT_PUBLIC_ORDFS_URL=https://ordfs.network
 ```
