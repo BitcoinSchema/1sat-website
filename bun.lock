@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "1sat-website",
@@ -46,7 +47,7 @@
         "framer-motion": "^11.18.2",
         "isomorphic-dompurify": "^2.30.1",
         "jdenticon": "^3.3.0",
-        "js-1sat-ord": "^0.1.82",
+        "js-1sat-ord": "0.1.85",
         "lodash": "^4.17.21",
         "lucide-react": "^0.378.0",
         "mime": "^3.0.0",
@@ -1299,7 +1300,7 @@
 
     "jquery": ["jquery@3.7.1", "", {}, "sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg=="],
 
-    "js-1sat-ord": ["js-1sat-ord@0.1.82", "", { "dependencies": { "image-meta": "^0.2.1", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" }, "peerDependencies": { "@bsv/sdk": "^1.1.23" } }, "sha512-T7v+3fgCJEpB487d7ffBbwrO6yvSHt7Uix0knri8+ja4lAPt8YuEIwxj0oooo6bqqQr4hyOVhpZUpM8VYzyRvg=="],
+    "js-1sat-ord": ["js-1sat-ord@0.1.85", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" }, "peerDependencies": { "@bsv/sdk": "^1.8.10" } }, "sha512-OXs13zlwDMRDASw+LKwi4PqLTvE4K/ppJESt/DprR/UhFkcK7QgwnZDMWYh1ynSLXjjqEyxu9GYo+XLe6wIEOQ=="],
 
     "js-tiktoken": ["js-tiktoken@1.0.21", "", { "dependencies": { "base64-js": "^1.5.1" } }, "sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g=="],
 
