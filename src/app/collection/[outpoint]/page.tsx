@@ -4,15 +4,30 @@ import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
+// Helper to add timeout to promises
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+	return Promise.race([
+		promise,
+		new Promise<T>((_, reject) =>
+			setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs)
+		),
+	]);
+};
+
 const Collection = async ({ params }: { params: Promise<{ outpoint: string }> }) => {
 	const { outpoint } = await params;
+	const TIMEOUT_MS = 8000; // 8 second timeout to leave buffer before Vercel's 10s limit
+
 	// Get the Ordinal TXO
 	let collection: OrdUtxo | undefined;
 	const collectionUrl = `${API_HOST}/api/txos/${outpoint}`;
 	try {
-		const { promise: promiseCollection } =
+		const { promise: promiseCollection, abort } =
 			http.customFetch<OrdUtxo>(collectionUrl);
-		collection = await promiseCollection;
+		collection = await withTimeout(promiseCollection, TIMEOUT_MS).catch((error) => {
+			abort();
+			throw error;
+		});
 	} catch (e) {
 		console.error("Error fetching collection", e, collectionUrl);
 	}
@@ -21,15 +36,21 @@ const Collection = async ({ params }: { params: Promise<{ outpoint: string }> })
 	let stats: CollectionStats | undefined;
 	const collectionStatsUrl = `${API_HOST}/api/collections/${outpoint}/stats`;
 	try {
-		const { promise } =
+		const { promise, abort } =
 			http.customFetch<CollectionStats>(collectionStatsUrl);
-		stats = (await promise) || [];
+		stats = (await withTimeout(promise, TIMEOUT_MS).catch((error) => {
+			abort();
+			throw error;
+		})) || [];
 	} catch (e) {
-		console.error(e);
+		console.error("Error fetching stats", e, collectionStatsUrl);
 	}
 
 	if (!collection || !stats) {
-		return <div>Collection not found</div>;
+		return <div className="p-8 text-center">
+			<h2 className="text-2xl mb-4">Collection not found</h2>
+			<p className="text-gray-400">The collection data could not be loaded. This may be due to network issues or the collection may not exist.</p>
+		</div>;
 	}
 	return <CollectionPage stats={stats} collection={collection} />;
 };
@@ -42,18 +63,34 @@ export async function generateMetadata({
 	params: Promise<{ outpoint: string }>;
 }) {
 	const { outpoint } = await params;
-	const details = await fetch(
-		`${API_HOST}/api/inscriptions/${outpoint}`
-	).then((res) => res.json() as Promise<OrdUtxo>);
+	const METADATA_TIMEOUT = 5000; // 5 second timeout for metadata
 
-	const collectionName =
-		details.origin?.data?.map?.name ||
-		details.origin?.data?.bsv20?.tick ||
-		details.origin?.data?.bsv20?.sym ||
-		details.origin?.data?.insc?.json?.tick ||
-		details.origin?.data?.insc?.json?.p ||
-		details.origin?.data?.insc?.file.type ||
-		"Mystery Outpoint";
+	let details: OrdUtxo | undefined;
+	try {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), METADATA_TIMEOUT);
+
+		details = await fetch(
+			`${API_HOST}/api/inscriptions/${outpoint}`,
+			{
+				signal: controller.signal,
+				next: { revalidate: 300 } // 5 min cache
+			}
+		).then((res) => res.json() as Promise<OrdUtxo>)
+		.finally(() => clearTimeout(timeoutId));
+	} catch (e) {
+		console.error("Error fetching metadata for collection", outpoint, e);
+	}
+
+	const collectionName = details
+		? details.origin?.data?.map?.name ||
+		  details.origin?.data?.bsv20?.tick ||
+		  details.origin?.data?.bsv20?.sym ||
+		  details.origin?.data?.insc?.json?.tick ||
+		  details.origin?.data?.insc?.json?.p ||
+		  details.origin?.data?.insc?.file.type ||
+		  "Mystery Outpoint"
+		: "Collection";
 
 	return {
 		title: `${collectionName} Collection`,
