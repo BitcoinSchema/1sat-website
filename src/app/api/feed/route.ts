@@ -1,4 +1,4 @@
-import { MARKET_API_HOST } from "@/constants";
+import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -110,7 +110,7 @@ async function fetchAndAddItems(count: number = 100): Promise<void> {
 
     // Fetch images
     const imagePromises = offsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=40&offset=${offset}&type=image`)
+      fetch(`${API_HOST}/api/market?limit=40&offset=${offset}&type=image`)
         .then(res => res.json())
         .catch(() => [])
     );
@@ -118,7 +118,7 @@ async function fetchAndAddItems(count: number = 100): Promise<void> {
     // Fetch some videos too
     const videoOffsets = [getWeightedOffset(), getWeightedOffset()];
     const videoPromises = videoOffsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=10&offset=${offset}&type=video`)
+      fetch(`${API_HOST}/api/market?limit=10&offset=${offset}&type=video`)
         .then(res => res.json())
         .catch(() => [])
     );
@@ -126,7 +126,7 @@ async function fetchAndAddItems(count: number = 100): Promise<void> {
     // Fetch some 3D models
     const modelOffsets = [getWeightedOffset()];
     const modelPromises = modelOffsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=5&offset=${offset}&type=model`)
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=model`)
         .then(res => res.json())
         .catch(() => [])
     );
@@ -134,7 +134,7 @@ async function fetchAndAddItems(count: number = 100): Promise<void> {
     // Fetch some audio
     const audioOffsets = [getWeightedOffset()];
     const audioPromises = audioOffsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=5&offset=${offset}&type=audio`)
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=audio`)
         .then(res => res.json())
         .catch(() => [])
     );
@@ -191,28 +191,28 @@ async function refreshFeedPool() {
 
     // Fetch both images and videos for content variety
     const imagePromises = offsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=40&offset=${offset}&type=image`)
+      fetch(`${API_HOST}/api/market?limit=40&offset=${offset}&type=image`)
         .then(res => res.json())
         .catch(() => [])
     );
 
     const videoOffsets = [0, 10, 25, getWeightedOffset(), getWeightedOffset()];
     const videoPromises = videoOffsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=10&offset=${offset}&type=video`)
+      fetch(`${API_HOST}/api/market?limit=10&offset=${offset}&type=video`)
         .then(res => res.json())
         .catch(() => [])
     );
 
     const modelOffsets = [0, getWeightedOffset()];
     const modelPromises = modelOffsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=5&offset=${offset}&type=model`)
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=model`)
         .then(res => res.json())
         .catch(() => [])
     );
 
     const audioOffsets = [0, getWeightedOffset()];
     const audioPromises = audioOffsets.map(offset =>
-      fetch(`${MARKET_API_HOST}/market?limit=5&offset=${offset}&type=audio`)
+      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=audio`)
         .then(res => res.json())
         .catch(() => [])
     );
