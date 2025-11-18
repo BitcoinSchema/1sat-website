@@ -6,6 +6,8 @@ const nextConfig = {
 	turbopack: {},
 	// React Compiler for automatic memoization
 	reactCompiler: true,
+	// Transpile packages that need to be bundled for server-side use
+	transpilePackages: ['isomorphic-dompurify'],
 	experimental: {
 		viewTransition: true,
 	},
