@@ -48,7 +48,7 @@
         "framer-motion": "^11.18.2",
         "isomorphic-dompurify": "^2.32.0",
         "jdenticon": "^3.3.0",
-        "js-1sat-ord": "^0.1.86",
+        "js-1sat-ord": "^0.1.88",
         "jsdom": "27.2.0",
         "lodash": "^4.17.21",
         "lucide-react": "^0.378.0",
@@ -1304,7 +1304,7 @@
 
     "jquery": ["jquery@3.7.1", "", {}, "sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg=="],
 
-    "js-1sat-ord": ["js-1sat-ord@0.1.86", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" } }, "sha512-0csSibinIgod+/zK5nmnRjZz/7h12FsfQTe/WJRcnCRe0e2cHz1l5FSK7FlQk2PR3y6gvAd03jpw/qreqk2/Zg=="],
+    "js-1sat-ord": ["js-1sat-ord@0.1.88", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" } }, "sha512-U3n+5SEe9LyxuB0OaSU4fIywxBz3pvoxuJvaxQ741qiutYhC3v1rCEzVdEjSOn/sWi0xiFh8C75U8vMd18fZhw=="],
 
     "js-tiktoken": ["js-tiktoken@1.0.21", "", { "dependencies": { "base64-js": "^1.5.1" } }, "sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g=="],
 

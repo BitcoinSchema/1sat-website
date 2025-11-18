@@ -52,7 +52,7 @@
 		"framer-motion": "^11.18.2",
 		"isomorphic-dompurify": "^2.32.0",
 		"jdenticon": "^3.3.0",
-		"js-1sat-ord": "^0.1.86",
+		"js-1sat-ord": "^0.1.88",
 		"jsdom": "27.2.0",
 		"lodash": "^4.17.21",
 		"lucide-react": "^0.378.0",
