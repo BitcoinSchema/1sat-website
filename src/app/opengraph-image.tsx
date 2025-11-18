@@ -17,7 +17,17 @@ export default async function Image() {
   const notoSerif = await getNotoSerifItalicFont();
   const headersList = await headers();
 	// Check multiple header sources for hostname
-	const hostname = headersList.get("x-forwarded-host") || headersList.get("host") || "";
+	const forwardedHost = headersList.get("x-forwarded-host");
+	const host = headersList.get("host");
+	const hostname = forwardedHost || host || "";
+
+	// Temporary logging to debug OG image hostname detection
+	console.log("OG Image Headers:", {
+		"x-forwarded-host": forwardedHost,
+		"host": host,
+		"hostname": hostname,
+		"all-headers": Object.fromEntries(headersList.entries())
+	});
 
 	const isAlpha = hostname.includes("alpha.1satordinals.com") || hostname.includes("alpha.1sat.market");
   return new ImageResponse(
