@@ -64,16 +64,16 @@ export function TokenMarketTabs({
   const topListing = computed(() => head(listings.value))
 
   return ticker && (
-    <div className="flex flex-col md:flex-row w-full items-start bg-zinc-950">
+    <div className="flex flex-col md:flex-row w-full items-start bg-background">
       {mdUp ? (
         <>
           <div className="relative w-1/2">
-            <div className="flex border-b border-zinc-800 mr-4 px-4">
+            <div className="flex border-b border-border mr-4 px-4">
               <button
                 type="button"
                 className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
-                  "border-green-500 text-green-400": selectedListingsTab.value === "listings",
-                  "border-transparent text-zinc-500 hover:text-zinc-300": selectedListingsTab.value !== "listings",
+                  "border-primary text-primary": selectedListingsTab.value === "listings",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedListingsTab.value !== "listings",
                 })}
                 onClick={() => { selectedListingsTab.value = "listings"; }}
               >
@@ -82,8 +82,8 @@ export function TokenMarketTabs({
               <button
                 type="button"
                 className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
-                  "border-green-500 text-green-400": selectedListingsTab.value === "my_listings",
-                  "border-transparent text-zinc-500 hover:text-zinc-300": selectedListingsTab.value !== "my_listings",
+                  "border-primary text-primary": selectedListingsTab.value === "my_listings",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedListingsTab.value !== "my_listings",
                 })}
                 onClick={() => { selectedListingsTab.value = "my_listings"; }}
               >
@@ -112,12 +112,12 @@ export function TokenMarketTabs({
           </div>
 
           <div className="w-1/2">
-            <div className="flex border-b border-zinc-800 px-4">
+            <div className="flex border-b border-border px-4">
               <button
                 type="button"
                 className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
-                  "border-green-500 text-green-400": selectedSalesTab.value === "sales",
-                  "border-transparent text-zinc-500 hover:text-zinc-300": selectedSalesTab.value !== "sales",
+                  "border-primary text-primary": selectedSalesTab.value === "sales",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedSalesTab.value !== "sales",
                 })}
                 onClick={() => { selectedSalesTab.value = "sales"; }}
               >
@@ -126,8 +126,8 @@ export function TokenMarketTabs({
               <button
                 type="button"
                 className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
-                  "border-green-500 text-green-400": selectedSalesTab.value === "my_sales",
-                  "border-transparent text-zinc-500 hover:text-zinc-300": selectedSalesTab.value !== "my_sales",
+                  "border-primary text-primary": selectedSalesTab.value === "my_sales",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedSalesTab.value !== "my_sales",
                 })}
                 onClick={() => { selectedSalesTab.value = "my_sales"; }}
               >
@@ -147,12 +147,12 @@ export function TokenMarketTabs({
         </>
       ) : (
         <div className="w-full">
-          <div className="flex flex-wrap border-b border-zinc-800 p-2 gap-1">
+          <div className="flex flex-wrap border-b border-border p-2 gap-1">
             <button
               type="button"
               className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
-                "bg-green-900/30 text-green-400 border border-green-500/50": selectedTab.value === "listings",
-                "text-zinc-500 hover:text-zinc-300 border border-zinc-800": selectedTab.value !== "listings",
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "listings",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "listings",
               })}
               onClick={() => { selectedTab.value = "listings"; }}
             >
@@ -161,8 +161,8 @@ export function TokenMarketTabs({
             <button
               type="button"
               className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
-                "bg-green-900/30 text-green-400 border border-green-500/50": selectedTab.value === "my_listings",
-                "text-zinc-500 hover:text-zinc-300 border border-zinc-800": selectedTab.value !== "my_listings",
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "my_listings",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "my_listings",
               })}
               onClick={() => { selectedTab.value = "my_listings"; }}
             >
@@ -171,8 +171,8 @@ export function TokenMarketTabs({
             <button
               type="button"
               className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
-                "bg-green-900/30 text-green-400 border border-green-500/50": selectedTab.value === "sales",
-                "text-zinc-500 hover:text-zinc-300 border border-zinc-800": selectedTab.value !== "sales",
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "sales",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "sales",
               })}
               onClick={() => { selectedTab.value = "sales"; }}
             >
@@ -181,8 +181,8 @@ export function TokenMarketTabs({
             <button
               type="button"
               className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
-                "bg-green-900/30 text-green-400 border border-green-500/50": selectedTab.value === "my_sales",
-                "text-zinc-500 hover:text-zinc-300 border border-zinc-800": selectedTab.value !== "my_sales",
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "my_sales",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "my_sales",
               })}
               onClick={() => { selectedTab.value = "my_sales"; }}
             >
