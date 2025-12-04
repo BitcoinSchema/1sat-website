@@ -441,24 +441,30 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="bg-background border-border rounded-lg max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-foreground">
-            <span className="flex items-center gap-3">
-              <Rocket className="w-5 h-5 text-primary" />
-              {reviewMode.value ? "Review Airdrop" : `Airdrop ${sym || id}`}
-            </span>
-            <button
-              type="button"
-              className="text-xs font-mono text-muted-foreground hover:text-primary transition cursor-pointer"
-              onClick={setAmountToBalance}
-            >
-              Balance: {balance} {type === AssetType.BSV21 ? sym : id}
-            </button>
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="bg-background border-border rounded-lg max-w-xl max-h-[90vh] overflow-hidden">
+        {/* Meteors background - outside scrollable area */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <Meteors number={20} />
+        </div>
+        
+        <div className="relative z-10 max-h-[calc(90vh-3rem)] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-foreground">
+              <span className="flex items-center gap-3">
+                <Rocket className="w-5 h-5 text-primary" />
+                {reviewMode.value ? "Review Airdrop" : `Airdrop ${sym || id}`}
+              </span>
+              <button
+                type="button"
+                className="text-xs font-mono text-muted-foreground hover:text-primary transition cursor-pointer"
+                onClick={setAmountToBalance}
+              >
+                Balance: {balance} {type === AssetType.BSV21 ? sym : id}
+              </button>
+            </DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={submit} className="space-y-4 relative">
+          <form onSubmit={submit} className="space-y-4 relative">
           {!reviewMode.value && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -648,9 +654,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                 : "Review"}
             </Button>
           </div>
-
-          <Meteors number={20} />
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

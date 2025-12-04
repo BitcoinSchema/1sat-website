@@ -9,7 +9,7 @@ export enum WalletTab {
 	Ordinals = "ordinals",
 	BSV20 = "bsv20",
 	BSV21 = "bsv21",
-	History = "History",
+	History = "history",
 }
 
 const WalletTabs = ({

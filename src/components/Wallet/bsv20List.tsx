@@ -30,7 +30,6 @@ import React, {
 import { IoSend } from "react-icons/io5";
 
 import { useLocalStorage } from "@/utils/storage";
-import { Noto_Serif } from "next/font/google";
 import {
   FaChevronRight,
   FaFireFlameCurved,
@@ -38,31 +37,20 @@ import {
   FaParachuteBox,
 } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-token";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
 import type { MarketData } from "../pages/TokenMarket/list";
 import { truncate } from "../transaction/display";
 import SAFU from "./safu";
-import WalletTabs, { WalletTab } from "./tabs";
-
-enum BalanceTab {
-  Confirmed = 0,
-  Pending = 1,
-  Listed = 2,
-  Unindexed = 3,
-}
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
+import { WalletTab } from "./tabs";
+import { BalanceFilter, selectedBalanceFilter } from "./WalletSidebar";
 
 const Bsv20List = ({
   type,
@@ -76,14 +64,12 @@ const Bsv20List = ({
   const [encryptedBackup] = useLocalStorage<string | undefined>(
     "encryptedBackup", undefined
   );
-  // console.log({ ordAddress: ordAddress.value, addressProp, encryptedBackup });
 
   const ref = useRef(null);
   const isInView = useInView(ref);
   const parentRef = useRef<HTMLDivElement>(null);
   const [newOffset, setNewOffset] = useState(0);
   const [reachedEndOfListings, setReachedEndOfListings] = useState(false);
-  const [balanceTab, setBalanceTab] = useState(BalanceTab.Confirmed);
   const router = useRouter();
   const holdings = useSignal<BSV20TXO[] | null>(null);
   const addressBalances = useSignal<BSV20Balance[] | null>(null);
@@ -108,7 +94,6 @@ const Bsv20List = ({
       const finalArray = (unindexed.concat(fromBalances) || []).filter(
         (id) => !!id,
       );
-      // console.log({ finalArray });
       const ids = uniq(finalArray);
       if (!ids.length) return;
 
@@ -133,8 +118,6 @@ const Bsv20List = ({
 
   useEffect(() => {
     const fire = async (address: string) => {
-      // fetch token history
-      // TODO: Use type
       if (fetchHistoryStatus.value === FetchStatus.Idle && address) {
         try {
           fetchHistoryStatus.value = FetchStatus.Loading;
@@ -159,7 +142,6 @@ const Bsv20List = ({
 
   useEffect(() => {
     const address = addressProp || ordAddress.value;
-    // get unindexed tickers
     const fire = async () => {
       unspentStatus.value = FetchStatus.Loading;
       bsv20s.value = [];
@@ -168,19 +150,12 @@ const Bsv20List = ({
           `${API_HOST}/api/bsv20/${address}/unspent?limit=1000&offset=0&type=${type === WalletTab.BSV20 ? "v1" : "v2"}`,
         );
         const u = await promise;
-
-        // filter out tickers that already exist in holdings, and group by ticker
-        const tickerList = u.map((u) => u.tick);
-        // console.log({ tickerList });
         bsv20s.value = u.filter((u) =>
           holdings.value?.every((h) => h.tick !== u.tick),
         );
-        // console.log({ u });
         bsv20s.value = u;
 
         if (address !== ordAddress.value) {
-          // not viewing own address
-          // fetch balances
           const { promise: promiseBalances } = http.customFetch<BSV20Balance[]>(
             `${MARKET_API_HOST}/user/${address}/balance`,
           );
@@ -252,7 +227,6 @@ const Bsv20List = ({
       setNewOffset(prev => prev + resultsPerPage);
     };
 
-    // Debounce scroll trigger to prevent rapid-fire requests
     const timeoutId = setTimeout(() => {
       if (
         isInView &&
@@ -303,19 +277,12 @@ const Bsv20List = ({
 
   const getAction = useCallback(
     (bsv20: BSV20TXO) => {
-      // if (bsv20.owner === ordAddress.value) {
-      //   return "Received";
-      // }
-      // // default
-      // return bsv20.op;
       if (bsv20.sale) {
         return "Sale";
       }
-
       if (bsv20.spend !== "") {
         return "Transferred";
       }
-
       return "Recieved";
     },
     [ordAddress.value, balances.value],
@@ -330,8 +297,8 @@ const Bsv20List = ({
   const rowVirtualizer = useVirtualizer({
     count: activityData.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 40, // Estimated row height
-    overscan: 5, // Render 5 extra items above/below viewport
+    estimateSize: () => 40,
+    overscan: 5,
   });
 
   const renderActivityRow = useCallback((bsv20: BSV20TXO) => {
@@ -357,8 +324,7 @@ const Bsv20List = ({
             className="flex items-center cursor-pointer hover:text-primary transition-colors"
             onClick={() =>
               router.push(
-                `/market/${bsv20.tick ? `bsv20/${bsv20.tick}` : `bsv21/${bsv20?.id}`
-                }`,
+                `/market/${bsv20.tick ? `bsv20/${bsv20.tick}` : `bsv21/${bsv20?.id}`}`,
               )
             }
           >
@@ -414,495 +380,357 @@ const Bsv20List = ({
     });
   });
 
-  const confirmedContent = useMemo(() => {
-    // Show error state if balance fetch failed
-    if (unspentStatus.value === FetchStatus.Error) {
-      return (
-        <div className="flex flex-col items-center justify-center p-8 text-center border border-border rounded-lg bg-card">
-          <h3 className="font-mono text-lg font-bold text-destructive mb-2">Failed to load balances</h3>
-          <p className="text-muted-foreground text-sm mb-4">Unable to fetch balance data. Please check your connection and try again.</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              unspentStatus.value = FetchStatus.Idle;
-              bsv20s.value = null;
-            }}
-          >
-            Retry
-          </Button>
-        </div>
-      );
+  // Get current balances based on sidebar filter
+  const currentBalances = useMemo(() => {
+    switch (selectedBalanceFilter.value) {
+      case BalanceFilter.Confirmed:
+        return confirmedBalances.value;
+      case BalanceFilter.Pending:
+        return pendingBalances.value;
+      case BalanceFilter.Listed:
+        return listingBalances.value;
+      case BalanceFilter.Unindexed:
+        return null; // handled separately
+      default:
+        return confirmedBalances.value;
     }
-
-    // Show loading state
-    if (unspentStatus.value === FetchStatus.Loading) {
-      return (
-        <div className="flex items-center justify-center p-8">
-          <div className="loading loading-spinner loading-lg"></div>
-        </div>
-      );
-    }
-
-    // Show empty state if no balances
-    if (!confirmedBalances?.value || confirmedBalances.value.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-lg">
-          <h3 className="font-mono text-lg font-bold text-muted-foreground mb-2">No confirmed balances</h3>
-          <p className="text-muted-foreground text-sm">You don&apos;t have any confirmed token balances yet.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        {confirmedBalances.value.map(
-          ({ tick, all, sym, id, dec, listed, icon, price }, idx) => {
-            // TODO: Get actual coin supply (hopefully return this on the balances endpoint?)
-            const deets = find(tickerDetails.value, (t) => t.tick === tick);
-            const supply = deets?.supply || deets?.amt;
-            const balance = (all.confirmed - listed.confirmed) / 10 ** dec;
-
-            // get number of decimals
-            const numDecimals = balance.toString().split(".")[1]?.length || 0;
-
-            const balanceText = getBalanceText(balance, numDecimals) || "0";
-            const tooltip =
-              balance.toString() !== balanceText.trim()
-                ? balance.toLocaleString()
-                : "";
-
-            const showAirdropIcon =
-              (!addressProp || addressProp === ordAddress.value) &&
-              all.confirmed / 10 ** dec > 100;
-
-            const tokenPrice = price
-              ? `$${((price * balance) / usdRate.value).toFixed(2)}`
-              : "";
-            return (
-              <Card key={`bal-confirmed-${tick}`} className="border-border bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      {WalletTab.BSV21 === type && (
-                        <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
-                          <IconWithFallback
-                            icon={icon || null}
-                            alt={sym || ""}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <div
-                          className="font-mono text-lg font-bold hover:text-primary cursor-pointer transition-colors"
-                          onClick={() =>
-                            router.push(
-                              `/market/${id ? `bsv21/${id}` : `bsv20/${tick}`}`,
-                            )
-                          }
-                        >
-                          {tick || sym}
-                        </div>
-                        <div className="flex items-center text-xs text-muted-foreground font-mono">
-                          {type === WalletTab.BSV20 && (
-                            <FaHashtag className="w-3 h-3 mr-1" />
-                          )}
-                          {deets?.num || truncate(id) || ""}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-mono text-muted-foreground">{tokenPrice}</div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <div className="text-lg font-mono text-primary font-medium">
-                              {balanceText}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{tooltip}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
-                    {showAirdropIcon && (
-                      <>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => setShowAirdrop(tick || id)}
-                              >
-                                <FaParachuteBox className="w-3 h-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Airdrop {sym || tick}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        {showAirdrop === (tick || id) && (
-                          <AirdropTokensModal
-                            onClose={() => setShowAirdrop(undefined)}
-                            type={id ? AssetType.BSV21 : AssetType.BSV20}
-                            dec={dec}
-                            id={(tick || id)!}
-                            sym={sym}
-                            open={true}
-                            balance={(all.confirmed - listed.confirmed) / 10 ** dec}
-                          />
-                        )}
-                      </>
-                    )}
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setShowBurnModal(tick || id)}
-                          >
-                            <FaFireFlameCurved className="w-3 h-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Burn {sym || tick}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {(!addressProp || addressProp === ordAddress.value) && all.confirmed / 10 ** dec > 0 && (
-                      <>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => setShowSendModal(tick || id)}
-                              >
-                                <IoSend className="w-3 h-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Send {sym || tick}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        {(showSendModal === (tick || id) || showBurnModal === (tick || id)) && (
-                          <TransferBsv20Modal
-                            onClose={() => {
-                              setShowBurnModal(undefined);
-                              setShowSendModal(undefined);
-                            }}
-                            type={type}
-                            id={(tick || id)!}
-                            dec={dec}
-                            balance={balance}
-                            burn={showBurnModal === (tick || id)}
-                            sym={sym}
-                          />
-                        )}
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          },
-        )}
-      </div>
-    );
-  }, [confirmedBalances.value, tickerDetails.value, unspentStatus.value]);
-
-  const pendingContent = useMemo(() => {
-    // Show error state if balance fetch failed
-    if (unspentStatus.value === FetchStatus.Error) {
-      return (
-        <div className="flex flex-col items-center justify-center p-8 text-center border border-border rounded-lg bg-card">
-          <h3 className="font-mono text-lg font-bold text-destructive mb-2">Failed to load balances</h3>
-          <p className="text-muted-foreground text-sm mb-4">Unable to fetch balance data. Please check your connection and try again.</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              unspentStatus.value = FetchStatus.Idle;
-              bsv20s.value = null;
-            }}
-          >
-            Retry
-          </Button>
-        </div>
-      );
-    }
-
-    // Show empty state if no pending balances
-    if (!pendingBalances?.value || pendingBalances.value.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-lg">
-          <h3 className="font-mono text-lg font-bold text-muted-foreground mb-2">No pending balances</h3>
-          <p className="text-muted-foreground text-sm">You don&apos;t have any pending token balances.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Ticker</TableHead>
-              <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pendingBalances.value.map(({ tick, all, sym, id, dec }, idx) => (
-              <TableRow key={`bal-pending-${tick}`} className="border-border hover:bg-muted/50">
-                <TableCell>
-                  <div
-                    className="cursor-pointer hover:text-primary transition-colors font-mono font-medium"
-                    onClick={() =>
-                      router.push(`/market/${id ? "bsv21/" + id : "bsv20/" + tick}`)
-                    }
-                  >
-                    {tick || sym}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right font-mono text-primary">
-                  {all.pending / 10 ** dec}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    );
-  }, [pendingBalances.value, balances.value, tickerDetails.value, unspentStatus.value]);
-
-  const listedContent = computed(() => {
-    return (
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Ticker</TableHead>
-              <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {listingBalances?.value?.map(
-              ({ tick, all, sym, id, listed, dec }, idx) => (
-                <TableRow key={`bal-listed-${tick}`} className="border-border hover:bg-muted/50">
-                  <TableCell>
-                    <div
-                      className="cursor-pointer hover:text-primary transition-colors font-mono font-medium"
-                      onClick={() =>
-                        router.push(`/market/${id ? `bsv21/${id}` : `bsv20/${tick}`}`)
-                      }
-                    >
-                      {tick || sym}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-primary">
-                    {getBalanceText(listed.confirmed / 10 ** dec, dec)}
-                  </TableCell>
-                </TableRow>
-              ),
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    );
-  });
-
-  const unindexedContent = computed(() => {
-    return (
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Ticker</TableHead>
-              <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bsv20s && bsv20s.value?.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
-                  No unindexed tokens found
-                </TableCell>
-              </TableRow>
-            )}
-            {Object.entries(unindexBalances)
-              .filter((t) => {
-                // return type === AssetType.BSV20 ? tick : id;
-                return true;
-              })
-              .map(([tick, amount], idx) => (
-                <TableRow key={`bal-unindexed-${tick}`} className="border-border hover:bg-muted/50">
-                  <TableCell>
-                    <Link
-                      href={`/market/${type}/${tick}`}
-                      className="cursor-pointer hover:text-primary transition-colors font-mono font-medium"
-                    >
-                      {tick}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="font-mono text-primary">
-                            {amount}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>[ ! ] This balance does not consider decimals.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </div>
-    );
-  });
+  }, [selectedBalanceFilter.value, confirmedBalances.value, pendingBalances.value, listingBalances.value]);
 
   const locked = computed(() => !ordAddress.value && !!encryptedBackup);
 
-  return !addressProp && locked.value ? <SAFU /> : (
-    <div className="container mx-auto max-w-[1400px] pb-12">
-      <WalletTabs type={type} address={addressProp} />
-      
-      <Tabs defaultValue={BalanceTab.Confirmed.toString()} onValueChange={(v) => setBalanceTab(parseInt(v))} className="w-full">
-        <div className="flex flex-col lg:flex-row gap-8 px-4 md:px-6">
-          {/* Sidebar / Filters */}
-          <div className="w-full lg:w-[280px] flex-shrink-0 space-y-8">
-             <div className="sticky top-20">
-               <h2 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">Filter Balances</h2>
-               <TabsList className="flex flex-col w-full h-auto items-stretch bg-transparent p-0 gap-1">
-                 <TabsTrigger 
-                   value={BalanceTab.Confirmed.toString()} 
-                   className="justify-start px-4 py-3 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground border border-transparent data-[state=active]:border-primary/20 transition-all rounded-md w-full"
-                 >
-                   Confirmed
-                 </TabsTrigger>
-                 <TabsTrigger 
-                   value={BalanceTab.Pending.toString()}
-                   className="justify-start px-4 py-3 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground border border-transparent data-[state=active]:border-primary/20 transition-all rounded-md w-full"
-                 >
-                   Pending
-                 </TabsTrigger>
-                 <TabsTrigger 
-                    value={BalanceTab.Listed.toString()}
-                    className="justify-start px-4 py-3 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground border border-transparent data-[state=active]:border-primary/20 transition-all rounded-md w-full"
-                 >
-                    Listed
-                 </TabsTrigger>
-                 {type === WalletTab.BSV20 && (
-                   <TabsTrigger 
-                     value={BalanceTab.Unindexed.toString()} 
-                     className="justify-start px-4 py-3 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-primary/10 data-[state=active]:text-primary text-muted-foreground hover:text-foreground border border-transparent data-[state=active]:border-primary/20 transition-all rounded-md w-full"
-                   >
-                     Unindexed
-                   </TabsTrigger>
-                 )}
-               </TabsList>
-             </div>
+  if (!addressProp && locked.value) {
+    return <SAFU />;
+  }
+
+  const isUnindexed = selectedBalanceFilter.value === BalanceFilter.Unindexed;
+  const isLoading = unspentStatus.value === FetchStatus.Loading;
+  const hasError = unspentStatus.value === FetchStatus.Error;
+
+  return (
+    <div className="flex flex-col w-full h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border">
+        <h1 className="font-mono text-sm uppercase tracking-widest text-foreground">
+          {type.toUpperCase()}_BALANCES
+        </h1>
+        <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+          {selectedBalanceFilter.value.toUpperCase()}
+        </span>
+      </div>
+
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        {/* Error State */}
+        {hasError && (
+          <div className="flex flex-col items-center justify-center p-8 text-center border border-border rounded-lg bg-card">
+            <h3 className="font-mono text-lg font-bold text-destructive mb-2">Failed to load balances</h3>
+            <p className="text-muted-foreground text-sm mb-4">Unable to fetch balance data. Please check your connection and try again.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                unspentStatus.value = FetchStatus.Idle;
+                bsv20s.value = null;
+              }}
+            >
+              Retry
+            </Button>
           </div>
+        )}
 
-          {/* Main Content */}
-          <div className="flex-1 min-w-0 space-y-12">
-             {/* Balances Section */}
-             <div>
-                <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-4">Balances</h2>
-                <TabsContent value={BalanceTab.Confirmed.toString()} className="mt-0 animate-in fade-in-50 duration-500">
-                  {confirmedContent}
-                </TabsContent>
-                <TabsContent value={BalanceTab.Pending.toString()} className="mt-0 animate-in fade-in-50 duration-500">
-                  {pendingContent}
-                </TabsContent>
-                <TabsContent value={BalanceTab.Listed.toString()} className="mt-0 animate-in fade-in-50 duration-500">
-                  {listedContent.value}
-                </TabsContent>
-                {type === WalletTab.BSV20 && (
-                  <TabsContent value={BalanceTab.Unindexed.toString()} className="mt-0 animate-in fade-in-50 duration-500">
-                    {unindexedContent.value}
-                  </TabsContent>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* Unindexed Balances */}
+        {!isLoading && !hasError && isUnindexed && type === WalletTab.BSV20 && (
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Ticker</TableHead>
+                  <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bsv20s && bsv20s.value?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                      No unindexed tokens found
+                    </TableCell>
+                  </TableRow>
                 )}
-             </div>
+                {Object.entries(unindexBalances).map(([tick, amount], idx) => (
+                  <TableRow key={`bal-unindexed-${tick}`} className="border-border hover:bg-muted/50">
+                    <TableCell>
+                      <Link
+                        href={`/market/${type}/${tick}`}
+                        className="cursor-pointer hover:text-primary transition-colors font-mono font-medium"
+                      >
+                        {tick}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <div className="font-mono text-primary">
+                              {amount}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>[ ! ] This balance does not consider decimals.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-             {/* History Section */}
-             <div>
-                <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-4">
-                  {type.toUpperCase()} History
-                </h2>
-                <div className="w-full border border-border rounded-lg bg-card overflow-hidden">
-                  <div
-                    ref={parentRef}
-                    className="overflow-auto"
-                    style={{ height: "calc(100vh - 400px)", minHeight: "400px" }}
-                  >
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/60 z-10">
-                        <TableRow className="hover:bg-transparent border-border">
-                          <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-24">Height</TableHead>
-                          <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Ticker</TableHead>
-                          <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Op</TableHead>
-                          <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Amount</TableHead>
-                          <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Value</TableHead>
-                          <TableHead className="w-10"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: "relative" }}>
-                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                          const item = activityData[virtualRow.index];
-                          return (
-                            <TableRow
-                              key={virtualRow.key}
-                              data-index={virtualRow.index}
-                              ref={rowVirtualizer.measureElement}
-                              className="border-border hover:bg-muted/50 absolute w-full flex items-center"
-                              style={{
-                                transform: `translateY(${virtualRow.start}px)`,
-                              }}
-                            >
-                              {renderActivityRow(item)}
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-             </div>
+        {/* Regular Balances (Confirmed/Pending/Listed) */}
+        {!isLoading && !hasError && !isUnindexed && (
+          <>
+            {/* Empty State */}
+            {(!currentBalances || currentBalances.length === 0) ? (
+              <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-lg">
+                <h3 className="font-mono text-lg font-bold text-muted-foreground mb-2">
+                  No {selectedBalanceFilter.value} balances
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  You don&apos;t have any {selectedBalanceFilter.value} token balances.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+                {currentBalances.map(
+                  ({ tick, all, sym, id, dec, listed, icon, price }, idx) => {
+                    const deets = find(tickerDetails.value, (t) => t.tick === tick);
+                    const balance = selectedBalanceFilter.value === BalanceFilter.Listed
+                      ? listed.confirmed / 10 ** dec
+                      : selectedBalanceFilter.value === BalanceFilter.Pending
+                        ? all.pending / 10 ** dec
+                        : (all.confirmed - listed.confirmed) / 10 ** dec;
+
+                    const numDecimals = balance.toString().split(".")[1]?.length || 0;
+                    const balanceText = getBalanceText(balance, numDecimals) || "0";
+                    const tooltip =
+                      balance.toString() !== balanceText.trim()
+                        ? balance.toLocaleString()
+                        : "";
+
+                    const showAirdropIcon =
+                      selectedBalanceFilter.value === BalanceFilter.Confirmed &&
+                      (!addressProp || addressProp === ordAddress.value) &&
+                      all.confirmed / 10 ** dec > 100;
+
+                    const tokenPrice = price
+                      ? `$${((price * balance) / usdRate.value).toFixed(2)}`
+                      : "";
+
+                    return (
+                      <Card key={`bal-${selectedBalanceFilter.value}-${tick || id}`} className="border-border bg-card">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              {WalletTab.BSV21 === type && (
+                                <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
+                                  <IconWithFallback
+                                    icon={icon || null}
+                                    alt={sym || ""}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <div
+                                  className="font-mono text-lg font-bold hover:text-primary cursor-pointer transition-colors"
+                                  onClick={() =>
+                                    router.push(
+                                      `/market/${id ? `bsv21/${id}` : `bsv20/${tick}`}`,
+                                    )
+                                  }
+                                >
+                                  {tick || sym}
+                                </div>
+                                <div className="flex items-center text-xs text-muted-foreground font-mono">
+                                  {type === WalletTab.BSV20 && (
+                                    <FaHashtag className="w-3 h-3 mr-1" />
+                                  )}
+                                  {deets?.num || truncate(id) || ""}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-mono text-muted-foreground">{tokenPrice}</div>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <div className="text-lg font-mono text-primary font-medium">
+                                      {balanceText}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{tooltip}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </div>
+
+                          {selectedBalanceFilter.value === BalanceFilter.Confirmed && (
+                            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
+                              {showAirdropIcon && (
+                                <>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => setShowAirdrop(tick || id)}
+                                        >
+                                          <FaParachuteBox className="w-3 h-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Airdrop {sym || tick}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  {showAirdrop === (tick || id) && (
+                                    <AirdropTokensModal
+                                      onClose={() => setShowAirdrop(undefined)}
+                                      type={id ? AssetType.BSV21 : AssetType.BSV20}
+                                      dec={dec}
+                                      id={(tick || id)!}
+                                      sym={sym}
+                                      open={true}
+                                      balance={(all.confirmed - listed.confirmed) / 10 ** dec}
+                                    />
+                                  )}
+                                </>
+                              )}
+
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => setShowBurnModal(tick || id)}
+                                    >
+                                      <FaFireFlameCurved className="w-3 h-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Burn {sym || tick}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+
+                              {(!addressProp || addressProp === ordAddress.value) && all.confirmed / 10 ** dec > 0 && (
+                                <>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => setShowSendModal(tick || id)}
+                                        >
+                                          <IoSend className="w-3 h-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Send {sym || tick}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  {(showSendModal === (tick || id) || showBurnModal === (tick || id)) && (
+                                    <TransferBsv20Modal
+                                      onClose={() => {
+                                        setShowBurnModal(undefined);
+                                        setShowSendModal(undefined);
+                                      }}
+                                      type={type}
+                                      id={(tick || id)!}
+                                      dec={dec}
+                                      balance={balance}
+                                      burn={showBurnModal === (tick || id)}
+                                      sym={sym}
+                                    />
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  },
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* History Section */}
+        <div className="mt-8">
+          <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-4">
+            {type.toUpperCase()} HISTORY
+          </h2>
+          <div className="w-full border border-border rounded-lg bg-card overflow-hidden">
+            <div
+              ref={parentRef}
+              className="overflow-auto"
+              style={{ height: "400px", minHeight: "300px" }}
+            >
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/60 z-10">
+                  <TableRow className="hover:bg-transparent border-border">
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-24">Height</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Ticker</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Op</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Amount</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground text-right">Value</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: "relative" }}>
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const item = activityData[virtualRow.index];
+                    return (
+                      <TableRow
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        ref={rowVirtualizer.measureElement}
+                        className="border-border hover:bg-muted/50 absolute w-full flex items-center"
+                        style={{
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        {renderActivityRow(item)}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
-      </Tabs>
+      </div>
     </div>
   );
 };
 
 export default Bsv20List;
-
-// export const getBsv20Utxos = async (ordUtxos: Signal<OrdUtxo[] | null>) => {
-//   bsv20Utxos.value = [];
-//   const { promise } = http.customFetch<OrdUtxo[]>(
-//     `${API_HOST}/api/txos/address/${ordAddress.value}/unspent?limit=${resultsPerPage}&offset=0&dir=DESC&status=all&bsv20=true`
-//   );
-//   const u = await promise;
-//   bsv20Utxos.value = u;
-// };

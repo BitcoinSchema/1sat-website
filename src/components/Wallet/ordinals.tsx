@@ -17,21 +17,18 @@ import { useInView } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactType, artifactTypeMap } from "../artifact";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
 import { selectedType } from "./filter";
 import BatchActionsBar from "./BatchActionsBar";
-import FilterSidebar from "./FilterSidebar";
 import OrdinalCard from "./OrdinalCard";
 import SAFU from "./safu";
 
 interface WalletOrdinalsProps {
 	address?: string;
 	onClick?: (outpoint: string) => Promise<void>;
+	onCountsChange?: (counts: Record<string, number>, outpoints: string[]) => void;
 }
 
-const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) => {
+const WalletOrdinals = ({ address: addressProp, onClick, onCountsChange }: WalletOrdinalsProps) => {
 	useSignals();
 	const ref = useRef(null);
 	const isInView = useInView(ref);
@@ -153,6 +150,11 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 		return c;
 	}, [listings.value, filteredListings.length]);
 
+	// Notify parent of counts change for sidebar
+	useEffect(() => {
+		onCountsChange?.(counts, allOutpoints);
+	}, [counts, allOutpoints, onCountsChange]);
+
 	// Handle theme application
 	const handleApplyTheme = useCallback(async (ord: OrdUtxo) => {
 		// TODO: Integrate with @theme-token/sdk
@@ -179,7 +181,7 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 	// Show loading state until client is mounted to avoid hydration mismatch
 	if (!mounted) {
 		return (
-			<div className="w-full flex-1 flex items-center justify-center">
+			<div className="w-full flex-1 flex items-center justify-center min-h-[400px]">
 				<Loader2 className="w-8 h-8 text-primary animate-spin" />
 			</div>
 		);
@@ -191,89 +193,59 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 
 	if (!ordAddress.value && !addressProp) {
 		return (
-			<div className="w-full flex-1 flex items-center justify-center">
+			<div className="w-full flex-1 flex items-center justify-center min-h-[400px]">
 				<Loader2 className="w-8 h-8 text-primary animate-spin" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex w-full font-mono">
-			{/* Desktop Sidebar - Sticky within the layout */}
-			<div className="hidden lg:block sticky top-14 h-[calc(100vh-3.5rem)] z-30">
-				<FilterSidebar counts={counts} ordinalOutpoints={allOutpoints} />
+		<div className="flex flex-col w-full h-full">
+			{/* Header */}
+			<div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border">
+				<h1 className="font-mono text-sm uppercase tracking-widest text-foreground">
+					WALLET_INVENTORY
+				</h1>
+				<span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+					{counts.total || 0} ARTIFACTS
+				</span>
 			</div>
 
-			{/* Main Content Area */}
-			<div className="flex-1 flex flex-col min-w-0">
-				{/* Mobile Header with Sheet trigger */}
-				<div className="lg:hidden flex items-center justify-between p-4 border-b border-border">
-					<h1 className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
-						INVENTORY
-					</h1>
-					<Sheet>
-						<SheetTrigger asChild>
-							<Button
-								variant="outline"
-								size="sm"
-								className="rounded-none border-border hover:border-primary/50 hover:text-primary"
-							>
-								<Menu className="w-4 h-4 mr-2" />
-								<span className="font-mono text-xs uppercase">Filter</span>
-							</Button>
-						</SheetTrigger>
-						<SheetContent side="left" className="p-0 w-[280px] bg-background border-border">
-							<FilterSidebar counts={counts} ordinalOutpoints={allOutpoints} />
-						</SheetContent>
-					</Sheet>
-				</div>
-
-				{/* Desktop Header */}
-				<div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-border">
-					<h1 className="font-mono text-lg uppercase tracking-tight text-foreground">
-						WALLET_INVENTORY
-					</h1>
-					<span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
-						{counts.total || 0} ARTIFACTS
-					</span>
-				</div>
-
-				{/* Grid Area */}
-				<div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24">
-					{filteredListings.length === 0 && !isFetching ? (
-						<div className="flex flex-col items-center justify-center py-24 text-muted-foreground font-mono">
-							<div className="text-6xl mb-6 opacity-20">/</div>
-							<p className="uppercase tracking-widest text-sm">NO ARTIFACTS FOUND</p>
-							<p className="text-xs text-muted-foreground mt-2">
-								{searchQuery.value ? "Try a different search term" : "Your wallet is empty"}
-							</p>
-						</div>
-					) : (
-						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-							{filteredListings.map((ord) => (
-								<OrdinalCard
-									key={ord.outpoint}
-									ord={ord}
-									onApplyTheme={handleApplyTheme}
-									onClick={onClick ? (op) => onClick(op) : undefined}
-								/>
-							))}
-						</div>
-					)}
-
-					{/* Infinite scroll trigger */}
-					<div ref={ref} className="flex justify-center py-12">
-						{hasNextPage || isFetching ? (
-							<div className="flex items-center gap-3 text-primary font-mono text-sm animate-pulse">
-								<Loader2 className="w-5 h-5 animate-spin" />
-								<span className="uppercase tracking-wider">LOADING_DATA...</span>
-							</div>
-						) : filteredListings.length > 0 ? (
-							<span className="text-muted-foreground text-xs uppercase tracking-widest">
-								[ END OF DATA ]
-							</span>
-						) : null}
+			{/* Grid Area */}
+			<div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24">
+				{filteredListings.length === 0 && !isFetching ? (
+					<div className="flex flex-col items-center justify-center py-24 text-muted-foreground font-mono">
+						<div className="text-6xl mb-6 opacity-20">/</div>
+						<p className="uppercase tracking-widest text-sm">NO ARTIFACTS FOUND</p>
+						<p className="text-xs text-muted-foreground mt-2">
+							{searchQuery.value ? "Try a different search term" : "Your wallet is empty"}
+						</p>
 					</div>
+				) : (
+					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+						{filteredListings.map((ord) => (
+							<OrdinalCard
+								key={ord.outpoint}
+								ord={ord}
+								onApplyTheme={handleApplyTheme}
+								onClick={onClick ? (op) => onClick(op) : undefined}
+							/>
+						))}
+					</div>
+				)}
+
+				{/* Infinite scroll trigger */}
+				<div ref={ref} className="flex justify-center py-12">
+					{hasNextPage || isFetching ? (
+						<div className="flex items-center gap-3 text-primary font-mono text-sm animate-pulse">
+							<Loader2 className="w-5 h-5 animate-spin" />
+							<span className="uppercase tracking-wider">LOADING_DATA...</span>
+						</div>
+					) : filteredListings.length > 0 ? (
+						<span className="text-muted-foreground text-xs uppercase tracking-widest">
+							[ END OF DATA ]
+						</span>
+					) : null}
 				</div>
 			</div>
 

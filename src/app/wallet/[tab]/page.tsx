@@ -2,25 +2,31 @@ import WalletBsv20 from "@/components/Wallet/bsv20";
 import WalletHistory from "@/components/Wallet/history";
 import WalletOrdinals from "@/components/Wallet/ordinals";
 import { WalletTab } from "@/components/Wallet/tabs";
+import WalletLayout from "@/components/Wallet/WalletLayout";
 
 import { getCapitalizedAssetType } from "@/utils/assetType";
 
 const WalletPage = async ({ params }: { params: Promise<{ tab: WalletTab }> }) => {
   const { tab } = await params;
 
-  // Ordinals has its own sidebar layout - no wrapper padding needed
-  if (tab === WalletTab.Ordinals) {
-    return <WalletOrdinals />;
-  }
+  const getContent = () => {
+    switch (tab) {
+      case WalletTab.Ordinals:
+        return <WalletOrdinals />;
+      case WalletTab.BSV20:
+      case WalletTab.BSV21:
+        return <WalletBsv20 type={tab} />;
+      case WalletTab.History:
+        return <WalletHistory />;
+      default:
+        return <WalletOrdinals />;
+    }
+  };
 
   return (
-    <div className="w-full flex-1 flex flex-col px-4 md:px-6 lg:px-8">
-      {tab === WalletTab.BSV20 || tab === WalletTab.BSV21 ? (
-        <WalletBsv20 type={tab} />
-      ) : (
-        <WalletHistory />
-      )}
-    </div>
+    <WalletLayout tab={tab}>
+      {getContent()}
+    </WalletLayout>
   );
 };
 

@@ -1,10 +1,12 @@
-import WalletHome from "@/components/Wallet/home";
+import WalletOrdinals from "@/components/Wallet/ordinals";
+import WalletLayout from "@/components/Wallet/WalletLayout";
+import { WalletTab } from "@/components/Wallet/tabs";
 
 const WalletPage = () => {
 	return (
-		<div className="w-full flex-1 flex flex-col px-4 md:px-6 lg:px-8">
-			<WalletHome />
-		</div>
+		<WalletLayout tab={WalletTab.Ordinals}>
+			<WalletOrdinals />
+		</WalletLayout>
 	);
 };
 
