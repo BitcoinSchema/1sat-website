@@ -82,6 +82,7 @@ type ArtifactProps = {
   sizes: string;
   latest?: boolean;
   showListingTag?: boolean;
+  thumbnail?: boolean;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -99,6 +100,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   sizes,
   latest = false,
   showListingTag = true,
+  thumbnail = false,
 }) => {
   const router = useRouter();
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
@@ -191,6 +193,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         origin={origin}
         src={src}
         className={`${classNames?.media ? classNames.media : ""}`}
+        thumbnail={thumbnail}
       />
     ) : type === ArtifactType.Audio || type === ArtifactType.Audio2 ? (
       <>
@@ -374,6 +377,7 @@ const Artifact: React.FC<ArtifactProps> = ({
     num,
     sizes,
     showFooter,
+    thumbnail,
   ]);
 
   return (

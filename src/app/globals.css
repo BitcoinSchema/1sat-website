@@ -186,36 +186,36 @@ h1 {
 
 @layer base {
   :root {
-		--background: oklch(1.0000 0 0);
-		--foreground: oklch(0.2686 0 0);
-		--card: oklch(1.0000 0 0);
-		--card-foreground: oklch(0.2686 0 0);
-		--popover: oklch(1.0000 0 0);
-		--popover-foreground: oklch(0.2686 0 0);
-		--primary: oklch(0.7686 0.1647 70.0804);
-		--primary-foreground: oklch(0 0 0);
-		--secondary: oklch(0.9670 0.0029 264.5419);
-		--secondary-foreground: oklch(0.4461 0.0263 256.8018);
-		--muted: oklch(0.9846 0.0017 247.8389);
-		--muted-foreground: oklch(0.5510 0.0234 264.3637);
-		--accent: oklch(0.9869 0.0214 95.2774);
-		--accent-foreground: oklch(0.4732 0.1247 46.2007);
-		--destructive: oklch(0.6368 0.2078 25.3313);
-		--destructive-foreground: oklch(1.0000 0 0);
-		--border: oklch(0.9276 0.0058 264.5313);
-		--input: oklch(0.9276 0.0058 264.5313);
-		--ring: oklch(0.7686 0.1647 70.0804);
-		--chart-1: oklch(0.7686 0.1647 70.0804);
-		--chart-2: oklch(0.6658 0.1574 58.3183);
-		--chart-3: oklch(0.5553 0.1455 48.9975);
-		--chart-4: oklch(0.4732 0.1247 46.2007);
-		--chart-5: oklch(0.4137 0.1054 45.9038);
-		--radius: 0.125rem; /* Sharp corners for terminal aesthetic */
+		--background: oklch(0.98 0.005 155);
+		--foreground: oklch(0.14 0.04 155);
+		--card: oklch(0.96 0.008 155);
+		--card-foreground: oklch(0.14 0.04 155);
+		--popover: oklch(0.96 0.008 155);
+		--popover-foreground: oklch(0.14 0.04 155);
+		--primary: oklch(0.48 0.15 155);
+		--primary-foreground: oklch(0.98 0.00 0);
+		--secondary: oklch(0.92 0.03 155);
+		--secondary-foreground: oklch(0.25 0.06 155);
+		--muted: oklch(0.92 0.01 155);
+		--muted-foreground: oklch(0.45 0.04 155);
+		--accent: oklch(0.90 0.04 155);
+		--accent-foreground: oklch(0.20 0.06 155);
+		--destructive: oklch(0.55 0.20 25);
+		--destructive-foreground: oklch(0.98 0.00 0);
+		--border: oklch(0.88 0.03 155);
+		--input: oklch(0.88 0.03 155);
+		--ring: oklch(0.48 0.15 155);
+		--chart-1: oklch(0.48 0.15 155);
+		--chart-2: oklch(0.55 0.12 175);
+		--chart-3: oklch(0.45 0.12 200);
+		--chart-4: oklch(0.60 0.14 130);
+		--chart-5: oklch(0.55 0.10 155);
+		--radius: 0.25rem; /* Sharp corners for terminal aesthetic */
 		--sidebar-foreground: 240 5.3% 26.1%;
 		--sidebar-primary-foreground: 0 0% 98%;
 		--sidebar-accent-foreground: 240 5.9% 10%;
 		--sidebar-ring: 217.2 91.2% 59.8%;
-		--font-serif: Source Serif 4, serif;
+		--font-serif: "Source Serif 4", ui-serif, Georgia, serif;
 		--shadow-y: 4px;
 		--shadow-spread: -1px;
 		--shadow-color: hsl(0 0% 0%);
@@ -224,8 +224,8 @@ h1 {
 		--sidebar-primary: 240 5.9% 10%;
 		--sidebar-accent: 240 4.8% 95.9%;
 		--sidebar-border: 220 13% 91%;
-		--font-sans: Inter, sans-serif;
-		--font-mono: JetBrains Mono, monospace;
+		--font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+		--font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
 		--shadow-x: 0px;
 		--shadow-blur: 8px;
 		--shadow-opacity: 0.1;
@@ -234,36 +234,36 @@ h1 {
 	}
   .dark {
 		/* Hacker Terminal Theme with subtle green tint */
-		--background: oklch(0.12 0.01 150);
-		--foreground: oklch(0.92 0.03 150);
-		--card: oklch(0.17 0.015 150);
-		--card-foreground: oklch(0.92 0.03 150);
-		--popover: oklch(0.17 0.015 150);
-		--popover-foreground: oklch(0.92 0.03 150);
-		--primary: oklch(0.723 0.219 149.579);
-		--primary-foreground: oklch(0.1 0.02 150);
-		--secondary: oklch(0.22 0.025 150);
-		--secondary-foreground: oklch(0.9 0.03 150);
-		--muted: oklch(0.22 0.025 150);
-		--muted-foreground: oklch(0.6 0.035 150);
-		--accent: oklch(0.25 0.04 150);
-		--accent-foreground: oklch(0.9 0.03 150);
-		--destructive: oklch(0.6 0.2 20);
-		--destructive-foreground: oklch(0.95 0 0);
-		--border: oklch(0.23 0.03 150);
-		--input: oklch(0.23 0.03 150);
-		--ring: oklch(0.723 0.219 149.579);
-		--chart-1: oklch(0.8369 0.1644 84.4286);
-		--chart-2: oklch(0.6658 0.1574 58.3183);
-		--chart-3: oklch(0.4732 0.1247 46.2007);
-		--chart-4: oklch(0.5553 0.1455 48.9975);
-		--chart-5: oklch(0.4732 0.1247 46.2007);
-		--radius: 0.125rem; /* Sharp corners for terminal aesthetic */
+		--background: oklch(0.11 0.03 155);
+		--foreground: oklch(0.92 0.04 155);
+		--card: oklch(0.14 0.035 155);
+		--card-foreground: oklch(0.92 0.04 155);
+		--popover: oklch(0.14 0.035 155);
+		--popover-foreground: oklch(0.92 0.04 155);
+		--primary: oklch(0.70 0.18 155);
+		--primary-foreground: oklch(0.11 0.05 155);
+		--secondary: oklch(0.22 0.05 155);
+		--secondary-foreground: oklch(0.85 0.08 155);
+		--muted: oklch(0.18 0.03 155);
+		--muted-foreground: oklch(0.65 0.06 155);
+		--accent: oklch(0.20 0.06 155);
+		--accent-foreground: oklch(0.85 0.10 155);
+		--destructive: oklch(0.60 0.22 25);
+		--destructive-foreground: oklch(0.12 0.05 25);
+		--border: oklch(0.22 0.05 155);
+		--input: oklch(0.22 0.05 155);
+		--ring: oklch(0.65 0.15 155);
+		--chart-1: oklch(0.70 0.18 155);
+		--chart-2: oklch(0.72 0.15 175);
+		--chart-3: oklch(0.65 0.14 200);
+		--chart-4: oklch(0.78 0.16 130);
+		--chart-5: oklch(0.75 0.12 155);
+		--radius: 0.25rem; /* Sharp corners for terminal aesthetic */
 		--sidebar-foreground: 240 4.8% 95.9%;
 		--sidebar-primary-foreground: 0 0% 100%;
 		--sidebar-accent-foreground: 240 4.8% 95.9%;
 		--sidebar-ring: 217.2 91.2% 59.8%;
-		--font-serif: Source Serif 4, serif;
+		--font-serif: "Source Serif 4", ui-serif, Georgia, serif;
 		--shadow-y: 4px;
 		--shadow-spread: -1px;
 		--shadow-color: hsl(0 0% 0%);
@@ -271,18 +271,18 @@ h1 {
 		--sidebar-primary: 224.3 76.3% 48%;
 		--sidebar-accent: oklch(0.2 0.025 150);
 		--sidebar-border: oklch(0.23 0.03 150);
-		--font-sans: Inter, sans-serif;
-		--font-mono: JetBrains Mono, monospace;
+		--font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+		--font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
 		--shadow-x: 0px;
 		--shadow-blur: 8px;
 		--shadow-opacity: 0.1;
 		--sidebar-background: 240 5.9% 10%;
 	}
   .theme {
-		--font-sans: Inter, sans-serif;
-		--font-mono: JetBrains Mono, monospace;
-		--font-serif: Source Serif 4, serif;
-		--radius: 0.125rem; /* Sharp corners for terminal aesthetic */
+		--font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+		--font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+		--font-serif: "Source Serif 4", ui-serif, Georgia, serif;
+		--radius: 0.25rem; /* Sharp corners for terminal aesthetic */
 		--tracking-tighter: calc(var(--tracking-normal) - 0.05em);
 		--tracking-tight: calc(var(--tracking-normal) - 0.025em);
 		--tracking-wide: calc(var(--tracking-normal) + 0.025em);
