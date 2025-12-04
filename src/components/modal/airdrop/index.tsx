@@ -531,7 +531,9 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                 destinationBsv21Ids.value.length > 0) && (
                 <div className="space-y-2">
                   <Label className="flex items-center justify-end gap-2">
-                    <HelpCircle className="w-3 h-3 text-zinc-500" title="Holders per ticker, largest first." />
+                    <span title="Holders per ticker, largest first.">
+                      <HelpCircle className="w-3 h-3 text-muted-foreground" />
+                    </span>
                     Number of Holders
                   </Label>
                   <Input
