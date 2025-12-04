@@ -5,20 +5,20 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-mono uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-mono uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-green-900/30 text-green-400 border border-green-500/50 hover:bg-green-900/50",
+          "bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30",
         destructive:
-          "bg-red-900/30 text-red-400 border border-red-500/50 hover:bg-red-900/50",
+          "bg-destructive/20 text-destructive border border-destructive/50 hover:bg-destructive/30",
         outline:
-          "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
+          "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100",
-        ghost: "hover:bg-zinc-900 hover:text-green-400",
-        link: "text-green-500 underline-offset-4 hover:underline",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",

@@ -10,7 +10,7 @@ const Header = async ({ ubuntu }: { ubuntu: { className: string } }) => {
 
 	return (
 		<header
-			className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm"
+			className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-sm"
 			style={{ paddingTop: "env(safe-area-inset-top)" }}
 		>
 			<div className="flex h-14 items-center justify-between px-4 md:px-6">
