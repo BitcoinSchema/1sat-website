@@ -5,6 +5,7 @@ import { bsv20Utxos, ordPk, payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
 import { getUtxos } from "@/utils/address";
+import { notifyIndexer } from "@/utils/indexer";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
@@ -102,6 +103,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
         const response = await tx.broadcast(oneSatBroadcaster());
       console.log({response});
 			if (response.status === "success") {
+				notifyIndexer(response.txid);
 				bsv20Utxos.value =
 					bsv20Utxos.value?.filter(
 						(u: OrdUtxo) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1,
@@ -192,6 +194,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 			const { txid, status } = await tx.broadcast(oneSatBroadcaster());
 			if (status === "success") {
 				console.log("Broadcasted", { txid });
+				notifyIndexer(txid);
 				toast.success("Listing canceled.", toastProps);
 				const newOutpoint = `${txid}_0`;
 

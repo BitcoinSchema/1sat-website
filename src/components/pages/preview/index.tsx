@@ -4,6 +4,7 @@ import { FetchStatus, toastProps } from "@/constants";
 import { ordUtxos, usdRate, utxos } from "@/signals/wallet";
 import type { PendingTransaction } from "@/types/preview";
 import { formatBytes } from "@/utils/bytes";
+import { notifyIndexer } from "@/utils/indexer";
 import { useIDBStorage } from "@/utils/storage";
 import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
@@ -60,6 +61,7 @@ const PreviewPage = () => {
     const { txid, status } = await transaction.broadcast(oneSatBroadcaster());
     if (status === "success") {
       console.log("Broadcasted", { txid })
+      notifyIndexer(txid);
       setBroadcastStatus(FetchStatus.Success);
 
       toast.success("Transaction broadcasted.", toastProps);
