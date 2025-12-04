@@ -4,97 +4,145 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-1Sat is a Next.js-based marketplace for Bitcoin SV Ordinals and tokens. It provides wallet management, token trading, NFT collections, and inscription services.
+1Sat is a Next.js marketplace for Bitcoin SV 1Sat Ordinals and tokens. Provides wallet management, token trading, NFT collections, and inscription services.
 
 ## Development Commands
 
 ```bash
-bun run dev      # Start development server
+bun run dev      # Start development server (uses Turbopack)
 bun run build    # Build for production
 bun run start    # Start production server
 bun run lint     # Run ESLint
-bun update       # Update all dependencies
 ```
 
 ## Architecture Overview
 
 ### Tech Stack
-- **Framework**: Next.js 16 with App Router
-- **Language**: TypeScript (strict mode)
-- **State Management**: Preact Signals v3 for reactive wallet state
-- **Data Fetching**: TanStack Query
-- **Styling**: TailwindCSS + DaisyUI (luxury theme)
-- **Bitcoin Integration**: @bsv/sdk and js-1sat-ord
+- **Framework**: Next.js 16 with App Router + Turbopack + React Compiler
+- **State Management**: Preact Signals v3 (`@preact/signals-react`)
+- **Data Fetching**: TanStack Query with custom `httpClient` wrapper
+- **Styling**: TailwindCSS v4 + ShadCN/UI + ThemeToken
+- **Bitcoin**: `@bsv/sdk` and `js-1sat-ord`
 
 ### Key Directories
-- `src/app/` - Next.js App Router pages and API routes
-- `src/components/` - Reusable components (pages/, modal/, ui/)
-- `src/signals/` - Reactive state management using Preact Signals
-- `src/utils/` - Utility functions for crypto, formatting, etc.
-- `src/types/` - TypeScript type definitions
+- `src/app/` - App Router pages and API routes
+- `src/components/` - Organized as `pages/`, `modal/`, `ui/`
+- `src/signals/` - Preact Signals state (wallet signals in `wallet/`)
+- `src/utils/` - Utilities including `httpClient.ts` for API calls
+- `src/types/` - TypeScript definitions (`ordinals.ts`, `bsv20.ts`, `common.ts`)
+- `src/constants.ts` - API endpoints, protocol prefixes, fee rates
 
-### Core Concepts
+### Wallet Architecture
+- HD wallets with BIP39 mnemonics
+- Three key types: `payPk` (payments), `ordPk` (ordinals), `identityPk` (identity)
+- Encrypted storage with passphrase
+- All wallet state via signals: `src/signals/wallet/index.tsx`
 
-#### Wallet System
-- Uses HD wallets with BIP39 mnemonics
-- Separate keys: `payPk` (payments) and `ordPk` (ordinals)
-- Encrypted storage with user passphrase
-- State managed via signals in `src/signals/wallet/`
+### Asset Types (from `src/constants.ts`)
+- `AssetType.Ordinals` - NFT inscriptions
+- `AssetType.BSV20` - Fungible tokens (tick-based)
+- `AssetType.BSV21` - Enhanced tokens (id-based)
+- `AssetType.LRC20` - Alternative protocol
 
-#### Supported Asset Types
-- **Ordinals**: NFT-like inscriptions
-- **BSV20**: Fungible tokens
-- **BSV21**: Enhanced token standard  
-- **LRC20**: Alternative token protocol
-
-#### API Integrations
-- **Ordinals Indexer**: https://ordinals.gorillapool.io
-- **1Sat API**: https://1sat-api-production.up.railway.app
-- **WhatsOnChain**: For blockchain data
-- **ORDFS**: For file storage
-
-### Environment Variables
-
-Required in `.env.local`:
+### API Endpoints (from `src/constants.ts`)
+```typescript
+ORDFS = "https://ordfs.network"           // File storage
+API_HOST = "https://ordinals.gorillapool.io"  // Ordinals indexer
+MARKET_API_HOST = "https://api.1sat.market"   // Market API
 ```
-UPLOADTHING_SECRET=<your-key>
-UPLOADTHING_APP_ID=<your-app-id>
-NEXT_PUBLIC_OLLAMA_URL=http://localhost:11434  # Optional, for AI features
-```
+
+### Protocol Prefixes (from `src/constants.ts`)
+- `MAP_PREFIX` - Magic Attribute Protocol
+- `B_PREFIX` - B:// file protocol
+- `BAP_PREFIX` - Bitcoin Attestation Protocol
+- `AIP_PREFIX` - Author Identity Protocol
 
 ### Important Patterns
 
-1. **Component Imports**: Always check existing components before creating new ones. UI components are in `src/components/ui/`.
-
-2. **State Management**: Use signals from `src/signals/` for wallet-related state. Example:
+1. **Signals State**: Import from `@/signals/wallet`:
    ```typescript
-   import { payPk, ordPk, utxos } from '@/signals/wallet';
+   import { payPk, ordPk, utxos, bsv20Balances } from '@/signals/wallet';
    ```
 
-3. **API Calls**: Use TanStack Query hooks for data fetching. Check `src/hooks/` for existing query hooks.
+2. **HTTP Client**: Use `customFetch` from `@/utils/httpClient` for API calls with automatic caching and error handling.
 
-4. **Type Safety**: All data structures have TypeScript types in `src/types/`. Use them consistently.
+3. **Path Alias**: `@/*` maps to `./src/*`
 
-5. **Path Aliases**: Use `@/*` which maps to `./src/*`
+4. **Sanitization**: Use `isomorphic-dompurify` for user content (SVG, HTML).
 
-### Security Considerations
+5. **Fee Rate**: Use `SATS_PER_KB` or `SATS_PER_BYTE` from constants (not deprecated `feeRate`).
 
-- Content Security Policy configured in `src/middleware.ts`
-- All user content (SVG, HTML) must be sanitized using DOMPurify
-- Wallet keys are encrypted before storage
-- Check blacklist for scam prevention (`src/utils/blacklist.ts`)
-
-### Common Development Tasks
-
-When working with:
-- **Wallet features**: Check `src/signals/wallet/` and `src/utils/wallet/`
-- **Token operations**: See `src/utils/tokens/` and corresponding API routes
-- **UI components**: Use existing components from `src/components/ui/` and DaisyUI
-- **Blockchain data**: Use existing API hooks rather than direct calls
+### Security
+- User content (SVG, HTML) must be sanitized with DOMPurify
+- Wallet keys encrypted before storage
+- Scam prevention via `SCAM_LISTING_USER_BLACKLIST` and `SCAM_ITEM_BLACKLIST` in constants
+- CSP configured for images in `next.config.mjs`
 
 ### Notes
+- Production app handling real cryptocurrency - be extremely careful with wallet operations
+- Uses real blockchain data, never mock data
+- React Compiler enabled for automatic memoization
+- View transitions enabled experimentally
 
-- This is a production application handling real cryptocurrency - be extremely careful with wallet operations
-- The codebase uses real blockchain data, never mock data
-- Image optimization is handled by Next.js Image component and Sharp
-- AI features integrate with OpenAI and Ollama when configured
+## ShadCN/UI + ThemeToken Migration
+
+This codebase uses ShadCN/UI with ThemeToken support. When modifying components:
+
+1. **Check shadcn.md files**: Each folder has a `shadcn.md` with migration status
+2. **Use semantic colors**: Never use hardcoded hex colors - use `bg-card`, `text-muted-foreground`, etc.
+3. **Use ShadCN components**: Import from `@/components/ui/` (Button, Dialog, Tabs, etc.)
+4. **CSS Variables**: Theme colors defined in `globals.css` using OKLCH format
+5. **ThemeToken**: Runtime theming via `useThemeToken` hook from `@/hooks/useThemeToken`
+
+### Base Theme
+The midnight-aurora ThemeToken is installed as the base theme:
+- Origin: `85702d92d2ca2f5a48eaede302f0e85d9142924d68454565dbf621701b2d83cf_0`
+- Primary: Gold/yellow (`oklch(0.7686 0.1647 70.0804)`)
+
+### Component Imports
+```typescript
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
+import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+```
+
+### Color Mapping (DaisyUI to ShadCN)
+| Hardcoded | Semantic Replacement |
+|-----------|---------------------|
+| `bg-[#111]` | `bg-card` |
+| `bg-[#222]` | `bg-secondary` or `bg-muted` |
+| `text-[#aaa]` | `text-card-foreground` |
+| `text-[#555]` | `text-muted-foreground` |
+| `bg-base-100` | `bg-background` |
+| `border-base-200` | `border-border` |
+
+### DaisyUI to ShadCN Component Mapping
+| DaisyUI | ShadCN |
+|---------|--------|
+| `modal`, `modal-box` | `<Dialog>`, `<DialogContent>` |
+| `btn`, `btn-primary` | `<Button>` |
+| `btn-ghost` | `<Button variant="ghost">` |
+| `btn-error` | `<Button variant="destructive">` |
+| `tabs`, `tab` | `<Tabs>`, `<TabsTrigger>` |
+| `dropdown` | `<DropdownMenu>` |
+| `tooltip` | `<Tooltip>` |
+| `divider` | `<Separator>` |
+| `input`, `input-bordered` | `<Input>` |
+
+### ThemeToken Hook Usage
+```typescript
+import { useThemeToken } from "@/hooks/useThemeToken";
+
+// Pass user's ordinals to detect ThemeToken ordinals
+const { themeTokens, activeTheme, loadTheme, resetTheme } = useThemeToken(ordinals);
+
+// Load a theme by origin
+await loadTheme("85702d92d2ca2f5a48eaede302f0e85d9142924d68454565dbf621701b2d83cf_0");
+
+// Reset to default theme
+resetTheme();
+```
