@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import MarketFilterSidebar from "./FilterSidebar";
 
 interface MarketLayoutProps {
@@ -19,26 +19,23 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
 
 			{/* Main Content */}
 			<div className="flex-1 flex flex-col overflow-hidden">
-				{/* Mobile Header with Sheet trigger */}
-				<div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-background">
+				{/* Mobile Filter Bar */}
+				<div className="lg:hidden flex items-center px-4 py-2 border-b border-border">
 					<Sheet>
 						<SheetTrigger asChild>
 							<Button
 								variant="ghost"
 								size="sm"
-								className="rounded-md text-muted-foreground hover:text-foreground"
+								className="gap-2 text-muted-foreground hover:text-foreground"
 							>
-								<Menu className="w-5 h-5" />
+								<SlidersHorizontal className="w-4 h-4" />
+								<span className="text-xs uppercase tracking-wider">Filters</span>
 							</Button>
 						</SheetTrigger>
 						<SheetContent side="left" className="p-0 w-[280px]">
 							<MarketFilterSidebar />
 						</SheetContent>
 					</Sheet>
-					<span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-						ORDINALS_MARKET
-					</span>
-					<div className="w-8" />
 				</div>
 
 				{/* Content */}

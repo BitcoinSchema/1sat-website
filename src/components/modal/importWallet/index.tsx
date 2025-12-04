@@ -128,16 +128,16 @@ const ImportWalletModal = forwardRef<
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+      <DialogContent className="bg-background border-border max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
-            <Download className="w-5 h-5 text-green-500" />
+          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-foreground">
+            <Download className="w-5 h-5 text-primary" />
             Import Wallet
             {importWalletTab.value === ImportWalletTab.FromBackupJson && (
-              <span className="text-zinc-500 text-sm">/ Backup JSON</span>
+              <span className="text-muted-foreground text-sm">/ Backup JSON</span>
             )}
             {importWalletTab.value === ImportWalletTab.FromMnemonic && (
-              <span className="text-zinc-500 text-sm">/ Mnemonic</span>
+              <span className="text-muted-foreground text-sm">/ Mnemonic</span>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -154,7 +154,7 @@ const ImportWalletModal = forwardRef<
                 wallet, sign out first.
               </p>
             </div>
-            <DialogFooter className="flex gap-2 pt-4 border-t border-zinc-800">
+            <DialogFooter className="flex gap-2 pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
@@ -178,7 +178,7 @@ const ImportWalletModal = forwardRef<
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <button
                   type="button"
-                  className="flex flex-col items-center justify-center gap-3 p-6 border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 hover:border-zinc-700 transition font-mono text-sm uppercase tracking-wider text-zinc-300 hover:text-green-400"
+                  className="flex flex-col items-center justify-center gap-3 p-6 border border-border bg-card hover:bg-muted hover:border-muted-foreground transition font-mono text-sm uppercase tracking-wider text-muted-foreground hover:text-primary"
                   onClick={() => selectTab(ImportWalletTab.FromBackupJson)}
                 >
                   <FileUp className="w-8 h-8" />
@@ -187,7 +187,7 @@ const ImportWalletModal = forwardRef<
 
                 <button
                   type="button"
-                  className="flex flex-col items-center justify-center gap-3 p-6 border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 hover:border-zinc-700 transition font-mono text-sm uppercase tracking-wider text-zinc-300 hover:text-green-400"
+                  className="flex flex-col items-center justify-center gap-3 p-6 border border-border bg-card hover:bg-muted hover:border-muted-foreground transition font-mono text-sm uppercase tracking-wider text-muted-foreground hover:text-primary"
                   onClick={() => selectTab(ImportWalletTab.FromMnemonic)}
                 >
                   <Key className="w-8 h-8" />

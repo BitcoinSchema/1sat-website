@@ -239,7 +239,7 @@ const WalletMenu: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-none hover:bg-zinc-800 hover:text-green-400"
+            className="rounded-none hover:bg-muted hover:text-primary"
             title="Wallet"
           >
             <FaWallet className="w-4 h-4" />
@@ -249,11 +249,11 @@ const WalletMenu: React.FC = () => {
           {payPk.value && ordPk.value && (
             <>
               {/* Balance Section */}
-              <div className="px-3 py-4 text-center border-b border-zinc-800">
-                <div className="text-zinc-500 text-xs uppercase tracking-wider mb-2">
+              <div className="px-3 py-4 text-center border-b border-border">
+                <div className="text-muted-foreground text-xs uppercase tracking-wider mb-2">
                   Balance
                 </div>
-                <div className="text-2xl font-mono text-zinc-100 mb-1">
+                <div className="text-2xl font-mono text-foreground mb-1">
                   {balance.value === undefined ? (
                     ""
                   ) : usdRate.value > 0 ? (
@@ -261,18 +261,18 @@ const WalletMenu: React.FC = () => {
                   ) : (
                     <Loader2 className="animate-spin inline-flex w-4 h-4" />
                   )}
-                  <span className="text-xs text-zinc-500 ml-1">USD</span>
+                  <span className="text-xs text-muted-foreground ml-1">USD</span>
                 </div>
-                <div className="text-zinc-500 text-sm">
+                <div className="text-muted-foreground text-sm">
                   {toBitcoin(balance.value)} <span className="text-xs">BSV</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 p-3 border-b border-zinc-800">
+              <div className="flex gap-2 p-3 border-b border-border">
                 <button
                   type="button"
-                  className="flex-1 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-green-900/30 text-green-400 border border-green-500/50 hover:bg-green-900/50 transition"
+                  className="flex-1 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30 transition"
                   onClick={() => {
                     showDepositModal.value = true;
                     showDropdown.value = false;
@@ -283,7 +283,7 @@ const WalletMenu: React.FC = () => {
                 <button
                   type="button"
                   disabled={usdRate.value <= 0 || balance.value === 0}
-                  className="flex-1 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-zinc-900 text-zinc-400 border border-zinc-700 hover:text-zinc-200 hover:border-zinc-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-muted text-muted-foreground border border-border hover:text-foreground hover:border-muted-foreground transition disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => {
                     showWithdrawalModal.value = true;
                     showDropdown.value = false;
@@ -317,7 +317,7 @@ const WalletMenu: React.FC = () => {
                 {ordAddressHover.value
                   ? `${ordAddress.value?.slice(0, 8)}...${ordAddress.value?.slice(-8)}`
                   : "Ordinals Address"}
-                <FaCopy className="text-zinc-600 w-3 h-3" />
+                <FaCopy className="text-muted-foreground w-3 h-3" />
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />

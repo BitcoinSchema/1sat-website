@@ -3,6 +3,7 @@ import SearchBar from "../SearchBar";
 import Wallet from "../Wallet/menu";
 import MarketMenu from "../marketMenu";
 import Logo from "./Logo";
+import StatusIndicator from "./StatusIndicator";
 
 const Header = async ({ ubuntu }: { ubuntu: { className: string } }) => {
 	const headersList = await headers();
@@ -26,6 +27,7 @@ const Header = async ({ ubuntu }: { ubuntu: { className: string } }) => {
 
 				{/* Right Actions */}
 				<div className="flex items-center gap-2">
+					<StatusIndicator />
 					<MarketMenu />
 					<Wallet />
 				</div>

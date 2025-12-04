@@ -147,24 +147,36 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         console.log(`FlowGrid: ${data?.pages.length || 0} pages, ${allArtifacts.length} total artifacts, ${artifacts.length} after dedup, hasNextPage: ${hasNextPage}, isFetchingNextPage: ${isFetchingNextPage}`);
     }, [data?.pages.length, allArtifacts.length, artifacts.length, hasNextPage, isFetchingNextPage]);
 
+    // Track which artifacts have been marked visible to avoid infinite loops
+    const markedVisible = useRef<Set<string>>(new Set());
+
     useEffect(() => {
         // Initialize all new artifacts as visible immediately
         // IntersectionObserver lazy loading was causing items to stay invisible
+        const newOutpoints: string[] = [];
         for (const artifact of artifacts) {
-            // Use artifact.outpoint directly - this is the CURRENT listing outpoint
             const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
-
+            if (!markedVisible.current.has(outpointStr)) {
+                markedVisible.current.add(outpointStr);
+                newOutpoints.push(outpointStr);
+            }
+        }
+        
+        // Batch update - only if there are new items
+        if (newOutpoints.length > 0) {
             setVisible(prev => {
-                if (!prev.has(outpointStr)) {
-                    return new Map(prev).set(outpointStr, true);
+                const next = new Map(prev);
+                for (const outpoint of newOutpoints) {
+                    next.set(outpoint, true);
                 }
-                return prev;
+                return next;
             });
         }
+
         return () => {
             observers.current.forEach(observer => observer.disconnect());
         };
-    }, [artifacts]);
+    }, [artifacts.length]); // Only depend on length, not the array itself
 
     useEffect(() => {
         const sentinel = sentinelRef.current;

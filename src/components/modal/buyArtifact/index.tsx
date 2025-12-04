@@ -315,7 +315,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
   return (
     <Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="bg-background border-border rounded-lg max-w-lg">
+      <DialogContent className="bg-background border-border rounded-lg max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-foreground">
             <ShoppingCart className="w-5 h-5 text-primary" />
@@ -323,7 +323,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="relative w-full h-64 md:h-96 overflow-hidden">
+        <div className="relative w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-card rounded">
           {content}
         </div>
 

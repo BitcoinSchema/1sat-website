@@ -6,9 +6,10 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { SquareArrowOutUpRight, X, ShoppingCart, Info } from "lucide-react";
 import Artifact from "@/components/artifact";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 const needsFlipButton = (artifact: OrdUtxo): boolean => {
     const contentType = artifact.origin?.data?.insc?.file.type || '';
@@ -74,6 +75,9 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
         <>
             <Dialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
                 <DialogContent className="max-w-[90vw] w-full h-[96vh] p-0 bg-background border-border overflow-hidden flex flex-col" hideCloseButton={false}>
+                    <VisuallyHidden.Root>
+                        <DialogTitle>{ordinalName || "Artifact Preview"}</DialogTitle>
+                    </VisuallyHidden.Root>
                     <div className="flex items-center justify-between gap-2 p-4 border-b border-border shrink-0">
                         <p className="text-sm font-medium text-foreground truncate">
                             {ordinalName || '\u00A0'}

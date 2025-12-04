@@ -31,16 +31,6 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({
 	return (
 		<div className="w-full h-full p-4 md:p-6">
 			<div className="border border-border rounded-md overflow-hidden">
-				{/* Table Header Decoration */}
-				<div className="flex justify-between items-center px-4 py-3 border-b border-border bg-muted/50">
-					<span className="text-[10px] text-primary uppercase tracking-widest font-mono flex items-center gap-2">
-						<span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-						SYSTEM_STATUS: ONLINE
-					</span>
-					<span className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono">
-						ORDINALS_MARKET
-					</span>
-				</div>
 
 				<Table className="font-mono">
 					{mode === OrdViewMode.List && (

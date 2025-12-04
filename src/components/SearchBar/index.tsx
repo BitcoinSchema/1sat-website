@@ -108,18 +108,18 @@ const SearchBar: React.FC = () => {
 			<Button
 				variant="outline"
 				onClick={() => (isOpen.value = true)}
-				className="relative w-full justify-start text-sm text-zinc-500 sm:pr-12 md:w-64 lg:w-80 bg-zinc-900 border-zinc-800 rounded-none hover:bg-zinc-800 hover:text-green-400 hover:border-green-500/50 font-mono transition-colors h-9"
+				className="relative w-full justify-start text-sm text-muted-foreground sm:pr-12 md:w-64 lg:w-80 bg-card border-border rounded-none hover:bg-muted hover:text-primary hover:border-primary/50 font-mono transition-colors h-9"
 			>
 				<span className="inline-flex items-center gap-2">
 					<Search className="h-4 w-4" />
 					<span className="hidden lg:inline-flex uppercase tracking-wider text-xs">
-						Search tokens...
+						Search...
 					</span>
 					<span className="inline-flex lg:hidden uppercase tracking-wider text-xs">
 						Search...
 					</span>
 				</span>
-				<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 border border-zinc-700 bg-zinc-800 px-1.5 font-mono text-[10px] text-zinc-500 sm:flex">
+				<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground sm:flex">
 					<span className="text-xs">⌘</span>K
 				</kbd>
 			</Button>

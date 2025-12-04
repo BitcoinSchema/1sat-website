@@ -22,8 +22,10 @@ console.log("HERE HANDLE MNEMOINIC")
 	};
 
 	return (
-		<>
-			<div className="mt-2 mb-4">Enter your mnemonic to continue</div>
+		<div className="space-y-4">
+			<p className="text-sm text-muted-foreground font-mono">
+				Enter your 12-word recovery phrase to restore your wallet
+			</p>
 
 			<MnemonicGrid
 				mode={MnemonicGridMode.Import}
@@ -31,6 +33,6 @@ console.log("HERE HANDLE MNEMOINIC")
 					handleMnemonic(keys)
 				}
 			/>
-		</>
+		</div>
 	);
 }
