@@ -92,7 +92,7 @@ This codebase uses ShadCN/UI with ThemeToken support. When modifying components:
 2. **Use semantic colors**: Never use hardcoded hex colors - use `bg-card`, `text-muted-foreground`, etc.
 3. **Use ShadCN components**: Import from `@/components/ui/` (Button, Dialog, Tabs, etc.)
 4. **CSS Variables**: Theme colors defined in `globals.css` using OKLCH format
-5. **ThemeToken**: Runtime theming via `useThemeToken` hook from `@/hooks/useThemeToken`
+5. **ThemeToken**: Runtime theming via `useThemeToken` hook from `@theme-token/sdk/react`
 
 ### Base Theme
 The midnight-aurora ThemeToken is installed as the base theme:
@@ -135,10 +135,10 @@ import { Separator } from "@/components/ui/separator"
 
 ### ThemeToken Hook Usage
 ```typescript
-import { useThemeToken } from "@/hooks/useThemeToken";
+import { useThemeToken } from "@theme-token/sdk/react";
 
 // Pass user's ordinals to detect ThemeToken ordinals
-const { themeTokens, activeTheme, loadTheme, resetTheme } = useThemeToken(ordinals);
+const { themeTokens, activeOrigin, loadTheme, resetTheme, isLoading } = useThemeToken(ordinals);
 
 // Load a theme by origin
 await loadTheme("85702d92d2ca2f5a48eaede302f0e85d9142924d68454565dbf621701b2d83cf_0");
