@@ -12,6 +12,13 @@ import { useEffect } from "react";
 import { DoneStep } from "./steps/DoneStep";
 import { EnterPassphraseStep } from "./steps/EnterPassphraseStep";
 import { InfoStep } from "./steps/InfoStep";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Shield } from "lucide-react";
 
 const ProtectKeysModal = ({
 	open,
@@ -42,38 +49,32 @@ const ProtectKeysModal = ({
 	}, []);
 
 	return (
-		<dialog
-			id="protect_wallet_modal"
-			className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
-		>
-			<div className="modal-box">
-				<h3 className="font-bold text-lg">Protect Your Keys</h3>
+		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+			<DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
+						<Shield className="w-5 h-5 text-green-500" />
+						Protect Your Keys
+					</DialogTitle>
+				</DialogHeader>
 
-				{(
-					<>
-						{open && (
-							<div>
-								{protectKeysStep.value ===
-									ProtectKeysStep.Info && <InfoStep />}
-
-								{protectKeysStep.value ===
-									ProtectKeysStep.EnterPassphrase && (
-									<EnterPassphraseStep migrating={migrating.value} />
-								)}
-
-								{protectKeysStep.value ===
-									ProtectKeysStep.Done && (
-									<DoneStep onDone={handleClose} />
-								)}
-							</div>
+				{open && (
+					<div>
+						{protectKeysStep.value === ProtectKeysStep.Info && (
+							<InfoStep />
 						)}
-					</>
+
+						{protectKeysStep.value === ProtectKeysStep.EnterPassphrase && (
+							<EnterPassphraseStep migrating={migrating.value} />
+						)}
+
+						{protectKeysStep.value === ProtectKeysStep.Done && (
+							<DoneStep onDone={handleClose} />
+						)}
+					</div>
 				)}
-			</div>
-			<form method="dialog" className="modal-backdrop">
-				<button type="button" onClick={handleClose}>close</button>
-			</form>
-		</dialog>
+			</DialogContent>
+		</Dialog>
 	);
 };
 

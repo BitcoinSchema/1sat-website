@@ -34,7 +34,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
-import { CgSpinner } from "react-icons/cg";
+import { Loader2 } from "lucide-react";
 import {
   FaExclamationCircle,
   FaFileImport,
@@ -50,6 +50,15 @@ import { EnterPassphraseModal } from "../modal/enterPassphrase";
 import ImportWalletModal from "../modal/importWallet";
 import ProtectKeysModal from "../modal/protectKeys";
 import WithdrawalModal from "../modal/withdrawal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const WalletMenu: React.FC = () => {
   useSignals();
@@ -224,226 +233,143 @@ const WalletMenu: React.FC = () => {
   };
 
   return (
-    <ul className="dropdown dropdown-end">
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-      <div
-        className="btn btn-ghost m-1 rounded relative"
-        tabIndex={0}
-        role="button"
-        onClick={() => {
-          showDropdown.value = true;
-        }}
-      >
-        <div className="tooltip tooltip-bottom" data-tip="Wallet">
-          <FaWallet />
-        </div>
-      </div>
-      {showDropdown.value && (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-        <ul
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
-          tabIndex={0}
-          onClick={() => {
-            showDropdown.value = false;
-          }}
-          className="dropdown-content menu shadow border-yellow-200/25 bg-base-100 rounded-box w-64 border"
-        >
+    <>
+      <DropdownMenu open={showDropdown.value} onOpenChange={(open) => { showDropdown.value = open; }}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-none hover:bg-zinc-800 hover:text-green-400"
+            title="Wallet"
+          >
+            <FaWallet className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
           {payPk.value && ordPk.value && (
-            <div>
-              <div className="text-center mb-2">
-                <div className="text-[#555] text-lg">
+            <>
+              {/* Balance Section */}
+              <div className="px-3 py-4 text-center border-b border-zinc-800">
+                <div className="text-zinc-500 text-xs uppercase tracking-wider mb-2">
                   Balance
                 </div>
-                <div className="text-2xl font-mono my-2">
+                <div className="text-2xl font-mono text-zinc-100 mb-1">
                   {balance.value === undefined ? (
-                    "" // user has no wallet yet
+                    ""
                   ) : usdRate.value > 0 ? (
-                    `$${(
-                      balance.value / usdRate.value
-                    ).toFixed(2)}`
+                    `$${(balance.value / usdRate.value).toFixed(2)}`
                   ) : (
-                    <CgSpinner className="animate-spin inline-flex w-4" />
+                    <Loader2 className="animate-spin inline-flex w-4 h-4" />
                   )}
-                  <span className="text-xs ml-1">USD</span>
+                  <span className="text-xs text-zinc-500 ml-1">USD</span>
                 </div>
-                <div className="text-[#555] my-2">
-                  {toBitcoin(balance.value)}{" "}
-                  <span className="text-xs">BSV</span>
+                <div className="text-zinc-500 text-sm">
+                  {toBitcoin(balance.value)} <span className="text-xs">BSV</span>
                 </div>
               </div>
-              <div className="flex gap-2 justify-center items-center">
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 p-3 border-b border-zinc-800">
                 <button
                   type="button"
-                  className="btn btn-sm btn-primary"
+                  className="flex-1 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-green-900/30 text-green-400 border border-green-500/50 hover:bg-green-900/50 transition"
                   onClick={() => {
                     showDepositModal.value = true;
+                    showDropdown.value = false;
                   }}
                 >
                   Deposit
                 </button>
                 <button
                   type="button"
-                  disabled={
-                    usdRate.value <= 0 ||
-                    balance.value === 0
-                  }
-                  className="btn btn-sm btn-primary"
+                  disabled={usdRate.value <= 0 || balance.value === 0}
+                  className="flex-1 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-zinc-900 text-zinc-400 border border-zinc-700 hover:text-zinc-200 hover:border-zinc-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => {
                     showWithdrawalModal.value = true;
+                    showDropdown.value = false;
                   }}
                 >
                   Withdraw
                 </button>
               </div>
 
-              <div className="divider">1Sat Wallet</div>
-              <ul className="p-0">
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                <li
-                  onClick={() => {
-                    showDropdown.value = false;
-                  }}
-                >
-                  <Link href="/wallet/ordinals" >
-                    Ordinals
-                  </Link>
-                </li>
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                <li
-                  onClick={() => {
-                    showDropdown.value = false;
-                  }}
-                >
-                  <Link href="/wallet/bsv20">BSV20</Link>
-                </li>
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                <li
-                  onClick={() => {
-                    showDropdown.value = false;
-                  }}
-                >
-                  <Link href="/wallet/bsv21">BSV21</Link>
-                </li>
-                <li
-                  onMouseEnter={mouseEnterOrdAddress}
-                  onMouseLeave={mouseLeaveOrdAddress}
-                >
-                  <button
-                    type="button"
-                    className={
-                      "flex items-center justify-between w-full"
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      copy(ordAddress.value || "");
-                      console.log(
-                        "Copied",
-                        ordAddress.value
-                      );
-                      toast.success(
-                        "Copied Ordinals Address"
-                      );
-                      showDropdown.value = false;
-                    }}
-                  >
-                    {ordAddressHover.value
-                      ? `${ordAddress.value?.slice(
-                        0,
-                        8
-                      )}...${ordAddress.value?.slice(
-                        -8
-                      )}`
-                      : "Ordinals Address"}{" "}
-                    <FaCopy className="text-[#333]" />
-                  </button>
-                </li>
-              </ul>
+              <DropdownMenuLabel>1Sat Wallet</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link href="/wallet/ordinals">Ordinals</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/wallet/bsv20">BSV20</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/wallet/bsv21">BSV21</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onMouseEnter={mouseEnterOrdAddress}
+                onMouseLeave={mouseLeaveOrdAddress}
+                onClick={(e) => {
+                  e.preventDefault();
+                  copy(ordAddress.value || "");
+                  toast.success("Copied Ordinals Address");
+                  showDropdown.value = false;
+                }}
+                className="justify-between"
+              >
+                {ordAddressHover.value
+                  ? `${ordAddress.value?.slice(0, 8)}...${ordAddress.value?.slice(-8)}`
+                  : "Ordinals Address"}
+                <FaCopy className="text-zinc-600 w-3 h-3" />
+              </DropdownMenuItem>
 
-              <div className="divider">Keys</div>
-              <ul className="p-0">
-                <li>
-                  <button
-                    type="button"
-                    onClick={handleImportWallet}
-                  >
-                    Import Wallet
-                  </button>
-                </li>
-                <li>
-                  <button type="button" onClick={backupKeys}>
-                    Export Keys
-                  </button>
-                </li>
-                {/* <li>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    type="button"
-                    onClick={exportKeysViaFragment}
-                  >
-                    Migrate to 1Sat.Market
-                  </button>
-                </li> */}
-                {/* <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
-                <Link href="/wallet/swap">Swap Keys</Link>
-              </li> */}
-                <li className="hover:bg-error hover:text-error-content rounded transition opacity-25">
-                  <Link href="/wallet/delete">Sign Out</Link>
-                </li>
-              </ul>
-            </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Keys</DropdownMenuLabel>
+              <DropdownMenuItem onClick={handleImportWallet}>
+                Import Wallet
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={backupKeys}>
+                Export Keys
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-red-400/50 hover:text-red-400 focus:text-red-400">
+                <Link href="/wallet/delete">Sign Out</Link>
+              </DropdownMenuItem>
+            </>
           )}
+
           {hasUnprotectedKeys.value && (
-            <li>
-              <button
-                type="button"
-                className="flex w-full flex-row items-center justify-between bg-yellow-600 text-black hover:bg-yellow-500"
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
                 onClick={handleProtectKeys}
+                className="justify-between bg-yellow-900/30 text-yellow-400 focus:bg-yellow-900/50 focus:text-yellow-300"
               >
                 Protect Your Keys
                 <FaExclamationCircle className="w-4 h-4" />
-              </button>
-            </li>
+              </DropdownMenuItem>
+            </>
           )}
+
           {!payPk.value && !ordPk.value && (
             <>
               {showUnlockWalletButton.value && (
-                <ul className="p-0">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                  <li onClick={handleUnlockWallet}>
-                    <div className="flex w-full flex-row items-center justify-between">
-                      Unlock Wallet
-                      <FaUnlock className="w-4 h-4" />
-                    </div>
-                  </li>
-                </ul>
+                <DropdownMenuItem onClick={handleUnlockWallet} className="justify-between">
+                  Unlock Wallet
+                  <FaUnlock className="w-4 h-4" />
+                </DropdownMenuItem>
               )}
-              <ul className="p-0">
-                <li>
-                  <Link
-                    href="/wallet/create"
-                    className="flex w-full flex-row items-center justify-between"
-                  >
-                    Create New Wallet
-                    <FaPlus className="w-4 h-4" />
-                  </Link>
-                </li>
-              </ul>
-              <ul className="p-0">
-                <li>
-                  <button
-                    type="button"
-                    onClick={handleImportWallet}
-                    className="flex flex-row items-center justify-between w-full"
-                  >
-                    Import Wallet
-                    <FaFileImport className="w-4 h-4" />
-                  </button>
-                </li>
-              </ul>
+              <DropdownMenuItem asChild className="justify-between">
+                <Link href="/wallet/create">
+                  Create New Wallet
+                  <FaPlus className="w-4 h-4" />
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleImportWallet} className="justify-between">
+                Import Wallet
+                <FaFileImport className="w-4 h-4" />
+              </DropdownMenuItem>
             </>
           )}
-        </ul>
-      )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       {showDepositModal.value && (
         <DepositModal
           onClose={() => {
@@ -489,7 +415,7 @@ const WalletMenu: React.FC = () => {
         onChange={handleFileChange}
         type="file"
       />
-    </ul>
+    </>
   );
 };
 

@@ -2,7 +2,7 @@ import WalletHome from "@/components/Wallet/home";
 
 const WalletPage = () => {
 	return (
-		<div className="mx-auto">
+		<div className="w-full flex-1 flex flex-col px-4 md:px-6 lg:px-8">
 			<WalletHome />
 		</div>
 	);

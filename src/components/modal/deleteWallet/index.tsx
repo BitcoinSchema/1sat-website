@@ -17,12 +17,22 @@ import {
   showUnlockWalletButton,
   utxos
 } from "@/signals/wallet";
-import { PendingTransaction } from "@/types/preview";
+import type { PendingTransaction } from "@/types/preview";
 import { CreateWalletStep } from "@/types/wallet";
 import { useIDBStorage } from "@/utils/storage";
 import { backupKeys } from "@/utils/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { LogOut, AlertTriangle, Download } from "lucide-react";
 
 const DeleteWalletModal = ({
   open,
@@ -70,50 +80,55 @@ const DeleteWalletModal = ({
   }, [setPendingTxs]);
 
   return (
-    <dialog
-      id="delete_wallet_modal"
-      className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
-    >
-      <div className="modal-box">
-        <h3 className="font-bold text-lg">Are you sure?</h3>
-        <p className="py-4">
-          This will clear your keys from this browser. Only do this if
-          you&apos;re exported your keys already.
-        </p>
-        <form method="dialog">
-          <div className="modal-action">
-            <button
-              className="btn"
-              type="button"
-              onClick={() => {
-                close(true);
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              className="btn btn-error"
-              type="button"
-              onClick={() => {
-                clearKeys();
-                close(true);
-              }}
-            >
-              Sign Out
-            </button>
-            {/* if there is a button in form, it will close the modal */}
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && close()}>
+      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
+            <LogOut className="w-5 h-5 text-red-500" />
+            Sign Out
+          </DialogTitle>
+          <DialogDescription className="font-mono text-sm text-zinc-400">
+            This will clear your keys from this browser. Only do this if
+            you have exported your keys already.
+          </DialogDescription>
+        </DialogHeader>
 
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={backupKeys}
-            >
-              Export Keys
-            </button>
+        <div className="p-3 border border-yellow-500/50 bg-yellow-900/20 text-yellow-400">
+          <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider">
+            <AlertTriangle className="w-4 h-4" />
+            Warning: This action cannot be undone
           </div>
-        </form>
-      </div>
-    </dialog>
+        </div>
+
+        <DialogFooter className="flex gap-2 pt-4 border-t border-zinc-800">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => close(true)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={backupKeys}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export Keys
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => {
+              clearKeys();
+              close(true);
+            }}
+          >
+            Sign Out
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

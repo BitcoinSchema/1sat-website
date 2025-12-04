@@ -25,14 +25,21 @@ import {
   useMemo,
 } from "react";
 import toast from "react-hot-toast";
-import { FaKey } from "react-icons/fa";
-import { FaFileArrowUp } from "react-icons/fa6";
 import { DoneStep } from "./steps/DoneStep";
 import { EnterPassphraseStep as EnterPassphraseBackupJsonStep } from "./steps/fromBackupJson/EnterPassphraseStep";
 import { SelectFileStep } from "./steps/fromBackupJson/SelectFileStep";
 import { EnterMnemonicStep } from "./steps/fromMnemonic/EnterMnemonicStep";
 import { EnterPassphraseStep as EnterPassphraseMnemonicStep } from "./steps/fromMnemonic/EnterPassphraseStep";
 import { GenerateWalletStep } from "./steps/fromMnemonic/GenerateWalletStep";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { FileUp, Key, Download, AlertTriangle } from "lucide-react";
 
 interface ImportWalletModalProps {
   open: boolean;
@@ -120,127 +127,123 @@ const ImportWalletModal = forwardRef<
   };
 
   return (
-    <dialog
-      id="import_wallet_modal"
-      className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
-    >
-      <div className="modal-box">
-        <h3 className="font-bold text-lg">
-          Import Wallet{" "}
-          {importWalletTab.value === ImportWalletTab.FromBackupJson
-            ? "From Backup Json"
-            : importWalletTab.value === ImportWalletTab.FromMnemonic
-              ? "From Mnemonic"
-              : ""}
-        </h3>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
+            <Download className="w-5 h-5 text-green-500" />
+            Import Wallet
+            {importWalletTab.value === ImportWalletTab.FromBackupJson && (
+              <span className="text-zinc-500 text-sm">/ Backup JSON</span>
+            )}
+            {importWalletTab.value === ImportWalletTab.FromMnemonic && (
+              <span className="text-zinc-500 text-sm">/ Mnemonic</span>
+            )}
+          </DialogTitle>
+        </DialogHeader>
 
-        <>
-          {alreadyHasKey && (
-            <div>
-              <div>
-                You already have a wallet!! If you really want to import a new
-                wallet, sign out first.
+        {alreadyHasKey && (
+          <div className="space-y-4">
+            <div className="p-4 border border-yellow-500/50 bg-yellow-900/20 text-yellow-400">
+              <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider mb-2">
+                <AlertTriangle className="w-4 h-4" />
+                Wallet Exists
               </div>
-              <form method="dialog">
-                <div className="modal-action">
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    onClick={() => {
-                      router.push("/wallet/delete");
-                    }}
-                  >
-                    {" "}
-                    Sign Out
-                  </button>
-                </div>
-              </form>
+              <p className="font-mono text-sm text-yellow-300">
+                You already have a wallet! If you really want to import a new
+                wallet, sign out first.
+              </p>
             </div>
-          )}
+            <DialogFooter className="flex gap-2 pt-4 border-t border-zinc-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onClose()}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => router.push("/wallet/delete")}
+              >
+                Sign Out
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
 
-          {!alreadyHasKey && (
-            <>
-              {importWalletTab.value === null && (
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-lg text-sm md:text-base rounded-md p-4 flex flex-nowrap"
-                    onClick={() => selectTab(ImportWalletTab.FromBackupJson)}
-                  >
-                    <FaFileArrowUp className="text-xl hidden md:block" />
-                    From Backup JSON
-                  </button>
+        {!alreadyHasKey && (
+          <>
+            {importWalletTab.value === null && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <button
+                  type="button"
+                  className="flex flex-col items-center justify-center gap-3 p-6 border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 hover:border-zinc-700 transition font-mono text-sm uppercase tracking-wider text-zinc-300 hover:text-green-400"
+                  onClick={() => selectTab(ImportWalletTab.FromBackupJson)}
+                >
+                  <FileUp className="w-8 h-8" />
+                  Backup JSON
+                </button>
 
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-lg text-sm md:text-base rounded-md p-4 flex flex-nowrap"
-                    onClick={() => selectTab(ImportWalletTab.FromMnemonic)}
-                  >
-                    <FaKey className="text-lg hidden md:block" />
-                    From Mnemonic
-                  </button>
+                <button
+                  type="button"
+                  className="flex flex-col items-center justify-center gap-3 p-6 border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 hover:border-zinc-700 transition font-mono text-sm uppercase tracking-wider text-zinc-300 hover:text-green-400"
+                  onClick={() => selectTab(ImportWalletTab.FromMnemonic)}
+                >
+                  <Key className="w-8 h-8" />
+                  Mnemonic
+                </button>
+              </div>
+            )}
+
+            {open &&
+              importWalletTab.value === ImportWalletTab.FromBackupJson && (
+                <div>
+                  {importWalletFromBackupJsonStep.value ===
+                    ImportWalletFromBackupJsonStep.SelectFile && (
+                      <SelectFileStep />
+                    )}
+
+                  {importWalletFromBackupJsonStep.value ===
+                    ImportWalletFromBackupJsonStep.EnterPassphrase && (
+                      <EnterPassphraseBackupJsonStep />
+                    )}
+
+                  {importWalletFromBackupJsonStep.value ===
+                    ImportWalletFromBackupJsonStep.Done && (
+                      <DoneStep onDone={handleClose} />
+                    )}
                 </div>
               )}
 
-              {open &&
-                importWalletTab.value === ImportWalletTab.FromBackupJson && (
-                  <div>
-                    {importWalletFromBackupJsonStep.value ===
-                      ImportWalletFromBackupJsonStep.SelectFile && (
-                        <SelectFileStep />
-                      )}
+            {open &&
+              importWalletTab.value === ImportWalletTab.FromMnemonic && (
+                <div>
+                  {importWalletFromMnemonicStep.value ===
+                    ImportWalletFromMnemonicStep.EnterMnemonic && (
+                      <EnterMnemonicStep />
+                    )}
 
-                    {importWalletFromBackupJsonStep.value ===
-                      ImportWalletFromBackupJsonStep.EnterPassphrase && (
-                        <EnterPassphraseBackupJsonStep />
-                      )}
+                  {importWalletFromMnemonicStep.value ===
+                    ImportWalletFromMnemonicStep.GenerateWallet && (
+                      <GenerateWalletStep />
+                    )}
 
-                    {importWalletFromBackupJsonStep.value ===
-                      ImportWalletFromBackupJsonStep.Done && (
-                        <DoneStep onDone={handleClose} />
-                      )}
-                  </div>
-                )}
+                  {importWalletFromMnemonicStep.value ===
+                    ImportWalletFromMnemonicStep.EnterPassphrase && (
+                      <EnterPassphraseMnemonicStep />
+                    )}
 
-              {open &&
-                importWalletTab.value === ImportWalletTab.FromMnemonic && (
-                  <div>
-                    {importWalletFromMnemonicStep.value ===
-                      ImportWalletFromMnemonicStep.EnterMnemonic && (
-                        <EnterMnemonicStep />
-                      )}
-
-                    {importWalletFromMnemonicStep.value ===
-                      ImportWalletFromMnemonicStep.GenerateWallet && (
-                        <GenerateWalletStep />
-                      )}
-
-                    {importWalletFromMnemonicStep.value ===
-                      ImportWalletFromMnemonicStep.EnterPassphrase && (
-                        <EnterPassphraseMnemonicStep />
-                      )}
-
-                    {importWalletFromMnemonicStep.value ===
-                      ImportWalletFromMnemonicStep.Done && (
-                        <DoneStep onDone={handleClose} />
-                      )}
-                  </div>
-                )}
-            </>
-          )}
-        </>
-
-      </div>
-    </dialog>
+                  {importWalletFromMnemonicStep.value ===
+                    ImportWalletFromMnemonicStep.Done && (
+                      <DoneStep onDone={handleClose} />
+                    )}
+                </div>
+              )}
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 });
 

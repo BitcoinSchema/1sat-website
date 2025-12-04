@@ -40,8 +40,17 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { FaQuestion } from "react-icons/fa";
 import { toBitcoin, toToken, toTokenSat } from "satoshi-token";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Rocket, HelpCircle, Loader2, ArrowLeft } from "lucide-react";
 
 interface TransferModalProps {
   onClose: () => void;
@@ -431,250 +440,217 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
   };
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <dialog
-      id="airdrop_modal"
-      className={`modal backdrop-blur ${open ? "modal-open" : ""}`}
-      onClick={handleModalClick}
-    >
-      <div
-        className="modal-box max-h-[90vh] m-auto w-full max-w-xl m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
-        onMouseDown={handleModalContentMouseDown}
-      >
-        <div className="modal-content overflow-y-auto relative w-full min-h-64 md:h-full">
-          <div className="flex justify-between">
-            <div className="text-lg font-semibold">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-zinc-200">
+            <span className="flex items-center gap-3">
+              <Rocket className="w-5 h-5 text-green-500" />
               {reviewMode.value ? "Review Airdrop" : `Airdrop ${sym || id}`}
-            </div>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            <div
-              className="text-xs cursor-pointer text-[#aaa]"
+            </span>
+            <button
+              type="button"
+              className="text-xs font-mono text-zinc-500 hover:text-green-400 transition cursor-pointer"
               onClick={setAmountToBalance}
             >
               Balance: {balance} {type === AssetType.BSV21 ? sym : id}
-            </div>
-          </div>
-          <form onSubmit={submit}>
-            {!reviewMode.value && (
-              <div>
-                <div className="flex flex-col w-full">
-                  <label className="text-sm font-semibold text-[#aaa] mb-2">
-                    Amount
-                  </label>
-                  <input
+            </button>
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={submit} className="space-y-4 relative">
+          {!reviewMode.value && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  placeholder={amtPlaceholder}
+                  max={balance}
+                  value={amount.value === "0" ? "" : amount.value}
+                  onChange={(e) => {
+                    if (
+                      e.target.value === "" ||
+                      Number.parseFloat(e.target.value) <= balance
+                    ) {
+                      amount.value = e.target.value;
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <span>{allocation.value} Allocation</span>
+                  <span className="text-zinc-600 text-xs normal-case">
+                    {allocation.value === Allocation.Equal
+                      ? "- distribute tokens equally to all addresses"
+                      : "- based on % of total supply held by each address"}
+                  </span>
+                </Label>
+                <select
+                  className="flex h-9 w-full border border-zinc-800 bg-zinc-900 px-3 py-1 font-mono text-sm text-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500"
+                  value={allocation.value}
+                  onChange={(e) => {
+                    allocation.value = e.target.value as Allocation;
+                  }}
+                >
+                  {ALLOCATION_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>BSV20 Destination Tickers (comma separated)</Label>
+                <Input
+                  type="text"
+                  placeholder="RUG, PEPE, EGG, LOVE, SHGR"
+                  value={destinationTickers.value}
+                  onChange={(e) => {
+                    destinationTickers.value = e.target.value;
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>BSV21 Destination Token IDs (comma separated)</Label>
+                <Input
+                  type="text"
+                  placeholder="e6d40ba206340aa94ed40fe1a8adcd722c08c9438b2c1dd16b4527d561e848a2_0"
+                  value={destinationBsv21Ids.value}
+                  onChange={(e) => {
+                    destinationBsv21Ids.value = e.target.value;
+                  }}
+                />
+              </div>
+
+              {(destinationTickers.value.length > 0 ||
+                destinationBsv21Ids.value.length > 0) && (
+                <div className="space-y-2">
+                  <Label className="flex items-center justify-end gap-2">
+                    <HelpCircle className="w-3 h-3 text-zinc-500" title="Holders per ticker, largest first." />
+                    Number of Holders
+                  </Label>
+                  <Input
                     type="number"
-                    placeholder={amtPlaceholder}
-                    max={balance}
-                    className="z-20 input input-bordered w-full placeholder:text-[#333]"
-                    value={amount.value === "0" ? "" : amount.value}
+                    placeholder="25"
+                    value={numOfHolders.value === "0" ? "" : numOfHolders.value}
+                    max={1000}
                     onChange={(e) => {
-                      if (
-                        e.target.value === "" ||
-                        Number.parseFloat(e.target.value) <= balance
-                      ) {
-                        amount.value = e.target.value;
-                      }
+                      numOfHolders.value = e.target.value;
                     }}
                   />
                 </div>
-                <div className="flex flex-col w-full mt-4">
-                  <label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center">
-                    <span className="text-nowrap">
-                      {allocation.value} allocation
-                    </span>{" "}
-                    <div className="text-[#555] pl-2">
-                      {allocation.value === Allocation.Equal
-                        ? "distribute tokens equally to all addresses."
-                        : "based on % of total supply held by each address."}
-                    </div>
-                  </label>
+              )}
 
-                  <select
-                    className="z-20 input input-bordered w-full"
-                    value={allocation.value}
-                    onChange={(e) => {
-                      allocation.value = e.target.value as Allocation;
-                    }}
-                  >
-                    {ALLOCATION_OPTIONS.map(
-                      (opt: {
-                        value: Allocation;
-                        label: string;
-                      }) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-                <div className="flex flex-col mt-4">
-                  <label className="text-sm font-semibold text-[#aaa] mb-2">
-                    BSV20 Destination Tickers (comma separated list)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="RUG, PEPE, EGG, LOVE, SHGR"
-                    className="z-20 input input-bordered w-full placeholder:text-[#333]"
-                    value={destinationTickers.value}
-                    onChange={(e) => {
-                      destinationTickers.value = e.target.value;
-                    }}
-                  />
-                </div>
+              <div className="border-t border-zinc-800 my-4" />
 
-                <div className="flex flex-col mt-4">
-                  <label className="text-sm font-semibold text-[#aaa] mb-2">
-                    BSV21 Destination Token IDs (comma separated list)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e6d40ba206340aa94ed40fe1a8adcd722c08c9438b2c1dd16b4527d561e848a2_0"
-                    className="z-20 input input-bordered w-full placeholder:text-[#333]"
-                    value={destinationBsv21Ids.value}
-                    onChange={(e) => {
-                      destinationBsv21Ids.value = e.target.value;
-                    }}
-                  />
-                </div>
-
-                {(destinationTickers.value.length > 0 ||
-                  destinationBsv21Ids.value.length > 0) && (
-                    <div className="flex flex-col w-full mt-4">
-                      <label className="text-sm font-semibold text-[#aaa] mb-2 flex items-center text-right justify-end">
-                        <div
-                          className="tooltip tooltip-left"
-                          data-tip="Holders per ticker, largest first."
-                        >
-                          <FaQuestion className="text-[#aaa] cursor-pointer mr-2" />
-                        </div>
-                        Number of holders
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="25"
-                        className="z-20 input input-bordered w-full placeholder:text-[#333]"
-                        value={
-                          numOfHolders.value === "0" ? "" : numOfHolders.value
-                        }
-                        max={"1000"}
-                        onChange={(e) => {
-                          numOfHolders.value = e.target.value;
-                        }}
-                      />
-                    </div>
-                  )}
-
-                <div className="divider" />
-                {isEqualAllocation && (
-                  <>
-                    <div className="flex flex-col mt-4">
-                      <label className="text-sm font-semibold text-[#aaa] mb-2">
-                        Addresses (comma separated list){" "}
-                        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                        <div
-                          className="cursor-pointer text-blue-400 hover:text-blue-500"
-                          onClick={loadTemplate}
-                        >
-                          All Registered Users
-                        </div>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-                        className="z-20 input input-bordered w-full placeholder:text-[#333]"
-                        value={addresses.value}
-                        onChange={(e) => {
-                          addresses.value = e.target.value;
-                        }}
-                      />
-                    </div>
-                  </>
-                )}
-                <div className="flex flex-col mt-4">
-                  <label className="text-sm font-semibold text-[#aaa] mb-2">
-                    Exclude Addresses (comma separated list)
-                  </label>
-                  <input
+              {isEqualAllocation && (
+                <div className="space-y-2">
+                  <Label className="flex items-center justify-between">
+                    Addresses (comma separated)
+                    <button
+                      type="button"
+                      className="text-green-500 hover:text-green-400 transition cursor-pointer"
+                      onClick={loadTemplate}
+                    >
+                      Load Registered Users
+                    </button>
+                  </Label>
+                  <Input
                     type="text"
                     placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-                    className="z-20 input input-bordered w-full placeholder:text-[#333]"
-                    value={excludeAdresses.value}
+                    value={addresses.value}
                     onChange={(e) => {
-                      excludeAdresses.value = e.target.value;
+                      addresses.value = e.target.value;
                     }}
                   />
                 </div>
-              </div>
-            )}
+              )}
 
+              <div className="space-y-2">
+                <Label>Exclude Addresses (comma separated)</Label>
+                <Input
+                  type="text"
+                  placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+                  value={excludeAdresses.value}
+                  onChange={(e) => {
+                    excludeAdresses.value = e.target.value;
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {reviewMode.value && (
+            <div className="space-y-4">
+              <div className="flex justify-between font-mono text-xs uppercase tracking-wider text-zinc-500">
+                <span>Destination ({destinations.value.length})</span>
+                <span>Amount</span>
+              </div>
+              <div className="border border-zinc-800 bg-zinc-900/50 max-h-48 overflow-y-auto">
+                {destinations.value.map((dest) => (
+                  <div
+                    key={`destination-${dest.address}`}
+                    className="flex justify-between px-3 py-2 border-b border-zinc-800 last:border-b-0 font-mono text-xs text-zinc-400"
+                  >
+                    <span className="truncate max-w-[280px]">{dest.address}</span>
+                    <span className="whitespace-nowrap text-zinc-200">
+                      {dest.receiveAmt} {sym || id}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between font-mono text-sm border-t border-zinc-800 pt-3">
+                <span className="text-zinc-500">Indexing Fees</span>
+                <span className="text-zinc-200">{toBitcoin(indexingFees.value || 0)} BSV</span>
+              </div>
+              {changeTokenAmount.value > 0n && (
+                <div className="flex justify-between font-mono text-sm">
+                  <span className="text-zinc-500">Change Tokens</span>
+                  <span className="text-zinc-200">
+                    {changeTokenAmount.value.toString()} {sym || id}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-zinc-800">
             {reviewMode.value && (
-              <div className="flex flex-col">
-                <div className="flex justify-between">
-                  <div className="text-sm font-semibold text-[#aaa] mb-2">
-                    Destination ({destinations.value.length})
-                  </div>
-                  <div className="text-sm font-semibold text-[#aaa] mb-2">
-                    Amount
-                  </div>
-                </div>
-                <div className="border-b border-[#555] pb-2">
-                  {destinations.value.map((dest, index) => (
-                    <div
-                      key={`destination-${dest.address}`}
-                      className="flex justify-between mb-2 text-xs"
-                    >
-                      <span>{dest.address}</span>
-                      <span className="whitespace-nowrap">
-                        {dest.receiveAmt} {sym || id}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 flex justify-between text-sm">
-                  <div className="font-semibold text-[#aaa]">Indexing Fees</div>
-                  <div>{toBitcoin(indexingFees.value || 0)} BSV</div>
-                </div>
-                {changeTokenAmount.value > 0 && (
-                  <div className="mt-2 flex justify-between text-sm">
-                    <div className="font-semibold text-[#aaa] mb-2">
-                      Change Tokens
-                    </div>
-                    <div>
-                      {changeTokenAmount.value.toString()} {sym || id}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="modal-action">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => {
                   reviewMode.value = false;
                 }}
-                className="bg-[#222] p-2 rounded cursor-pointer hover:bg-yellow-600 text-white"
               >
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
-              </button>
-              <button
-                type="submit"
-                disabled={airdroppingStatus.value === FetchStatus.Loading}
-                className="bg-[#222] p-2 rounded cursor-pointer hover:bg-emerald-600 text-white disabled:bg-[#555] disabled:cursor-not-allowed"
-              >
-                {reviewMode.value
-                  ? airdroppingStatus.value === FetchStatus.Loading
-                    ? "Raining"
-                    : "Confirm"
-                  : "Review"}
-              </button>
-            </div>
-          </form>
+              </Button>
+            )}
+            <Button
+              type="submit"
+              disabled={airdroppingStatus.value === FetchStatus.Loading}
+            >
+              {airdroppingStatus.value === FetchStatus.Loading && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              {reviewMode.value
+                ? airdroppingStatus.value === FetchStatus.Loading
+                  ? "Raining..."
+                  : "Confirm"
+                : "Review"}
+            </Button>
+          </div>
+
           <Meteors number={20} />
-        </div>
-      </div>
-    </dialog>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

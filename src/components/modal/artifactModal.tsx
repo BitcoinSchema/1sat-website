@@ -92,7 +92,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                             {artifact.data?.list && artifact.data.list.price && (
                                 <Button
                                     variant="secondary"
-                                    size="iconSm"
+                                    size="sm"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setShowBuyModal(true);
@@ -103,21 +103,21 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                             )}
                             <Button
                                 variant="secondary"
-                                size="iconSm"
+                                size="sm"
                                 onClick={() => router.push(`/outpoint/${artifact.outpoint}`)}
                             >
                                 <Info className="w-4 h-4" />
                             </Button>
                             <Button
                                 variant="secondary"
-                                size="iconSm"
+                                size="sm"
                                 onClick={() => window.open(`https://ordfs.network/${artifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer')}
                             >
                                 <SquareArrowOutUpRight className="w-4 h-4" />
                             </Button>
                             <Button
                                 variant="secondary"
-                                size="iconSm"
+                                size="sm"
                                 onClick={onClose}
                             >
                                 <X className="w-4 h-4" />

@@ -37,13 +37,13 @@ const config: Config = {
   					muted: 'colors.gray[50],',
   					subtle: 'colors.gray[100],',
   					DEFAULT: 'colors.white',
-  					emphasis: 'colors.gray[700]
+  					emphasis: 'colors.gray[700]',
   				},
   				border: {
-  					DEFAULT: 'colors.gray[200]
+  					DEFAULT: 'colors.gray[200]',
   				},
   				ring: {
-  					DEFAULT: 'colors.gray[200]
+  					DEFAULT: 'colors.gray[200]',
   				},
   				content: {
   					subtle: 'colors.gray[400],',
@@ -60,26 +60,26 @@ const config: Config = {
   					subtle: 'colors.blue[800],',
   					DEFAULT: 'colors.blue[500],',
   					emphasis: 'colors.blue[400],',
-  					inverted: 'colors.blue[950]
+  					inverted: 'colors.blue[950]',
   				},
   				background: {
   					muted: '#131A2B',
   					subtle: 'colors.gray[800],',
   					DEFAULT: 'var(--fallback-b2,oklch(var(--b2)/var(--tw-bg-opacity)))',
-  					emphasis: 'colors.gray[300]
+  					emphasis: 'colors.gray[300]',
   				},
   				border: {
-  					DEFAULT: 'colors.gray[800]
+  					DEFAULT: 'colors.gray[800]',
   				},
   				ring: {
-  					DEFAULT: 'colors.gray[800]
+  					DEFAULT: 'colors.gray[800]',
   				},
   				content: {
   					subtle: 'colors.gray[600],',
   					DEFAULT: 'colors.gray[400],',
   					emphasis: 'colors.gray[200],',
   					strong: 'colors.gray[50],',
-  					inverted: 'colors.gray[950]
+  					inverted: 'colors.gray[950]',
   				}
   			},
   			background: 'hsl(var(--background))',

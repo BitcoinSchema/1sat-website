@@ -38,7 +38,7 @@ import {
   FaParachuteBox,
 } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-token";
-import { Empty } from "@/components/ui/empty";
+import { Empty, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 import AirdropTokensModal from "../modal/airdrop";
 import TransferBsv20Modal from "../modal/transferBsv20";
 import { IconWithFallback } from "../pages/TokenMarket/heading";
@@ -401,12 +401,12 @@ const Bsv20List = ({
     // Show error state if balance fetch failed
     if (unspentStatus.value === FetchStatus.Error) {
       return (
-        <Empty
-          title="Failed to load balances"
-          description="Unable to fetch balance data. Please check your connection and try again."
-          icon="network"
-          action={
+        <Empty>
+          <EmptyTitle>Failed to load balances</EmptyTitle>
+          <EmptyDescription>Unable to fetch balance data. Please check your connection and try again.</EmptyDescription>
+          <EmptyContent>
             <button
+              type="button"
               onClick={() => {
                 unspentStatus.value = FetchStatus.Idle;
                 bsv20s.value = null;
@@ -415,8 +415,8 @@ const Bsv20List = ({
             >
               Retry
             </button>
-          }
-        />
+          </EmptyContent>
+        </Empty>
       );
     }
 
@@ -432,10 +432,10 @@ const Bsv20List = ({
     // Show empty state if no balances
     if (!confirmedBalances?.value || confirmedBalances.value.length === 0) {
       return (
-        <Empty
-          title="No confirmed balances"
-          description="You don't have any confirmed token balances yet."
-        />
+        <Empty>
+          <EmptyTitle>No confirmed balances</EmptyTitle>
+          <EmptyDescription>You don&apos;t have any confirmed token balances yet.</EmptyDescription>
+        </Empty>
       );
     }
 
@@ -601,12 +601,12 @@ const Bsv20List = ({
     // Show error state if balance fetch failed
     if (unspentStatus.value === FetchStatus.Error) {
       return (
-        <Empty
-          title="Failed to load balances"
-          description="Unable to fetch balance data. Please check your connection and try again."
-          icon="network"
-          action={
+        <Empty>
+          <EmptyTitle>Failed to load balances</EmptyTitle>
+          <EmptyDescription>Unable to fetch balance data. Please check your connection and try again.</EmptyDescription>
+          <EmptyContent>
             <button
+              type="button"
               onClick={() => {
                 unspentStatus.value = FetchStatus.Idle;
                 bsv20s.value = null;
@@ -615,18 +615,18 @@ const Bsv20List = ({
             >
               Retry
             </button>
-          }
-        />
+          </EmptyContent>
+        </Empty>
       );
     }
 
     // Show empty state if no pending balances
     if (!pendingBalances?.value || pendingBalances.value.length === 0) {
       return (
-        <Empty
-          title="No pending balances"
-          description="You don't have any pending token balances."
-        />
+        <Empty>
+          <EmptyTitle>No pending balances</EmptyTitle>
+          <EmptyDescription>You don&apos;t have any pending token balances.</EmptyDescription>
+        </Empty>
       );
     }
 

@@ -7,13 +7,16 @@ import { getCapitalizedAssetType } from "@/utils/assetType";
 
 const WalletPage = async ({ params }: { params: Promise<{ tab: WalletTab }> }) => {
   const { tab } = await params;
+
+  // Ordinals has its own sidebar layout - no wrapper padding needed
+  if (tab === WalletTab.Ordinals) {
+    return <WalletOrdinals />;
+  }
+
   return (
-    <div className="mx-auto">
-      {tab === WalletTab.BSV20 ||
-        tab === WalletTab.BSV21 ? (
+    <div className="w-full flex-1 flex flex-col px-4 md:px-6 lg:px-8">
+      {tab === WalletTab.BSV20 || tab === WalletTab.BSV21 ? (
         <WalletBsv20 type={tab} />
-      ) : tab === WalletTab.Ordinals ? (
-        <WalletOrdinals />
       ) : (
         <WalletHistory />
       )}

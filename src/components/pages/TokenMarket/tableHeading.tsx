@@ -21,45 +21,47 @@ const TableHeading = ({
 	}, [router, type, dir]);
 
 	return (
-		<thead className="w-full">
+		<thead className="w-full border-b border-zinc-800 bg-zinc-900/50">
 			<tr>
-				<th className={`min-w-16 ${sortable ? "cursor-pointer" : ""} group flex items-center`}>
-					{type === AssetType.BSV20 && (
-						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-						<div className="mr-2 hover:text-white" onClick={() => handleSort(SortBy.Number)}>
-							<FaHashtag />
-						</div>
-					)}
-					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-					<div
-						className="flex items-center"
-						onClick={() => sortable ? handleSort(SortBy.Ticker) : null}
-					>
-						Ticker
-						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Ticker ? "" : "text-[#555]"}`}
+				<th className={`min-w-16 px-4 py-3 text-left text-xs uppercase tracking-widest text-zinc-500 ${sortable ? "cursor-pointer" : ""} group`}>
+					<div className="flex items-center">
+						{type === AssetType.BSV20 && (
+							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+							<div className="mr-2 hover:text-green-400 transition" onClick={() => handleSort(SortBy.Number)}>
+								<FaHashtag />
+							</div>
+						)}
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+						<div
+							className="flex items-center hover:text-green-400 transition"
+							onClick={() => sortable ? handleSort(SortBy.Ticker) : null}
 						>
-							{sort === SortBy.Ticker ? (
-								dir === "asc" ? (
-									<FaSortUp />
+							Ticker
+							{sortable && <span
+								className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Ticker ? "text-green-400" : "text-zinc-600"}`}
+							>
+								{sort === SortBy.Ticker ? (
+									dir === "asc" ? (
+										<FaSortUp />
+									) : (
+										<FaSortDown />
+									)
 								) : (
-									<FaSortDown />
-								)
-							) : (
-								<FaSort />
-							)}
-						</span>}
+									<FaSort />
+								)}
+							</span>}
+						</div>
 					</div>
 				</th>
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<th
-					className={`w-1/2 ${sortable ? "cursor-pointer" : ""} group`}
+					className={`w-1/2 px-4 py-3 text-left text-xs uppercase tracking-widest text-zinc-500 ${sortable ? "cursor-pointer" : ""} group hover:text-green-400 transition`}
 					onClick={() => sortable ? handleSort(SortBy.Price) : null}
 				>
 					<div className="flex items-center">
 						Recent Price
 						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Price ? "" : "text-[#555]"}`}
+							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Price ? "text-green-400" : "text-zinc-600"}`}
 						>
 							{sort === SortBy.Price ? (
 								dir === "asc" ? (
@@ -75,13 +77,13 @@ const TableHeading = ({
 				</th>
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<th
-					className={`${sortable ? "cursor-pointer" : ""} group`}
+					className={`px-4 py-3 text-left text-xs uppercase tracking-widest text-zinc-500 ${sortable ? "cursor-pointer" : ""} group hover:text-green-400 transition`}
 					onClick={() => sortable ? handleSort(SortBy.PctChange) : null}
 				>
 					<div className="flex items-center">
 						Pct Change
 						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.PctChange ? "" : "text-[#555]"}`}
+							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.PctChange ? "text-green-400" : "text-zinc-600"}`}
 						>
 							{sort === SortBy.PctChange ? (
 								dir === "asc" ? (
@@ -97,13 +99,13 @@ const TableHeading = ({
 				</th>
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<th
-					className={`text-right flex-1 ${sortable ? "cursor-pointer" : ""} group`}
+					className={`px-4 py-3 text-right text-xs uppercase tracking-widest text-zinc-500 flex-1 ${sortable ? "cursor-pointer" : ""} group hover:text-green-400 transition`}
 					onClick={() => sortable && handleSort(SortBy.MarketCap)}
 				>
 					<div className="flex items-center justify-end">
 						Market Cap
 						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.MarketCap ? "" : "text-[#555]"}`}
+							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.MarketCap ? "text-green-400" : "text-zinc-600"}`}
 						>
 							{sort === SortBy.MarketCap ? (
 								dir === "asc" ? (
@@ -118,17 +120,17 @@ const TableHeading = ({
 					</div>
 				</th>
 				{type === AssetType.BSV21 && (
-					<th className="text-center w-12">Contract</th>
+					<th className="px-4 py-3 text-center text-xs uppercase tracking-widest text-zinc-500 w-12">Contract</th>
 				)}
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<th
-					className={`${type === AssetType.BSV21 ? "w-48" : "w-96"} text-right ${sortable ? "cursor-pointer" : ""} group`}
+					className={`${type === AssetType.BSV21 ? "w-48" : "w-96"} px-4 py-3 text-right text-xs uppercase tracking-widest text-zinc-500 ${sortable ? "cursor-pointer" : ""} group hover:text-green-400 transition`}
 					onClick={() => sortable ? handleSort(SortBy.Holders) : null}
 				>
 					<div className="flex items-center justify-end">
 						Holders
 						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Holders ? "" : "text-[#555]"}`}
+							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Holders ? "text-green-400" : "text-zinc-600"}`}
 						>
 							{sort === SortBy.Holders ? (
 								dir === "asc" ? (

@@ -1,6 +1,16 @@
 "use client";
 
 import { getOutpoints } from "@/components/OrdinalListings/helpers";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import Ordinals from "@/components/Wallet/ordinals";
 import Artifact from "@/components/artifact";
 import { type AssetType, ORDFS, SATS_PER_KB, toastErrorProps } from "@/constants";
@@ -9,33 +19,22 @@ import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import { useIDBStorage } from "@/utils/storage";
-import {
-  fetchOrdinal,
-} from "@/utils/transaction";
+import { fetchOrdinal } from "@/utils/transaction";
 import { PrivateKey } from "@bsv/sdk";
 import { useSignals } from "@preact/signals-react/runtime";
 import type { Utxo } from "js-1sat-ord";
 import { type CreateOrdListingsConfig, createOrdListings } from "js-1sat-ord";
 import { head } from "lodash";
-import { Noto_Serif } from "next/font/google";
+import { ArrowLeft, Info, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { FaChevronLeft } from "react-icons/fa6";
-import { IoMdInformationCircle } from "react-icons/io";
-import { TbClick } from "react-icons/tb";
 import { toSatoshi } from "satoshi-token";
 
 interface NewListingPageProps {
   type: AssetType;
 }
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   useSignals();
@@ -207,151 +206,176 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   }, [ordUtxos.value, selectedItem]);
 
   return (
-    <div className="flex flex-col max-w-6xl w-full mx-auto">
-      {/* <Tabs currentTab={Tab.Listings} /> */}
-      {/* <MarketTabs currentTab={MarketTab.New} /> */}
-      <div className="w-full text-xl px-4 md:px-0 mb-4 flex items-center justify-between">
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-        <div
-          className={`flex items-center text-[#555] hover:text-blue-500 transition cursor-pointer ${notoSerif.className}`}
-          onClick={() => {
-            router.back();
-          }}
+    <div className="w-full p-4 md:p-8 font-mono bg-background">
+      {/* Breadcrumb Header */}
+      <div className="flex items-center justify-between mb-8">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-muted-foreground hover:text-primary transition cursor-pointer text-xs uppercase tracking-wider"
         >
-          <FaChevronLeft className="mr-2" />
+          <ArrowLeft className="w-4 h-4" />
           Back
+        </button>
+        <div className="text-xs uppercase tracking-widest text-muted-foreground">
+          Initiate_Listing
         </div>
-        <div className={notoSerif.className}>Create Listing</div>
       </div>
-      <div className="flex flex-col md:flex-row px-4 md:px-0 w-full">
-        <div className="md:w-2/3 md:mr-2">
-          <div className="my-2 md:my-0 p-2 rounded bg-[#111]">
-            {!outpoint && (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-              <div
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        {/* Left Col: Asset Selection & Form */}
+        <div className="space-y-6">
+          {/* Asset Selection */}
+          <div className="space-y-4">
+            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              Target Asset
+            </Label>
+            {!outpoint ? (
+              <button
+                type="button"
                 onClick={clickSelectItem}
-                className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer p-2 flex items-center justify-center w-full h-64 border rounded-lg border-[#333] border-dashed hover:bg-[#1a1a1a] transition mx-auto"
+                className="w-full h-48 border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all group flex flex-col items-center justify-center gap-4"
               >
-                <TbClick className="text-2xl mr-2" /> Select an Item
-              </div>
-            )}
-
-            {outpoint && (
-              <div className="">
-                <div className="rounded p-2 md:p-4 max-w-4xl text-[#777] flex mb-2 items-start justify-start">
-                  <IoMdInformationCircle className="-mt-6 md:w-24 md:h-24 md:mr-2 opacity-25 text-emerald-200" />
-                  <div className="md:text-xl">
-                    Listings are can be purchased on the market page, or on
-                    other platforms. Listings can be cancelled at any time.
-                  </div>
+                <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-primary group-hover:text-primary transition-colors">
+                  <Plus className="w-6 h-6 text-muted-foreground group-hover:text-primary" />
+                </div>
+                <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground group-hover:text-primary">
+                  [ Select_Source_Asset ]
+                </span>
+              </button>
+            ) : (
+              <div className="border border-border bg-muted/30 p-4">
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary/50" />
+                  <p className="text-xs">
+                    Listings can be purchased on the market page or on other platforms.
+                    Listings can be cancelled at any time.
+                  </p>
                 </div>
               </div>
             )}
+          </div>
 
-            <div className="my-2 w-full md:px-4">
-              <label className="block text-white mb-2 font-mono md:flex md:items-center md:justify-between">
-                <span className="block mb-1 md:mb-0">Price</span>
-                <div className="relative">
-                  <input
-                    className="input input-bordered w-full md:max-w-xs p-2 rounded"
-                    type="number"
-                    placeholder="0.00000000"
-                    onChange={(e) => {
-                      if (e.target.value === "") {
-                        setPrice(0);
-                        return;
-                      }
-                      setPrice(
-                        toSatoshi(
-                          e.target.value.includes(".")
-                            ? Number.parseFloat(e.target.value)
-                            : Number.parseInt(e.target.value),
-                        ),
-                      );
-                    }}
-                  />
-                  <div className="absolute right-0 bottom-0 mb-3 mr-2 text-[#555]">
-                    BSV
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            <div className="my-2 flex justify-end  md:px-4">
-              {
-                <button
-                  type="button"
-                  disabled={!usdRate || (!!outpoint && !price)}
-                  onClick={() => {
-                    console.log("on click!!", usdRate, price);
-                    if (!outpoint) {
-                      setShowSelectItem(true);
-                      return;
-                    }
-                    if (!price) {
-                      toast.error("Please set a price", toastErrorProps);
-                      return;
-                    }
-                    submit();
-                  }}
-                  className={`font-mono btn btn-ghost ${!outpoint
-                    ? "bg-neutral"
-                    : "bg-teal-500 hover:bg-teal-600 cursor-pointer"
-                    } w-full   transition text-white p-2 rounded disabled:bg-[#222] disabled:text-[#555]`}
-                >
-                  {` ${!outpoint ? "Select an Item" : !price ? "Set a Price" : ""
-                    }`}
-                  {!!outpoint && !!usdRate.value && !!price
-                    ? `List for $${(price / usdRate.value)
-                      .toFixed(2)
-                      .toLocaleString()}`
-                    : ""}
-                </button>
-              }
+          {/* Price Input */}
+          <div className="space-y-4">
+            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              Set_Price (BSV)
+            </Label>
+            <div className="relative group">
+              <Input
+                type="number"
+                placeholder="0.00000000"
+                className="bg-background border-border rounded-none h-12 text-lg font-mono text-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-primary placeholder:text-muted-foreground/30 pr-16"
+                onChange={(e) => {
+                  if (e.target.value === "") {
+                    setPrice(0);
+                    return;
+                  }
+                  setPrice(
+                    toSatoshi(
+                      e.target.value.includes(".")
+                        ? Number.parseFloat(e.target.value)
+                        : Number.parseInt(e.target.value),
+                    ),
+                  );
+                }}
+              />
+              <div className="absolute right-0 top-0 h-full w-14 flex items-center justify-center border-l border-border text-muted-foreground text-xs uppercase">
+                BSV
+              </div>
             </div>
           </div>
-        </div>
-        <div className="md:w-1/3 md:ml-2">
-          {!outpoint && (
-            <div className="min-h-12 border border-[#222] text-[#555] rounded flex items-center justify-center text-center w-full h-full h-32">
-              Listing Preview Will Display Here
+
+          {/* Fee Calculation */}
+          {outpoint && price > 0 && usdRate.value && (
+            <div className="bg-muted/30 border border-border p-4 space-y-2">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>USD_VALUE</span>
+                <span className="text-primary">
+                  ${(price / usdRate.value).toFixed(2)}
+                </span>
+              </div>
             </div>
           )}
-          {outpoint && (
-            <Artifact
-              src={`${ORDFS}/${artifact?.origin?.outpoint}`}
-              onClick={() => { }}
-              artifact={
-                artifact ||
-                ({
-                  origin: { outpoint },
-                } as Partial<OrdUtxo>)
+
+          {/* Submit Button */}
+          <Button
+            type="button"
+            disabled={!usdRate.value || (!!outpoint && !price)}
+            onClick={() => {
+              if (!outpoint) {
+                setShowSelectItem(true);
+                return;
               }
-              sizes={"100vw"}
-              size={600}
-            />
+              if (!price) {
+                toast.error("Please set a price", toastErrorProps);
+                return;
+              }
+              submit();
+            }}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-none h-12 text-xs font-bold tracking-widest uppercase disabled:bg-muted disabled:text-muted-foreground"
+          >
+            {!outpoint
+              ? "[ Select an Item ]"
+              : !price
+                ? "[ Set a Price ]"
+                : `[ Confirm_Listing - $${usdRate.value ? (price / usdRate.value).toFixed(2) : "0.00"} ]`}
+          </Button>
+        </div>
+
+        {/* Right Col: Preview */}
+        <div className="space-y-4">
+          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            Asset Preview
+          </Label>
+          {!outpoint ? (
+            <div className="h-64 border border-border text-muted-foreground flex items-center justify-center text-center font-mono text-xs uppercase tracking-wider">
+              Preview_Will_Display_Here
+            </div>
+          ) : (
+            <div className="border border-border bg-muted/50">
+              <Artifact
+                src={`${ORDFS}/${artifact?.origin?.outpoint}`}
+                onClick={() => {}}
+                artifact={
+                  artifact ||
+                  ({
+                    origin: { outpoint },
+                  } as Partial<OrdUtxo>)
+                }
+                sizes={"100vw"}
+                size={600}
+              />
+            </div>
           )}
         </div>
       </div>
-      {showSelectItem && (
-        <div className="fixed top-0 left-0 bg-black bg-opacity-50 w-screen h-screen overflow-auto flex flex-col">
-          <div className="m-auto max-w-7xl p-4 bg-[#111] rounded-xl max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div>Select an Item</div>
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-              <div
-                onClick={() => {
-                  setShowSelectItem(false);
-                }}
-                className="text-[#555] hover:text-blue-500 transition cursor-pointer"
-              >
-                Close
-              </div>
-            </div>
+
+      {/* Item Selection Modal */}
+      <Dialog open={showSelectItem} onOpenChange={setShowSelectItem}>
+        <DialogContent className="bg-background border border-border rounded-none max-w-4xl max-h-[85vh] overflow-hidden">
+          <DialogHeader className="border-b border-border pb-4">
+            <DialogTitle className="font-mono text-sm uppercase tracking-widest text-primary flex items-center gap-2">
+              <span className="w-2 h-2 bg-primary animate-pulse" />
+              Accessing_Wallet_Inventory...
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="h-[60vh] pr-4 mt-2">
             <Ordinals onClick={clickOrdinal} />
+          </ScrollArea>
+
+          <div className="border-t border-border pt-4 flex justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setShowSelectItem(false)}
+              className="rounded-none text-xs hover:bg-muted hover:text-foreground uppercase tracking-wider"
+            >
+              Cancel
+            </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

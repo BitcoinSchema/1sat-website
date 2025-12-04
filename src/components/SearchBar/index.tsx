@@ -4,178 +4,250 @@ import { AssetType, FetchStatus, MARKET_API_HOST, ORDFS } from "@/constants";
 import { autofillValues, searchLoading } from "@/signals/search";
 import type { Autofill } from "@/types/search";
 import * as http from "@/utils/httpClient";
-import { computed, effect, useSignal } from "@preact/signals-react";
+import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import type React from "react";
-import { useCallback, useMemo, useRef } from "react";
-import { FaHashtag, FaSpinner } from "react-icons/fa6";
-import { IoMdClose, IoMdSearch } from "react-icons/io";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect } from "react";
+import { FaHashtag } from "react-icons/fa6";
+import { Loader2, Search } from "lucide-react";
 import ImageWithFallback from "../ImageWithFallback";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+	CommandDialog,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	CommandSeparator,
+} from "@/components/ui/command";
 
-// signal has to be in a React.FC
 const SearchBar: React.FC = () => {
-  useSignals();
-  const searchTerm = useSignal("");
-  const router = useRouter();
-  const searchParam = usePathname().split("/").pop() || "";
-  const lastTerm = useSignal(searchParam);
-  const focused = useSignal(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+	useSignals();
+	const router = useRouter();
+	const searchTerm = useSignal("");
+	const lastTerm = useSignal("");
+	const isOpen = useSignal(false);
 
-  const subForm = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (searchTerm.value.length > 0) {
-      e.currentTarget.blur();
-      focused.value = false;
-      const url = `/listings/search/${searchTerm.value}`;
-      searchTerm.value = "";
-      searchLoading.value = FetchStatus.Loading;
-      router.push(url);
-    }
-  }, [searchTerm.value, focused.value, router, autofillValues.value]);
+	// Keyboard shortcut: Cmd+K or Ctrl+K
+	useEffect(() => {
+		const down = (e: KeyboardEvent) => {
+			if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+				e.preventDefault();
+				isOpen.value = !isOpen.value;
+			}
+		};
+		document.addEventListener("keydown", down);
+		return () => document.removeEventListener("keydown", down);
+	}, []);
 
-  effect(() => {
-    const fire = async (term: string) => {
-      const url = `${MARKET_API_HOST}/ticker/autofill/bsv20/${term}`;
-      const { promise } = http.customFetch<Autofill[]>(url);
-      const response = await promise;
-      // console.log({ response });
+	// Autofill effect - fetch results as user types
+	effect(() => {
+		const fire = async (term: string) => {
+			searchLoading.value = FetchStatus.Loading;
+			try {
+				const url = `${MARKET_API_HOST}/ticker/autofill/bsv20/${term}`;
+				const { promise } = http.customFetch<Autofill[]>(url);
+				const response = await promise;
 
-      const url2 = `${MARKET_API_HOST}/ticker/autofill/bsv21/${term}`;
-      const { promise: promise2 } = http.customFetch<Autofill[]>(url2);
-      const response2 = await promise2;
-      // console.log({ response2 });
+				const url2 = `${MARKET_API_HOST}/ticker/autofill/bsv21/${term}`;
+				const { promise: promise2 } = http.customFetch<Autofill[]>(url2);
+				const response2 = await promise2;
 
-      autofillValues.value = response.concat(response2);
+				autofillValues.value = response.concat(response2);
+			} finally {
+				searchLoading.value = FetchStatus.Idle;
+			}
+		};
 
-    };
-    if (
-      searchTerm.value.length > 0 &&
-      lastTerm.value !== searchTerm.value
-    ) {
-      lastTerm.value = searchTerm.value;
-      fire(searchTerm.value);
-    }
-  });
+		if (searchTerm.value.length > 0 && lastTerm.value !== searchTerm.value) {
+			lastTerm.value = searchTerm.value;
+			fire(searchTerm.value);
+		}
+	});
 
-  const searchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") {
-      searchTerm.value = "";
-      autofillValues.value = null;
-      focused.value = false;
-      e.currentTarget.blur();
-    }
-  }, [searchTerm, focused]);
+	// Clear state when dialog closes
+	const handleOpenChange = useCallback(
+		(open: boolean) => {
+			isOpen.value = open;
+			if (!open) {
+				searchTerm.value = "";
+				autofillValues.value = null;
+				searchLoading.value = FetchStatus.Idle;
+			}
+		},
+		[isOpen, searchTerm],
+	);
 
-  const clearSearch = useCallback(() => {
-    searchTerm.value = "";
-    autofillValues.value = null;
-    focused.value = false;
-    inputRef.current?.blur();
-  }, [searchTerm, focused]);
+	// Navigate to token page
+	const handleSelect = useCallback(
+		(path: string) => {
+			isOpen.value = false;
+			searchTerm.value = "";
+			autofillValues.value = null;
+			router.push(path);
+		},
+		[router, isOpen, searchTerm],
+	);
 
-  const handleSearchClick = useCallback(() => {
-    if (searchTerm.value.length > 0) {
-      subForm(new Event("submit") as unknown as React.FormEvent<HTMLFormElement>);
-    } else {
-      inputRef.current?.focus();
-    }
-  }, [searchTerm, subForm]);
+	// Search the market
+	const handleSearchSubmit = useCallback(() => {
+		if (!searchTerm.value) return;
+		const url = `/listings/search/${searchTerm.value}`;
+		isOpen.value = false;
+		searchTerm.value = "";
+		autofillValues.value = null;
+		searchLoading.value = FetchStatus.Loading;
+		router.push(url);
+	}, [router, isOpen, searchTerm]);
 
-  const icon = computed(() => {
-    return searchLoading.value === FetchStatus.Loading ? (
-      <FaSpinner className="absolute right-2 text-primary/25 animate-spin" />
-    ) : (
-      <IoMdSearch
-        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-primary/25 group-hover:text-secondary-content transition w-5 h-5 cursor-pointer"
-        onClick={handleSearchClick}
-      />
-    )
-  });
+	return (
+		<>
+			{/* Trigger Button - Terminal Style */}
+			<Button
+				variant="outline"
+				onClick={() => (isOpen.value = true)}
+				className="relative w-full justify-start text-sm text-zinc-500 sm:pr-12 md:w-64 lg:w-80 bg-zinc-900 border-zinc-800 rounded-none hover:bg-zinc-800 hover:text-green-400 hover:border-green-500/50 font-mono transition-colors h-9"
+			>
+				<span className="inline-flex items-center gap-2">
+					<Search className="h-4 w-4" />
+					<span className="hidden lg:inline-flex uppercase tracking-wider text-xs">
+						Search tokens...
+					</span>
+					<span className="inline-flex lg:hidden uppercase tracking-wider text-xs">
+						Search...
+					</span>
+				</span>
+				<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 border border-zinc-700 bg-zinc-800 px-1.5 font-mono text-[10px] text-zinc-500 sm:flex">
+					<span className="text-xs">⌘</span>K
+				</kbd>
+			</Button>
 
-  const autofill = useMemo(() => {
-    // we need focused as a dependency so the autofill 
+			{/* Command Palette Dialog */}
+			<CommandDialog open={isOpen.value} onOpenChange={handleOpenChange}>
+				<div className="bg-zinc-950 border-zinc-800 font-mono">
+					<CommandInput
+						placeholder="SEARCH BSV20, BSV21, TICKERS..."
+						value={searchTerm.value}
+						onValueChange={(v) => (searchTerm.value = v)}
+						className="border-none focus:ring-0 font-mono text-zinc-100 placeholder:text-zinc-600 h-12"
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && !autofillValues.value?.length) {
+								handleSearchSubmit();
+							}
+						}}
+					/>
 
-    return focused.value && autofillValues.value &&
-      autofillValues.value.length > 0 &&
-      (searchTerm.value !== searchParam || searchTerm.value === "") &&
-      (<div className="flex-col text-left right-0 
-      top-0 mt-2 h-full text-white rounded w-full 
-      flex z-20 overflow-hidden overflow-y-scroll">
-        {autofillValues.value.map((t) => (
-          <Link
-            onClick={() => {
-              searchTerm.value = "";
-              autofillValues.value = null;
-            }}
-            href={t.type === AssetType.BSV20 ? `/market/bsv20/${t.tick}` : `/market/bsv21/${t.id}`}
-            key={t.id}
-            className="hover:bg-base-200 flex items-center justify-between w-full h-fit p-2 "
-          >
-            <div className="flex items-center justify-start gap-2">
-              {t.type === AssetType.BSV21 && (<ImageWithFallback src={`${ORDFS}/${t.icon}`} alt={t.tick} width={30} height={30} />)}
-              {t.type === AssetType.BSV20 ? <div className="flex items-center text-[#555]"><FaHashtag className="w-8 " />{t.num}</div> : ""}{t.tick}
-            </div>
-            <div className="flex items-center gap-2">
+					<CommandList className="bg-zinc-950 min-h-[300px] max-h-[400px]">
+						{/* Loading State */}
+						{searchLoading.value === FetchStatus.Loading && (
+							<div className="flex items-center justify-center p-6 text-zinc-500 text-xs gap-2 font-mono uppercase tracking-wider">
+								<Loader2 className="animate-spin text-green-500 w-4 h-4" />
+								<span>SCANNING_NETWORK...</span>
+							</div>
+						)}
 
-              {t.type === AssetType.BSV21 && t.contract ? <div className="text-yellow-500/50">{t.contract}</div> : ""}
-              <div className="text-[#555]">
-                {t.type}
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>)
-  }, [autofillValues.value, searchTerm.value, searchParam, focused.value]);
+						{/* Empty State */}
+						{searchLoading.value !== FetchStatus.Loading &&
+							autofillValues.value?.length === 0 &&
+							searchTerm.value && (
+								<CommandEmpty className="py-8 text-center text-xs text-zinc-500 font-mono uppercase tracking-wider">
+									NO TOKENS FOUND
+									<br />
+									<span className="text-zinc-600">
+										Press ENTER to search market
+									</span>
+								</CommandEmpty>
+							)}
 
-  return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div className={`px-2 md:px-0 justify-center items-center ${focused.value ?
-      'absolute top-0 left:0 mt-2 md:mt-auto md:left-auto md:top-auto md:modal-backdrop md:backdrop-blur w-full md:h-screen' :
-      'w-fit mx-auto'}`}
-      onClick={(e) => {
-        searchTerm.value = "";
-        autofillValues.value = null;
-        focused.value = false;
-        searchLoading.value = FetchStatus.Idle;
-      }}>
-      <div className={`${focused.value ? ' border border-yellow-200/25 w-full bg-[#111] rounded-box md:w-[50vw] max-w-xl h-[50vh] flex flex-col items-center justify-start p-3 z-20' : ''}`}>
-        <form className="w-full navbar-center relative flex flex-col h-full" onSubmit={subForm}>
-          <div className={"w-full group gap-2 relative flex items-center"}>
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={"Search"}
-              className="w-full input input-ghost hover:input-bordered pr-16"
-              value={searchTerm.value}
-              onChange={(e) => {
-                searchTerm.value = e.target.value
-                if (!focused.value) focused.value = true
-              }}
-              onClick={() => {
-                focused.value = true;
-                searchTerm.value = "";
-              }}
-              onFocus={() => {
-                focused.value = true;
-              }}
-              onKeyDown={searchKeyDown}
-            />
-            {focused.value && searchTerm.value.length > 0 && (
-              <IoMdClose
-                className="absolute right-8 top-1/2 transform -translate-y-1/2 text-primary/25 hover:text-secondary-content transition w-5 h-5 cursor-pointer"
-                onClick={clearSearch}
-              />
-            )}
-            {icon.value}
-          </div>
-          {autofill}
-        </form>
-      </div>
-    </div>
-  );
+						{/* Search Action */}
+						{searchTerm.value && (
+							<CommandGroup
+								heading="ACTIONS"
+								className="text-zinc-600 font-mono text-[10px] uppercase tracking-widest"
+							>
+								<CommandItem
+									onSelect={handleSearchSubmit}
+									className="data-[selected=true]:bg-zinc-900 data-[selected=true]:text-green-400 rounded-none cursor-pointer font-mono"
+								>
+									<Search className="mr-2 h-4 w-4" />
+									<span className="uppercase text-xs tracking-wider">
+										Search market for "{searchTerm.value}"
+									</span>
+								</CommandItem>
+							</CommandGroup>
+						)}
+
+						{searchTerm.value && <CommandSeparator className="bg-zinc-800" />}
+
+						{/* Autocomplete Results */}
+						{autofillValues.value && autofillValues.value.length > 0 && (
+							<CommandGroup
+								heading="TOKENS"
+								className="text-zinc-600 font-mono text-[10px] uppercase tracking-widest"
+							>
+								{autofillValues.value.map((t) => {
+									const isBsv20 = t.type === AssetType.BSV20;
+									const path = isBsv20
+										? `/market/bsv20/${t.tick}`
+										: `/market/bsv21/${t.id}`;
+
+									return (
+										<CommandItem
+											key={t.id}
+											value={`${t.tick || ""} ${t.id}`}
+											onSelect={() => handleSelect(path)}
+											className="data-[selected=true]:bg-zinc-900 data-[selected=true]:text-green-400 rounded-none cursor-pointer py-3"
+										>
+											<div className="flex items-center w-full gap-3">
+												{/* Icon */}
+												<div className="relative h-8 w-8 shrink-0 overflow-hidden border border-zinc-800 bg-zinc-900 flex items-center justify-center">
+													{t.icon ? (
+														<ImageWithFallback
+															src={`${ORDFS}/${t.icon}`}
+															alt={t.tick || ""}
+															width={32}
+															height={32}
+															className="h-full w-full object-cover"
+														/>
+													) : (
+														<FaHashtag className="text-zinc-600 w-3 h-3" />
+													)}
+												</div>
+
+												{/* Info */}
+												<div className="flex flex-col flex-1 min-w-0">
+													<span className="truncate text-zinc-200 font-bold tracking-tight font-mono">
+														{t.tick || "Unknown"}
+													</span>
+													<span className="truncate text-[10px] text-zinc-600 font-mono">
+														{isBsv20
+															? `#${t.num || t.id.slice(0, 8)}`
+															: `${t.id.slice(0, 12)}...`}
+													</span>
+												</div>
+
+												{/* Type Badge */}
+												<Badge
+													variant="outline"
+													className={`rounded-none border-zinc-700 font-mono text-[10px] uppercase ${
+														isBsv20 ? "text-orange-400" : "text-purple-400"
+													}`}
+												>
+													{t.type}
+												</Badge>
+											</div>
+										</CommandItem>
+									);
+								})}
+							</CommandGroup>
+						)}
+					</CommandList>
+				</div>
+			</CommandDialog>
+		</>
+	);
 };
 
 export default SearchBar;
