@@ -3,7 +3,6 @@
 import { exchangeRate } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
-import { CgSpinner } from "react-icons/cg";
 import { Store, ChevronDown } from "lucide-react";
 import {
 	DropdownMenu,
@@ -20,21 +19,19 @@ const MarketMenu: React.FC = () => {
 	return (
 		<div className="flex items-center gap-2">
 			{/* Exchange Rate Display */}
-			<div className="hidden md:flex items-center text-xs text-green-400/70 border border-zinc-800 px-3 py-1.5 bg-zinc-900 font-mono">
-				{exchangeRate.value > 0 ? (
+			{exchangeRate.value > 0 && (
+				<div className="hidden md:flex items-center text-xs text-muted-foreground border border-border px-3 py-1.5 bg-card font-mono">
 					<span>
-						1 BSV = <span className="text-green-400">${exchangeRate.value.toFixed(2)}</span>
+						1 BSV = <span className="text-primary">${exchangeRate.value.toFixed(2)}</span>
 					</span>
-				) : (
-					<CgSpinner className="animate-spin w-3 h-3" />
-				)}
-			</div>
+				</div>
+			)}
 
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<button
 						type="button"
-						className="flex items-center gap-2 px-3 py-1.5 text-sm font-mono transition-colors bg-zinc-900 text-zinc-300 border border-zinc-800 hover:border-green-500/50 hover:text-green-400 focus:outline-none focus:ring-1 focus:ring-green-500"
+						className="flex items-center gap-2 px-3 py-1.5 text-sm font-mono transition-colors bg-card text-muted-foreground border border-border hover:border-primary/50 hover:text-primary focus:outline-none focus:ring-1 focus:ring-ring"
 					>
 						<Store className="w-4 h-4" />
 						<span className="hidden sm:inline uppercase tracking-wider text-xs">Market</span>
@@ -44,25 +41,25 @@ const MarketMenu: React.FC = () => {
 
 				<DropdownMenuContent
 					align="end"
-					className="w-56 bg-zinc-950 border border-zinc-800 text-zinc-300 rounded-none font-mono"
+					className="w-56 bg-background border border-border text-foreground font-mono"
 				>
-					<DropdownMenuLabel className="text-green-500/70 text-xs uppercase tracking-widest">
+					<DropdownMenuLabel className="text-primary/70 text-xs uppercase tracking-widest">
 						Collectables
 					</DropdownMenuLabel>
 
-					<DropdownMenuSeparator className="bg-zinc-800" />
+					<DropdownMenuSeparator className="bg-border" />
 
-					<DropdownMenuItem asChild className="focus:bg-green-900/20 focus:text-green-400 cursor-pointer rounded-none">
+					<DropdownMenuItem asChild className="focus:bg-accent focus:text-accent-foreground cursor-pointer rounded-sm">
 						<Link href="/market/ordinals" className="flex items-center justify-between w-full">
 							<span>Ordinals</span>
-							<span className="text-zinc-600 text-xs">NFT</span>
+							<span className="text-muted-foreground text-xs">NFT</span>
 						</Link>
 					</DropdownMenuItem>
 
 					<DropdownMenuItem asChild className="focus:bg-green-900/20 focus:text-green-400 cursor-pointer rounded-none">
 						<Link href="/collection" className="flex items-center justify-between w-full">
 							<span>Collections</span>
-							<span className="text-zinc-600 text-xs">NFT</span>
+							<span className="text-muted-foreground text-xs">NFT</span>
 						</Link>
 					</DropdownMenuItem>
 
