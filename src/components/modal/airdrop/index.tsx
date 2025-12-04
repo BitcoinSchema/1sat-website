@@ -441,16 +441,16 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-background border-border rounded-lg max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-zinc-200">
+          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-foreground">
             <span className="flex items-center gap-3">
-              <Rocket className="w-5 h-5 text-green-500" />
+              <Rocket className="w-5 h-5 text-primary" />
               {reviewMode.value ? "Review Airdrop" : `Airdrop ${sym || id}`}
             </span>
             <button
               type="button"
-              className="text-xs font-mono text-zinc-500 hover:text-green-400 transition cursor-pointer"
+              className="text-xs font-mono text-muted-foreground hover:text-primary transition cursor-pointer"
               onClick={setAmountToBalance}
             >
               Balance: {balance} {type === AssetType.BSV21 ? sym : id}
@@ -482,14 +482,14 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <span>{allocation.value} Allocation</span>
-                  <span className="text-zinc-600 text-xs normal-case">
+                  <span className="text-muted-foreground text-xs normal-case">
                     {allocation.value === Allocation.Equal
                       ? "- distribute tokens equally to all addresses"
                       : "- based on % of total supply held by each address"}
                   </span>
                 </Label>
                 <select
-                  className="flex h-9 w-full border border-zinc-800 bg-zinc-900 px-3 py-1 font-mono text-sm text-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500"
+                  className="flex h-9 w-full border border-input bg-background px-3 py-1 font-mono text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-md"
                   value={allocation.value}
                   onChange={(e) => {
                     allocation.value = e.target.value as Allocation;
@@ -548,7 +548,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                 </div>
               )}
 
-              <div className="border-t border-zinc-800 my-4" />
+              <div className="border-t border-border my-4" />
 
               {isEqualAllocation && (
                 <div className="space-y-2">
@@ -556,7 +556,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
                     Addresses (comma separated)
                     <button
                       type="button"
-                      className="text-green-500 hover:text-green-400 transition cursor-pointer"
+                      className="text-primary hover:text-primary/80 transition cursor-pointer"
                       onClick={loadTemplate}
                     >
                       Load Registered Users
@@ -589,31 +589,31 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
           {reviewMode.value && (
             <div className="space-y-4">
-              <div className="flex justify-between font-mono text-xs uppercase tracking-wider text-zinc-500">
+              <div className="flex justify-between font-mono text-xs uppercase tracking-wider text-muted-foreground">
                 <span>Destination ({destinations.value.length})</span>
                 <span>Amount</span>
               </div>
-              <div className="border border-zinc-800 bg-zinc-900/50 max-h-48 overflow-y-auto">
+              <div className="border border-border bg-card max-h-48 overflow-y-auto rounded-md">
                 {destinations.value.map((dest) => (
                   <div
                     key={`destination-${dest.address}`}
-                    className="flex justify-between px-3 py-2 border-b border-zinc-800 last:border-b-0 font-mono text-xs text-zinc-400"
+                    className="flex justify-between px-3 py-2 border-b border-border last:border-b-0 font-mono text-xs text-muted-foreground"
                   >
                     <span className="truncate max-w-[280px]">{dest.address}</span>
-                    <span className="whitespace-nowrap text-zinc-200">
+                    <span className="whitespace-nowrap text-foreground">
                       {dest.receiveAmt} {sym || id}
                     </span>
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between font-mono text-sm border-t border-zinc-800 pt-3">
-                <span className="text-zinc-500">Indexing Fees</span>
-                <span className="text-zinc-200">{toBitcoin(indexingFees.value || 0)} BSV</span>
+              <div className="flex justify-between font-mono text-sm border-t border-border pt-3">
+                <span className="text-muted-foreground">Indexing Fees</span>
+                <span className="text-foreground">{toBitcoin(indexingFees.value || 0)} BSV</span>
               </div>
               {changeTokenAmount.value > 0n && (
                 <div className="flex justify-between font-mono text-sm">
-                  <span className="text-zinc-500">Change Tokens</span>
-                  <span className="text-zinc-200">
+                  <span className="text-muted-foreground">Change Tokens</span>
+                  <span className="text-foreground">
                     {changeTokenAmount.value.toString()} {sym || id}
                   </span>
                 </div>
@@ -621,7 +621,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-zinc-800">
+          <div className="flex justify-end gap-2 pt-4 border-t border-border">
             {reviewMode.value && (
               <Button
                 type="button"

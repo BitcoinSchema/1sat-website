@@ -180,7 +180,7 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 	if (!mounted) {
 		return (
 			<div className="w-full flex-1 flex items-center justify-center">
-				<Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+				<Loader2 className="w-8 h-8 text-primary animate-spin" />
 			</div>
 		);
 	}
@@ -192,7 +192,7 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 	if (!ordAddress.value && !addressProp) {
 		return (
 			<div className="w-full flex-1 flex items-center justify-center">
-				<Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+				<Loader2 className="w-8 h-8 text-primary animate-spin" />
 			</div>
 		);
 	}
@@ -207,8 +207,8 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 			{/* Main Content Area */}
 			<div className="flex-1 flex flex-col min-w-0">
 				{/* Mobile Header with Sheet trigger */}
-				<div className="lg:hidden flex items-center justify-between p-4 border-b border-zinc-800">
-					<h1 className="font-mono text-sm uppercase tracking-wider text-zinc-300">
+				<div className="lg:hidden flex items-center justify-between p-4 border-b border-border">
+					<h1 className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
 						INVENTORY
 					</h1>
 					<Sheet>
@@ -216,24 +216,24 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 							<Button
 								variant="outline"
 								size="sm"
-								className="rounded-none border-zinc-700 hover:border-green-500/50 hover:text-green-400"
+								className="rounded-none border-border hover:border-primary/50 hover:text-primary"
 							>
 								<Menu className="w-4 h-4 mr-2" />
 								<span className="font-mono text-xs uppercase">Filter</span>
 							</Button>
 						</SheetTrigger>
-						<SheetContent side="left" className="p-0 w-[280px] bg-zinc-950 border-zinc-800">
+						<SheetContent side="left" className="p-0 w-[280px] bg-background border-border">
 							<FilterSidebar counts={counts} ordinalOutpoints={allOutpoints} />
 						</SheetContent>
 					</Sheet>
 				</div>
 
 				{/* Desktop Header */}
-				<div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-zinc-800">
-					<h1 className="font-mono text-lg uppercase tracking-tight text-zinc-200">
+				<div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-border">
+					<h1 className="font-mono text-lg uppercase tracking-tight text-foreground">
 						WALLET_INVENTORY
 					</h1>
-					<span className="font-mono text-xs text-zinc-600 uppercase tracking-widest">
+					<span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
 						{counts.total || 0} ARTIFACTS
 					</span>
 				</div>
@@ -241,10 +241,10 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 				{/* Grid Area */}
 				<div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24">
 					{filteredListings.length === 0 && !isFetching ? (
-						<div className="flex flex-col items-center justify-center py-24 text-zinc-600 font-mono">
+						<div className="flex flex-col items-center justify-center py-24 text-muted-foreground font-mono">
 							<div className="text-6xl mb-6 opacity-20">/</div>
 							<p className="uppercase tracking-widest text-sm">NO ARTIFACTS FOUND</p>
-							<p className="text-xs text-zinc-700 mt-2">
+							<p className="text-xs text-muted-foreground mt-2">
 								{searchQuery.value ? "Try a different search term" : "Your wallet is empty"}
 							</p>
 						</div>
@@ -264,12 +264,12 @@ const WalletOrdinals = ({ address: addressProp, onClick }: WalletOrdinalsProps) 
 					{/* Infinite scroll trigger */}
 					<div ref={ref} className="flex justify-center py-12">
 						{hasNextPage || isFetching ? (
-							<div className="flex items-center gap-3 text-green-500 font-mono text-sm animate-pulse">
+							<div className="flex items-center gap-3 text-primary font-mono text-sm animate-pulse">
 								<Loader2 className="w-5 h-5 animate-spin" />
 								<span className="uppercase tracking-wider">LOADING_DATA...</span>
 							</div>
 						) : filteredListings.length > 0 ? (
-							<span className="text-zinc-700 text-xs uppercase tracking-widest">
+							<span className="text-muted-foreground text-xs uppercase tracking-widest">
 								[ END OF DATA ]
 							</span>
 						) : null}

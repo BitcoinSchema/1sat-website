@@ -51,13 +51,13 @@ export const OrdinalCard = ({
 		<div className="group relative">
 			<Card
 				className={`
-          relative overflow-hidden rounded-none border-2 transition-all duration-200 bg-zinc-950
+          relative overflow-hidden rounded-lg border-2 transition-all duration-200 bg-card
           ${
 						isSelected
-							? "border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.15)]"
+							? "border-primary shadow-[0_0_15px_rgba(var(--primary),0.15)]"
 							: isTheme
-								? "border-zinc-800 hover:border-purple-500/50"
-								: "border-zinc-800 hover:border-zinc-600"
+								? "border-border hover:border-purple-500/50"
+								: "border-border hover:border-primary/50"
 					}
         `}
 			>
@@ -74,10 +74,10 @@ export const OrdinalCard = ({
 						}
 					}}
 				>
-					<div className="bg-zinc-950/80 p-0.5">
+					<div className="bg-background/80 p-0.5 rounded-sm backdrop-blur-sm">
 						<Checkbox
 							checked={isSelected}
-							className="rounded-none border-zinc-600 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 w-5 h-5"
+							className="rounded-sm border-muted-foreground data-[state=checked]:bg-primary data-[state=checked]:border-primary w-5 h-5"
 						/>
 					</div>
 				</div>
@@ -85,14 +85,14 @@ export const OrdinalCard = ({
 				{/* Theme Indicator Badge */}
 				{isTheme && (
 					<div className="absolute top-2 right-2 z-10">
-						<Badge className="rounded-none bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/30 font-mono text-[10px] uppercase">
+						<Badge className="rounded-sm bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/30 font-mono text-[10px] uppercase">
 							THEME
 						</Badge>
 					</div>
 				)}
 
 				{/* Content Area */}
-				<CardContent className="p-0 aspect-square bg-zinc-900 relative flex items-center justify-center overflow-hidden">
+				<CardContent className="p-0 aspect-square bg-muted relative flex items-center justify-center overflow-hidden">
 					<Artifact
 						artifact={ord}
 						to={onClick ? undefined : `/outpoint/${outpoint}`}
@@ -109,14 +109,14 @@ export const OrdinalCard = ({
 				</CardContent>
 
 				{/* Footer Info */}
-				<CardFooter className="flex flex-col items-start gap-2 p-3 border-t border-zinc-800 bg-zinc-950">
+				<CardFooter className="flex flex-col items-start gap-2 p-3 border-t border-border bg-card">
 					<div className="flex w-full justify-between items-center">
-						<span className="font-mono text-xs text-zinc-500 truncate max-w-[100px]">
+						<span className="font-mono text-xs text-muted-foreground truncate max-w-[100px]">
 							#{inscNum}
 						</span>
 						<Badge
 							variant="outline"
-							className="rounded-none text-[10px] text-zinc-600 border-zinc-800 uppercase"
+							className="rounded-sm text-[10px] text-muted-foreground border-border uppercase"
 						>
 							{fileType}
 						</Badge>
@@ -128,7 +128,7 @@ export const OrdinalCard = ({
 							size="sm"
 							variant="outline"
 							onClick={handleApplyTheme}
-							className="w-full h-7 mt-1 rounded-none border-purple-900/50 text-purple-400 hover:bg-purple-900/20 hover:text-purple-300 font-mono text-[10px] uppercase tracking-wider"
+							className="w-full h-7 mt-1 rounded-sm border-purple-900/50 text-purple-400 hover:bg-purple-900/20 hover:text-purple-300 font-mono text-[10px] uppercase tracking-wider"
 						>
 							<Palette className="w-3 h-3 mr-2" />
 							Apply Theme

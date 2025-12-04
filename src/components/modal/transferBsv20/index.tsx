@@ -196,20 +196,20 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 
   return (
     <Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+      <DialogContent className="bg-background border-border rounded-lg max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-zinc-200">
+          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-foreground">
             <span className="flex items-center gap-3">
               {burn ? (
                 <Flame className="w-5 h-5 text-orange-500" />
               ) : (
-                <Send className="w-5 h-5 text-green-500" />
+                <Send className="w-5 h-5 text-primary" />
               )}
               {burn ? "Burn" : "Transfer"} {type === WalletTab.BSV20 ? id : sym}
             </span>
             <button
               type="button"
-              className="text-xs font-mono text-zinc-500 hover:text-green-400 transition cursor-pointer"
+              className="text-xs font-mono text-muted-foreground hover:text-primary transition cursor-pointer"
               onClick={setAmountToBalance}
             >
               Balance: {balance} {type === WalletTab.BSV20 ? id : sym}
@@ -255,7 +255,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
             </div>
           )}
 
-          <div className="flex justify-end pt-4 border-t border-zinc-800">
+          <div className="flex justify-end pt-4 border-t border-border">
             <Button
               type="submit"
               variant={burn ? "destructive" : "default"}

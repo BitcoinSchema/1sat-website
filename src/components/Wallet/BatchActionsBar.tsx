@@ -32,13 +32,13 @@ export const BatchActionsBar = ({ onSend, onList }: BatchActionsBarProps) => {
 
 	return (
 		<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-			<div className="flex items-center gap-1 p-1.5 bg-zinc-950 border border-zinc-800 shadow-2xl shadow-black">
+			<div className="flex items-center gap-1 p-1.5 bg-background border border-border shadow-2xl shadow-black/50 rounded-md">
 				{/* Status Block */}
-				<div className="flex items-center gap-3 px-3 py-1.5 bg-zinc-900 border border-zinc-800 mr-1">
-					<Layers className="w-4 h-4 text-green-500" />
-					<span className="font-mono text-sm font-bold text-zinc-200">
+				<div className="flex items-center gap-3 px-3 py-1.5 bg-muted border border-border mr-1 rounded-sm">
+					<Layers className="w-4 h-4 text-primary" />
+					<span className="font-mono text-sm font-bold text-foreground">
 						{count}{" "}
-						<span className="text-zinc-500 text-xs font-normal">SELECTED</span>
+						<span className="text-muted-foreground text-xs font-normal">SELECTED</span>
 					</span>
 				</div>
 
@@ -46,7 +46,8 @@ export const BatchActionsBar = ({ onSend, onList }: BatchActionsBarProps) => {
 				{onSend && (
 					<Button
 						onClick={handleSend}
-						className="rounded-none bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono text-xs uppercase h-10 px-4"
+						variant="secondary"
+						className="rounded-sm bg-muted hover:bg-accent text-muted-foreground hover:text-accent-foreground border border-border font-mono text-xs uppercase h-10 px-4"
 					>
 						<Send className="w-3 h-3 mr-2" />
 						Send
@@ -56,19 +57,20 @@ export const BatchActionsBar = ({ onSend, onList }: BatchActionsBarProps) => {
 				{onList && (
 					<Button
 						onClick={handleList}
-						className="rounded-none bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-mono text-xs uppercase h-10 px-4"
+						variant="secondary"
+						className="rounded-sm bg-muted hover:bg-accent text-muted-foreground hover:text-accent-foreground border border-border font-mono text-xs uppercase h-10 px-4"
 					>
 						<List className="w-3 h-3 mr-2" />
 						List
 					</Button>
 				)}
 
-				<Separator orientation="vertical" className="h-6 bg-zinc-800 mx-1" />
+				<Separator orientation="vertical" className="h-6 bg-border mx-1" />
 
 				<Button
 					onClick={clearSelection}
 					variant="ghost"
-					className="rounded-none hover:bg-red-900/20 hover:text-red-400 text-zinc-500 h-10 w-10 p-0"
+					className="rounded-sm hover:bg-destructive/20 hover:text-destructive text-muted-foreground h-10 w-10 p-0"
 				>
 					<X className="w-4 h-4" />
 				</Button>
