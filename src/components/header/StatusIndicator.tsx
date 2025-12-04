@@ -1,12 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { MARKET_API_HOST } from "@/constants";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useEffect, useState } from "react";
 
 type StatusResponse = {
   exchangeRate: number;
@@ -25,30 +25,47 @@ type StatusResponse = {
   };
 };
 
-async function fetchStatus(): Promise<{ api: boolean; data?: StatusResponse }> {
-  try {
-    const res = await fetch(`${MARKET_API_HOST}/status`, { 
-      cache: "no-store",
-      signal: AbortSignal.timeout(5000)
-    });
-    if (!res.ok) return { api: false };
-    const data = await res.json() as StatusResponse;
-    return { api: true, data };
-  } catch {
-    return { api: false };
-  }
-}
+type StatusState = {
+  api: boolean;
+  data?: StatusResponse;
+  loading: boolean;
+  updatedAt?: number;
+};
 
 export default function StatusIndicator() {
-  const { data, isLoading, dataUpdatedAt } = useQuery({
-    queryKey: ["system-status"],
-    queryFn: fetchStatus,
-    refetchInterval: 60000, // Check every minute
-    staleTime: 30000,
-  });
+  const [status, setStatus] = useState<StatusState>({ api: false, loading: true });
 
-  const isOnline = data?.api ?? false;
-  const statusData = data?.data;
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch(`${MARKET_API_HOST}/status`, { 
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000)
+        });
+        if (!mounted) return;
+        if (!res.ok) {
+          setStatus({ api: false, loading: false, updatedAt: Date.now() });
+          return;
+        }
+        const data = await res.json() as StatusResponse;
+        setStatus({ api: true, data, loading: false, updatedAt: Date.now() });
+      } catch {
+        if (mounted) setStatus({ api: false, loading: false, updatedAt: Date.now() });
+      }
+    }
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 60000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const { api: isOnline, data: statusData, loading: isLoading, updatedAt } = status;
   const chain = statusData?.chainInfo;
   const indexers = statusData?.indexers;
 
@@ -122,7 +139,7 @@ export default function StatusIndicator() {
           )}
           
           <div className="border-t border-border pt-2 text-[9px] text-muted-foreground">
-            Updated: {dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : "—"}
+            Updated: {updatedAt ? new Date(updatedAt).toLocaleTimeString() : "—"}
           </div>
         </div>
       </PopoverContent>

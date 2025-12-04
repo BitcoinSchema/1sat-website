@@ -11,16 +11,16 @@ interface MarketLayoutProps {
 
 export default function MarketLayout({ children }: MarketLayoutProps) {
 	return (
-		<div className="flex w-full bg-background font-mono" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
-			{/* Desktop Sidebar - Sticky */}
-			<div className="hidden lg:block sticky top-14 h-[calc(100vh-3.5rem)] flex-shrink-0">
+		<div className="flex w-full bg-background font-mono h-[calc(100vh-3.5rem)]">
+			{/* Desktop Sidebar - Fixed height, own scroll */}
+			<div className="hidden lg:flex flex-shrink-0 h-full overflow-y-auto border-r border-border">
 				<MarketFilterSidebar />
 			</div>
 
-			{/* Main Content */}
-			<div className="flex-1 flex flex-col min-w-0">
+			{/* Main Content - Scrolls independently */}
+			<div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
 				{/* Mobile Filter Bar */}
-				<div className="lg:hidden flex items-center px-4 py-2 border-b border-border sticky top-14 bg-background z-30">
+				<div className="lg:hidden flex items-center px-4 py-2 border-b border-border bg-background z-30 flex-shrink-0">
 					<Sheet>
 						<SheetTrigger asChild>
 							<Button
@@ -38,8 +38,8 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
 					</Sheet>
 				</div>
 
-				{/* Content */}
-				<div className="flex-1">
+				{/* Content - This is the scrolling area */}
+				<div className="flex-1 overflow-y-auto">
 					{children}
 				</div>
 			</div>

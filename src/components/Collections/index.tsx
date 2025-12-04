@@ -3,7 +3,6 @@
 import { MARKET_API_HOST, ORDFS } from "@/constants";
 import type { Collection } from "@/types/collection";
 import { useQuery } from "@tanstack/react-query";
-import { Noto_Serif } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import "slick-carousel/slick/slick-theme.css";
@@ -16,12 +15,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, TrendingUp, Layers } from "lucide-react";
-
-const notoSerif = Noto_Serif({
-	style: "italic",
-	weight: ["400", "700"],
-	subsets: ["latin"],
-});
 
 const Collections = () => {
 	useSignals();
@@ -47,7 +40,7 @@ const Collections = () => {
 				<section className="px-4 md:px-6 py-6 border-b border-border">
 					<div className="flex items-center gap-2 mb-4">
 						<Sparkles className="w-5 h-5 text-primary" />
-						<h2 className={`text-xl text-foreground ${notoSerif.className}`}>
+						<h2 className="font-serif italic text-lg text-foreground">
 							Featured Collections
 						</h2>
 					</div>
@@ -61,14 +54,14 @@ const Collections = () => {
 					{collectionView.value === "featured" ? (
 						<>
 							<TrendingUp className="w-5 h-5 text-primary" />
-							<h2 className={`text-xl text-foreground ${notoSerif.className}`}>
+							<h2 className="font-serif italic text-lg text-foreground">
 								Current Hype
 							</h2>
 						</>
 					) : (
 						<>
 							<Layers className="w-5 h-5 text-primary" />
-							<h2 className={`text-xl text-foreground ${notoSerif.className}`}>
+							<h2 className="font-serif italic text-lg text-foreground">
 								All Collections
 							</h2>
 						</>

@@ -2,7 +2,6 @@ import FeaturedCollections from "@/components/Collections/featured";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import { AssetType, SortBy } from "@/constants";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
-import { Noto_Serif } from "next/font/google";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import TokenMarket from "../TokenMarket";
@@ -21,12 +20,6 @@ export interface MarketPageProps {
 	sort?: SortBy;
 	dir?: "asc" | "desc";
 }
-
-const notoSerif = Noto_Serif({
-	style: "italic",
-	weight: ["400", "700"],
-	subsets: ["latin"],
-});
 
 const Listings = async ({
 	id,
@@ -80,10 +73,8 @@ const MarketPage: React.FC<MarketPageProps> = async (props) => {
 		<MarketLayout>
 			{/* Featured Collections (Ordinals only) */}
 			{selectedAssetType === AssetType.Ordinals && (
-				<div className="px-4 md:px-6 py-4 border-b border-border">
-					<h2
-						className={`text-xl mb-4 text-foreground ${notoSerif.className}`}
-					>
+				<div className="px-4 md:px-6 py-6 border-b border-border">
+					<h2 className="font-serif text-lg mb-4 text-foreground italic">
 						Featured Collections
 					</h2>
 					<FeaturedCollections />
