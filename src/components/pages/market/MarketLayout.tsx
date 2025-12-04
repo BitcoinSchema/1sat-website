@@ -4,7 +4,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import MarketFilterSidebar from "./FilterSidebar";
-import Footer from "@/components/Footer/footer";
 
 interface MarketLayoutProps {
 	children: React.ReactNode;
@@ -12,7 +11,7 @@ interface MarketLayoutProps {
 
 export default function MarketLayout({ children }: MarketLayoutProps) {
 	return (
-		<div className="flex w-full bg-background font-mono h-[calc(100vh-3.5rem)]">
+		<div className="flex w-full bg-background font-mono h-full">
 			{/* Desktop Sidebar - Fixed height, own scroll */}
 			<div className="hidden lg:flex flex-shrink-0 h-full overflow-y-auto border-r border-border">
 				<MarketFilterSidebar />
@@ -40,11 +39,8 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
 				</div>
 
 				{/* Content - This is the scrolling area */}
-				<div className="flex-1 overflow-y-auto flex flex-col">
-					<div className="flex-1">
-						{children}
-					</div>
-					<Footer />
+				<div className="flex-1 overflow-y-auto">
+					{children}
 				</div>
 			</div>
 		</div>

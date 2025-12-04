@@ -96,6 +96,12 @@ const Collections = () => {
 			await fetch(`${MARKET_API_HOST}/collection/`).then((res) => res.json()),
 	});
 
+	// Get current filter values (access during render for reactivity)
+	const searchVal = collectionSearch.value;
+	const statusVal = collectionStatus.value;
+	const sizeVal = collectionSize.value;
+	const sortVal = collectionSort.value;
+
 	// Filter and sort collections
 	const filteredCollections = useMemo(() => {
 		if (!data) return [];
@@ -104,31 +110,31 @@ const Collections = () => {
 			if (!c.outpoint || typeof c.outpoint !== "string") return false;
 
 			// Search filter
-			if (collectionSearch.value) {
+			if (searchVal) {
 				const name = c.data?.map?.name?.toLowerCase() || "";
-				if (!name.includes(collectionSearch.value.toLowerCase())) return false;
+				if (!name.includes(searchVal.toLowerCase())) return false;
 			}
 
 			// Status filter
-			if (!filterByStatus(c, collectionStatus.value)) return false;
+			if (!filterByStatus(c, statusVal)) return false;
 
 			// Size filter
-			if (!filterBySize(c, collectionSize.value)) return false;
+			if (!filterBySize(c, sizeVal)) return false;
 
 			return true;
 		});
 
 		// Apply sorting
-		result = sortCollections(result, collectionSort.value);
+		result = sortCollections(result, sortVal);
 
 		return result;
-	}, [data, collectionSearch.value, collectionStatus.value, collectionSize.value, collectionSort.value]);
+	}, [data, searchVal, statusVal, sizeVal, sortVal]);
 
 	// Check if any filters are active
-	const hasActiveFilters = collectionSearch.value ||
-		collectionStatus.value !== "all" ||
-		collectionSize.value !== "all" ||
-		collectionSort.value !== "newest";
+	const hasActiveFilters = searchVal ||
+		statusVal !== "all" ||
+		sizeVal !== "all" ||
+		sortVal !== "newest";
 
 	return (
 		<div className="flex-1">
@@ -228,6 +234,7 @@ const Collections = () => {
 											size={300}
 											sizes={"(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"}
 											showFooter={false}
+											disableLink={true}
 										/>
 										{/* Gradient overlay */}
 										<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />

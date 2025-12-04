@@ -8,17 +8,31 @@ import type { OrdUtxo } from "@/types/ordinals";
 import {
 	fetchCollectionItems,
 	fetchCollectionMarket,
+	type ItemFilters,
+	type MarketFilters,
 } from "@/utils/fetchCollectionData";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Package, ShoppingBag } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { Loader2, Package, ShoppingBag, Filter, SlidersHorizontal } from "lucide-react";
 import { Tab } from "./CollectionNavigation";
+import { useSignals } from "@preact/signals-react/runtime";
+import {
+	CollectionFilters,
+	traitsParam,
+	itemSort,
+	marketSort,
+	minPrice,
+	maxPrice,
+	hasActiveFilters,
+} from "./CollectionFilters";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 type CollectionListProps = {
 	collectionId: string;
 };
 
 export const CollectionList = ({ collectionId }: CollectionListProps) => {
+	useSignals();
 	const searchParams = useSearchParams();
 	// if there's no tab param, act as if it's market
 	const tab = searchParams.get("tab") ?? Tab.Market;
@@ -32,6 +46,9 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 
 	const [hasMoreMarket, setHasMoreMarket] = useState(true);
 	const [hasMoreItems, setHasMoreItems] = useState(true);
+
+	// Track filter version to trigger reloads
+	const [filterVersion, setFilterVersion] = useState(0);
 
 	const hasMore = useMemo(
 		() => (isMarketTab ? hasMoreMarket : hasMoreItems),
@@ -60,30 +77,51 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 		[loading]
 	);
 
-	const loadMore = useCallback(async () => {
+	// Get current filter values
+	const currentTraits = traitsParam.value;
+	const currentItemSort = itemSort.value;
+	const currentMarketSort = marketSort.value;
+	const currentMinPrice = minPrice.value;
+	const currentMaxPrice = maxPrice.value;
+
+	const loadMore = useCallback(async (reset = false) => {
 		setLoadingStatus(tab, FetchStatus.Loading);
 
-		if (isMarketTab) {
-			const newItems =
-				(await fetchCollectionMarket(collectionId, marketOffset)) ?? [];
+		const offset = reset ? 0 : (isMarketTab ? marketOffset : itemsOffset);
 
-			if (marketOffset === 0) {
+		if (isMarketTab) {
+			const filters: MarketFilters = {
+				traits: currentTraits || undefined,
+				sort: currentMarketSort,
+				minPrice: currentMinPrice ? Number(currentMinPrice) : undefined,
+				maxPrice: currentMaxPrice ? Number(currentMaxPrice) : undefined,
+			};
+			const newItems =
+				(await fetchCollectionMarket(collectionId, offset, NUMBER_OF_ITEMS_PER_PAGE, filters)) ?? [];
+
+			if (reset || offset === 0) {
 				setMarketItems(newItems);
+				setMarketOffset(NUMBER_OF_ITEMS_PER_PAGE);
 			} else {
 				setMarketItems((i) => [...i, ...newItems]);
+				setMarketOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
 			}
 			setHasMoreMarket(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
-			setMarketOffset((offset) => offset + NUMBER_OF_ITEMS_PER_PAGE);
 		} else {
+			const filters: ItemFilters = {
+				traits: currentTraits || undefined,
+				sort: currentItemSort,
+			};
 			const newItems =
-				(await fetchCollectionItems(collectionId, itemsOffset)) ?? [];
-			if (itemsOffset === 0) {
+				(await fetchCollectionItems(collectionId, offset, NUMBER_OF_ITEMS_PER_PAGE, filters)) ?? [];
+			if (reset || offset === 0) {
 				setItems(newItems);
+				setItemsOffset(NUMBER_OF_ITEMS_PER_PAGE);
 			} else {
 				setItems((i) => [...i, ...newItems]);
+				setItemsOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
 			}
 			setHasMoreItems(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
-			setItemsOffset((offset) => offset + NUMBER_OF_ITEMS_PER_PAGE);
 		}
 
 		setLoadingStatus(tab, FetchStatus.Success);
@@ -94,7 +132,32 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 		collectionId,
 		marketOffset,
 		itemsOffset,
+		currentTraits,
+		currentItemSort,
+		currentMarketSort,
+		currentMinPrice,
+		currentMaxPrice,
 	]);
+
+	// Reset and reload when filters change
+	const handleFilterChange = useCallback(() => {
+		setFilterVersion((v) => v + 1);
+	}, []);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: filter changes should reset
+	useEffect(() => {
+		if (filterVersion > 0) {
+			// Reset offsets when filters change
+			if (isMarketTab) {
+				setMarketOffset(0);
+				setMarketItems([]);
+			} else {
+				setItemsOffset(0);
+				setItems([]);
+			}
+			loadMore(true);
+		}
+	}, [filterVersion, isMarketTab]);
 
 	useEffect(() => {
 		// initial load
@@ -119,6 +182,43 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 
 	return (
 		<section className="w-full flex flex-col">
+			{/* Filter Bar */}
+			<div className="flex items-center justify-between mb-4">
+				<div className="flex items-center gap-2">
+					<span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+						{itemsToDisplay.length} {isMarketTab ? "listings" : "items"}
+					</span>
+					{hasActiveFilters.value && (
+						<span className="text-xs text-primary">• Filtered</span>
+					)}
+				</div>
+				<Sheet>
+					<SheetTrigger asChild>
+						<Button
+							variant="outline"
+							size="sm"
+							className={`gap-2 font-mono text-xs uppercase tracking-wider ${
+								hasActiveFilters.value ? "border-primary text-primary" : ""
+							}`}
+						>
+							<SlidersHorizontal className="w-4 h-4" />
+							Filters
+							{hasActiveFilters.value && (
+								<span className="ml-1 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
+									!
+								</span>
+							)}
+						</Button>
+					</SheetTrigger>
+					<SheetContent side="right" className="w-[320px] p-4">
+						<CollectionFilters
+							isMarketTab={isMarketTab}
+							onFilterChange={handleFilterChange}
+						/>
+					</SheetContent>
+				</Sheet>
+			</div>
+
 			{/* Loading skeleton */}
 			{loading.get(tab) === FetchStatus.Loading && itemsToDisplay.length === 0 && (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
@@ -190,7 +290,7 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 					<div className="flex justify-center pt-8">
 						<Button
 							variant="outline"
-							onClick={loadMore}
+							onClick={() => loadMore()}
 							className="rounded-md font-mono text-xs uppercase tracking-wider"
 						>
 							Load More

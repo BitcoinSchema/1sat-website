@@ -52,19 +52,25 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
 
-      <body className={`flex flex-col min-h-screen ${inter.className}`}>
+      <body className={`flex flex-col h-screen overflow-hidden ${inter.className}`}>
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
           fill="white"
         />
         <TanstackProvider>
+          {/* Fixed Header */}
           <Header ubuntu={ubuntu} />
-          <main className="flex-1 w-full relative flex flex-col">
+          
+          {/* Main content area - grows to fill space between header and footer */}
+          <main className="flex-1 w-full relative flex flex-col overflow-hidden">
             {children}
           </main>
+          
+          {/* Fixed Footer */}
+          <Footer />
+          
           <Analytics />
           <SpeedInsights />
-          <Footer />
           <Toaster
             position="bottom-left"
             reverseOrder={false}

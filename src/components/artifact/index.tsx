@@ -83,6 +83,7 @@ type ArtifactProps = {
   latest?: boolean;
   showListingTag?: boolean;
   thumbnail?: boolean;
+  disableLink?: boolean;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -101,6 +102,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   latest = false,
   showListingTag = true,
   thumbnail = false,
+  disableLink = false,
 }) => {
   const router = useRouter();
   const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
@@ -380,111 +382,122 @@ const Artifact: React.FC<ArtifactProps> = ({
     thumbnail,
   ]);
 
-  return (
-    <React.Fragment>
-      <Link
-        key={outPoint || origin}
-        className={`${showFooter
-            ? `${type !== ArtifactType.HTML ? "pb-[65px]" : ""} ${classNames?.footer ? classNames.footer : ""
-            }`
-            : ""
-          } ${glow ? "glow" : ""
-          } flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${to ? "cursor-pointer" : "cursor-default"
-          } block transition mx-auto ${classNames?.wrapper ? classNames.wrapper : ""
-          }`}
-        target={to ? "_self" : undefined}
-        href={to || "#"}
-        draggable={false}
-        onClick={(e) => {
-          if (!to && !clickToZoom) {
-            e.stopPropagation();
-            e.preventDefault();
-            if (txid && onClick) {
-              onClick(txid);
-            }
+  const wrapperClassName = `${showFooter
+      ? `${type !== ArtifactType.HTML ? "pb-[65px]" : ""} ${classNames?.footer ? classNames.footer : ""}`
+      : ""
+    } ${glow ? "glow" : ""
+    } flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${to && !disableLink ? "cursor-pointer" : "cursor-default"
+    } block transition mx-auto ${classNames?.wrapper ? classNames.wrapper : ""}`;
+
+  const footerContent = showFooter === true && num !== undefined && (
+    <div className="text-xs absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
+      <button
+        type="button"
+        className={`rounded bg-[#222] p-2 text-[#aaa] ${onClick && (outPoint || origin) ? "cursor-pointer" : ""}`}
+        onClick={() => {
+          if (onClick && outPoint) {
+            onClick(outPoint);
+            return;
+          }
+          if (onClick && origin) {
+            onClick(origin);
           }
         }}
       >
-        {content}
-        {sigma && head(sigma)?.valid && (
-          <div className="absolute top-0 left-0 ml-2 mt-2">
-            <Tooltip message={`Signed by ${head(sigma)?.address}` || ""}>
-              <CheckmarkIcon className="m-auto" />
-            </Tooltip>
-          </div>
-        )}
-        {isListing && (size || 300) >= 300 && showListingTag && (
-          <div className="absolute top-0 right-0 mr-2 mt-2 pointer-events-none opacity-75">
-            <IoMdPricetag className="m-auto w-6 h-6 text-blue-400" />
-          </div>
-        )}
-        {/* TODO: Show indicator when more than one isncription */}
-        {showFooter === true && num !== undefined && (
-          <div className="text-xs absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
-            <button
-              type="button"
-              className={`rounded bg-[#222] p-2 text-[#aaa] ${onClick && (outPoint || origin) ? "cursor-pointer" : ""
-                }`}
-              onClick={() => {
-                if (onClick && outPoint) {
-                  onClick(outPoint);
-                  return;
-                }
-                if (onClick && origin) {
-                  onClick(origin);
-                }
-              }}
-            >
-              #{num}
-            </button>
-            <div className={"hidden md:block"}>&nbsp;</div>
-            <button
-              type="button"
-              className={` ${price !== undefined &&
-                  // type !== ArtifactType.BSV20 &&
-                  !(height && type === ArtifactType.Text && height >= 793000)
-                  ? "cursor-pointer hover:bg-emerald-600 text-white"
-                  : ""
-                } select-none text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
-              onClick={(e) => {
-                // clickToZoom && setShowZoom(true);
-                if (
-                  !(
-                    price !== undefined &&
-                    isListing &&
-                    // type !== ArtifactType.BSV20 &&
-                    !(height && type === ArtifactType.Text && height >= 793000)
-                  )
-                ) {
-                  return;
-                }
-                e.stopPropagation();
-                if (artifact.origin?.data?.bsv20) {
-                  router.push(
-                    artifact.origin?.data?.bsv20?.id
-                      ? `/market/bsv21/${artifact.origin?.data?.bsv20?.id}`
-                      : `/market/bsv20/${artifact.origin?.data?.bsv20?.tick}`,
-                  );
-                  return;
-                }
-                setShowBuy(true);
-              }}
-            // onMouseEnter={() => {
-            //   setHoverPrice(true);
-            // }}
-            // onMouseLeave={() => {
-            //   setHoverPrice(false);
-            // }}
-            >
-              {price !== undefined
-                ? price > 1000
-                  ? `Buy - ${toBitcoin(price)} BSV`
-                  : `Buy - ${price} sat`
-                : contentType}
-            </button>
-          </div>
-        )}
-      </Link>
+        #{num}
+      </button>
+      <div className={"hidden md:block"}>&nbsp;</div>
+      <button
+        type="button"
+        className={` ${price !== undefined &&
+            !(height && type === ArtifactType.Text && height >= 793000)
+            ? "cursor-pointer hover:bg-emerald-600 text-white"
+            : ""
+          } select-none text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
+        onClick={(e) => {
+          if (
+            !(
+              price !== undefined &&
+              isListing &&
+              !(height && type === ArtifactType.Text && height >= 793000)
+            )
+          ) {
+            return;
+          }
+          e.stopPropagation();
+          if (artifact.origin?.data?.bsv20) {
+            router.push(
+              artifact.origin?.data?.bsv20?.id
+                ? `/market/bsv21/${artifact.origin?.data?.bsv20?.id}`
+                : `/market/bsv20/${artifact.origin?.data?.bsv20?.tick}`,
+            );
+            return;
+          }
+          setShowBuy(true);
+        }}
+      >
+        {price !== undefined
+          ? price > 1000
+            ? `Buy - ${toBitcoin(price)} BSV`
+            : `Buy - ${price} sat`
+          : contentType}
+      </button>
+    </div>
+  );
+
+  const innerContent = (
+    <>
+      {content}
+      {sigma && head(sigma)?.valid && (
+        <div className="absolute top-0 left-0 ml-2 mt-2">
+          <Tooltip message={`Signed by ${head(sigma)?.address}` || ""}>
+            <CheckmarkIcon className="m-auto" />
+          </Tooltip>
+        </div>
+      )}
+      {isListing && (size || 300) >= 300 && showListingTag && (
+        <div className="absolute top-0 right-0 mr-2 mt-2 pointer-events-none opacity-75">
+          <IoMdPricetag className="m-auto w-6 h-6 text-blue-400" />
+        </div>
+      )}
+      {footerContent}
+    </>
+  );
+
+  return (
+    <React.Fragment>
+      {disableLink ? (
+        <div
+          key={outPoint || origin}
+          className={wrapperClassName}
+          onClick={(e) => {
+            if (txid && onClick) {
+              onClick(txid);
+            }
+          }}
+        >
+          {innerContent}
+        </div>
+      ) : (
+        <Link
+          key={outPoint || origin}
+          className={wrapperClassName}
+          target={to ? "_self" : undefined}
+          href={to || "#"}
+          draggable={false}
+          onClick={(e) => {
+            if (!to && !clickToZoom) {
+              e.stopPropagation();
+              e.preventDefault();
+              if (txid && onClick) {
+                onClick(txid);
+              }
+            }
+          }}
+        >
+          {innerContent}
+        </Link>
+      )}
       {showZoom && (
         // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
         <div

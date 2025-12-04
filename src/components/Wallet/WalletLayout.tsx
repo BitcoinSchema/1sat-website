@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import WalletSidebar from "./WalletSidebar";
 import { WalletTab } from "./tabs";
-import Footer from "@/components/Footer/footer";
 
 interface WalletLayoutProps {
 	children: React.ReactNode;
@@ -25,7 +24,7 @@ export default function WalletLayout({
 	filterProps 
 }: WalletLayoutProps) {
 	return (
-		<div className="flex w-full bg-background font-mono h-[calc(100vh-3.5rem)]">
+		<div className="flex w-full bg-background font-mono h-full">
 			{/* Desktop Sidebar - Fixed height, own scroll */}
 			<div className="hidden lg:flex flex-shrink-0 h-full overflow-y-auto border-r border-border">
 				<WalletSidebar 
@@ -63,11 +62,8 @@ export default function WalletLayout({
 				</div>
 
 				{/* Content - This is the scrolling area */}
-				<div className="flex-1 overflow-y-auto flex flex-col">
-					<div className="flex-1">
-						{children}
-					</div>
-					<Footer />
+				<div className="flex-1 overflow-y-auto">
+					{children}
 				</div>
 			</div>
 		</div>
