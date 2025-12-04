@@ -13,11 +13,13 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import { ChevronRight, Loader2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { toBitcoin } from "satoshi-token";
 import JDenticon from "../JDenticon";
 import { selectedType } from "../Wallet/filter";
 import Artifact, { ArtifactType } from "../artifact";
+import ArtifactModal from "../modal/artifactModal";
 import BuyBtn from "./buy";
 import {
 	checkOutpointFormat,
@@ -38,6 +40,37 @@ const List = ({ term, address, onClick }: Props) => {
 	const isInView = useInView(ref);
 
 	const listings = useSignal<OrdUtxo[]>([]);
+	const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
+	const [showBackdrop, setShowBackdrop] = useState(false);
+
+	const handleRowClick = (e: React.MouseEvent, listing: OrdUtxo) => {
+		e.preventDefault();
+		if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+			try {
+				const transition = (document as any).startViewTransition(() => {
+					flushSync(() => {
+						setSelectedArtifact(listing);
+					});
+				});
+				transition.ready.then(() => {
+					setShowBackdrop(true);
+				}).catch(() => {
+					setShowBackdrop(true);
+				});
+			} catch {
+				setSelectedArtifact(listing);
+				setShowBackdrop(true);
+			}
+		} else {
+			setSelectedArtifact(listing);
+			setShowBackdrop(true);
+		}
+	};
+
+	const closeModal = () => {
+		setShowBackdrop(false);
+		setSelectedArtifact(null);
+	};
 
 	const [selectedArtifactType, setSelectedArtifactType] =
 		useLocalStorage<ArtifactType>("1ssmartt", ArtifactType.All);
@@ -118,7 +151,8 @@ const List = ({ term, address, onClick }: Props) => {
 	});
 
 	return (
-		listings.value && (
+		<>
+		{listings.value && (
 			<TableBody>
 				{listings.value.map((listing) => {
 					const scamListing = !!listing.origin?.outpoint && SCAM_ITEM_BLACKLIST.includes(listing.origin.outpoint);
@@ -131,7 +165,8 @@ const List = ({ term, address, onClick }: Props) => {
 						listing && (
 							<TableRow
 								key={`k-${listing?.txid}-${listing?.vout}-${listing?.height}`}
-								className="border-border hover:bg-muted/50 group"
+								className="border-border hover:bg-muted/50 group cursor-pointer"
+								onClick={(e) => handleRowClick(e, listing)}
 							>
 								{/* Asset Thumbnail */}
 								<TableCell className="py-3 px-4">
@@ -145,7 +180,7 @@ const List = ({ term, address, onClick }: Props) => {
 											size={size}
 											sizes={"100vw"}
 											showFooter={false}
-											to={`/outpoint/${listing?.outpoint}/listing`}
+											thumbnail={true}
 										/>
 									</div>
 								</TableCell>
@@ -156,6 +191,7 @@ const List = ({ term, address, onClick }: Props) => {
 										<Link
 											className="text-sm text-foreground font-medium group-hover:text-primary transition-colors truncate max-w-[200px] md:max-w-[300px]"
 											href={`/outpoint/${listing?.outpoint}/listing`}
+											onClick={(e) => e.stopPropagation()}
 										>
 											{listingName(listing)}
 										</Link>
@@ -163,6 +199,7 @@ const List = ({ term, address, onClick }: Props) => {
 											<Link
 												href={`/collection/${listing?.origin?.data?.map?.subTypeData?.collectionId}`}
 												className="text-[10px] text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider"
+												onClick={(e) => e.stopPropagation()}
 											>
 												{collection.name} {mintNumber(listing, collection)}
 											</Link>
@@ -179,7 +216,7 @@ const List = ({ term, address, onClick }: Props) => {
 								</TableCell>
 
 								{/* Seller */}
-								<TableCell className="py-3 px-4 hidden md:table-cell">
+								<TableCell className="py-3 px-4 hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
 									<Link href={`/signer/${listing?.owner}`} className="block">
 										<div
 											className="w-10 h-10 rounded-md border border-border bg-muted overflow-hidden group-hover:border-primary/50 transition-colors"
@@ -211,7 +248,7 @@ const List = ({ term, address, onClick }: Props) => {
 								</TableCell>
 
 								{/* Action */}
-								<TableCell className="py-3 px-4 text-right">
+								<TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
 									{!scamListing && !knownScammer && listing?.data?.list?.price ? (
 										<BuyBtn
 											satoshis={BigInt(listing.data.list.price)}
@@ -257,7 +294,13 @@ const List = ({ term, address, onClick }: Props) => {
 					</TableCell>
 				</TableRow>
 			</TableBody>
-		)
+		)}
+		<ArtifactModal
+			artifact={selectedArtifact}
+			showBackdrop={showBackdrop}
+			onClose={closeModal}
+		/>
+		</>
 	);
 };
 

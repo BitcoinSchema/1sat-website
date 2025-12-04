@@ -52,7 +52,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
 
-      <body className={`flex flex-col min-h-screen bg-zinc-950 ${inter.className}`}>
+      <body className={`flex flex-col min-h-screen ${inter.className}`}>
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
           fill="white"
