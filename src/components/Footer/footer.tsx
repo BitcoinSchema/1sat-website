@@ -4,10 +4,10 @@ import { FaBook, FaDiscord } from "react-icons/fa6";
 
 const Footer = () => {
 	const linkClass =
-		"flex items-center text-xs text-zinc-600 hover:text-green-400 transition-colors font-mono uppercase tracking-wider";
+		"flex items-center text-xs text-muted-foreground hover:text-primary transition-colors font-mono uppercase tracking-wider";
 
 	return (
-		<footer className="w-full border-t border-zinc-800 bg-zinc-950 py-6">
+		<footer className="w-full border-t border-border bg-background py-6 mt-auto">
 			<div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 px-4">
 				<Link
 					href="https://docs.1satordinals.com"
@@ -16,11 +16,11 @@ const Footer = () => {
 				>
 					<FaBook className="mr-1.5 w-3 h-3" /> Protocol
 				</Link>
-				<span className="text-zinc-800">/</span>
+				<span className="text-border">/</span>
 				<Link href="/mine" className={linkClass}>
 					<BsGpuCard className="mr-1.5 w-3 h-3" /> Mine
 				</Link>
-				<span className="text-zinc-800">/</span>
+				<span className="text-border">/</span>
 				<Link
 					href="https://discord.gg/t5AsAsQxGT"
 					target="_blank"
@@ -28,7 +28,7 @@ const Footer = () => {
 				>
 					<FaDiscord className="mr-1.5 w-3 h-3" /> Discord
 				</Link>
-				<span className="text-zinc-800">/</span>
+				<span className="text-border">/</span>
 				<Link
 					href="https://x.com/1SatMarket"
 					target="_blank"

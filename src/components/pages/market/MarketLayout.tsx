@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import MarketFilterSidebar from "./FilterSidebar";
+import Footer from "@/components/Footer/footer";
 
 interface MarketLayoutProps {
 	children: React.ReactNode;
@@ -39,8 +40,11 @@ export default function MarketLayout({ children }: MarketLayoutProps) {
 				</div>
 
 				{/* Content - This is the scrolling area */}
-				<div className="flex-1 overflow-y-auto">
-					{children}
+				<div className="flex-1 overflow-y-auto flex flex-col">
+					<div className="flex-1">
+						{children}
+					</div>
+					<Footer />
 				</div>
 			</div>
 		</div>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import WalletSidebar from "./WalletSidebar";
 import { WalletTab } from "./tabs";
+import Footer from "@/components/Footer/footer";
 
 interface WalletLayoutProps {
 	children: React.ReactNode;
@@ -62,8 +63,11 @@ export default function WalletLayout({
 				</div>
 
 				{/* Content - This is the scrolling area */}
-				<div className="flex-1 overflow-y-auto">
-					{children}
+				<div className="flex-1 overflow-y-auto flex flex-col">
+					<div className="flex-1">
+						{children}
+					</div>
+					<Footer />
 				</div>
 			</div>
 		</div>

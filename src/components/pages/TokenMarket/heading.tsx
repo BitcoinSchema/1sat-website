@@ -197,13 +197,13 @@ const TickerHeading = ({
 						<button
 							type="button"
 							disabled={btnDisabled}
-							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-green-900/30 text-green-400 border border-green-500/50 hover:bg-green-900/50 transition disabled:opacity-50 disabled:cursor-not-allowed mr-4"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30 transition disabled:opacity-50 disabled:cursor-not-allowed mr-4"
 						>
 							Mint {ticker.tick}
 						</button>
 					</Link>
 				)}
-				<span title="Circulating Supply / Max Supply" className="text-zinc-400">
+				<span title="Circulating Supply / Max Supply" className="text-muted-foreground">
 					{`${totalSupply.toLocaleString()} / ${maxSupply.toLocaleString()}`}
 				</span>
 			</>
@@ -216,7 +216,7 @@ const TickerHeading = ({
 			(ticker.dec ? 10 ** ticker.dec : 1);
 
 		return (
-			<span title="Total Supply" className="text-zinc-400">
+			<span title="Total Supply" className="text-muted-foreground">
 				{`${totalSupply.toLocaleString()}`}
 			</span>
 		);
@@ -256,11 +256,11 @@ const TickerHeading = ({
 						</button>
 					</Link>
 				)}
-				<span title="Remaining Supply / Total Supply" className="text-zinc-400">
+				<span title="Remaining Supply / Total Supply" className="text-muted-foreground">
 					{supplyText}
 				</span>
 				{!pow20Details.owner && (
-					<span title="Current Mining Difficulty" className="text-zinc-400 ml-4">
+					<span title="Current Mining Difficulty" className="text-muted-foreground ml-4">
 						Difficulty: {currentDifficulty}
 					</span>
 				)}
@@ -293,7 +293,7 @@ const TickerHeading = ({
 						</button>
 					</Link>
 				)}
-				<span title="Remaining Supply / Total Supply" className="text-zinc-400">
+				<span title="Remaining Supply / Total Supply" className="text-muted-foreground">
 					{supplyText}
 				</span>
 			</>
@@ -320,10 +320,10 @@ const TickerHeading = ({
 					}
 					router.push(`/market/${type}/${ticker.tick || ticker.id}`);
 				}}
-				className={`transition border-b border-zinc-800/50 ${
+				className={`transition border-b border-border ${
 					id
-						? "bg-zinc-900 text-xl text-zinc-100"
-						: "cursor-pointer hover:bg-zinc-900/50 text-zinc-300 hover:text-zinc-100"
+						? "bg-muted/50 text-xl text-foreground"
+						: "cursor-pointer hover:bg-muted/30 text-muted-foreground hover:text-foreground"
 				}`}
 			>
 				<td className="truncate text-ellipsis px-4 py-3">
@@ -336,45 +336,45 @@ const TickerHeading = ({
 							/>
 						)}
 						{ticker.num && (
-							<div className="whitespace-nowrap items-end content-end text-right mr-4 text-zinc-500">
-								<FaHashtag className="m-0 mb-1 w-3 h-3 text-zinc-600 inline" />
+							<div className="whitespace-nowrap items-end content-end text-right mr-4 text-muted-foreground">
+								<FaHashtag className="m-0 mb-1 w-3 h-3 text-muted-foreground/50 inline" />
 								{ticker.num}
 							</div>
 						)}
-						<span className="text-2xl md:text-4xl mr-4 font-bold text-zinc-100">{ticker.tick || ticker.sym}</span>
+						<span className="text-2xl md:text-4xl mr-4 font-bold text-foreground">{ticker.tick || ticker.sym}</span>
 					</div>
 				</td>
 				{currencyDisplay.value === CurrencyDisplay.BSV && (
-					<td className="px-4 py-3 text-zinc-300">
+					<td className="px-4 py-3 text-muted-foreground">
 						{ticker.price?.toLocaleString("en-US", {
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 8,
 							useGrouping: false,
 						}) || ""}{" "}
-						<span className="text-green-500">sat/token</span>
+						<span className="text-primary">sat/token</span>
 					</td>
 				)}
 				{currencyDisplay.value === CurrencyDisplay.USD && (
-					<td className="px-4 py-3 text-zinc-300">
+					<td className="px-4 py-3 text-muted-foreground">
 						{usdPrice.value.toLocaleString("en-US", {
 							style: "currency",
 							currency: "USD",
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 8,
 						})}
-						<span className="text-green-500">/token</span>
+						<span className="text-primary">/token</span>
 					</td>
 				)}
 				<td className="px-4 py-3">
 					<span
 						className={`ml-2 text-xl ${
-							ticker.pctChange > 0 ? "text-emerald-400" : "text-red-500"
+							ticker.pctChange > 0 ? "text-emerald-400" : "text-destructive"
 						}`}
 					>
 						{change}
 					</span>
 				</td>
-				<td className="px-4 py-3 w-full text-right text-zinc-300">
+				<td className="px-4 py-3 w-full text-right text-muted-foreground">
 					{currencyDisplay.value === CurrencyDisplay.BSV
 						? `${
 								ticker.marketCap > 0
@@ -410,32 +410,32 @@ const TickerHeading = ({
 							</span>
 						) : (
 							<span className="mx-auto">
-								<GiPlainCircle className="text-zinc-700" />
+								<GiPlainCircle className="text-muted-foreground/30" />
 							</span>
 						)}
 					</td>
 				)}
-				<td className="px-4 py-3 break-normal text-right w-48 text-zinc-400 hover:text-green-400 transition">
+				<td className="px-4 py-3 break-normal text-right w-48 text-muted-foreground hover:text-primary transition">
 					<Link href={`/holders/${type}/${ticker.tick || ticker.id}`}>
 						{(ticker.accounts || 0).toLocaleString()}
 					</Link>
 				</td>
 			</tr>
 			{id && (
-				<tr className="bg-zinc-900 border-b border-zinc-800">
+				<tr className="bg-muted/30 border-b border-border">
 					<td
 						colSpan={3}
-						className="px-4 py-3 font-mono text-sm text-zinc-500"
+						className="px-4 py-3 font-mono text-sm text-muted-foreground"
 					>
 						{supplyContent.value}
 					</td>
 					<td
 						colSpan={type === AssetType.BSV21 ? 3 : 2}
-						className="px-4 py-3 text-right text-zinc-500"
+						className="px-4 py-3 text-right text-muted-foreground"
 					>
 						<Link
 							href={`/outpoint/${ticker.txid}_${ticker.vout}/token`}
-							className="hover:text-green-400 transition"
+							className="hover:text-primary transition"
 						>
 							Deployment Inscription{" "}
 							<FaExternalLinkAlt className="inline-block ml-2" />
