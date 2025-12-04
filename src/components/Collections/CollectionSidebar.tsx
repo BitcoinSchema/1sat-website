@@ -16,14 +16,29 @@ import {
 	Grid3X3,
 	LayoutGrid,
 	ArrowLeft,
+	ArrowUpDown,
+	CheckCircle2,
+	Circle,
+	Hash,
+	Layers,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+// Sort options
+export type SortOption = "newest" | "oldest" | "name_asc" | "name_desc" | "size_desc" | "size_asc";
+
+// Filter options
+export type StatusFilter = "all" | "complete" | "open";
+export type SizeFilter = "all" | "small" | "medium" | "large";
+
 // Signals for collection filtering
 export const collectionSearch = signal("");
 export const collectionView = signal<"featured" | "all">("featured");
+export const collectionSort = signal<SortOption>("newest");
+export const collectionStatus = signal<StatusFilter>("all");
+export const collectionSize = signal<SizeFilter>("all");
 
 interface CollectionSidebarProps {
 	showBackLink?: boolean;
@@ -34,6 +49,28 @@ const NAV_ITEMS = [
 	{ id: "featured", label: "Featured", icon: Star, href: "/collection" },
 	{ id: "trending", label: "Trending", icon: TrendingUp, href: "/collection?sort=trending" },
 ] as const;
+
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+	{ id: "newest", label: "Newest First" },
+	{ id: "oldest", label: "Oldest First" },
+	{ id: "name_asc", label: "Name A→Z" },
+	{ id: "name_desc", label: "Name Z→A" },
+	{ id: "size_desc", label: "Most Items" },
+	{ id: "size_asc", label: "Fewest Items" },
+];
+
+const STATUS_OPTIONS: { id: StatusFilter; label: string; icon: typeof CheckCircle2 }[] = [
+	{ id: "all", label: "All", icon: Layers },
+	{ id: "complete", label: "Complete", icon: CheckCircle2 },
+	{ id: "open", label: "Open Mint", icon: Circle },
+];
+
+const SIZE_OPTIONS: { id: SizeFilter; label: string; range: string }[] = [
+	{ id: "all", label: "Any Size", range: "" },
+	{ id: "small", label: "Small", range: "1-99" },
+	{ id: "medium", label: "Medium", range: "100-999" },
+	{ id: "large", label: "Large", range: "1000+" },
+];
 
 export default function CollectionSidebar({ 
 	showBackLink,
@@ -182,6 +219,93 @@ export default function CollectionSidebar({
 								</button>
 							</div>
 						</div>
+					)}
+
+					{/* Sort */}
+					{!isDetailPage && (
+						<>
+							<Separator className="bg-border" />
+							<div>
+								<h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+									<ArrowUpDown className="w-3 h-3" />
+									SORT_BY
+								</h3>
+								<select
+									value={collectionSort.value}
+									onChange={(e) => { collectionSort.value = e.target.value as SortOption; }}
+									className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 font-mono text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer"
+								>
+									{SORT_OPTIONS.map((opt) => (
+										<option key={opt.id} value={opt.id}>
+											{opt.label}
+										</option>
+									))}
+								</select>
+							</div>
+						</>
+					)}
+
+					{/* Status Filter */}
+					{!isDetailPage && (
+						<>
+							<Separator className="bg-border" />
+							<div>
+								<h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
+									STATUS
+								</h3>
+								<div className="space-y-1">
+									{STATUS_OPTIONS.map(({ id, label, icon: Icon }) => (
+										<button
+											key={id}
+											type="button"
+											onClick={() => { collectionStatus.value = id; }}
+											className={cn(
+												"w-full flex items-center px-3 py-2 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
+												collectionStatus.value === id
+													? "bg-primary/10 text-primary border-l-2 border-primary"
+													: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+											)}
+										>
+											<Icon className="w-3.5 h-3.5 mr-2" />
+											{label}
+										</button>
+									))}
+								</div>
+							</div>
+						</>
+					)}
+
+					{/* Size Filter */}
+					{!isDetailPage && (
+						<>
+							<Separator className="bg-border" />
+							<div>
+								<h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+									<Hash className="w-3 h-3" />
+									ITEMS
+								</h3>
+								<div className="space-y-1">
+									{SIZE_OPTIONS.map(({ id, label, range }) => (
+										<button
+											key={id}
+											type="button"
+											onClick={() => { collectionSize.value = id; }}
+											className={cn(
+												"w-full flex items-center justify-between px-3 py-2 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
+												collectionSize.value === id
+													? "bg-primary/10 text-primary border-l-2 border-primary"
+													: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+											)}
+										>
+											<span>{label}</span>
+											{range && (
+												<span className="text-[10px] opacity-60">{range}</span>
+											)}
+										</button>
+									))}
+								</div>
+							</div>
+						</>
 					)}
 
 					{/* Quick Links (on detail pages) */}

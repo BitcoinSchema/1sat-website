@@ -122,7 +122,7 @@ const List = ({
 	}
 
 	return (
-		<tbody className="overflow-auto bg-zinc-950">
+		<tbody className="overflow-auto bg-background">
 			{marketData?.map((ticker, idx) => (
 				<TickerHeading
 					key={`${ticker.tick}-${idx}`}
@@ -132,7 +132,7 @@ const List = ({
 				/>
 			))}
 			<tr>
-				<td colSpan={6} className="p-0 bg-zinc-950">
+				<td colSpan={6} className="p-0 bg-background">
 					{ticker && <TickerContent ticker={ticker} show={true} type={type} />}
 				</td>
 			</tr>

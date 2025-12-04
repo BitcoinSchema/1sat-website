@@ -21,7 +21,7 @@ const TickerContent = ({
 
   return (
     show && (
-      <div className="transition bg-base-200 flex py-4 w-full">
+      <div className="transition bg-muted/30 flex py-4 w-full">
         <div className="w-1/2 align-top">
           <TremorChartComponent
             ticker={ticker}
@@ -39,7 +39,6 @@ const TickerContent = ({
           />
         </div>
       </div>
-
     )
   );
 };

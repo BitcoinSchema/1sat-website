@@ -19,6 +19,7 @@ import {
 	exchangeRate,
 } from "@/signals/wallet";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 interface Props {
 	ticker: MarketData;
@@ -118,15 +119,15 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 						key={`${listing.txid}-${listing.vout}-${listing.height}`}
 					>
 						<div
-							className="flex w-full justify-between"
+							className="flex w-full justify-between items-center py-2 border-b border-border last:border-b-0"
 							key={`${listing.txid}-${listing.vout}-${listing.height}`}
 						>
 							<Link
 								href={`/outpoint/${listing.txid}_${listing.vout}`}
-								className="flex flex-col py-1"
+								className="flex flex-col py-1 hover:text-primary transition"
 							>
-								<span className="text-secondary-content/75">{qtyStr}</span>
-								<span className="text-base-content/50 text-xs">
+								<span className="text-foreground">{qtyStr}</span>
+								<span className="text-muted-foreground text-xs">
 									{pricePer}{" "}
 									{currencyDisplay.value === CurrencyDisplay.BSV
 										? "/ "
@@ -135,11 +136,10 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 								</span>
 							</Link>
 							<div className="py-1">
-								<button
-									type="button"
-									className={`ml-2 btn btn-outline hover:btn-primary transition btn-xs ${
-										myListing ? "btn-primary" : ""
-									}`}
+								<Button
+									variant={myListing ? "default" : "outline"}
+									size="sm"
+									className="ml-2 text-xs"
 									onClick={() => {
 										if (!myListing) {
 											showBuy.value = listing.txid || null;
@@ -149,7 +149,7 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 									}}
 								>
 									{buttonText}
-								</button>
+								</Button>
 								{showCancel.value === listing.txid && (
 									<CancelListingModal
 										className="w-full"
@@ -181,22 +181,22 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 										price={BigInt(Math.ceil(Number.parseInt(listing.price)))}
 										showLicense={false}
 										content={
-											<div className="w-full h-full rounded border border-secondary flex flex-col items-center justify-center">
-												<span className="text-xl text-secondary-content/75">{`${(
+											<div className="w-full h-full rounded border border-border flex flex-col items-center justify-center p-4">
+												<span className="text-xl text-foreground">{`${(
 													Number.parseInt(listing.amt) /
 													10 ** ticker.dec
 												).toLocaleString()} ${
 													ticker.tick || ticker.sym
 												}`}</span>
-												<span className="texl-base text-accent text-xs my-1">
+												<span className="text-base text-primary text-xs my-1">
 													{listing.pricePer} sat/token
 												</span>
-												<span className="text-base-content/75">
+												<span className="text-muted-foreground">
 													Status: {listing.status}
 												</span>
 												<Link
 													href={`/outpoint/${listing.txid}_${listing.vout}`}
-													className="text-sm flex items-center my-2"
+													className="text-sm flex items-center my-2 text-primary hover:underline"
 												>
 													Listing Details
 												</Link>
@@ -211,20 +211,19 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 			})}
 
       {status === "pending" && (
-        <div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
+        <div className="text-center text-muted-foreground min-h-64 flex items-center justify-center">
           Loading...
         </div>
       )}
 
       {status === "error" && (
-        <div className="text-center text-error min-h-64 flex items-center justify-center">
+        <div className="text-center text-destructive min-h-64 flex items-center justify-center">
           Error loading listings
         </div>
       )}
 
-
 			{listings.value?.length === 0 && (
-				<div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
+				<div className="text-center text-muted-foreground min-h-64 flex items-center justify-center">
 					No listings found
 				</div>
 			)}

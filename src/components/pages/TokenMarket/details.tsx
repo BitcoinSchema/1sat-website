@@ -89,7 +89,7 @@ const Details = async ({
   marketData: MarketData[];
 }) => {
   return (
-    <div className="overflow-auto w-full bg-zinc-950">
+    <div className="overflow-auto w-full bg-background">
       {marketData.map((ticker, idx) => {
         const showBsv20Content =
           type === AssetType.BSV20 &&
@@ -100,7 +100,7 @@ const Details = async ({
         return (<React.Fragment key={`${ticker.tick}-content`}>
           {ticker.included &&
             (showBsv20Content || showBsv21Content) && (
-              <div className="transition bg-zinc-900 font-mono text-xs border-t border-zinc-800">
+              <div className="transition bg-muted/30 font-mono text-xs border-t border-border">
                 <div className="align-top">
                   <TokenMarketTabs
                     ticker={ticker}
