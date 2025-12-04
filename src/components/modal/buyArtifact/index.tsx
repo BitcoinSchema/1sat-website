@@ -315,10 +315,10 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
 
   return (
     <Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+      <DialogContent className="bg-background border-border rounded-lg max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
-            <ShoppingCart className="w-5 h-5 text-green-500" />
+          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-foreground">
+            <ShoppingCart className="w-5 h-5 text-primary" />
             Purchase
           </DialogTitle>
         </DialogHeader>
@@ -352,12 +352,12 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         )}
 
         {!scamListing && showLicense && (
-          <div className="p-3 border border-zinc-700 bg-zinc-900">
-            <h1 className="font-mono text-xs uppercase tracking-wider text-zinc-400 flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
+          <div className="p-3 border border-border bg-card">
+            <h1 className="font-mono text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
               License Notice
             </h1>
-            <p className="font-mono text-xs text-zinc-500">
+            <p className="font-mono text-xs text-muted-foreground">
               You are about to purchase this inscription, granting you ownership
               and control of the associated token. This purchase does not include
               a license to any artwork or IP that may be depicted here and no
@@ -367,7 +367,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
           </div>
         )}
 
-        <DialogFooter className="border-t border-zinc-800 pt-4">
+        <DialogFooter className="border-t border-border pt-4">
           {!scamListing && (
             <Button
               type="button"

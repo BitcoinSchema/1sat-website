@@ -120,7 +120,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
             pages: [{
                 items: initialArtifacts,
                 nextCursor: initialArtifacts.length,
-                total: initialArtifacts.length
+                total: 1000 // Set a high total to ensure hasNextPage is true
             }],
             pageParams: [0]
         } : undefined,
@@ -144,8 +144,8 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     });
 
     useEffect(() => {
-        console.log(`FlowGrid: ${data?.pages.length || 0} pages, ${allArtifacts.length} total artifacts, ${artifacts.length} after dedup, hasNextPage: ${hasNextPage}`);
-    }, [data?.pages.length, allArtifacts.length, artifacts.length, hasNextPage]);
+        console.log(`FlowGrid: ${data?.pages.length || 0} pages, ${allArtifacts.length} total artifacts, ${artifacts.length} after dedup, hasNextPage: ${hasNextPage}, isFetchingNextPage: ${isFetchingNextPage}`);
+    }, [data?.pages.length, allArtifacts.length, artifacts.length, hasNextPage, isFetchingNextPage]);
 
     useEffect(() => {
         // Initialize all new artifacts as visible immediately
@@ -177,7 +177,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     fetchNextPage();
                 }
             },
-            { threshold: 0, rootMargin: '0px 0px 1000px 0px' }
+            { threshold: 0.1, rootMargin: '100px' }
         );
 
         observer.observe(sentinel);
@@ -283,7 +283,14 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                     </>
                 )}
             </div>
-            <div ref={sentinelRef} className="h-20" />
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="h-20 flex items-center justify-center">
+                {hasNextPage && (
+                    <div className="text-muted-foreground">
+                        {isFetchingNextPage ? 'Loading more...' : 'Scroll for more'}
+                    </div>
+                )}
+            </div>
         </div>
 
         <ArtifactModal
