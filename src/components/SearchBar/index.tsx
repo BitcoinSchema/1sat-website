@@ -125,26 +125,24 @@ const SearchBar: React.FC = () => {
 			{/* Command Palette Dialog */}
 			<CommandDialog open={isOpen.value} onOpenChange={handleOpenChange}>
 				<div className="bg-zinc-950 border-zinc-800 font-mono h-full flex flex-col sm:rounded-lg">
-					<CommandInput
-						placeholder="SEARCH BSV20, BSV21, TICKERS..."
-						value={searchTerm.value}
-						onValueChange={(v) => (searchTerm.value = v)}
-						className="border-none focus:ring-0 font-mono text-zinc-100 placeholder:text-zinc-600 h-12"
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && !autofillValues.value?.length) {
-								handleSearchSubmit();
-							}
-						}}
-					/>
+					<div className="relative">
+						<CommandInput
+							placeholder="SEARCH BSV20, BSV21, TICKERS..."
+							value={searchTerm.value}
+							onValueChange={(v) => (searchTerm.value = v)}
+							className="border-none focus:ring-0 font-mono text-zinc-100 placeholder:text-zinc-600 h-12 pr-10"
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && !autofillValues.value?.length) {
+									handleSearchSubmit();
+								}
+							}}
+						/>
+						{searchLoading.value === FetchStatus.Loading && (
+							<Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+						)}
+					</div>
 
 					<CommandList className="bg-zinc-950 flex-1 min-h-[50vh] sm:min-h-[300px] sm:max-h-[400px]">
-						{/* Loading State */}
-						{searchLoading.value === FetchStatus.Loading && (
-							<div className="flex items-center justify-center p-6 text-zinc-500 text-xs gap-2 font-mono uppercase tracking-wider">
-								<Loader2 className="animate-spin text-green-500 w-4 h-4" />
-								<span>SCANNING_NETWORK...</span>
-							</div>
-						)}
 
 						{/* Empty State */}
 						{searchLoading.value !== FetchStatus.Loading &&
