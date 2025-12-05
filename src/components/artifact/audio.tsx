@@ -17,10 +17,10 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
   src,
   className,
 }) => {
-  const [componentX, setComponentX] = useState(4);
-  const [componentY, setComponentY] = useState(4);
+  const [componentX] = useState(4);
+  const [componentY] = useState(4);
   const [position, setPosition] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(0);
+  const [, setDuration] = useState<number>(0);
 
   const [data, setData] = useState<
     { file: File; imageUrl: string; imageData: ImageData } | undefined
@@ -74,12 +74,10 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
   useEffect(() => {
     const interval = setInterval(() => {
       if (data && outPoint && generatedImage) {
-        console.log("This will be called every 2 seconds");
         const ael = document.getElementById(
           `${outPoint}_audio`
         ) as HTMLAudioElement;
         if (!ael?.paused && ael?.currentTime && ael?.duration) {
-          console.log("playing", ael.currentTime);
           setPosition(ael.currentTime);
           setDuration(ael.duration);
         }
@@ -102,17 +100,13 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
         />
       )}
       {!bh && generatedImage}
-      {/* biome-ignore lint/a11y/useMediaCaption: <explanation> */}
+      {/* biome-ignore lint/a11y/useMediaCaption: audio player */}
       <audio
         className={`w-full transition ${className ? className : ""}`}
         src={src ? src : `${ORDFS}/${outPoint}`}
         id={`${src ? src : outPoint}_audio`}
-        onPlaying={(e) => {
-          console.log("playing", e);
-        }}
-        onPause={(e) => {
-          console.log("paused", e);
-        }}
+        onPlaying={() => {}}
+        onPause={() => {}}
         controls
       />
     </div>

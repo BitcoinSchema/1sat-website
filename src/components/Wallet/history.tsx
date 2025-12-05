@@ -1,3 +1,5 @@
+"use client";
+
 import { API_HOST } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
 import type { OrdUtxo } from "@/types/ordinals";
@@ -25,18 +27,15 @@ const WalletHistory: React.FC<WalletHistoryProps> = ({
     isError: isBsv20HistoryError,
     error: bsv20Error,
   } = useQuery<OrdUtxo[]>({
-    queryKey: ["history", addressProp, ordAddressMemo],
+    queryKey: ["bsv20-history", addressProp, ordAddressMemo],
     queryFn: async () => {
-      if (!addressProp && !ordAddressMemo) {
-        return [] as OrdUtxo[];
-      }
       const res = await fetch(
-        `${API_HOST}/api/txos/address/${addressProp || ordAddressMemo
-        }/history?bsv20=true`
+        `${API_HOST}/api/txos/address/${addressProp || ordAddressMemo}/history?bsv20=true`
       );
       const json = await res.json();
       return json as OrdUtxo[];
     },
+    enabled: !!(addressProp || ordAddressMemo),
   });
 
   const {
@@ -45,18 +44,15 @@ const WalletHistory: React.FC<WalletHistoryProps> = ({
     isError: isHistoryError,
     error: historyError,
   } = useQuery<OrdUtxo[]>({
-    queryKey: ["history", addressProp, ordAddressMemo],
+    queryKey: ["ordinals-history", addressProp, ordAddressMemo],
     queryFn: async () => {
-      if (!addressProp && !ordAddressMemo) {
-        return [] as OrdUtxo[];
-      }
       const res = await fetch(
-        `${API_HOST}/api/txos/address/${addressProp || ordAddressMemo
-        }/history`
+        `${API_HOST}/api/txos/address/${addressProp || ordAddressMemo}/history`
       );
       const json = await res.json();
       return json as OrdUtxo[];
     },
+    enabled: !!(addressProp || ordAddressMemo),
   });
 
   if (isLoadingBsv20History || isLoadingHistory) {
