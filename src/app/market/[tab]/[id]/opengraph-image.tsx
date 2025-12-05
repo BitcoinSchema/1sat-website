@@ -55,11 +55,11 @@ export default async function Image({
             {params.tab === AssetType.BSV21 ? "BSV21" : "BSV20"}
           </div>
         )}
-        {
-          // eslint-disable-next-line @next/next/no-img-element
-          (<img width="50" height="50" src={`${ORDFS}/${icon}`} alt={ticker || ""} style={{
+        {(
+          <img width="50" height="50" src={`${ORDFS}/${icon}`} alt={ticker || ""} style={{
             marginRight: ".5rem",
-          }} />)}
+          }} />
+        )}
         {ticker || "Mystery Outpoint"}
         <Logo />
       </Container>

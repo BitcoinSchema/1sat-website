@@ -35,7 +35,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className, mini=fal
           } else {
             setIsJson(true);
           }
-        } catch (e) {
+        } catch (_e) {
           // not json
           setText(resultText);
           return;

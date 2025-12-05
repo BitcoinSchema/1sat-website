@@ -72,7 +72,7 @@ const List = ({ term, address, onClick }: Props) => {
 		setSelectedArtifact(null);
 	};
 
-	const [selectedArtifactType, setSelectedArtifactType] =
+	const [selectedArtifactType, _setSelectedArtifactType] =
 		useLocalStorage<ArtifactType>("1ssmartt", ArtifactType.All);
 
 	useEffect(() => {
@@ -93,7 +93,7 @@ const List = ({ term, address, onClick }: Props) => {
 		queryKey: ["ordinals", selectedType.value],
 		queryFn: ({ pageParam }) =>
 			getMarketListings({ pageParam, selectedType: selectedType.value, term }),
-		getNextPageParam: (lastPage, pages, lastPageParam) => {
+		getNextPageParam: (lastPage, _pages, lastPageParam) => {
 			if (lastPage?.length === resultsPerPage) {
 				return lastPageParam + 1;
 			}
@@ -116,7 +116,6 @@ const List = ({ term, address, onClick }: Props) => {
 				}
 			}
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [data, listings, data?.pages[data.pages.length - 1]]);
 
 	useEffect(() => {
@@ -124,7 +123,6 @@ const List = ({ term, address, onClick }: Props) => {
 		if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
 			fetchNextPage();
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [isInView]);
 
 	const collectionIds = computed(() =>

@@ -11,6 +11,7 @@ import * as http from "@/utils/httpClient";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 export interface SearchPageProps {
@@ -87,15 +88,11 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
       )}
       {bsv20Results && bsv20Results.length > 0 && (<div className="text-[#555] font-semibold text-lg mb-2">BSV20</div>)}
       {bsv20Results && bsv20Results.length > 0 && (
-        <div className="w-full text-base-100 grid grid-cols-8 mb-4 gap-2">
+        <div className="w-full text-foreground grid grid-cols-8 mb-4 gap-2">
           {bsv20Results?.map((match) => (
-            <Link
-              key={match.id}
-              href={`/market/bsv20/${match.tick}`}
-              className="btn btn-sm hover:bg-neutral transition"
-            >
-              {match.tick}
-            </Link>
+            <Button key={match.id} asChild variant="outline" size="sm">
+              <Link href={`/market/bsv20/${match.tick}`}>{match.tick}</Link>
+            </Button>
           ))}
         </div>
       )}
@@ -105,20 +102,24 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
         </div>
       )}
       {bsv21Results && bsv21Results.length > 0 && (
-        <div className="w-full text-base-100 grid grid-cols-8 mb-4 gap-2">
+        <div className="w-full text-foreground grid grid-cols-8 mb-4 gap-2">
           {bsv21Results?.map((match) => (
-            <Link
+            <Button
               key={match.id}
-              href={`/market/bsv21/${match.id}`}
-              className={`btn btn-sm hover:bg-neutral transition ${match.contract ? match.contract === "pow-20" ? "bg-orange-800 hover:bg-orange-600" : "" : ""}`}
+              asChild
+              variant="outline"
+              size="sm"
+              className={match.contract === "pow-20" ? "bg-orange-800 hover:bg-orange-700 text-white" : ""}
             >
-              <div className="flex items-center">
-                {match.icon && <ImageWithFallback src={`${ORDFS}/${match.icon}`} alt={match.tick} width={15} height={15} className="mr-2 rounded-box" />}
-                <div className="inline-flex">
-                  {match.tick}
+              <Link href={`/market/bsv21/${match.id}`}>
+                <div className="flex items-center">
+                  {match.icon && <ImageWithFallback src={`${ORDFS}/${match.icon}`} alt={match.tick} width={15} height={15} className="mr-2 rounded-sm" />}
+                  <div className="inline-flex">
+                    {match.tick}
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </Button>
           ))}
         </div>
       )}
@@ -127,7 +128,7 @@ const SearchPage: React.FC<SearchPageProps> = (props) => {
           Ordinals
         </div>
       )}
-      <div className="tab-content block bg-base-100 border-base-200 rounded-box p-2 md:p-6">
+      <div className="rounded-lg border border-border bg-card p-2 md:p-6">
         <Listings />
       </div>
     </div>

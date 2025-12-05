@@ -1,10 +1,10 @@
 "use client"
 
-import { Combobox, Transition } from "@headlessui/react";
+import { Combobox, } from "@headlessui/react";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import clsx from "clsx";
-import { Fragment, useCallback, useEffect } from "react";
+import { useEffect } from "react";
 
 interface DropdownProps {
 	placeholder?: string;

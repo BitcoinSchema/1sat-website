@@ -1,7 +1,7 @@
 import CollectionPage from "@/components/pages/collection";
 import { API_HOST } from "@/constants";
-import { CollectionStats } from "@/types/collection";
-import { OrdUtxo } from "@/types/ordinals";
+import type { CollectionStats } from "@/types/collection";
+import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import {
 	COOM_BANNERS_BY_OUTPOINT,

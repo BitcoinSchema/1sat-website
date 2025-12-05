@@ -18,7 +18,6 @@ const InscribePage: React.FC = () => {
       {payPk.value && utxos.value && <Inscribe tab={tab} generated={generated} />}
       <div className="p-2 md:p-4">
         {(!payPk.value || !utxos.value) && (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 <div
             className="rounded bg-[#222] hover:bg-[#333] cursor-pointer mx-auto p-4 md:p-8"
             onClick={() => router.push("./wallet")}

@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 interface Props {
 	onDone: () => void;
 }
@@ -12,9 +14,9 @@ export function DoneStep({ onDone }: Props) {
 			</div>
 
 			<div className="flex justify-end mt-4">
-				<button className="btn btn-outline btn-sm" onClick={onDone}>
+				<Button variant="outline" size="sm" onClick={onDone}>
 					Done
-				</button>
+				</Button>
 			</div>
 		</>
 	);

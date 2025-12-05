@@ -19,7 +19,7 @@ export enum Tab {
 
 const Tabs = ({ showIndicator, className }: Props) => {
   const path = usePathname();
-  let currentTab: Tab | undefined = undefined;
+  let currentTab: Tab | undefined ;
 
   if (path === "/") {
     currentTab = Tab.Overview;

@@ -89,7 +89,7 @@ export default function WalletSidebar({
 	ordinalOutpoints = [] 
 }: WalletSidebarProps) {
 	useSignals();
-	const pathname = usePathname();
+	const _pathname = usePathname();
 
 	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
 		searchQuery.value = e.target.value;

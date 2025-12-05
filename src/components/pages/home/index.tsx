@@ -1,8 +1,6 @@
-import type { OrdUtxo } from "@/types/ordinals";
+
 import type React from "react";
 import { Suspense } from "react";
-import { LoaderIcon } from "react-hot-toast";
-import SlideshowLoader from "./loader";
 import FlowLoader from "./flowLoader";
 import HomeLoadingSkeleton from "./loadingSkeleton";
 

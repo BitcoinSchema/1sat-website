@@ -7,12 +7,12 @@ interface Props {
 }
 
 const TokenContent = async ({ outpoint }: Props) => {
-	let artifact: BSV20TXO | undefined;
+	let _artifact: BSV20TXO | undefined;
 	let inscription: OrdUtxo | undefined;
 	try {
 		const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
 		const { promise } = http.customFetch<BSV20TXO>(url);
-		artifact = await promise;
+		_artifact = await promise;
 	} catch (e) {
 		console.log(e);
 	}

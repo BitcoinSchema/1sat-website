@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { CgClose } from "react-icons/cg";
 import { TbGridDots } from "react-icons/tb";
+import { Button } from "@/components/ui/button";
 
 const OutpointHeading = ({ outpoint, toggleDetails, showing }: { outpoint: string, toggleDetails: () => void, showing: boolean }) => {
   const txid = outpoint.split("_")[0];
@@ -29,10 +30,9 @@ const OutpointHeading = ({ outpoint, toggleDetails, showing }: { outpoint: strin
         </Link>
       </div>
       <div className=" cursor-pointer hover:text-blue-400 flex justify-end w-full text-sm text-[#555]">
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-        <div className="btn btn-sm flex items-center w-fit" onClick={toggleDetails}>
+        <Button size="sm" variant="outline" className="w-fit" onClick={toggleDetails}>
           {button}
-        </div>
+        </Button>
       </div>
     </>
   );

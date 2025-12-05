@@ -63,5 +63,5 @@ const listingAmount = (listing: BSV20TXO) => {
 };
 
 const satsPerToken = (listing: BSV20TXO) => {
-	return Math.floor(Number.parseInt(listing.pricePer));
+	return Math.floor(Number.parseInt(listing.pricePer, 10));
 };

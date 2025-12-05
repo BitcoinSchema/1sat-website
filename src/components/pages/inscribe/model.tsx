@@ -24,14 +24,14 @@ interface InscribeImageProps {
 const InscribeModel: React.FC<InscribeImageProps> = ({ inscribedCallback }) => {
   useSignals();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
 
-  const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
+  const [inscribeStatus, _setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
 

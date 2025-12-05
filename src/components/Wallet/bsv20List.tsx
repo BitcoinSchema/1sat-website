@@ -20,7 +20,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { find, uniq } from "lodash";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -184,9 +184,9 @@ const Bsv20List = ({
         (acc, utxo) => {
           if (utxo.tick) {
             if (acc[utxo.tick]) {
-              acc[utxo.tick] += Number.parseInt(utxo.amt);
+              acc[utxo.tick] += Number.parseInt(utxo.amt, 10);
             } else {
-              acc[utxo.tick] = Number.parseInt(utxo.amt);
+              acc[utxo.tick] = Number.parseInt(utxo.amt, 10);
             }
           }
           return acc;
@@ -304,7 +304,7 @@ const Bsv20List = ({
   const renderActivityRow = useCallback((bsv20: BSV20TXO) => {
     const decimals = getDec(bsv20.tick, bsv20.id);
     const amount = getBalanceText(
-      Number.parseInt(bsv20.amt || "0") / 10 ** decimals,
+      Number.parseInt(bsv20.amt || "0", 10) / 10 ** decimals,
       decimals,
     );
 
@@ -463,7 +463,7 @@ const Bsv20List = ({
                     </TableCell>
                   </TableRow>
                 )}
-                {Object.entries(unindexBalances).map(([tick, amount], idx) => (
+                {Object.entries(unindexBalances).map(([tick, amount], _idx) => (
                   <TableRow key={`bal-unindexed-${tick}`} className="border-border hover:bg-muted/50">
                     <TableCell>
                       <Link
@@ -510,7 +510,7 @@ const Bsv20List = ({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
                 {currentBalances.map(
-                  ({ tick, all, sym, id, dec, listed, icon, price }, idx) => {
+                  ({ tick, all, sym, id, dec, listed, icon, price }, _idx) => {
                     const deets = find(tickerDetails.value, (t) => t.tick === tick);
                     const balance = selectedBalanceFilter.value === BalanceFilter.Listed
                       ? listed.confirmed / 10 ** dec

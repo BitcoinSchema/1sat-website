@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { signal, computed } from "@preact/signals-react";
@@ -61,7 +60,7 @@ export const toggleTrait = (traitName: string, value: string) => {
 	selectedTraits.value = current;
 };
 
-interface TraitData {
+export interface TraitData {
 	name: string;
 	values: string[];
 	counts?: number[];

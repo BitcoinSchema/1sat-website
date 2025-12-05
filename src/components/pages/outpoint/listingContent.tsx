@@ -10,8 +10,8 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useMemo, useState, useEffect } from "react";
-import { FaSpinner } from "react-icons/fa6";
+import { useMemo, useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
   useSignals();
@@ -42,11 +42,13 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
       ) : (
         <div>
           <div>This item is not listed</div>
-          {isOwner && !artifact.data?.bsv20 && <Link href={`/market/ordinals/new?outpoint=${artifact.outpoint}`}>
-            <button type="button" className="btn">
-              List
-            </button>
-          </Link>}
+          {isOwner && !artifact.data?.bsv20 && (
+            <Button asChild>
+              <Link href={`/market/ordinals/new?outpoint=${artifact.outpoint}`}>
+                List
+              </Link>
+            </Button>
+          )}
         </div>
 
       )}
@@ -78,28 +80,25 @@ const ListingContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
       {/* // unlisted bsv20 */}
       {isOwner && !artifact.data?.list && artifact.data?.bsv20 && (
-        <Link
-          href={`/market/${artifact.data.bsv20.id ? "bsv21" : "bsv20"
-            }/${artifact.data.bsv20.id || artifact.data.bsv20.tick}`}
-        >
-          <button type="button" className="btn">
+        <Button asChild>
+          <Link href={`/market/${artifact.data.bsv20.id ? "bsv21" : "bsv20"
+            }/${artifact.data.bsv20.id || artifact.data.bsv20.tick}`}>
             Sell
-          </button>
-        </Link>
+          </Link>
+        </Button>
       )}
 
       {/* // unlisted utxo */}
       {isOwner && artifact.data?.list && !artifact.data?.bsv20 && (
-        <button
+        <Button
           disabled={!!artifact.spend && artifact.spend !== ""}
           type="button"
-          className="btn disabled:text-gray-[#555]"
           onClick={() => {
             showCancelModal.value = true;
           }}
         >
           Cancel
-        </button>
+        </Button>
       )}
 
       {artifact && showCancelModal.value && (

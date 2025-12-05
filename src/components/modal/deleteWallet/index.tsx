@@ -42,7 +42,7 @@ const DeleteWalletModal = ({
   close: (signOut?: boolean) => void;
 }) => {
   useSignals();
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );

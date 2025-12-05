@@ -70,7 +70,7 @@ const TremorChartComponent: FC<ChartProps> = ({
     const finalData = Object.entries(groupedData).map(([height, data]) => {
       const averagePrice = data.price / data.amt;
       return {
-        height: Number.parseInt(height),
+        height: Number.parseInt(height, 10),
         price: averagePrice,
         amt: data.amt,
       };
@@ -90,7 +90,7 @@ const TremorChartComponent: FC<ChartProps> = ({
   });
 
   // Define categories for the chart based on dataCategory
-  const categories = useMemo(() => [dataCategory], [dataCategory]);
+  const _categories = useMemo(() => [dataCategory], [dataCategory]);
 
   // Render the chart using the Chart component from @tremor/react
   return (

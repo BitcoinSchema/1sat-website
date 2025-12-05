@@ -42,7 +42,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
   useSignals();
   const router = useRouter();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
@@ -120,7 +120,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
         if (onClose) {
           onClose();
         }
-      } catch (e) {
+      } catch (_e) {
         toast.error("Error creating tx", toastErrorProps);
       }
     },

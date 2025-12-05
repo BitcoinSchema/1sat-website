@@ -2,13 +2,14 @@ import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { toBitcoin } from "satoshi-token";
 
 const AddressPage = async ({ params }: { params: Promise<{ address: string }> }) => {
   const { address } = await params;
   const balanceUrl = `${API_HOST}/api/txos/address/${address}/balance`;
   const { promise: balancePromise } = http.customFetch<string>(balanceUrl);
-  const balance = Number.parseInt((await balancePromise) || "0");
+  const balance = Number.parseInt((await balancePromise) || "0", 10);
 
   // fetch address history
   const historyUrl = `${API_HOST}/api/txos/address/${address}/history`;
@@ -22,24 +23,15 @@ const AddressPage = async ({ params }: { params: Promise<{ address: string }> })
         {address} - {toBitcoin(balance)} BSV
       </h2>
       <div className="my-8 mx-auto w-fit">
-        <Link
-          href={`/activity/${address}/ordinals`}
-          className="btn btn-lg mr-2"
-        >
-          Ordinals
-        </Link>
-        <Link
-          href={`/activity/${address}/bsv20`}
-          className="btn btn-lg mr-2"
-        >
-          BSV20
-        </Link>
-        <Link
-          href={`/activity/${address}/bsv21`}
-          className="btn btn-lg"
-        >
-          BSV21
-        </Link>
+        <Button asChild size="lg" className="mr-2">
+          <Link href={`/activity/${address}/ordinals`}>Ordinals</Link>
+        </Button>
+        <Button asChild size="lg" className="mr-2">
+          <Link href={`/activity/${address}/bsv20`}>BSV20</Link>
+        </Button>
+        <Button asChild size="lg">
+          <Link href={`/activity/${address}/bsv21`}>BSV21</Link>
+        </Button>
       </div>
       <div>
         <h2 className="font-bold text-xl">History</h2>

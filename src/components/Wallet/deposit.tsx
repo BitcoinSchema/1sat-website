@@ -6,12 +6,12 @@ import { FaCopy } from "react-icons/fa";
 import { useCopyToClipboard } from "usehooks-ts";
 
 const Deposit = () => {
-	const [text, copy] = useCopyToClipboard();
+	const [_text, copy] = useCopyToClipboard();
 	return (
 		<div className="">
 			<h1 className="font-semibold text-lg mb-4">Deposit Bitcoin SV</h1>
 
-			<div className="text-warning rounded p-2 mx-auto mb-4 border-warning border">
+			<div className="text-amber-500 rounded p-2 mx-auto mb-4 border-amber-500 border">
 				This is not an Ordinals address. Send BSV only.
 			</div>
 			<div className="hover:text-neutral-content w-fit bg-neutral text-neutral-content/50 rounded p-2 mx-auto my-4 transition">

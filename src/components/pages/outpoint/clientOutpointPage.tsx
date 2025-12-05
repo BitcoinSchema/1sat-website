@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Artifact from "@/components/artifact";
 import ArtifactViewer from "./ArtifactViewer";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import { Noto_Serif } from "next/font/google";
-import { OutpointTab } from "./tabs";
+import type { OutpointTab } from "./tabs";
 import { FaSpinner } from "react-icons/fa";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 const notoSerif = Noto_Serif({
 	style: "italic",
@@ -31,7 +32,7 @@ interface Props {
 
 const ClientOutpointPage = ({ artifact, outpoint, initialTab, tabs }: Props) => {
 	const router = useRouter();
-	const searchParams = useSearchParams();
+	const _searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState<OutpointTab>(initialTab);
 	const [isLoadingTab, setIsLoadingTab] = useState(false);
 
@@ -69,33 +70,36 @@ const ClientOutpointPage = ({ artifact, outpoint, initialTab, tabs }: Props) => 
 						No inscription
 					</div>
 				)}
-				<div className="divider" />
+				<Separator className="my-2" />
 				<div className="w-full mx-auto">
-					{/* Tab Navigation */}
-					<div role="tablist" className="tabs tabs-bordered mb-4 font-mono">
+					<Tabs
+						value={activeTab}
+						onValueChange={(tab) => handleTabChange(tab as OutpointTab)}
+						className="w-full"
+					>
+						<TabsList className="mb-4 font-mono">
+							{tabs.map((tab) => (
+								<TabsTrigger key={tab.id} value={tab.id}>
+									{tab.label}
+								</TabsTrigger>
+							))}
+						</TabsList>
 						{tabs.map((tab) => (
-							<button
+							<TabsContent
 								key={tab.id}
-								type="button"
-								role="tab"
-								onClick={() => handleTabChange(tab.id)}
-								className={`tab ${activeTab === tab.id ? "tab-active" : ""}`}
+								value={tab.id}
+								className="min-h-64"
 							>
-								{tab.label}
-							</button>
+								{isLoadingTab ? (
+									<div className="flex items-center justify-center p-8">
+										<FaSpinner className="animate-spin text-2xl" />
+									</div>
+								) : (
+									tab.component && <tab.component outpoint={outpoint} />
+								)}
+							</TabsContent>
 						))}
-					</div>
-
-					{/* Tab Content */}
-					<div className="min-h-64">
-						{isLoadingTab ? (
-							<div className="flex items-center justify-center p-8">
-								<FaSpinner className="animate-spin text-2xl" />
-							</div>
-						) : (
-							ActiveTabComponent && <ActiveTabComponent outpoint={outpoint} />
-						)}
-					</div>
+					</Tabs>
 				</div>
 			</div>
 		</div>

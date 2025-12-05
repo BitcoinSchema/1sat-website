@@ -79,8 +79,8 @@ export function TokenMarketSales({ ticker, type }: Props) {
     <>
       {sales.value?.map((sale) => {
 
-const qty = Number.parseInt(sale.amt) / 10 ** ticker.dec;
-const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
+const qty = Number.parseInt(sale.amt, 10) / 10 ** ticker.dec;
+const _qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
 
 const pricePerSat = Number.parseFloat(sale.price) / qty;
 const pricePerUSD = (pricePerSat / 1e8) * exchangeRate.value; // Convert sat to BSV, then to USD
@@ -104,11 +104,11 @@ const pricePer = currencyDisplay.value === CurrencyDisplay.BSV
         	// For the button text
 				const buttonText =
         currencyDisplay.value === CurrencyDisplay.BSV
-          ? Number.parseInt(sale.price) < 1000
+          ? Number.parseInt(sale.price, 10) < 1000
             ? `${sale.price} sat`
             : `${toBitcoin(sale.price)} BSV`
           : `${(
-              (Number.parseInt(sale.price) / 1e8) *
+              (Number.parseInt(sale.price, 10) / 1e8) *
               exchangeRate.value
             ).toLocaleString("en-US", {
               style: "currency",
@@ -129,7 +129,7 @@ const pricePer = currencyDisplay.value === CurrencyDisplay.BSV
             >
               <span className="text-foreground">
                 {(
-                  Number.parseInt(sale.amt) /
+                  Number.parseInt(sale.amt, 10) /
                   10 ** ticker.dec
                 ).toLocaleString()}{" "}
                 {ticker.tick}

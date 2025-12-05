@@ -90,7 +90,7 @@ export function TokenMarketMySales({ ticker, type }: Props) {
             >
               <span className="text-foreground">
                 {(
-                  Number.parseInt(sale.amt) /
+                  Number.parseInt(sale.amt, 10) /
                   10 ** ticker.dec
                 ).toLocaleString()}{" "}
                 {ticker.tick}
@@ -114,7 +114,7 @@ export function TokenMarketMySales({ ticker, type }: Props) {
                 disabled
                 className="text-xs pointer-events-none"
               >
-                {Number.parseInt(sale.price) > 1000
+                {Number.parseInt(sale.price, 10) > 1000
                   ? `${toBitcoin(sale.price)} BSV`
                   : `${sale.price} sat`}
               </Button>

@@ -1,7 +1,7 @@
-import { Holder, TickHolder } from "@/components/pages/TokenMarket/list";
+import type { Holder, TickHolder } from "@/components/pages/TokenMarket/list";
 import { API_HOST, AssetType } from "@/constants";
-import { BSV20 } from "@/types/bsv20";
-import { NextRequest, NextResponse } from "next/server";
+import type { BSV20 } from "@/types/bsv20";
+import { type NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic"; // defaults to auto
 
@@ -27,13 +27,13 @@ export async function POST(
 	const holdersJson = ((await holdersResp.json()) || []) as Holder[];
 
 	const holders = holdersJson?.length && holdersJson
-		?.sort((a, b) => parseInt(b.amt) - parseInt(a.amt))
+		?.sort((a, b) => parseInt(b.amt, 10) - parseInt(a.amt, 10))
 		.map((h) => ({
 			...h,
-			amt: parseInt(h.amt) / 10 ** (details?.dec || 0),
+			amt: parseInt(h.amt, 10) / 10 ** (details?.dec || 0),
 			pct: type === AssetType.BSV20
-				? (parseInt(h.amt) / parseInt(details!.supply!)) * 100
-				: (parseInt(h.amt) / parseInt(details!.amt!)) * 100,
+				? (parseInt(h.amt, 10) / parseInt(details?.supply!, 10)) * 100
+				: (parseInt(h.amt, 10) / parseInt(details?.amt!, 10)) * 100,
 		})) as TickHolder[];
 	return NextResponse.json(holders || []);
 }

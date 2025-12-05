@@ -55,7 +55,7 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
 }) => {
   useSignals();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );

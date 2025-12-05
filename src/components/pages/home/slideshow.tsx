@@ -4,7 +4,6 @@ import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import Artifact from "@/components/artifact";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { OrdUtxo } from "@/types/ordinals";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 

@@ -2,13 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Artifact from "@/components/artifact";
 import ArtifactViewer from "./ArtifactViewer";
-import { API_HOST } from "@/constants";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
-import * as http from "@/utils/httpClient";
 import { Noto_Serif } from "next/font/google";
 import OutpointTabs, { type OutpointTab } from "./tabs";
 
@@ -38,7 +35,7 @@ const OutpointPage = ({
 	activeTab: initialTab,
 }: Props) => {
 	const router = useRouter();
-	const [activeTab, setActiveTab] = useState(initialTab);
+	const [_activeTab, setActiveTab] = useState(initialTab);
 	const [content, setContent] = useState(initialContent);
 
 	const handleTabChange = (tab: OutpointTab) => {
@@ -58,59 +55,63 @@ const OutpointPage = ({
 	}, [initialTab]);
 
 	return (
-		<div className="mx-auto flex flex-col p-2 md:p-0 min-h-64">
+		<div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6 lg:p-8">
 			{artifact && (
 				<>
-					<h2 className={`text-2xl mb-4  ${notoSerif.className}`}>
+					<h2
+						className={`text-3xl font-semibold leading-tight text-foreground ${notoSerif.className}`}
+					>
 						{displayName(artifact, false)}
 					</h2>
-					<div className="flex flex-col md:flex-row gap-4">
-						{artifact?.origin?.data?.insc && (
-							<div className="overflow-hidden h-[550px] relative w-fit">
-								<ArtifactViewer
-									artifact={artifact}
-									size={550}
-									className="h-full"
+					<div className="grid gap-6 lg:grid-cols-[minmax(320px,420px)_1fr]">
+						<div className="rounded-lg border border-border bg-card shadow-sm">
+							{artifact?.origin?.data?.insc ? (
+								<div className="relative overflow-hidden rounded-lg">
+									<ArtifactViewer
+										artifact={artifact}
+										size={560}
+										className="h-full w-full"
+									/>
+								</div>
+							) : (
+								<div className="flex min-h-64 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-sm text-muted-foreground">
+									No inscription
+								</div>
+							)}
+						</div>
+
+						<div className="rounded-lg border border-border bg-card shadow-sm">
+							<div className="border-b border-border px-4 py-3">
+								<OutpointTabs
+									outpoint={outpoint}
+									owner={
+										artifact.spend ||
+										!!artifact.origin?.data?.bsv20
+											? undefined
+											: artifact?.owner
+									}
+									actualOwner={artifact?.owner}
+									hasToken={!!artifact.origin?.data?.bsv20}
+									isListing={!!artifact.data?.list}
+									isCollection={
+										artifact.origin?.data?.map?.subType ===
+											"collection" ||
+										artifact.origin?.data?.map?.subType ===
+											"collectionItem"
+									}
+									onTabChange={handleTabChange}
 								/>
 							</div>
-						)}
-						{!artifact?.origin?.data?.insc && (
-							<div className="h-full w-full text-[#aaa] flex items-center justify-center min-h-64 bg-[#111] rounded">
-								No inscription
-							</div>
-						)}
-						<div className="divider" />
-						<div
-							className={`w-full ${
-								// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-1/3"
-								"w-full"
-							} mx-auto`}
-						>
-							<OutpointTabs
-								outpoint={outpoint}
-								owner={
-									artifact.spend ||
-									!!artifact.origin?.data?.bsv20
-										? undefined
-										: artifact?.owner
-								}
-								actualOwner={artifact?.owner}
-								hasToken={!!artifact.origin?.data?.bsv20}
-								isListing={!!artifact.data?.list}
-								isCollection={
-									artifact.origin?.data?.map?.subType ===
-										"collection" ||
-									artifact.origin?.data?.map?.subType ===
-										"collectionItem"
-								}
-								onTabChange={handleTabChange}
-							/>
-							{content}
+							<div className="px-4 py-5">{content}</div>
 						</div>
 					</div>
 				</>
 			)}
-			{!artifact && <div>No Artifact</div>}
+			{!artifact && (
+				<div className="rounded-lg border border-border bg-card p-6 text-muted-foreground">
+					No Artifact
+				</div>
+			)}
 		</div>
 	);
 };

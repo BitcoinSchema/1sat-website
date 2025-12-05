@@ -6,6 +6,9 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useChat } from "@ai-sdk/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import React, { useCallback, useState, type ChangeEvent, type FormEvent } from "react";
 import { FaMicrophone } from "react-icons/fa";
 import { FaStop } from "react-icons/fa6";
@@ -162,9 +165,7 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
     if (message.startsWith(imageUrlPrefix)) {
       const imageUrl = message.slice(imageUrlPrefix.length);
       return (
-        <>
-          <Image src={imageUrl} alt="Generated" className="mt-2" width={200} height={200} />
-        </>
+        <Image src={imageUrl} alt="Generated" className="mt-2" width={200} height={200} />
       );
     }
     return message;
@@ -172,25 +173,27 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
 
 
   return (
-    <div className="bg-[#222] border-warning/25 border rounded-lg p-4">
+    <div className="bg-[#222] border-amber-500/25 border rounded-lg p-4">
       <div className="flex space-x-2 justify-between">
-        <button
+        <Button
           type="button"
-          className={`text-[#aaa] btn btn-ghost btn-primary ${className}`}
+          variant="ghost"
+          className={`text-[#aaa] ${className}`}
           onClick={handleRecording}
         >
           {isRecording ? <FaStop /> : <FaMicrophone />}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           disabled={generatingImage === FetchStatus.Loading}
-          className={`text-[#aaa] btn btn-ghost btn-primary disabled:text-[#555] disabled:pointer-default ${className}`}
+          className={`text-[#aaa] disabled:text-[#555] ${className}`}
           onClick={handleImageGeneration}
         >
           Generate Image
-        </button>
+        </Button>
       </div>
-      <div className="divider" />
+      <Separator className="my-4" />
       <div className="flex flex-col h-full w-full max-w-md py-24 mx-auto stretch">
         {messages.map((m) => (
           <div key={m.id} className="whitespace-pre-wrap h-full text-[#aaa]">
@@ -210,13 +213,13 @@ const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
             onSubmit(e);
           }}
         />
-         <input
+         <Input
           type="text"
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          className="input input-bordered text-[#aaa] placeholder-[#555] mt-2"
+          className="text-[#aaa] placeholder:text-[#555] mt-2"
         />
     </div>
   );

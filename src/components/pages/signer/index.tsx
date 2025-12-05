@@ -1,5 +1,5 @@
 import Timeline from "@/components/Timeline";
-import { OrdUtxo } from "@/types/ordinals";
+import type { OrdUtxo } from "@/types/ordinals";
 import { uniqBy } from "lodash";
 import Link from "next/link";
 import SlideShow from "../home/slideshow";

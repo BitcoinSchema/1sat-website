@@ -20,12 +20,10 @@ export function EnterPassphraseStep({migrating}: Props) {
 	};
 
 	return (
-		<>
-			<EnterPassphrase
+		<EnterPassphrase
 				mode={EncryptDecrypt.Encrypt}
 				onSubmit={onSubmit}
 				migrating={migrating}
 			/>
-		</>
 	);
 }

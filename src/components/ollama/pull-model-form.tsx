@@ -28,7 +28,7 @@ const formSchema = z.object({
 export default function PullModelForm() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [name, setName] = useState("");
-  const router = useRouter();
+  const _router = useRouter();
   const env = process.env.NODE_ENV;
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -111,7 +111,7 @@ export default function PullModelForm() {
                   setIsDownloading(false);
                   return;
                 }
-              } catch (error) {
+              } catch (_error) {
                 toast.error("Error parsing JSON");
                 setIsDownloading(false);
                 return;

@@ -100,7 +100,6 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
         />
       )}
       {!bh && generatedImage}
-      {/* biome-ignore lint/a11y/useMediaCaption: audio player */}
       <audio
         className={`w-full transition ${className ? className : ""}`}
         src={src ? src : `${ORDFS}/${outPoint}`}

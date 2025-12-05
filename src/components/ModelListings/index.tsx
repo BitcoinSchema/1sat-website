@@ -22,7 +22,7 @@ const listingAmount = (listing: OrdUtxo) => {
 const satsPerModel = (listing: OrdUtxo) => {
   if (listing.origin?.data?.bsv20) {
     const price = listing.data?.list?.price || 0
-    const amt = parseInt(listing.origin.data.bsv20.amt || '0')
+    const amt = parseInt(listing.origin.data.bsv20.amt || '0', 10)
     return Math.floor(price / amt)
   }
   return 0

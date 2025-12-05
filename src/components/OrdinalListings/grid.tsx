@@ -29,7 +29,7 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
   const isInView = useInView(ref);
   const listings = useSignal<OrdUtxo[]>(listingsProp || []);
 
-  const [selectedArtifactType, setSelectedArtifactType] =
+  const [selectedArtifactType, _setSelectedArtifactType] =
     useLocalStorage<ArtifactType>("1ssartt", ArtifactType.All);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
         pageParam,
         selectedType: selectedType.value,
       }),
-    getNextPageParam: (lastPage, pages, lastPageParam) => {
+    getNextPageParam: (lastPage, _pages, lastPageParam) => {
       if (lastPage?.length === resultsPerPage) {
         return lastPageParam + 1;
       }
@@ -82,7 +82,6 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, listings, data?.pages[data.pages.length - 1]]);
 
   useEffect(() => {
@@ -90,7 +89,6 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
     if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
       fetchNextPage();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInView]);
 
   const collectionIds = computed(() =>
@@ -108,7 +106,7 @@ const GridList = ({ address, listings: listingsProp, onClick }: Props) => {
     queryFn: () => getOutpoints(collectionIds.value, false),
   });
 
-  const collections = useSignal(collectionData || []);
+  const _collections = useSignal(collectionData || []);
 
   return (
     listings && (

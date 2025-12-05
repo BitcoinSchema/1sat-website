@@ -26,6 +26,8 @@ import type {
 import { debounce, head } from "lodash";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast, { ErrorIcon } from "react-hot-toast";
 import {
@@ -49,20 +51,20 @@ interface InscribeBsv20Props {
 
 const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
   useSignals();
-  const router = useRouter();
+  const _router = useRouter();
   const params = useSearchParams();
   // const { tab, tick, op } = params.query as { tab: string; tick: string; op: string };
-  const tab = params.get("tab") as InscriptionTab;
+  const _tab = params.get("tab") as InscriptionTab;
   const tick = params.get("tick");
   const op = params.get("op");
 
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
 
-  const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
+  const [preview, _setPreview] = useState<string | ArrayBuffer | null>(null);
   const [selectedActionType, setSelectedActionType] = useState<ActionType>(
     ActionType.Mint
   );
@@ -133,16 +135,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
             console.log(
               "selected BSV20",
               { bsv20 },
-              Number.parseInt(bsv20.supply!) <
-              Number.parseInt(bsv20.max!)
+              Number.parseInt(bsv20.supply!, 10) <
+              Number.parseInt(bsv20.max!, 10)
             );
             setSelectedBsv20(bsv20);
             if (
               !!bsv20 &&
               bsv20.max !== undefined &&
               bsv20.supply !== undefined &&
-              Number.parseInt(bsv20.supply) <
-              Number.parseInt(bsv20.max) &&
+              Number.parseInt(bsv20.supply, 10) <
+              Number.parseInt(bsv20.max, 10) &&
               bsv20.pendingOps === 0
             ) {
               setTickerAvailable(true);
@@ -196,12 +198,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
     useCallback((e) => {
       // check the value is not more than the max
       if (
-        Number.parseInt(e.target.value) > Number.parseInt(e.target.max)
+        Number.parseInt(e.target.value, 10) > Number.parseInt(e.target.max, 10)
       ) {
         toast.error(`Max iterations is ${e.target.max}`);
         return;
       }
-      setIterations(Number.parseInt(e.target.value));
+      setIterations(Number.parseInt(e.target.value, 10));
     }, []);
 
   const inSync = computed(() => {
@@ -240,7 +242,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
   ]);
 
   const totalTokens = useMemo(() => {
-    return iterations * Number.parseInt(amount || "0");
+    return iterations * Number.parseInt(amount || "0", 10);
   }, [amount, iterations]);
 
   // Define the debounced function outside of the render method
@@ -257,7 +259,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
   const changeDecimals = useCallback(
     (e: any) => {
-      setDecimals(e.target.valuye ? Number.parseInt(e.target.value) : undefined);
+      setDecimals(e.target.valuye ? Number.parseInt(e.target.value, 10) : undefined);
     },
     [setDecimals]
   );
@@ -265,13 +267,13 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
   const changeAmount = useCallback(
     (e: any) => {
       if (selectedActionType === ActionType.Mint && selectedBsv20?.lim) {
-        if (Number.parseInt(e.target.value) <= Number.parseInt(selectedBsv20.lim)) {
+        if (Number.parseInt(e.target.value, 10) <= Number.parseInt(selectedBsv20.lim, 10)) {
           setAmount(e.target.value);
         }
         return;
       }
       // exclude 0
-      if (Number.parseInt(e.target.value) !== 0) {
+      if (Number.parseInt(e.target.value, 10) !== 0) {
         setAmount(e.target.value);
       }
     },
@@ -294,7 +296,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
         switch (selectedActionType) {
           case ActionType.Deploy:
             if (
-              Number.parseInt(maxSupply) === 0 ||
+              Number.parseInt(maxSupply, 10) === 0 ||
               BigInt(maxSupply) > maxMaxSupply
             ) {
               toast.error(
@@ -326,7 +328,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
           case ActionType.Mint:
             if (
               !amount ||
-              Number.parseInt(amount) === 0 ||
+              Number.parseInt(amount, 10) === 0 ||
               BigInt(amount) > maxMaxSupply ||
               !selectedBsv20
             ) {
@@ -447,7 +449,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       !ticker?.length ||
       inscribeStatus === FetchStatus.Loading ||
       fetchTickerStatus === FetchStatus.Loading ||
-      (!!limit && !!maxSupply && Number.parseInt(maxSupply) < Number.parseInt(limit))
+      (!!limit && !!maxSupply && Number.parseInt(maxSupply, 10) < Number.parseInt(limit, 10))
     );
   }, [
     inscribeStatus,
@@ -494,14 +496,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
         : confirmedOplBalance
       : 0;
 
-    let max = Number.parseInt(selectedBsv20.max || "0");
+    let max = Number.parseInt(selectedBsv20.max || "0", 10);
     if (selectedBsv20.available) {
       max =
-        Number.parseInt(selectedBsv20.available) -
-        Number.parseInt(selectedBsv20.pending || "0");
+        Number.parseInt(selectedBsv20.available, 10) -
+        Number.parseInt(selectedBsv20.pending || "0", 10);
     }
 
-    const organicMax = Math.ceil(max / Number.parseInt(amount));
+    const organicMax = Math.ceil(max / Number.parseInt(amount, 10));
 
     // console.log({ organicMax, displayOplBalance });
 
@@ -531,14 +533,14 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       return 0;
     }
 
-    const supply = Number.parseInt(selectedBsv20.supply);
-    const max = Number.parseInt(selectedBsv20.max);
+    const supply = Number.parseInt(selectedBsv20.supply, 10);
+    const max = Number.parseInt(selectedBsv20.max, 10);
     const newTokens = supply / 10 ** selectedBsv20.dec + totalTokens;
     if (newTokens > max) {
       return max;
     }
     const pending = selectedBsv20.pending
-      ? Number.parseInt(selectedBsv20.pending)
+      ? Number.parseInt(selectedBsv20.pending, 10)
       : 0;
     const pendingAdjusted = pending * 10 ** selectedBsv20.dec;
     return newTokens + pendingAdjusted;
@@ -627,7 +629,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
             Ticker{" "}
             {chainInfo.value && indexers.value && (
               <span
-                className="text-[#555] hover:text-warning text-sm tooltip transition"
+                className="text-[#555] hover:text-amber-500 text-sm tooltip transition"
                 data-tip={`Latest block: ${chainInfo.value.blocks
                   } BSV20 Deploy: ${indexers.value["bsv20-deploy"]
                   } BSV20 Mint: ${indexers.value.bsv20} ${selectedBsv20 ? selectedBsv20.tick : ""
@@ -664,7 +666,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
             {tickerAvailable === true && !inSync.value && (
               <div className="absolute right-0 bottom-0 mb-2 mr-2">
-                <FaExclamationTriangle className="w-5 h-5 text-warning" />
+                <FaExclamationTriangle className="w-5 h-5 text-amber-500" />
               </div>
             )}
 
@@ -674,9 +676,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                   <FaCheckCircle className="w-5 h-5 text-success" />
                 ) : selectedBsv20?.pendingOps &&
                   selectedBsv20?.pendingOps > 0 ? (
-                  <FaClock className="w-5 h-5 text-warning" />
+                  <FaClock className="w-5 h-5 text-amber-500" />
                 ) : (
-                  <FaCheckCircle className="w-5 h-5 text-warning" />
+                  <FaCheckCircle className="w-5 h-5 text-amber-500" />
                 )}
               </div>
             )}
@@ -711,11 +713,11 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
               <div className="my-2 flex justify-between items-center">
                 Amount{" "}
                 {selectedBsv20 && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-sm"
+                    size="sm"
+                    variant="outline"
                   >
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                     <span
                       className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
                       onClick={() => {
@@ -734,7 +736,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                         ? selectedBsv20.lim
                         : selectedBsv20?.max}
                     </span>
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -746,7 +748,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                 max={selectedBsv20?.lim}
                 onChange={changeAmount}
                 value={amount}
-                step={step + parseInt(amount || "0") - 1}
+                step={step + parseInt(amount || "0", 10) - 1}
                 onFocus={(event) =>
                   checkTicker(
                     ticker || "",
@@ -757,7 +759,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
               />
             </label>
           </div>
-          <div className="divider">Bulk Minting</div>
+          <div className="mt-6 mb-2 text-sm font-semibold text-muted-foreground">Bulk Minting</div>
+          <Separator className="mb-4" />
 
           <div>
             <div className="p-2 bg-[#111] my-2 rounded flex items-center justify-between">
@@ -832,7 +835,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
                   <div className="w-1/2">
                     You will recieve
                     <span
-                      className="tooltip text-warning"
+                      className="tooltip text-amber-500"
                       data-tip={
                         !tickerAvailable
                           ? "Minted Out"
@@ -883,8 +886,9 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
             )}
             {selectedBsv20 && !selectedBsv20?.included && (
               <>
-                <div className="divider">Ticker Status</div>
-                <div className="p-2 bg-[#111] my-2 rounded text-warning font-mono">
+                <div className="mt-6 mb-2 text-sm font-semibold text-muted-foreground">Ticker Status</div>
+                <Separator className="mb-4" />
+                <div className="p-2 bg-[#111] my-2 rounded text-amber-500 font-mono">
                   <Link
                     href={`/market/bsv20/${selectedBsv20?.tick}`}
                   >
@@ -931,7 +935,6 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 
       {selectedActionType === ActionType.Deploy &&
         !showOptionalFields && (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
           <div
             className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
             onClick={toggleOptionalFields}
@@ -1025,7 +1028,7 @@ const tierMaxNum = (balance: number) => {
   return calculateTier(balance, bulkMintingTickerMaxSupply);
 };
 
-const calculateSpacers = (maxIterations: number, steps: number) => {
+const calculateSpacers = (_maxIterations: number, steps: number) => {
   // console.log({ maxIterations, steps });
   // Calculate the number of spacers
   // const numSpacers = Math.floor(maxIterations / step);

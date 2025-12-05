@@ -12,8 +12,8 @@ import {
 	type MarketFilters,
 } from "@/utils/fetchCollectionData";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { Loader2, Package, ShoppingBag, Filter, SlidersHorizontal } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, Package, ShoppingBag, SlidersHorizontal } from "lucide-react";
 import { Tab } from "./CollectionNavigation";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
@@ -24,8 +24,42 @@ import {
 	minPrice,
 	maxPrice,
 	hasActiveFilters,
+	type TraitData,
 } from "./CollectionFilters";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+// Parse subTypeData JSON and extract traits
+const parseTraits = (item: OrdUtxo): { name: string; value: string }[] => {
+	try {
+		const subTypeData = item.origin?.data?.map?.subTypeData;
+		if (!subTypeData) return [];
+		const data = typeof subTypeData === "string" ? JSON.parse(subTypeData) : subTypeData;
+		return Array.isArray(data?.traits) ? data.traits : [];
+	} catch {
+		return [];
+	}
+};
+
+// Extract trait facets from items for filter UI
+const extractTraitFacets = (items: OrdUtxo[]): TraitData[] => {
+	const facets = new Map<string, Map<string, number>>();
+	
+	for (const item of items) {
+		const traits = parseTraits(item);
+		for (const { name, value } of traits) {
+			if (!name || !value) continue;
+			if (!facets.has(name)) facets.set(name, new Map());
+			const valMap = facets.get(name)!;
+			valMap.set(value, (valMap.get(value) || 0) + 1);
+		}
+	}
+	
+	return Array.from(facets.entries()).map(([name, valMap]) => ({
+		name,
+		values: Array.from(valMap.keys()),
+		counts: Array.from(valMap.values()),
+	}));
+};
 
 type CollectionListProps = {
 	collectionId: string;
@@ -49,6 +83,9 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 
 	// Track filter version to trigger reloads
 	const [filterVersion, setFilterVersion] = useState(0);
+	
+	// Extracted trait facets for filter UI
+	const [traitFacets, setTraitFacets] = useState<TraitData[]>([]);
 
 	const hasMore = useMemo(
 		() => (isMarketTab ? hasMoreMarket : hasMoreItems),
@@ -102,8 +139,19 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 			if (reset || offset === 0) {
 				setMarketItems(newItems);
 				setMarketOffset(NUMBER_OF_ITEMS_PER_PAGE);
+				// Extract traits from first page (no filters active) for filter UI
+				if (!currentTraits) {
+					setTraitFacets(extractTraitFacets(newItems));
+				}
 			} else {
-				setMarketItems((i) => [...i, ...newItems]);
+				setMarketItems((i) => {
+					const combined = [...i, ...newItems];
+					// Update trait facets with more data (only when not filtered)
+					if (!currentTraits) {
+						setTraitFacets(extractTraitFacets(combined));
+					}
+					return combined;
+				});
 				setMarketOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
 			}
 			setHasMoreMarket(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
@@ -117,8 +165,19 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 			if (reset || offset === 0) {
 				setItems(newItems);
 				setItemsOffset(NUMBER_OF_ITEMS_PER_PAGE);
+				// Extract traits from first page (no filters active) for filter UI
+				if (!currentTraits) {
+					setTraitFacets(extractTraitFacets(newItems));
+				}
 			} else {
-				setItems((i) => [...i, ...newItems]);
+				setItems((i) => {
+					const combined = [...i, ...newItems];
+					// Update trait facets with more data (only when not filtered)
+					if (!currentTraits) {
+						setTraitFacets(extractTraitFacets(combined));
+					}
+					return combined;
+				});
 				setItemsOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
 			}
 			setHasMoreItems(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
@@ -144,7 +203,6 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 		setFilterVersion((v) => v + 1);
 	}, []);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: filter changes should reset
 	useEffect(() => {
 		if (filterVersion > 0) {
 			// Reset offsets when filters change
@@ -213,6 +271,7 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 					<SheetContent side="right" className="w-[320px] p-4">
 						<CollectionFilters
 							isMarketTab={isMarketTab}
+							traits={traitFacets}
 							onFilterChange={handleFilterChange}
 						/>
 					</SheetContent>

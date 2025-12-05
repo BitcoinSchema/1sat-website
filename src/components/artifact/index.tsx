@@ -105,13 +105,13 @@ const Artifact: React.FC<ArtifactProps> = ({
   disableLink = false,
 }) => {
   const router = useRouter();
-  const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
+  const [_imageLoadStatus, _setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading,
   );
   const [showZoom, setShowZoom] = useState<boolean>(false);
 
   const [showBuy, setShowBuy] = useState<boolean>(false);
-  const [hoverPrice, setHoverPrice] = useState<boolean>(false);
+  const [_hoverPrice, _setHoverPrice] = useState<boolean>(false);
 
   const contentType = useMemo(
     () =>
@@ -198,14 +198,12 @@ const Artifact: React.FC<ArtifactProps> = ({
         thumbnail={thumbnail}
       />
     ) : type === ArtifactType.Audio || type === ArtifactType.Audio2 ? (
-      <>
-        <AudioArtifact
+      <AudioArtifact
           outPoint={outPoint || origin}
           src={src}
           className={`p-1 absolute bottom-0 left-0 w-full ${classNames?.media ? classNames.media : ""
             }`}
         />
-      </>
     ) : type === ArtifactType.SVG ? (
       origin && (
         <SVGArtifact
@@ -285,9 +283,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         />
       </div>
     ) : type === ArtifactType.Model ? (
-      <>
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-        <div
+      <div
           className={`w-full ${classNames?.wrapper || ""} ${classNames?.media || ""
             }`}
           onClick={(e) => {
@@ -304,7 +300,6 @@ const Artifact: React.FC<ArtifactProps> = ({
         >
           <Model src={src} size={size} />
         </div>
-      </>
     ) : type === ArtifactType.MarkDown ? (
       <div
         className={`h-full p-4 ${classNames?.wrapper || ""} ${classNames?.media || ""
@@ -470,7 +465,7 @@ const Artifact: React.FC<ArtifactProps> = ({
         <div
           key={outPoint || origin}
           className={wrapperClassName}
-          onClick={(e) => {
+          onClick={(_e) => {
             if (txid && onClick) {
               onClick(txid);
             }
@@ -499,7 +494,6 @@ const Artifact: React.FC<ArtifactProps> = ({
         </Link>
       )}
       {showZoom && (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
         <div
           className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
           onClick={() => setShowZoom(false)}

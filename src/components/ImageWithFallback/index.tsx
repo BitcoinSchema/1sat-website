@@ -1,7 +1,7 @@
 "use client"
 
 import fallbackImage from "@/assets/images/oneSatLogoDark.svg";
-import Image, { type ImageProps } from "next/image";
+import type { ImageProps } from "next/image";
 import { forwardRef } from "react";
 
 interface Props extends Partial<ImageProps> {
@@ -19,14 +19,14 @@ const ImageWithFallback = forwardRef<HTMLImageElement, Props>(({
 }, ref) => {
   // Filter out Next.js Image-specific props that aren't valid on regular img elements
   const {
-    placeholder,
-    blurDataURL,
-    priority,
-    quality,
-    sizes,
-    fill,
-    loading,
-    unoptimized,
+    placeholder: _placeholder,
+    blurDataURL: _blurDataURL,
+    priority: _priority,
+    quality: _quality,
+    sizes: _sizes,
+    fill: _fill,
+    loading: _loading,
+    unoptimized: _unoptimized,
     ...imgProps
   } = props as any;
 
@@ -42,7 +42,6 @@ const ImageWithFallback = forwardRef<HTMLImageElement, Props>(({
   const finalSrc = isValidSrc ? src : fallbackImage;
 
   return (
-    // biome-ignore lint/a11y/useAltText: alt is provided via props
     <img
       ref={ref}
       style={{ background: "black" }}

@@ -29,15 +29,15 @@ interface InscribeImageProps {
 const InscribeImage: React.FC<InscribeImageProps> = ({ inscribedCallback, generated }) => {
   useSignals();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, _setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | ArrayBuffer | null>(null);
   const [isImage, setIsImage] = useState<boolean>(false);
-  const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
+  const [inscribeStatus, _setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
 

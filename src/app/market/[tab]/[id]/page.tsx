@@ -42,7 +42,7 @@ export async function generateMetadata({
 }) {
   const { tab, id } = await params;
   let ticker: string | undefined;
-  let icon: string | undefined;
+  let _icon: string | undefined;
   const assetType = getCapitalizedAssetType(tab);
   if (tab === AssetType.BSV20) {
     ticker = id;
@@ -52,7 +52,7 @@ export async function generateMetadata({
       (res) => res.json() as Promise<BSV20>
     );
     ticker = details.sym;
-    icon = details.icon || "b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
+    _icon = details.icon || "b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
   }
 
   const name = ticker || "Mystery Outpoint";

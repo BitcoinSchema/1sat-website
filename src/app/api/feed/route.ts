@@ -1,6 +1,6 @@
 import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 // Cached item with expiration
 type CachedItem = OrdUtxo & { _cachedAt: number };
@@ -25,7 +25,7 @@ async function fetchWithTimeout(url: string, timeout: number = API_TIMEOUT): Pro
     clearTimeout(timeoutId);
     if (!response.ok) return [];
     return await response.json();
-  } catch (error) {
+  } catch (_error) {
     clearTimeout(timeoutId);
     return [];
   }
@@ -117,8 +117,7 @@ async function refreshFeedPool() {
       const results = await Promise.allSettled(promises);
       const allItems = results
         .filter(r => r.status === 'fulfilled')
-        .map(r => (r as PromiseFulfilledResult<any>).value)
-        .flat() as OrdUtxo[];
+        .flatMap(r => (r as PromiseFulfilledResult<any>).value) as OrdUtxo[];
 
       // Deduplicate
       const seen = new Set<string>();
@@ -171,8 +170,7 @@ async function backgroundExpand() {
     const results = await Promise.allSettled(promises);
     const allItems = results
       .filter(r => r.status === 'fulfilled')
-      .map(r => (r as PromiseFulfilledResult<any>).value)
-      .flat() as OrdUtxo[];
+      .flatMap(r => (r as PromiseFulfilledResult<any>).value) as OrdUtxo[];
     
     // Filter new items only
     const newItems = allItems.filter(item => {

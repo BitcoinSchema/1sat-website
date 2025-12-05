@@ -2,14 +2,15 @@ import MnemonicGrid, { MnemonicGridMode } from "@/components/MnemonicGrid";
 import { toastProps } from "@/constants";
 import { createWalletStep, mnemonic } from "@/signals/wallet";
 import { CreateWalletStep } from "@/types/wallet";
+import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { useCopyToClipboard } from "usehooks-ts";
 
-interface Props {}
+type Props = {}
 
 export function ViewMnemonicStep({}: Props) {
 
-	const [value, copy] = useCopyToClipboard()
+	const [_value, copy] = useCopyToClipboard()
 	
 	function handleNextStep() {
 		createWalletStep.value = CreateWalletStep.VerifyMnemonic;
@@ -24,7 +25,7 @@ export function ViewMnemonicStep({}: Props) {
 
 			<div
 				role="alert"
-				className="my-2 alert alert-warning bg-yellow-500 flex-nowrap"
+				className="my-2 flex items-center gap-2 rounded border border-amber-500 bg-amber-500/10 px-3 py-2 text-amber-900 dark:text-amber-50"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -53,9 +54,9 @@ export function ViewMnemonicStep({}: Props) {
 						);
 					}}
 				>
-					<button disabled={!mnemonic.value} className="btn btn-sm">
+					<Button disabled={!mnemonic.value} size="sm">
 						Copy
-					</button>
+					</Button>
 				</div>
 			</div>
 

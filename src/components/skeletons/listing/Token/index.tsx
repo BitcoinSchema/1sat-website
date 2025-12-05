@@ -39,10 +39,7 @@ const TokenListingSkeleton = ({ type }: { type: AssetType }) => (
 		{[...Array(iterations)].map((_, i) => (
 			<SkeletonItem
 				type={type}
-				key={`token-skel-${
-					// biome-ignore lint/suspicious/noArrayIndexKey: there are no values to use in this case
-					i
-				}`}
+				key={`token-skel-${i}`}
 			/>
 		))}
 	</TableBody>

@@ -108,18 +108,16 @@ const SearchBar: React.FC = () => {
 			<Button
 				variant="outline"
 				onClick={() => (isOpen.value = true)}
-				className="relative w-full justify-start text-sm text-muted-foreground sm:pr-12 md:w-64 lg:w-80 bg-card border-border rounded-none hover:bg-muted hover:text-primary hover:border-primary/50 font-mono transition-colors h-9"
+				aria-label="Open search"
+				className="relative h-10 w-10 p-0 justify-center text-sm text-muted-foreground sm:h-9 sm:w-full sm:px-3 sm:justify-start sm:pr-12 md:w-64 lg:w-80 bg-card border-border rounded-none hover:bg-muted hover:text-primary hover:border-primary/50 font-mono transition-colors"
 			>
-				<span className="inline-flex items-center gap-2">
+				<span className="inline-flex items-center w-full justify-center gap-0 sm:justify-start sm:gap-2">
 					<Search className="h-4 w-4" />
-					<span className="hidden lg:inline-flex uppercase tracking-wider text-xs">
-						Search...
-					</span>
-					<span className="inline-flex lg:hidden uppercase tracking-wider text-xs">
+					<span className="hidden sm:inline-flex uppercase tracking-wider text-xs">
 						Search...
 					</span>
 				</span>
-				<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground sm:flex">
+				<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground lg:flex">
 					<span className="text-xs">⌘</span>K
 				</kbd>
 			</Button>

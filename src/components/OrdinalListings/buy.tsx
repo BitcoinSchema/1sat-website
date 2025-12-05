@@ -34,7 +34,7 @@ const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
 						setListingWithScript(res[0]);
 					}
 				})
-				.catch((e) => {
+				.catch((_e) => {
 					toast.error("Failed to get listing script");
 				});
 		}

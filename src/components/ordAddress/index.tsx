@@ -15,7 +15,7 @@ type OrdAddressProps = {
 
 const OrdAddress: React.FC<OrdAddressProps> = ({ className }) => {
 
-  const [value, copy] = useCopyToClipboard()
+  const [_value, copy] = useCopyToClipboard()
 
   return computed(() => (
     <div className="relative w-full">

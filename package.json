@@ -5,8 +5,7 @@
 	"scripts": {
 		"dev": "bun run --bun next dev",
 		"build": "bun run --bun next build",
-		"start": "next start",
-		"lint": "next lint"
+		"start": "next start"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^2.0.77",
@@ -135,9 +134,6 @@
 		"babel-plugin-react-compiler": "^1.0.0",
 		"buffer": "^6.0.3",
 		"character-entities": "^2.0.2",
-		"eslint": "^8.57.1",
-		"eslint-config-next": "^16.0.7",
-		"eslint-plugin-react-hooks-signals": "^1.0.0",
 		"playwright": "^1.57.0",
 		"postcss": "^8.5.6",
 		"process": "^0.11.10",

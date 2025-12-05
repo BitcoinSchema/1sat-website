@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import Bsv20List from "./bsv20List";
-import { WalletTab } from "./tabs";
+import type { WalletTab } from "./tabs";
 
 interface WalletBsv20Props {
   type: WalletTab.BSV20 | WalletTab.BSV21;

@@ -1,5 +1,5 @@
 import { API_HOST, AssetType } from "@/constants";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 interface TickHolder {
 	address: string;
@@ -10,7 +10,7 @@ interface TickHolder {
 export const dynamic = "auto"; // defaults to auto
 
 export async function GET(
-	request: NextRequest,
+	_request: NextRequest,
   { params }: { params: Promise<{ type: string; id: string }> },
 ) {
   const { type, id } = await params;

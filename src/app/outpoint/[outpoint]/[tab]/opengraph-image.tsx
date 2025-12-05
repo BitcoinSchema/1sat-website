@@ -61,8 +61,6 @@ export default async function Image({
     (
       <Container>
         {isImageInscription || sigilData ? (
-          // biome-ignore lint/a11y/useAltText: <explanation>
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={alt} {...size} />
         ) : (
           name || "Mystery Outpoint"

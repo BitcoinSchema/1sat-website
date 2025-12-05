@@ -2,10 +2,12 @@
 
 import type { MarketData } from "@/components/pages/TokenMarket/list";
 import ListingForm from "@/components/pages/TokenMarket/listingForm";
-import { bsv20Utxos, ordUtxos, utxos } from "@/signals/wallet";
+import { bsv20Utxos, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { useSignals } from "@preact/signals-react/runtime";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 interface CreateTokenListingModalProps {
 	onClose: () => void;
@@ -28,19 +30,23 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
 	};
 
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-		<dialog
-			id={`create-token-listing-modal-${listing.tick}`}
-			className="modal backdrop-blur"
+		<Dialog
 			open={open}
-			onClick={() => onClose()}
+			onOpenChange={(isOpen) => {
+				if (!isOpen) onClose();
+			}}
 		>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-			<div className="modal-box" onClick={(e) => e.stopPropagation()}>
-				<h3 className="font-bold text-lg flex items-center justify-between">
-					<span>Listing {ticker.tick || ticker.sym}</span>
-					<span className="text-[#555] text-xs tooltip" data-tip="Last Price">{listing.pricePer} sat/token</span>
-				</h3>
+			<DialogContent
+				className="max-w-2xl"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<DialogHeader className="flex flex-row items-center justify-between space-y-0">
+					<DialogTitle>Listing {ticker.tick || ticker.sym}</DialogTitle>
+					<span className="text-muted-foreground text-xs">
+						Last Price: {listing.pricePer} sat/token
+					</span>
+				</DialogHeader>
+				<Separator />
 				<ListingForm
 					initialPrice={listing.pricePer}
 					ticker={ticker}
@@ -59,8 +65,8 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
 						}
 					}}
 				/>
-			</div>
-		</dialog>
+			</DialogContent>
+		</Dialog>
 	);
 };
 

@@ -3,11 +3,11 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import * as http from "@/utils/httpClient";
 import { Noto_Serif } from "next/font/google";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import ArtifactViewer from "@/components/pages/outpoint/ArtifactViewer";
 import OutpointTabs from "@/components/pages/outpoint/tabs";
 import TxDetails from "@/components/transaction";
+import { Separator } from "@/components/ui/separator";
 
 const notoSerif = Noto_Serif({
 	style: "italic",
@@ -33,7 +33,7 @@ export default async function OutpointLayout({
 		const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
 		const { promise } = http.customFetch<OrdUtxo>(url);
 		bsv20 = await promise;
-	} catch (e) {
+	} catch (_e) {
 		console.log("No BSV20 data (expected for non-token items)");
 	}
 
@@ -77,7 +77,7 @@ export default async function OutpointLayout({
 							No inscription
 						</div>
 					)}
-					<div className="divider" />
+					<Separator className="my-2" />
 					<div className="w-full mx-auto">
 						<OutpointTabs
 							outpoint={outpoint}

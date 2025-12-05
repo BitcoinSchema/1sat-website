@@ -40,7 +40,7 @@ const ArtifactViewer = ({ artifact, size = 550, className = "" }: ArtifactViewer
                 }).catch(() => {
                     setShowBackdrop(true);
                 });
-            } catch (err) {
+            } catch (_err) {
                 setSelectedArtifact(artifact);
                 setShowBackdrop(true);
             }

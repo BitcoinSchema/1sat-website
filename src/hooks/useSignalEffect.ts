@@ -6,7 +6,7 @@ import type { ReadonlySignal } from '@preact/signals-react';
  * This extracts signal values and uses them as dependencies to satisfy exhaustive-deps.
  */
 export function useSignalEffect(
-  effect: () => void | (() => void),
+  effect: () => undefined | (() => void),
   signals: ReadonlySignal<unknown>[]
 ) {
   // Extract current values from signals
@@ -25,7 +25,7 @@ export function useSignalEffect(
       prevValuesRef.current = values;
       return effect();
     }
-  }, values); // eslint-disable-line react-hooks/exhaustive-deps
+  }, values);
 }
 
 /**

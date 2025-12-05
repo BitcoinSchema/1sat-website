@@ -86,9 +86,7 @@ const SVGArtifact: React.FC<ArtifactProps> = ({
 			onClick={onClick}
 		>
 			{!isSingleImage.value && (
-				<>
-					{
-						<iframe
+				<iframe
 							onLoad={
 								onLoad as ReactEventHandler<HTMLIFrameElement>
 							}
@@ -103,8 +101,6 @@ const SVGArtifact: React.FC<ArtifactProps> = ({
 							scrolling="no"
 							style={{background: "transparent"}}
 						/>
-					}
-				</>
 			)}
 		</div>
 	);

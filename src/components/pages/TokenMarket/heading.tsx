@@ -19,7 +19,8 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { useMemo, useRef } from "react";
 import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { GiPlainCircle } from "react-icons/gi";
@@ -48,7 +49,7 @@ export const IconWithFallback: React.FC<IconProps> = (props) => {
 			ref={ref}
 			alt={alt}
 			src={imgSrc.value}
-			onError={(e) => {
+			onError={(_e) => {
 				imgSrc.value = oneSatLogo;
 			}}
 			onLoad={(e) => {
@@ -112,7 +113,7 @@ const TickerHeading = ({
 	const bsvNeeded = computed(() => {
 		const satoshis = Math.max(
 			minFee - Number(ticker.fundTotal),
-			(ticker.pendingOps || 0) * 1000 - Number.parseInt(ticker.fundBalance),
+			(ticker.pendingOps || 0) * 1000 - Number.parseInt(ticker.fundBalance, 10),
 		);
 		// console.log({
 		//   satoshis,
@@ -180,11 +181,11 @@ const TickerHeading = ({
 		if (!ticker.supply) return null;
 		if (!ticker.max) return null;
 		const totalSupply =
-			Number.parseInt(ticker.supply || ticker.amt || "0") /
+			Number.parseInt(ticker.supply || ticker.amt || "0", 10) /
 			(ticker.dec ? 10 ** ticker.dec : 1);
-		const maxSupply = Number.parseInt(ticker.max) / 10 ** (ticker.dec || 0);
+		const maxSupply = Number.parseInt(ticker.max, 10) / 10 ** (ticker.dec || 0);
 		const mintedOut =
-			Number.parseInt(ticker.supply) === Number.parseInt(ticker.max);
+			Number.parseInt(ticker.supply, 10) === Number.parseInt(ticker.max, 10);
 		const btnDisabled = !ticker.included || paidUp.value;
 
 		return (
@@ -193,14 +194,22 @@ const TickerHeading = ({
 					<Link
 						href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}
 						className={btnDisabled ? "cursor-default" : ""}
+						onClick={(e) => {
+							if (btnDisabled) {
+								e.preventDefault();
+							}
+						}}
+						aria-disabled={btnDisabled}
+						tabIndex={btnDisabled ? -1 : 0}
 					>
-						<button
+						<Button
 							type="button"
+							size="sm"
 							disabled={btnDisabled}
-							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30 transition disabled:opacity-50 disabled:cursor-not-allowed mr-4"
+							className="mr-4"
 						>
 							Mint {ticker.tick}
-						</button>
+						</Button>
 					</Link>
 				)}
 				<span title="Circulating Supply / Max Supply" className="text-muted-foreground">
@@ -212,7 +221,7 @@ const TickerHeading = ({
 
 	const renderBSV21Supply = () => {
 		const totalSupply =
-			Number.parseInt(ticker.supply || ticker.amt || "0") /
+			Number.parseInt(ticker.supply || ticker.amt || "0", 10) /
 			(ticker.dec ? 10 ** ticker.dec : 1);
 
 		return (
@@ -310,7 +319,6 @@ const TickerHeading = ({
 
 	return (
 		<>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<tr
 				onClick={(e) => {
 					if (id) {

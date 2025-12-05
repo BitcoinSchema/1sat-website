@@ -46,12 +46,12 @@ const OutpointCollection = async ({ outpoint }: Props) => {
   }
 
   // Get the collection stats
-  let stats: CollectionStats | undefined;
+  let _stats: CollectionStats | undefined;
   const collectionStatsUrl = `${API_HOST}/api/collections/${artifact.origin?.data?.map?.subTypeData.collectionId}/stats`;
   try {
     const { promise } =
       http.customFetch<CollectionStats>(collectionStatsUrl);
-    stats = (await promise) || [];
+    _stats = (await promise) || [];
   } catch (e) {
     console.error(e);
   }

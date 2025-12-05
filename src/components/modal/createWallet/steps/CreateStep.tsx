@@ -1,8 +1,6 @@
 import {
 	changeAddressPath,
   createWalletStep,
-  identityAddressPath,
-  identityPk,
   isCreatingWallet,
   mnemonic,
   ordAddressPath,
@@ -11,6 +9,7 @@ import {
 } from "@/signals/wallet";
 import { CreateWalletStep } from "@/types/wallet";
 import { randomMnemonic } from "@/utils/keys";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   onClose: () => void;
@@ -53,21 +52,20 @@ export function CreateStep({
             Click the button below to create a new wallet.
           </div>
           <form method="dialog">
-            <div className="modal-action">
-              <button
-                className="btn"
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                variant="outline"
                 type="button"
                 onClick={() => onClose()}
               >
                 Cancel
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
                 type="button"
                 onClick={handleGenerateWallet}
               >
                 Generate Wallet
-              </button>
+              </Button>
             </div>
           </form>
         </>

@@ -20,7 +20,7 @@ interface InscribeHtmlProps {
 const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
   useSignals();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );

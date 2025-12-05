@@ -1,14 +1,15 @@
 "use client";
 import { Fragment, useRef, useEffect, useState } from "react";
 import JDenticon from "@/components/JDenticon";
-import { AssetType } from "@/constants";
+import type { AssetType } from "@/constants";
 import { getBalanceText } from "@/utils/wallet";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import Link from "next/link";
 import { getHolders, resultsPerPage } from "@/utils/getHolders";
-import { Holder, TickHolder } from "../pages/TokenMarket/details";
+import type { Holder, TickHolder } from "../pages/TokenMarket/details";
 import { FiLoader } from "react-icons/fi";
+import { Separator } from "@/components/ui/separator";
 
 type Props = {
 	type: AssetType;
@@ -35,7 +36,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 		queryFn: ({ pageParam }) =>
 			getHolders({ type, id, pageParam, details }),
 		initialPageParam: 0,
-		getNextPageParam: (lastPage, pages, lastPageParam) => {
+		getNextPageParam: (lastPage, _pages, lastPageParam) => {
 			if (lastPage?.length === resultsPerPage) {
 				return lastPageParam + 1;
 			}
@@ -54,7 +55,6 @@ const HoldersTable = ({ type, id, details }: Props) => {
 				setHolders(u);
 			}
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [data, data?.pages[data.pages.length - 1]]);
 
 	useEffect(() => {
@@ -63,7 +63,6 @@ const HoldersTable = ({ type, id, details }: Props) => {
 		if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
 			fetchNextPage();
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [isInView]);
 
 	const processHolder = (h: Holder | TickHolder) => {
@@ -95,7 +94,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 				<div className="w-24 text-right">{h?.pct?.toFixed(4)}%</div>
 				<div className="flex items-center mb-2 relative col-span-3">
 					<div
-						className="w-full bg-warning/25 rounded h-1"
+						className="w-full bg-amber-500/25 rounded h-1"
 						style={{ width: pctWidth }}
 					>
 						&nbsp;
@@ -118,7 +117,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 						</div>
 						<div className="w-24 text-right">Holdings</div>
 						<div className="w-12 text-right">Ownership</div>
-						<div className="divider col-span-3" />
+						<Separator className="col-span-3 my-2" />
 						{holders?.map((h) => processHolder(h))}
 					</div>
 				</div>

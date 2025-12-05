@@ -1,9 +1,9 @@
 "use client";
 
 import { bip39words } from "@/utils/bip39words";
-import { head, isEqual, set } from "lodash";
+import { head, isEqual, } from "lodash";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RiRestartLine } from "react-icons/ri";
 import Dropdown from "../dropdown/dropdown";
 import toast from "react-hot-toast";
@@ -57,7 +57,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 	const [shuffledWords, setShuffledWords] = useState<string[]>([]);
 	const [clickedWords, setClickedWords] = useState<string[]>([]);
 	const [inputValue, setInputValue] = useState("");
-	const [suggestedWords, setSuggestedWords] = useState<string[]>([]);
+	const [_suggestedWords, setSuggestedWords] = useState<string[]>([]);
 	const [useCustomPaths, setUseCustomPaths] = useState<boolean>(false);
   const [ready, setReady] = useState<boolean>(false);
 
@@ -93,7 +93,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		}
 	}, [inputValue, mode]);
 
-	const handleWordSelect = useCallback(
+	const _handleWordSelect = useCallback(
 		(word: string) => {
 			setClickedWords([...clickedWords, word]);
 			setInputValue("");
@@ -232,19 +232,16 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 		<div className="transition mt-4 mx-auto rounded w-full text-foreground">
 			<div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
 				{mode === MnemonicGridMode.Import && (
-					<>
-						{inputMnemonic.map((word, index) => (
+					inputMnemonic.map((word, index) => (
 							<Dropdown
-								key={`mnemonic-word-${// biome-ignore lint/suspicious/noArrayIndexKey: prevent redraw on change
-index}`}
+								key={`mnemonic-word-${index}`}
 								items={bip39words}
 								selectedItem={word}
 								onChange={handleSelectInputMnemonicWord(index)}
 								placeholder={`Word ${index + 1}`}
 								onPaste={handlePasteMnemonic}
 							/>
-						))}
-					</>
+						))
 				)}
 				{(mode === MnemonicGridMode.Prove
 					? shuffledWords
@@ -252,7 +249,6 @@ index}`}
 				)?.map((w, i) => {
 					return (
 						<div
-							// biome-ignore lint/suspicious/noArrayIndexKey: prevent redraw on change
 							key={i}
 							className={`select-none inline-flex p-2 rounded bg-card border border-border ${
 								mode === MnemonicGridMode.Prove

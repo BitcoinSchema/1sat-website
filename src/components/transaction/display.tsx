@@ -10,6 +10,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
+import { Button } from "@/components/ui/button";
 import { FaSpinner } from "react-icons/fa";
 import { FaHashtag } from "react-icons/fa6";
 import { toBitcoin } from "satoshi-token";
@@ -118,12 +119,11 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
       inputOutpoints.length > 0 &&
       ioIns.value && (
         <ul className="rounded bg-gradient-to-b from-[#010101] to-black">
-          {ioIns.value?.map((io, i) => {
+          {ioIns.value?.map((io, _i) => {
             const sats = inputOutpoints[io.index].satoshis;
             const itemClass =
               "cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative hover:bg-neutral/50";
             return (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
               <li
                 key={`input-${io.txid}-${io.index}`}
                 className={itemClass}
@@ -150,25 +150,27 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
                           : `https://whatsonchain.com/tx/${io.txid}?output=${io.index}`
                       }
                     >
-                      <button
-                        type="button"
-                        className={`${io.address ? "md:text-base" : ""
-                          } btn-outline ${io.index === vout ? "text-white" : "text-white/50"
-                          } rounded font-mono flex items-center px-1 gap-1`}
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className={`${io.address ? "md:text-base" : ""} ${io.index === vout ? "text-white border-white/50" : "text-white/50"} normal-case px-1 gap-1`}
                       >
-                        {io.address || io.script}
-                      </button>
+                        <span>{io.address || io.script}</span>
+                      </Button>
                     </Link>
                     <Link
                       className="text-xs w-fit text-[#555]"
                       href={`/outpoint/${io.txid}_${io.index}`}
                     >
-                      <button
-                        type="button"
-                        className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="normal-case opacity-50 hover:opacity-100 transition px-1"
                       >
-                        via {truncate(io.txid)} [{io.index}]
-                      </button>
+                        <span>via {truncate(io.txid)} [{io.index}]</span>
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -191,10 +193,9 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
       <ul className="rounded bg-gradient-to-b from-[#010101] to-black">
         {ioOuts.value?.map((io, i) => {
           const sats = io.amount;
-          const itemClass = `cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative ${vout === i ? "bg-neutral text-warning" : "hover:bg-neutral/50 "
+          const itemClass = `cursor-pointer p-2 rounded flex gap-2 justify-between p-4 relative ${vout === i ? "bg-neutral text-amber-400" : "hover:bg-neutral/50 "
             }`;
           return (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <li
               key={`output-${io.txid}-${io.index}`}
               className={itemClass}
@@ -224,26 +225,28 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
                         : `https://whatsonchain.com/tx/${io.txid}?output=${io.index}`
                     }
                   >
-                    <button
-                      type="button"
-                      className={`${io.address ? "md:text-base" : ""
-                        } btn-outline ${io.index === vout ? "text-white" : "text-white/50"
-                        } rounded font-mono flex items-center px-1 gap-1`}
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className={`${io.address ? "md:text-base" : ""} ${io.index === vout ? "text-white border-white/50" : "text-white/50"} normal-case px-1 gap-1`}
                     >
-                      {io.address || io.script}
-                    </button>
+                      <span>{io.address || io.script}</span>
+                    </Button>
                   </Link>
                   {outputSpends[io.index] && (
                     <Link
                       className="text-xs w-fit text-[#555]"
                       href={`/outpoint/${outputSpends[io.index]}`}
                     >
-                      <button
-                        type="button"
-                        className="btn-outline rounded font-mono opacity-50 hover:opacity-100 transition px-1"
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="normal-case opacity-50 hover:opacity-100 transition px-1"
                       >
-                        Spend {truncate(outputSpends[io.index])} [{io.index}]
-                      </button>
+                        <span>Spend {truncate(outputSpends[io.index])} [{io.index}]</span>
+                      </Button>
                     </Link>
                   )}
                 </div>
@@ -288,11 +291,9 @@ const DisplayIO: React.FC<DisplayIOProps> = ({
 
   return (
     showDetails.value && (
-      <>
-        <div className="w-full rounded gap-4 mb-4 flex-col md:flex-row flex overflow-x-auto">
+      <div className="w-full rounded gap-4 mb-4 flex-col md:flex-row flex overflow-x-auto">
           {details.value}
         </div>
-      </>
     )
   );
 };

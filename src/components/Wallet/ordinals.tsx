@@ -1,6 +1,7 @@
 "use client";
 
 import { API_HOST, resultsPerPage } from "@/constants";
+import { useThemeToken } from "@/hooks/useThemeToken";
 import { ordAddress } from "@/signals/wallet/address";
 import { ordUtxos } from "@/signals/wallet";
 import {
@@ -16,6 +17,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { ArtifactType, artifactTypeMap } from "../artifact";
 import { selectedType } from "./filter";
 import BatchActionsBar from "./BatchActionsBar";
@@ -34,13 +36,14 @@ const WalletOrdinals = ({ address: addressProp, onClick, onCountsChange }: Walle
 	const isInView = useInView(ref);
 	const listings = useSignal<OrdUtxo[]>([]);
 	const [mounted, setMounted] = useState(false);
+	const { loadTheme, isLoading: isLoadingTheme } = useThemeToken();
 
 	const [encryptedBackup] = useLocalStorage<string | undefined>(
 		"encryptedBackup",
 		undefined,
 	);
 
-	const [selectedArtifactType, setSelectedArtifactType] =
+	const [selectedArtifactType, _setSelectedArtifactType] =
 		useLocalStorage<ArtifactType>("1ssartt", ArtifactType.All);
 
 	// Wait for client hydration before showing conditional content
@@ -157,9 +160,22 @@ const WalletOrdinals = ({ address: addressProp, onClick, onCountsChange }: Walle
 
 	// Handle theme application
 	const handleApplyTheme = useCallback(async (ord: OrdUtxo) => {
-		// TODO: Integrate with @theme-token/sdk
-		console.log("Apply theme:", ord.origin?.outpoint);
-	}, []);
+		const origin = ord.origin?.outpoint;
+		if (!origin) {
+			toast.error("Invalid theme token");
+			return;
+		}
+
+		const loadingToast = toast.loading("Applying theme...");
+		const success = await loadTheme(origin);
+		toast.dismiss(loadingToast);
+
+		if (success) {
+			toast.success("Theme applied successfully");
+		} else {
+			toast.error("Failed to apply theme");
+		}
+	}, [loadTheme]);
 
 	// Handle batch send
 	const handleBatchSend = useCallback((outpoints: string[]) => {

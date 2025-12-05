@@ -2,7 +2,7 @@ import MnemonicGrid, { MnemonicGridMode } from "@/components/MnemonicGrid";
 import { createWalletStep, mnemonic } from "@/signals/wallet";
 import { CreateWalletStep } from "@/types/wallet";
 
-interface Props {}
+type Props = {}
 
 export function VerifyMnemonicStep({}: Props) {
   function handleOnSubmit(verified?: boolean) {

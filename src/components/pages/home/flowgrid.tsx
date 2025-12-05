@@ -51,6 +51,7 @@ const useColumnCount = () => {
 
 const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[], className: string }) => {
     const sentinelRef = useRef<HTMLDivElement>(null);
+    const [sentinelInView, setSentinelInView] = useState(false);
     const seenOutpoints = useRef<Set<string>>(new Set());
     const [visible, setVisible] = useState<Set<string>>(new Set());
     const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
@@ -114,7 +115,6 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         // Skip view transition for now if it's causing issues, or keep it simple
         if (typeof document !== 'undefined' && 'startViewTransition' in document) {
              try {
-                // @ts-ignore
                 const transition = document.startViewTransition(() => {
                     flushSync(() => {
                         setSelectedArtifact(artifact);
@@ -125,7 +125,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                 }).catch(() => {
                     setShowBackdrop(true);
                 });
-            } catch (err) {
+            } catch (_err) {
                 setSelectedArtifact(artifact);
                 setShowBackdrop(true);
             }
@@ -200,23 +200,26 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         return cols;
     }, [allArtifacts, columnCount]);
 
-    // Infinite scroll sentinel
+    // Track sentinel visibility
     useEffect(() => {
         const sentinel = sentinelRef.current;
         if (!sentinel) return;
 
         const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-                    fetchNextPage();
-                }
-            },
-            { threshold: 0.1, rootMargin: '400px' } // Increased rootMargin for smoother loading
+            ([entry]) => setSentinelInView(entry?.isIntersecting ?? false),
+            { threshold: 0.1, rootMargin: '400px' }
         );
 
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, []);
+
+    // Fetch next page while sentinel stays in view
+    useEffect(() => {
+        if (sentinelInView && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [sentinelInView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const renderArtifact = (artifact: OrdUtxo) => {
         const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;

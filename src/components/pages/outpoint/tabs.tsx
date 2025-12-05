@@ -60,14 +60,23 @@ const OutpointTabs = ({
 		}
 	};
 
+	const buttonClasses = (isActive: boolean) =>
+		`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
+			isActive
+				? "border-border bg-card text-foreground shadow-sm"
+				: "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground"
+		}`;
+
 	return (
-		<div role="tablist" className={"tabs tabs-bordered mb-4 font-mono"}>
+		<div
+			role="tablist"
+			className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 p-1 font-mono"
+		>
 			<button
 				type="button"
 				role="tab"
-				className={`tab ${
-					activeTab === OutpointTab.Timeline ? "tab-active" : ""
-				}`}
+				aria-selected={activeTab === OutpointTab.Timeline}
+				className={buttonClasses(activeTab === OutpointTab.Timeline)}
 				onClick={() => handleTabClick(OutpointTab.Timeline)}
 			>
 				Timeline
@@ -75,9 +84,8 @@ const OutpointTabs = ({
 			<button
 				type="button"
 				role="tab"
-				className={`tab ${
-					activeTab === OutpointTab.Inscription ? "tab-active" : ""
-				}`}
+				aria-selected={activeTab === OutpointTab.Inscription}
+				className={buttonClasses(activeTab === OutpointTab.Inscription)}
 				onClick={() => handleTabClick(OutpointTab.Inscription)}
 			>
 				Details
@@ -86,9 +94,8 @@ const OutpointTabs = ({
 				<button
 					type="button"
 					role="tab"
-					className={`tab ${
-						activeTab === OutpointTab.Token ? "tab-active" : ""
-					}`}
+					aria-selected={activeTab === OutpointTab.Token}
+					className={buttonClasses(activeTab === OutpointTab.Token)}
 					onClick={() => handleTabClick(OutpointTab.Token)}
 				>
 					Token
@@ -99,9 +106,8 @@ const OutpointTabs = ({
 				<button
 					type="button"
 					role="tab"
-					className={`tab ${
-						activeTab === OutpointTab.Listing ? "tab-active" : ""
-					}`}
+					aria-selected={activeTab === OutpointTab.Listing}
+					className={buttonClasses(activeTab === OutpointTab.Listing)}
 					onClick={() => handleTabClick(OutpointTab.Listing)}
 				>
 					Listing
@@ -111,9 +117,8 @@ const OutpointTabs = ({
 				<button
 					type="button"
 					role="tab"
-					className={`tab ${
-						activeTab === OutpointTab.Collection ? "tab-active" : ""
-					}`}
+					aria-selected={activeTab === OutpointTab.Collection}
+					className={buttonClasses(activeTab === OutpointTab.Collection)}
 					onClick={() => handleTabClick(OutpointTab.Collection)}
 				>
 					Collection

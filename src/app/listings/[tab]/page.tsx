@@ -1,6 +1,6 @@
 import ListingsPage from "@/components/pages/listings";
 import { API_HOST, AssetType } from "@/constants";
-import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
+import type { BSV20TXO, } from "@/types/ordinals";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 import * as http from "@/utils/httpClient";
 
@@ -19,7 +19,7 @@ const Listings = async ({ params }: { params: Promise<{ tab: AssetType }> }) => 
       );
     case AssetType.BSV20:
       return <ListingsPage selectedAssetType={AssetType.BSV20} />;
-    case AssetType.BSV21:
+    case AssetType.BSV21: {
       const urlV2Tokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
       const { promise: promiseBsv21 } =
         http.customFetch<BSV20TXO[]>(urlV2Tokens);
@@ -30,6 +30,7 @@ const Listings = async ({ params }: { params: Promise<{ tab: AssetType }> }) => 
           selectedAssetType={AssetType.BSV21}
         />
       );
+    }
     default:
       return null;
   }

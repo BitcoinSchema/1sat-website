@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import WalletSidebar from "./WalletSidebar";
-import { WalletTab } from "./tabs";
+import type { WalletTab } from "./tabs";
 
 interface WalletLayoutProps {
 	children: React.ReactNode;

@@ -39,8 +39,7 @@ const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, sort, dir }) 
         </div>
       )}
       {id && (
-        <>
-          <Suspense fallback={<TokenListingSkeleton type={type} />}>
+        <Suspense fallback={<TokenListingSkeleton type={type} />}>
             <div className="overflow-x-auto w-full bg-background">
               <Table className="w-full font-mono text-sm">
                 <TableHeading type={type} sortable={false} />
@@ -49,7 +48,6 @@ const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, sort, dir }) 
             </div>
             <Details type={type} id={id} marketData={marketData} />
           </Suspense>
-        </>
       )}
     </>
   );

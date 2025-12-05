@@ -69,13 +69,11 @@ const View = ({
   //   }
   // }, [data, data?.pages.length, listings]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   // useEffect(() => {
   //   const newPageData = data?.pages[data.pages.length - 1];
   //   if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
   //     fetchNextPage();
   //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [isInView]);
 
   if (mode === OrdViewMode.Grid && address) {

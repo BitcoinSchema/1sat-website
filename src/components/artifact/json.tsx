@@ -26,11 +26,11 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
 }) => {
   const [json, setJson] = useState<JSON | any>(j);
   const [bsv20, setBsv20] = useState<Partial<BSV20> | undefined>();
-  const [lrc20, setLrc20] = useState<Partial<LRC20> | undefined>(undefined);
+  const [_lrc20, setLrc20] = useState<Partial<LRC20> | undefined>(undefined);
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
     FetchStatus.Idle
   );
-  const [fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
+  const [_fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
     FetchStatus.Idle
   );
   const [limCache, setLimCache] = useState<Map<string, number>>(new Map());
@@ -54,7 +54,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
             setBsv20(txJson);
           }
         }
-      } catch (e) {
+      } catch (_e) {
         setFetchTextStatus(FetchStatus.Error);
       }
     };

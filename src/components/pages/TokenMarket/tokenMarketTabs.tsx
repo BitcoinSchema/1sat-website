@@ -147,10 +147,10 @@ export function TokenMarketTabs({
         </>
       ) : (
         <div className="w-full">
-          <div className="flex flex-wrap border-b border-border p-2 gap-1">
+          <div className="flex flex-wrap items-center border-b border-border p-2 gap-1.5">
             <button
               type="button"
-              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+              className={clsx("px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition", {
                 "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "listings",
                 "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "listings",
               })}
@@ -160,7 +160,7 @@ export function TokenMarketTabs({
             </button>
             <button
               type="button"
-              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+              className={clsx("px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition", {
                 "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "my_listings",
                 "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "my_listings",
               })}
@@ -170,7 +170,7 @@ export function TokenMarketTabs({
             </button>
             <button
               type="button"
-              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+              className={clsx("px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition", {
                 "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "sales",
                 "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "sales",
               })}
@@ -180,7 +180,7 @@ export function TokenMarketTabs({
             </button>
             <button
               type="button"
-              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+              className={clsx("px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition", {
                 "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "my_sales",
                 "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "my_sales",
               })}
@@ -188,22 +188,21 @@ export function TokenMarketTabs({
             >
               My Sales
             </button>
+            {hasBalance.value && (
+              <button
+                type="button"
+                aria-label="List token"
+                onClick={() => addListing(ticker)}
+                className="ml-auto h-9 w-9 flex items-center justify-center rounded border border-yellow-500/60 bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50 transition"
+              >
+                <FaPlus className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="p-4">
             {selectedTab.value === "listings" && (
-              <>
-                {hasBalance.value && (
-                  <button
-                    type="button"
-                    onClick={() => addListing(ticker)}
-                    className="w-full mb-4 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-900/50 transition flex items-center justify-center"
-                  >
-                    <FaPlus className="mr-1 w-3 h-3" />List {ticker.sym || ticker.tick}
-                  </button>
-                )}
-                <TokenMarketListings ticker={ticker} show={show} type={type} />
-              </>
+              <TokenMarketListings ticker={ticker} show={show} type={type} />
             )}
             {selectedTab.value === "my_listings" && (
               <TokenMarketMyListings ticker={ticker} type={type} />

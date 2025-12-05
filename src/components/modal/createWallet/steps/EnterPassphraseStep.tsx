@@ -2,7 +2,7 @@ import EnterPassphrase from "@/components/Passphrase";
 import { createWalletStep } from "@/signals/wallet";
 import { CreateWalletStep, EncryptDecrypt } from "@/types/wallet";
 
-interface Props {}
+type Props = {}
 
 export function EnterPassphraseStep({}: Props) {
   function handleEnterPassphrase() {
@@ -10,11 +10,9 @@ export function EnterPassphraseStep({}: Props) {
   }
 
   return (
-    <>
-      <EnterPassphrase
+    <EnterPassphrase
         mode={EncryptDecrypt.Encrypt}
         onSubmit={() => handleEnterPassphrase()}
       />
-    </>
   );
 }

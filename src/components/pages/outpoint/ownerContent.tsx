@@ -8,6 +8,7 @@ import { SATS_PER_KB, toastErrorProps } from "@/constants";
 import { ordPk, payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
+import { Button } from "@/components/ui/button";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import { useIDBStorage } from "@/utils/storage";
@@ -36,7 +37,7 @@ const { toBase58Check } = Utils;
 const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
   useSignals();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
@@ -80,7 +81,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
   console.log({ address, artifact, ordAddress: ordAddress.value, isUtxo: isUtxo.value, isRun: isRun.value })
   const transferOrdinal = useCallback(
     async (
-      e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+      _e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
       to: string,
       meta: MAP | undefined,
     ) => {
@@ -208,7 +209,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
 
   const burnOrdinal = useCallback(
     async (
-      e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+      _e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
       meta: BurnMAP,
     ) => {
       if (!ordPk.value) {
@@ -252,7 +253,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
   );
 
   const recoverUtxo = useCallback(
-    async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    async (_e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       console.log("recover utxo");
       const artifactUtxo = {
         txid: artifact.txid,
@@ -289,31 +290,30 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
       {isClient && artifact.owner === ordAddress.value && (
         <div>
           {isUtxo.value ? (
-            <div className="bg-warning text-warning-content rounded p-4">
+            <div className="rounded border border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-50 p-4">
               <p>
                 This appears to be a spendable UTXO output without an
                 inscription. This was probably sent to your Ordinals address by
                 mistake.
               </p>
               <p>Do you want to transfer it to your funding address?</p>
-              <div className="modal-action">
-                <button
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
                   type="button"
                   disabled={!!artifact.spend && artifact.spend !== ""}
-                  className="btn"
                   onClick={(e) => {
                     recoverUtxo(e);
                   }}
                 >
                   Recover {toBitcoin(artifact.satoshis)} BSV
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
-            <button
+            <Button
               disabled={!!artifact.data?.list && (!!artifact.spend && artifact.spend !== "")}
               type="button"
-              className="btn disabled:text-[#555] my-2"
+              className="my-2"
               onClick={(e) => {
                 // if its a bsv20, transfer with a different function
                 if (artifact.data?.bsv20) {
@@ -375,14 +375,15 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
             >
               <FaPaperPlane className="w-4 mr-1" />
               Send Ordinal
-            </button>
+            </Button>
           )}
 
           {!isUtxo.value && (
-            <button
+            <Button
               type="button"
+              variant="destructive"
               disabled={!!artifact.spend && artifact.spend !== ""}
-              className="btn btn-error my-2 ml-2"
+              className="my-2 ml-2"
               onClick={(e) => {
                 if (artifact.data?.bsv20) {
                   alert("Burn BSV20 tokens from your wallet page");
@@ -409,7 +410,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
               }}
             >
               <FaFire className="w-4 mr-1" /> Burn Ordinal
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -448,7 +449,7 @@ const OwnerContent = ({ artifact }: { artifact: OrdUtxo }) => {
               (artifact.data?.bsv20?.tick || artifact.data?.bsv20?.id) as string
             }
             dec={artifact.data?.bsv20?.dec || 0}
-            balance={Number.parseInt(artifact.data?.bsv20?.amt || "0")}
+            balance={Number.parseInt(artifact.data?.bsv20?.amt || "0", 10)}
             sym={artifact.data?.bsv20?.sym}
           />
         )}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { CollectionSubTypeData, MAP } from "js-1sat-ord";
 
 interface TraitsProps {

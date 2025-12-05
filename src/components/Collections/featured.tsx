@@ -5,9 +5,9 @@ import type { CollectionStats } from "@/types/collection";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import Slider, { Settings } from "react-slick";
+import Slider, { type Settings } from "react-slick";
 import { useMediaQuery } from "usehooks-ts";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Featured = {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function ScrollToTop() {
     const [showScrollTop, setShowScrollTop] = useState(false);
@@ -23,9 +24,10 @@ export default function ScrollToTop() {
     if (!showScrollTop) return null;
 
     return (
-        <button
+        <Button
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 z-[60] btn btn-circle btn-primary shadow-lg hover:scale-110 transition-transform"
+            size="icon"
+            className="fixed bottom-8 right-8 z-[60] rounded-full shadow-lg hover:scale-110 transition-transform"
             aria-label="Scroll to top"
         >
             <svg
@@ -38,6 +40,6 @@ export default function ScrollToTop() {
             >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
             </svg>
-        </button>
+        </Button>
     );
 }

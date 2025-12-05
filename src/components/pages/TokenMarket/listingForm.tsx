@@ -23,6 +23,7 @@ import type { Utxo } from "js-1sat-ord";
 import { type CreateOrdTokenListingsConfig, type NewTokenListing, TokenType, type TokenUtxo, createOrdTokenListings } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import type { MarketData } from "./list";
 import { showAddListingModal } from "./tokenMarketTabs";
@@ -38,7 +39,7 @@ const ListingForm = ({
 }) => {
   useSignals();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
@@ -305,7 +306,6 @@ const ListingForm = ({
   return (
     <div className="h-60 w-full">
       <form action="dialog">
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
           className="text-center text-xl font-semibold cursor-pointer"
           onClick={(e) => {
@@ -367,16 +367,16 @@ const ListingForm = ({
           />
         </div>
 
-        <div className="modal-action">
-          <button
+        <div className="flex justify-end mt-4">
+          <Button
             type="button"
-            className={"btn btn-sm btn-primary"}
+            size="sm"
             // make sure the balance available is enough
             disabled={listDisabled}
             onClick={submit}
           >
             {`List ${listingAmount.value || 0} ${ticker.tick || ticker.sym}`}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

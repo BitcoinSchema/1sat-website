@@ -21,7 +21,7 @@ interface InscribeTextProps {
 const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
   useSignals();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
@@ -76,7 +76,7 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
   );
 
   const clickInscribe = useCallback(
-    async (e: any) => {
+    async (_e: any) => {
       if (
         !text ||
         text.length === 0 ||
@@ -116,7 +116,6 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
         />
       </div>
       {!showOptionalFields && (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
         <div
           className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
           onClick={toggleOptionalFields}
@@ -152,7 +151,6 @@ const InscribeText: React.FC<InscribeTextProps> = ({ inscribedCallback }) => {
         </div>
       )}
 
-      {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
       <button
         disabled={submitDisabled}
         onClick={clickInscribe}

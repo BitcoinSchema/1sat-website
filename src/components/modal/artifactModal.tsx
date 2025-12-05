@@ -83,7 +83,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                             {ordinalName || '\u00A0'}
                         </p>
                         <div className="flex gap-1 items-center">
-                            {artifact.data?.list && artifact.data.list.price && (
+                            {artifact.data?.list?.price && (
                                 <Button
                                     variant="ghost"
                                     size="icon"

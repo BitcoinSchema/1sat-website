@@ -1,9 +1,8 @@
 "use client";
 
-import { MARKET_API_HOST, ORDFS } from "@/constants";
+import { MARKET_API_HOST, } from "@/constants";
 import type { Collection } from "@/types/collection";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import Link from "next/link";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";

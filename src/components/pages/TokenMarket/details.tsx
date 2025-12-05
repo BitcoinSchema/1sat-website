@@ -3,7 +3,7 @@ import React from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
 import Fund from "./fund";
 import { TokenMarketTabs } from "./tokenMarketTabs";
-import { TxoData } from "@/types/ordinals";
+import type { TxoData } from "@/types/ordinals";
 
 export interface Holder {
   address: string;
@@ -90,7 +90,7 @@ const Details = async ({
 }) => {
   return (
     <div className="overflow-auto w-full bg-background">
-      {marketData.map((ticker, idx) => {
+      {marketData.map((ticker, _idx) => {
         const showBsv20Content =
           type === AssetType.BSV20 &&
           ticker.tick?.toLowerCase() === id?.toLowerCase();

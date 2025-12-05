@@ -33,7 +33,6 @@ export default async function Image({
 	return new ImageResponse(
 		<Container>
 			{isImageInscription ? (
-				// eslint-disable-next-line @next/next/no-img-element
 				<img src={url} alt={alt} />
 			) : (
 				details.origin?.data?.map?.name ||

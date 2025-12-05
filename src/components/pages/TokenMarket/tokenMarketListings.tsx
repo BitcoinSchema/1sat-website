@@ -9,7 +9,7 @@ import * as http from "@/utils/httpClient";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useInView } from "framer-motion";
 import Link from "next/link";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, } from "react";
 import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
 import { listings } from "./signals";
@@ -74,7 +74,7 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 	return (
 		<>
 			{listings.value?.map((listing) => {
-				const qty = Number.parseInt(listing.amt) / 10 ** ticker.dec;
+				const qty = Number.parseInt(listing.amt, 10) / 10 ** ticker.dec;
 				const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
 
 				const pricePerSat = Number.parseFloat(listing.price) / qty;
@@ -99,11 +99,11 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 				// For the button text
 				const buttonText =
 					currencyDisplay.value === CurrencyDisplay.BSV
-						? Number.parseInt(listing.price) < 1000
+						? Number.parseInt(listing.price, 10) < 1000
 							? `${listing.price} sat`
 							: `${toBitcoin(listing.price)} BSV`
 						: `${(
-								(Number.parseInt(listing.price) / 1e8) *
+								(Number.parseInt(listing.price, 10) / 1e8) *
 								exchangeRate.value
 							).toLocaleString("en-US", {
                 style: "currency",
@@ -178,12 +178,12 @@ export function TokenMarketListings({ ticker, show, type }: Props) {
 										onClose={() => {
 											showBuy.value = null;
 										}}
-										price={BigInt(Math.ceil(Number.parseInt(listing.price)))}
+										price={BigInt(Math.ceil(Number.parseInt(listing.price, 10)))}
 										showLicense={false}
 										content={
 											<div className="w-full h-full rounded border border-border flex flex-col items-center justify-center p-4">
 												<span className="text-xl text-foreground">{`${(
-													Number.parseInt(listing.amt) /
+													Number.parseInt(listing.amt, 10) /
 													10 ** ticker.dec
 												).toLocaleString()} ${
 													ticker.tick || ticker.sym

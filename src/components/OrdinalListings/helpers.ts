@@ -27,7 +27,7 @@ export const checkOutpointFormat = (outpoint: string) => {
 	if (split[0].length !== 64) {
 		return false;
 	}
-	if (Number.isNaN(Number.parseInt(split[1]))) {
+	if (Number.isNaN(Number.parseInt(split[1], 10))) {
 		return false;
 	}
 	return true;
@@ -105,7 +105,6 @@ export const listingName = (listing: OrdUtxo) => {
 		return listing?.origin.data.bsv20.tick;
 	}
 	switch (listing?.origin?.data?.insc?.file.type.split(";")[0]) {
-      // biome-ignore lint/suspicious/noFallthroughSwitchClause: if no title is found fall through to default behavior
       case "text/html": { 
       const nameFromMeta = listing?.origin?.data.map?.name || listing?.origin.data.map?.subTypeData.name 
       if (nameFromMeta) {

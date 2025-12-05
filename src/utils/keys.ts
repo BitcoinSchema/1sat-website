@@ -1,4 +1,4 @@
-import { createWalletIterations, identityPk } from "@/signals/wallet";
+import { createWalletIterations, } from "@/signals/wallet";
 import { HD, Mnemonic, type PrivateKey } from "@bsv/sdk";
 
 export type WalletKeys = {
@@ -81,13 +81,13 @@ export const findKeysFromMnemonic = async (mnemonic: string) => {
 		let ordAddress;
 
 		const timeoutMs = 100000;
-		const ts = new Date().getTime();
+		const ts = Date.now();
 		let found = false;
 
 		const searchForAddress = (i: number) => {
 			console.log(`Searching for ord address with child key ${i}.`);
 			createWalletIterations.value = i;
-			if (new Date().getTime() - ts > timeoutMs && !found) {
+			if (Date.now()- ts > timeoutMs && !found) {
 				reject(
 					new Error("Timeout while searching for the desired address prefix."),
 				);

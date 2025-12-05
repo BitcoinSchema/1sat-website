@@ -62,7 +62,7 @@ import { Button } from "@/components/ui/button";
 
 const WalletMenu: React.FC = () => {
   useSignals();
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, _setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     []
   );
@@ -76,7 +76,7 @@ const WalletMenu: React.FC = () => {
 
   const [eb] = useLocalStorage("encryptedBackup", undefined);
 
-  const [value, copy] = useCopyToClipboard();
+  const [_value, copy] = useCopyToClipboard();
   const ordAddressHover = useSignal(false);
 
   const mouseEnterOrdAddress = () => {
@@ -434,8 +434,8 @@ export const exportKeysViaFragment = () => {
   } else {
     data = JSON.stringify({ payPk: JSON.parse(fk), ordPk: JSON.parse(ok) });
   }
-  const b64 = btoa(data);
-  const base = "http://localhost:3000" // "https://1sat.market"
+  const _b64 = btoa(data);
+  const _base = "http://localhost:3000" // "https://1sat.market"
   // window.location.href = `${base}/wallet/import#import=${b64}`;
 }
 

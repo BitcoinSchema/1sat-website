@@ -16,13 +16,11 @@ export function EnterPassphraseStep({ migrating }: Props) {
 	};
 
 	return (
-		<>
-			<EnterPassphrase
+		<EnterPassphrase
 				mode={EncryptDecrypt.Encrypt}
 				onSubmit={onSubmit}
 				download={false}
 				migrating={migrating}
 			/>
-		</>
 	);
 }

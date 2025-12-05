@@ -4,6 +4,7 @@ import Wallet from "../Wallet/menu";
 import MarketMenu from "../marketMenu";
 import Logo from "./Logo";
 import StatusIndicator from "./StatusIndicator";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Header = async ({ ubuntu }: { ubuntu: { className: string } }) => {
 	const headersList = await headers();
@@ -21,13 +22,14 @@ const Header = async ({ ubuntu }: { ubuntu: { className: string } }) => {
 				</div>
 
 				{/* Search */}
-				<div className="flex-1 flex justify-center px-4 max-w-xl">
+				<div className="flex justify-center px-2 sm:px-4 sm:flex-1 max-w-xl">
 					<SearchBar />
 				</div>
 
 				{/* Right Actions */}
 				<div className="flex items-center gap-2">
 					<StatusIndicator />
+					<ThemeToggle />
 					<MarketMenu />
 					<Wallet />
 				</div>

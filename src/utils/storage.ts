@@ -143,7 +143,6 @@
 //     return () => {
 //       window.removeEventListener("storage", handleChange);
 //     };
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
 //   }, [initialValue, storageKey, storageType]);
 
 //   const value = useMemo(() => [storedValue, setValue], [storedValue, setValue]);
@@ -166,7 +165,7 @@ import { useCallback, useEffect, useState } from "react";
 type StorageType = "localStorage" | "sessionStorage";
 
 // JSON Serialization Helpers
-const replacer = (key: string, value: any) => {
+const replacer = (_key: string, value: any) => {
   if (value instanceof Map) {
     return {
       dataType: "Map",
@@ -176,7 +175,7 @@ const replacer = (key: string, value: any) => {
   return value;
 };
 
-const reviver = (key: string, value: any) => {
+const reviver = (_key: string, value: any) => {
   if (typeof value === "object" && value !== null) {
     if (value.dataType === "Map") {
       return new Map(value.value);
@@ -231,7 +230,7 @@ const loadFromStorage = <T>(
 
       try {
         return JSON.parse(dataStr, reviver);
-      } catch (parseError) {
+      } catch (_parseError) {
         // If JSON.parse fails, the value might be a raw string (e.g., WIF key)
         // Return it as-is
         console.warn(`Failed to parse JSON for key "${storageKey}", returning raw value`);
@@ -327,7 +326,7 @@ const openDB = (): Promise<IDBDatabase> => {
       reject(request.error);
     };
 
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = (_event) => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME);

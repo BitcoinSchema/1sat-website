@@ -10,6 +10,8 @@ import { Transaction } from "@bsv/sdk";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { oneSatBroadcaster } from "js-1sat-ord";
 import { head } from "lodash";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -25,7 +27,7 @@ const PreviewPage = () => {
     "1sat-pts",
     [],
   );
-  const [value, copy] = useCopyToClipboard();
+  const [_value, copy] = useCopyToClipboard();
   const router = useRouter();
   // const txs = useSignal<PendingTransaction[] | null>(pendingTxs);
   const pendingTx = useSignal<PendingTransaction | null>(
@@ -149,7 +151,8 @@ Preview`}
               </div>
             )}
 
-            <div className="divider">Network Fees</div>
+            <div className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">Network Fees</div>
+            <Separator className="mb-4" />
 
             <div className="flex justify-between">
               <div>Network Fee</div>
@@ -173,7 +176,8 @@ Preview`}
             )}
             {pendingTx.value?.metadata && (
               <>
-                <div className="divider">MetaData</div>
+                <div className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">MetaData</div>
+                <Separator className="mb-4" />
                 <div className="flex justify-between">
                   <div>Metadata</div>
                   <div>
@@ -193,7 +197,8 @@ Preview`}
             )}
             {pendingTx.value?.marketFee ? (
               <>
-                <div className="divider">Market</div>
+                <div className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">Market</div>
+                <Separator className="mb-4" />
                 <div className="flex justify-between">
                   <div>Market Fee (4%)</div>
                   <div>
@@ -206,7 +211,8 @@ Preview`}
             ) : null}
             {pendingTx.value?.iterations && pendingTx.value?.iterations > 1 && (
               <>
-                <div className="divider">Indexing</div>
+                <div className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">Indexing</div>
+                <Separator className="mb-4" />
                 <div className="flex justify-between">
                   <div>Operations</div> <div>{pendingTx.value.iterations}</div>
                 </div>
@@ -221,13 +227,12 @@ Preview`}
             )}
 
           </div>
-          <div className={`${loading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-750 divider`} />
+          <Separator className={`${loading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-750`} />
           <div className={`${loading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-750 mx-auto text-center text-teal-700 mb-2`}>
             {pendingTx.value?.txid}
           </div>
 
           <div className={`${loading ? 'opacity-0' : 'opacity-100'} flex gap-2 items-center justify-between mb-8 transition-opacity duration-1000`}>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
             <div
               className="cursor-pointer w-full rounded bg-[#222] border flex items-center justify-center text-center text-[9px] md:text-[11px] text-[#aaa] border-[#333] py-2 relative"
               onClick={async () => {
@@ -239,7 +244,6 @@ Preview`}
             >
               TxID <FaCopy className="absolute right-0 mr-2" />
             </div>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
             <div
               className="cursor-pointer w-full rounded bg-[#222] border flex items-center justify-center text-center text-[9px] md:text-[11px] text-[#aaa] border-[#333] py-2 relative"
               onClick={async () => {
@@ -253,9 +257,9 @@ Preview`}
             </div>
           </div>
           <div className={`${loading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-3000 items-center justify-center gap-2`}>
-            <button
+            <Button
               type="button"
-              className="btn btn-warning w-full cursor-pointer disabled:cursor-default"
+              className="w-full bg-amber-500 text-amber-950 hover:bg-amber-600"
               onClick={async () => {
                 if (pendingTx.value) {
                   await broadcast(pendingTx.value);
@@ -268,7 +272,7 @@ Preview`}
               {broadcastStatus === FetchStatus.Loading
                 ? "Broadcasting..."
                 : `Broadcast ${usdPrice}`}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

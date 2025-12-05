@@ -16,6 +16,8 @@ import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { FaChevronDown, FaCircle } from "react-icons/fa6";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useCopyToClipboard } from "usehooks-ts";
 
 const SignMessagePage = ({
@@ -28,7 +30,7 @@ const SignMessagePage = ({
 	state?: string;
 }) => {
 	useSignals();
-	const [value, copy] = useCopyToClipboard();
+	const [_value, copy] = useCopyToClipboard();
 	const activeKey = useSignal<string | undefined>(undefined);
 	const proof = useSignal<string | undefined>(undefined);
 	const showActiveKeySwitcher = useSignal(false);
@@ -158,114 +160,108 @@ const SignMessagePage = ({
 	return locked.value ? (
 		<SAFU />
 	) : (
-		<dialog
-			id={`sign-message-modal-${message}`}
-			className="modal"
+		<Dialog
 			open={!showUnlockWalletModal.value}
+			onOpenChange={(open) => {
+				showUnlockWalletModal.value = !open;
+			}}
 		>
-			<div className="modal-box">
-				<div className="text-sm flex justify-between mb-4">
-					<div>
+			<DialogContent>
+				<DialogHeader className="flex flex-row items-start justify-between">
+					<div className="space-y-1 text-left">
 						{callback ? (
-							<div>
-								<div className="text-lg font-semibold">Wallet Connection Request</div>
-								<div className="text-xs text-[#777] mt-1">
+							<>
+								<DialogTitle>Wallet Connection Request</DialogTitle>
+								<div className="text-xs text-muted-foreground">
 									{new URL(callback).hostname} is requesting access
 								</div>
-							</div>
+							</>
 						) : (
-							<div>Sign Message</div>
+							<DialogTitle>Sign Message</DialogTitle>
 						)}
 					</div>
-					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 					<div
 						onClick={toggleActiveKey}
-						className="flex relative cursor-pointer items-center"
+						className="flex relative cursor-pointer items-center text-xs"
 					>
-						<span className="text-[#777] transition hover:text-[#aaa]">
+						<span className="text-muted-foreground transition hover:text-foreground">
 							{activeAddress.value?.slice(0, 8)}...
 							{activeAddress.value?.slice(-8)}{" "}
 						</span>
-						<FaChevronDown className="text-[#333] ml-2" />
+						<FaChevronDown className="text-muted-foreground ml-2" />
 						{showActiveKeySwitcher.value && (
-							<div className="absolute top-0 right-0 rounded bg-[#111] mt-8 w-48 text-right">
-								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+							<div className="absolute top-0 right-0 rounded border border-border bg-card mt-8 w-48 text-right shadow-lg">
 								<div
-									className="cursor-pointer hover:bg-[#333] mb-1 p-1 w-full flex items-center justify-end"
-									id="ord"
+									className="cursor-pointer hover:bg-muted mb-1 p-2 w-full flex items-center justify-end"
+									id="key-switcher-ord"
 									onClick={changeActiveKey}
 								>
-									{activeKey.value === ordPk.value && <FaCircle className="w-3 text-yellow-200/25 mr-2" />} Ordinals
+									{activeKey.value === ordPk.value && <FaCircle className="w-3 text-yellow-200/60 mr-2" />} Ordinals
 								</div>
-								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 								<div
-									className="cursor-pointer hover:bg-[#333] mb-1 p-1 w-full flex items-center justify-end"
-									id="pay"
+									className="cursor-pointer hover:bg-muted mb-1 p-2 w-full flex items-center justify-end"
+									id="key-switcher-pay"
 									onClick={changeActiveKey}
 								>
-									{activeKey.value === payPk.value && <FaCircle className="w-3 text-yellow-200/25 mr-2" />} Payment
+									{activeKey.value === payPk.value && <FaCircle className="w-3 text-yellow-200/60 mr-2" />} Payment
 								</div>
-								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 								<div
-									className="cursor-pointer hover:bg-[#333] mb-1 p-1 w-full flex items-center justify-end"
-									id="identity"
+									className="cursor-pointer hover:bg-muted mb-1 p-2 w-full flex items-center justify-end"
+									id="key-switcher-identity"
 									onClick={changeActiveKey}
 								>
-									{activeKey.value === "replaceMes" && <FaCircle className="w-3 text-yellow-200/25 mr-2" />} Identity
+									{activeKey.value === "replaceMes" && <FaCircle className="w-3 text-yellow-200/60 mr-2" />} Identity
 								</div>
 							</div>
 						)}
 					</div>
-				</div>
-			
-					<p className="text-xs border bg-[#111] border-[#222] rounded p-2 mb-2">
-						<span className="text-[#555] mr-2">Message</span> {message}
+				</DialogHeader>
+
+				<p className="text-xs border border-border rounded p-2 bg-card">
+					<span className="text-muted-foreground mr-2">Message</span> {message}
+				</p>
+
+				{!callback && (
+					<p className={`${proof.value ? 'opacity-100' : 'opacity-0'} transition text-xs border border-border rounded p-2 h-16 break-all leading-loose bg-card`}>
+						<span className="text-muted-foreground mr-2">{proof.value ? "Signature": ""}</span> {proof.value}
 					</p>
-		
-					{!callback && (
-						<p className={`${proof.value ? 'opacity-100' : 'opacity-0'} transition text-xs border bg-[#111] border-[#222] rounded p-2 h-16 break-all leading-loose`}>
-						<span className="text-[#555] mr-2">{proof.value ? "Signature": ""}</span> {proof.value}
-						</p>
+				)}
+
+				<DialogFooter className="justify-end">
+					{callback ? (
+						<Button
+							type="button"
+							onClick={signChallenge}
+							disabled={locked.value || !!proof.value}
+						>
+							{locked.value
+								? "Unlock Wallet"
+								: proof.value
+									? "Redirecting..."
+									: "Sign and Connect"}
+						</Button>
+					) : (
+						<Button
+							type="button"
+							variant={proof.value ? "default" : "outline"}
+							onClick={() => {
+								if (proof.value) {
+									copy(proof.value);
+									toast.success("Signature copied!");
+								}
+								signChallenge();
+							}}
+						>
+							{locked.value
+								? "Unlock Wallet"
+								: proof.value
+									? "Copy Signature"
+									: "Sign Challenge"}
+						</Button>
 					)}
-	
-				<form method="dialog">
-					<div className="modal-action">
-						{callback ? (
-							<button
-								type="button"
-								className="btn btn-primary"
-								onClick={signChallenge}
-								disabled={locked.value || !!proof.value}
-							>
-								{locked.value
-									? "Unlock Wallet"
-									: proof.value
-										? "Redirecting..."
-										: "Sign and Connect"}
-							</button>
-						) : (
-							<button
-								type="button"
-								className="btn"
-								onClick={() => {
-									if (proof.value) {
-										copy(proof.value);
-										toast.success("Signature copied!");
-									}
-									signChallenge();
-								}}
-							>
-								{locked.value
-									? "Unlock Wallet"
-									: proof.value
-										? "Copy Signature"
-										: "Sign Challenge"}
-							</button>
-						)}
-					</div>
-				</form>
-			</div>
-		</dialog>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };
 

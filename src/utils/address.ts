@@ -1,9 +1,8 @@
 import { API_HOST, resultsPerPage } from "@/constants";
-import { WocUtxo, WocUtxoResults } from "@/types/common";
 import type { OrdUtxo } from "@/types/ordinals";
 import { uniq } from "lodash";
 import * as http from "./httpClient";
-import { fetchNftUtxos, fetchPayUtxos, type Utxo } from "js-1sat-ord";
+import { fetchPayUtxos, type Utxo } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
 
 export const addressFromWif = (payPk: string) => {

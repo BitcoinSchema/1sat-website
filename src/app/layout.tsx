@@ -4,6 +4,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { Spotlight } from "@/components/ui/spotlights";
 import { toastProps } from "@/constants";
 import TanstackProvider from "@/providers/TanstackProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import type { Metadata } from "next";
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -18,7 +19,7 @@ const ubuntu = Ubuntu({
   subsets: ["latin"],
 });
 
-const ubuntuMono = Ubuntu_Mono({
+const _ubuntuMono = Ubuntu_Mono({
   style: "normal",
   weight: ["400", "700"],
   subsets: ["latin"],
@@ -46,38 +47,40 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="icon" href="/favicon.ico" />
       </head>
 
       <body className={`flex flex-col h-screen overflow-hidden ${inter.className}`}>
-        <Spotlight
-          className="-top-40 left-0 md:left-60 md:-top-20"
-          fill="white"
-        />
-        <TanstackProvider>
-          {/* Fixed Header */}
-          <Header ubuntu={ubuntu} />
-          
-          {/* Main content area - grows to fill space between header and footer */}
-          <main className="flex-1 w-full relative flex flex-col overflow-hidden">
-            {children}
-          </main>
-          
-          {/* Fixed Footer */}
-          <Footer />
-          
-          <Analytics />
-          <SpeedInsights />
-          <Toaster
-            position="bottom-left"
-            reverseOrder={false}
-            toastOptions={toastProps}
+        <ThemeProvider>
+          <Spotlight
+            className="-top-40 left-0 md:left-60 md:-top-20"
+            fill="white"
           />
-          <ScrollToTop />
-        </TanstackProvider>
+          <TanstackProvider>
+            {/* Fixed Header */}
+            <Header ubuntu={ubuntu} />
+            
+            {/* Main content area - grows to fill space between header and footer */}
+            <main className="flex-1 w-full relative flex flex-col overflow-hidden">
+              {children}
+            </main>
+            
+            {/* Fixed Footer */}
+            <Footer />
+            
+            <Analytics />
+            <SpeedInsights />
+            <Toaster
+              position="bottom-left"
+              reverseOrder={false}
+              toastOptions={toastProps}
+            />
+            <ScrollToTop />
+          </TanstackProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

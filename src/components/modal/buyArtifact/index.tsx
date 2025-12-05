@@ -64,7 +64,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
   useSignals();
   const router = useRouter();
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
@@ -228,7 +228,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
       amt: (listing as Listing).amt,
       id: tickOrId as string,
       payout: (listing as Listing).payout,
-      price: Number.parseInt((listing as Listing).price),
+      price: Number.parseInt((listing as Listing).price, 10),
       isListing: true,
     };
 

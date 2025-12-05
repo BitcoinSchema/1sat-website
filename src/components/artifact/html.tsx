@@ -3,7 +3,6 @@ import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useEffect, type ReactEventHandler } from "react";
 import { TbFileTypeHtml } from "react-icons/tb";
-import Image from "next/image";
 
 interface ArtifactProps {
 	origin: string;
@@ -76,10 +75,8 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 	}
 
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 		<div className={className?.wrapper || ""} onClick={onClick}>
 			{isSingleImage.value && (
-				// eslint-disable-next-line @next/next/no-img-element
 				<img
 					onLoad={onLoad as ReactEventHandler<HTMLImageElement>}
 					src={src.value}

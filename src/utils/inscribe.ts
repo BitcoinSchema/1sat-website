@@ -40,7 +40,7 @@ export const handleInscribing = async (
   //   "L1tFiewYRivZciv146HnCPBWzV35BR65dsJWZBYkQsKJ8UhXLz6q"
   // );
   console.log("Inscribing with", { metaData });
-  const signer = {
+  const _signer = {
     // idKey // optional id key
     keyHost: "http://localhost:21000",
   } as RemoteSigner;
@@ -123,7 +123,7 @@ export const handleBulkInscribingWithData = async (
 ) => {
   const paymentPk = PrivateKey.fromWif(payPk);
 
-  const signer = {
+  const _signer = {
     keyHost: "http://localhost:21000",
   } as RemoteSigner;
 

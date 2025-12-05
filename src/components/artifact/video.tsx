@@ -1,6 +1,7 @@
 import { ORDFS } from "@/constants";
 import { Play } from "lucide-react";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 
 type VideoArtifactProps = {
   origin?: string;

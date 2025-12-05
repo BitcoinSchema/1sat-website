@@ -20,7 +20,7 @@ const Fund = ({ ticker }: { ticker: any }) => {
   const bsvNeeded = computed(() => {
     const satoshis = Math.max(
       minFee - Number(ticker.fundTotal),
-      parseInt(ticker.pendingOps || "0") * 1000
+      parseInt(ticker.pendingOps || "0", 10) * 1000
     );
     return toBitcoin(satoshis);
   });
@@ -68,8 +68,8 @@ const Fund = ({ ticker }: { ticker: any }) => {
         )}
         {bsvNeeded.value > 0 && (
           <>
-            <div className="text-warning">Unpaid Fee</div>
-            <div className="text-right text-warning">{bsvNeeded.value} BSV</div>
+            <div className="text-amber-500">Unpaid Fee</div>
+            <div className="text-right text-amber-500">{bsvNeeded.value} BSV</div>
           </>
         )}
       </div>

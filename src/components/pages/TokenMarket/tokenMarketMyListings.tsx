@@ -91,7 +91,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
   return (
     <>
       {myListings.value?.map((listing) => {
-        const qty = Number.parseInt(listing.amt) / 10 ** ticker.dec;
+        const qty = Number.parseInt(listing.amt, 10) / 10 ** ticker.dec;
         const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
         const pricePer = (
           Number.parseFloat(listing.price) / qty
@@ -132,7 +132,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
                   }
                 }}
               >
-                {Number.parseInt(listing.price) < 1000
+                {Number.parseInt(listing.price, 10) < 1000
                   ? `${listing.price} sat`
                   : `${toBitcoin(listing.price)} BSV`}
               </Button>

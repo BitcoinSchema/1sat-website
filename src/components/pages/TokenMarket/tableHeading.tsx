@@ -36,12 +36,10 @@ const TableHeading = ({
 				<TableHead className={`min-w-16 px-4 py-3 text-left text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group`}>
 					<div className="flex items-center">
 						{type === AssetType.BSV20 && (
-							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 							<div className="mr-2 hover:text-primary transition" onClick={() => handleSort(SortBy.Number)}>
 								<FaHashtag />
 							</div>
 						)}
-						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 						<div
 							className="flex items-center hover:text-primary transition"
 							onClick={() => sortable ? handleSort(SortBy.Ticker) : null}
@@ -51,7 +49,6 @@ const TableHeading = ({
 						</div>
 					</div>
 				</TableHead>
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<TableHead
 					className={`w-1/2 px-4 py-3 text-left text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable ? handleSort(SortBy.Price) : null}
@@ -61,7 +58,6 @@ const TableHeading = ({
 						<SortIcon column={SortBy.Price} />
 					</div>
 				</TableHead>
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<TableHead
 					className={`px-4 py-3 text-left text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable ? handleSort(SortBy.PctChange) : null}
@@ -71,7 +67,6 @@ const TableHeading = ({
 						<SortIcon column={SortBy.PctChange} />
 					</div>
 				</TableHead>
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<TableHead
 					className={`px-4 py-3 text-right text-xs uppercase tracking-widest text-muted-foreground flex-1 ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable && handleSort(SortBy.MarketCap)}
@@ -86,7 +81,6 @@ const TableHeading = ({
 						Contract
 					</TableHead>
 				)}
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 				<TableHead
 					className={`${type === AssetType.BSV21 ? "w-48" : "w-96"} px-4 py-3 text-right text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable ? handleSort(SortBy.Holders) : null}

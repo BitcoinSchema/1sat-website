@@ -1,6 +1,6 @@
 import { ArtifactType, artifactTypeMap } from "@/components/artifact";
 import { API_HOST, ORDFS, resultsPerPage } from "@/constants";
-import { type Inscription, type OpNSData, OpNsStatus, TxoData, type OrdUtxo } from "@/types/ordinals";
+import { type Inscription, type OpNSData, OpNsStatus, type OrdUtxo } from "@/types/ordinals";
 import { Hash, Utils } from "@bsv/sdk";
 
 export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
@@ -8,29 +8,26 @@ export const fillContentType = async (artifact: OrdUtxo): Promise<OrdUtxo> => {
     artifact.origin?.outpoint || `${artifact.txid}_${artifact.vout}`;
   const url = `${ORDFS}/${origin}`;
 
-  // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
-  return new Promise(async (resolve) => {
-    try {
-      const response = await fetch(url);
-      if (response.status !== 404) {
-        const blob = await response.blob();
-        const buff = await response.arrayBuffer();
-        const f = {
-          hash: Utils.toHex(Hash.sha256(Buffer.from(buff).toString('hex'), 'hex')),
-          size: blob.size,
-          type: blob.type,
-        };
-        if (artifact.origin?.data?.insc?.file) {
-          artifact.origin.data.insc.file = f;
-        }
+  try {
+    const response = await fetch(url);
+    if (response.status !== 404) {
+      const blob = await response.blob();
+      const buff = await response.arrayBuffer();
+      const f = {
+        hash: Utils.toHex(Hash.sha256(Buffer.from(buff).toString('hex'), 'hex')),
+        size: blob.size,
+        type: blob.type,
+      };
+      if (artifact.origin?.data?.insc?.file) {
+        artifact.origin.data.insc.file = f;
       }
-      resolve(artifact);
-    } catch (e) {
-      console.error(e);
-      // dont fail if we cant find an image
-      resolve(artifact);
     }
-  });
+    return artifact;
+  } catch (e) {
+    console.error(e);
+    // dont fail if we cant find an image
+    return artifact;
+  }
 };
 
 export const getArtifactType = (

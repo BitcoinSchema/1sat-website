@@ -2,11 +2,9 @@ import {
 	ImportWalletFromMnemonicStep,
 	importWalletFromMnemonicStep,
 	mnemonic,
-	ordPk,
 	payPk,
 } from "@/signals/wallet";
-import { setKeys } from "@/signals/wallet/client";
-import { findKeysFromMnemonic } from "@/utils/keys";
+import { Button } from "@/components/ui/button";
 import { useSignal } from "@preact/signals-react";
 import { useEffect } from "react";
 import { FaCheck } from "react-icons/fa";
@@ -74,16 +72,15 @@ export function GenerateWalletStep() {
 
 			{isGeneratingWallet.value && (
 				<div className="flex items-center justify-center mt-4">
-					<div className="loading loading-spinner text-warning" />
+					<div className="loading loading-spinner text-amber-500" />
 				</div>
 			)}
 
 			{!isGeneratingWallet.value && payPk.value && (
 				<div className="flex justify-end mt-4">
-					{/* biome-ignore lint/a11y/useButtonType: <explanation> */}
-          <button className="btn btn-primary" onClick={handleNext}>
+          <Button onClick={handleNext}>
 						Next
-					</button>
+					</Button>
 				</div>
 			)}
 		</>

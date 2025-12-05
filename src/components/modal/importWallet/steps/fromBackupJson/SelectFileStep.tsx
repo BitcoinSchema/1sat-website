@@ -67,7 +67,7 @@ export function SelectFileStep() {
 				// go to the password step
 				importWalletFromBackupJsonStep.value =
 					ImportWalletFromBackupJsonStep.EnterPassphrase;
-			} catch (error) {
+			} catch (_error) {
 				toast.error(
 					"Invalid JSON file. Please select a backup json.",
 					toastErrorProps

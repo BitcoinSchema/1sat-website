@@ -10,7 +10,7 @@ const Mine = async () => {
         content={"Mine Pow20"}
       />
     </Head>
-    <MinePage />;
+    <MinePage />
   </>
 };
 export default Mine;

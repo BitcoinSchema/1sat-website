@@ -119,7 +119,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
   const changeTokenAmount = useSignal(0n);
   const indexingFees = useSignal(0);
 
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
@@ -184,7 +184,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
           toTokenSat(tokensToSend, ticker.dec || 0),
           destinationTickers.value,
           destinationBsv21Ids.value,
-          Number.parseInt(numOfHolders.value),
+          Number.parseInt(numOfHolders.value, 10),
           plusAddresses,
           omitAddresses,
           ticker.dec || 0,
@@ -194,7 +194,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
           toTokenSat(tokensToSend, ticker.dec || 0),
           destinationTickers.value,
           destinationBsv21Ids.value,
-          Number.parseInt(numOfHolders.value),
+          Number.parseInt(numOfHolders.value, 10),
           omitAddresses,
           ticker.dec || 0,
         );
@@ -428,14 +428,14 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
   const [clickedInside, setClickedInside] = useState(false);
 
-  const handleModalClick = () => {
+  const _handleModalClick = () => {
     if (!clickedInside) {
       onClose();
     }
     setClickedInside(false);
   };
 
-  const handleModalContentMouseDown = () => {
+  const _handleModalContentMouseDown = () => {
     setClickedInside(true);
   };
 
@@ -781,7 +781,7 @@ const calculateWeightedDistributions = async (
   );
 
   const distributions: Distribution[] = [];
-  let totalAllocated = 0;
+  let _totalAllocated = 0;
 
   for (const holder of allHolders) {
     const weightedAmt = Math.floor(
@@ -792,7 +792,7 @@ const calculateWeightedDistributions = async (
         address: holder.address,
         tokens: toToken(weightedAmt, decimals),
       });
-      totalAllocated += weightedAmt;
+      _totalAllocated += weightedAmt;
     }
   }
 

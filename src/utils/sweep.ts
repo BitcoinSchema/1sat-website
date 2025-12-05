@@ -1,4 +1,4 @@
-import { SATS_PER_KB, toastProps } from "@/constants";
+import { SATS_PER_KB, } from "@/constants";
 import { notifyIndexer } from "@/utils/indexer";
 import type { PrivateKey } from "@bsv/sdk";
 import {
@@ -8,7 +8,6 @@ import {
 	sendUtxos,
 	type SendUtxosConfig,
 } from "js-1sat-ord";
-import toast from "react-hot-toast";
 
 export const sweepUtxos = async (
 	paymentPk: PrivateKey,

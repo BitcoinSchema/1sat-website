@@ -33,11 +33,13 @@ import Cropper from 'react-easy-crop';
 import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { RiSettings2Fill } from "react-icons/ri";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { IconWithFallback } from "../TokenMarket/heading";
 import { knownImageTypes } from "./image";
 import type { InscriptionTab } from "./tabs";
 
-const top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"];
+const _top10 = ["FREN", "LOVE", "TRMP", "GOLD", "TOPG", "CAAL"];
 
 interface InscribeBsv21Props {
   inscribedCallback: () => void;
@@ -60,31 +62,31 @@ type CroppedArea = {
 const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
   useSignals();
   const router = useRouter();
-  const [pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
+  const [_pendingTxs, setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
   );
   const params = useSearchParams();
   // const { tab, tick, op } = params.query as { tab: string; tick: string; op: string };
-  const tab = params.get("tab") as InscriptionTab;
+  const _tab = params.get("tab") as InscriptionTab;
   const tick = params.get("tick");
-  const op = params.get("op");
+  const _op = params.get("op");
   const [isImage, setIsImage] = useState<boolean>(false);
 
 
-  const [fetchTickerStatus, setFetchTickerStatus] = useState<FetchStatus>(
+  const [fetchTickerStatus, _setFetchTickerStatus] = useState<FetchStatus>(
     FetchStatus.Idle,
   );
   const [inscribeStatus, setInscribeStatus] = useState<FetchStatus>(
     FetchStatus.Idle,
   );
-  const [limit, setLimit] = useState<string | undefined>("1337");
+  const [_limit, _setLimit] = useState<string | undefined>("1337");
   const [maxSupply, setMaxSupply] = useState<string>("21000000");
   const [decimals, setDecimals] = useState<number | undefined>();
-  const [amount, setAmount] = useState<string>();
-  const [mintError, setMintError] = useState<string>();
+  const [_amount, _setAmount] = useState<string>();
+  const [mintError, _setMintError] = useState<string>();
   const [showOptionalFields, setShowOptionalFields] = useState<boolean>(false);
-  const [iterations, setIterations] = useState<number>(1);
+  const [_iterations, _setIterations] = useState<number>(1);
 
   const [ticker, setTicker] = useState<string | null>(tick);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -286,7 +288,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
     return calculateIndexingFee(usdRate.value);
   });
 
-  const onCropComplete = useCallback((croppedArea: CropData, croppedAreaPixels: CroppedArea) => {
+  const onCropComplete = useCallback((_croppedArea: CropData, croppedAreaPixels: CroppedArea) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -322,14 +324,17 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
   }, [croppedImage, selectedImage, selectedImageURL, isImage, artifact]);
   return (
     <form className="w-full max-w-lg mx-auto" onSubmit={clickInscribe}>
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-      <dialog
-        id="cropper_modal"
-        className={`modal backdrop-blur ${showCropper ? "modal-open" : ""}`}
-        onClick={() => setShowCropper(false)}
+      <Dialog
+        open={showCropper}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setShowCropper(false);
+            setSelectedImage(null);
+            setSelectedImageURL(null);
+          }
+        }}
       >
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-        <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+        <DialogContent className="max-w-2xl" onClick={(e) => e.stopPropagation()}>
           <div className="relative w-full h-[400px] bg-[#333]">
             {selectedImageURL ? <Cropper
               image={selectedImageURL}
@@ -343,28 +348,28 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
               onCropComplete={onCropComplete}
             /> : null}
           </div>
-          <div className="flex justify-end mt-4">
-            <button
+          <DialogFooter className="justify-end mt-4">
+            <Button
               type="button"
               onClick={handleCropIcon}
-              className="mr-2 px-4 py-2 bg-blue-500 text-white rounded"
+              className="mr-2"
             >
               Crop
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               onClick={() => {
                 setShowCropper(false);
                 setSelectedImage(null);
                 setSelectedImageURL(null);
               }}
-              className="px-4 py-2 bg-gray-500 text-white rounded"
             >
               Cancel
-            </button>
-          </div>
-        </div>
-      </dialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="text-white w-full p-2 rounded my-2">Deploy New Token</div>
       <div className="my-2">
         <label className="block mb-4">
@@ -449,7 +454,6 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
       </div>
 
       {!showOptionalFields && (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
         <div
           className="my-2 flex items-center justify-end cursor-pointer text-blue-500 hover:text-blue-400 transition"
           onClick={toggleOptionalFields}
@@ -471,18 +475,17 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
               max={18}
               value={decimals}
               placeholder={defaultDec.toString()}
-              onChange={(e) => setDecimals(e.target.value ? Number.parseInt(e.target.value) : undefined)}
+              onChange={(e) => setDecimals(e.target.value ? Number.parseInt(e.target.value, 10) : undefined)}
             />
           </label>
         </div>
       )}
       <div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
-        {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
-        <label className="block w-full">
+        <span className="block w-full">
           BSV21 deployements are indexed immediately. A listing fee of $
           {`${listingFee.value}`} will be required before it shows up in some
           areas on the website. This can be paid later.
-        </label>
+        </span>
       </div>
       {croppedImage && <hr className="my-2 h-2 border-0 bg-[#222]" />}
 
@@ -498,7 +501,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 
 export default InscribeBsv21;
 
-const maxMaxSupply = BigInt("18446744073709551615");
+const _maxMaxSupply = BigInt("18446744073709551615");
 
 export const minFee = 100000000; // 1BSV
 export const baseFee = 50;
