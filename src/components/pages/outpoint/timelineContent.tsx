@@ -32,7 +32,7 @@ const TimelineContent = async ({ outpoint }: Props) => {
 					{
 						method: "POST",
 						body: JSON.stringify(spendOutpoints),
-					}
+					},
 				);
 
 				spends = await promiseSpends;

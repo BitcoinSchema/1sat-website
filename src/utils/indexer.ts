@@ -17,4 +17,3 @@ export const notifyIndexer = async (txid: string): Promise<void> => {
 		console.warn("Failed to notify v5 indexer:", err);
 	}
 };
-

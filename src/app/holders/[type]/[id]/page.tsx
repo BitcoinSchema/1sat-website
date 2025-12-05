@@ -1,9 +1,9 @@
-import { API_HOST, AssetType } from "@/constants";
-import type { BSV20 } from "@/types/bsv20";
 import Link from "next/link";
 import { NextRequest } from "next/server";
 import HoldersTable from "@/components/holders";
 import { Separator } from "@/components/ui/separator";
+import { API_HOST, AssetType } from "@/constants";
+import type { BSV20 } from "@/types/bsv20";
 
 const Page = async ({
 	params,

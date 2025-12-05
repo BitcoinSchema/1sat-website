@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, } from "react";
+import { Noto_Serif } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
-import ArtifactViewer from "./ArtifactViewer";
+import { useState } from "react";
+import { FaSpinner } from "react-icons/fa";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
-import { Noto_Serif } from "next/font/google";
+import ArtifactViewer from "./ArtifactViewer";
 import type { OutpointTab } from "./tabs";
-import { FaSpinner } from "react-icons/fa";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 
 const notoSerif = Noto_Serif({
 	style: "italic",
@@ -30,7 +30,12 @@ interface Props {
 	tabs: Tab[];
 }
 
-const ClientOutpointPage = ({ artifact, outpoint, initialTab, tabs }: Props) => {
+const ClientOutpointPage = ({
+	artifact,
+	outpoint,
+	initialTab,
+	tabs,
+}: Props) => {
 	const router = useRouter();
 	const _searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState<OutpointTab>(initialTab);
@@ -48,8 +53,6 @@ const ClientOutpointPage = ({ artifact, outpoint, initialTab, tabs }: Props) => 
 		setTimeout(() => setIsLoadingTab(false), 100);
 	};
 
-	const ActiveTabComponent = tabs.find(t => t.id === activeTab)?.component;
-
 	return (
 		<div className="mx-auto flex flex-col p-2 md:p-0 min-h-64">
 			<h2 className={`text-2xl mb-4  ${notoSerif.className}`}>
@@ -58,11 +61,7 @@ const ClientOutpointPage = ({ artifact, outpoint, initialTab, tabs }: Props) => 
 			<div className="flex flex-col md:flex-row gap-4">
 				{artifact?.origin?.data?.insc && (
 					<div className="overflow-hidden h-[550px] relative w-fit">
-						<ArtifactViewer
-							artifact={artifact}
-							size={550}
-							className="h-full"
-						/>
+						<ArtifactViewer artifact={artifact} size={550} className="h-full" />
 					</div>
 				)}
 				{!artifact?.origin?.data?.insc && (
@@ -85,11 +84,7 @@ const ClientOutpointPage = ({ artifact, outpoint, initialTab, tabs }: Props) => 
 							))}
 						</TabsList>
 						{tabs.map((tab) => (
-							<TabsContent
-								key={tab.id}
-								value={tab.id}
-								className="min-h-64"
-							>
+							<TabsContent key={tab.id} value={tab.id} className="min-h-64">
 								{isLoadingTab ? (
 									<div className="flex items-center justify-center p-8">
 										<FaSpinner className="animate-spin text-2xl" />

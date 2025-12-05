@@ -1,6 +1,19 @@
 {
 	"files": {
-		"includes": ["**", "!**/components/ui", "!**/*.css"]
+		"includes": [
+			"**",
+			"!**/components/ui",
+			"!**/*.css",
+			"!**/.next",
+			"!**/node_modules",
+			"!**/.turbo",
+			"!**/.cursor",
+			"!**/.claude",
+			"!**/.mcp.json",
+			"!**/agent-tools",
+			"!**/test-results",
+			"!**/dist"
+		]
 	},
 	"linter": {
 		"rules": {

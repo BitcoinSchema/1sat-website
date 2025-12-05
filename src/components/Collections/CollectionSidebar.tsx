@@ -1,33 +1,39 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-	Library,
-	TrendingUp,
-	Star,
-	Search,
-	X,
-	Sparkles,
-	Grid3X3,
-	LayoutGrid,
 	ArrowLeft,
 	ArrowUpDown,
 	CheckCircle2,
 	Circle,
+	Grid3X3,
 	Hash,
 	Layers,
+	LayoutGrid,
+	Library,
+	Search,
+	Sparkles,
+	Star,
+	TrendingUp,
+	X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 // Sort options
-export type SortOption = "newest" | "oldest" | "name_asc" | "name_desc" | "size_desc" | "size_asc";
+export type SortOption =
+	| "newest"
+	| "oldest"
+	| "name_asc"
+	| "name_desc"
+	| "size_desc"
+	| "size_asc";
 
 // Filter options
 export type StatusFilter = "all" | "complete" | "open";
@@ -47,7 +53,12 @@ interface CollectionSidebarProps {
 
 const NAV_ITEMS = [
 	{ id: "featured", label: "Featured", icon: Star, href: "/collection" },
-	{ id: "trending", label: "Trending", icon: TrendingUp, href: "/collection?sort=trending" },
+	{
+		id: "trending",
+		label: "Trending",
+		icon: TrendingUp,
+		href: "/collection?sort=trending",
+	},
 ] as const;
 
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
@@ -59,7 +70,11 @@ const SORT_OPTIONS: { id: SortOption; label: string }[] = [
 	{ id: "size_asc", label: "Fewest Items" },
 ];
 
-const STATUS_OPTIONS: { id: StatusFilter; label: string; icon: typeof CheckCircle2 }[] = [
+const STATUS_OPTIONS: {
+	id: StatusFilter;
+	label: string;
+	icon: typeof CheckCircle2;
+}[] = [
 	{ id: "all", label: "All", icon: Layers },
 	{ id: "complete", label: "Complete", icon: CheckCircle2 },
 	{ id: "open", label: "Open Mint", icon: Circle },
@@ -72,9 +87,9 @@ const SIZE_OPTIONS: { id: SizeFilter; label: string; range: string }[] = [
 	{ id: "large", label: "Large", range: "1000+" },
 ];
 
-export default function CollectionSidebar({ 
+export default function CollectionSidebar({
 	showBackLink,
-	collectionName 
+	collectionName,
 }: CollectionSidebarProps) {
 	useSignals();
 	const pathname = usePathname();
@@ -87,7 +102,8 @@ export default function CollectionSidebar({
 		collectionSearch.value = "";
 	};
 
-	const isDetailPage = pathname.includes("/collection/") && pathname !== "/collection";
+	const isDetailPage =
+		pathname.includes("/collection/") && pathname !== "/collection";
 
 	return (
 		<div className="flex flex-col h-full bg-background border-r border-border w-[280px] min-w-[280px]">
@@ -130,7 +146,9 @@ export default function CollectionSidebar({
 								</h3>
 								<div className="space-y-1">
 									{NAV_ITEMS.map(({ id, label, icon: Icon, href }) => {
-										const isActive = pathname === href || (pathname === "/collection" && id === "featured");
+										const isActive =
+											pathname === href ||
+											(pathname === "/collection" && id === "featured");
 										return (
 											<Link
 												key={id}
@@ -139,7 +157,7 @@ export default function CollectionSidebar({
 													"w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 													isActive
 														? "bg-primary/10 text-primary border-l-2 border-primary"
-														: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+														: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 												)}
 											>
 												<span className="flex items-center gap-2">
@@ -193,12 +211,14 @@ export default function CollectionSidebar({
 							<div className="space-y-1">
 								<button
 									type="button"
-									onClick={() => { collectionView.value = "featured"; }}
+									onClick={() => {
+										collectionView.value = "featured";
+									}}
 									className={cn(
 										"w-full flex items-center px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 										collectionView.value === "featured"
 											? "bg-primary/10 text-primary border-l-2 border-primary"
-											: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+											: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 									)}
 								>
 									<Sparkles className="w-4 h-4 mr-2" />
@@ -206,12 +226,14 @@ export default function CollectionSidebar({
 								</button>
 								<button
 									type="button"
-									onClick={() => { collectionView.value = "all"; }}
+									onClick={() => {
+										collectionView.value = "all";
+									}}
 									className={cn(
 										"w-full flex items-center px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 										collectionView.value === "all"
 											? "bg-primary/10 text-primary border-l-2 border-primary"
-											: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+											: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 									)}
 								>
 									<LayoutGrid className="w-4 h-4 mr-2" />
@@ -232,7 +254,9 @@ export default function CollectionSidebar({
 								</h3>
 								<select
 									value={collectionSort.value}
-									onChange={(e) => { collectionSort.value = e.target.value as SortOption; }}
+									onChange={(e) => {
+										collectionSort.value = e.target.value as SortOption;
+									}}
 									className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 font-mono text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-none cursor-pointer"
 								>
 									{SORT_OPTIONS.map((opt) => (
@@ -258,12 +282,14 @@ export default function CollectionSidebar({
 										<button
 											key={id}
 											type="button"
-											onClick={() => { collectionStatus.value = id; }}
+											onClick={() => {
+												collectionStatus.value = id;
+											}}
 											className={cn(
 												"w-full flex items-center px-3 py-2 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 												collectionStatus.value === id
 													? "bg-primary/10 text-primary border-l-2 border-primary"
-													: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+													: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 											)}
 										>
 											<Icon className="w-3.5 h-3.5 mr-2" />
@@ -289,12 +315,14 @@ export default function CollectionSidebar({
 										<button
 											key={id}
 											type="button"
-											onClick={() => { collectionSize.value = id; }}
+											onClick={() => {
+												collectionSize.value = id;
+											}}
 											className={cn(
 												"w-full flex items-center justify-between px-3 py-2 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 												collectionSize.value === id
 													? "bg-primary/10 text-primary border-l-2 border-primary"
-													: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+													: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 											)}
 										>
 											<span>{label}</span>
@@ -342,4 +370,3 @@ export default function CollectionSidebar({
 		</div>
 	);
 }
-

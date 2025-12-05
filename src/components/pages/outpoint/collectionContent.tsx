@@ -1,12 +1,12 @@
 "use client";
 
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import Link from "next/link";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { Button } from "@/components/ui/button";
 import { ORDFS } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
 import type { OrdUtxo } from "@/types/ordinals";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 const CollectionContent = ({
 	artifact,
@@ -31,8 +31,7 @@ const CollectionContent = ({
 				<div>{artifact.origin?.data?.map?.name}</div>
 				{artifact.origin?.data?.map?.subTypeData.mintNumber > 0 ? (
 					<div>
-						{artifact.origin?.data?.map?.subTypeData.mintNumber}/
-						{numItems}
+						{artifact.origin?.data?.map?.subTypeData.mintNumber}/{numItems}
 					</div>
 				) : (
 					<div>&nbsp;</div>

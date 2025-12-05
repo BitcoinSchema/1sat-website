@@ -11,16 +11,15 @@ interface Props {
 
 export function EnterPassphraseStep({ migrating }: Props) {
 	const onSubmit = () => {
-		importWalletFromBackupJsonStep.value =
-			ImportWalletFromBackupJsonStep.Done;
+		importWalletFromBackupJsonStep.value = ImportWalletFromBackupJsonStep.Done;
 	};
 
 	return (
 		<EnterPassphrase
-				mode={EncryptDecrypt.Encrypt}
-				onSubmit={onSubmit}
-				download={false}
-				migrating={migrating}
-			/>
+			mode={EncryptDecrypt.Encrypt}
+			onSubmit={onSubmit}
+			download={false}
+			migrating={migrating}
+		/>
 	);
 }

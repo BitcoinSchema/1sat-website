@@ -1,6 +1,6 @@
 import WalletOrdinals from "@/components/Wallet/ordinals";
-import WalletLayout from "@/components/Wallet/WalletLayout";
 import { WalletTab } from "@/components/Wallet/tabs";
+import WalletLayout from "@/components/Wallet/WalletLayout";
 
 const WalletPage = () => {
 	return (

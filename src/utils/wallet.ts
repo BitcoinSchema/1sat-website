@@ -13,10 +13,10 @@ export const getBalanceText = (balance: number, numDecimals: number) => {
 	return balance > 1000000000
 		? `${(balance / 1000000000).toFixed(2)}B`
 		: balance > 1000000
-		? `${(balance / 1000000).toFixed(2)}M`
-		: numDecimals > 0
-		? balance.toFixed(2)
-		: balance.toString();
+			? `${(balance / 1000000).toFixed(2)}M`
+			: numDecimals > 0
+				? balance.toFixed(2)
+				: balance.toString();
 };
 
 export const backupKeys = () => {
@@ -32,15 +32,17 @@ export const backupKeys = () => {
 	}
 
 	const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
-		JSON.stringify(removeNullKeys({
-			mnemonic: mnemonic.value,
-			payPk: payPk.value,
-			payDerivationPath: payPkDerivationPath,
-			ordPk: ordPk.value,
-			ordDerivationPath: ordPkDerivationPath,
-			identityPk: identityPk.value,
-			identityDerivationPath: identityAddressPath.value,
-		}))
+		JSON.stringify(
+			removeNullKeys({
+				mnemonic: mnemonic.value,
+				payPk: payPk.value,
+				payDerivationPath: payPkDerivationPath,
+				ordPk: ordPk.value,
+				ordDerivationPath: ordPkDerivationPath,
+				identityPk: identityPk.value,
+				identityDerivationPath: identityAddressPath.value,
+			}),
+		),
 	)}`;
 
 	const clicker = document.createElement("a");

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Noto_Serif } from "next/font/google";
 import { useRouter } from "next/navigation";
-import ArtifactViewer from "./ArtifactViewer";
+import { useEffect, useState } from "react";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
-import { Noto_Serif } from "next/font/google";
+import ArtifactViewer from "./ArtifactViewer";
 import OutpointTabs, { type OutpointTab } from "./tabs";
 
 const notoSerif = Noto_Serif({
@@ -85,8 +85,7 @@ const OutpointPage = ({
 								<OutpointTabs
 									outpoint={outpoint}
 									owner={
-										artifact.spend ||
-										!!artifact.origin?.data?.bsv20
+										artifact.spend || !!artifact.origin?.data?.bsv20
 											? undefined
 											: artifact?.owner
 									}
@@ -94,10 +93,8 @@ const OutpointPage = ({
 									hasToken={!!artifact.origin?.data?.bsv20}
 									isListing={!!artifact.data?.list}
 									isCollection={
-										artifact.origin?.data?.map?.subType ===
-											"collection" ||
-										artifact.origin?.data?.map?.subType ===
-											"collectionItem"
+										artifact.origin?.data?.map?.subType === "collection" ||
+										artifact.origin?.data?.map?.subType === "collectionItem"
 									}
 									onTabChange={handleTabChange}
 								/>

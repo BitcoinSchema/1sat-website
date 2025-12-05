@@ -1,6 +1,6 @@
 "use client";
 
-import { signal, computed } from "@preact/signals-react";
+import { computed, signal } from "@preact/signals-react";
 import type { OrdUtxo } from "@/types/ordinals";
 
 // --- Selection State ---

@@ -1,10 +1,10 @@
 "use client";
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import WalletSidebar from "./WalletSidebar";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { WalletTab } from "./tabs";
+import WalletSidebar from "./WalletSidebar";
 
 interface WalletLayoutProps {
 	children: React.ReactNode;
@@ -17,19 +17,19 @@ interface WalletLayoutProps {
 	};
 }
 
-export default function WalletLayout({ 
-	children, 
-	tab, 
+export default function WalletLayout({
+	children,
+	tab,
 	address,
-	filterProps 
+	filterProps,
 }: WalletLayoutProps) {
 	return (
 		<div className="flex w-full bg-background font-mono h-full">
 			{/* Desktop Sidebar - Fixed height, own scroll */}
 			<div className="hidden lg:flex flex-shrink-0 h-full overflow-y-auto border-r border-border">
-				<WalletSidebar 
-					tab={tab} 
-					address={address} 
+				<WalletSidebar
+					tab={tab}
+					address={address}
 					counts={filterProps?.counts}
 					ordinalOutpoints={filterProps?.ordinalOutpoints}
 				/>
@@ -51,8 +51,8 @@ export default function WalletLayout({
 							</Button>
 						</SheetTrigger>
 						<SheetContent side="left" className="p-0 w-[280px]">
-							<WalletSidebar 
-								tab={tab} 
+							<WalletSidebar
+								tab={tab}
 								address={address}
 								counts={filterProps?.counts}
 								ordinalOutpoints={filterProps?.ordinalOutpoints}
@@ -62,11 +62,8 @@ export default function WalletLayout({
 				</div>
 
 				{/* Content - This is the scrolling area */}
-				<div className="flex-1 overflow-y-auto">
-					{children}
-				</div>
+				<div className="flex-1 overflow-y-auto">{children}</div>
 			</div>
 		</div>
 	);
 }
-

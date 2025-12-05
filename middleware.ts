@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+	const response = NextResponse.next();
 
-  response.headers.set(
-    'Content-Security-Policy',
-    "frame-src 'self' https://ordfs.network; frame-ancestors 'self';"
-  );
+	response.headers.set(
+		"Content-Security-Policy",
+		"frame-src 'self' https://ordfs.network; frame-ancestors 'self';",
+	);
 
-  return response;
+	return response;
 }
 
 export const config = {
-  matcher: '/:path*',
+	matcher: "/:path*",
 };

@@ -1,18 +1,13 @@
 "use client";
 
-import { AssetType, FetchStatus, MARKET_API_HOST, ORDFS } from "@/constants";
-import { autofillValues, searchLoading } from "@/signals/search";
-import type { Autofill } from "@/types/search";
-import * as http from "@/utils/httpClient";
 import { effect, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
+import { Loader2, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { FaHashtag } from "react-icons/fa6";
-import { Loader2, Search } from "lucide-react";
-import ImageWithFallback from "../ImageWithFallback";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	CommandDialog,
 	CommandEmpty,
@@ -22,6 +17,11 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
+import { AssetType, FetchStatus, MARKET_API_HOST, ORDFS } from "@/constants";
+import { autofillValues, searchLoading } from "@/signals/search";
+import type { Autofill } from "@/types/search";
+import * as http from "@/utils/httpClient";
+import ImageWithFallback from "../ImageWithFallback";
 
 const SearchBar: React.FC = () => {
 	useSignals();
@@ -109,11 +109,11 @@ const SearchBar: React.FC = () => {
 				variant="outline"
 				onClick={() => (isOpen.value = true)}
 				aria-label="Open search"
-				className="relative h-10 w-10 p-0 justify-center text-sm text-muted-foreground sm:h-9 sm:w-full sm:px-3 sm:justify-start sm:pr-12 md:w-64 lg:w-80 bg-card border-border rounded-none hover:bg-muted hover:text-primary hover:border-primary/50 font-mono transition-colors"
+				className="relative h-10 w-full p-0 justify-start text-sm text-muted-foreground sm:h-9 sm:w-full sm:justify-start sm:px-3 sm:pr-12 md:w-64 lg:w-80 bg-card border-border rounded-none hover:bg-muted hover:text-primary hover:border-primary/50 font-mono transition-colors"
 			>
-				<span className="inline-flex items-center w-full justify-center gap-0 sm:justify-start sm:gap-2">
+				<span className="inline-flex items-center w-full gap-2 px-3 sm:px-0">
 					<Search className="h-4 w-4" />
-					<span className="hidden sm:inline-flex uppercase tracking-wider text-xs">
+					<span className="hidden sm:inline uppercase tracking-wider text-xs">
 						Search...
 					</span>
 				</span>
@@ -124,7 +124,7 @@ const SearchBar: React.FC = () => {
 
 			{/* Command Palette Dialog */}
 			<CommandDialog open={isOpen.value} onOpenChange={handleOpenChange}>
-				<div className="bg-zinc-950 border-zinc-800 font-mono">
+				<div className="bg-zinc-950 border-zinc-800 font-mono h-full flex flex-col sm:rounded-lg">
 					<CommandInput
 						placeholder="SEARCH BSV20, BSV21, TICKERS..."
 						value={searchTerm.value}
@@ -137,7 +137,7 @@ const SearchBar: React.FC = () => {
 						}}
 					/>
 
-					<CommandList className="bg-zinc-950 min-h-[300px] max-h-[400px]">
+					<CommandList className="bg-zinc-950 flex-1 min-h-[50vh] sm:min-h-[300px] sm:max-h-[400px]">
 						{/* Loading State */}
 						{searchLoading.value === FetchStatus.Loading && (
 							<div className="flex items-center justify-center p-6 text-zinc-500 text-xs gap-2 font-mono uppercase tracking-wider">

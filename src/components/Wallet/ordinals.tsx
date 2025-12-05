@@ -1,16 +1,5 @@
 "use client";
 
-import { API_HOST, resultsPerPage } from "@/constants";
-import { useThemeToken } from "@/hooks/useThemeToken";
-import { ordAddress } from "@/signals/wallet/address";
-import { ordUtxos } from "@/signals/wallet";
-import {
-	clearSelection,
-	isThemeToken,
-	searchQuery,
-} from "@/signals/wallet/selection";
-import type { OrdUtxo } from "@/types/ordinals";
-import { useLocalStorage } from "@/utils/storage";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -18,25 +7,43 @@ import { useInView } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { API_HOST, resultsPerPage } from "@/constants";
+import { useThemeToken } from "@/hooks/useThemeToken";
+import { ordUtxos } from "@/signals/wallet";
+import { ordAddress } from "@/signals/wallet/address";
+import {
+	clearSelection,
+	isThemeToken,
+	searchQuery,
+} from "@/signals/wallet/selection";
+import type { OrdUtxo } from "@/types/ordinals";
+import { useLocalStorage } from "@/utils/storage";
 import { ArtifactType, artifactTypeMap } from "../artifact";
-import { selectedType } from "./filter";
 import BatchActionsBar from "./BatchActionsBar";
+import { selectedType } from "./filter";
 import OrdinalCard from "./OrdinalCard";
 import SAFU from "./safu";
 
 interface WalletOrdinalsProps {
 	address?: string;
 	onClick?: (outpoint: string) => Promise<void>;
-	onCountsChange?: (counts: Record<string, number>, outpoints: string[]) => void;
+	onCountsChange?: (
+		counts: Record<string, number>,
+		outpoints: string[],
+	) => void;
 }
 
-const WalletOrdinals = ({ address: addressProp, onClick, onCountsChange }: WalletOrdinalsProps) => {
+const WalletOrdinals = ({
+	address: addressProp,
+	onClick,
+	onCountsChange,
+}: WalletOrdinalsProps) => {
 	useSignals();
 	const ref = useRef(null);
 	const isInView = useInView(ref);
 	const listings = useSignal<OrdUtxo[]>([]);
 	const [mounted, setMounted] = useState(false);
-	const { loadTheme, isLoading: isLoadingTheme } = useThemeToken();
+	const { loadTheme } = useThemeToken();
 
 	const [encryptedBackup] = useLocalStorage<string | undefined>(
 		"encryptedBackup",
@@ -62,29 +69,24 @@ const WalletOrdinals = ({ address: addressProp, onClick, onCountsChange }: Walle
 	const address = addressProp || ordAddress.value || "";
 
 	// Data fetching with infinite scroll
-	const {
-		data,
-		fetchNextPage,
-		hasNextPage,
-		isFetching,
-		isFetchingNextPage,
-	} = useInfiniteQuery({
-		queryKey: ["ordinals", address, selectedType.value],
-		queryFn: ({ pageParam }) =>
-			getWalletOrdUtxos({
-				address,
-				pageParam,
-				selectedType: selectedType.value,
-			}),
-		getNextPageParam: (lastPage, _pages, lastPageParam) => {
-			if (lastPage?.length === resultsPerPage) {
-				return lastPageParam + 1;
-			}
-			return undefined;
-		},
-		initialPageParam: 0,
-		enabled: !!address,
-	});
+	const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+		useInfiniteQuery({
+			queryKey: ["ordinals", address, selectedType.value],
+			queryFn: ({ pageParam }) =>
+				getWalletOrdUtxos({
+					address,
+					pageParam,
+					selectedType: selectedType.value,
+				}),
+			getNextPageParam: (lastPage, _pages, lastPageParam) => {
+				if (lastPage?.length === resultsPerPage) {
+					return lastPageParam + 1;
+				}
+				return undefined;
+			},
+			initialPageParam: 0,
+			enabled: !!address,
+		});
 
 	// Update listings when data changes
 	useEffect(() => {
@@ -159,23 +161,26 @@ const WalletOrdinals = ({ address: addressProp, onClick, onCountsChange }: Walle
 	}, [counts, allOutpoints, onCountsChange]);
 
 	// Handle theme application
-	const handleApplyTheme = useCallback(async (ord: OrdUtxo) => {
-		const origin = ord.origin?.outpoint;
-		if (!origin) {
-			toast.error("Invalid theme token");
-			return;
-		}
+	const handleApplyTheme = useCallback(
+		async (ord: OrdUtxo) => {
+			const origin = ord.origin?.outpoint;
+			if (!origin) {
+				toast.error("Invalid theme token");
+				return;
+			}
 
-		const loadingToast = toast.loading("Applying theme...");
-		const success = await loadTheme(origin);
-		toast.dismiss(loadingToast);
+			const loadingToast = toast.loading("Applying theme...");
+			const success = await loadTheme(origin);
+			toast.dismiss(loadingToast);
 
-		if (success) {
-			toast.success("Theme applied successfully");
-		} else {
-			toast.error("Failed to apply theme");
-		}
-	}, [loadTheme]);
+			if (success) {
+				toast.success("Theme applied successfully");
+			} else {
+				toast.error("Failed to apply theme");
+			}
+		},
+		[loadTheme],
+	);
 
 	// Handle batch send
 	const handleBatchSend = useCallback((outpoints: string[]) => {
@@ -232,9 +237,13 @@ const WalletOrdinals = ({ address: addressProp, onClick, onCountsChange }: Walle
 				{filteredListings.length === 0 && !isFetching ? (
 					<div className="flex flex-col items-center justify-center py-24 text-muted-foreground font-mono">
 						<div className="text-6xl mb-6 opacity-20">/</div>
-						<p className="uppercase tracking-widest text-sm">NO ARTIFACTS FOUND</p>
+						<p className="uppercase tracking-widest text-sm">
+							NO ARTIFACTS FOUND
+						</p>
 						<p className="text-xs text-muted-foreground mt-2">
-							{searchQuery.value ? "Try a different search term" : "Your wallet is empty"}
+							{searchQuery.value
+								? "Try a different search term"
+								: "Your wallet is empty"}
 						</p>
 					</div>
 				) : (
@@ -289,7 +298,11 @@ export const getWalletOrdUtxos = async ({
 	let url = `${API_HOST}/api/txos/address/${address}/unspent?limit=${resultsPerPage}&offset=${offset}&dir=DESC&status=all&bsv20=false`;
 
 	// Don't add type filter for special types like "theme"
-	if (selectedType && selectedType !== ArtifactType.All && selectedType !== ("theme" as ArtifactType)) {
+	if (
+		selectedType &&
+		selectedType !== ArtifactType.All &&
+		selectedType !== ("theme" as ArtifactType)
+	) {
 		url += `&type=${artifactTypeMap.get(selectedType)}`;
 	}
 
@@ -298,7 +311,9 @@ export const getWalletOrdUtxos = async ({
 
 	// Client-side filter for type
 	const final =
-		selectedType && selectedType !== ArtifactType.All && selectedType !== ("theme" as ArtifactType)
+		selectedType &&
+		selectedType !== ArtifactType.All &&
+		selectedType !== ("theme" as ArtifactType)
 			? result.filter((o) =>
 					o.origin?.data?.insc?.file.type?.startsWith(
 						artifactTypeMap.get(selectedType) as string,

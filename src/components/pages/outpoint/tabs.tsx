@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
-import { useMemo } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
+import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { ordAddress } from "@/signals/wallet/address";
 import OwnerTab from "./ownerTab";
 
@@ -39,14 +39,15 @@ const OutpointTabs = ({
 	const pathname = usePathname();
 
 	// Check if the current user is the owner
-	const isOwner = actualOwner && ordAddress.value && actualOwner === ordAddress.value;
+	const isOwner =
+		actualOwner && ordAddress.value && actualOwner === ordAddress.value;
 
 	// Show listing tab if it's a listing OR if the user owns it (so they can create a listing)
 	const showListingTab = isListing || isOwner;
 
 	// Derive active tab from URL pathname
 	const activeTab = useMemo(() => {
-		const segments = pathname.split('/');
+		const segments = pathname.split("/");
 		const tabSegment = segments[segments.length - 1];
 		return (tabSegment as OutpointTab) || OutpointTab.Timeline;
 	}, [pathname]);
@@ -101,7 +102,12 @@ const OutpointTabs = ({
 					Token
 				</button>
 			)}
-			<OwnerTab owner={owner} outpoint={outpoint} activeTab={activeTab} onTabChange={onTabChange} />
+			<OwnerTab
+				owner={owner}
+				outpoint={outpoint}
+				activeTab={activeTab}
+				onTabChange={onTabChange}
+			/>
 			{showListingTab && (
 				<button
 					type="button"

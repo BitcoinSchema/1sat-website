@@ -35,11 +35,11 @@ export enum CreateWalletStep {
 }
 
 export type Keys = {
-  payPk: string;
-  ordPk: string;
-  mnemonic?: string;
-  changeAddressPath?: number | string;
-  ordAddressPath?: number | string;
-  identityPk?: string;
-  identityAddressPath?: number | string;
-}
+	payPk: string;
+	ordPk: string;
+	mnemonic?: string;
+	changeAddressPath?: number | string;
+	ordAddressPath?: number | string;
+	identityPk?: string;
+	identityAddressPath?: number | string;
+};

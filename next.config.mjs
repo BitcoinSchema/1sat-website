@@ -1,23 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	reactStrictMode: true,
-	pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+	pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
 	// Turbopack is now default in Next.js 16
 	turbopack: {},
 	// React Compiler for automatic memoization
 	reactCompiler: true,
 	// Transpile packages that need to be bundled for server-side use
-	transpilePackages: ['isomorphic-dompurify'],
+	transpilePackages: ["isomorphic-dompurify"],
 	experimental: {
 		viewTransition: true,
 	},
 	images: {
 		dangerouslyAllowSVG: true,
-		contentSecurityPolicy:
-			"default-src 'self'; script-src 'none'; sandbox;",
+		contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
 		localPatterns: [
 			{
-				pathname: '/api/sanitize**',
+				pathname: "/api/sanitize**",
 			},
 		],
 		remotePatterns: [

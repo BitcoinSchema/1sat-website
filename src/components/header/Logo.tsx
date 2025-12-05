@@ -1,10 +1,10 @@
 "use client";
 
-import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
-import { payPk } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import Link from "next/link";
+import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
+import { payPk } from "@/signals/wallet";
 
 interface LogoProps {
 	ubuntu: { className: string };

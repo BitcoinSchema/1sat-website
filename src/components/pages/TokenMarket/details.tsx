@@ -1,49 +1,49 @@
-import { AssetType } from "@/constants";
 import React from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
+import { AssetType } from "@/constants";
+import type { TxoData } from "@/types/ordinals";
 import Fund from "./fund";
 import { TokenMarketTabs } from "./tokenMarketTabs";
-import type { TxoData } from "@/types/ordinals";
 
 export interface Holder {
-  address: string;
-  amt: string;
-  pct?: number;
+	address: string;
+	amt: string;
+	pct?: number;
 }
 
 export interface TickHolder {
-  address: string;
-  amt: string;
-  pct: number;
+	address: string;
+	amt: string;
+	pct: number;
 }
 
 export type MarketData = {
-  accounts: number;
-  tick?: string;
-  id: string;
-  sym?: string;
-  price: number;
-  marketCap: number;
-  holders: Holder[];
-  data: TxoData;
-  dec: number;
-  pctChange: number;
-  fundAddress: string;
-  fundTotal: string;
-  fundUsed: string;
-  fundBalance: string;
-  included: boolean;
-  pendingOps: number;
-  icon?: string;
-  supply?: string;
-  max?: string;
-  txid: string;
-  vout: number;
-  amt?: string;
-  num: number;
-  contract?: "pow-20" | "LockToMintBsv20" | undefined;
-  difficulty?: string | undefined;
-  startingreward?: string | undefined;
+	accounts: number;
+	tick?: string;
+	id: string;
+	sym?: string;
+	price: number;
+	marketCap: number;
+	holders: Holder[];
+	data: TxoData;
+	dec: number;
+	pctChange: number;
+	fundAddress: string;
+	fundTotal: string;
+	fundUsed: string;
+	fundBalance: string;
+	included: boolean;
+	pendingOps: number;
+	icon?: string;
+	supply?: string;
+	max?: string;
+	txid: string;
+	vout: number;
+	amt?: string;
+	num: number;
+	contract?: "pow-20" | "LockToMintBsv20" | undefined;
+	difficulty?: string | undefined;
+	startingreward?: string | undefined;
 };
 
 // https://ordinals.gorillapool.io/api/bsv20/id/8677c7600eab310f7e5fbbdfc139cc4b168f4d079185facb868ebb2a80728ff1_0?refresh=false
@@ -80,52 +80,48 @@ export type MarketData = {
 // }
 
 const Details = async ({
-  type,
-  id,
-  marketData,
+	type,
+	id,
+	marketData,
 }: {
-  type: AssetType.BSV20 | AssetType.BSV21;
-  id?: string;
-  marketData: MarketData[];
+	type: AssetType.BSV20 | AssetType.BSV21;
+	id?: string;
+	marketData: MarketData[];
 }) => {
-  return (
-    <div className="overflow-auto w-full bg-background">
-      {marketData.map((ticker, _idx) => {
-        const showBsv20Content =
-          type === AssetType.BSV20 &&
-          ticker.tick?.toLowerCase() === id?.toLowerCase();
-        const showBsv21Content =
-          type === AssetType.BSV21 &&
-          ticker.id.toLowerCase() === id?.toLowerCase();
-        return (<React.Fragment key={`${ticker.tick}-content`}>
-          {ticker.included &&
-            (showBsv20Content || showBsv21Content) && (
-              <div className="transition bg-muted/30 font-mono text-xs border-t border-border">
-                <div className="align-top">
-                  <TokenMarketTabs
-                    ticker={ticker}
-                    show={true}
-                    type={type}
-                  />
-                </div>
-              </div>
-            )}
-          {!ticker.included && (
-            <div className="w-full">
-              <div className="max-w-lg mx-auto">
-                <div className="bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 p-3 my-4 w-full flex items-center font-mono text-sm">
-                  <FaExclamationTriangle className="mr-2 text-yellow-500" />
-                  This ticker is not currently listed.
-                </div>
-                <Fund ticker={ticker} />
-              </div>
-            </div>
-          )}
-        </React.Fragment>);
-      })}
-    </div>
-  );
+	return (
+		<div className="overflow-auto w-full bg-background">
+			{marketData.map((ticker, _idx) => {
+				const showBsv20Content =
+					type === AssetType.BSV20 &&
+					ticker.tick?.toLowerCase() === id?.toLowerCase();
+				const showBsv21Content =
+					type === AssetType.BSV21 &&
+					ticker.id.toLowerCase() === id?.toLowerCase();
+				return (
+					<React.Fragment key={`${ticker.tick}-content`}>
+						{ticker.included && (showBsv20Content || showBsv21Content) && (
+							<div className="transition bg-muted/30 font-mono text-xs border-t border-border">
+								<div className="align-top">
+									<TokenMarketTabs ticker={ticker} show={true} type={type} />
+								</div>
+							</div>
+						)}
+						{!ticker.included && (
+							<div className="w-full">
+								<div className="max-w-lg mx-auto">
+									<div className="bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 p-3 my-4 w-full flex items-center font-mono text-sm">
+										<FaExclamationTriangle className="mr-2 text-yellow-500" />
+										This ticker is not currently listed.
+									</div>
+									<Fund ticker={ticker} />
+								</div>
+							</div>
+						)}
+					</React.Fragment>
+				);
+			})}
+		</div>
+	);
 };
 
 export default Details;
-

@@ -1,13 +1,18 @@
-"use client"
+"use client";
 
+import { useSignals } from "@preact/signals-react/runtime";
 import type { MarketData } from "@/components/pages/TokenMarket/list";
 import ListingForm from "@/components/pages/TokenMarket/listingForm";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { bsv20Utxos, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import { getBsv20Utxos, getUtxos } from "@/utils/address";
-import { useSignals } from "@preact/signals-react/runtime";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 
 interface CreateTokenListingModalProps {
 	onClose: () => void;
@@ -36,10 +41,7 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
 				if (!isOpen) onClose();
 			}}
 		>
-			<DialogContent
-				className="max-w-2xl"
-				onClick={(e) => e.stopPropagation()}
-			>
+			<DialogContent className="max-w-2xl" onClick={(e) => e.stopPropagation()}>
 				<DialogHeader className="flex flex-row items-center justify-between space-y-0">
 					<DialogTitle>Listing {ticker.tick || ticker.sym}</DialogTitle>
 					<span className="text-muted-foreground text-xs">
@@ -55,11 +57,7 @@ const CreateTokenListingModal: React.FC<CreateTokenListingModalProps> = ({
 
 						// refresh ord utxos
 						if (fundingAddress.value && ordAddress.value) {
-							const bu = await getBsv20Utxos(
-								ordAddress.value,
-								0,
-								ticker.id,
-							);
+							const bu = await getBsv20Utxos(ordAddress.value, 0, ticker.id);
 							bsv20Utxos.value = (bsv20Utxos.value || []).concat(bu);
 							utxos.value = await getUtxos(fundingAddress.value);
 						}

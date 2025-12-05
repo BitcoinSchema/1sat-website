@@ -1,14 +1,14 @@
 "use client";
 
+import { Signal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
+import { ChevronDown, Filter as FilterIcon, Terminal } from "lucide-react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Signal } from "@preact/signals-react";
-import { useSignals } from "@preact/signals-react/runtime";
-import { ChevronDown, Filter as FilterIcon, Terminal } from "lucide-react";
 import { ArtifactType } from "../artifact";
 
 const Filter = () => {
@@ -52,4 +52,3 @@ export const selectedType = new Signal<ArtifactType | null>(null);
 export const changeFilter = (type: ArtifactType) => {
 	selectedType.value = type;
 };
-

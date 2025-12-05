@@ -1,7 +1,7 @@
-import { ProtectKeysStep, protectKeysStep } from "@/signals/wallet";
 import { Button } from "@/components/ui/button";
+import { ProtectKeysStep, protectKeysStep } from "@/signals/wallet";
 
-type Props = {}
+type Props = {};
 
 export function InfoStep({}: Props) {
 	const onNext = () => {
@@ -12,9 +12,9 @@ export function InfoStep({}: Props) {
 		<>
 			<div className="mb-2">
 				<div className="text-sm text-gray-500">
-					We detected that you have unprotected keys. Protecting your
-					keys ensures that your funds are safe. You can protect your
-					keys by encrypting them with a passphrase.
+					We detected that you have unprotected keys. Protecting your keys
+					ensures that your funds are safe. You can protect your keys by
+					encrypting them with a passphrase.
 				</div>
 			</div>
 

@@ -1,7 +1,7 @@
+import { ImageResponse } from "next/og";
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
 import { getNotoSerifItalicFont } from "@/utils/font";
-import { ImageResponse } from "next/og";
 import {
 	COOM_BANNERS_BY_OUTPOINT,
 	COOM_OUTPOINTS_BY_SLUGS,
@@ -41,8 +41,8 @@ export default async function Image({
 			imageData = await fetch(
 				new URL(
 					"../../../../assets/images/coom/generation_1_cards.png",
-					import.meta.url
-				)
+					import.meta.url,
+				),
 			).then((res) => res.arrayBuffer());
 			break;
 		case "generation_2_cards.png":
@@ -51,44 +51,42 @@ export default async function Image({
 			imageData = await fetch(
 				new URL(
 					"../../../../assets/images/coom/generation_1_cards.png",
-					import.meta.url
-				)
+					import.meta.url,
+				),
 			).then((res) => res.arrayBuffer());
 			break;
 		case "generation_3_cards.png":
 			imageData = await fetch(
 				new URL(
 					"../../../../assets/images/coom/generation_3_cards.png",
-					import.meta.url
-				)
+					import.meta.url,
+				),
 			).then((res) => res.arrayBuffer());
 			break;
 		case "generation_3_packs.jpeg":
 			imageData = await fetch(
 				new URL(
 					"../../../../assets/images/coom/generation_3_packs.jpeg",
-					import.meta.url
-				)
+					import.meta.url,
+				),
 			).then((res) => res.arrayBuffer());
 
 			break;
 	}
 
 	return new ImageResponse(
-		(
-			<Container>
-				{imageData && (
-					<img
-						src={imageData as any}
-						alt={alt}
-						{...size}
-						style={{ objectFit: "contain" }}
-					/>
-				)}
+		<Container>
+			{imageData && (
+				<img
+					src={imageData as any}
+					alt={alt}
+					{...size}
+					style={{ objectFit: "contain" }}
+				/>
+			)}
 
-				<Logo />
-			</Container>
-		),
+			<Logo />
+		</Container>,
 		{
 			...size,
 			fonts: [
@@ -99,6 +97,6 @@ export default async function Image({
 					weight: 400,
 				},
 			],
-		}
+		},
 	);
 }

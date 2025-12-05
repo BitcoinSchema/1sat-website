@@ -1,8 +1,8 @@
-import { ORDFS } from "@/constants";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { useEffect, type ReactEventHandler } from "react";
+import { type ReactEventHandler, useEffect } from "react";
 import { TbFileTypeHtml } from "react-icons/tb";
+import { ORDFS } from "@/constants";
 
 interface ArtifactProps {
 	origin: string;
@@ -94,7 +94,9 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 							onLoad={onLoad as ReactEventHandler<HTMLIFrameElement>}
 							title="html artifact"
 							className={`pointer-events-none bg-none overflow-hidden no-scrollbar ${
-								size ? `w-[${size}px] h-[${size}px]` : "h-full w-full min-h-full min-w-full"
+								size
+									? `w-[${size}px] h-[${size}px]`
+									: "h-full w-full min-h-full min-w-full"
 							}`}
 							src={src.value}
 							// sandbox=" "

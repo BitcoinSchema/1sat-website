@@ -1,6 +1,6 @@
 import ActivityPage from "@/components/pages/activity";
 
 const Activity = async () => {
-  return <ActivityPage />;
+	return <ActivityPage />;
 };
 export default Activity;

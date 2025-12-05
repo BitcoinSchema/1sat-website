@@ -1,8 +1,8 @@
 "use client";
 
+import { Grid3X3, ShoppingBag } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ShoppingBag, Grid3X3 } from "lucide-react";
 
 export enum Tab {
 	Market = "market",
@@ -32,7 +32,7 @@ export const CollectionNavigation = () => {
 						"flex items-center gap-2 px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
 						tab === Tab.Market
 							? "border-primary text-primary"
-							: "border-transparent text-muted-foreground hover:text-foreground"
+							: "border-transparent text-muted-foreground hover:text-foreground",
 					)}
 				>
 					<ShoppingBag className="w-4 h-4" />
@@ -46,7 +46,7 @@ export const CollectionNavigation = () => {
 						"flex items-center gap-2 px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
 						tab === Tab.Items
 							? "border-primary text-primary"
-							: "border-transparent text-muted-foreground hover:text-foreground"
+							: "border-transparent text-muted-foreground hover:text-foreground",
 					)}
 				>
 					<Grid3X3 className="w-4 h-4" />

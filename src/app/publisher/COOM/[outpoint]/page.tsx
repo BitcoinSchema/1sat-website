@@ -9,7 +9,11 @@ import {
 	COOM_SLUGS_AND_OUTPOINTS,
 } from "../constants";
 
-const CoOMCollection = async ({ params }: { params: Promise<{ outpoint: string }> }) => {
+const CoOMCollection = async ({
+	params,
+}: {
+	params: Promise<{ outpoint: string }>;
+}) => {
 	const { outpoint: outpointParam } = await params;
 	let outpoint = outpointParam;
 	const isCoom = COOM_SLUGS_AND_OUTPOINTS.includes(outpoint);
@@ -36,8 +40,7 @@ const CoOMCollection = async ({ params }: { params: Promise<{ outpoint: string }
 	const collectionStatsUrl = `${API_HOST}/api/collections/${outpoint}/stats`;
 
 	try {
-		const { promise } =
-			http.customFetch<CollectionStats>(collectionStatsUrl);
+		const { promise } = http.customFetch<CollectionStats>(collectionStatsUrl);
 		stats = (await promise) || [];
 	} catch (e) {
 		console.error(e);

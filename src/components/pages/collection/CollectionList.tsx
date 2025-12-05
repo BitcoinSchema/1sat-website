@@ -1,7 +1,12 @@
 "use client";
 
+import { useSignals } from "@preact/signals-react/runtime";
+import { Loader2, Package, ShoppingBag, SlidersHorizontal } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Artifact from "@/components/artifact";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FetchStatus, NUMBER_OF_ITEMS_PER_PAGE } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
@@ -11,29 +16,25 @@ import {
 	type ItemFilters,
 	type MarketFilters,
 } from "@/utils/fetchCollectionData";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Package, ShoppingBag, SlidersHorizontal } from "lucide-react";
-import { Tab } from "./CollectionNavigation";
-import { useSignals } from "@preact/signals-react/runtime";
 import {
 	CollectionFilters,
-	traitsParam,
+	hasActiveFilters,
 	itemSort,
 	marketSort,
-	minPrice,
 	maxPrice,
-	hasActiveFilters,
+	minPrice,
 	type TraitData,
+	traitsParam,
 } from "./CollectionFilters";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Tab } from "./CollectionNavigation";
 
 // Parse subTypeData JSON and extract traits
 const parseTraits = (item: OrdUtxo): { name: string; value: string }[] => {
 	try {
 		const subTypeData = item.origin?.data?.map?.subTypeData;
 		if (!subTypeData) return [];
-		const data = typeof subTypeData === "string" ? JSON.parse(subTypeData) : subTypeData;
+		const data =
+			typeof subTypeData === "string" ? JSON.parse(subTypeData) : subTypeData;
 		return Array.isArray(data?.traits) ? data.traits : [];
 	} catch {
 		return [];
@@ -43,7 +44,7 @@ const parseTraits = (item: OrdUtxo): { name: string; value: string }[] => {
 // Extract trait facets from items for filter UI
 const extractTraitFacets = (items: OrdUtxo[]): TraitData[] => {
 	const facets = new Map<string, Map<string, number>>();
-	
+
 	for (const item of items) {
 		const traits = parseTraits(item);
 		for (const { name, value } of traits) {
@@ -53,7 +54,7 @@ const extractTraitFacets = (items: OrdUtxo[]): TraitData[] => {
 			valMap.set(value, (valMap.get(value) || 0) + 1);
 		}
 	}
-	
+
 	return Array.from(facets.entries()).map(([name, valMap]) => ({
 		name,
 		values: Array.from(valMap.keys()),
@@ -83,18 +84,18 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 
 	// Track filter version to trigger reloads
 	const [filterVersion, setFilterVersion] = useState(0);
-	
+
 	// Extracted trait facets for filter UI
 	const [traitFacets, setTraitFacets] = useState<TraitData[]>([]);
 
 	const hasMore = useMemo(
 		() => (isMarketTab ? hasMoreMarket : hasMoreItems),
-		[isMarketTab, hasMoreMarket, hasMoreItems]
+		[isMarketTab, hasMoreMarket, hasMoreItems],
 	);
 
 	const itemsToDisplay = useMemo(
 		() => (isMarketTab ? marketItems : items),
-		[isMarketTab, marketItems, items]
+		[isMarketTab, marketItems, items],
 	);
 
 	// initialize to idle for both tabs
@@ -102,7 +103,7 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 		new Map([
 			[Tab.Market, FetchStatus.Idle],
 			[Tab.Items, FetchStatus.Idle],
-		])
+		]),
 	);
 
 	const setLoadingStatus = useCallback(
@@ -111,7 +112,7 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 			newLoading.set(tab as Tab, status);
 			setLoading(newLoading);
 		},
-		[loading]
+		[loading],
 	);
 
 	// Get current filter values
@@ -121,82 +122,95 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 	const currentMinPrice = minPrice.value;
 	const currentMaxPrice = maxPrice.value;
 
-	const loadMore = useCallback(async (reset = false) => {
-		setLoadingStatus(tab, FetchStatus.Loading);
+	const loadMore = useCallback(
+		async (reset = false) => {
+			setLoadingStatus(tab, FetchStatus.Loading);
 
-		const offset = reset ? 0 : (isMarketTab ? marketOffset : itemsOffset);
+			const offset = reset ? 0 : isMarketTab ? marketOffset : itemsOffset;
 
-		if (isMarketTab) {
-			const filters: MarketFilters = {
-				traits: currentTraits || undefined,
-				sort: currentMarketSort,
-				minPrice: currentMinPrice ? Number(currentMinPrice) : undefined,
-				maxPrice: currentMaxPrice ? Number(currentMaxPrice) : undefined,
-			};
-			const newItems =
-				(await fetchCollectionMarket(collectionId, offset, NUMBER_OF_ITEMS_PER_PAGE, filters)) ?? [];
+			if (isMarketTab) {
+				const filters: MarketFilters = {
+					traits: currentTraits || undefined,
+					sort: currentMarketSort,
+					minPrice: currentMinPrice ? Number(currentMinPrice) : undefined,
+					maxPrice: currentMaxPrice ? Number(currentMaxPrice) : undefined,
+				};
+				const newItems =
+					(await fetchCollectionMarket(
+						collectionId,
+						offset,
+						NUMBER_OF_ITEMS_PER_PAGE,
+						filters,
+					)) ?? [];
 
-			if (reset || offset === 0) {
-				setMarketItems(newItems);
-				setMarketOffset(NUMBER_OF_ITEMS_PER_PAGE);
-				// Extract traits from first page (no filters active) for filter UI
-				if (!currentTraits) {
-					setTraitFacets(extractTraitFacets(newItems));
-				}
-			} else {
-				setMarketItems((i) => {
-					const combined = [...i, ...newItems];
-					// Update trait facets with more data (only when not filtered)
+				if (reset || offset === 0) {
+					setMarketItems(newItems);
+					setMarketOffset(NUMBER_OF_ITEMS_PER_PAGE);
+					// Extract traits from first page (no filters active) for filter UI
 					if (!currentTraits) {
-						setTraitFacets(extractTraitFacets(combined));
+						setTraitFacets(extractTraitFacets(newItems));
 					}
-					return combined;
-				});
-				setMarketOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
-			}
-			setHasMoreMarket(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
-		} else {
-			const filters: ItemFilters = {
-				traits: currentTraits || undefined,
-				sort: currentItemSort,
-			};
-			const newItems =
-				(await fetchCollectionItems(collectionId, offset, NUMBER_OF_ITEMS_PER_PAGE, filters)) ?? [];
-			if (reset || offset === 0) {
-				setItems(newItems);
-				setItemsOffset(NUMBER_OF_ITEMS_PER_PAGE);
-				// Extract traits from first page (no filters active) for filter UI
-				if (!currentTraits) {
-					setTraitFacets(extractTraitFacets(newItems));
+				} else {
+					setMarketItems((i) => {
+						const combined = [...i, ...newItems];
+						// Update trait facets with more data (only when not filtered)
+						if (!currentTraits) {
+							setTraitFacets(extractTraitFacets(combined));
+						}
+						return combined;
+					});
+					setMarketOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
 				}
+				setHasMoreMarket(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
 			} else {
-				setItems((i) => {
-					const combined = [...i, ...newItems];
-					// Update trait facets with more data (only when not filtered)
+				const filters: ItemFilters = {
+					traits: currentTraits || undefined,
+					sort: currentItemSort,
+				};
+				const newItems =
+					(await fetchCollectionItems(
+						collectionId,
+						offset,
+						NUMBER_OF_ITEMS_PER_PAGE,
+						filters,
+					)) ?? [];
+				if (reset || offset === 0) {
+					setItems(newItems);
+					setItemsOffset(NUMBER_OF_ITEMS_PER_PAGE);
+					// Extract traits from first page (no filters active) for filter UI
 					if (!currentTraits) {
-						setTraitFacets(extractTraitFacets(combined));
+						setTraitFacets(extractTraitFacets(newItems));
 					}
-					return combined;
-				});
-				setItemsOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
+				} else {
+					setItems((i) => {
+						const combined = [...i, ...newItems];
+						// Update trait facets with more data (only when not filtered)
+						if (!currentTraits) {
+							setTraitFacets(extractTraitFacets(combined));
+						}
+						return combined;
+					});
+					setItemsOffset((o) => o + NUMBER_OF_ITEMS_PER_PAGE);
+				}
+				setHasMoreItems(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
 			}
-			setHasMoreItems(newItems.length >= NUMBER_OF_ITEMS_PER_PAGE);
-		}
 
-		setLoadingStatus(tab, FetchStatus.Success);
-	}, [
-		setLoadingStatus,
-		tab,
-		isMarketTab,
-		collectionId,
-		marketOffset,
-		itemsOffset,
-		currentTraits,
-		currentItemSort,
-		currentMarketSort,
-		currentMinPrice,
-		currentMaxPrice,
-	]);
+			setLoadingStatus(tab, FetchStatus.Success);
+		},
+		[
+			setLoadingStatus,
+			tab,
+			isMarketTab,
+			collectionId,
+			marketOffset,
+			itemsOffset,
+			currentTraits,
+			currentItemSort,
+			currentMarketSort,
+			currentMinPrice,
+			currentMaxPrice,
+		],
+	);
 
 	// Reset and reload when filters change
 	const handleFilterChange = useCallback(() => {
@@ -279,17 +293,18 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 			</div>
 
 			{/* Loading skeleton */}
-			{loading.get(tab) === FetchStatus.Loading && itemsToDisplay.length === 0 && (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-					{[...Array(10)].map((_, i) => (
-						<div key={i} className="space-y-2">
-							<Skeleton className="aspect-square w-full rounded-lg" />
-							<Skeleton className="h-4 w-3/4" />
-							<Skeleton className="h-3 w-1/2" />
-						</div>
-					))}
-				</div>
-			)}
+			{loading.get(tab) === FetchStatus.Loading &&
+				itemsToDisplay.length === 0 && (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+						{[...Array(10)].map((_, i) => (
+							<div key={i} className="space-y-2">
+								<Skeleton className="aspect-square w-full rounded-lg" />
+								<Skeleton className="h-4 w-3/4" />
+								<Skeleton className="h-3 w-1/2" />
+							</div>
+						))}
+					</div>
+				)}
 
 			{/* Items grid */}
 			{itemsToDisplay.length > 0 && (
@@ -301,11 +316,14 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 								to={`/outpoint/${item.outpoint}`}
 								artifact={item}
 								size={300}
-								sizes={"(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"}
+								sizes={
+									"(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+								}
 								priority={idx < 10}
 								showListingTag={!!item.data?.list?.price}
 								classNames={{
-									wrapper: "bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors",
+									wrapper:
+										"bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors",
 									media: "bg-card",
 								}}
 							/>
@@ -315,11 +333,12 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 			)}
 
 			{/* Loading indicator for pagination */}
-			{loading.get(tab) === FetchStatus.Loading && itemsToDisplay.length > 0 && (
-				<div className="flex items-center justify-center py-8">
-					<Loader2 className="w-6 h-6 animate-spin text-primary" />
-				</div>
-			)}
+			{loading.get(tab) === FetchStatus.Loading &&
+				itemsToDisplay.length > 0 && (
+					<div className="flex items-center justify-center py-8">
+						<Loader2 className="w-6 h-6 animate-spin text-primary" />
+					</div>
+				)}
 
 			{/* Empty state */}
 			{itemsToDisplay.length === 0 &&

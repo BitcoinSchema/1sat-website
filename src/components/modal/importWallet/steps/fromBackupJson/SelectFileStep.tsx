@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useSignals } from "@preact/signals-react/runtime";
+import { AlertTriangle, Check, Download, FileJson, Upload } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
 import { toastErrorProps } from "@/constants";
 import {
 	ImportWalletFromBackupJsonStep,
@@ -10,10 +14,6 @@ import {
 } from "@/signals/wallet";
 import { setKeys } from "@/signals/wallet/client";
 import { backupKeys } from "@/utils/wallet";
-import { useSignals } from "@preact/signals-react/runtime";
-import toast from "react-hot-toast";
-import { AlertTriangle, Upload, FileJson, Check, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export function SelectFileStep() {
 	useSignals();
@@ -36,7 +36,7 @@ export function SelectFileStep() {
 	};
 
 	const processFile = useCallback((file: File) => {
-		if (!file.name.endsWith('.json')) {
+		if (!file.name.endsWith(".json")) {
 			toast.error("Please select a .json file", toastErrorProps);
 			return;
 		}
@@ -62,7 +62,9 @@ export function SelectFileStep() {
 					changeAddressPath: json.payDerivationPath,
 					ordAddressPath: json.ordDerivationPath,
 					...(!!json.identityPk && { identityPk: json.identityPk }),
-					...(!!json.identityDerivationPath && { identityAddressPath: json.identityDerivationPath }),
+					...(!!json.identityDerivationPath && {
+						identityAddressPath: json.identityDerivationPath,
+					}),
 				});
 				// go to the password step
 				importWalletFromBackupJsonStep.value =
@@ -70,7 +72,7 @@ export function SelectFileStep() {
 			} catch (_error) {
 				toast.error(
 					"Invalid JSON file. Please select a backup json.",
-					toastErrorProps
+					toastErrorProps,
 				);
 			}
 		};
@@ -124,7 +126,8 @@ export function SelectFileStep() {
 						Warning
 					</div>
 					<p className="text-sm text-yellow-300 font-mono">
-						Importing a new wallet will clear the existing one. Be sure you have a backup before proceeding.
+						Importing a new wallet will clear the existing one. Be sure you have
+						a backup before proceeding.
 					</p>
 				</div>
 			)}
@@ -139,11 +142,12 @@ export function SelectFileStep() {
 					relative border-2 border-dashed rounded-lg p-8
 					flex flex-col items-center justify-center gap-4
 					cursor-pointer transition-all duration-200
-					${isDragging 
-						? "border-primary bg-primary/10" 
-						: selectedFileName 
-							? "border-primary/50 bg-primary/5" 
-							: "border-border hover:border-muted-foreground hover:bg-muted/50"
+					${
+						isDragging
+							? "border-primary bg-primary/10"
+							: selectedFileName
+								? "border-primary/50 bg-primary/5"
+								: "border-border hover:border-muted-foreground hover:bg-muted/50"
 					}
 				`}
 			>
@@ -153,13 +157,19 @@ export function SelectFileStep() {
 							<Check className="w-6 h-6 text-primary" />
 						</div>
 						<div className="text-center">
-							<p className="text-sm font-mono text-foreground">{selectedFileName}</p>
-							<p className="text-xs text-muted-foreground mt-1">File selected</p>
+							<p className="text-sm font-mono text-foreground">
+								{selectedFileName}
+							</p>
+							<p className="text-xs text-muted-foreground mt-1">
+								File selected
+							</p>
 						</div>
 					</>
 				) : (
 					<>
-						<div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isDragging ? "bg-primary/20" : "bg-muted"}`}>
+						<div
+							className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isDragging ? "bg-primary/20" : "bg-muted"}`}
+						>
 							{isDragging ? (
 								<FileJson className="w-6 h-6 text-primary" />
 							) : (
@@ -202,11 +212,7 @@ export function SelectFileStep() {
 					</Button>
 				)}
 				{selectedBackupJson.value && (
-					<Button
-						type="button"
-						onClick={handleNext}
-						className="ml-auto"
-					>
+					<Button type="button" onClick={handleNext} className="ml-auto">
 						Continue
 					</Button>
 				)}

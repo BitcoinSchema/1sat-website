@@ -1,33 +1,33 @@
 "use client";
 
+import { computed } from "@preact/signals-react";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { useQuery } from "@tanstack/react-query";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo, useRef } from "react";
+import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
+import { FaHashtag } from "react-icons/fa6";
+import { GiPlainCircle } from "react-icons/gi";
+import { toBitcoin } from "satoshi-token";
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
+import { Button } from "@/components/ui/button";
 import { API_HOST, AssetType, MARKET_API_HOST } from "@/constants";
 import {
-	CurrencyDisplay,
 	bsv20Utxos,
+	CurrencyDisplay,
 	currencyDisplay,
 	exchangeRate,
 	usdRate,
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import type { OrdUtxo } from "@/types/ordinals";
 import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { minFee } from "@/utils/bsv20";
-import { computed } from "@preact/signals-react";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { useMemo, useRef } from "react";
-import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
-import { FaHashtag } from "react-icons/fa6";
-import { GiPlainCircle } from "react-icons/gi";
-import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
-import { useQuery } from "@tanstack/react-query";
-import type { OrdUtxo } from "@/types/ordinals";
 
 type IconProps = {
 	alt: string;
@@ -140,7 +140,7 @@ const TickerHeading = ({
 			ticker.contract === "LockToMintBsv20"
 		);
 	}, [ticker]);
-  
+
 	// const bsv21SupplyContent = computed(() => {
 	//   const totalSupply = ticker.amt;
 	//   let text = `${totalSupply?.toLocaleString()} `;
@@ -157,9 +157,9 @@ const TickerHeading = ({
 		enabled: !!id && isLtm,
 	});
 
-  // useEffect(() => {
-  //   console.log({ltmDetails});
-  // }, [ltmDetails]);
+	// useEffect(() => {
+	//   console.log({ltmDetails});
+	// }, [ltmDetails]);
 
 	const supplyContent = computed(() => {
 		if (type === AssetType.BSV20) {
@@ -169,9 +169,9 @@ const TickerHeading = ({
 			if (isPow20) {
 				return renderPOW20Supply();
 			}
-      if (isLtm) {
-        return renderLTMSupply();
-      }
+			if (isLtm) {
+				return renderLTMSupply();
+			}
 			return renderBSV21Supply();
 		}
 		return null;
@@ -212,7 +212,10 @@ const TickerHeading = ({
 						</Button>
 					</Link>
 				)}
-				<span title="Circulating Supply / Max Supply" className="text-muted-foreground">
+				<span
+					title="Circulating Supply / Max Supply"
+					className="text-muted-foreground"
+				>
 					{`${totalSupply.toLocaleString()} / ${maxSupply.toLocaleString()}`}
 				</span>
 			</>
@@ -260,16 +263,25 @@ const TickerHeading = ({
 			<>
 				{!pow20Details.owner && (
 					<Link href={"/mine"}>
-						<button type="button" className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-orange-900/30 text-orange-400 border border-orange-500/50 hover:bg-orange-900/50 transition mr-4">
+						<button
+							type="button"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-orange-900/30 text-orange-400 border border-orange-500/50 hover:bg-orange-900/50 transition mr-4"
+						>
 							Mine {ticker.sym}
 						</button>
 					</Link>
 				)}
-				<span title="Remaining Supply / Total Supply" className="text-muted-foreground">
+				<span
+					title="Remaining Supply / Total Supply"
+					className="text-muted-foreground"
+				>
 					{supplyText}
 				</span>
 				{!pow20Details.owner && (
-					<span title="Current Mining Difficulty" className="text-muted-foreground ml-4">
+					<span
+						title="Current Mining Difficulty"
+						className="text-muted-foreground ml-4"
+					>
 						Difficulty: {currentDifficulty}
 					</span>
 				)}
@@ -285,24 +297,31 @@ const TickerHeading = ({
 		const totalSupply = ltmDetails.origin.data.insc.json.amt;
 		const remainingSupply = ltmDetails.data.bsv20.amt;
 		const decimals = ltmDetails.origin.data.insc.json.dec;
-		console.log({totalSupply, remainingSupply, decimals});
+		console.log({ totalSupply, remainingSupply, decimals });
 		const adjustedTotalSupply = totalSupply / 10 ** decimals;
 		const adjustedRemainingSupply = Number(remainingSupply) / 10 ** decimals;
 
-		const supplyText = remainingSupply === "0"
-			? `Minted Out / ${adjustedTotalSupply.toLocaleString()}`
-			: `${adjustedRemainingSupply.toLocaleString()} / ${adjustedTotalSupply.toLocaleString()}`;
+		const supplyText =
+			remainingSupply === "0"
+				? `Minted Out / ${adjustedTotalSupply.toLocaleString()}`
+				: `${adjustedRemainingSupply.toLocaleString()} / ${adjustedTotalSupply.toLocaleString()}`;
 
 		return (
 			<>
 				{remainingSupply === "0" && (
 					<Link href={"https://locktomint.com"} target="_blank">
-						<button type="button" className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-blue-900/30 text-blue-400 border border-blue-500/50 hover:bg-blue-900/50 transition mr-4">
+						<button
+							type="button"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-blue-900/30 text-blue-400 border border-blue-500/50 hover:bg-blue-900/50 transition mr-4"
+						>
 							Mint {ticker.sym}
 						</button>
 					</Link>
 				)}
-				<span title="Remaining Supply / Total Supply" className="text-muted-foreground">
+				<span
+					title="Remaining Supply / Total Supply"
+					className="text-muted-foreground"
+				>
 					{supplyText}
 				</span>
 			</>
@@ -349,7 +368,9 @@ const TickerHeading = ({
 								{ticker.num}
 							</div>
 						)}
-						<span className="text-2xl md:text-4xl mr-4 font-bold text-foreground">{ticker.tick || ticker.sym}</span>
+						<span className="text-2xl md:text-4xl mr-4 font-bold text-foreground">
+							{ticker.tick || ticker.sym}
+						</span>
 					</div>
 				</td>
 				{currencyDisplay.value === CurrencyDisplay.BSV && (
@@ -453,7 +474,10 @@ const TickerHeading = ({
 			)}
 			{(ticker.pendingOps > 0 || !paidUp.value) && (
 				<tr className="group bg-yellow-900/20 border-b border-yellow-500/30">
-					<td className="px-4 py-3 text-yellow-400" colSpan={type === AssetType.BSV21 ? 5 : 4}>
+					<td
+						className="px-4 py-3 text-yellow-400"
+						colSpan={type === AssetType.BSV21 ? 5 : 4}
+					>
 						<span title={`${ticker.pendingOps} pending operations`}>
 							{bsvNeeded.value > 0
 								? `Needs ${bsvNeeded} BSV`

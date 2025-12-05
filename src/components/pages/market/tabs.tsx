@@ -1,11 +1,11 @@
 "use client";
 
-import { AssetType } from "@/constants";
-import Link from "next/link";
-import { currencyDisplay, CurrencyDisplay } from "@/signals/wallet";
-import { Button } from "@/components/ui/button";
-import { Plus, Bitcoin, DollarSign } from "lucide-react";
 import clsx from "clsx";
+import { Bitcoin, DollarSign, Plus } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { AssetType } from "@/constants";
+import { CurrencyDisplay, currencyDisplay } from "@/signals/wallet";
 
 const CurrencySwitch = () => {
 	return (
@@ -37,8 +37,9 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
 						"px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
 						{
 							"border-primary text-primary": selectedTab === AssetType.Ordinals,
-							"border-transparent text-muted-foreground hover:text-foreground": selectedTab !== AssetType.Ordinals,
-						}
+							"border-transparent text-muted-foreground hover:text-foreground":
+								selectedTab !== AssetType.Ordinals,
+						},
 					)}
 					aria-label="Ordinals"
 				>
@@ -52,8 +53,9 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
 						"px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
 						{
 							"border-primary text-primary": selectedTab === AssetType.BSV20,
-							"border-transparent text-muted-foreground hover:text-foreground": selectedTab !== AssetType.BSV20,
-						}
+							"border-transparent text-muted-foreground hover:text-foreground":
+								selectedTab !== AssetType.BSV20,
+						},
 					)}
 					aria-label="BSV20"
 				>
@@ -67,8 +69,9 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
 						"px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
 						{
 							"border-primary text-primary": selectedTab === AssetType.BSV21,
-							"border-transparent text-muted-foreground hover:text-foreground": selectedTab !== AssetType.BSV21,
-						}
+							"border-transparent text-muted-foreground hover:text-foreground":
+								selectedTab !== AssetType.BSV21,
+						},
 					)}
 					aria-label="BSV21"
 				>
@@ -77,12 +80,13 @@ const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
 			</div>
 
 			<div className="flex items-center pr-4">
-				{(selectedTab === AssetType.BSV21 || selectedTab === AssetType.BSV20) && <CurrencySwitch />}
+				{(selectedTab === AssetType.BSV21 ||
+					selectedTab === AssetType.BSV20) && <CurrencySwitch />}
 				{selectedTab === AssetType.Ordinals && (
 					<Button asChild size="sm" className="rounded-md">
 						<Link href={`/market/${selectedTab}/new`}>
-							<Plus className="w-4 h-4 mr-2" />
-							List
+							<Plus className="w-4 h-4" />
+							<span className="hidden md:inline ml-2">List</span>
 						</Link>
 					</Button>
 				)}

@@ -34,7 +34,7 @@ const OutpointTimeline = async ({ outpoint }: Props) => {
 					{
 						method: "POST",
 						body: JSON.stringify(spendOutpoints),
-					}
+					},
 				);
 
 				spends = await promiseSpends;
@@ -59,9 +59,7 @@ const OutpointTimeline = async ({ outpoint }: Props) => {
 			history={history}
 			spends={spends}
 			outpoint={outpoint}
-			content={
-				<Timeline history={history} spends={spends} listing={listing} />
-			}
+			content={<Timeline history={history} spends={spends} listing={listing} />}
 			activeTab={OutpointTab.Timeline}
 		/>
 	);

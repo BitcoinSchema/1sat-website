@@ -16,14 +16,8 @@ const Ordinals: React.FC<Props> = ({ artifacts, onClick }) => {
 						<Artifact
 							artifact={a}
 							onClick={() => onClick?.(`${a.txid}_${a.vout}`)}
-							key={`gridlist-${
-								a.origin?.outpoint || `${a.txid}_${a.vout}`
-							}`}
-							to={
-								onClick
-									? undefined
-									: `/outpoint/${a.txid}_${a.vout}`
-							}
+							key={`gridlist-${a.origin?.outpoint || `${a.txid}_${a.vout}`}`}
+							to={onClick ? undefined : `/outpoint/${a.txid}_${a.vout}`}
 							classNames={{
 								wrapper: "w-64 h-64 overflow-hidden mb-2",
 							}}

@@ -1,12 +1,12 @@
 "use client";
 
-import { FetchStatus, ORDFS } from "@/constants";
 import { MDXClient } from "next-mdx-remote-client/csr";
 import type { SerializeResult } from "next-mdx-remote-client/serialize";
 import { serialize } from "next-mdx-remote-client/serialize";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
+import { FetchStatus, ORDFS } from "@/constants";
 
 type MarkdownArtifactProps = {
 	origin?: string;
@@ -51,7 +51,9 @@ const MarkdownArtifact: React.FC<MarkdownArtifactProps> = ({
 		}
 	}, [mdxSource, fetchTextStatus, origin]);
 
-	return fetchTextStatus === FetchStatus.Success && mdxSource && "compiledSource" in mdxSource ? (
+	return fetchTextStatus === FetchStatus.Success &&
+		mdxSource &&
+		"compiledSource" in mdxSource ? (
 		<div
 			className={`flex items-center justify-center w-full h-full transition ${className || ""}`}
 		>

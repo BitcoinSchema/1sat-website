@@ -5,8 +5,8 @@ import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import TokenMarket from "../TokenMarket";
-import MarketTabs from "./tabs";
 import MarketLayout from "./MarketLayout";
+import MarketTabs from "./tabs";
 
 export interface MarketPageProps {
 	collections?: OrdUtxo[];

@@ -1,11 +1,11 @@
 "use client";
 
-import { MARKET_API_HOST, type SortBy, type AssetType } from "@/constants";
-import TickerHeading from "./heading";
 import { useQuery } from "@tanstack/react-query";
 import TokenListingSkeleton from "@/components/skeletons/listing/Token";
-import TickerContent from "./content";
+import { type AssetType, MARKET_API_HOST, type SortBy } from "@/constants";
 import type { TxoData } from "@/types/ordinals";
+import TickerContent from "./content";
+import TickerHeading from "./heading";
 
 export interface Holder {
 	address: string;
@@ -33,7 +33,7 @@ export type MarketData = {
 	marketCap: number;
 	holders: Holder[];
 	dec: number;
-  data: TxoData;
+	data: TxoData;
 	pctChange: number;
 	fundAddress: string;
 	fundTotal: string;
@@ -106,7 +106,7 @@ const List = ({
 	} = useQuery<MarketData[]>({
 		queryKey: ["marketData", type, id, sort, dir],
 		queryFn: async () => {
-			const url = `${MARKET_API_HOST}/market/${type}${id ? `/${id}` : ""}` //?sort=${sort}&dir=${dir}&limit=100`;
+			const url = `${MARKET_API_HOST}/market/${type}${id ? `/${id}` : ""}`; //?sort=${sort}&dir=${dir}&limit=100`;
 			const response = await fetch(url);
 			return response.json();
 		},

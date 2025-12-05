@@ -1,8 +1,8 @@
 "use client";
 
+import { Signal } from "@preact/signals-react";
 import type { Listing } from "@/types/bsv20";
 import type { BSV20TXO } from "@/types/ordinals";
-import { Signal } from "@preact/signals-react";
 
 export const listings = new Signal<Listing[] | null>(null);
 export const sales = new Signal<BSV20TXO[] | null>(null);

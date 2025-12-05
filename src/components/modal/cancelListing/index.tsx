@@ -1,36 +1,41 @@
 "use client";
 
-import { indexerBuyFee, SATS_PER_KB, toastErrorProps, toastProps } from "@/constants";
-import { bsv20Utxos, ordPk, payPk, utxos } from "@/signals/wallet";
-import { fundingAddress, ordAddress } from "@/signals/wallet/address";
-import type { Listing } from "@/types/bsv20";
-import { getUtxos } from "@/utils/address";
-import { notifyIndexer } from "@/utils/indexer";
+import { PrivateKey } from "@bsv/sdk";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { useCallback } from "react";
-import toast from "react-hot-toast";
 import {
-	cancelOrdListings,
 	type CancelOrdListingsConfig,
-	cancelOrdTokenListings,
 	type CancelOrdTokenListingsConfig,
+	cancelOrdListings,
+	cancelOrdTokenListings,
 	oneSatBroadcaster,
 	TokenType,
 	type Utxo,
 } from "js-1sat-ord";
-import { PrivateKey } from "@bsv/sdk";
-import type { OrdUtxo } from "@/types/ordinals";
+import { Loader2, XCircle } from "lucide-react";
+import { useCallback } from "react";
+import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
-	DialogHeader,
-	DialogTitle,
 	DialogDescription,
 	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2, XCircle } from "lucide-react";
+import {
+	indexerBuyFee,
+	SATS_PER_KB,
+	toastErrorProps,
+	toastProps,
+} from "@/constants";
+import { bsv20Utxos, ordPk, payPk, utxos } from "@/signals/wallet";
+import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import type { Listing } from "@/types/bsv20";
+import type { OrdUtxo } from "@/types/ordinals";
+import { getUtxos } from "@/utils/address";
+import { notifyIndexer } from "@/utils/indexer";
 
 interface CancelListingModalProps {
 	onClose: () => void;
@@ -52,7 +57,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
 	const cancelBsv20Listing = useCallback(
 		async (e: React.MouseEvent) => {
-      "use client";
+			"use client";
 
 			if (!fundingAddress.value) {
 				console.log("funding address not set");
@@ -98,15 +103,16 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 
 			const { tx, spentOutpoints, tokenChange, payChange } =
 				await cancelOrdTokenListings(config);
-        console.log({tx: tx.toHex()});
-        // const broadcaster = new OneSatBroadcaster(new FetchHttpClient(fetch));
-        const response = await tx.broadcast(oneSatBroadcaster());
-      console.log({response});
+			console.log({ tx: tx.toHex() });
+			// const broadcaster = new OneSatBroadcaster(new FetchHttpClient(fetch));
+			const response = await tx.broadcast(oneSatBroadcaster());
+			console.log({ response });
 			if (response.status === "success") {
 				notifyIndexer(response.txid);
 				bsv20Utxos.value =
 					bsv20Utxos.value?.filter(
-						(u: OrdUtxo) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1,
+						(u: OrdUtxo) =>
+							spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1,
 					) || [];
 				const changeOrdUtxos =
 					tokenChange?.map(
@@ -124,10 +130,11 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 							}) as OrdUtxo,
 					) || [];
 				bsv20Utxos.value = bsv20Utxos.value?.concat(changeOrdUtxos) || [];
-				utxos.value =
-					(utxos.value?.filter(
+				utxos.value = (
+					utxos.value?.filter(
 						(u: Utxo) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1,
-					) || []).concat(payChange || []);
+					) || []
+				).concat(payChange || []);
 
 				console.log("broadcasted tx", { txid: response.txid });
 				toast.success("Transaction broadcasted.", toastProps);
@@ -136,7 +143,10 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 				onCancelled(newOutpoint);
 			} else if (response.status === "error") {
 				console.error(e);
-				toast.error(`Error broadcasting transaction. ${response.description}`, toastErrorProps);
+				toast.error(
+					`Error broadcasting transaction. ${response.description}`,
+					toastErrorProps,
+				);
 			}
 
 			cancelling.value = false;
@@ -198,9 +208,9 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 				toast.success("Listing canceled.", toastProps);
 				const newOutpoint = `${txid}_0`;
 
-				utxos.value = ((utxos.value || []).filter(
-					(u) => !spentOutpoints.includes(`${u.txid}_${u.vout}`),
-				)).concat(payChange || []);
+				utxos.value = (utxos.value || [])
+					.filter((u) => !spentOutpoints.includes(`${u.txid}_${u.vout}`))
+					.concat(payChange || []);
 				onCancelled(newOutpoint);
 			} else if (status === "error") {
 				toast.error("Error broadcasting transaction.", toastErrorProps);
@@ -230,16 +240,15 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 					</DialogTitle>
 					<DialogDescription className="font-mono text-sm text-zinc-400">
 						Are you sure you want to cancel the listing for{" "}
-						<span className="text-zinc-200">{listing.tick || listing.sym || "this ordinal"}</span>?
+						<span className="text-zinc-200">
+							{listing.tick || listing.sym || "this ordinal"}
+						</span>
+						?
 					</DialogDescription>
 				</DialogHeader>
 
 				<DialogFooter className="flex gap-2 pt-4 border-t border-zinc-800">
-					<Button
-						type="button"
-						variant="outline"
-						onClick={onClose}
-					>
+					<Button type="button" variant="outline" onClick={onClose}>
 						Close
 					</Button>
 					{listing && (
@@ -266,7 +275,9 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 								}
 							}}
 						>
-							{cancelling.value && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+							{cancelling.value && (
+								<Loader2 className="w-4 h-4 animate-spin mr-2" />
+							)}
 							Cancel Listing
 						</Button>
 					)}

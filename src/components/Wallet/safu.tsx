@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { showUnlockWalletModal } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
 import { Lock, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { showUnlockWalletModal } from "@/signals/wallet";
 
 const SAFU = () => {
 	useSignals();

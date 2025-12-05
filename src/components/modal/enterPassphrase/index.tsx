@@ -1,5 +1,7 @@
 "use client";
 
+import { useSignals } from "@preact/signals-react/runtime";
+import { Lock } from "lucide-react";
 import EnterPassphrase from "@/components/Passphrase";
 import {
 	Dialog,
@@ -8,8 +10,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { EncryptDecrypt } from "@/types/wallet";
-import { useSignals } from "@preact/signals-react/runtime";
-import { Lock } from "lucide-react";
 
 interface Props {
 	open: boolean;

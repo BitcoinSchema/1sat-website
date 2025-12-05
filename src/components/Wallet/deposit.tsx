@@ -1,9 +1,9 @@
 "use client";
-import { fundingAddress } from "@/signals/wallet/address";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import { FaCopy } from "react-icons/fa";
 import { useCopyToClipboard } from "usehooks-ts";
+import { fundingAddress } from "@/signals/wallet/address";
 
 const Deposit = () => {
 	const [_text, copy] = useCopyToClipboard();

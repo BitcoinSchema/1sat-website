@@ -20,7 +20,7 @@ export const getHolders = async ({
 			: `${API_HOST}/api/bsv20/id/${id}/holders`;
 
 	const holdersResp = await fetch(
-		`${url}?limit=${resultsPerPage}&offset=${offset}`
+		`${url}?limit=${resultsPerPage}&offset=${offset}`,
 	);
 	const holdersJson = (await holdersResp.json()) || [];
 	const holders =

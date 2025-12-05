@@ -1,20 +1,20 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { signal, computed } from "@preact/signals-react";
+import { computed, signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-	Filter,
-	X,
 	ArrowUpDown,
-	DollarSign,
-	Sparkles,
 	ChevronDown,
 	ChevronUp,
+	DollarSign,
+	Filter,
+	Sparkles,
+	X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import type { ItemSort, MarketSort } from "@/utils/fetchCollectionData";
 
 // Signals for collection item filters
@@ -256,7 +256,7 @@ export const CollectionFilters = ({
 															"w-full flex items-center justify-between px-2 py-1.5 rounded text-xs transition-all",
 															isSelected
 																? "bg-primary/10 text-primary"
-																: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+																: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 														)}
 													>
 														<span className="font-mono">{value}</span>
@@ -331,4 +331,3 @@ export const CollectionFilters = ({
 };
 
 export default CollectionFilters;
-

@@ -1,11 +1,11 @@
+import { ImageResponse } from "next/og";
+import { NextRequest } from "next/server";
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
 import { API_HOST, AssetType } from "@/constants";
 import type { BSV20 } from "@/types/bsv20";
 import { getCapitalizedAssetType } from "@/utils/assetType";
 import { getNotoSerifItalicFont } from "@/utils/font";
-import { ImageResponse } from "next/og";
-import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
@@ -36,23 +36,21 @@ export default async function Image({
 	const tokenName = type === AssetType.BSV20 ? id : details.sym;
 
 	return new ImageResponse(
-		(
-			<Container>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-					}}
-				>
-					<div>{assetType}</div>
-					<div>{tokenName}</div>
-					<div>holders</div>
-				</div>
+		<Container>
+			<div
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+				}}
+			>
+				<div>{assetType}</div>
+				<div>{tokenName}</div>
+				<div>holders</div>
+			</div>
 
-				<Logo />
-			</Container>
-		),
+			<Logo />
+		</Container>,
 		{
 			...size,
 			fonts: [
@@ -63,7 +61,7 @@ export default async function Image({
 					weight: 400,
 				},
 			],
-		}
+		},
 	);
 }
 

@@ -1,5 +1,9 @@
 "use client";
 
+import { Signal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
+import { ChevronDown, Filter as FilterIcon, Terminal } from "lucide-react";
+import toast from "react-hot-toast";
 import { ArtifactType, artifactTypeMap } from "@/components/artifact";
 import {
 	DropdownMenu,
@@ -7,10 +11,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Signal } from "@preact/signals-react";
-import { useSignals } from "@preact/signals-react/runtime";
-import { ChevronDown, Filter as FilterIcon, Terminal } from "lucide-react";
-import toast from "react-hot-toast";
 
 const Filter = () => {
 	useSignals();

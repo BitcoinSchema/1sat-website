@@ -1,5 +1,5 @@
-import type { AssetType } from "@/constants";
 import { Suspense } from "react";
+import type { AssetType } from "@/constants";
 import TokenListingSkeleton from "../skeletons/listing/Token";
 import List from "./list";
 

@@ -3,10 +3,10 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { customFetch } from "@/utils/httpClient";
 
 export const fetchOrdinal = async (outpoint: string) => {
-  const { promise } = customFetch<OrdUtxo>(
-    `${API_HOST}/api/inscriptions/${outpoint}?script=true`
-  );
-  return await promise;
+	const { promise } = customFetch<OrdUtxo>(
+		`${API_HOST}/api/inscriptions/${outpoint}?script=true`,
+	);
+	return await promise;
 };
 
 // Re-export for backward compatibility

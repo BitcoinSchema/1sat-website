@@ -1,5 +1,21 @@
 "use client";
 
+import { PrivateKey, Utils } from "@bsv/sdk";
+import { computed, effect } from "@preact/signals-react";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { type AuthConfig, getAuthToken, parseAuthToken } from "bitcoin-auth";
+import { useCallback } from "react";
+import toast from "react-hot-toast";
+import { FaChevronDown, FaCircle } from "react-icons/fa6";
+import { useCopyToClipboard } from "usehooks-ts";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import SAFU from "@/components/Wallet/safu";
 import {
 	encryptedBackup,
@@ -9,16 +25,6 @@ import {
 	showUnlockWalletModal,
 } from "@/signals/wallet";
 import { ordAddress } from "@/signals/wallet/address";
-import { PrivateKey, Utils } from "@bsv/sdk";
-import { getAuthToken, parseAuthToken, type AuthConfig } from "bitcoin-auth";
-import { computed, effect } from "@preact/signals-react";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import { useCallback } from "react";
-import toast from "react-hot-toast";
-import { FaChevronDown, FaCircle } from "react-icons/fa6";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useCopyToClipboard } from "usehooks-ts";
 
 const SignMessagePage = ({
 	message,
@@ -97,7 +103,8 @@ const SignMessagePage = ({
 
 			// If callback URL is present, redirect with authToken in query params
 			if (callback) {
-				const keyType = activeKey.value === ordPk.value ? "ordinals" : "payment";
+				const keyType =
+					activeKey.value === ordPk.value ? "ordinals" : "payment";
 
 				// Build callback URL with query params
 				const callbackUrl = new URL(callback);
@@ -128,7 +135,15 @@ const SignMessagePage = ({
 				`Signing error: ${error instanceof Error ? error.message : "Unknown error"}`,
 			);
 		}
-	}, [ordPk.value, locked.value, activeKey.value, message, callback, state, proof]);
+	}, [
+		ordPk.value,
+		locked.value,
+		activeKey.value,
+		message,
+		callback,
+		state,
+		proof,
+	]);
 
 	const toggleActiveKey = () => {
 		showActiveKeySwitcher.value = !showActiveKeySwitcher.value;
@@ -196,21 +211,30 @@ const SignMessagePage = ({
 									id="key-switcher-ord"
 									onClick={changeActiveKey}
 								>
-									{activeKey.value === ordPk.value && <FaCircle className="w-3 text-yellow-200/60 mr-2" />} Ordinals
+									{activeKey.value === ordPk.value && (
+										<FaCircle className="w-3 text-yellow-200/60 mr-2" />
+									)}{" "}
+									Ordinals
 								</div>
 								<div
 									className="cursor-pointer hover:bg-muted mb-1 p-2 w-full flex items-center justify-end"
 									id="key-switcher-pay"
 									onClick={changeActiveKey}
 								>
-									{activeKey.value === payPk.value && <FaCircle className="w-3 text-yellow-200/60 mr-2" />} Payment
+									{activeKey.value === payPk.value && (
+										<FaCircle className="w-3 text-yellow-200/60 mr-2" />
+									)}{" "}
+									Payment
 								</div>
 								<div
 									className="cursor-pointer hover:bg-muted mb-1 p-2 w-full flex items-center justify-end"
 									id="key-switcher-identity"
 									onClick={changeActiveKey}
 								>
-									{activeKey.value === "replaceMes" && <FaCircle className="w-3 text-yellow-200/60 mr-2" />} Identity
+									{activeKey.value === "replaceMes" && (
+										<FaCircle className="w-3 text-yellow-200/60 mr-2" />
+									)}{" "}
+									Identity
 								</div>
 							</div>
 						)}
@@ -222,8 +246,13 @@ const SignMessagePage = ({
 				</p>
 
 				{!callback && (
-					<p className={`${proof.value ? 'opacity-100' : 'opacity-0'} transition text-xs border border-border rounded p-2 h-16 break-all leading-loose bg-card`}>
-						<span className="text-muted-foreground mr-2">{proof.value ? "Signature": ""}</span> {proof.value}
+					<p
+						className={`${proof.value ? "opacity-100" : "opacity-0"} transition text-xs border border-border rounded p-2 h-16 break-all leading-loose bg-card`}
+					>
+						<span className="text-muted-foreground mr-2">
+							{proof.value ? "Signature" : ""}
+						</span>{" "}
+						{proof.value}
 					</p>
 				)}
 

@@ -1,20 +1,20 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
+	Box,
+	FileCode,
 	Hash,
 	ImageIcon,
 	Music,
-	Box,
-	FileCode,
-	Video,
 	Plus,
+	Video,
 } from "lucide-react";
 import Link from "next/link";
 import { ArtifactType } from "@/components/artifact";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 // Use the SAME selectedType signal that OrdinalListings uses
 import { selectedType } from "@/components/Wallet/filter";
 
@@ -53,7 +53,9 @@ export default function MarketFilterSidebar() {
 						</h3>
 						<div className="space-y-1">
 							{ARTIFACT_FILTERS.map(({ type, icon: Icon, label }) => {
-								const isActive = selectedType.value === type || (!selectedType.value && type === ArtifactType.All);
+								const isActive =
+									selectedType.value === type ||
+									(!selectedType.value && type === ArtifactType.All);
 								return (
 									<button
 										key={type}
@@ -61,9 +63,10 @@ export default function MarketFilterSidebar() {
 										onClick={() => handleFilterClick(type)}
 										className={`
 											w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all
-											${isActive
-												? "bg-primary/10 text-primary border-r-2 border-primary"
-												: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+											${
+												isActive
+													? "bg-primary/10 text-primary border-r-2 border-primary"
+													: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
 											}
 										`}
 									>
@@ -89,9 +92,9 @@ export default function MarketFilterSidebar() {
 							asChild
 							className="w-full rounded-md font-mono text-xs uppercase tracking-wider border-border text-muted-foreground hover:text-primary hover:border-primary hover:bg-primary/10 justify-start gap-2 h-9"
 						>
-							<Link href="/market/ordinals/new">
+							<Link href="/market/ordinals/new" className="flex items-center gap-2">
 								<Plus className="w-4 h-4" />
-								Create Listing
+								<span className="hidden md:inline">Create Listing</span>
 							</Link>
 						</Button>
 					</div>

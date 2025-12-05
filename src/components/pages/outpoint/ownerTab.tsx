@@ -1,8 +1,8 @@
 "use client";
-import { ordAddress } from "@/signals/wallet/address";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ordAddress } from "@/signals/wallet/address";
 import { OutpointTab } from "./tabs";
 
 const OwnerTab: React.FC<{
@@ -29,13 +29,12 @@ const OwnerTab: React.FC<{
 	};
 
 	return (
-		isClient && owner === ordAddress.value && (
+		isClient &&
+		owner === ordAddress.value && (
 			<button
 				type="button"
 				role="tab"
-				className={`tab ${
-					activeTab === OutpointTab.Owner ? "tab-active" : ""
-				}`}
+				className={`tab ${activeTab === OutpointTab.Owner ? "tab-active" : ""}`}
 				onClick={handleClick}
 			>
 				Owner

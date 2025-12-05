@@ -1,246 +1,265 @@
-"use client"
+"use client";
 
-import { FetchStatus } from "@/constants";
-import { generatedImage } from "@/signals/ai";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useChat } from "@ai-sdk/react";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import React, {
+	type ChangeEvent,
+	type FormEvent,
+	useCallback,
+	useState,
+} from "react";
+import { FaMicrophone } from "react-icons/fa";
+import { FaStop } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import React, { useCallback, useState, type ChangeEvent, type FormEvent } from "react";
-import { FaMicrophone } from "react-icons/fa";
-import { FaStop } from "react-icons/fa6";
+import { FetchStatus } from "@/constants";
+import { generatedImage } from "@/signals/ai";
 
 interface ViviBtnProps {
-  className?: string;
+	className?: string;
 }
 
 const ViviButton: React.FC<ViviBtnProps> = ({ className }) => {
-  useSignals();
-  const router = useRouter();
-  const formRef = React.createRef<HTMLFormElement>();
-  const { sendMessage, messages } = useChat();
-  const [input, setInput] = React.useState<string>("");
-  const audioChunks = useSignal<Blob[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
-    null
-  );
+	useSignals();
+	const router = useRouter();
+	const formRef = React.createRef<HTMLFormElement>();
+	const { sendMessage, messages } = useChat();
+	const [input, setInput] = React.useState<string>("");
+	const audioChunks = useSignal<Blob[]>([]);
+	const [isRecording, setIsRecording] = useState(false);
+	const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+		null,
+	);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-  }, []);
+	const handleInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			setInput(e.target.value);
+		},
+		[],
+	);
 
-  const onSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+	const onSubmit = useCallback(
+		(e: React.FormEvent<HTMLFormElement>) => {
+			e.preventDefault();
 
-    // Send the message using the new AI SDK v5 API
-    if (input.trim()) {
-      sendMessage({
-        role: "user",
-        parts: [{ type: "text", text: input }],
-      });
-    }
+			// Send the message using the new AI SDK v5 API
+			if (input.trim()) {
+				sendMessage({
+					role: "user",
+					parts: [{ type: "text", text: input }],
+				});
+			}
 
-    // Clear input after sending
-    setInput("");
-  }, [input, sendMessage]);
+			// Clear input after sending
+			setInput("");
+		},
+		[input, sendMessage],
+	);
 
-  const doneRecording = useCallback(
-    async (audioFile: File) => {
-      console.log("Audio data is available. Sending to OpenAI...");
+	const doneRecording = useCallback(
+		async (audioFile: File) => {
+			console.log("Audio data is available. Sending to OpenAI...");
 
-      const { transcription } = await fetchTranscription(audioFile);
-      if (transcription) {
-        console.log("Transcription:", transcription);
-        const e: ChangeEvent<HTMLInputElement> = {
-          target: { value: transcription },
-        } as ChangeEvent<HTMLInputElement>;
+			const { transcription } = await fetchTranscription(audioFile);
+			if (transcription) {
+				console.log("Transcription:", transcription);
+				const e: ChangeEvent<HTMLInputElement> = {
+					target: { value: transcription },
+				} as ChangeEvent<HTMLInputElement>;
 
-        handleInputChange(e);
-      }
-    },
-    [handleInputChange]
-  );
+				handleInputChange(e);
+			}
+		},
+		[handleInputChange],
+	);
 
-  // useEffect(() => {
-  //   if (input) {
-  //     const e: React.FormEvent<HTMLFormElement> = {
-  //       currentTarget: formRef.current,
-  //       preventDefault: () => { },
-  //     } as React.FormEvent<HTMLFormElement>;
+	// useEffect(() => {
+	//   if (input) {
+	//     const e: React.FormEvent<HTMLFormElement> = {
+	//       currentTarget: formRef.current,
+	//       preventDefault: () => { },
+	//     } as React.FormEvent<HTMLFormElement>;
 
-  //     handleSubmit(e, options);
-  //   }
-  // }, [formRef, handleSubmit, input]);
+	//     handleSubmit(e, options);
+	//   }
+	// }, [formRef, handleSubmit, input]);
 
-  const handleRecording = () => {
-    if (!isRecording) {
-      console.log("Starting recording...");
-      if (!navigator.mediaDevices || !window.AudioContext) {
-        console.error(
-          "Your browser does not support the required audio features."
-        );
-        return;
-      }
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          const newMediaRecorder = new MediaRecorder(stream);
-          setMediaRecorder(newMediaRecorder);
-          newMediaRecorder.start();
-          setIsRecording(true);
+	const handleRecording = () => {
+		if (!isRecording) {
+			console.log("Starting recording...");
+			if (!navigator.mediaDevices || !window.AudioContext) {
+				console.error(
+					"Your browser does not support the required audio features.",
+				);
+				return;
+			}
+			navigator.mediaDevices
+				.getUserMedia({ audio: true })
+				.then((stream) => {
+					const newMediaRecorder = new MediaRecorder(stream);
+					setMediaRecorder(newMediaRecorder);
+					newMediaRecorder.start();
+					setIsRecording(true);
 
-          newMediaRecorder.ondataavailable = (event) => {
-            audioChunks.value.push(event.data);
-          };
+					newMediaRecorder.ondataavailable = (event) => {
+						audioChunks.value.push(event.data);
+					};
 
-          newMediaRecorder.onstop = async () => {
-            const blob = new Blob(audioChunks.value, {
-              type: "audio/ogg; codecs=opus",
-            });
-            const file = new File([blob], "audio.ogg", {
-              type: blob.type,
-            });
-            // console.log("Recording stopped. Audio data is available.", file.size);
-            // const uploadResponse = await uploadFiles("audioUploader", {
-            //   files: [file],
-            // });
-            // audioChunks.value = []; // Reset audio chunks for the next recording
-            doneRecording(file);
-          };
-        })
-        .catch((error) => {
-          console.error("Error accessing microphone:", error);
-        });
-    } else {
-      console.log("Stopping recording...");
-      // Stop the recording
-      mediaRecorder?.stop();
-      setIsRecording(false);
-    }
-  };
+					newMediaRecorder.onstop = async () => {
+						const blob = new Blob(audioChunks.value, {
+							type: "audio/ogg; codecs=opus",
+						});
+						const file = new File([blob], "audio.ogg", {
+							type: blob.type,
+						});
+						// console.log("Recording stopped. Audio data is available.", file.size);
+						// const uploadResponse = await uploadFiles("audioUploader", {
+						//   files: [file],
+						// });
+						// audioChunks.value = []; // Reset audio chunks for the next recording
+						doneRecording(file);
+					};
+				})
+				.catch((error) => {
+					console.error("Error accessing microphone:", error);
+				});
+		} else {
+			console.log("Stopping recording...");
+			// Stop the recording
+			mediaRecorder?.stop();
+			setIsRecording(false);
+		}
+	};
 
-  const [generatingImage, setGeneratingImage] = useState(FetchStatus.Idle);
-  const handleImageGeneration = useCallback(async () => {
-    if (input) {
-      setGeneratingImage(FetchStatus.Loading);
-      try {
+	const [generatingImage, setGeneratingImage] = useState(FetchStatus.Idle);
+	const handleImageGeneration = useCallback(async () => {
+		if (input) {
+			setGeneratingImage(FetchStatus.Loading);
+			try {
+				const b64Json = await generateImage(input);
+				setGeneratingImage(FetchStatus.Success);
+				if (b64Json) {
+					generatedImage.value = {
+						name: b64Json.created.toString(),
+						data: b64Json.data[0].b64_json,
+					};
+					// Add the generated image URL to the content with a prefix
+					// const imageMessage = `[B64JSON]: ${imageUrl}`;
+					// append({ role: "assistant", content: imageMessage, id: Date.now().toString() });
+					// Navigate to the inscribe page with the imageUrl parameter
+					router.push("/inscribe?tab=image&generated=true");
+				}
+			} catch (error) {
+				console.error("Error generating image:", error);
+				setGeneratingImage(FetchStatus.Error);
+			}
+		}
+	}, [input, router]);
 
-        const b64Json = await generateImage(input);
-        setGeneratingImage(FetchStatus.Success);
-        if (b64Json) {
-          generatedImage.value = {
-            name: b64Json.created.toString(),
-            data: b64Json.data[0].b64_json,
-          }
-          // Add the generated image URL to the content with a prefix
-          // const imageMessage = `[B64JSON]: ${imageUrl}`;
-          // append({ role: "assistant", content: imageMessage, id: Date.now().toString() });
-          // Navigate to the inscribe page with the imageUrl parameter
-          router.push("/inscribe?tab=image&generated=true");
-        }
-      } catch (error) {
-        console.error("Error generating image:", error);
-        setGeneratingImage(FetchStatus.Error);
-      }
-    }
-  }, [input, router]);
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === "Enter") {
+				const e: FormEvent<HTMLFormElement> = {
+					currentTarget: formRef.current,
+					preventDefault: () => {},
+				} as FormEvent<HTMLFormElement>;
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      const e: FormEvent<HTMLFormElement> = {
-        currentTarget: formRef.current,
-        preventDefault: () => { },
-      } as FormEvent<HTMLFormElement>;
+				onSubmit(e); //, options);
+			}
+		},
+		[formRef, onSubmit],
+	);
 
-      onSubmit(e) //, options);
-    }
-  }, [formRef, onSubmit]);
+	const renderMessage = (message: string) => {
+		const imageUrlPrefix = "[IMAGE_URL]: ";
+		if (message.startsWith(imageUrlPrefix)) {
+			const imageUrl = message.slice(imageUrlPrefix.length);
+			return (
+				<Image
+					src={imageUrl}
+					alt="Generated"
+					className="mt-2"
+					width={200}
+					height={200}
+				/>
+			);
+		}
+		return message;
+	};
 
-  const renderMessage = (message: string) => {
-    const imageUrlPrefix = "[IMAGE_URL]: ";
-    if (message.startsWith(imageUrlPrefix)) {
-      const imageUrl = message.slice(imageUrlPrefix.length);
-      return (
-        <Image src={imageUrl} alt="Generated" className="mt-2" width={200} height={200} />
-      );
-    }
-    return message;
-  };
-
-
-  return (
-    <div className="bg-[#222] border-amber-500/25 border rounded-lg p-4">
-      <div className="flex space-x-2 justify-between">
-        <Button
-          type="button"
-          variant="ghost"
-          className={`text-[#aaa] ${className}`}
-          onClick={handleRecording}
-        >
-          {isRecording ? <FaStop /> : <FaMicrophone />}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={generatingImage === FetchStatus.Loading}
-          className={`text-[#aaa] disabled:text-[#555] ${className}`}
-          onClick={handleImageGeneration}
-        >
-          Generate Image
-        </Button>
-      </div>
-      <Separator className="my-4" />
-      <div className="flex flex-col h-full w-full max-w-md py-24 mx-auto stretch">
-        {messages.map((m) => (
-          <div key={m.id} className="whitespace-pre-wrap h-full text-[#aaa]">
-            {m.role === "user" ? "User: " : "AI: "}
-            {m.parts.map((part, i) => {
-              if (typeof part === "object" && "text" in part && part.text) {
-                return <span key={`${m.id}-${i}`}>{renderMessage(part.text)}</span>;
-              }
-              return null;
-            })}
-          </div>
-        ))}
-      </div>
-      <form
-          ref={formRef}
-          onSubmit={(e) => {
-            onSubmit(e);
-          }}
-        />
-         <Input
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
-          className="text-[#aaa] placeholder:text-[#555] mt-2"
-        />
-    </div>
-  );
+	return (
+		<div className="bg-[#222] border-amber-500/25 border rounded-lg p-4">
+			<div className="flex space-x-2 justify-between">
+				<Button
+					type="button"
+					variant="ghost"
+					className={`text-[#aaa] ${className}`}
+					onClick={handleRecording}
+				>
+					{isRecording ? <FaStop /> : <FaMicrophone />}
+				</Button>
+				<Button
+					type="button"
+					variant="ghost"
+					disabled={generatingImage === FetchStatus.Loading}
+					className={`text-[#aaa] disabled:text-[#555] ${className}`}
+					onClick={handleImageGeneration}
+				>
+					Generate Image
+				</Button>
+			</div>
+			<Separator className="my-4" />
+			<div className="flex flex-col h-full w-full max-w-md py-24 mx-auto stretch">
+				{messages.map((m) => (
+					<div key={m.id} className="whitespace-pre-wrap h-full text-[#aaa]">
+						{m.role === "user" ? "User: " : "AI: "}
+						{m.parts.map((part, i) => {
+							if (typeof part === "object" && "text" in part && part.text) {
+								return (
+									<span key={`${m.id}-${i}`}>{renderMessage(part.text)}</span>
+								);
+							}
+							return null;
+						})}
+					</div>
+				))}
+			</div>
+			<form
+				ref={formRef}
+				onSubmit={(e) => {
+					onSubmit(e);
+				}}
+			/>
+			<Input
+				type="text"
+				value={input}
+				onChange={handleInputChange}
+				onKeyDown={handleKeyDown}
+				placeholder="Type your message..."
+				className="text-[#aaa] placeholder:text-[#555] mt-2"
+			/>
+		</div>
+	);
 };
 
 export default ViviButton;
 
-
 export const fetchTranscription = async (audioFile: File) => {
-  const formData = new FormData();
-  formData.append("file", audioFile);
+	const formData = new FormData();
+	formData.append("file", audioFile);
 
-  try {
-    const response = await fetch("/api/openai/transcribe", {
-      method: "POST",
-      body: formData,
-    });
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching transcription:", error);
-  }
+	try {
+		const response = await fetch("/api/openai/transcribe", {
+			method: "POST",
+			body: formData,
+		});
+		return await response.json();
+	} catch (error) {
+		console.error("Error fetching transcription:", error);
+	}
 };
 
 // const options = {
@@ -251,29 +270,28 @@ export const fetchTranscription = async (audioFile: File) => {
 // };
 
 type ImageData = {
-  revised_prompt: string;
-  b64_json: string;
-}
-
-type ImageGenerationResponse = {
-  created: number,
-  data: ImageData[],
-}
-
-export const generateImage = async (prompt: string) => {
-  const formData = new FormData();
-  formData.append("prompt", prompt);
-  if (prompt.length === 0) {
-    return;
-  }
-  try {
-    const response = await fetch("/api/openai/generate", {
-      method: "POST",
-      body: formData,
-    });
-    return await response.json() as ImageGenerationResponse;
-  } catch (error) {
-    console.error("Error fetching transcription:", error);
-  }
+	revised_prompt: string;
+	b64_json: string;
 };
 
+type ImageGenerationResponse = {
+	created: number;
+	data: ImageData[];
+};
+
+export const generateImage = async (prompt: string) => {
+	const formData = new FormData();
+	formData.append("prompt", prompt);
+	if (prompt.length === 0) {
+		return;
+	}
+	try {
+		const response = await fetch("/api/openai/generate", {
+			method: "POST",
+			body: formData,
+		});
+		return (await response.json()) as ImageGenerationResponse;
+	} catch (error) {
+		console.error("Error fetching transcription:", error);
+	}
+};

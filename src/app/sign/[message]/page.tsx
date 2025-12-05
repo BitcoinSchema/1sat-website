@@ -10,11 +10,7 @@ const Prove = async ({
 	const { message } = await params;
 	const { callback, state } = await searchParams;
 	return (
-		<SignMessagePage
-			message={message}
-			callback={callback}
-			state={state}
-		/>
+		<SignMessagePage message={message} callback={callback} state={state} />
 	);
 };
 

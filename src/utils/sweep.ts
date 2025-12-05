@@ -1,13 +1,13 @@
-import { SATS_PER_KB, } from "@/constants";
-import { notifyIndexer } from "@/utils/indexer";
 import type { PrivateKey } from "@bsv/sdk";
 import {
 	fetchPayUtxos,
 	oneSatBroadcaster,
 	type Payment,
-	sendUtxos,
 	type SendUtxosConfig,
+	sendUtxos,
 } from "js-1sat-ord";
+import { SATS_PER_KB } from "@/constants";
+import { notifyIndexer } from "@/utils/indexer";
 
 export const sweepUtxos = async (
 	paymentPk: PrivateKey,

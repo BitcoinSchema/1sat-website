@@ -1,14 +1,14 @@
 "use client";
 
-import type { CollectionStats } from "@/types/collection";
-import type { OrdUtxo } from "@/types/ordinals";
+import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import type { CollectionStats } from "@/types/collection";
+import type { OrdUtxo } from "@/types/ordinals";
 import { CollectionList } from "./CollectionList";
 import { CollectionNavigation } from "./CollectionNavigation";
 import Traits, { type Collection } from "./Traits";
-import { Badge } from "@/components/ui/badge";
 
 interface Props {
 	stats: CollectionStats;

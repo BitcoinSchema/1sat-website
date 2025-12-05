@@ -1,74 +1,72 @@
+import { redirect } from "next/navigation";
 import MarketPage from "@/components/pages/market";
 import { API_HOST, AssetType } from "@/constants";
 import type { BSV20 } from "@/types/bsv20";
 import { getCapitalizedAssetType } from "@/utils/assetType";
-import { redirect } from "next/navigation";
 
 const Market = async ({
-  params,
+	params,
 }: {
-  params: Promise<{ tab: AssetType; id: string }>;
+	params: Promise<{ tab: AssetType; id: string }>;
 }) => {
-  const { tab, id } = await params;
-  // hit the details request
+	const { tab, id } = await params;
+	// hit the details request
 
-  const tickOrId = decodeURIComponent(id);
-  switch (tab) {
-    case AssetType.Ordinals:
-      //       const urlImages = `${MARKET_API_HOST}/market/${tab}/${id}`;
-      // const { promise } = http.customFetch(urlImages);
-      // const marketData = await promise;
-      // console.log(marketData);
-      // TODO: redirect to outpoint page
-  return redirect(`/outpoint/${id}`);
-    case AssetType.BSV20:
-      return (
-        <MarketPage selectedAssetType={AssetType.BSV20} id={tickOrId} />
-      );
-    case AssetType.BSV21:
-      return (
-        <MarketPage selectedAssetType={AssetType.BSV21} id={tickOrId} />
-      );
-    default:
-      return null;
-  }
+	const tickOrId = decodeURIComponent(id);
+	switch (tab) {
+		case AssetType.Ordinals:
+			//       const urlImages = `${MARKET_API_HOST}/market/${tab}/${id}`;
+			// const { promise } = http.customFetch(urlImages);
+			// const marketData = await promise;
+			// console.log(marketData);
+			// TODO: redirect to outpoint page
+			return redirect(`/outpoint/${id}`);
+		case AssetType.BSV20:
+			return <MarketPage selectedAssetType={AssetType.BSV20} id={tickOrId} />;
+		case AssetType.BSV21:
+			return <MarketPage selectedAssetType={AssetType.BSV21} id={tickOrId} />;
+		default:
+			return null;
+	}
 };
 export default Market;
 
 export async function generateMetadata({
-  params,
+	params,
 }: {
-  params: Promise<{ tab: AssetType; id: string }>;
+	params: Promise<{ tab: AssetType; id: string }>;
 }) {
-  const { tab, id } = await params;
-  let ticker: string | undefined;
-  let _icon: string | undefined;
-  const assetType = getCapitalizedAssetType(tab);
-  if (tab === AssetType.BSV20) {
-    ticker = id;
-  } else if (tab === AssetType.BSV21) {
-    const detailsUrl = `${API_HOST}/api/bsv20/id/${id}`;
-    const details = await fetch(detailsUrl).then(
-      (res) => res.json() as Promise<BSV20>
-    );
-    ticker = details.sym;
-    _icon = details.icon || "b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
-  }
+	const { tab, id } = await params;
+	let ticker: string | undefined;
+	let _icon: string | undefined;
+	const assetType = getCapitalizedAssetType(tab);
+	if (tab === AssetType.BSV20) {
+		ticker = id;
+	} else if (tab === AssetType.BSV21) {
+		const detailsUrl = `${API_HOST}/api/bsv20/id/${id}`;
+		const details = await fetch(detailsUrl).then(
+			(res) => res.json() as Promise<BSV20>,
+		);
+		ticker = details.sym;
+		_icon =
+			details.icon ||
+			"b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
+	}
 
-  const name = ticker || "Mystery Outpoint";
+	const name = ticker || "Mystery Outpoint";
 
-  return {
-    title: `${assetType} Market Listings for ${name} - 1SatOrdinals`,
-    description: `Explore market listings for ${name} (${assetType}) on 1SatOrdinals.`,
-    openGraph: {
-      title: `${assetType} Market Listings for ${name} - 1SatOrdinals`,
-      description: `Explore market listings for ${name} (${assetType}) on 1SatOrdinals.`,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${assetType} Market Listings for ${name} - 1SatOrdinals`,
-      description: `Explore market listings for ${name} (${assetType}) on 1SatOrdinals.`,
-    },
-  };
+	return {
+		title: `${assetType} Market Listings for ${name} - 1SatOrdinals`,
+		description: `Explore market listings for ${name} (${assetType}) on 1SatOrdinals.`,
+		openGraph: {
+			title: `${assetType} Market Listings for ${name} - 1SatOrdinals`,
+			description: `Explore market listings for ${name} (${assetType}) on 1SatOrdinals.`,
+			type: "website",
+		},
+		twitter: {
+			card: "summary_large_image",
+			title: `${assetType} Market Listings for ${name} - 1SatOrdinals`,
+			description: `Explore market listings for ${name} (${assetType}) on 1SatOrdinals.`,
+		},
+	};
 }

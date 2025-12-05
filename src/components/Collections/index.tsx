@@ -1,29 +1,29 @@
 "use client";
 
-import { MARKET_API_HOST, } from "@/constants";
-import type { Collection } from "@/types/collection";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { MARKET_API_HOST } from "@/constants";
+import type { Collection } from "@/types/collection";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
-import FeaturedCollections from "./featured";
-import Artifact from "../artifact";
 import { useSignals } from "@preact/signals-react/runtime";
+import { Filter, Layers, Sparkles, TrendingUp } from "lucide-react";
+import { useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import Artifact from "../artifact";
 import {
 	collectionSearch,
-	collectionView,
+	collectionSize,
 	collectionSort,
 	collectionStatus,
-	collectionSize,
+	collectionView,
+	type SizeFilter,
 	type SortOption,
 	type StatusFilter,
-	type SizeFilter,
 } from "./CollectionSidebar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, TrendingUp, Layers, Filter } from "lucide-react";
-import { useMemo } from "react";
+import FeaturedCollections from "./featured";
 
 // Helper to check if collection is complete
 const isComplete = (c: Collection) => {
@@ -130,7 +130,8 @@ const Collections = () => {
 	}, [data, searchVal, statusVal, sizeVal, sortVal]);
 
 	// Check if any filters are active
-	const hasActiveFilters = searchVal ||
+	const hasActiveFilters =
+		searchVal ||
 		statusVal !== "all" ||
 		sizeVal !== "all" ||
 		sortVal !== "newest";
@@ -231,46 +232,48 @@ const Collections = () => {
 											}}
 											artifact={c}
 											size={300}
-											sizes={"(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"}
+											sizes={
+												"(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+											}
 											showFooter={false}
 											disableLink={true}
 										/>
 										{/* Gradient overlay */}
 										<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 									</div>
-								<CardContent className="p-3 bg-card">
-									<h3 className="font-mono text-sm text-foreground truncate group-hover:text-primary transition-colors">
-										{c.data?.map?.name || "Unnamed Collection"}
-									</h3>
-									<div className="flex items-center justify-between mt-2">
-										<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-											Block #{c.height}
-										</span>
-										<div className="flex items-center gap-1.5">
-											{c.stats && c.stats.max > 0 && (
-												<Badge
-													variant={isComplete(c) ? "default" : "outline"}
-													className={`rounded-md font-mono text-[10px] px-1.5 py-0 ${
-														isComplete(c)
-															? "bg-green-500/10 text-green-500 border-green-500/30"
-															: "text-muted-foreground"
-													}`}
-												>
-													{isComplete(c) ? "✓" : "○"}
-												</Badge>
-											)}
-											{c.stats && (
-												<Badge
-													variant="secondary"
-													className="rounded-md font-mono text-[10px] px-1.5 py-0"
-												>
-													{c.stats.count}
-													{c.stats.max ? `/${c.stats.max}` : ""}
-												</Badge>
-											)}
+									<CardContent className="p-3 bg-card">
+										<h3 className="font-mono text-sm text-foreground truncate group-hover:text-primary transition-colors">
+											{c.data?.map?.name || "Unnamed Collection"}
+										</h3>
+										<div className="flex items-center justify-between mt-2">
+											<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+												Block #{c.height}
+											</span>
+											<div className="flex items-center gap-1.5">
+												{c.stats && c.stats.max > 0 && (
+													<Badge
+														variant={isComplete(c) ? "default" : "outline"}
+														className={`rounded-md font-mono text-[10px] px-1.5 py-0 ${
+															isComplete(c)
+																? "bg-green-500/10 text-green-500 border-green-500/30"
+																: "text-muted-foreground"
+														}`}
+													>
+														{isComplete(c) ? "✓" : "○"}
+													</Badge>
+												)}
+												{c.stats && (
+													<Badge
+														variant="secondary"
+														className="rounded-md font-mono text-[10px] px-1.5 py-0"
+													>
+														{c.stats.count}
+														{c.stats.max ? `/${c.stats.max}` : ""}
+													</Badge>
+												)}
+											</div>
 										</div>
-									</div>
-								</CardContent>
+									</CardContent>
 								</Card>
 							</Link>
 						))}

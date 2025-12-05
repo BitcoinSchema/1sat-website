@@ -1,5 +1,7 @@
 "use client";
 
+import { useSignals } from "@preact/signals-react/runtime";
+import { Layers, List, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -7,8 +9,6 @@ import {
 	selectedCount,
 	selectedOutpoints,
 } from "@/signals/wallet/selection";
-import { useSignals } from "@preact/signals-react/runtime";
-import { Layers, List, Send, X } from "lucide-react";
 
 interface BatchActionsBarProps {
 	onSend?: (outpoints: string[]) => void;
@@ -38,7 +38,9 @@ export const BatchActionsBar = ({ onSend, onList }: BatchActionsBarProps) => {
 					<Layers className="w-4 h-4 text-primary" />
 					<span className="font-mono text-sm font-bold text-foreground">
 						{count}{" "}
-						<span className="text-muted-foreground text-xs font-normal">SELECTED</span>
+						<span className="text-muted-foreground text-xs font-normal">
+							SELECTED
+						</span>
 					</span>
 				</div>
 

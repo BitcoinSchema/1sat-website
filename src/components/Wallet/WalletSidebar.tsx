@@ -1,43 +1,43 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import {
-	clearSelection,
-	searchQuery,
-	selectedCount,
-	selectAll,
-} from "@/signals/wallet/selection";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
-	CheckSquare,
-	Hash,
-	ImageIcon,
-	Music,
+	AlertTriangle,
 	Box,
-	FileCode,
-	Video,
-	Palette,
-	Search,
-	X,
-	Wallet,
-	Coins,
-	History,
-	Plus,
+	CheckSquare,
 	CircleDollarSign,
 	Clock,
+	Coins,
+	FileCode,
+	Hash,
+	History,
+	ImageIcon,
+	Music,
+	Palette,
+	Plus,
+	Search,
 	Tag,
-	AlertTriangle,
+	Video,
+	Wallet,
+	X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArtifactType } from "../artifact";
-import { selectedType, changeFilter } from "./filter";
-import { WalletTab } from "./tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import {
+	clearSelection,
+	searchQuery,
+	selectAll,
+	selectedCount,
+} from "@/signals/wallet/selection";
+import { ArtifactType } from "../artifact";
+import { changeFilter, selectedType } from "./filter";
+import { WalletTab } from "./tabs";
 
 interface WalletSidebarProps {
 	tab: WalletTab;
@@ -80,13 +80,15 @@ const BALANCE_FILTERS = [
 export { BalanceFilter };
 
 import { signal } from "@preact/signals-react";
-export const selectedBalanceFilter = signal<BalanceFilter>(BalanceFilter.Confirmed);
+export const selectedBalanceFilter = signal<BalanceFilter>(
+	BalanceFilter.Confirmed,
+);
 
-export default function WalletSidebar({ 
-	tab, 
-	address, 
-	counts = {}, 
-	ordinalOutpoints = [] 
+export default function WalletSidebar({
+	tab,
+	address,
+	counts = {},
+	ordinalOutpoints = [],
 }: WalletSidebarProps) {
 	useSignals();
 	const _pathname = usePathname();
@@ -135,8 +137,10 @@ export default function WalletSidebar({
 						<div className="space-y-1">
 							{NAV_ITEMS.map(({ id, label, icon: Icon }) => {
 								const isActive = tab === id;
-								const href = address ? `/activity/${address}/${id}` : `/wallet/${id}`;
-								
+								const href = address
+									? `/activity/${address}/${id}`
+									: `/wallet/${id}`;
+
 								return (
 									<Link
 										key={id}
@@ -145,7 +149,7 @@ export default function WalletSidebar({
 											"w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 											isActive
 												? "bg-primary/10 text-primary border-l-2 border-primary"
-												: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+												: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 										)}
 									>
 										<span className="flex items-center gap-2">
@@ -222,21 +226,22 @@ export default function WalletSidebar({
 													"w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 													isActive
 														? "bg-primary/10 text-primary border-l-2 border-primary"
-														: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+														: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 												)}
 											>
 												<span className="flex items-center gap-2">
 													<Icon className="w-4 h-4" />
 													{label}
 												</span>
-												{type === ArtifactType.All && counts.total !== undefined && (
-													<Badge
-														variant="outline"
-														className="rounded-md border-border text-muted-foreground font-mono text-[10px] h-5 px-1.5"
-													>
-														{counts.total}
-													</Badge>
-												)}
+												{type === ArtifactType.All &&
+													counts.total !== undefined && (
+														<Badge
+															variant="outline"
+															className="rounded-md border-border text-muted-foreground font-mono text-[10px] h-5 px-1.5"
+														>
+															{counts.total}
+														</Badge>
+													)}
 											</button>
 										);
 									})}
@@ -258,7 +263,7 @@ export default function WalletSidebar({
 												"w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 												selectedType.value === ("theme" as ArtifactType)
 													? "bg-purple-500/20 text-purple-400 border-l-2 border-purple-500"
-													: "text-purple-400/70 hover:text-purple-400 hover:bg-purple-500/10"
+													: "text-purple-400/70 hover:text-purple-400 hover:bg-purple-500/10",
 											)}
 										>
 											<span className="flex items-center gap-2">
@@ -290,7 +295,9 @@ export default function WalletSidebar({
 											className="w-full rounded-md font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-primary hover:bg-primary/10 justify-start gap-2 h-9"
 										>
 											<CheckSquare className="w-4 h-4" />
-											{selectedCount.value === ordinalOutpoints.length ? "Clear Selection" : "Select All"}
+											{selectedCount.value === ordinalOutpoints.length
+												? "Clear Selection"
+												: "Select All"}
 											{selectedCount.value > 0 && (
 												<Badge className="ml-auto rounded-md bg-primary/20 text-primary border-primary/50 font-mono text-[10px] h-5 px-1.5">
 													{selectedCount.value}
@@ -313,18 +320,20 @@ export default function WalletSidebar({
 								{BALANCE_FILTERS.map(({ id, label, icon: Icon }) => {
 									// Hide Unindexed for BSV21
 									if (id === BalanceFilter.Unindexed && isBsv21) return null;
-									
+
 									const isActive = selectedBalanceFilter.value === id;
 									return (
 										<button
 											key={id}
 											type="button"
-											onClick={() => { selectedBalanceFilter.value = id; }}
+											onClick={() => {
+												selectedBalanceFilter.value = id;
+											}}
 											className={cn(
 												"w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all",
 												isActive
 													? "bg-primary/10 text-primary border-l-2 border-primary"
-													: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+													: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 											)}
 										>
 											<span className="flex items-center gap-2">
@@ -350,4 +359,3 @@ export default function WalletSidebar({
 		</div>
 	);
 }
-

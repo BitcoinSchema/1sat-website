@@ -1,5 +1,5 @@
-import { showDepositModal } from "@/signals/wallet";
 import { Button } from "@/components/ui/button";
+import { showDepositModal } from "@/signals/wallet";
 
 interface Props {
 	onClose: () => void;
@@ -23,10 +23,7 @@ export function FundStep({ onClose }: Props) {
 				<Button variant="outline" type="button" onClick={onClose}>
 					Not Now
 				</Button>
-				<Button
-					type="button"
-					onClick={handleFundWallet}
-				>
+				<Button type="button" onClick={handleFundWallet}>
 					Fund Wallet
 				</Button>
 			</div>

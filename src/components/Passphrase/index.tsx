@@ -1,12 +1,26 @@
 "use client";
 
+import { PrivateKey } from "@bsv/sdk";
+import { effect, useSignal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
+import { AlertTriangle, Copy, Dices, KeyRound } from "lucide-react";
+import randomBytes from "randombytes";
+import {
+	type FormEvent,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import toast from "react-hot-toast";
+import { useCopyToClipboard } from "usehooks-ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { encryptionPrefix, toastErrorProps, toastProps } from "@/constants";
 import {
-	ImportWalletFromBackupJsonStep,
 	changeAddressPath,
 	encryptionKey,
+	ImportWalletFromBackupJsonStep,
 	identityAddressPath,
 	identityPk,
 	importWalletFromBackupJsonStep,
@@ -25,20 +39,6 @@ import {
 } from "@/utils/encryption";
 import { generatePassphrase } from "@/utils/passphrase";
 import { backupKeys } from "@/utils/wallet";
-import { PrivateKey } from "@bsv/sdk";
-import { effect, useSignal } from "@preact/signals-react";
-import { useSignals } from "@preact/signals-react/runtime";
-import { AlertTriangle, Copy, Dices, KeyRound } from "lucide-react";
-import randomBytes from "randombytes";
-import {
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-	type FormEvent,
-} from "react";
-import toast from "react-hot-toast";
-import { useCopyToClipboard } from "usehooks-ts";
 
 type Props = {
 	mode: EncryptDecrypt;
@@ -98,9 +98,7 @@ const EnterPassphrase: React.FC<Props> = ({
 					return;
 				}
 
-				const pubKey = PrivateKey.fromWif(payPk.value)
-					.toPublicKey()
-					.toString();
+				const pubKey = PrivateKey.fromWif(payPk.value).toPublicKey().toString();
 				encryptionKey.value =
 					(await generateEncryptionKeyFromPassphrase(
 						passphrase.value,
@@ -133,8 +131,7 @@ const EnterPassphrase: React.FC<Props> = ({
 				);
 
 				const encryptedBackup =
-					encryptionPrefix +
-					Buffer.concat([iv, encrypted]).toString("base64");
+					encryptionPrefix + Buffer.concat([iv, encrypted]).toString("base64");
 
 				const keys: EncryptedBackupJson = {
 					encryptedBackup,

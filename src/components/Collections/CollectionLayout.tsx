@@ -1,10 +1,10 @@
 "use client";
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import CollectionSidebar from "./CollectionSidebar";
 import Footer from "@/components/Footer/footer";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import CollectionSidebar from "./CollectionSidebar";
 
 interface CollectionLayoutProps {
 	children: React.ReactNode;
@@ -12,7 +12,7 @@ interface CollectionLayoutProps {
 	collectionName?: string;
 }
 
-export default function CollectionLayout({ 
+export default function CollectionLayout({
 	children,
 	showBackLink,
 	collectionName,
@@ -21,7 +21,7 @@ export default function CollectionLayout({
 		<div className="flex w-full bg-background font-mono h-[calc(100vh-3.5rem)]">
 			{/* Desktop Sidebar - Fixed height, own scroll */}
 			<div className="hidden lg:flex flex-shrink-0 h-full overflow-y-auto border-r border-border">
-				<CollectionSidebar 
+				<CollectionSidebar
 					showBackLink={showBackLink}
 					collectionName={collectionName}
 				/>
@@ -39,11 +39,13 @@ export default function CollectionLayout({
 								className="gap-2 text-muted-foreground hover:text-foreground"
 							>
 								<Menu className="w-4 h-4" />
-								<span className="text-xs uppercase tracking-wider">Collections</span>
+								<span className="text-xs uppercase tracking-wider">
+									Collections
+								</span>
 							</Button>
 						</SheetTrigger>
 						<SheetContent side="left" className="p-0 w-[280px]">
-							<CollectionSidebar 
+							<CollectionSidebar
 								showBackLink={showBackLink}
 								collectionName={collectionName}
 							/>
@@ -53,13 +55,10 @@ export default function CollectionLayout({
 
 				{/* Content - This is the scrolling area */}
 				<div className="flex-1 overflow-y-auto flex flex-col">
-					<div className="flex-1">
-						{children}
-					</div>
+					<div className="flex-1">{children}</div>
 					<Footer />
 				</div>
 			</div>
 		</div>
 	);
 }
-

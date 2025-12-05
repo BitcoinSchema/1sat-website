@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal } from "@preact/signals-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-token";
+import { Button } from "@/components/ui/button";
+import type { OrdUtxo } from "@/types/ordinals";
 import Artifact from "../artifact";
 import BuyArtifactModal from "../modal/buyArtifact";
 import { getOutpoints } from "./helpers";
@@ -17,9 +17,7 @@ interface Props {
 
 const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
 	const showBuy = useSignal(false);
-	const [listingWithScript, setListingWithScript] = useState<OrdUtxo>(
-		listing,
-	);
+	const [listingWithScript, setListingWithScript] = useState<OrdUtxo>(listing);
 
 	const clickBuy = useCallback(() => {
 		showBuy.value = true;

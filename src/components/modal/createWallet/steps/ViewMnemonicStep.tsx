@@ -1,17 +1,16 @@
+import toast from "react-hot-toast";
+import { useCopyToClipboard } from "usehooks-ts";
 import MnemonicGrid, { MnemonicGridMode } from "@/components/MnemonicGrid";
+import { Button } from "@/components/ui/button";
 import { toastProps } from "@/constants";
 import { createWalletStep, mnemonic } from "@/signals/wallet";
 import { CreateWalletStep } from "@/types/wallet";
-import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast";
-import { useCopyToClipboard } from "usehooks-ts";
 
-type Props = {}
+type Props = {};
 
 export function ViewMnemonicStep({}: Props) {
+	const [_value, copy] = useCopyToClipboard();
 
-	const [_value, copy] = useCopyToClipboard()
-	
 	function handleNextStep() {
 		createWalletStep.value = CreateWalletStep.VerifyMnemonic;
 	}
@@ -19,8 +18,8 @@ export function ViewMnemonicStep({}: Props) {
 	return (
 		<>
 			<div>
-				Save the mnemonic in a safe place. On the next step, we will ask
-				you to confirm the mnemonic.
+				Save the mnemonic in a safe place. On the next step, we will ask you to
+				confirm the mnemonic.
 			</div>
 
 			<div
@@ -47,11 +46,8 @@ export function ViewMnemonicStep({}: Props) {
 
 				<div
 					onClick={() => {
-						copy(mnemonic.value || "")
-						toast.success(
-							"Copied mnemonic phrase. Careful now!",
-							toastProps
-						);
+						copy(mnemonic.value || "");
+						toast.success("Copied mnemonic phrase. Careful now!", toastProps);
 					}}
 				>
 					<Button disabled={!mnemonic.value} size="sm">

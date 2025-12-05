@@ -1,26 +1,31 @@
-import CollectionPage from "@/components/pages/collection";
 import CollectionLayout from "@/components/Collections/CollectionLayout";
+import CollectionPage from "@/components/pages/collection";
 import { API_HOST } from "@/constants";
 import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
 // Helper to add timeout to promises
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+const withTimeout = <T,>(
+	promise: Promise<T>,
+	timeoutMs: number,
+): Promise<T> => {
 	return Promise.race([
 		promise,
 		new Promise<T>((_, reject) =>
 			setTimeout(
 				() => reject(new Error(`Request timeout after ${timeoutMs}ms`)),
-				timeoutMs
-			)
+				timeoutMs,
+			),
 		),
 	]);
 };
 
 const Collection = async ({
 	params,
-}: { params: Promise<{ outpoint: string }> }) => {
+}: {
+	params: Promise<{ outpoint: string }>;
+}) => {
 	const { outpoint } = await params;
 	const TIMEOUT_MS = 8000; // 8 second timeout to leave buffer before Vercel's 10s limit
 
@@ -34,7 +39,7 @@ const Collection = async ({
 			(error) => {
 				abort();
 				throw error;
-			}
+			},
 		);
 	} catch (e) {
 		console.error("Error fetching collection", e, collectionUrl);
@@ -64,8 +69,8 @@ const Collection = async ({
 							Collection not found
 						</h2>
 						<p className="text-muted-foreground text-sm">
-							The collection data could not be loaded. This may be due to network
-							issues or the collection may not exist.
+							The collection data could not be loaded. This may be due to
+							network issues or the collection may not exist.
 						</p>
 					</div>
 				</div>

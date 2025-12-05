@@ -1,12 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import {
-	Table,
-	TableHeader,
-	TableHead,
-	TableRow,
-} from "@/components/ui/table";
+import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import OrdinalListingSkeleton from "../skeletons/listing/Ordinal";
 import View from "./view";
 
@@ -31,7 +26,6 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({
 	return (
 		<div className="w-full h-full p-4 md:p-6">
 			<div className="border border-border rounded-md overflow-hidden">
-
 				<Table className="font-mono">
 					{mode === OrdViewMode.List && (
 						<TableHeader>
@@ -55,12 +49,7 @@ const OrdinalListings: React.FC<OrdinalListingsProps> = ({
 						</TableHeader>
 					)}
 					<Suspense fallback={<OrdinalListingSkeleton iterations={30} />}>
-						<View
-							term={term}
-							address={address}
-							mode={mode}
-							onClick={onClick}
-						/>
+						<View term={term} address={address} mode={mode} onClick={onClick} />
 					</Suspense>
 				</Table>
 			</div>

@@ -1,6 +1,6 @@
-import { AssetType } from "@/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { AssetType } from "@/constants";
 
 const SkeletonItem = ({ type = AssetType.BSV20 }: { type: AssetType }) => (
 	<TableRow className="border-b border-border">
@@ -37,10 +37,7 @@ const iterations = 12;
 const TokenListingSkeleton = ({ type }: { type: AssetType }) => (
 	<TableBody>
 		{[...Array(iterations)].map((_, i) => (
-			<SkeletonItem
-				type={type}
-				key={`token-skel-${i}`}
-			/>
+			<SkeletonItem type={type} key={`token-skel-${i}`} />
 		))}
 	</TableBody>
 );

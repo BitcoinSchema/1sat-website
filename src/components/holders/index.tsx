@@ -1,15 +1,15 @@
 "use client";
-import { Fragment, useRef, useEffect, useState } from "react";
-import JDenticon from "@/components/JDenticon";
-import type { AssetType } from "@/constants";
-import { getBalanceText } from "@/utils/wallet";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import Link from "next/link";
-import { getHolders, resultsPerPage } from "@/utils/getHolders";
-import type { Holder, TickHolder } from "../pages/TokenMarket/details";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { FiLoader } from "react-icons/fi";
+import JDenticon from "@/components/JDenticon";
 import { Separator } from "@/components/ui/separator";
+import type { AssetType } from "@/constants";
+import { getHolders, resultsPerPage } from "@/utils/getHolders";
+import { getBalanceText } from "@/utils/wallet";
+import type { Holder, TickHolder } from "../pages/TokenMarket/details";
 
 type Props = {
 	type: AssetType;
@@ -23,26 +23,18 @@ const HoldersTable = ({ type, id, details }: Props) => {
 	const [holders, setHolders] = useState<Holder[] | TickHolder[]>([]);
 	const numHolders = (holders || []).length > 0 ? holders.length : 0;
 
-	const {
-		data,
-		error,
-		fetchNextPage,
-		hasNextPage,
-		isFetching,
-		isFetchingNextPage,
-		status,
-	} = useInfiniteQuery({
-		queryKey: ["holders"],
-		queryFn: ({ pageParam }) =>
-			getHolders({ type, id, pageParam, details }),
-		initialPageParam: 0,
-		getNextPageParam: (lastPage, _pages, lastPageParam) => {
-			if (lastPage?.length === resultsPerPage) {
-				return lastPageParam + 1;
-			}
-			return undefined;
-		},
-	});
+	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+		useInfiniteQuery({
+			queryKey: ["holders"],
+			queryFn: ({ pageParam }) => getHolders({ type, id, pageParam, details }),
+			initialPageParam: 0,
+			getNextPageParam: (lastPage, _pages, lastPageParam) => {
+				if (lastPage?.length === resultsPerPage) {
+					return lastPageParam + 1;
+				}
+				return undefined;
+			},
+		});
 
 	useEffect(() => {
 		if (data) {
@@ -50,7 +42,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 			if (pageData !== undefined) {
 				const u = data.pages.reduce(
 					(acc, val) => (acc || []).concat(val || []),
-					[]
+					[],
 				);
 				setHolders(u);
 			}
@@ -72,9 +64,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 
 		const balanceText = getBalanceText(balance, numDecimals);
 		const tooltip =
-			balance.toString() !== balanceText.trim()
-				? balance.toLocaleString()
-				: "";
+			balance.toString() !== balanceText.trim() ? balance.toLocaleString() : "";
 
 		return (
 			<Fragment key={`${id}-holder-${h.address}`}>
@@ -82,10 +72,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 					className="flex items-center text-sm flex-1"
 					href={`/activity/${h.address}/ordinals`}
 				>
-					<JDenticon
-						hashOrValue={h.address}
-						className="w-8 h-8 mr-2"
-					/>
+					<JDenticon hashOrValue={h.address} className="w-8 h-8 mr-2" />
 					<span className="hidden md:block">{h.address}</span>
 				</Link>
 				<div className="w-24 text-right tooltip" data-tip={tooltip}>
@@ -106,9 +93,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 
 	return (
 		<div className="w-full">
-			{status === "pending" && (
-				<p className="text-center py-10">Loading...</p>
-			)}
+			{status === "pending" && <p className="text-center py-10">Loading...</p>}
 			{!!holders?.length && (
 				<div className="w-full">
 					<div className="grid grid-template-columns-3 p-6">
@@ -124,7 +109,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 			)}
 
 			<div ref={ref} className="flex items-center justify-center h-6">
-				{isFetching && <FiLoader className="animate animate-spin" />}
+				{isFetchingNextPage && <FiLoader className="animate animate-spin" />}
 			</div>
 		</div>
 	);

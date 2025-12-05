@@ -1,9 +1,9 @@
 "use client";
 
-import { ORDFS } from "@/constants";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { useEffect, type ReactEventHandler } from "react";
+import { type ReactEventHandler, useEffect } from "react";
+import { ORDFS } from "@/constants";
 
 interface ArtifactProps {
 	origin: string;
@@ -40,10 +40,7 @@ const SVGArtifact: React.FC<ArtifactProps> = ({
 			let image: HTMLImageElement | null = null;
 			if (res.headers.get("content-type")?.startsWith("text/html")) {
 				const data = await res.text();
-				const parsedHtml = new DOMParser().parseFromString(
-					data,
-					"text/html"
-				);
+				const parsedHtml = new DOMParser().parseFromString(data, "text/html");
 				// html.value = parsedHtml.documentElement.innerHTML;
 
 				const images =
@@ -87,20 +84,18 @@ const SVGArtifact: React.FC<ArtifactProps> = ({
 		>
 			{!isSingleImage.value && (
 				<iframe
-							onLoad={
-								onLoad as ReactEventHandler<HTMLIFrameElement>
-							}
-							title="html artifact"
-							className={`pointer-events-none w-full h-full overflow-hidden no-scrollbar  ${
-								size ? `w-[${size}px] h-[${size}px]` : ""
-							}`}
-							src={src.value}
-							sandbox=" "
-							height={size || "100%"}
-							width={size || "100%"}
-							scrolling="no"
-							style={{background: "transparent"}}
-						/>
+					onLoad={onLoad as ReactEventHandler<HTMLIFrameElement>}
+					title="html artifact"
+					className={`pointer-events-none w-full h-full overflow-hidden no-scrollbar  ${
+						size ? `w-[${size}px] h-[${size}px]` : ""
+					}`}
+					src={src.value}
+					sandbox=" "
+					height={size || "100%"}
+					width={size || "100%"}
+					scrolling="no"
+					style={{ background: "transparent" }}
+				/>
 			)}
 		</div>
 	);

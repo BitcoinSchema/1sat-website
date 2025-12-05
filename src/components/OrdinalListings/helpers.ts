@@ -1,13 +1,7 @@
-import { API_HOST, resultsPerPage } from "@/constants";
-import type { Collection } from "@/types/collection";
-import type { OrdUtxo } from "@/types/ordinals";
 import { uniq } from "lodash";
+import { API_HOST, resultsPerPage } from "@/constants";
+import type { OrdUtxo } from "@/types/ordinals";
 import { ArtifactType, artifactTypeMap } from "../artifact";
-
-interface GroupedCollection {
-	name: string;
-	collections: Collection[];
-}
 
 // api does this now
 // export const shouldBeHidden = (listing: OrdUtxo) => {
@@ -64,11 +58,9 @@ export const getOrdList = async ({
 		selectedType !== ArtifactType.All
 			? result.filter((o) => {
 					return o.origin?.data?.insc?.file.type?.startsWith(
-						artifactTypeMap.get(
-							selectedType as ArtifactType
-						) as string
+						artifactTypeMap.get(selectedType as ArtifactType) as string,
 					);
-			  })
+				})
 			: result;
 	return final;
 };
@@ -105,19 +97,21 @@ export const listingName = (listing: OrdUtxo) => {
 		return listing?.origin.data.bsv20.tick;
 	}
 	switch (listing?.origin?.data?.insc?.file.type.split(";")[0]) {
-      case "text/html": { 
-      const nameFromMeta = listing?.origin?.data.map?.name || listing?.origin.data.map?.subTypeData.name 
-      if (nameFromMeta) {
-        return nameFromMeta
-      }
-      
+		case "text/html": {
+			const nameFromMeta =
+				listing?.origin?.data.map?.name ||
+				listing?.origin.data.map?.subTypeData.name;
+			if (nameFromMeta) {
+				return nameFromMeta;
+			}
+
 			// extract the title from the html
 			const html = listing?.origin?.data?.insc?.text;
 			const title = html?.match(/<title>(.*)<\/title>/)?.[1];
 			if (title) {
-        return title;
+				return title;
 			}
-      }
+		}
 		case "text/json":
 			return listing?.origin?.data?.insc.text || listing?.origin.num;
 		case "text/plain":

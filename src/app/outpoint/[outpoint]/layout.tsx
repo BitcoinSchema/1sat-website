@@ -1,13 +1,13 @@
-import { API_HOST } from "@/constants";
-import type { OrdUtxo } from "@/types/ordinals";
-import { displayName } from "@/utils/artifact";
-import * as http from "@/utils/httpClient";
 import { Noto_Serif } from "next/font/google";
 import { notFound } from "next/navigation";
 import ArtifactViewer from "@/components/pages/outpoint/ArtifactViewer";
 import OutpointTabs from "@/components/pages/outpoint/tabs";
 import TxDetails from "@/components/transaction";
 import { Separator } from "@/components/ui/separator";
+import { API_HOST } from "@/constants";
+import type { OrdUtxo } from "@/types/ordinals";
+import { displayName } from "@/utils/artifact";
+import * as http from "@/utils/httpClient";
 
 const notoSerif = Noto_Serif({
 	style: "italic",

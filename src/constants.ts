@@ -1,8 +1,13 @@
 // API Endpoints - use environment variables with fallback to production
-export const ORDFS = process.env.NEXT_PUBLIC_ORDFS_URL || "https://ordfs.network";
-export const API_HOST = process.env.NEXT_PUBLIC_API_HOST || "https://ordinals.gorillapool.io";
-export const MARKET_API_HOST = process.env.NEXT_PUBLIC_MARKET_API_HOST || "https://api.1sat.market";
-export const ORDINALS_V5_INDEXER_HOST = process.env.NEXT_PUBLIC_ORDINALS_V5_INDEXER_HOST || "https://ordinals.1sat.app";
+export const ORDFS =
+	process.env.NEXT_PUBLIC_ORDFS_URL || "https://ordfs.network";
+export const API_HOST =
+	process.env.NEXT_PUBLIC_API_HOST || "https://ordinals.gorillapool.io";
+export const MARKET_API_HOST =
+	process.env.NEXT_PUBLIC_MARKET_API_HOST || "https://api.1sat.market";
+export const ORDINALS_V5_INDEXER_HOST =
+	process.env.NEXT_PUBLIC_ORDINALS_V5_INDEXER_HOST ||
+	"https://ordinals.1sat.app";
 
 export type UserBlacklist = {
 	address: string;

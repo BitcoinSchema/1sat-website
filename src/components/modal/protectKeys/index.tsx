@@ -1,24 +1,20 @@
 "use client";
 
-import { OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
-import {
-	ProtectKeysStep,
-	protectKeysStep,
-	migrating
-} from "@/signals/wallet";
-import { setKeys } from "@/signals/wallet/client";
 import { useSignals } from "@preact/signals-react/runtime";
+import { Shield } from "lucide-react";
 import { useEffect } from "react";
-import { DoneStep } from "./steps/DoneStep";
-import { EnterPassphraseStep } from "./steps/EnterPassphraseStep";
-import { InfoStep } from "./steps/InfoStep";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Shield } from "lucide-react";
+import { OLD_ORD_PK_KEY, OLD_PAY_PK_KEY } from "@/constants";
+import { migrating, ProtectKeysStep, protectKeysStep } from "@/signals/wallet";
+import { setKeys } from "@/signals/wallet/client";
+import { DoneStep } from "./steps/DoneStep";
+import { EnterPassphraseStep } from "./steps/EnterPassphraseStep";
+import { InfoStep } from "./steps/InfoStep";
 
 const ProtectKeysModal = ({
 	open,
@@ -36,7 +32,7 @@ const ProtectKeysModal = ({
 	useEffect(() => {
 		console.log("Migrating?", migrating.value);
 	}, [migrating.value]);
-	
+
 	useEffect(() => {
 		const payPk = localStorage.getItem(OLD_PAY_PK_KEY);
 		const ordPk = localStorage.getItem(OLD_ORD_PK_KEY);
@@ -60,9 +56,7 @@ const ProtectKeysModal = ({
 
 				{open && (
 					<div>
-						{protectKeysStep.value === ProtectKeysStep.Info && (
-							<InfoStep />
-						)}
+						{protectKeysStep.value === ProtectKeysStep.Info && <InfoStep />}
 
 						{protectKeysStep.value === ProtectKeysStep.EnterPassphrase && (
 							<EnterPassphraseStep migrating={migrating.value} />

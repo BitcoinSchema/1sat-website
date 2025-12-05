@@ -1,29 +1,29 @@
 "use client";
 
+import { useSignals } from "@preact/signals-react/runtime";
+import {
+	Box,
+	CheckSquare,
+	FileCode,
+	Hash,
+	ImageIcon,
+	Music,
+	Palette,
+	Search,
+	Video,
+	X,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
 	clearSelection,
 	searchQuery,
-	selectedCount,
 	selectAll,
+	selectedCount,
 } from "@/signals/wallet/selection";
-import { useSignals } from "@preact/signals-react/runtime";
-import {
-	CheckSquare,
-	Hash,
-	ImageIcon,
-	Music,
-	Box,
-	FileCode,
-	Video,
-	Palette,
-	Search,
-	X,
-} from "lucide-react";
 import { ArtifactType } from "../artifact";
 import { selectedType } from "./filter";
 
@@ -41,7 +41,10 @@ const ARTIFACT_FILTERS = [
 	{ type: ArtifactType.Text, icon: FileCode, label: "Text / Code" },
 ] as const;
 
-export default function FilterSidebar({ counts, ordinalOutpoints = [] }: FilterSidebarProps) {
+export default function FilterSidebar({
+	counts,
+	ordinalOutpoints = [],
+}: FilterSidebarProps) {
 	useSignals();
 
 	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,9 +113,10 @@ export default function FilterSidebar({ counts, ordinalOutpoints = [] }: FilterS
 										}}
 										className={`
 											w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all
-											${isActive
-												? "bg-primary/10 text-primary border-r-2 border-primary"
-												: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+											${
+												isActive
+													? "bg-primary/10 text-primary border-r-2 border-primary"
+													: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
 											}
 										`}
 									>
@@ -151,9 +155,10 @@ export default function FilterSidebar({ counts, ordinalOutpoints = [] }: FilterS
 									}}
 									className={`
 										w-full flex items-center justify-between px-3 py-2.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all
-										${selectedType.value === ("theme" as ArtifactType)
-											? "bg-accent/20 text-accent border-r-2 border-accent"
-											: "text-accent/70 hover:text-accent hover:bg-accent/10"
+										${
+											selectedType.value === ("theme" as ArtifactType)
+												? "bg-accent/20 text-accent border-r-2 border-accent"
+												: "text-accent/70 hover:text-accent hover:bg-accent/10"
 										}
 									`}
 								>
@@ -186,7 +191,9 @@ export default function FilterSidebar({ counts, ordinalOutpoints = [] }: FilterS
 								className="w-full rounded-md font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-primary hover:bg-primary/10 justify-start gap-2 h-9"
 							>
 								<CheckSquare className="w-4 h-4" />
-								{selectedCount.value === ordinalOutpoints.length ? "Clear Selection" : "Select All"}
+								{selectedCount.value === ordinalOutpoints.length
+									? "Clear Selection"
+									: "Select All"}
 								{selectedCount.value > 0 && (
 									<Badge className="ml-auto rounded-md bg-primary/20 text-primary border-primary/50 font-mono text-[10px] h-5 px-1.5">
 										{selectedCount.value}

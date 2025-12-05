@@ -1,5 +1,5 @@
-import PublisherPage from "@/components/pages/publisher";
 import Image from "next/image";
+import PublisherPage from "@/components/pages/publisher";
 import { COOM_COLLECTIONS } from "./constants";
 
 const Publisher = async () => {

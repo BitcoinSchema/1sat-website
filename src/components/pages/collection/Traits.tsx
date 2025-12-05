@@ -25,21 +25,21 @@ type Trait = {
 };
 
 const Traits: React.FC<TraitsProps> = ({ collection }) => {
-  return <></>
-  
+	return null;
+
 	// const [traits, setTraits] = useState<Traits>({});
 
 	// useEffect(() => {
 	// 	console.log({ collection });
 	// 	if (collection.subTypeData) {
-  //     console.log({ data: collection.subTypeData });
-  //     try {
-  //       const data = collection.subTypeData as CollectionSubTypeData;
-  //       console.log({ traits: data?.traits });
-  //       setTraits(JSON.parse(data.traits) as Traits);
-  //     } catch (e) {
-  //       console.error("Error parsing collection data", e);
-  //     }
+	//     console.log({ data: collection.subTypeData });
+	//     try {
+	//       const data = collection.subTypeData as CollectionSubTypeData;
+	//       console.log({ traits: data?.traits });
+	//       setTraits(JSON.parse(data.traits) as Traits);
+	//     } catch (e) {
+	//       console.error("Error parsing collection data", e);
+	//     }
 	// 	}
 	// }, [collection]);
 
@@ -52,9 +52,9 @@ const Traits: React.FC<TraitsProps> = ({ collection }) => {
 	// 		<h1 className="text-2xl font-bold">Traits</h1>
 	// 		{Object.entries(traits).map(([traitName, trait]) => (
 	// 			<div key={traitName}>
-  //         <h2>{traitName}</h2>
-  //         {trait.values.map((trait, index) => <div key={trait}>{trait}</div>)}
-  //       </div>
+	//         <h2>{traitName}</h2>
+	//         {trait.values.map((trait, index) => <div key={trait}>{trait}</div>)}
+	//       </div>
 	// 		))}
 	// 	</div>
 	// );
