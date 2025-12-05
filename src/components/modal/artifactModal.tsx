@@ -74,15 +74,15 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
     return (
         <>
             <Dialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
-                <DialogContent className="max-w-[90vw] w-full h-[96vh] p-0 bg-background border-border overflow-hidden flex flex-col" hideCloseButton={false}>
+                <DialogContent className="max-w-[90vw] w-full h-[96vh] p-0 bg-background border-border overflow-hidden flex flex-col" hideCloseButton={true}>
                     <VisuallyHidden.Root>
                         <DialogTitle>{ordinalName || "Artifact Preview"}</DialogTitle>
                     </VisuallyHidden.Root>
-                    <div className="flex items-center justify-between gap-2 p-4 border-b border-border shrink-0">
+                    <div className="flex items-center justify-between gap-2 px-4 h-12 border-b border-border shrink-0">
                         <p className="text-sm font-medium text-foreground truncate">
                             {ordinalName || '\u00A0'}
                         </p>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 items-center">
                             {artifact.data?.list && artifact.data.list.price && (
                                 <Button
                                     variant="ghost"
@@ -111,6 +111,14 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 className="h-8 w-8"
                             >
                                 <SquareArrowOutUpRight className="w-4 h-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={onClose}
+                                className="h-8 w-8"
+                            >
+                                <X className="w-4 h-4" />
                             </Button>
                         </div>
                     </div>
