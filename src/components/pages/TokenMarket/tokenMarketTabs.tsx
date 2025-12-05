@@ -64,231 +64,159 @@ export function TokenMarketTabs({
   const topListing = computed(() => head(listings.value))
 
   return ticker && (
-    <div className="flex flex-col md:flex-row w-full items-start">
+    <div className="flex flex-col md:flex-row w-full items-start bg-background">
       {mdUp ? (
         <>
-          <div className="relative w-1/2 ">
-            <div role="tablist" className="tabs tabs-bordered mr-4 w-full px-4">
-              <a
-                role="tab"
-                className={clsx("mb-4 tab font-bold", {
-                  "tab-active [--tab-bg:bg-base-100]":
-                    selectedListingsTab.value === "listings",
+          <div className="relative w-1/2">
+            <div className="flex border-b border-border mr-4 px-4">
+              <button
+                type="button"
+                className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
+                  "border-primary text-primary": selectedListingsTab.value === "listings",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedListingsTab.value !== "listings",
                 })}
-                // biome-ignore lint/a11y/useValidAnchor: <explanation>
-                onClick={(e) => {
-                  e.preventDefault();
-                  selectedListingsTab.value = "listings";
-                }}
+                onClick={() => { selectedListingsTab.value = "listings"; }}
               >
-                <div className={"font-semibold text-base-content/75 font-mono"}>
-                  Listings
-                </div>
-              </a>
+                Listings
+              </button>
+              <button
+                type="button"
+                className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
+                  "border-primary text-primary": selectedListingsTab.value === "my_listings",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedListingsTab.value !== "my_listings",
+                })}
+                onClick={() => { selectedListingsTab.value = "my_listings"; }}
+              >
+                My Listings
+              </button>
+            </div>
 
-              <div
-                role="tabpanel"
-                className={clsx("tab-content align-top", {
-                  hidden: selectedListingsTab.value !== "listings",
-                })}
-              >
+            <div className="px-4 py-4">
+              {selectedListingsTab.value === "listings" && (
                 <TokenMarketListings ticker={ticker} show={show} type={type} />
-              </div>
-
-              <a
-                role="tab"
-                className={clsx("mb-4 tab font-bold", {
-                  "tab-active [--tab-bg:bg-base-200]":
-                    selectedListingsTab.value === "my_listings",
-                })}
-                // biome-ignore lint/a11y/useValidAnchor: <explanation>
-                onClick={(e) => {
-                  e.preventDefault();
-                  selectedListingsTab.value = "my_listings";
-                }}
-              >
-                <div className="font-semibold text-base-content/75 font-mono">
-                  My Listings
-                </div>
-              </a>
-              <div
-                role="tabpanel"
-                className={clsx("tab-content align-top", {
-                  hidden: selectedListingsTab.value !== "my_listings",
-                })}
-              >
+              )}
+              {selectedListingsTab.value === "my_listings" && (
                 <TokenMarketMyListings ticker={ticker} type={type} />
-              </div>
+              )}
             </div>
 
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            {hasBalance.value && <div onClick={() => addListing(ticker)} className="absolute right-0 top-0 btn btn-sm border-yellow-200/25 hover:bg-base-300 mr-4">
-              <div className="flex items-center" ><FaPlus className="mr-1" />List {ticker.sym || ticker.tick}</div>
-            </div>}
+            {hasBalance.value && (
+              <button
+                type="button"
+                onClick={() => addListing(ticker)}
+                className="absolute right-4 top-2 px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-900/50 transition flex items-center"
+              >
+                <FaPlus className="mr-1 w-3 h-3" />List {ticker.sym || ticker.tick}
+              </button>
+            )}
           </div>
-          <div role="tablist" className="tabs tabs-bordered w-1/2 px-4">
-            <a
-              role="tab"
-              className={clsx("mb-4 tab font-bold", {
-                "tab-active [--tab-bg:bg-base-200]":
-                  selectedSalesTab.value === "sales",
-              })}
-              // biome-ignore lint/a11y/useValidAnchor: <explanation>
-              onClick={(e) => {
-                e.preventDefault();
-                selectedSalesTab.value = "sales";
-              }}
-            >
-              <div className="font-semibold text-base-content/75 font-mono">
+
+          <div className="w-1/2">
+            <div className="flex border-b border-border px-4">
+              <button
+                type="button"
+                className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
+                  "border-primary text-primary": selectedSalesTab.value === "sales",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedSalesTab.value !== "sales",
+                })}
+                onClick={() => { selectedSalesTab.value = "sales"; }}
+              >
                 Recent Sales
-              </div>
-            </a>
-            <div
-              role="tabpanel"
-              className={clsx("tab-content align-top", {
-                hidden: selectedSalesTab.value !== "sales",
-              })}
-            >
-              <TokenMarketSales ticker={ticker} type={type} />
+              </button>
+              <button
+                type="button"
+                className={clsx("px-4 py-3 font-mono text-xs uppercase tracking-wider transition border-b-2 -mb-[1px]", {
+                  "border-primary text-primary": selectedSalesTab.value === "my_sales",
+                  "border-transparent text-muted-foreground hover:text-foreground": selectedSalesTab.value !== "my_sales",
+                })}
+                onClick={() => { selectedSalesTab.value = "my_sales"; }}
+              >
+                My Sales
+              </button>
             </div>
 
-            <a
-              role="tab"
-              className={clsx("mb-4 tab font-bold", {
-                "tab-active [--tab-bg:bg-base-200]":
-                  selectedSalesTab.value === "my_sales",
-              })}
-              // biome-ignore lint/a11y/useValidAnchor: <explanation>
-              onClick={(e) => {
-                e.preventDefault();
-                selectedSalesTab.value = "my_sales";
-              }}
-            >
-              <div className="font-semibold text-base-content/75 font-mono">
-                My Sales
-              </div>
-            </a>
-            <div
-              role="tabpanel"
-              className={clsx("tab-content align-top", {
-                hidden: selectedSalesTab.value !== "my_sales",
-              })}
-            >
-              <TokenMarketMySales ticker={ticker} type={type} />
+            <div className="px-4 py-4">
+              {selectedSalesTab.value === "sales" && (
+                <TokenMarketSales ticker={ticker} type={type} />
+              )}
+              {selectedSalesTab.value === "my_sales" && (
+                <TokenMarketMySales ticker={ticker} type={type} />
+              )}
             </div>
           </div>
         </>
       ) : (
-        <div role="tablist" className="tabs tabs-xs tabs-bordered w-full p-2">
-          <a
-            role="tab"
-            className={clsx("mb-4 tab font-bold", {
-              "tab-active [--tab-bg:bg-base-200]":
-                selectedTab.value === "listings",
-            })}
-            // biome-ignore lint/a11y/useValidAnchor: <explanation>
-            onClick={(e) => {
-              e.preventDefault();
-              selectedTab.value = "listings";
-            }}
-          >
-            <div className="font-semibold text-base-content/75 font-mono">
+        <div className="w-full">
+          <div className="flex flex-wrap border-b border-border p-2 gap-1">
+            <button
+              type="button"
+              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "listings",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "listings",
+              })}
+              onClick={() => { selectedTab.value = "listings"; }}
+            >
               Listings
-            </div>
-          </a>
-          <div
-            role="tabpanel"
-            className={clsx("tab-content ", {
-              hidden: selectedTab.value !== "listings",
-            })}
-          >
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-            {hasBalance.value && <div
-              onClick={() => addListing(ticker)}
-              className="md:absolute md:right-0 md:top-0 w-full md:w-fit btn btn-sm mb-4 md:mb-0 border-yellow-200/25 hover:bg-base-300 mr-4">
-              <div className="flex items-center" >
-                <FaPlus className="mr-1" />List {ticker.sym || ticker.tick}
-              </div>
-            </div>}
-            <TokenMarketListings ticker={ticker} show={show} type={type} />
-          </div>
-
-          <a
-            role="tab"
-            className={clsx("mb-4 tab font-bold", {
-              "tab-active [--tab-bg:bg-base-200]":
-                selectedTab.value === "my_listings",
-            })}
-            // biome-ignore lint/a11y/useValidAnchor: <explanation>
-            onClick={(e) => {
-              e.preventDefault();
-              selectedTab.value = "my_listings";
-            }}
-          >
-            <div className="font-semibold text-base-content/75 font-mono">
+            </button>
+            <button
+              type="button"
+              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "my_listings",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "my_listings",
+              })}
+              onClick={() => { selectedTab.value = "my_listings"; }}
+            >
               My Listings
-            </div>
-          </a>
-          <div
-            role="tabpanel"
-            className={clsx("tab-content ", {
-              hidden: selectedTab.value !== "my_listings",
-            })}
-          >
-            <TokenMarketMyListings ticker={ticker} type={type} />
-          </div>
-          <a
-            role="tab"
-            className={clsx("mb-4 tab font-bold", {
-              "tab-active [--tab-bg:bg-base-200]":
-                selectedTab.value === "sales",
-            })}
-            // biome-ignore lint/a11y/useValidAnchor: <explanation>
-            onClick={(e) => {
-              e.preventDefault();
-              selectedTab.value = "sales";
-            }}
-          >
-            <div className="font-semibold text-base-content/75 font-mono">
+            </button>
+            <button
+              type="button"
+              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "sales",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "sales",
+              })}
+              onClick={() => { selectedTab.value = "sales"; }}
+            >
               Sales
-            </div>
-          </a>
-          <div
-            role="tabpanel"
-            className={clsx("tab-content ", {
-              hidden: selectedTab.value !== "sales",
-            })}
-          >
-            <TokenMarketSales ticker={ticker} type={type} />
+            </button>
+            <button
+              type="button"
+              className={clsx("px-3 py-2 font-mono text-xs uppercase tracking-wider transition", {
+                "bg-primary/20 text-primary border border-primary/50": selectedTab.value === "my_sales",
+                "text-muted-foreground hover:text-foreground border border-border": selectedTab.value !== "my_sales",
+              })}
+              onClick={() => { selectedTab.value = "my_sales"; }}
+            >
+              My Sales
+            </button>
           </div>
 
-          <a
-            role="tab"
-            className={clsx("mb-4 tab font-bold", {
-              "tab-active [--tab-bg:bg-base-200]":
-                selectedTab.value === "my_sales",
-            })}
-            // biome-ignore lint/a11y/useValidAnchor: <explanation>
-            onClick={(e) => {
-              e.preventDefault();
-              selectedTab.value = "my_sales";
-            }}
-          >
-            <div className="font-semibold text-base-content/75 font-mono">
-              My Sales
-            </div>
-          </a>
-          <div
-            role="tabpanel"
-            className={clsx("tab-content", {
-              hidden: selectedTab.value !== "my_sales",
-            })}
-          >
-            <TokenMarketMySales ticker={ticker} type={type} />
+          <div className="p-4">
+            {selectedTab.value === "listings" && (
+              <>
+                {hasBalance.value && (
+                  <button
+                    type="button"
+                    onClick={() => addListing(ticker)}
+                    className="w-full mb-4 px-3 py-2 text-xs font-mono uppercase tracking-wider bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-900/50 transition flex items-center justify-center"
+                  >
+                    <FaPlus className="mr-1 w-3 h-3" />List {ticker.sym || ticker.tick}
+                  </button>
+                )}
+                <TokenMarketListings ticker={ticker} show={show} type={type} />
+              </>
+            )}
+            {selectedTab.value === "my_listings" && (
+              <TokenMarketMyListings ticker={ticker} type={type} />
+            )}
+            {selectedTab.value === "sales" && (
+              <TokenMarketSales ticker={ticker} type={type} />
+            )}
+            {selectedTab.value === "my_sales" && (
+              <TokenMarketMySales ticker={ticker} type={type} />
+            )}
           </div>
         </div>
-      )
-      }
+      )}
 
       <CreateTokenListingModal
         onClose={() => {
@@ -298,7 +226,7 @@ export function TokenMarketTabs({
         initialPrice={topListing.value?.pricePer}
         open={showAddListingModal.value === ticker.id ||
           showAddListingModal.value === ticker.tick} />
-    </div >
+    </div>
   );
 }
 

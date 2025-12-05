@@ -1,78 +1,94 @@
 "use client";
 
-import Filter from "@/components/Wallet/filter";
 import { AssetType } from "@/constants";
 import Link from "next/link";
-import { FaPlus } from "react-icons/fa";
-import { FaBitcoin, FaDollarSign } from "react-icons/fa6";
 import { currencyDisplay, CurrencyDisplay } from "@/signals/wallet";
+import { Button } from "@/components/ui/button";
+import { Plus, Bitcoin, DollarSign } from "lucide-react";
+import clsx from "clsx";
 
 const CurrencySwitch = () => {
-  return <div className="tooltip md:tooltip-left" data-tip="Currency Display">
-    <label className="swap swap-flip text-xl mr-4 text-yellow-200/50 hover:text-yellow-300/75 transition">
-
-    {/* this hidden checkbox controls the state */}
-    <input type="checkbox" onChange={() => {
-      currencyDisplay.value = currencyDisplay.value === "USD" ? "BSV" : "USD";
-    }} />
-
-    <div className={currencyDisplay.value === CurrencyDisplay.BSV ? "swap-on" : "swap-off"}><FaBitcoin className="-rotate-12" /></div>
-    <div className={currencyDisplay.value === CurrencyDisplay.BSV ? "swap-off" : "swap-on"}><FaDollarSign /></div>
-  </label>
-  </div>
-}
+	return (
+		<button
+			type="button"
+			onClick={() => {
+				currencyDisplay.value = currencyDisplay.value === "USD" ? "BSV" : "USD";
+			}}
+			className="flex items-center justify-center w-8 h-8 mr-4 text-muted-foreground hover:text-primary transition-colors"
+			title="Toggle Currency Display"
+		>
+			{currencyDisplay.value === CurrencyDisplay.BSV ? (
+				<Bitcoin className="w-5 h-5 -rotate-12" />
+			) : (
+				<DollarSign className="w-5 h-5" />
+			)}
+		</button>
+	);
+};
 
 const MarketTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
-  return (
-    <div className="flex w-full items-center justify-between">
-      <div
-        role="tablist"
-        className="tabs md:tabs-lg tabs-lifted ml-4 gap-2 w-64"
-      >
-        <Link
-          href={`/market/${AssetType.Ordinals}`}
-          role="tab"
-          className={`tab ${selectedTab === AssetType.Ordinals ? "tab-active" : ""
-            }`}
-          aria-label="Ordinals"
-        >
-          Ordinals
-        </Link>
+	return (
+		<div className="flex w-full items-center justify-between border-b border-border bg-background">
+			<div role="tablist" className="flex">
+				<Link
+					href={`/market/${AssetType.Ordinals}`}
+					role="tab"
+					className={clsx(
+						"px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
+						{
+							"border-primary text-primary": selectedTab === AssetType.Ordinals,
+							"border-transparent text-muted-foreground hover:text-foreground": selectedTab !== AssetType.Ordinals,
+						}
+					)}
+					aria-label="Ordinals"
+				>
+					Ordinals
+				</Link>
 
-        <Link
-          href={`/market/${AssetType.BSV20}`}
-          role="tab"
-          className={`tab ${selectedTab === AssetType.BSV20 ? "tab-active" : ""
-            }`}
-          aria-label="BSV20"
-        >
-          BSV20
-        </Link>
+				<Link
+					href={`/market/${AssetType.BSV20}`}
+					role="tab"
+					className={clsx(
+						"px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
+						{
+							"border-primary text-primary": selectedTab === AssetType.BSV20,
+							"border-transparent text-muted-foreground hover:text-foreground": selectedTab !== AssetType.BSV20,
+						}
+					)}
+					aria-label="BSV20"
+				>
+					BSV20
+				</Link>
 
-        <Link
-          href={`/market/${AssetType.BSV21}`}
-          role="tab"
-          className={`tab ${selectedTab === AssetType.BSV21 ? "tab-active" : ""
-            }`}
-          aria-label="BSV21"
-        >
-          BSV21
-        </Link>
-      </div>
-      <div className="flex-none flex items-center">
-        {(selectedTab === AssetType.BSV21 || selectedTab === AssetType.BSV20) && <CurrencySwitch />}
-        {selectedTab === AssetType.Ordinals && <Filter />}
-        {selectedTab === AssetType.Ordinals && (
-          <Link
-            className="btn md:btn-xs md:relative absolute bottom-0 right-0 md:mr-0 mr-4 mb-4 md:mb-0 z-10 md:z-0 md:border-0 border border-yellow-200/25"
-            href={`/market/${selectedTab}/new`}
-          >
-            <FaPlus /> List
-          </Link>
-        )}
-      </div>
-    </div>
-  );
+				<Link
+					href={`/market/${AssetType.BSV21}`}
+					role="tab"
+					className={clsx(
+						"px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
+						{
+							"border-primary text-primary": selectedTab === AssetType.BSV21,
+							"border-transparent text-muted-foreground hover:text-foreground": selectedTab !== AssetType.BSV21,
+						}
+					)}
+					aria-label="BSV21"
+				>
+					BSV21
+				</Link>
+			</div>
+
+			<div className="flex items-center pr-4">
+				{(selectedTab === AssetType.BSV21 || selectedTab === AssetType.BSV20) && <CurrencySwitch />}
+				{selectedTab === AssetType.Ordinals && (
+					<Button asChild size="sm" className="rounded-md">
+						<Link href={`/market/${selectedTab}/new`}>
+							<Plus className="w-4 h-4 mr-2" />
+							List
+						</Link>
+					</Button>
+				)}
+			</div>
+		</div>
+	);
 };
 
 export default MarketTabs;

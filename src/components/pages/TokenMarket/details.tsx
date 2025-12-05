@@ -89,7 +89,7 @@ const Details = async ({
   marketData: MarketData[];
 }) => {
   return (
-    <div className="overflow-auto w-full">
+    <div className="overflow-auto w-full bg-background">
       {marketData.map((ticker, idx) => {
         const showBsv20Content =
           type === AssetType.BSV20 &&
@@ -100,7 +100,7 @@ const Details = async ({
         return (<React.Fragment key={`${ticker.tick}-content`}>
           {ticker.included &&
             (showBsv20Content || showBsv21Content) && (
-              <div className="transition bg-base-200 font-mono text-xs">
+              <div className="transition bg-muted/30 font-mono text-xs border-t border-border">
                 <div className="align-top">
                   <TokenMarketTabs
                     ticker={ticker}
@@ -109,16 +109,13 @@ const Details = async ({
                   />
                 </div>
               </div>
-
             )}
           {!ticker.included && (
             <div className="w-full">
               <div className="max-w-lg mx-auto">
-                <div className="bg-warning/50 text-warning-content p-2 rounded my-4 w-full flex items-center">
-                  <FaExclamationTriangle className="mr-2 text-warning" />
-                  {
-                    "This ticker is not currently listed."
-                  }
+                <div className="bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 p-3 my-4 w-full flex items-center font-mono text-sm">
+                  <FaExclamationTriangle className="mr-2 text-yellow-500" />
+                  This ticker is not currently listed.
                 </div>
                 <Fund ticker={ticker} />
               </div>

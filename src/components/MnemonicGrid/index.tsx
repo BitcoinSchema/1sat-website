@@ -19,6 +19,7 @@ import { CgSpinner } from "react-icons/cg";
 import { useSignals } from "@preact/signals-react/runtime";
 import { Switch } from "@tremor/react";
 import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 import { sweepUtxos } from "@/utils/sweep";
 import { PrivateKey } from "@bsv/sdk";
 import { toBitcoin } from "satoshi-token";
@@ -228,7 +229,7 @@ const MnemonicGrid: React.FC<MnemonicGridProps> = ({
 	}, [inputMnemonic, mode, ready, pendingPaths, processing, useCustomPaths]);
 
 	return (
-		<div className="transition mt-4 mx-auto rounded w-full text-yellow-500">
+		<div className="transition mt-4 mx-auto rounded w-full text-foreground">
 			<div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
 				{mode === MnemonicGridMode.Import && (
 					<>
@@ -253,11 +254,11 @@ index}`}
 						<div
 							// biome-ignore lint/suspicious/noArrayIndexKey: prevent redraw on change
 							key={i}
-							className={`select-none inline-flex p-2 rounded bg-[#1a1a1a] ${
+							className={`select-none inline-flex p-2 rounded bg-card border border-border ${
 								mode === MnemonicGridMode.Prove
 									? clickedWords.includes(w)
 										? ""
-										: "cursor-pointer hover:bg-[#222]"
+										: "cursor-pointer hover:bg-muted"
 									: ""
 							} flex justify-between`}
 							onClick={
@@ -273,11 +274,11 @@ index}`}
               }}
 						>
 							{mode !== MnemonicGridMode.Prove && (
-								<span className={"text-[#444] mr-4"}>{i + 1}</span>
+								<span className={"text-muted-foreground mr-4"}>{i + 1}</span>
 							)}{" "}
 							<span
 								className={`${
-									clickedWords.includes(w) ? "text-[#555]" : ""
+									clickedWords.includes(w) ? "text-muted-foreground" : ""
 								} mr-4`}
 							>
 								{w}
@@ -288,27 +289,25 @@ index}`}
 			</div>
 			{mode === MnemonicGridMode.View && (
 				<div className="w-full flex flex-col items-end mt-8 mb-2">
-					<button
+					<Button
 						type="button"
-						className="btn btn-primary"
-						// Add some validation on pendingKeys
 						onClick={() => {
               onSubmit({ verified: true })
             }}
 					>
 						Next
-					</button>
+					</Button>
 				</div>
 			)}
 			{mode === MnemonicGridMode.Import && (
 				<>
-					<div className="text-sm text-[#555] my-2 flex items-start justify-between">
-						<div className="flex items-start flex-col">
+					<div className="text-sm text-muted-foreground my-4 flex items-start justify-between">
+						<div className="flex items-start flex-col gap-1">
 							{!useCustomPaths && (
-								<div className="text-sm text-[#555]">Payment Path: m/0</div>
+								<div className="text-sm text-muted-foreground font-mono">Payment Path: m/0</div>
 							)}
 							{!useCustomPaths && (
-								<div className="text-sm text-[#555] flex items-center">
+								<div className="text-sm text-muted-foreground font-mono flex items-center">
 									Ordinals Path:{" "}
 									{processing ? (
 										<>
@@ -323,8 +322,8 @@ index}`}
 								</div>
 							)}
 						</div>
-						<div className="flex items-start">
-							Custom Derivation{" "}
+						<div className="flex items-center gap-2 text-sm">
+							<span className="text-muted-foreground">Custom Derivation</span>
 							<Switch
 								className="ml-2"
 								aria-label="Customize"
@@ -334,16 +333,17 @@ index}`}
 						</div>
 					</div>
 					{useCustomPaths && (
-						<div className="flex items-center mb-2">
-              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+						<div className="flex flex-wrap items-center gap-2 mb-4">
+              <Button variant="outline" size="sm" type="button" onClick={() => {
                 setPendingPaths(undefined);
                 toggleCustomPaths();
               }}>
                 1Sat
-              </button>
-							<button
+              </Button>
+							<Button
 								type="button"
-                className="btn btn-sm btn-primary mr-2"
+                variant="outline"
+                size="sm"
 								onClick={() => {
                   setPendingPaths({
                     changeAddressPath: RELAYX_WALLET_PATH,
@@ -353,8 +353,8 @@ index}`}
 								}}
 							>
 								RelayX
-							</button>
-							<button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+							</Button>
+							<Button variant="outline" size="sm" type="button" onClick={() => {
                 setPendingPaths({
                   changeAddressPath:  YOURS_WALLET_PATH,
                   ordAddressPath: YOURS_ORD_PATH,
@@ -362,64 +362,58 @@ index}`}
                 });
               }}>
 								Yours
-							</button>
-              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+							</Button>
+              <Button variant="outline" size="sm" type="button" onClick={() => {
                 setPendingPaths({
                   changeAddressPath:  TWETCH_WALLET_PATH,
                   ordAddressPath: TWETCH_ORD_PATH,
                 });
               }}>
 								Twetch
-							</button>
-              <button className="btn btn-sm btn-primary mr-2" type="button" onClick={() => {
+							</Button>
+              <Button variant="outline" size="sm" type="button" onClick={() => {
                 setPendingPaths({
                   changeAddressPath: AYM_WALLET_PATH,
                   ordAddressPath: AYM_ORD_PATH,
                 });
               }}>
 								Aym
-							</button>
+							</Button>
 						</div>
 					)}
 					{useCustomPaths && (
-						<div>
-							<div className="mb-2">
-								<Input
-									placeholder={`Payment Derivation Path ${pendingPaths?.changeAddressPath || "m/0"}`}
-									value={pendingPaths?.changeAddressPath}
-									onChange={(e) => {
-										const changeAddressPath = e.target.value;
-										if (!changeAddressPath) return;
-										setPendingPaths({
-											changeAddressPath: changeAddressPath as string,
-											ordAddressPath: pendingPaths?.ordAddressPath as string,
-										});
-									}}
-								/>
-							</div>
-							<div>
-								<Input
-									placeholder={`Ordinals Derivation Path: ${ordAddressPath.value || "m/0/x"}`}
-									value={pendingPaths?.ordAddressPath}
-									onChange={(e) => {
-										const ordAddressPath = e.target.value;
-										if (!ordAddressPath) return;
-										setPendingPaths({
-											changeAddressPath:
-												pendingPaths?.changeAddressPath as string,
-											ordAddressPath: ordAddressPath as string,
-										});
-									}}
-								/>
-							</div>
+						<div className="space-y-2">
+							<Input
+								placeholder={`Payment Derivation Path ${pendingPaths?.changeAddressPath || "m/0"}`}
+								value={pendingPaths?.changeAddressPath}
+								onChange={(e) => {
+									const changeAddressPath = e.target.value;
+									if (!changeAddressPath) return;
+									setPendingPaths({
+										changeAddressPath: changeAddressPath as string,
+										ordAddressPath: pendingPaths?.ordAddressPath as string,
+									});
+								}}
+							/>
+							<Input
+								placeholder={`Ordinals Derivation Path: ${ordAddressPath.value || "m/0/x"}`}
+								value={pendingPaths?.ordAddressPath}
+								onChange={(e) => {
+									const ordAddressPath = e.target.value;
+									if (!ordAddressPath) return;
+									setPendingPaths({
+										changeAddressPath:
+											pendingPaths?.changeAddressPath as string,
+										ordAddressPath: ordAddressPath as string,
+									});
+								}}
+							/>
 						</div>
 					)}
-					<div className="w-full flex flex-col items-end mt-8">
-						<button
+					<div className="w-full flex flex-col items-end mt-6 pt-4 border-t border-border">
+						<Button
 							type="button"
 							disabled={processing || inputMnemonic.some((word) => !word)}
-							className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-							// Add some validation on pendingKeys
 							onClick={async () => {
 								console.log({ mnemonic, pendingPaths, inputMnemonic });
 								if (!inputMnemonic) return;
@@ -453,22 +447,21 @@ index}`}
 							}}
 						>
 							Next
-						</button>
+						</Button>
 					</div>
 				</>
 			)}
 			{clickedWords?.length > 0 && (
 				<div className="w-full flex justify-center my-8">
-					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-					<div
-						className="btn gap-0"
+					<Button
+						variant="outline"
 						onClick={() => {
 							shuffle();
 							setClickedWords([]);
 						}}
 					>
 						<RiRestartLine className="mr-2" /> Start Over
-					</div>
+					</Button>
 				</div>
 			)}
 		</div>

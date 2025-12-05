@@ -46,24 +46,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="icon" href="/favicon.ico" />
       </head>
 
-      <body className={`flex flex-col h-100vh ${inter.className}`}>
+      <body className={`flex flex-col h-screen overflow-hidden ${inter.className}`}>
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
           fill="white"
         />
         <TanstackProvider>
+          {/* Fixed Header */}
           <Header ubuntu={ubuntu} />
-          {/* <Tabs className={`absolute md:relative m-0 md:my-8 bottom-0 left-0 w-full md:w-fit mx-auto ${ubuntuMono.className}`} /> */}
-          {children}
+          
+          {/* Main content area - grows to fill space between header and footer */}
+          <main className="flex-1 w-full relative flex flex-col overflow-hidden">
+            {children}
+          </main>
+          
+          {/* Fixed Footer */}
+          <Footer />
+          
           <Analytics />
           <SpeedInsights />
-          <Footer />
           <Toaster
             position="bottom-left"
             reverseOrder={false}

@@ -16,8 +16,17 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
-import { CgSpinner } from "react-icons/cg";
+import { Loader2, Upload } from "lucide-react";
 import { toBitcoin, toSatoshi } from "satoshi-token";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface DespotModalProps {
   onClose: () => void;
@@ -204,85 +213,78 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
   );
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div
-      className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen backdrop-blur bg-black bg-opacity-50 overflow-hidden"
-      onClick={() => onClose()}
-    >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-      <div
-        className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
-          <form onSubmit={submit}>
-            <div className="flex justify-between">
-              <div className="text-lg font-semibold">Withdraw</div>
-              {balance.value !== undefined && (
-                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                <div
-                  className="text-xs cursor-pointer text-[#aaa]"
-                  onClick={setAmountToBalance}
-                >
-                  Balance: {balance.value > 0 ? toBitcoin(balance.value) : 0}{" "}
-                  BSV
-                </div>
-              )}
-              {balance.value === undefined && (
-                <div className="text-xs cursor-pointer text-[#aaa]">
-                  <CgSpinner className="animate-spin" />
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col w-full">
-              <label className="text-sm font-semibold text-[#aaa] mb-2">
-                Amount
-              </label>
-              <input
-                type="text"
-                placeholder="0.00000000"
-                className="input input-bordered w-full"
-                value={amount.value || ""}
-                onChange={(e) => {
-                  if (
-                    e.target.value === "" ||
-                    Number.parseFloat(e.target.value) <= balance.value
-                  ) {
-                    amount.value = e.target.value;
-                  }
-                }}
-              />
-            </div>
-            <div className="flex flex-col mt-4">
-              <label className="text-sm font-semibold text-[#aaa] mb-2">
-                Address
-              </label>
-              <input
-                type="text"
-                placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-                className="input input-bordered w-full"
-                value={address.value}
-                onChange={(e) => {
-                  address.value = e.target.value;
-                }}
-              />
-            </div>
-            <div className="modal-action">
+    <Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-zinc-200">
+            <span className="flex items-center gap-3">
+              <Upload className="w-5 h-5 text-green-500" />
+              Withdraw
+            </span>
+            {balance.value !== undefined ? (
               <button
-                type="submit"
-                disabled={
-                  Number.parseFloat(amount.value || "0") <= 0 || !address.value
-                }
-                className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:btn-disabled diabled:hover:btn-disabled"
+                type="button"
+                className="text-xs font-mono text-zinc-500 hover:text-green-400 transition cursor-pointer"
+                onClick={setAmountToBalance}
               >
-                Send
+                Balance: {balance.value > 0 ? toBitcoin(balance.value) : 0} BSV
               </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+            ) : (
+              <Loader2 className="animate-spin w-4 h-4 text-zinc-500" />
+            )}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label className="font-mono text-xs uppercase tracking-wider text-zinc-500">
+              Amount
+            </Label>
+            <Input
+              type="text"
+              placeholder="0.00000000"
+              className="bg-zinc-900 border-zinc-800 rounded-none font-mono text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-green-500"
+              value={amount.value || ""}
+              onChange={(e) => {
+                if (
+                  e.target.value === "" ||
+                  Number.parseFloat(e.target.value) <= balance.value
+                ) {
+                  amount.value = e.target.value;
+                }
+              }}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-mono text-xs uppercase tracking-wider text-zinc-500">
+              Address
+            </Label>
+            <Input
+              type="text"
+              placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+              className="bg-zinc-900 border-zinc-800 rounded-none font-mono text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-green-500"
+              value={address.value}
+              onChange={(e) => {
+                address.value = e.target.value;
+              }}
+            />
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-zinc-800">
+            <Button
+              type="submit"
+              disabled={
+                Number.parseFloat(amount.value || "0") <= 0 || !address.value
+              }
+              className="rounded-none bg-green-900/30 text-green-400 border border-green-500/50 hover:bg-green-900/50 font-mono uppercase tracking-wider text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Send
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

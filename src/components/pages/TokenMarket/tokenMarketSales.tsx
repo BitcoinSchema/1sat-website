@@ -10,6 +10,7 @@ import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
 import { sales } from "./signals";
 import { CurrencyDisplay, currencyDisplay, exchangeRate } from "@/signals/wallet";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   ticker: MarketData;
@@ -119,14 +120,14 @@ const pricePer = currencyDisplay.value === CurrencyDisplay.BSV
 
         return (
           <div
-            className="flex w-full justify-between"
+            className="flex w-full justify-between items-center py-2 border-b border-border last:border-b-0"
             key={`${sale.txid}-${sale.vout}-${sale.height}`}
           >
             <Link
               href={`/outpoint/${sale.txid}`}
-              className="flex flex-col py-1"
+              className="flex flex-col py-1 hover:text-primary transition"
             >
-              <span className="text-secondary-content/75">
+              <span className="text-foreground">
                 {(
                   Number.parseInt(sale.amt) /
                   10 ** ticker.dec
@@ -134,31 +135,32 @@ const pricePer = currencyDisplay.value === CurrencyDisplay.BSV
                 {ticker.tick}
               </span>
               <div className="flex items-center">
-                <span className="text-base-content/50 text-xs">
+                <span className="text-muted-foreground text-xs">
                   {pricePer} / token
                 </span>
-                <span className="text-accent text-xs mx-1">
+                <span className="text-primary text-xs mx-1">
                   •
                 </span>
-                <span className="text-accent text-xs">
+                <span className="text-primary text-xs">
                   Block #{sale.height}
                 </span>
               </div>
             </Link>
             <div className="py-1">
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 disabled
-                className="btn btn-xs btn-outline btn-secondary pointer-events-none"
+                className="text-xs pointer-events-none"
               >
                 {buttonText}
-              </button>
+              </Button>
             </div>
           </div>
         );
       })}
       {sales.value?.length === 0 && (
-        <div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
+        <div className="text-center text-muted-foreground min-h-64 flex items-center justify-center">
           No sales found
         </div>
       )}

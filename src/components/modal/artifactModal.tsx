@@ -6,9 +6,10 @@ import type { OrdUtxo } from "@/types/ordinals";
 import { SquareArrowOutUpRight, X, ShoppingCart, Info } from "lucide-react";
 import Artifact from "@/components/artifact";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 const needsFlipButton = (artifact: OrdUtxo): boolean => {
     const contentType = artifact.origin?.data?.insc?.file.type || '';
@@ -72,62 +73,59 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
 
     return (
         <>
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm transition-opacity duration-300"
-                style={{
-                    opacity: showBackdrop ? 1 : 0,
-                    viewTransitionName: 'none'
-                } as React.CSSProperties}
-                onClick={onClose}
-            >
-                <div
-                    className="relative flex flex-col w-[90vw] h-[96vh]"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="flex items-center justify-between gap-2 shrink-0">
-                        <p className="text-sm font-medium text-white/90 truncate">
+            <Dialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
+                <DialogContent className="max-w-[90vw] w-full h-[96vh] p-0 bg-background border-border overflow-hidden flex flex-col" hideCloseButton={true}>
+                    <VisuallyHidden.Root>
+                        <DialogTitle>{ordinalName || "Artifact Preview"}</DialogTitle>
+                    </VisuallyHidden.Root>
+                    <div className="flex items-center justify-between gap-2 px-4 h-12 border-b border-border shrink-0">
+                        <p className="text-sm font-medium text-foreground truncate">
                             {ordinalName || '\u00A0'}
                         </p>
-                        <ButtonGroup>
+                        <div className="flex gap-1 items-center">
                             {artifact.data?.list && artifact.data.list.price && (
                                 <Button
-                                    variant="secondary"
-                                    size="iconSm"
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setShowBuyModal(true);
                                     }}
+                                    className="h-8 w-8"
                                 >
                                     <ShoppingCart className="w-4 h-4" />
                                 </Button>
                             )}
                             <Button
-                                variant="secondary"
-                                size="iconSm"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => router.push(`/outpoint/${artifact.outpoint}`)}
+                                className="h-8 w-8"
                             >
                                 <Info className="w-4 h-4" />
                             </Button>
                             <Button
-                                variant="secondary"
-                                size="iconSm"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => window.open(`https://ordfs.network/${artifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer')}
+                                className="h-8 w-8"
                             >
                                 <SquareArrowOutUpRight className="w-4 h-4" />
                             </Button>
                             <Button
-                                variant="secondary"
-                                size="iconSm"
+                                variant="ghost"
+                                size="icon"
                                 onClick={onClose}
+                                className="h-8 w-8"
                             >
                                 <X className="w-4 h-4" />
                             </Button>
-                        </ButtonGroup>
+                        </div>
                     </div>
 
                     <div
                         ref={scrollContainerRef}
-                        className={`shadow-2xl bg-[#111] rounded-lg flex-1 flex ${allowScroll ? 'items-start overflow-auto' : 'items-center overflow-hidden'} justify-center`}
+                        className={`bg-card flex-1 flex ${allowScroll ? 'items-start overflow-auto' : 'items-center overflow-hidden'} justify-center`}
                         onMouseDown={allowScroll ? handleMouseDown : undefined}
                         onMouseMove={allowScroll ? handleMouseMove : undefined}
                         onMouseUp={allowScroll ? handleMouseUp : undefined}
@@ -149,7 +147,7 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                                 }}
                             />
                         ) : (
-                            <div className={allowScroll ? "flex items-center justify-center min-h-full w-full" : "contents"}>
+                            <div className={allowScroll ? "flex items-center justify-center min-h-full w-full p-8" : "contents"}>
                                 <ImageWithFallback
                                     src={`https://ordfs.network/${artifact.origin?.outpoint}`}
                                     alt="Full size artifact"
@@ -162,8 +160,8 @@ const ArtifactModal = ({ artifact, showBackdrop, onClose }: ArtifactModalProps) 
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
+                </DialogContent>
+            </Dialog>
 
             {showBuyModal && artifact.data?.list?.price && (
                 <BuyArtifactModal

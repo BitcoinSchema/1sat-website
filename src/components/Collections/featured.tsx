@@ -4,9 +4,11 @@ import { ORDFS } from "@/constants";
 import type { CollectionStats } from "@/types/collection";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Slider, { Settings } from "react-slick";
 import { useMediaQuery } from "usehooks-ts";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type Featured = {
   stats?: CollectionStats;
@@ -21,39 +23,101 @@ type Featured = {
   }[];
 }
 
-const FeaturedCollections = () => {
+// Custom arrow components
+const NextArrow = ({ onClick }: { onClick?: () => void }) => (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={onClick}
+    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-muted hover:text-primary"
+  >
+    <ChevronRight className="w-5 h-5" />
+  </Button>
+);
 
+const PrevArrow = ({ onClick }: { onClick?: () => void }) => (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={onClick}
+    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-muted hover:text-primary"
+  >
+    <ChevronLeft className="w-5 h-5" />
+  </Button>
+);
+
+const FeaturedCollections = () => {
+  const [mounted, setMounted] = useState(false);
   const smUp = useMediaQuery('(min-width: 640px)');
   const mdUp = useMediaQuery('(min-width: 768px)');
   const lgUp = useMediaQuery('(min-width: 1024px)');
   const xlUp = useMediaQuery('(min-width: 1280px)');
   const xxlUp = useMediaQuery('(min-width: 1536px)');
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Shuffle collections on mount for variety
+  const shuffledCollections = useMemo(() => {
+    if (!mounted) return featured;
+    return [...featured].sort(() => Math.random() - 0.5);
+  }, [mounted]);
+
   const settings = useMemo(() => {
+    const slidesToShow = xxlUp ? 5 : xlUp ? 4 : lgUp ? 3 : mdUp ? 2 : smUp ? 2 : 1;
     return {
-      dots: true,
+      dots: false,
       infinite: true,
       speed: 500,
-      slidesToShow: xxlUp ? 4 : xlUp ? 4 : lgUp ? 3 : mdUp ? 3 : smUp ? 2 : 1,
-      slidesToScroll: xxlUp ? 4 : xlUp ? 4 : lgUp ? 3 : mdUp ? 3 : smUp ? 2 : 1,
+      slidesToShow,
+      slidesToScroll: 1,
       autoplay: true,
-      autoplaySpeed: 3000,
+      autoplaySpeed: 4000,
+      pauseOnHover: true,
+      nextArrow: <NextArrow />,
+      prevArrow: <PrevArrow />,
+      cssEase: "cubic-bezier(0.4, 0, 0.2, 1)",
     } as Settings;
   }, [xxlUp, xlUp, lgUp, mdUp, smUp]);
 
+  if (!mounted) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="aspect-square bg-muted animate-pulse rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-8">
+    <div className="relative px-12">
       <Slider {...settings}>
-        {featured.map((collection: Featured) => (
-          <div key={`c-${collection.origin}`}>
-            <Link href={`/collection/${collection.origin}`}>
-              <Image
-                src={collection.previewUrl || `${ORDFS}/${collection.origin}`}
-                alt={collection.name}
-                width={300}
-                height={300}
-                className="rounded-box mx-auto h-[300px] w-[300px]"
-              />
+        {shuffledCollections.map((collection: Featured) => (
+          <div key={`c-${collection.origin}`} className="px-2">
+            <Link 
+              href={`/collection/${collection.origin}`}
+              className="group block"
+            >
+              <div className="relative aspect-square overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10">
+                <Image
+                  src={collection.previewUrl || `${ORDFS}/${collection.origin}`}
+                  alt={collection.name}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                
+                {/* Collection name */}
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <h3 className="font-mono text-xs uppercase tracking-wider text-white truncate group-hover:text-primary transition-colors">
+                    {collection.name}
+                  </h3>
+                </div>
+              </div>
             </Link>
           </div>
         ))}
@@ -121,13 +185,6 @@ const featured: Featured[] = [
       },
     ],
   },
-  // {
-  //   origin: "5117338ee9885e867fbf51d7a36b09b786bc395c817f49fd91ab6f0cb0771f97_0",
-  //   name: "Masks of Salvation",
-  //   previewUrl:
-  //     "https://ordfs.network/5117338ee9885e867fbf51d7a36b09b786bc395c817f49fd91ab6f0cb0771f97_0",
-  //   height: 791882,
-  // },
   {
     origin: "80d224cdf1d6f6b5145a7f5ede14b357ea7c05f7f7f4aaab04d4cc36d707f806_0",
     name: "Bookworms",
@@ -156,13 +213,6 @@ const featured: Featured[] = [
       "https://takeit-art-prod.s3.amazonaws.com/1Zoide/ae18bbd2-b322-48cd-8b3e-ba127121d7f5",
     height: 792196,
   },
-  // {
-  //   origin: "d2901f73588a012e4d4b1a44354195f86c1f057c1ccf4b612bc20c6359b11248_0",
-  //   name: "Uniqords",
-  //   previewUrl:
-  //     "https://ordfs.network/d2901f73588a012e4d4b1a44354195f86c1f057c1ccf4b612bc20c6359b11248_0",
-  //   height: 783972,
-  // },
   {
     origin: "ac9c9f59ae63ae07bc5a25e20dc5635f233076ab18df8c43e2c16e4f3242c750_0",
     name: "CoOM Battles · Genesis Airdrop",
@@ -303,13 +353,6 @@ const featured: Featured[] = [
     previewUrl:
       "https://ordfs.network/6352cd99e4df66f727175b71da91f0bf0276cd4541ab6cb213126ea22c7f8f61_0",
   },
-  // {
-  //   origin: "805d7173b4018228004f8655d994ea967851bdb1e15aebcf5936aeb4147fedf1_0",
-  //   name: "Testing Burgers",
-  //   height: 818298,
-  //   previewUrl:
-  //     "https://ordfs.network/805d7173b4018228004f8655d994ea967851bdb1e15aebcf5936aeb4147fedf1_0",
-  // },
   {
     origin: "d545e4218a92492d7129ffc2caa02c09a7e38505a775f65b919884417814b281_0",
     name: "Nakagon 2",
@@ -317,11 +360,4 @@ const featured: Featured[] = [
     previewUrl:
       "https://ordfs.network/d545e4218a92492d7129ffc2caa02c09a7e38505a775f65b919884417814b281_0",
   },
-  // {
-  //   origin: "76e7af296d8c051775caa2a305cf99d13c870999eecedf6a453c02377e87814f_0",
-  //   name: "1Zoide",
-  //   height: 792196,
-  //   previewUrl:
-  //     "https://ordfs.network/76e7af296d8c051775caa2a305cf99d13c870999eecedf6a453c02377e87814f_0",
-  // },
 ];

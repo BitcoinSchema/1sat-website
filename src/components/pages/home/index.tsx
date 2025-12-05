@@ -8,13 +8,13 @@ import HomeLoadingSkeleton from "./loadingSkeleton";
 
 const HomePage: React.FC = async () => {
   return (
-    <main className="px-4 flex items-center justify-center w-full min-h-[calc(100dvh-15rem+)]">
-      <div className="flex flex-col items-center w-full h-full">
+    <div className="h-full w-full overflow-y-auto">
+      <div className="px-4 py-6 w-full">
         <Suspense fallback={<HomeLoadingSkeleton />}>
           <FlowLoader />
         </Suspense>
       </div>
-    </main>
+    </div>
   );
 };
 

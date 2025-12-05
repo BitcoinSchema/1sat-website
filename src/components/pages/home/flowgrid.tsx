@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { flushSync } from "react-dom";
 import type { OrdUtxo } from "@/types/ordinals";
 import Link from "next/link";
@@ -13,7 +13,7 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 const LoadingSkeleton = ({ count }: { count: number }) => (
     <>
         {Array.from({ length: count }).map((_, i) => (
-            <div key={`skeleton-${i}`} className="relative mb-4 break-inside-avoid">
+            <div key={`skeleton-${i}`} className="relative mb-4">
                 <div className="skeleton w-full aspect-square rounded-lg bg-[#333] animate-pulse"></div>
             </div>
         ))}
@@ -28,24 +28,75 @@ const getContentType = (artifact: OrdUtxo): 'video' | 'audio' | '3d' | 'image' =
     return 'image';
 };
 
+// Hook to determine number of columns based on window width
+const useColumnCount = () => {
+    const [columns, setColumns] = useState(1);
+
+    useEffect(() => {
+        const updateColumns = () => {
+            const width = window.innerWidth;
+            if (width >= 1280) setColumns(4);      // xl
+            else if (width >= 1024) setColumns(3); // lg
+            else if (width >= 640) setColumns(2);  // sm
+            else setColumns(1);
+        };
+
+        updateColumns();
+        window.addEventListener('resize', updateColumns);
+        return () => window.removeEventListener('resize', updateColumns);
+    }, []);
+
+    return columns;
+};
+
 const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[], className: string }) => {
-    const observers = useRef<Map<string, IntersectionObserver>>(new Map());
     const sentinelRef = useRef<HTMLDivElement>(null);
     const seenOutpoints = useRef<Set<string>>(new Set());
-    const [visible, setVisible] = useState<Map<string, boolean>>(new Map());
+    const [visible, setVisible] = useState<Set<string>>(new Set());
     const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
     const [showBackdrop, setShowBackdrop] = useState(false);
+    
+    // Determine column count
+    const columnCount = useColumnCount();
 
-    const observeImage = useCallback((element: HTMLImageElement, artifact: OrdUtxo) => {
-        if (!element) return;
-        const observer = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting) {
-                setVisible(prev => new Map(prev).set(artifact.outpoint, true));
-                observer.disconnect();
+    // Intersection Observer for images
+    const observerRef = useRef<IntersectionObserver | null>(null);
+
+    const observeImage = useCallback((element: HTMLElement | null, outpoint: string) => {
+        if (!element || visible.has(outpoint)) return;
+        
+        if (!observerRef.current) {
+            observerRef.current = new IntersectionObserver((entries) => {
+                const newVisible = new Set<string>();
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('data-outpoint');
+                        if (id) newVisible.add(id);
+                        observerRef.current?.unobserve(entry.target);
+                    }
+                });
+                
+                if (newVisible.size > 0) {
+                    setVisible(prev => {
+                        const next = new Set(prev);
+                        newVisible.forEach(id => next.add(id));
+                        return next;
+                    });
+                }
+            }, { threshold: 0.1 });
+        }
+
+        element.setAttribute('data-outpoint', outpoint);
+        observerRef.current.observe(element);
+    }, [visible]);
+
+    useEffect(() => {
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+                observerRef.current = null;
             }
-        }, { threshold: 0.1 });
-        observer.observe(element);
-        observers.current.set(artifact.outpoint, observer);
+        };
     }, []);
 
     useEffect(() => {
@@ -60,9 +111,11 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
 
     const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
         e.preventDefault();
+        // Skip view transition for now if it's causing issues, or keep it simple
         if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-            try {
-                const transition = (document as any).startViewTransition(() => {
+             try {
+                // @ts-ignore
+                const transition = document.startViewTransition(() => {
                     flushSync(() => {
                         setSelectedArtifact(artifact);
                     });
@@ -70,11 +123,9 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
                 transition.ready.then(() => {
                     setShowBackdrop(true);
                 }).catch(() => {
-                    // Transition aborted, ensure modal still shows
                     setShowBackdrop(true);
                 });
             } catch (err) {
-                // Fallback if transition fails
                 setSelectedArtifact(artifact);
                 setShowBackdrop(true);
             }
@@ -104,10 +155,8 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
     } = useInfiniteQuery({
         queryKey: ['market-flow'],
         queryFn: async ({ pageParam }) => {
-            console.log(`Fetching page at cursor ${pageParam}`);
             const response = await fetch(`/api/feed?cursor=${pageParam}&limit=30`);
             const result = await response.json() as { items: OrdUtxo[], nextCursor: number | null, total: number };
-            console.log(`Received ${result.items.length} items, nextCursor: ${result.nextCursor}, total: ${result.total}`);
             result.items.forEach(item => {
                 const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
                 seenOutpoints.current.add(outpoint);
@@ -120,7 +169,7 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
             pages: [{
                 items: initialArtifacts,
                 nextCursor: initialArtifacts.length,
-                total: initialArtifacts.length
+                total: 1000
             }],
             pageParams: [0]
         } : undefined,
@@ -129,43 +178,29 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         refetchOnWindowFocus: false,
     });
 
-    const allArtifacts = data?.pages.flatMap(page => page.items) || [];
-    const seen = new Set<string>();
-    const artifacts = allArtifacts.filter(artifact => {
-        if (!artifact?.outpoint) return false;
-        if (!artifact.origin?.outpoint) return false;
-
-        // Use artifact.outpoint directly - this is the CURRENT listing outpoint
-        const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
-
-        if (seen.has(outpointStr)) return false;
-        seen.add(outpointStr);
-        return true;
-    });
-
-    useEffect(() => {
-        console.log(`FlowGrid: ${data?.pages.length || 0} pages, ${allArtifacts.length} total artifacts, ${artifacts.length} after dedup, hasNextPage: ${hasNextPage}`);
-    }, [data?.pages.length, allArtifacts.length, artifacts.length, hasNextPage]);
-
-    useEffect(() => {
-        // Initialize all new artifacts as visible immediately
-        // IntersectionObserver lazy loading was causing items to stay invisible
-        for (const artifact of artifacts) {
-            // Use artifact.outpoint directly - this is the CURRENT listing outpoint
+    const allArtifacts = useMemo(() => {
+        const flat = data?.pages.flatMap(page => page.items) || [];
+        const seen = new Set<string>();
+        return flat.filter(artifact => {
+            if (!artifact?.outpoint) return false;
+            if (!artifact.origin?.outpoint) return false;
             const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
+            if (seen.has(outpointStr)) return false;
+            seen.add(outpointStr);
+            return true;
+        });
+    }, [data?.pages]);
 
-            setVisible(prev => {
-                if (!prev.has(outpointStr)) {
-                    return new Map(prev).set(outpointStr, true);
-                }
-                return prev;
-            });
-        }
-        return () => {
-            observers.current.forEach(observer => observer.disconnect());
-        };
-    }, [artifacts]);
+    // Distribute artifacts into columns
+    const columns = useMemo(() => {
+        const cols: OrdUtxo[][] = Array.from({ length: columnCount }, () => []);
+        allArtifacts.forEach((artifact, i) => {
+            cols[i % columnCount].push(artifact);
+        });
+        return cols;
+    }, [allArtifacts, columnCount]);
 
+    // Infinite scroll sentinel
     useEffect(() => {
         const sentinel = sentinelRef.current;
         if (!sentinel) return;
@@ -173,117 +208,127 @@ const FlowGrid = ({ initialArtifacts, className }: { initialArtifacts: OrdUtxo[]
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-                    console.log('Sentinel intersecting, fetching next page');
                     fetchNextPage();
                 }
             },
-            { threshold: 0, rootMargin: '0px 0px 1000px 0px' }
+            { threshold: 0.1, rootMargin: '400px' } // Increased rootMargin for smoother loading
         );
 
         observer.observe(sentinel);
         return () => observer.disconnect();
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+    const renderArtifact = (artifact: OrdUtxo) => {
+        const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
+        const originOutpoint = artifact.origin?.outpoint;
+        
+        if (!originOutpoint) return null;
+
+        const src = `https://ordfs.network/${originOutpoint}`;
+        const contentType = getContentType(artifact);
+        const imgSrc = contentType === 'image' ? `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}` : src;
+        const isVisible = visible.has(outpointStr);
+
+        return (
+            <Link href={`/outpoint/${outpointStr}/timeline`} key={outpointStr} className="block mb-4">
+                <div
+                    className={`relative break-inside-avoid group ${isVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+                    onClick={(e) => handleCardClick(e, artifact)}
+                    ref={(el) => observeImage(el, outpointStr)}
+                >
+                    <div className={"relative shadow-md bg-[#111] rounded-lg overflow-hidden"}>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                window.open(`https://ordfs.network/${artifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer');
+                            }}
+                            className="absolute top-2 right-2 z-10 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                            <SquareArrowOutUpRight className="w-4 h-4 text-white" />
+                        </button>
+                        
+                        {contentType === 'video' && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                <div className="p-4 bg-black/60 rounded-full">
+                                    <Play className="w-12 h-12 text-white fill-white" />
+                                </div>
+                            </div>
+                        )}
+
+                        {contentType === 'video' ? (
+                            <video
+                                src={src}
+                                className='w-full h-auto'
+                                width={375}
+                                muted
+                                playsInline
+                            />
+                        ) : contentType === '3d' ? (
+                            <div className='w-full aspect-square bg-gradient-to-br from-purple-900/30 to-blue-900/30 flex items-center justify-center'>
+                                <Box className="w-24 h-24 text-purple-300/50" />
+                            </div>
+                        ) : contentType === 'audio' ? (
+                            <div className='w-full aspect-square bg-gradient-to-br from-pink-900/30 to-orange-900/30 flex items-center justify-center'>
+                                <Music className="w-24 h-24 text-pink-300/50" />
+                            </div>
+                        ) : (
+                            <ImageWithFallback
+                                src={imgSrc}
+                                alt={`Image ${artifact.txid}`}
+                                className='w-full h-auto'
+                                width={375}
+                            />
+                        )}
+                        
+                        <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none'>
+                            <p className='text-base font-bold'>{toBitcoin(artifact.data?.list?.price || 0)} BSV</p>
+                            <p className='text-sm truncate'>{artifact.data?.map?.name}</p>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+        );
+    };
+
     return (
         <>
-        <div className={`relative text-center ${className}`}>
-            <div className='columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4'>
-                {artifacts.length === 0 ? (
-                    <LoadingSkeleton count={20} />
-                ) : (
-                    <>
-                        {artifacts.map((artifact) => {
-                            // Use the artifact.outpoint directly - this is the CURRENT listing outpoint, not the origin
-                            const outpointStr = artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
-
-                            // Ensure origin.outpoint is a string and not an object
-                            const originOutpoint = artifact.origin?.outpoint;
-                            const isValidOutpoint = originOutpoint && typeof originOutpoint === 'string' && originOutpoint.length > 0;
-
-                            if (!isValidOutpoint) {
-                                console.warn('Invalid origin outpoint for artifact:', artifact.txid, originOutpoint);
-                                return null;
-                            }
-
-                            const src = `https://ordfs.network/${originOutpoint}`;
-                            const isInModal = selectedArtifact?.outpoint === outpointStr;
-                            const contentType = getContentType(artifact);
-                            const imgSrc = contentType === 'image' ? `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}` : src;
-
-                            return (
-                                <Link href={`/outpoint/${outpointStr}/timeline`} key={outpointStr}>
-                                    <div
-                                        className={`relative mb-4 break-inside-avoid group ${visible.get(outpointStr) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
-                                        onClick={(e) => handleCardClick(e, artifact)}
-                                    >
-                                        <div className={"relative shadow-md bg-[#111] rounded-lg"}>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    window.open(`https://ordfs.network/${artifact.origin?.outpoint}`, '_blank', 'noopener,noreferrer');
-                                                }}
-                                                className="absolute top-2 right-2 z-10 p-1.5 bg-black/50 hover:bg-black/70 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                            >
-                                                <SquareArrowOutUpRight className="w-4 h-4 text-white" />
-                                            </button>
-                                            {contentType === 'video' && (
-                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                                    <div className="p-4 bg-black/60 rounded-full">
-                                                        <Play className="w-12 h-12 text-white fill-white" />
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {contentType === 'video' ? (
-                                                <video
-                                                    src={src}
-                                                    className='w-full h-auto rounded-lg'
-                                                    width={375}
-                                                    muted
-                                                    playsInline
-                                                    ref={(el) => {
-                                                        if (!el) return;
-                                                        observeImage(el as any, artifact)
-                                                    }}
-                                                />
-                                            ) : contentType === '3d' ? (
-                                                <div
-                                                    className='w-full aspect-square rounded-lg bg-gradient-to-br from-purple-900/30 to-blue-900/30 flex items-center justify-center'
-                                                >
-                                                    <Box className="w-24 h-24 text-purple-300/50" />
-                                                </div>
-                                            ) : contentType === 'audio' ? (
-                                                <div
-                                                    className='w-full aspect-square rounded-lg bg-gradient-to-br from-pink-900/30 to-orange-900/30 flex items-center justify-center'
-                                                >
-                                                    <Music className="w-24 h-24 text-pink-300/50" />
-                                                </div>
-                                            ) : (
-                                                <ImageWithFallback
-                                                    src={imgSrc}
-                                                    alt={`Image ${artifact.txid}`}
-                                                    className='w-full h-auto rounded-lg'
-                                                    width={375}
-                                                    ref={(el) => {
-                                                        if (!el) return;
-                                                        observeImage(el, artifact)
-                                                    }}
-                                                />
-                                            )}
-                                            <div className='absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none'>
-                                                <p className='text-base font-bold'>{toBitcoin(artifact.data?.list?.price || 0)} BSV</p>
-                                                <p className='text-sm'>{artifact.data?.map?.name}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                        {isFetchingNextPage && <LoadingSkeleton count={30} />}
-                    </>
+        <div className={`relative ${className}`}>
+            <div className="flex gap-4">
+                {columns.map((colItems, colIndex) => (
+                    <div key={colIndex} className="flex-1 flex flex-col gap-0 min-w-0">
+                        {colItems.map(renderArtifact)}
+                        {/* Add skeletons to columns when loading more */}
+                        {isFetchingNextPage && <LoadingSkeleton count={2} />}
+                    </div>
+                ))}
+                
+                {allArtifacts.length === 0 && !isFetchingNextPage && (
+                    <div className="w-full text-center py-20 text-muted-foreground col-span-full">
+                        No artifacts found.
+                    </div>
                 )}
             </div>
-            <div ref={sentinelRef} className="h-20" />
+
+            {/* Initial loading state */}
+            {allArtifacts.length === 0 && isFetchingNextPage && (
+                 <div className="flex gap-4">
+                     {Array.from({ length: columnCount }).map((_, i) => (
+                         <div key={i} className="flex-1">
+                             <LoadingSkeleton count={5} />
+                         </div>
+                     ))}
+                 </div>
+            )}
+
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="h-20 w-full flex items-center justify-center mt-8">
+                {hasNextPage && (
+                    <div className="text-muted-foreground">
+                        {isFetchingNextPage ? 'Loading more...' : 'Scroll for more'}
+                    </div>
+                )}
+            </div>
         </div>
 
         <ArtifactModal

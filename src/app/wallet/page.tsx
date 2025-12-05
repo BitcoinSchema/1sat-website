@@ -1,10 +1,12 @@
-import WalletHome from "@/components/Wallet/home";
+import WalletOrdinals from "@/components/Wallet/ordinals";
+import WalletLayout from "@/components/Wallet/WalletLayout";
+import { WalletTab } from "@/components/Wallet/tabs";
 
 const WalletPage = () => {
 	return (
-		<div className="mx-auto">
-			<WalletHome />
-		</div>
+		<WalletLayout tab={WalletTab.Ordinals}>
+			<WalletOrdinals />
+		</WalletLayout>
 	);
 };
 

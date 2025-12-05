@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Details from "./details";
 import List, { type MarketData } from "./list";
 import TableHeading from "./tableHeading";
+import { Table } from "@/components/ui/table";
 
 interface TokenMarketProps {
   type: AssetType.BSV20 | AssetType.BSV21;
@@ -21,32 +22,36 @@ const TokenMarket: React.FC<TokenMarketProps> = async ({ type, id, sort, dir }) 
   marketData = await getMarketData(new NextRequest(url), type, id, sort, dir);
 
   if (!marketData.length) {
-    return <div className="text-center">No data found</div>;
+    return <div className="text-center font-mono text-muted-foreground py-8 uppercase tracking-wider">No data found</div>;
   }
-  
+
   const ticker = (marketData || []).find((t) => t.tick === id || t.id === id);
   return (
     <>
-      {!id && <div className="w-full rounded-b-box overflow-x-auto"><table className="table font-mono">
-        <TableHeading type={type} sortable={true} />
-        <Suspense fallback={<TokenListingSkeleton type={type}/>}>
-          <List type={type} sort={sort} dir={dir} />
-        </Suspense>
-      </table></div>}
-      {id && <>
-        <Suspense fallback={<TokenListingSkeleton type={type} />}>
-          <div className="overflow-x-auto w-full">
-            <table className="table font-mono">
-              <TableHeading type={type} sortable={false} />
-              <List type={type} id={id} sort={sort} dir={dir} ticker={ticker} />
-            </table>
-          </div>
-          <Details type={type} id={id} 
-          marketData={marketData}
-           />
-        </Suspense>
-      </>}
-      </>
+      {!id && (
+        <div className="w-full overflow-x-auto bg-background">
+          <Table className="w-full font-mono text-sm">
+            <TableHeading type={type} sortable={true} />
+            <Suspense fallback={<TokenListingSkeleton type={type}/>}>
+              <List type={type} sort={sort} dir={dir} />
+            </Suspense>
+          </Table>
+        </div>
+      )}
+      {id && (
+        <>
+          <Suspense fallback={<TokenListingSkeleton type={type} />}>
+            <div className="overflow-x-auto w-full bg-background">
+              <Table className="w-full font-mono text-sm">
+                <TableHeading type={type} sortable={false} />
+                <List type={type} id={id} sort={sort} dir={dir} ticker={ticker} />
+              </Table>
+            </div>
+            <Details type={type} id={id} marketData={marketData} />
+          </Suspense>
+        </>
+      )}
+    </>
   );
 };
 

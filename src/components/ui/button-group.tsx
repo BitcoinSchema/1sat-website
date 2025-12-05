@@ -1,61 +1,83 @@
-import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
 import { cn } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
 
-const ButtonGroup = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
-    orientation?: "horizontal" | "vertical"
+const buttonGroupVariants = cva(
+  "flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 [&>*]:focus-visible:relative [&>*]:focus-visible:z-10 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
+  {
+    variants: {
+      orientation: {
+        horizontal:
+          "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
+        vertical:
+          "flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
+      },
+    },
+    defaultVariants: {
+      orientation: "horizontal",
+    },
   }
->(({ className, orientation = "horizontal", ...props }, ref) => (
-  <div
-    ref={ref}
-    role="group"
-    className={cn(
-      "inline-flex",
-      orientation === "horizontal" ? "flex-row" : "flex-col",
-      "[&>button]:rounded-none",
-      "[&>button:first-child]:rounded-l-md",
-      "[&>button:last-child]:rounded-r-md",
-      orientation === "vertical" && "[&>button:first-child]:rounded-t-md [&>button:first-child]:rounded-l-none",
-      orientation === "vertical" && "[&>button:last-child]:rounded-b-md [&>button:last-child]:rounded-r-none",
-      className
-    )}
-    {...props}
-  />
-))
-ButtonGroup.displayName = "ButtonGroup"
+)
 
-const ButtonGroupSeparator = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
-    orientation?: "horizontal" | "vertical"
-  }
->(({ className, orientation = "horizontal", ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "bg-border",
-      orientation === "horizontal" ? "w-px h-full" : "h-px w-full",
-      className
-    )}
-    {...props}
-  />
-))
-ButtonGroupSeparator.displayName = "ButtonGroupSeparator"
+function ButtonGroup({
+  className,
+  orientation,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
+  return (
+    <div
+      role="group"
+      data-slot="button-group"
+      data-orientation={orientation}
+      className={cn(buttonGroupVariants({ orientation }), className)}
+      {...props}
+    />
+  )
+}
 
-const ButtonGroupText = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "inline-flex items-center justify-center px-3 text-sm",
-      className
-    )}
-    {...props}
-  />
-))
-ButtonGroupText.displayName = "ButtonGroupText"
+function ButtonGroupText({
+  className,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"div"> & {
+  asChild?: boolean
+}) {
+  const Comp = asChild ? Slot : "div"
 
-export { ButtonGroup, ButtonGroupSeparator, ButtonGroupText }
+  return (
+    <Comp
+      className={cn(
+        "bg-muted shadow-xs flex items-center gap-2 rounded-md border px-4 text-sm font-medium [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function ButtonGroupSeparator({
+  className,
+  orientation = "vertical",
+  ...props
+}: React.ComponentProps<typeof Separator>) {
+  return (
+    <Separator
+      data-slot="button-group-separator"
+      orientation={orientation}
+      className={cn(
+        "bg-input relative !m-0 self-stretch data-[orientation=vertical]:h-auto",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  ButtonGroup,
+  ButtonGroupSeparator,
+  ButtonGroupText,
+  buttonGroupVariants,
+}

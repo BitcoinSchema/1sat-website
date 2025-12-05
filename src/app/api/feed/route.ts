@@ -9,9 +9,27 @@ type CachedItem = OrdUtxo & { _cachedAt: number };
 // In production, this should use Redis or similar
 let feedPool: CachedItem[] = [];
 let isRefilling = false;
-const ITEM_TTL = 30 * 60 * 1000; // 30 minutes per item
-const MIN_POOL_SIZE = 800; // Trigger refill below this
-const POOL_SIZE = 2000; // Max items in pool
+let poolInitialized = false;
+const ITEM_TTL = 60 * 60 * 1000; // 1 hour per item (increased from 30 min)
+const MIN_POOL_SIZE = 300; // Trigger refill below this (reduced from 800)
+const POOL_SIZE = 1000; // Max items in pool (reduced from 2000)
+const API_TIMEOUT = 5000; // 5 second timeout for API calls
+
+// Helper to fetch with timeout
+async function fetchWithTimeout(url: string, timeout: number = API_TIMEOUT): Promise<any> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    return [];
+  }
+}
 
 // Seeded shuffle for deterministic but random-looking results
 function seededShuffle<T>(array: T[], seed: number): T[] {
@@ -35,12 +53,11 @@ function seededShuffle<T>(array: T[], seed: number): T[] {
 
 // Helper to get collection ID
 function getCollectionId(item: OrdUtxo): string {
-  // Try multiple collection identifiers for better grouping
   return item.origin?.data?.map?.subTypeData?.collectionName ||
          item.origin?.data?.map?.subTypeData?.collection ||
          item.data?.map?.collectionId ||
          item.origin?.data?.map?.tx_id ||
-         item.origin?.data?.map?.app || // Group by app if no collection
+         item.origin?.data?.map?.app ||
          'uncategorized';
 }
 
@@ -48,13 +65,12 @@ function getCollectionId(item: OrdUtxo): string {
 function interleaveByCollection(items: OrdUtxo[]): OrdUtxo[] {
   const byCollection = new Map<string, OrdUtxo[]>();
   const collectionCounts = new Map<string, number>();
-  const maxPerCollection = 50; // Limit per collection in the pool
+  const maxPerCollection = 30; // Reduced from 50
 
   items.forEach(item => {
     const collectionId = getCollectionId(item);
     const count = collectionCounts.get(collectionId) || 0;
 
-    // Skip if we have too many from this collection
     if (count >= maxPerCollection) return;
 
     if (!byCollection.has(collectionId)) {
@@ -79,188 +95,108 @@ function interleaveByCollection(items: OrdUtxo[]): OrdUtxo[] {
   return interleaved;
 }
 
-// Generate weighted random offset favoring recent items
-function getWeightedOffset(): number {
-  // Rebalanced distribution to spread load across more items
-  // 40% recent, 30% mid, 20% older, 10% very old
-  const random = Math.random();
+// Lightweight pool refresh - non-blocking
+async function refreshFeedPool() {
+  // Don't block - return immediately and fill in background
+  if (isRefilling) return;
+  
+  isRefilling = true;
+  
+  // Fill pool in background
+  (async () => {
+    try {
+      const now = Date.now();
+      
+      // Fetch just a few pages to start quickly
+      const promises = [
+        fetchWithTimeout(`${API_HOST}/api/market?limit=40&offset=0&type=image`, 3000),
+        fetchWithTimeout(`${API_HOST}/api/market?limit=40&offset=40&type=image`, 3000),
+        fetchWithTimeout(`${API_HOST}/api/market?limit=10&offset=0&type=video`, 3000),
+      ];
 
-  if (random < 0.4) {
-    // 40% chance: recent (0-200)
-    return Math.floor(Math.random() * 200);
-  } else if (random < 0.7) {
-    // 30% chance: mid (200-500)
-    return 200 + Math.floor(Math.random() * 300);
-  } else if (random < 0.9) {
-    // 20% chance: older (500-1500)
-    return 500 + Math.floor(Math.random() * 1000);
-  } else {
-    // 10% chance: very old (1500-3000)
-    return 1500 + Math.floor(Math.random() * 1500);
-  }
-}
+      const results = await Promise.allSettled(promises);
+      const allItems = results
+        .filter(r => r.status === 'fulfilled')
+        .map(r => (r as PromiseFulfilledResult<any>).value)
+        .flat() as OrdUtxo[];
 
-// Fetch items from backend and add to pool
-async function fetchAndAddItems(count: number = 100): Promise<void> {
-  try {
-    const now = Date.now();
-
-    // Generate random offsets
-    const offsets = Array.from({ length: Math.ceil(count / 40) }, () => getWeightedOffset());
-
-    // Fetch images
-    const imagePromises = offsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=40&offset=${offset}&type=image`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    // Fetch some videos too
-    const videoOffsets = [getWeightedOffset(), getWeightedOffset()];
-    const videoPromises = videoOffsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=10&offset=${offset}&type=video`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    // Fetch some 3D models
-    const modelOffsets = [getWeightedOffset()];
-    const modelPromises = modelOffsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=model`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    // Fetch some audio
-    const audioOffsets = [getWeightedOffset()];
-    const audioPromises = audioOffsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=audio`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises, ...audioPromises]);
-    const allItems = results.flat() as OrdUtxo[];
-
-    // Get existing outpoints to avoid duplicates
-    const existingOutpoints = new Set(feedPool.map(item => item.outpoint));
-
-    // Deduplicate
-    const newItems = allItems
-      .filter(item => {
+      // Deduplicate
+      const seen = new Set<string>();
+      const deduplicated = allItems.filter(item => {
         const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
-        return !existingOutpoints.has(outpoint);
+        if (seen.has(outpoint)) return false;
+        seen.add(outpoint);
+        return true;
       });
 
-    // Interleave new items by collection
-    const interleaved = interleaveByCollection(newItems);
+      // Interleave by collection for diversity
+      const interleaved = interleaveByCollection(deduplicated);
 
-    // Add timestamps
-    const withTimestamps: CachedItem[] = interleaved.map(item => ({
+      // Add timestamps
+      const withTimestamps: CachedItem[] = interleaved.map(item => ({
+        ...item,
+        _cachedAt: now
+      }));
+
+      feedPool = seededShuffle(withTimestamps.slice(0, POOL_SIZE), Date.now());
+      poolInitialized = true;
+      
+      console.log(`Feed pool initialized with ${feedPool.length} items`);
+      
+      // Continue filling in background if needed
+      if (feedPool.length < MIN_POOL_SIZE) {
+        backgroundExpand();
+      }
+    } catch (error) {
+      console.error('Error refreshing feed pool:', error);
+      poolInitialized = true; // Mark as initialized even on error
+    } finally {
+      isRefilling = false;
+    }
+  })();
+}
+
+// Expand pool with more content
+async function backgroundExpand() {
+  try {
+    const now = Date.now();
+    const existingOutpoints = new Set(feedPool.map(item => item.outpoint));
+    
+    // Fetch more content with varied offsets
+    const offsets = [100, 200, 300, 500, 750, 1000];
+    const promises = offsets.map(offset =>
+      fetchWithTimeout(`${API_HOST}/api/market?limit=20&offset=${offset}&type=image`, 3000)
+    );
+    
+    const results = await Promise.allSettled(promises);
+    const allItems = results
+      .filter(r => r.status === 'fulfilled')
+      .map(r => (r as PromiseFulfilledResult<any>).value)
+      .flat() as OrdUtxo[];
+    
+    // Filter new items only
+    const newItems = allItems.filter(item => {
+      const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
+      return !existingOutpoints.has(outpoint);
+    });
+    
+    // Add to pool
+    const withTimestamps: CachedItem[] = newItems.map(item => ({
       ...item,
       _cachedAt: now
     }));
-
-    // Append to pool
+    
     feedPool.push(...withTimestamps);
-
+    
     // Limit pool size
     if (feedPool.length > POOL_SIZE) {
       feedPool = feedPool.slice(0, POOL_SIZE);
     }
-
-    console.log(`Added ${withTimestamps.length} new items to pool. Pool size: ${feedPool.length}`);
+    
+    console.log(`Expanded pool by ${withTimestamps.length} items. Total: ${feedPool.length}`);
   } catch (error) {
-    console.error('Error fetching items:', error);
+    console.error('Error expanding pool:', error);
   }
-}
-
-// Initial pool refresh
-async function refreshFeedPool() {
-  try {
-    const now = Date.now();
-
-    // Always include very recent items (0-100) and then weighted random offsets
-    const offsets = [
-      0,    // Always include the newest
-      10,   // Very recent
-      25,   // Very recent
-      50,   // Recent
-      ...Array.from({ length: 30 }, () => getWeightedOffset())
-    ].sort((a, b) => a - b);
-
-    // Fetch both images and videos for content variety
-    const imagePromises = offsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=40&offset=${offset}&type=image`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    const videoOffsets = [0, 10, 25, getWeightedOffset(), getWeightedOffset()];
-    const videoPromises = videoOffsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=10&offset=${offset}&type=video`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    const modelOffsets = [0, getWeightedOffset()];
-    const modelPromises = modelOffsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=model`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    const audioOffsets = [0, getWeightedOffset()];
-    const audioPromises = audioOffsets.map(offset =>
-      fetch(`${API_HOST}/api/market?limit=5&offset=${offset}&type=audio`)
-        .then(res => res.json())
-        .catch(() => [])
-    );
-
-    const results = await Promise.all([...imagePromises, ...videoPromises, ...modelPromises, ...audioPromises]);
-    const allItems = results.flat() as OrdUtxo[];
-
-    // Deduplicate by outpoint
-    const seen = new Set<string>();
-    const deduplicated = allItems.filter(item => {
-      const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
-      if (seen.has(outpoint)) return false;
-      seen.add(outpoint);
-      return true;
-    });
-
-    // Interleave by collection for diversity
-    const interleaved = interleaveByCollection(deduplicated);
-
-    // Add timestamps and shuffle
-    const withTimestamps: CachedItem[] = interleaved.map(item => ({
-      ...item,
-      _cachedAt: now
-    }));
-
-    feedPool = seededShuffle(withTimestamps.slice(0, POOL_SIZE), Date.now());
-
-    console.log(`Feed pool initialized with ${feedPool.length} items from ${allItems.length} total`);
-  } catch (error) {
-    console.error('Error refreshing feed pool:', error);
-  }
-}
-
-// Background refill (non-blocking)
-function backgroundRefill() {
-  if (isRefilling) {
-    console.log('Refill already in progress, skipping');
-    return;
-  }
-
-  isRefilling = true;
-  console.log('Triggering background refill');
-
-  Promise.resolve()
-    .then(() => fetchAndAddItems(500))
-    .finally(() => {
-      isRefilling = false;
-    });
 }
 
 export async function GET(request: NextRequest) {
@@ -269,31 +205,41 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '30', 10);
   const now = Date.now();
 
-  // Initialize pool if empty
-  if (feedPool.length === 0) {
-    await refreshFeedPool();
+  // Initialize pool if needed (non-blocking)
+  if (!poolInitialized && feedPool.length === 0) {
+    refreshFeedPool(); // This returns immediately
+    
+    // Return empty for first request while pool initializes
+    // Client will retry
+    return NextResponse.json({
+      items: [],
+      nextCursor: null,
+      total: 0,
+      poolInitializing: true
+    });
   }
 
   // Filter expired items
-  const beforeExpiration = feedPool.length;
-  feedPool = feedPool.filter(item => now - item._cachedAt < ITEM_TTL);
-
-  if (beforeExpiration > feedPool.length) {
-    console.log(`Removed ${beforeExpiration - feedPool.length} expired items. Pool: ${feedPool.length}`);
+  const validItems = feedPool.filter(item => now - item._cachedAt < ITEM_TTL);
+  
+  // Update pool if many items expired
+  if (validItems.length < feedPool.length * 0.5) {
+    feedPool = validItems;
+    if (!isRefilling) {
+      backgroundExpand(); // Non-blocking expansion
+    }
   }
 
-  // Trigger background refill if pool is running low
+  // Trigger background refill if pool is low
   if (feedPool.length < MIN_POOL_SIZE && !isRefilling) {
-    backgroundRefill();
+    backgroundExpand();
   }
 
   // Return paginated results
   const start = cursor;
   const end = Math.min(start + limit, feedPool.length);
-  const items = feedPool.slice(start, end).map(({ _cachedAt, ...item }) => item); // Remove timestamp from response
+  const items = feedPool.slice(start, end).map(({ _cachedAt, ...item }) => item);
   const nextCursor = end < feedPool.length ? end : null;
-
-  console.log(`[Feed API] Serving items ${start}-${end} of ${feedPool.length} | nextCursor: ${nextCursor} | refilling: ${isRefilling}`);
 
   return NextResponse.json({
     items,
@@ -302,9 +248,15 @@ export async function GET(request: NextRequest) {
   });
 }
 
-// Optionally allow manual refresh via POST
+// Manual refresh endpoint
 export async function POST() {
+  poolInitialized = false;
+  feedPool = [];
   await refreshFeedPool();
+  
+  // Wait a bit for initial pool to fill
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
   return NextResponse.json({
     success: true,
     poolSize: feedPool.length

@@ -32,8 +32,16 @@ import {
 } from "js-1sat-ord";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
-import { IoMdWarning } from "react-icons/io";
 import { toBitcoin } from "satoshi-token";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, ShoppingCart } from "lucide-react";
 interface BuyArtifactModalProps {
   onClose: () => void;
   listing: Listing | OrdUtxo;
@@ -306,66 +314,79 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
   }, [listing.owner]);
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div
-      className="z-[60] flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
-      onClick={() => onClose()}
-    >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-      <div
-        className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative w-full h-64 md:h-96 overflow-hidden modal-content">
+    <Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="bg-background border-border rounded-lg max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-foreground">
+            <ShoppingCart className="w-5 h-5 text-primary" />
+            Purchase
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="relative w-full h-64 md:h-80 overflow-hidden flex items-center justify-center bg-card rounded">
           {content}
         </div>
+
         {scamListing && (
-          <div className="rounded mb-4 p-2 text-xs text-red-200">
-            <h1>FLAGGED</h1>
-            <IoMdWarning className="inline-block mr-2" />
-            This item has been identified as potentially inauthentic, or a duplicate of an original work and is not available for purchase.
+          <div className="p-3 border border-red-500/50 bg-red-900/20 text-red-400">
+            <h1 className="font-mono text-xs uppercase tracking-wider flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4" />
+              Flagged
+            </h1>
+            <p className="font-mono text-xs text-red-300">
+              This item has been identified as potentially inauthentic, or a duplicate of an original work and is not available for purchase.
+            </p>
           </div>
         )}
+
         {knownScammer && (
-          <div className="rounded mb-4 p-2 text-xs text-red-200">
-            <h1>FLAGGED</h1>
-            <IoMdWarning className="inline-block mr-2" />
-            This seller has been identified as a known scammer and their listings are not available for purchase.
+          <div className="p-3 border border-red-500/50 bg-red-900/20 text-red-400">
+            <h1 className="font-mono text-xs uppercase tracking-wider flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4" />
+              Flagged
+            </h1>
+            <p className="font-mono text-xs text-red-300">
+              This seller has been identified as a known scammer and their listings are not available for purchase.
+            </p>
           </div>
         )}
+
         {!scamListing && showLicense && (
-          <div className="rounded mb-4 p-2 text-xs text-[#777]">
-            <h1>License</h1>
-            <IoMdWarning className="inline-block mr-2" />
-            You are about to purchase this inscription, granting you ownership
-            and control of the associated token. This purchase does not include
-            a license to any artwork or IP that may be depicted here and no
-            rights are transferred to the purchaser unless specified explicitly
-            within the transaction itself.
+          <div className="p-3 border border-border bg-card">
+            <h1 className="font-mono text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              License Notice
+            </h1>
+            <p className="font-mono text-xs text-muted-foreground">
+              You are about to purchase this inscription, granting you ownership
+              and control of the associated token. This purchase does not include
+              a license to any artwork or IP that may be depicted here and no
+              rights are transferred to the purchaser unless specified explicitly
+              within the transaction itself.
+            </p>
           </div>
         )}
-        <form
-          className="modal-action"
-        >
-          {!scamListing && <button
-            type="button"
-            onClick={ordAddress.value
-              ? isBsv20Listing
-                ? buyBsv20
-                : buyArtifact
-              : handleUnlockWallet}
-            className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#222]"
-          >
-            {"Buy -"}{" "}
-            {price && price > 0
-              ? price > 1000
-                ? `${toBitcoin(price.toString())} BSV`
-                : `${price} sat`
-              : 0}
-          </button>}
-        </form>
-      </div>
-    </div>
+
+        <DialogFooter className="border-t border-border pt-4">
+          {!scamListing && (
+            <Button
+              type="button"
+              onClick={ordAddress.value
+                ? isBsv20Listing
+                  ? buyBsv20
+                  : buyArtifact
+                : handleUnlockWallet}
+            >
+              Buy - {price && price > 0
+                ? price > 1000
+                  ? `${toBitcoin(price.toString())} BSV`
+                  : `${price} sat`
+                : 0}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

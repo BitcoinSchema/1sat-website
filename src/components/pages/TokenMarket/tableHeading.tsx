@@ -4,10 +4,11 @@ import { AssetType, SortBy } from "@/constants";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { FaSort, FaSortUp, FaSortDown, FaHashtag } from "react-icons/fa";
+import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const TableHeading = ({
 	type,
-  sortable,
+	sortable,
 }: { type: AssetType.BSV20 | AssetType.BSV21, sortable: boolean }) => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -20,130 +21,83 @@ const TableHeading = ({
 		router.push(`/market/${type}/?sort=${column}&dir=${newDir}`);
 	}, [router, type, dir]);
 
+	const SortIcon = ({ column }: { column: SortBy }) => {
+		if (!sortable) return null;
+		return (
+			<span className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === column ? "text-primary" : "text-muted-foreground/50"}`}>
+				{sort === column ? (dir === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
+			</span>
+		);
+	};
+
 	return (
-		<thead className="w-full">
-			<tr>
-				<th className={`min-w-16 ${sortable ? "cursor-pointer" : ""} group flex items-center`}>
-					{type === AssetType.BSV20 && (
-						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-						<div className="mr-2 hover:text-white" onClick={() => handleSort(SortBy.Number)}>
-							<FaHashtag />
-						</div>
-					)}
-					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-					<div
-						className="flex items-center"
-						onClick={() => sortable ? handleSort(SortBy.Ticker) : null}
-					>
-						Ticker
-						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Ticker ? "" : "text-[#555]"}`}
+		<TableHeader className="w-full border-b border-border bg-muted/30">
+			<TableRow className="hover:bg-transparent">
+				<TableHead className={`min-w-16 px-4 py-3 text-left text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group`}>
+					<div className="flex items-center">
+						{type === AssetType.BSV20 && (
+							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+							<div className="mr-2 hover:text-primary transition" onClick={() => handleSort(SortBy.Number)}>
+								<FaHashtag />
+							</div>
+						)}
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+						<div
+							className="flex items-center hover:text-primary transition"
+							onClick={() => sortable ? handleSort(SortBy.Ticker) : null}
 						>
-							{sort === SortBy.Ticker ? (
-								dir === "asc" ? (
-									<FaSortUp />
-								) : (
-									<FaSortDown />
-								)
-							) : (
-								<FaSort />
-							)}
-						</span>}
+							Ticker
+							<SortIcon column={SortBy.Ticker} />
+						</div>
 					</div>
-				</th>
+				</TableHead>
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-				<th
-					className={`w-1/2 ${sortable ? "cursor-pointer" : ""} group`}
+				<TableHead
+					className={`w-1/2 px-4 py-3 text-left text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable ? handleSort(SortBy.Price) : null}
 				>
 					<div className="flex items-center">
 						Recent Price
-						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Price ? "" : "text-[#555]"}`}
-						>
-							{sort === SortBy.Price ? (
-								dir === "asc" ? (
-									<FaSortUp />
-								) : (
-									<FaSortDown />
-								)
-							) : (
-								<FaSort />
-							)}
-						</span>}
+						<SortIcon column={SortBy.Price} />
 					</div>
-				</th>
+				</TableHead>
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-				<th
-					className={`${sortable ? "cursor-pointer" : ""} group`}
+				<TableHead
+					className={`px-4 py-3 text-left text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable ? handleSort(SortBy.PctChange) : null}
 				>
 					<div className="flex items-center">
 						Pct Change
-						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.PctChange ? "" : "text-[#555]"}`}
-						>
-							{sort === SortBy.PctChange ? (
-								dir === "asc" ? (
-									<FaSortUp />
-								) : (
-									<FaSortDown />
-								)
-							) : (
-								<FaSort />
-							)}
-						</span>}
+						<SortIcon column={SortBy.PctChange} />
 					</div>
-				</th>
+				</TableHead>
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-				<th
-					className={`text-right flex-1 ${sortable ? "cursor-pointer" : ""} group`}
+				<TableHead
+					className={`px-4 py-3 text-right text-xs uppercase tracking-widest text-muted-foreground flex-1 ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable && handleSort(SortBy.MarketCap)}
 				>
 					<div className="flex items-center justify-end">
 						Market Cap
-						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.MarketCap ? "" : "text-[#555]"}`}
-						>
-							{sort === SortBy.MarketCap ? (
-								dir === "asc" ? (
-									<FaSortUp />
-								) : (
-									<FaSortDown />
-								)
-							) : (
-								<FaSort />
-							)}
-						</span>}
+						<SortIcon column={SortBy.MarketCap} />
 					</div>
-				</th>
+				</TableHead>
 				{type === AssetType.BSV21 && (
-					<th className="text-center w-12">Contract</th>
+					<TableHead className="px-4 py-3 text-center text-xs uppercase tracking-widest text-muted-foreground w-12">
+						Contract
+					</TableHead>
 				)}
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-				<th
-					className={`${type === AssetType.BSV21 ? "w-48" : "w-96"} text-right ${sortable ? "cursor-pointer" : ""} group`}
+				<TableHead
+					className={`${type === AssetType.BSV21 ? "w-48" : "w-96"} px-4 py-3 text-right text-xs uppercase tracking-widest text-muted-foreground ${sortable ? "cursor-pointer" : ""} group hover:text-primary transition`}
 					onClick={() => sortable ? handleSort(SortBy.Holders) : null}
 				>
 					<div className="flex items-center justify-end">
 						Holders
-						{sortable && <span
-							className={`w-6 ml-1 md:invisible md:group-hover:visible ${sort === SortBy.Holders ? "" : "text-[#555]"}`}
-						>
-							{sort === SortBy.Holders ? (
-								dir === "asc" ? (
-									<FaSortUp />
-								) : (
-									<FaSortDown />
-								)
-							) : (
-								<FaSort />
-							)}
-						</span>}
+						<SortIcon column={SortBy.Holders} />
 					</div>
-				</th>
-			</tr>
-		</thead>
+				</TableHead>
+			</TableRow>
+		</TableHeader>
 	);
 };
 

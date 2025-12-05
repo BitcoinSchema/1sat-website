@@ -1,14 +1,13 @@
-"use client";
-
 import { API_HOST } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
 import type { OrdUtxo } from "@/types/ordinals";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { FaSpinner } from "react-icons/fa";
-import WalletTabs, { WalletTab } from "./tabs";
+import { Loader2 } from "lucide-react";
 import { useMemo } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface WalletHistoryProps {
   address?: string | undefined;
@@ -62,107 +61,140 @@ const WalletHistory: React.FC<WalletHistoryProps> = ({
 
   if (isLoadingBsv20History || isLoadingHistory) {
     return (
-      <div className="mx-auto animate-spin w-fit">
-        <FaSpinner />
+      <div className="flex items-center justify-center p-12 min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (isBsv20HistoryError || isHistoryError) {
-    return <div>Error {bsv20Error?.message || historyError?.message}</div>;
+    return (
+      <div className="flex items-center justify-center p-12 text-destructive min-h-[400px]">
+        Error {bsv20Error?.message || historyError?.message}
+      </div>
+    );
   }
 
-
-  // {
-  //   "txid": "45d0b39a861f470dda4bd72a311b757384e5cc6ecdfdd93f9218d9357af29540",
-  //   "vout": 0,
-  //   "outpoint": "45d0b39a861f470dda4bd72a311b757384e5cc6ecdfdd93f9218d9357af29540_0",
-  //   "satoshis": 10000000,
-  //   "accSats": "0",
-  //   "height": 834816,
-  //   "idx": "328",
-  //   "owner": "1NVoMjzjAgskT5dqWtTXVjQXUns7RqYp2m",
-  //   "spend": "77749e6e75c5d411f5005ebc7a53e427a4bd4c77e010b4090da6bcd7620f361e",
-  //   "origin": null,
-  //   "data": null
-  // }
-
   return (
-    <div className="overflow-x-auto">
-      <div className={`${"mb-12"} mx-auto w-full max-w-5xl`}>
-        <div className="flex flex-col items-center justify-center w-full h-full max-w-5xl">
-          <WalletTabs
-            type={WalletTab.History}
-            address={addressProp}
-          />
-          <div className="w-full min-w-96 min-h-[80vh] tab-content bg-base-100 border-base-200 rounded-box p-2 md:p-6 flex flex-col md:flex-row md:max-w-5xl">
-            <div className="w-full">
-              <table className="table w-full">
-                <thead>
-                  <tr>
-                    <th>Txid</th>
-                    <th>Spend</th>
-                    <th>Origin</th>
-                    <th>Sats</th>
-                  </tr>
-                </thead>
-                <tbody>
+    <div className="flex flex-col w-full h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border">
+        <h1 className="font-mono text-sm uppercase tracking-widest text-foreground">
+          TRANSACTION_HISTORY
+        </h1>
+        <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+          {(history?.length || 0) + (bsv20History?.length || 0)} RECORDS
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="space-y-8">
+          <Card className="border-border bg-card">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="font-mono uppercase tracking-widest text-sm text-muted-foreground">Ordinals History</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4">Txid</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4">Spend</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4">Origin</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4 text-right">Sats</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {history?.map((tx) => (
-                    <tr key={tx.txid}>
-                      <td>{tx.txid}</td>
-                      <td>{tx.spend}</td>
-                      <td>
+                    <TableRow key={tx.txid} className="border-border hover:bg-muted/50">
+                      <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[200px]" title={tx.txid}>
+                        {tx.txid}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[200px]" title={tx.spend}>
+                        {tx.spend}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
                         <Link
                           href={
                             tx.origin?.outpoint
                               ? `/outpoint/${tx.origin.outpoint}`
                               : "#"
                           }
+                          className="text-primary hover:underline truncate block max-w-[200px]"
+                          title={tx.origin?.outpoint}
                         >
-                          {tx.origin?.outpoint}
+                          {tx.origin?.outpoint || "-"}
                         </Link>
-                      </td>
-                      <td>{tx.satoshis}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-right">
+                        {tx.satoshis}
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                  {(!history || history.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        No transaction history found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-              <h2 className="text-2xl font-bold mt-8">BSV20 History</h2>
-              <table className="table w-full">
-                <thead>
-                  <tr>
-                    <th>Txid</th>
-                    <th>Spend</th>
-                    <th>Origin</th>
-                    <th>Sats</th>
-                  </tr>
-                </thead>
-
-                <tbody>
+          <Card className="border-border bg-card">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="font-mono uppercase tracking-widest text-sm text-muted-foreground">BSV20 History</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4">Txid</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4">Spend</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4">Origin</TableHead>
+                    <TableHead className="font-mono text-xs uppercase tracking-wider text-muted-foreground w-1/4 text-right">Sats</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {bsv20History?.map((tx) => (
-                    <tr key={tx.txid}>
-                      <td>{tx.txid}</td>
-                      <td>{tx.spend}</td>
-                      <td>
+                    <TableRow key={tx.txid} className="border-border hover:bg-muted/50">
+                      <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[200px]" title={tx.txid}>
+                        {tx.txid}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[200px]" title={tx.spend}>
+                        {tx.spend}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
                         <Link
                           href={
                             tx.origin?.outpoint
                               ? `/outpoint/${tx.origin.outpoint}`
                               : "#"
                           }
+                          className="text-primary hover:underline truncate block max-w-[200px]"
+                          title={tx.origin?.outpoint}
                         >
-                          {tx.origin?.outpoint}
+                          {tx.origin?.outpoint || "-"}
                         </Link>
-                      </td>
-                      <td>{tx.satoshis}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-right">
+                        {tx.satoshis}
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-
-            </div>
-          </div>
+                  {(!bsv20History || bsv20History.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        No BSV20 history found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

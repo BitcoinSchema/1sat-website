@@ -1,91 +1,91 @@
 "use client";
 
 import { exchangeRate } from "@/signals/wallet";
-import { ordAddress } from "@/signals/wallet/address";
-
 import { useSignals } from "@preact/signals-react/runtime";
 import Link from "next/link";
-import { CgSpinner } from "react-icons/cg";
-import { FaStore } from "react-icons/fa";
+import { Store, ChevronDown } from "lucide-react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const MarketMenu: React.FC = () => {
-  useSignals();
-  const address = ordAddress.value;
-  
-  return (
-    <>
-      <div className="hidden md:block dropdown dropdown-end">
-        {exchangeRate.value > 0 && (
-          <div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
-            1 BSV ={" "}
-            <span className="text-emerald-300/50">
-              ${exchangeRate.value.toFixed(2)}
-            </span>
-          </div>
-        )}
-        {address && !exchangeRate.value && (
-          <div className="relative rounded bg-[#111] px-1 mr-2 text-sm text-[#555] pointer-events-none">
-            <CgSpinner className="animate-spin" />
-          </div>
-        )}
-      </div>
-      <div className="dropdown dropdown-end">
-        <div
-          className="btn btn-ghost m-1 rounded relative"
-          tabIndex={0}
-          role="button"
-        >
-          <div className="tooltip tooltip-bottom" data-tip="Market">
-            <FaStore />
-          </div>
-        </div>
+	useSignals();
 
-        <ul
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
-          tabIndex={0}
-          className="dropdown-content z-[20] menu shadow bg-base-100 rounded-box w-64 border border-yellow-200/25 "
-        >
-          <div className="divider">Collectables</div>
+	return (
+		<div className="flex items-center gap-2">
+			{/* Exchange Rate Display */}
+			{exchangeRate.value > 0 && (
+				<div className="hidden md:flex items-center text-xs text-muted-foreground border border-border px-3 py-1.5 bg-card font-mono">
+					<span>
+						1 BSV = <span className="text-primary">${exchangeRate.value.toFixed(2)}</span>
+					</span>
+				</div>
+			)}
 
-          <li>
-            <Link
-              href="/market/ordinals"
-              className="flex items-center justify-between"
-            >
-              <div>Ordinals</div>
-              <div className="text-[#555]">NFT</div>
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/collection"
-              className="flex items-center justify-between"
-            >
-              <div>Collections</div>
-              <div className="text-[#555]">NFT</div>
-            </Link>
-          </li>
-          <div className="divider">Token Market</div>
-          <li>
-            <Link
-              className="flex items-center justify-between"
-              href="/market/bsv20"
-            >
-              BSV20 <div className="text-[#555]">FT</div>
-            </Link>
-          </li>
-          <li>
-            <Link
-              className="flex items-center justify-between"
-              href="/market/bsv21"
-            >
-              BSV21 <div className="text-[#555]">FT</div>
-            </Link>
-          </li>
-        </ul>
-      </div>
-    </>
-  );
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button
+						type="button"
+						className="flex items-center gap-2 px-3 py-1.5 text-sm font-mono transition-colors bg-card text-muted-foreground border border-border hover:border-primary/50 hover:text-primary focus:outline-none focus:ring-1 focus:ring-ring"
+					>
+						<Store className="w-4 h-4" />
+						<span className="hidden sm:inline uppercase tracking-wider text-xs">Market</span>
+						<ChevronDown className="h-3 w-3 opacity-50" />
+					</button>
+				</DropdownMenuTrigger>
+
+				<DropdownMenuContent
+					align="end"
+					className="w-56 bg-background border border-border text-foreground font-mono"
+				>
+					<DropdownMenuLabel className="text-primary/70 text-xs uppercase tracking-widest">
+						Collectables
+					</DropdownMenuLabel>
+
+					<DropdownMenuSeparator className="bg-border" />
+
+					<DropdownMenuItem asChild className="focus:bg-accent focus:text-accent-foreground cursor-pointer rounded-sm">
+						<Link href="/market/ordinals" className="flex items-center justify-between w-full">
+							<span>Ordinals</span>
+							<span className="text-muted-foreground text-xs">NFT</span>
+						</Link>
+					</DropdownMenuItem>
+
+					<DropdownMenuItem asChild className="focus:bg-green-900/20 focus:text-green-400 cursor-pointer rounded-none">
+						<Link href="/collection" className="flex items-center justify-between w-full">
+							<span>Collections</span>
+							<span className="text-muted-foreground text-xs">NFT</span>
+						</Link>
+					</DropdownMenuItem>
+
+					<DropdownMenuSeparator className="bg-zinc-800" />
+
+					<DropdownMenuLabel className="text-green-500/70 text-xs uppercase tracking-widest">
+						Token Market
+					</DropdownMenuLabel>
+
+					<DropdownMenuItem asChild className="focus:bg-green-900/20 focus:text-green-400 cursor-pointer rounded-none">
+						<Link href="/market/bsv20" className="flex items-center justify-between w-full">
+							<span>BSV20</span>
+							<span className="text-zinc-600 text-xs">FT</span>
+						</Link>
+					</DropdownMenuItem>
+
+					<DropdownMenuItem asChild className="focus:bg-green-900/20 focus:text-green-400 cursor-pointer rounded-none">
+						<Link href="/market/bsv21" className="flex items-center justify-between w-full">
+							<span>BSV21</span>
+							<span className="text-zinc-600 text-xs">FT</span>
+						</Link>
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</div>
+	);
 };
 
 export default MarketMenu;

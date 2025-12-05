@@ -10,6 +10,7 @@ import { useEffect, useRef } from "react";
 import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
 import { mySales } from "./signals";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   ticker: MarketData;
@@ -80,14 +81,14 @@ export function TokenMarketMySales({ ticker, type }: Props) {
       {mySales.value?.map((sale) => {
         return (
           <div
-            className="flex w-full justify-between"
+            className="flex w-full justify-between items-center py-2 border-b border-border last:border-b-0"
             key={`${sale.txid}-${sale.vout}-${sale.height}`}
           >
             <Link
               href={`/outpoint/${sale.txid}`}
-              className="flex flex-col py-1"
+              className="flex flex-col py-1 hover:text-primary transition"
             >
-              <span className="text-secondary-content/75">
+              <span className="text-foreground">
                 {(
                   Number.parseInt(sale.amt) /
                   10 ** ticker.dec
@@ -95,33 +96,34 @@ export function TokenMarketMySales({ ticker, type }: Props) {
                 {ticker.tick}
               </span>
               <div className="flex items-center">
-                <span className="text-base-content/50 text-xs">
+                <span className="text-muted-foreground text-xs">
                   {sale.pricePer} / token
                 </span>
-                <span className="text-accent text-xs mx-1">
+                <span className="text-primary text-xs mx-1">
                   •
                 </span>
-                <span className="text-accent text-xs">
+                <span className="text-primary text-xs">
                   Block #{sale.height}
                 </span>
               </div>
             </Link>
             <div className="py-1">
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 disabled
-                className="btn btn-xs btn-outline btn-secondary pointer-events-none"
+                className="text-xs pointer-events-none"
               >
                 {Number.parseInt(sale.price) > 1000
                   ? `${toBitcoin(sale.price)} BSV`
                   : `${sale.price} sat`}
-              </button>
+              </Button>
             </div>
           </div>
         );
       })}
       {mySales.value?.length === 0 && (
-        <div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
+        <div className="text-center text-muted-foreground min-h-64 flex items-center justify-center">
           No sales found
         </div>
       )}

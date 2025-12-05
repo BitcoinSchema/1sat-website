@@ -19,6 +19,16 @@ import { type Distribution, type Payment, TokenInputMode, TokenSelectionStrategy
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Send, Flame } from "lucide-react";
 
 interface TransferModalProps {
   onClose: () => void;
@@ -185,86 +195,77 @@ const TransferBsv20Modal: React.FC<TransferModalProps> = ({
   }, [dec]);
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div
-      className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen backdrop-blur	bg-black bg-opacity-50 overflow-hidden"
-      onClick={() => onClose()}
-    >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-      <div
-        className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col border border-yellow-200/5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative w-full h-64 md:h-full overflow-hidden mb-4">
-          <form onSubmit={submit}>
-            <div className="flex justify-between">
-              <div className="text-lg font-semibold">
-                {burn ? "Burn" : "Transfer"} {type === WalletTab.BSV20 ? id : sym}{" "}
-                {type}
-              </div>
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-              <div
-                className="text-xs cursor-pointer text-[#aaa]"
-                onClick={setAmountToBalance}
-              >
-                Balance: {balance}{" "}
-                {type === WalletTab.BSV20 ? id : sym}
-              </div>
-            </div>
+    <Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="bg-background border-border rounded-lg max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between w-full font-mono text-lg uppercase tracking-widest text-foreground">
+            <span className="flex items-center gap-3">
+              {burn ? (
+                <Flame className="w-5 h-5 text-orange-500" />
+              ) : (
+                <Send className="w-5 h-5 text-primary" />
+              )}
+              {burn ? "Burn" : "Transfer"} {type === WalletTab.BSV20 ? id : sym}
+            </span>
+            <button
+              type="button"
+              className="text-xs font-mono text-muted-foreground hover:text-primary transition cursor-pointer"
+              onClick={setAmountToBalance}
+            >
+              Balance: {balance} {type === WalletTab.BSV20 ? id : sym}
+            </button>
+          </DialogTitle>
+        </DialogHeader>
 
-            <div className="flex flex-col w-full">
-              <label className="text-sm font-semibold text-[#aaa] mb-2">
-                Amount
-              </label>
-              <input
-                type="number"
-                placeholder={placeholderText}
-                max={balance}
-                step={dec ? `0.${"0".repeat(dec - 1)}1` : "1"}
-                className="input input-bordered w-full"
-                value={amount.value || undefined}
-                onChange={(e) => {
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Amount</Label>
+            <Input
+              type="number"
+              placeholder={placeholderText}
+              max={balance}
+              step={dec ? `0.${"0".repeat(dec - 1)}1` : "1"}
+              value={amount.value || ""}
+              onChange={(e) => {
+                const regex = new RegExp(`^\\d*\\.?\\d{0,${dec}}$`);
+                if (!regex.test(e.target.value)) {
+                  e.target.value = e.target.value.slice(0, -1);
+                }
+                if (
+                  e.target.value === "" ||
+                  Number.parseFloat(e.target.value) <= balance
+                ) {
+                  amount.value = e.target.value;
+                }
+              }}
+            />
+          </div>
 
-                  const regex = new RegExp(`^\\d*\\.?\\d{0,${dec}}$`);
-                  if (!regex.test(e.target.value)) {
-                    e.target.value = e.target.value.slice(0, -1);
-                  }
-                  if (
-                    e.target.value === "" ||
-                    Number.parseFloat(e.target.value) <=
-                    balance
-                  ) {
-                    amount.value = e.target.value;
-                  }
-                }}
-              />
-            </div>
-            {!burn && <div className="flex flex-col mt-4">
-              <label className="text-sm font-semibold text-[#aaa] mb-2">
-                Address
-              </label>
-              <input
+          {!burn && (
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Input
                 type="text"
                 placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-                className="input input-bordered w-full"
-                value={(burn ? fundingAddress.value : address.value) || ""}
+                value={address.value || ""}
                 onChange={(e) => {
                   address.value = e.target.value;
                 }}
               />
-            </div>}
-            <div className="modal-action">
-              <button
-                type="submit"
-                className="bg-[#222] p-2 rounded cusros-pointer hover:bg-emerald-600 text-white"
-              >
-                {burn ? "Burn" : "Send"}
-              </button>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t border-border">
+            <Button
+              type="submit"
+              variant={burn ? "destructive" : "default"}
+            >
+              {burn ? "Burn" : "Send"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

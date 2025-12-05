@@ -12,6 +12,7 @@ import { useEffect, useRef } from "react";
 import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
 import { myListings } from "./signals";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   ticker: MarketData;
@@ -91,8 +92,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
     <>
       {myListings.value?.map((listing) => {
         const qty = Number.parseInt(listing.amt) / 10 ** ticker.dec;
-        const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym
-          }`;
+        const qtyStr = `${qty.toLocaleString()} ${ticker.tick || ticker.sym}`;
         const pricePer = (
           Number.parseFloat(listing.price) / qty
         ).toLocaleString('en-US', {
@@ -104,25 +104,25 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
         const myListing = listing.owner === ordAddress.value;
         return (
           <div
-            className="flex w-full justify-between"
+            className="flex w-full justify-between items-center py-2 border-b border-border last:border-b-0"
             key={`${listing.txid}-${listing.vout}-${listing.height}`}
           >
             <Link
               href={`/outpoint/${listing.txid}_${listing.vout}`}
-              className="flex flex-col py-1"
+              className="flex flex-col py-1 hover:text-primary transition"
             >
-              <span className="text-secondary-content/75">
+              <span className="text-foreground">
                 {qtyStr}
               </span>
-              <span className="text-base-content/50 text-xs">
+              <span className="text-muted-foreground text-xs">
                 {pricePer} sat/token
               </span>
             </Link>
             <div className="py-1">
-              <button
-                type="button"
-                className={`ml-2 btn btn-outline hover:btn-primary transition btn-xs ${myListing ? "btn-primary" : ""
-                  }`}
+              <Button
+                variant={myListing ? "default" : "outline"}
+                size="sm"
+                className="ml-2 text-xs"
                 onClick={() => {
                   console.log({ listing });
                   if (!myListing) {
@@ -135,7 +135,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
                 {Number.parseInt(listing.price) < 1000
                   ? `${listing.price} sat`
                   : `${toBitcoin(listing.price)} BSV`}
-              </button>
+              </Button>
               {showCancel.value === listing.txid && (
                 <CancelListingModal
                   className="w-full"
@@ -163,7 +163,7 @@ export function TokenMarketMyListings({ ticker, type }: Props) {
         );
       })}
       {myListings.value?.length === 0 && (
-        <div className="text-center text-base-content/75 min-h-64 flex items-center justify-center">
+        <div className="text-center text-muted-foreground min-h-64 flex items-center justify-center">
           No listings found
         </div>
       )}

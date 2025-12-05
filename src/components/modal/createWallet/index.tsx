@@ -13,6 +13,15 @@ import { EnterPassphraseStep } from "./steps/EnterPassphraseStep";
 import { FundStep } from "./steps/FundStep";
 import { VerifyMnemonicStep } from "./steps/VerifyMnemonicStep";
 import { ViewMnemonicStep } from "./steps/ViewMnemonicStep";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Wallet, AlertTriangle } from "lucide-react";
 
 const CreateWalletModal = ({
   open,
@@ -37,35 +46,44 @@ const CreateWalletModal = ({
 
 
   return (
-    <dialog
-      id="create_wallet_modal"
-      className={`modal backdrop-blur	${open ? "modal-open" : ""}`}
-    >
-      <div className="modal-box h-fit">
-        <h3 className="font-bold text-lg">Create New Wallet</h3>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && close()}>
+      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
+            <Wallet className="w-5 h-5 text-green-500" />
+            Create New Wallet
+          </DialogTitle>
+        </DialogHeader>
 
-        {alreadyHasKey.value && (<div className="mt-4">
-          <div className="text-neutral-content p-4 rounded-box bg-neutral">
-            You already have a wallet! If you really want to make a new
-            wallet, sign out first.
-          </div>
-          <form method="dialog">
-            <div className="modal-action">
-              <button
-                className="btn"
+        {alreadyHasKey.value && (
+          <div className="space-y-4">
+            <div className="p-4 border border-yellow-500/50 bg-yellow-900/20 text-yellow-400">
+              <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider mb-2">
+                <AlertTriangle className="w-4 h-4" />
+                Wallet Exists
+              </div>
+              <p className="font-mono text-sm text-yellow-300">
+                You already have a wallet! If you really want to make a new
+                wallet, sign out first.
+              </p>
+            </div>
+            <DialogFooter className="flex gap-2 pt-4 border-t border-zinc-800">
+              <Button
                 type="button"
-                onClick={() => {
-                  close();
-                }}
+                variant="outline"
+                onClick={() => close()}
               >
                 Cancel
-              </button>
-              <button className="btn btn-primary" type="button" onClick={() => {
-                router.push("/wallet/delete")
-              }}>Sign Out</button>
-            </div>
-          </form>
-        </div>)}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => router.push("/wallet/delete")}
+              >
+                Sign Out
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
 
         {!alreadyHasKey.value && (
           <>
@@ -73,30 +91,29 @@ const CreateWalletModal = ({
               <CreateStep onClose={close} />
             )}
 
-            {createWalletStep.value ===
-              CreateWalletStep.Created && <CreatedStep />}
+            {createWalletStep.value === CreateWalletStep.Created && (
+              <CreatedStep />
+            )}
 
-            {createWalletStep.value ===
-              CreateWalletStep.EnterPassphrase && (
-                <EnterPassphraseStep />
-              )}
+            {createWalletStep.value === CreateWalletStep.EnterPassphrase && (
+              <EnterPassphraseStep />
+            )}
 
-            {createWalletStep.value ===
-              CreateWalletStep.ViewMnemonic && (
-                <ViewMnemonicStep />
-              )}
+            {createWalletStep.value === CreateWalletStep.ViewMnemonic && (
+              <ViewMnemonicStep />
+            )}
 
-            {createWalletStep.value ===
-              CreateWalletStep.VerifyMnemonic && (
-                <VerifyMnemonicStep />
-              )}
+            {createWalletStep.value === CreateWalletStep.VerifyMnemonic && (
+              <VerifyMnemonicStep />
+            )}
 
             {createWalletStep.value === CreateWalletStep.Fund && (
               <FundStep onClose={close} />
             )}
-          </>)}
-      </div >
-    </dialog >
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 

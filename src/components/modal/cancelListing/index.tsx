@@ -5,6 +5,7 @@ import { bsv20Utxos, ordPk, payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
 import { getUtxos } from "@/utils/address";
+import { notifyIndexer } from "@/utils/indexer";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useCallback } from "react";
@@ -14,13 +15,22 @@ import {
 	type CancelOrdListingsConfig,
 	cancelOrdTokenListings,
 	type CancelOrdTokenListingsConfig,
-	OneSatBroadcaster,
 	oneSatBroadcaster,
 	TokenType,
 	type Utxo,
 } from "js-1sat-ord";
-import { FetchHttpClient, PrivateKey } from "@bsv/sdk";
+import { PrivateKey } from "@bsv/sdk";
 import type { OrdUtxo } from "@/types/ordinals";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogDescription,
+	DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2, XCircle } from "lucide-react";
 
 interface CancelListingModalProps {
 	onClose: () => void;
@@ -93,6 +103,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
         const response = await tx.broadcast(oneSatBroadcaster());
       console.log({response});
 			if (response.status === "success") {
+				notifyIndexer(response.txid);
 				bsv20Utxos.value =
 					bsv20Utxos.value?.filter(
 						(u: OrdUtxo) => spentOutpoints.indexOf(`${u.txid}_${u.vout}`) === -1,
@@ -183,6 +194,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 			const { txid, status } = await tx.broadcast(oneSatBroadcaster());
 			if (status === "success") {
 				console.log("Broadcasted", { txid });
+				notifyIndexer(txid);
 				toast.success("Listing canceled.", toastProps);
 				const newOutpoint = `${txid}_0`;
 
@@ -209,50 +221,58 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 	);
 
 	return (
-		<dialog id={`cancel-listing-modal-${listing.tick}`} className="modal" open>
-			<div className="modal-box">
-				<h3 className="font-bold text-lg">Cancel Listing</h3>
-				<p className="py-4">
-					Are you sure you want to cancel the listing for{" "}
-					{listing.tick || listing.sym || "this ordinal"}?
-				</p>
-				<form method="dialog">
-					<div className="modal-action">
-						{/* if there is a button in form, it will close the modal */}
-						<button type="button" className="btn" onClick={onClose}>
-							Close
-						</button>
-						{listing && (
-							<button
-								type="button"
-								disabled={cancelling.value}
-								className="btn btn-error disabled:btn-disabled"
-								onClick={async (e) => {
-									if (listing.tick || listing.id) {
-										console.log("Cancel BSV20", { listing });
-										await cancelBsv20Listing(e);
-									} else if (
-										!listing.data?.bsv20 &&
-										!listing.origin?.data?.bsv20
-									) {
-										console.log("Cancel Non BSV20 Listing", { listing });
-										await cancelListing(e);
-									} else {
-										console.log("invalid listing", listing);
-										toast.error(
-											`Something went wrong ${listing.outpoint}`,
-											toastErrorProps,
-										);
-									}
-								}}
-							>
-								Cancel Listing
-							</button>
-						)}
-					</div>
-				</form>
-			</div>
-		</dialog>
+		<Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
+			<DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-md">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
+						<XCircle className="w-5 h-5 text-red-500" />
+						Cancel Listing
+					</DialogTitle>
+					<DialogDescription className="font-mono text-sm text-zinc-400">
+						Are you sure you want to cancel the listing for{" "}
+						<span className="text-zinc-200">{listing.tick || listing.sym || "this ordinal"}</span>?
+					</DialogDescription>
+				</DialogHeader>
+
+				<DialogFooter className="flex gap-2 pt-4 border-t border-zinc-800">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={onClose}
+					>
+						Close
+					</Button>
+					{listing && (
+						<Button
+							type="button"
+							variant="destructive"
+							disabled={cancelling.value}
+							onClick={async (e) => {
+								if (listing.tick || listing.id) {
+									console.log("Cancel BSV20", { listing });
+									await cancelBsv20Listing(e);
+								} else if (
+									!listing.data?.bsv20 &&
+									!listing.origin?.data?.bsv20
+								) {
+									console.log("Cancel Non BSV20 Listing", { listing });
+									await cancelListing(e);
+								} else {
+									console.log("invalid listing", listing);
+									toast.error(
+										`Something went wrong ${listing.outpoint}`,
+										toastErrorProps,
+									);
+								}
+							}}
+						>
+							{cancelling.value && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+							Cancel Listing
+						</Button>
+					)}
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };
 

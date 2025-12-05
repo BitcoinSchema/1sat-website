@@ -1,4 +1,14 @@
+"use client";
+
 import Deposit from "@/components/Wallet/deposit";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 interface DespotModalProps {
   onClose: () => void;
@@ -6,27 +16,28 @@ interface DespotModalProps {
 
 const DepositModal: React.FC<DespotModalProps> = ({ onClose }) => {
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-    <div
-      className="modal modal-backdrop backdrop-blur modal-open"
-      onClick={() => onClose()}
-    >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-      <div
-        className="w-full max-w-lg m-auto p-4 bg-[#111] text-[#aaa] rounded flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative w-full h-full overflow-hidden mb-4">
+    <Dialog open onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="bg-zinc-950 border-zinc-800 rounded-none max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 font-mono text-lg uppercase tracking-widest text-zinc-200">
+            <Download className="w-5 h-5 text-green-500" />
+            Deposit
+          </DialogTitle>
+        </DialogHeader>
+        <div className="relative w-full overflow-hidden">
           <Deposit />
         </div>
-
-        <form onSubmit={onClose}>
-          <div className="flex justify-end">
-            <button type="button" className="btn">Done</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end pt-4 border-t border-zinc-800">
+          <Button
+            type="button"
+            onClick={onClose}
+            className="rounded-none bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 font-mono uppercase tracking-wider text-xs"
+          >
+            Done
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

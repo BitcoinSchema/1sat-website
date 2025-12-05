@@ -1,4 +1,5 @@
 import { SATS_PER_KB, toastProps } from "@/constants";
+import { notifyIndexer } from "@/utils/indexer";
 import type { PrivateKey } from "@bsv/sdk";
 import {
 	fetchPayUtxos,
@@ -36,6 +37,7 @@ export const sweepUtxos = async (
 	const { txid, status } = await tx.broadcast(oneSatBroadcaster());
 	if (status === "success") {
 		console.log("Change sweep:", txid);
+		notifyIndexer(txid);
 		return amount;
 	}
 	if (status === "error") {

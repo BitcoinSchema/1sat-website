@@ -197,15 +197,15 @@ const TickerHeading = ({
 						<button
 							type="button"
 							disabled={btnDisabled}
-							className="btn btn-sm btn-accent mr-4"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30 transition disabled:opacity-50 disabled:cursor-not-allowed mr-4"
 						>
 							Mint {ticker.tick}
 						</button>
 					</Link>
 				)}
-				<div data-tip="Circulating Supply / Max Supply" className="tooltip tooltip-right">
+				<span title="Circulating Supply / Max Supply" className="text-muted-foreground">
 					{`${totalSupply.toLocaleString()} / ${maxSupply.toLocaleString()}`}
-				</div>
+				</span>
 			</>
 		);
 	};
@@ -216,11 +216,9 @@ const TickerHeading = ({
 			(ticker.dec ? 10 ** ticker.dec : 1);
 
 		return (
-			<>
-				<div data-tip="Total Supply" className="tooltip tooltip-right">
-					{`${totalSupply.toLocaleString()}`}
-				</div>
-			</>
+			<span title="Total Supply" className="text-muted-foreground">
+				{`${totalSupply.toLocaleString()}`}
+			</span>
 		);
 	};
 
@@ -253,18 +251,18 @@ const TickerHeading = ({
 			<>
 				{!pow20Details.owner && (
 					<Link href={"/mine"}>
-						<button type="button" className="btn btn-sm btn-accent mr-4">
+						<button type="button" className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-orange-900/30 text-orange-400 border border-orange-500/50 hover:bg-orange-900/50 transition mr-4">
 							Mine {ticker.sym}
 						</button>
 					</Link>
 				)}
-				<div data-tip="Remaining Supply / Total Supply" className="tooltip">
+				<span title="Remaining Supply / Total Supply" className="text-muted-foreground">
 					{supplyText}
-				</div>
+				</span>
 				{!pow20Details.owner && (
-					<div data-tip="Current Mining Difficulty" className="tooltip ml-4">
+					<span title="Current Mining Difficulty" className="text-muted-foreground ml-4">
 						Difficulty: {currentDifficulty}
-					</div>
+					</span>
 				)}
 			</>
 		);
@@ -278,7 +276,7 @@ const TickerHeading = ({
 		const totalSupply = ltmDetails.origin.data.insc.json.amt;
 		const remainingSupply = ltmDetails.data.bsv20.amt;
 		const decimals = ltmDetails.origin.data.insc.json.dec;
-    console.log({totalSupply, remainingSupply, decimals});
+		console.log({totalSupply, remainingSupply, decimals});
 		const adjustedTotalSupply = totalSupply / 10 ** decimals;
 		const adjustedRemainingSupply = Number(remainingSupply) / 10 ** decimals;
 
@@ -290,14 +288,14 @@ const TickerHeading = ({
 			<>
 				{remainingSupply === "0" && (
 					<Link href={"https://locktomint.com"} target="_blank">
-						<button type="button" className="btn btn-sm btn-accent mr-4">
+						<button type="button" className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-blue-900/30 text-blue-400 border border-blue-500/50 hover:bg-blue-900/50 transition mr-4">
 							Mint {ticker.sym}
 						</button>
 					</Link>
 				)}
-				<div data-tip="Remaining Supply / Total Supply" className="tooltip tooltip-right">
+				<span title="Remaining Supply / Total Supply" className="text-muted-foreground">
 					{supplyText}
-				</div>
+				</span>
 			</>
 		);
 	};
@@ -322,13 +320,13 @@ const TickerHeading = ({
 					}
 					router.push(`/market/${type}/${ticker.tick || ticker.id}`);
 				}}
-				className={`transition ${
+				className={`transition border-b border-border ${
 					id
-						? "active text-xl text-base-content"
-						: "cursor-pointer hover:text-secondary-content"
+						? "bg-muted/50 text-xl text-foreground"
+						: "cursor-pointer hover:bg-muted/30 text-muted-foreground hover:text-foreground"
 				}`}
 			>
-				<th className={"truncate text-ellipsis"}>
+				<td className="truncate text-ellipsis px-4 py-3">
 					<div className="flex items-center">
 						{type === AssetType.BSV21 && (
 							<IconWithFallback
@@ -338,45 +336,45 @@ const TickerHeading = ({
 							/>
 						)}
 						{ticker.num && (
-							<div className="whitespace-nowrap items-end content-end text-right mr-4">
-								<FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
+							<div className="whitespace-nowrap items-end content-end text-right mr-4 text-muted-foreground">
+								<FaHashtag className="m-0 mb-1 w-3 h-3 text-muted-foreground/50 inline" />
 								{ticker.num}
 							</div>
 						)}
-						<span className="text-4xl mr-4">{ticker.tick || ticker.sym}</span>
+						<span className="text-2xl md:text-4xl mr-4 font-bold text-foreground">{ticker.tick || ticker.sym}</span>
 					</div>
-				</th>
+				</td>
 				{currencyDisplay.value === CurrencyDisplay.BSV && (
-					<th>
+					<td className="px-4 py-3 text-muted-foreground">
 						{ticker.price?.toLocaleString("en-US", {
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 8,
 							useGrouping: false,
 						}) || ""}{" "}
-						<span className="text-accent">sat/token</span>
-					</th>
+						<span className="text-primary">sat/token</span>
+					</td>
 				)}
 				{currencyDisplay.value === CurrencyDisplay.USD && (
-					<th>
+					<td className="px-4 py-3 text-muted-foreground">
 						{usdPrice.value.toLocaleString("en-US", {
 							style: "currency",
 							currency: "USD",
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 8,
 						})}
-						<span className="text-accent">/token</span>
-					</th>
+						<span className="text-primary">/token</span>
+					</td>
 				)}
-				<th>
+				<td className="px-4 py-3">
 					<span
 						className={`ml-2 text-xl ${
-							ticker.pctChange > 0 ? "text-emerald-400" : "text-orange-700"
+							ticker.pctChange > 0 ? "text-emerald-400" : "text-destructive"
 						}`}
 					>
 						{change}
 					</span>
-				</th>
-				<th className="w-full text-right">
+				</td>
+				<td className="px-4 py-3 w-full text-right text-muted-foreground">
 					{currencyDisplay.value === CurrencyDisplay.BSV
 						? `${
 								ticker.marketCap > 0
@@ -399,46 +397,45 @@ const TickerHeading = ({
 										})
 									: 0
 							}`}
-					<br />
-				</th>
+				</td>
 				{type === AssetType.BSV21 && (
-					<th className="text-center w-12">
+					<td className="px-4 py-3 text-center w-12">
 						{isPow20 ? (
-							<div className="tooltip mx-auto" data-tip="POW-20">
+							<span title="POW-20" className="mx-auto">
 								<FaFire className="text-orange-400" />
-							</div>
+							</span>
 						) : isLtm ? (
-							<div className="tooltip mx-auto" data-tip="Lock-to-Mint">
+							<span title="Lock-to-Mint" className="mx-auto">
 								<FaLock className="text-blue-400" />
-							</div>
+							</span>
 						) : (
-							<div className="tooltip mx-auto">
-								<GiPlainCircle className="text-gray-800" />
-							</div>
+							<span className="mx-auto">
+								<GiPlainCircle className="text-muted-foreground/30" />
+							</span>
 						)}
-					</th>
+					</td>
 				)}
-				<th className="break-normal text-right w-48 hover:text-info transition">
+				<td className="px-4 py-3 break-normal text-right w-48 text-muted-foreground hover:text-primary transition">
 					<Link href={`/holders/${type}/${ticker.tick || ticker.id}`}>
 						{(ticker.accounts || 0).toLocaleString()}
 					</Link>
-				</th>
+				</td>
 			</tr>
 			{id && (
-				<tr className="bg-base-200">
+				<tr className="bg-muted/30 border-b border-border">
 					<td
 						colSpan={3}
-						className="font-mono text-sm text-neutral-content/50 bg-[#111]"
+						className="px-4 py-3 font-mono text-sm text-muted-foreground"
 					>
 						{supplyContent.value}
 					</td>
 					<td
 						colSpan={type === AssetType.BSV21 ? 3 : 2}
-						className="text-right text-neutral-content/50 valign-center bg-[#111]"
+						className="px-4 py-3 text-right text-muted-foreground"
 					>
 						<Link
 							href={`/outpoint/${ticker.txid}_${ticker.vout}/token`}
-							className="hover:text-info transition"
+							className="hover:text-primary transition"
 						>
 							Deployment Inscription{" "}
 							<FaExternalLinkAlt className="inline-block ml-2" />
@@ -447,21 +444,18 @@ const TickerHeading = ({
 				</tr>
 			)}
 			{(ticker.pendingOps > 0 || !paidUp.value) && (
-				<tr className="group text-warning bg-warning-content">
-					<td className="" colSpan={type === AssetType.BSV21 ? 5 : 4}>
-						<div
-							className="tooltip tooltip-right"
-							data-tip={`${ticker.pendingOps} pending operations`}
-						>
+				<tr className="group bg-yellow-900/20 border-b border-yellow-500/30">
+					<td className="px-4 py-3 text-yellow-400" colSpan={type === AssetType.BSV21 ? 5 : 4}>
+						<span title={`${ticker.pendingOps} pending operations`}>
 							{bsvNeeded.value > 0
 								? `Needs ${bsvNeeded} BSV`
 								: "Funded. Processing..."}
-						</div>
+						</span>
 					</td>
-					<td className="transition cursor-pointer text-right">
+					<td className="px-4 py-3 transition cursor-pointer text-right">
 						<button
 							type="button"
-							className="btn btn-warning btn-sm whitespace-nowrap"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-900/50 transition whitespace-nowrap"
 							onClick={openPaymentModal}
 						>
 							Fund {ticker.tick || ticker.sym}
