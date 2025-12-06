@@ -273,19 +273,6 @@ export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typ
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>Wallet Status</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="px-4 py-2 text-sm text-muted-foreground">
-                {payPk.value && ordPk.value
-                  ? "Connected"
-                  : hasUnprotectedKeys.value
-                    ? "Unprotected Keys"
-                    : "No Wallet"}
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
           {payPk.value && ordPk.value && (
             <SidebarGroup>
               <SidebarGroupLabel>1Sat Wallet</SidebarGroupLabel>
