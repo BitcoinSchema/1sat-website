@@ -1,13 +1,13 @@
-import { toastProps } from "@/constants";
 import type { PrivateKey } from "@bsv/sdk";
 import {
 	fetchPayUtxos,
 	oneSatBroadcaster,
 	type Payment,
-	sendUtxos,
 	type SendUtxosConfig,
+	sendUtxos,
 } from "js-1sat-ord";
-import toast from "react-hot-toast";
+import { SATS_PER_KB } from "@/constants";
+import { notifyIndexer } from "@/utils/indexer";
 
 export const sweepUtxos = async (
 	paymentPk: PrivateKey,
@@ -30,11 +30,13 @@ export const sweepUtxos = async (
 		utxos,
 		paymentPk,
 		payments,
+		satsPerKb: SATS_PER_KB,
 	};
 	const { tx } = await sendUtxos(config);
 	const { txid, status } = await tx.broadcast(oneSatBroadcaster());
 	if (status === "success") {
 		console.log("Change sweep:", txid);
+		notifyIndexer(txid);
 		return amount;
 	}
 	if (status === "error") {

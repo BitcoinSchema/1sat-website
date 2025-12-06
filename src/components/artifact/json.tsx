@@ -1,10 +1,10 @@
-import { FetchStatus, ORDFS } from "@/constants";
-import type { BSV20 } from "@/types/bsv20";
-import type { LRC20 } from "@/types/ordinals";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FaCode } from "react-icons/fa6";
+import { FetchStatus, ORDFS } from "@/constants";
+import type { BSV20 } from "@/types/bsv20";
+import type { LRC20 } from "@/types/ordinals";
 import { ArtifactType } from ".";
 
 type TextArtifactProps = {
@@ -26,17 +26,22 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
 }) => {
   const [json, setJson] = useState<JSON | any>(j);
   const [bsv20, setBsv20] = useState<Partial<BSV20> | undefined>();
-  const [lrc20, setLrc20] = useState<Partial<LRC20> | undefined>(undefined);
+  const [_lrc20, setLrc20] = useState<Partial<LRC20> | undefined>(undefined);
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
-    FetchStatus.Idle
+    FetchStatus.Idle,
   );
-  const [fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
-    FetchStatus.Idle
+  const [_fetchBsv20Status, setFetchBsv20Status] = useState<FetchStatus>(
+    FetchStatus.Idle,
   );
   const [limCache, setLimCache] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     const fire = async () => {
+      // Ensure origin is a valid string before fetching
+      if (!origin || typeof origin !== "string") {
+        console.error("JsonArtifact: Invalid origin", origin);
+        return;
+      }
       try {
         setFetchTextStatus(FetchStatus.Loading);
 
@@ -54,7 +59,7 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
             setBsv20(txJson);
           }
         }
-      } catch (e) {
+      } catch (_e) {
         setFetchTextStatus(FetchStatus.Error);
       }
     };
@@ -85,9 +90,8 @@ const JsonArtifact: React.FC<TextArtifactProps> = ({
     <div className="relative w-full h-full flex">
       {!mini && (
         <pre
-          className={`overflow-hidden max-h-96 flex items-center justify-start w-full h-full transition text-xs  ${
-            className ? className : ""
-          }`}
+          className={`overflow-hidden max-h-96 flex items-center justify-start w-full h-full transition text-xs  ${className ? className : ""
+            }`}
         >
           {JSON.stringify(json, null, 2)}
         </pre>

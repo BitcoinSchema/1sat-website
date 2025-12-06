@@ -1,17 +1,16 @@
-import { API_HOST, AssetType } from "@/constants";
-import type { BSV20 } from "@/types/bsv20";
 import Link from "next/link";
 import { NextRequest } from "next/server";
-import React from "react";
 import HoldersTable from "@/components/holders";
+import { Separator } from "@/components/ui/separator";
+import { API_HOST, AssetType } from "@/constants";
+import type { BSV20 } from "@/types/bsv20";
 
 const Page = async ({
 	params,
 }: {
-	params: { type: AssetType; id: string };
+	params: Promise<{ type: AssetType; id: string }>;
 }) => {
-	const type = params.type;
-	const id = params.id;
+	const { type, id } = await params;
 
 	console.log(`type: ${type}, id: ${id}`);
 
@@ -35,7 +34,7 @@ const Page = async ({
 					ID: {id}
 				</Link>
 			)}
-			<div className="divider" />
+			<Separator className="my-4" />
 			<HoldersTable type={type} id={id} details={details} />
 		</div>
 	);
@@ -46,10 +45,10 @@ export default Page;
 const getDetails = async (req: NextRequest, type: AssetType, id: string) => {
 	const res = await import("./details/route");
 	const resp = await res.GET(req, {
-		params: {
+		params: Promise.resolve({
 			type,
 			id,
-		},
+		}),
 	});
 	const details = (await resp.json()) as BSV20;
 	return details;
@@ -58,9 +57,9 @@ const getDetails = async (req: NextRequest, type: AssetType, id: string) => {
 export async function generateMetadata({
 	params,
 }: {
-	params: { type: AssetType; id: string };
+	params: Promise<{ type: AssetType; id: string }>;
 }) {
-	const { type, id } = params;
+	const { type, id } = await params;
 
 	const url =
 		type === AssetType.BSV20

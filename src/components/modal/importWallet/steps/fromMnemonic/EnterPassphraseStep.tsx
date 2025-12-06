@@ -5,19 +5,12 @@ import {
 } from "@/signals/wallet";
 import { EncryptDecrypt } from "@/types/wallet";
 
-interface Props {}
+type Props = {};
 
 export function EnterPassphraseStep({}: Props) {
 	const onSubmit = () => {
 		importWalletFromMnemonicStep.value = ImportWalletFromMnemonicStep.Done;
 	};
 
-	return (
-		<>
-			<EnterPassphrase
-				mode={EncryptDecrypt.Encrypt}
-				onSubmit={onSubmit}
-			/>
-		</>
-	);
+	return <EnterPassphrase mode={EncryptDecrypt.Encrypt} onSubmit={onSubmit} />;
 }

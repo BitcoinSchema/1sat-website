@@ -1,22 +1,22 @@
+import { signal } from "@preact/signals-react";
 import type { InscriptionTab } from "@/components/pages/inscribe/tabs";
-import { AssetType, SortBy } from "@/constants";
+import { AssetType } from "@/constants";
 import type { BSV20Balance } from "@/types/bsv20";
 import type { ChainInfo, IndexerStats, Utxo } from "@/types/common";
 import type { OrdUtxo } from "@/types/ordinals";
 import type { PendingTransaction } from "@/types/preview";
 import { CreateWalletStep } from "@/types/wallet";
-import { signal } from "@preact/signals-react";
 
 export type InscribeOptions = {
-  tab: InscriptionTab;
-  tick: string;
-  op: string;
+	tab: InscriptionTab;
+	tick: string;
+	op: string;
 };
 
 export enum CurrencyDisplay {
-  BSV = "BSV",
-  USD = "USD",
-};
+	BSV = "BSV",
+	USD = "USD",
+}
 
 /**
  * Create wallet
@@ -25,7 +25,7 @@ export enum CurrencyDisplay {
 export const isCreatingWallet = signal<boolean>(false);
 export const createWalletIterations = signal<number>(0);
 export const createWalletStep = signal<CreateWalletStep>(
-  CreateWalletStep.Create
+	CreateWalletStep.Create,
 );
 
 /**
@@ -41,7 +41,6 @@ export const migrating = signal<boolean>(false);
  */
 export const showUnlockWalletModal = signal<boolean>(false);
 export const showUnlockWalletButton = signal<boolean>(false);
-
 
 /**
  * Wallet keys
@@ -75,33 +74,33 @@ export const showDepositModal = signal<boolean>(false);
  * Import Wallet
  */
 export enum ImportWalletTab {
-  FromBackupJson = 0,
-  FromMnemonic = 1,
-  FromFragment = 2,
+	FromBackupJson = 0,
+	FromMnemonic = 1,
+	FromFragment = 2,
 }
 
 export enum ImportWalletFromBackupJsonStep {
-  SelectFile = 0,
-  EnterPassphrase = 1,
-  Done = 2,
+	SelectFile = 0,
+	EnterPassphrase = 1,
+	Done = 2,
 }
 
 export enum ImportWalletFromMnemonicStep {
-  EnterMnemonic = 0,
-  GenerateWallet = 1,
-  EnterPassphrase = 2,
-  Done = 3,
+	EnterMnemonic = 0,
+	GenerateWallet = 1,
+	EnterPassphrase = 2,
+	Done = 3,
 }
 
 export const importWalletTab = signal<ImportWalletTab | null>(null);
 export const importWalletFromBackupJsonStep =
-  signal<ImportWalletFromBackupJsonStep>(
-    ImportWalletFromBackupJsonStep.SelectFile
-  );
+	signal<ImportWalletFromBackupJsonStep>(
+		ImportWalletFromBackupJsonStep.SelectFile,
+	);
 export const importWalletFromMnemonicStep =
-  signal<ImportWalletFromMnemonicStep>(
-    ImportWalletFromMnemonicStep.EnterMnemonic
-  );
+	signal<ImportWalletFromMnemonicStep>(
+		ImportWalletFromMnemonicStep.EnterMnemonic,
+	);
 
 export const selectedBackupJson = signal<string | null>(null);
 
@@ -109,9 +108,9 @@ export const selectedBackupJson = signal<string | null>(null);
  * Protect keys
  */
 export enum ProtectKeysStep {
-  Info = 0,
-  EnterPassphrase = 1,
-  Done = 2,
+	Info = 0,
+	EnterPassphrase = 1,
+	Done = 2,
 }
 
 export const protectKeysStep = signal<ProtectKeysStep>(ProtectKeysStep.Info);

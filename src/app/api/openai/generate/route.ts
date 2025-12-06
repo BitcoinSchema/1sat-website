@@ -1,5 +1,5 @@
-import { generateImage } from "@/components/vivi/ai";
 import { NextResponse } from "next/server";
+import { generateImage } from "@/components/vivi/ai";
 
 export async function POST(request: Request) {
 	// form data "file"

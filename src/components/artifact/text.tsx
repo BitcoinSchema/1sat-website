@@ -1,8 +1,8 @@
-import { FetchStatus, ORDFS } from "@/constants";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import { FaPaperclip } from "react-icons/fa6";
+import { FetchStatus, ORDFS } from "@/constants";
 import { ArtifactType } from ".";
 import JsonArtifact from "./json";
 
@@ -12,16 +12,25 @@ type TextArtifactProps = {
   mini?: boolean;
 };
 
-const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className, mini=false }) => {
+const TextArtifact: React.FC<TextArtifactProps> = ({
+  origin,
+  className,
+  mini = false,
+}) => {
   const [text, setText] = useState<string>();
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
-    FetchStatus.Idle
+    FetchStatus.Idle,
   );
   const [isJson, setIsJson] = useState<boolean>(false);
   const [isBsv20, setIsBsv20] = useState<boolean>(false);
 
   useEffect(() => {
     const fire = async () => {
+      // Ensure origin is a valid string before fetching
+      if (!origin || typeof origin !== "string") {
+        console.error("TextArtifact: Invalid origin", origin);
+        return;
+      }
       try {
         setFetchTextStatus(FetchStatus.Loading);
         const result = await fetch(`${ORDFS}/${origin}`);
@@ -35,7 +44,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className, mini=fal
           } else {
             setIsJson(true);
           }
-        } catch (e) {
+        } catch (_e) {
           // not json
           setText(resultText);
           return;
@@ -65,11 +74,12 @@ const TextArtifact: React.FC<TextArtifactProps> = ({ origin, className, mini=fal
         className={className ? className : ""}
         mini={mini}
       />
-    ) : mini ? (<FaPaperclip className="m-auto" />) : (
+    ) : mini ? (
+      <FaPaperclip className="m-auto" />
+    ) : (
       <code
-        className={`overflow-auto flex items-center justify-center w-full h-full transition  ${
-          className ? className : ""
-        }`}
+        className={`overflow-auto flex items-center justify-center w-full h-full transition  ${className ? className : ""
+          }`}
       >
         {text}
       </code>

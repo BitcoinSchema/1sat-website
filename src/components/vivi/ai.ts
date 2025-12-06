@@ -75,6 +75,6 @@ export const getOllamaModels = async () => {
 	console.log("unimplemented");
 };
 
-export const generateOllamaImage = async (prompt: string) => {
+export const generateOllamaImage = async (_prompt: string) => {
 	console.log("unimplemented");
 };

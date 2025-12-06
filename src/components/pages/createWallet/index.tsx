@@ -1,13 +1,13 @@
 "use client";
 
-import CreateWalletModal from "@/components/modal/createWallet";
 import { useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import CreateWalletModal from "@/components/modal/createWallet";
 
 const CreateWalletPage = () => {
-	useSignals()
+	useSignals();
 	const router = useRouter();
 	const open = useSignal(true);
 
@@ -20,7 +20,7 @@ const CreateWalletPage = () => {
 			}
 			router.back();
 		},
-		[open, router]
+		[open, router],
 	);
 
 	return <CreateWalletModal open={open.value} close={close} />;

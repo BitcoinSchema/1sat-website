@@ -12,13 +12,15 @@ export async function generateMetadata() {
 		description: "Preview your inscription before finalizing on 1SatOrdinals.",
 		openGraph: {
 			title: "Inscription Preview - 1SatOrdinals",
-			description: "Preview your inscription before finalizing on 1SatOrdinals.",
+			description:
+				"Preview your inscription before finalizing on 1SatOrdinals.",
 			type: "website",
 		},
 		twitter: {
 			card: "summary",
 			title: "Inscription Preview - 1SatOrdinals",
-			description: "Preview your inscription before finalizing on 1SatOrdinals.",
+			description:
+				"Preview your inscription before finalizing on 1SatOrdinals.",
 		},
 	};
 }

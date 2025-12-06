@@ -1,45 +1,58 @@
 "use client";
 
+import { Grid3X3, ShoppingBag } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export enum Tab {
-  Market = "market",
-  Items = "items",
+	Market = "market",
+	Items = "items",
 }
 
 export const CollectionNavigation = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") ?? Tab.Market;
-  const pathname = usePathname();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const tab = searchParams.get("tab") ?? Tab.Market;
+	const pathname = usePathname();
 
-  const navigateToTab = (tab: Tab) => {
-    const newSearchParams = new URLSearchParams(searchParams.toString());
-    newSearchParams.set("tab", tab);
-    router.push(`${pathname}?${newSearchParams.toString()}`);
-  };
+	const navigateToTab = (newTab: Tab) => {
+		const newSearchParams = new URLSearchParams(searchParams.toString());
+		newSearchParams.set("tab", newTab);
+		router.push(`${pathname}?${newSearchParams.toString()}`);
+	};
 
-  return (
-    <div
-      role="tablist"
-      className="tabs tabs-bordered max-w-[980px] mx-auto mb-12 sm:mb-16 font-mono"
-    >
-      <button
-        type="button"
-        role="tab"
-        onClick={() => navigateToTab(Tab.Market)}
-        className={`tab ${tab === Tab.Market ? "tab-active" : ""}`}
-      >
-        Market
-      </button>
-      <button
-        type="button"
-        role="tab"
-        onClick={() => navigateToTab(Tab.Items)}
-        className={`tab ${tab === Tab.Items ? "tab-active" : ""}`}
-      >
-        Items
-      </button>
-    </div>
-  );
+	return (
+		<div className="flex w-full items-center bg-background px-4 md:px-6">
+			<div role="tablist" className="flex">
+				<button
+					type="button"
+					role="tab"
+					onClick={() => navigateToTab(Tab.Market)}
+					className={cn(
+						"flex items-center gap-2 px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
+						tab === Tab.Market
+							? "border-primary text-primary"
+							: "border-transparent text-muted-foreground hover:text-foreground",
+					)}
+				>
+					<ShoppingBag className="w-4 h-4" />
+					Market
+				</button>
+				<button
+					type="button"
+					role="tab"
+					onClick={() => navigateToTab(Tab.Items)}
+					className={cn(
+						"flex items-center gap-2 px-6 py-3 font-mono text-xs uppercase tracking-wider transition-colors border-b-2 -mb-[1px]",
+						tab === Tab.Items
+							? "border-primary text-primary"
+							: "border-transparent text-muted-foreground hover:text-foreground",
+					)}
+				>
+					<Grid3X3 className="w-4 h-4" />
+					Items
+				</button>
+			</div>
+		</div>
+	);
 };

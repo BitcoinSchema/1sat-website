@@ -1,11 +1,12 @@
 "use client";
 
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import Link from "next/link";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { Button } from "@/components/ui/button";
 import { ORDFS } from "@/constants";
 import { ordAddress } from "@/signals/wallet/address";
 import type { OrdUtxo } from "@/types/ordinals";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import Link from "next/link";
 
 const CollectionContent = ({
 	artifact,
@@ -15,11 +16,11 @@ const CollectionContent = ({
 	collection: OrdUtxo;
 }) => {
 	useSignals();
-	const showCancelModal = useSignal(false);
-	const isOwner = artifact.owner === ordAddress.value;
-	const mapData = artifact.origin?.data?.map;
+	const _showCancelModal = useSignal(false);
+	const _isOwner = artifact.owner === ordAddress.value;
+	const _mapData = artifact.origin?.data?.map;
 	const collectionData = collection.origin?.data?.map;
-	const collectionInscription = collection.origin?.data?.insc;
+	const _collectionInscription = collection.origin?.data?.insc;
 	// console.log({ mapData, collectionData, collectionInscription });
 
 	const numItems = collectionData?.subTypeData?.quantity;
@@ -30,8 +31,7 @@ const CollectionContent = ({
 				<div>{artifact.origin?.data?.map?.name}</div>
 				{artifact.origin?.data?.map?.subTypeData.mintNumber > 0 ? (
 					<div>
-						{artifact.origin?.data?.map?.subTypeData.mintNumber}/
-						{numItems}
+						{artifact.origin?.data?.map?.subTypeData.mintNumber}/{numItems}
 					</div>
 				) : (
 					<div>&nbsp;</div>
@@ -51,11 +51,11 @@ const CollectionContent = ({
 			</div>
 
 			<div className="my-4 w-full text-right">
-				<Link href={`/collection/${collection.origin?.outpoint}`}>
-					<button type="button" className="btn">
+				<Button asChild>
+					<Link href={`/collection/${collection.origin?.outpoint}`}>
 						Browse Collection
-					</button>
-				</Link>
+					</Link>
+				</Button>
 			</div>
 		</div>
 	);

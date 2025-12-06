@@ -20,20 +20,20 @@ export const getHolders = async ({
 			: `${API_HOST}/api/bsv20/id/${id}/holders`;
 
 	const holdersResp = await fetch(
-		`${url}?limit=${resultsPerPage}&offset=${offset}`
+		`${url}?limit=${resultsPerPage}&offset=${offset}`,
 	);
 	const holdersJson = (await holdersResp.json()) || [];
 	const holders =
 		holdersJson?.length &&
 		holdersJson
-			?.sort((a: any, b: any) => parseInt(b.amt) - parseInt(a.amt))
+			?.sort((a: any, b: any) => parseInt(b.amt, 10) - parseInt(a.amt, 10))
 			.map((h: any) => ({
 				...h,
-				amt: parseInt(h.amt) / 10 ** (details?.dec || 0),
+				amt: parseInt(h.amt, 10) / 10 ** (details?.dec || 0),
 				pct:
 					type === AssetType.BSV20
-						? (parseInt(h.amt) / parseInt(details!.supply!)) * 100
-						: (parseInt(h.amt) / parseInt(details!.amt!)) * 100,
+						? (parseInt(h.amt, 10) / parseInt(details?.supply!, 10)) * 100
+						: (parseInt(h.amt, 10) / parseInt(details?.amt!, 10)) * 100,
 			}));
 
 	return holders;

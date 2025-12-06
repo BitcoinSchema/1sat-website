@@ -1,6 +1,6 @@
 export type ResponseInterceptor = (
   res: Response,
-  options: RequestInit
+  options: RequestInit,
 ) => Response | Promise<Response>;
 
 export type FetchResponse<T> = {
@@ -59,13 +59,13 @@ export const clearDefaultHeader = (header: string): void => {
 const responseInterceptors: ResponseInterceptor[] = [];
 
 export const registerResponseInterceptor = (
-  interceptor: ResponseInterceptor
+  interceptor: ResponseInterceptor,
 ): void => {
   responseInterceptors.push(interceptor);
 };
 
 export const unregisterResponseInterceptor = (
-  interceptor: ResponseInterceptor
+  interceptor: ResponseInterceptor,
 ): void => {
   const index = responseInterceptors.indexOf(interceptor);
   if (index >= 0) {
@@ -79,7 +79,7 @@ export const json = (body: Object) => {
 
 export const customFetch = <T>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit & { next?: { revalidate?: number } } = {},
 ): FetchResponse<T> => {
   // Cancel logic
   const controller = new AbortController();
@@ -87,17 +87,27 @@ export const customFetch = <T>(
   // Inject default headers
   const headers = options?.headers || defaultHeaders;
 
+  // Add default caching for API calls to reduce function invocations
+  // Keep listing data uncached (needs latest price data)
+  const isListingEndpoint = url.includes("/api/bsv20/outpoint/");
+  const cacheOptions = isListingEndpoint
+    ? { cache: "no-store" as RequestCache, ...options.next }
+    : url.includes("/api/inscriptions/") || url.includes("/api/bsv20/")
+      ? { next: { revalidate: 300 }, ...options.next } // 5 min cache for inscriptions/collection data
+      : options.next;
+
   // do fetch
   let responsePromise: Promise<Response> = fetch(url, {
     ...options,
     headers,
     signal: controller.signal,
+    next: cacheOptions,
   });
 
   // Register response interceptors
   responseInterceptors.forEach((interceptor) => {
     responsePromise = responsePromise.then((res: Response) =>
-      interceptor(res, options)
+      interceptor(res, options),
     );
   });
 
@@ -108,20 +118,20 @@ export const customFetch = <T>(
         return response.status !== 204
           ? ((await response.json()) as unknown as T)
           : // the logic is that if you have a specific case that needs to handle a 204 then you should declare the T as your type | undefined
-            // this makes working with apis that don't use 204 (most of the time) a lot easier
-            (undefined as unknown as T);
+          // this makes working with apis that don't use 204 (most of the time) a lot easier
+          (undefined as unknown as T);
       } else {
         switch (response.status) {
           case 400:
             throw new InvalidRequestError(await response.json());
           case 401:
             throw new GenericRequestError(
-              HttpErrors.UnauthenticatedRequestError
+              HttpErrors.UnauthenticatedRequestError,
             );
           case 403:
             throw new GenericRequestError(
               HttpErrors.ForbiddenRequestError,
-              await response.json()
+              await response.json(),
             );
           case 404:
             throw new GenericRequestError(HttpErrors.NotFoundRequestError);
@@ -130,21 +140,21 @@ export const customFetch = <T>(
           case 417:
             throw new GenericRequestError(
               HttpErrors.ExpectationFailed,
-              await response.json()
+              await response.json(),
             );
           case 422:
             throw new GenericRequestError(
               HttpErrors.UnprocessableRequestError,
-              await response.json()
+              await response.json(),
             );
           default:
             throw new GenericRequestError(
               HttpErrors.UnknownRequestError,
-              await response.json()
+              await response.json(),
             );
         }
       }
-    }
+    },
   );
 
   return {

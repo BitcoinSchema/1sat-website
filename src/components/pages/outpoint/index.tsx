@@ -1,10 +1,12 @@
-import Artifact from "@/components/artifact";
-import { API_HOST } from "@/constants";
+"use client";
+
+import { Noto_Serif } from "next/font/google";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
-import * as http from "@/utils/httpClient";
-import { Noto_Serif } from "next/font/google";
+import ArtifactViewer from "./ArtifactViewer";
 import OutpointTabs, { type OutpointTab } from "./tabs";
 
 const notoSerif = Noto_Serif({
@@ -23,108 +25,92 @@ interface Props {
 	activeTab: OutpointTab;
 }
 
-const OutpointPage = async ({
+const OutpointPage = ({
 	artifact,
 	listing,
 	history,
 	spends,
 	outpoint,
-	content,
-	activeTab,
+	content: initialContent,
+	activeTab: initialTab,
 }: Props) => {
-	// I1 - Ordinal
-	// I2 - Funding
-	// O1 - Ordinal destination
-	// O2 - Payment to lister
-	// O3 - Market Fee
-	// O4 - Change
-	try {
-		if (artifact?.data?.list && !artifact.script) {
-			const { promise } = http.customFetch<OrdUtxo>(
-				`${API_HOST}/api/txos/${artifact.outpoint}?script=true`
-			);
+	const router = useRouter();
+	const [_activeTab, setActiveTab] = useState(initialTab);
+	const [content, setContent] = useState(initialContent);
 
-			const { script } = await promise;
-			artifact.script = script;
-		}
+	const handleTabChange = (tab: OutpointTab) => {
+		setActiveTab(tab);
+		// Update URL without full page reload
+		router.push(`/outpoint/${outpoint}/${tab}`, { scroll: false });
+	};
 
-		// if (
-		//   (price === 0 ? minimumMarketFee + price : price * 1.04) >=
-		//   sumBy(fundingUtxos, "satoshis") + P2PKHInputSize * fundingUtxos.length
-		// ) {
-		//   toast.error("Not enough Bitcoin!", toastErrorProps);
-		// }
+	// Update content when initialContent changes (for initial render)
+	useEffect(() => {
+		setContent(initialContent);
+	}, [initialContent]);
 
-		return (
-			<div className="mx-auto flex flex-col p-2 md:p-0 min-h-64">
-				{artifact && (
-					<>
-						<h2 className={`text-2xl mb-4  ${notoSerif.className}`}>
-							{displayName(artifact, false)}
-						</h2>
-						<div className="flex flex-col md:flex-row gap-4">
-							{artifact?.origin?.data?.insc && (
-								<Artifact
-									artifact={artifact}
-									size={550}
-									sizes={"100vw"}
-									glow={true}
-									classNames={{
-										media: "overflow-hidden",
-										wrapper: `overflow-hidden h-[550px] relative ${
-											// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-2/3"
-											"w-fit"
-										}`,
-									}}
-									showListingTag={true}
-								/>
-							)}
-							{!artifact?.origin?.data?.insc && (
-								<div className="h-full w-full text-[#aaa] flex items-center justify-center min-h-64 bg-[#111] rounded">
+	// Update activeTab when URL changes (browser back/forward)
+	useEffect(() => {
+		setActiveTab(initialTab);
+	}, [initialTab]);
+
+	return (
+		<div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6 lg:p-8">
+			{artifact && (
+				<>
+					<h2
+						className={`text-3xl font-semibold leading-tight text-foreground ${notoSerif.className}`}
+					>
+						{displayName(artifact, false)}
+					</h2>
+					<div className="grid gap-6 lg:grid-cols-[minmax(320px,420px)_1fr]">
+						<div className="rounded-lg border border-border bg-card shadow-sm">
+							{artifact?.origin?.data?.insc ? (
+								<div className="relative overflow-hidden rounded-lg">
+									<ArtifactViewer
+										artifact={artifact}
+										size={560}
+										className="h-full w-full"
+									/>
+								</div>
+							) : (
+								<div className="flex min-h-64 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-sm text-muted-foreground">
 									No inscription
 								</div>
 							)}
-							<div className="divider" />
-							<div
-								className={`w-full ${
-									// activeTab === OutpointTab.Inscription ? "md:w-1/3" : "md:w-1/3"
-									"w-full"
-								} mx-auto`}
-							>
+						</div>
+
+						<div className="rounded-lg border border-border bg-card shadow-sm">
+							<div className="border-b border-border px-4 py-3">
 								<OutpointTabs
-									activeTab={activeTab}
 									outpoint={outpoint}
 									owner={
-										artifact.spend ||
-										!!artifact.origin?.data?.bsv20
+										artifact.spend || !!artifact.origin?.data?.bsv20
 											? undefined
 											: artifact?.owner
 									}
+									actualOwner={artifact?.owner}
 									hasToken={!!artifact.origin?.data?.bsv20}
 									isListing={!!artifact.data?.list}
 									isCollection={
-										artifact.origin?.data?.map?.subType ===
-											"collection" ||
-										artifact.origin?.data?.map?.subType ===
-											"collectionItem"
+										artifact.origin?.data?.map?.subType === "collection" ||
+										artifact.origin?.data?.map?.subType === "collectionItem"
 									}
+									onTabChange={handleTabChange}
 								/>
-								{content}
 							</div>
+							<div className="px-4 py-5">{content}</div>
 						</div>
-					</>
-				)}
-				{!artifact && <div>No Artifact</div>}
-			</div>
-		);
-	} catch (error) {
-		const message =
-			(error as Error).message === http.HttpErrors.NotFoundRequestError
-				? "Artifact not found"
-				: "Something went wrong";
-
-		return <div className="mx-auto my-4 text-center">{message}</div>;
-	}
+					</div>
+				</>
+			)}
+			{!artifact && (
+				<div className="rounded-lg border border-border bg-card p-6 text-muted-foreground">
+					No Artifact
+				</div>
+			)}
+		</div>
+	);
 };
 
 export default OutpointPage;

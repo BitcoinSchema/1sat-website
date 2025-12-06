@@ -1,55 +1,25 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AssetType } from "@/constants";
-import Link from "next/link";
+
 const ListingsTabs = ({ selectedTab }: { selectedTab: AssetType }) => {
-  return (
-    <div role="tablist" className="tabs tabs-lifted ml-4 gap-2 w-64">
-      <Link
-        href={`/listings/${AssetType.Ordinals}`}
-        role="tab"
-        className={`tab ${
-          selectedTab === AssetType.Ordinals ? "tab-active" : ""
-        }`}
-        aria-label="Ordinals"
-      >
-        Ordinals
-      </Link>
+	const router = useRouter();
 
-      <Link
-        href={`/listings/${AssetType.BSV20}`}
-        role="tab"
-        className={`tab ${
-          selectedTab === AssetType.BSV20 ? "tab-active" : ""
-        }`}
-        aria-label="BSV20"
-      >
-        BSV20
-      </Link>
-
-      <Link
-        href={`/listings/${AssetType.LRC20}`}
-        role="tab"
-        className={`tab ${
-          selectedTab === AssetType.LRC20 ? "tab-active" : ""
-        }`}
-        aria-label="LRC20"
-      >
-        LRC20
-      </Link>
-
-      <Link
-        href={`/listings/${AssetType.BSV21}`}
-        role="tab"
-        className={`tab ${
-          selectedTab === AssetType.BSV21 ? "tab-active" : ""
-        }`}
-        aria-label="BSV21"
-      >
-        BSV21
-      </Link>
-    </div>
-  );
+	return (
+		<Tabs
+			value={selectedTab}
+			onValueChange={(value) => router.push(`/listings/${value}`)}
+		>
+			<TabsList className="ml-4">
+				<TabsTrigger value={AssetType.Ordinals}>Ordinals</TabsTrigger>
+				<TabsTrigger value={AssetType.BSV20}>BSV20</TabsTrigger>
+				<TabsTrigger value={AssetType.LRC20}>LRC20</TabsTrigger>
+				<TabsTrigger value={AssetType.BSV21}>BSV21</TabsTrigger>
+			</TabsList>
+		</Tabs>
+	);
 };
 
 export default ListingsTabs;

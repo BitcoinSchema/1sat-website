@@ -1,9 +1,9 @@
+import { ImageResponse } from "next/og";
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
 import { API_HOST, ORDFS } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import { getNotoSerifItalicFont } from "@/utils/font";
-import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
@@ -33,7 +33,6 @@ export default async function Image({
 	return new ImageResponse(
 		<Container>
 			{isImageInscription ? (
-				// eslint-disable-next-line @next/next/no-img-element
 				<img src={url} alt={alt} />
 			) : (
 				details.origin?.data?.map?.name ||

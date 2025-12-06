@@ -1,39 +1,30 @@
+import { Loader2 } from "lucide-react";
 import { Suspense } from "react";
-import TokenListingSkeleton from "../skeletons/listing/Token";
 import Bsv20List from "./bsv20List";
-import { WalletTab } from "./tabs";
-import { AssetType } from "@/constants";
+import type { WalletTab } from "./tabs";
+
 interface WalletBsv20Props {
-  type: WalletTab.BSV20 | WalletTab.BSV21;
-  address?: string;
+	type: WalletTab.BSV20 | WalletTab.BSV21;
+	address?: string;
 }
 
 export type NumResults = {
-  num: any;
-  autofill: any;
+	num: any;
+	autofill: any;
 };
 
 const WalletBsv20 = async ({ type, address }: WalletBsv20Props) => {
-  return (
-    <div className="flex flex-col justify-start w-screen md:min-h-[80vh] max-w-[64rem]">
-      <div className="w-full">
-        <Suspense
-          fallback={
-            <table width={"100%"} className="w-full">
-              <tr className="px-4 flex gap-4 items-center w-full py-2">
-                <div className="w-24 skeleton h-8" />
-                <div className="w-24 skeleton h-8" />
-                <div className="w-24 skeleton h-8" />
-              </tr>
-              <TokenListingSkeleton type={type === WalletTab.BSV20 ? AssetType.BSV20 : AssetType.BSV21} />
-            </table>
-          }
-        >
-          <Bsv20List type={type} address={address} />
-        </Suspense>
-      </div>
-    </div>
-  );
+	return (
+		<Suspense
+			fallback={
+				<div className="flex items-center justify-center p-12">
+					<Loader2 className="w-8 h-8 animate-spin text-primary" />
+				</div>
+			}
+		>
+			<Bsv20List type={type} address={address} />
+		</Suspense>
+	);
 };
 
 export default WalletBsv20;

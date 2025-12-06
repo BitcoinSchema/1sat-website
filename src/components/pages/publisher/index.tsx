@@ -1,35 +1,50 @@
-import Image from 'next/image'
-import Link from 'next/link'
-import React from 'react'
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 type Collection = {
-  outpoint: string;
-  name: string;
-  signerAddress?: string;
-  image: string;
-}
+	outpoint: string;
+	name: string;
+	signerAddress?: string;
+	image: string;
+};
 
 type PublisherCollectionProps = {
-  collection: Collection;
-}
+	collection: Collection;
+};
 
-const PublisherPage = async ({collection: c}: PublisherCollectionProps) => {
-  const src = await import(`@/assets/images/coom/${c.image}`);
+const PublisherPage = async ({ collection: c }: PublisherCollectionProps) => {
+	const src = await import(`@/assets/images/coom/${c.image}`);
 
-  return (
-    <>
-      <div key={c.outpoint} className="card sm:card-side bg-base-100 shadow-xl">
-        <figure><Image width={90 * 16 / 9} height={90} alt={`${c.name} image`} src={src} /></figure>
-        <div className="card-body sm:justify-between sm:flex-row">
-          <h2 className="card-title justify-center">{c.name}</h2>
-          <div className="card-actions justify-center">
-            <Link className="btn" href={`/publisher/COOM/${c.outpoint}`}>Check</Link>
-          </div>
-        </div>
-      </div>
-      <div className="divider"></div>
-    </>
-  )
+	return (
+		<>
+			<Card
+				key={c.outpoint}
+				className="flex flex-col sm:flex-row items-center gap-4 p-4"
+			>
+				<div className="shrink-0">
+					<Image
+						width={(90 * 16) / 9}
+						height={90}
+						alt={`${c.name} image`}
+						src={src}
+						className="rounded-md object-cover"
+					/>
+				</div>
+				<CardContent className="flex flex-1 flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-0">
+					<CardTitle className="text-center sm:text-left">{c.name}</CardTitle>
+					<div className="flex justify-center sm:justify-end">
+						<Button asChild>
+							<Link href={`/publisher/COOM/${c.outpoint}`}>Check</Link>
+						</Button>
+					</div>
+				</CardContent>
+			</Card>
+			<Separator className="my-6" />
+		</>
+	);
 };
 
 export default PublisherPage;

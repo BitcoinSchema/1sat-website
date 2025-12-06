@@ -1,8 +1,12 @@
-import { FetchStatus, ORDFS } from "@/constants";
+"use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { MDXClient } from "next-mdx-remote-client/csr";
+import type { SerializeResult } from "next-mdx-remote-client/serialize";
+import { serialize } from "next-mdx-remote-client/serialize";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { LoaderIcon } from "react-hot-toast";
-import ReactMarkdown from "react-markdown";
+import { FetchStatus, ORDFS } from "@/constants";
 
 type MarkdownArtifactProps = {
   origin?: string;
@@ -13,41 +17,53 @@ const MarkdownArtifact: React.FC<MarkdownArtifactProps> = ({
   origin,
   className,
 }) => {
-  const [text, setText] = useState<string>();
+  const [mdxSource, setMdxSource] = useState<SerializeResult | null>(null);
   const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
-    FetchStatus.Idle
+    FetchStatus.Idle,
   );
 
   useEffect(() => {
     const fire = async () => {
+      // Ensure origin is a valid string before fetching
+      if (!origin || typeof origin !== "string") {
+        console.error("MarkdownArtifact: Invalid origin", origin);
+        return;
+      }
       try {
         setFetchTextStatus(FetchStatus.Loading);
         const result = await fetch(`${ORDFS}/${origin}`);
         const resultText = await result.text();
+
+        const mdxSource = await serialize({
+          source: resultText,
+          options: {
+            mdxOptions: {
+              remarkPlugins: [],
+              rehypePlugins: [],
+            },
+          },
+        });
+
+        setMdxSource(mdxSource);
         setFetchTextStatus(FetchStatus.Success);
-        setText(resultText);
       } catch (e) {
         console.error("Failed to fetch inscription", e);
         setFetchTextStatus(FetchStatus.Error);
       }
     };
-    if (!text && fetchTextStatus === FetchStatus.Idle) {
+    if (!mdxSource && fetchTextStatus === FetchStatus.Idle) {
       fire();
     }
-  }, [text, fetchTextStatus, origin, setText, setFetchTextStatus]);
+  }, [mdxSource, fetchTextStatus, origin]);
 
-  const markdown = useMemo(() => {
-    return text && <ReactMarkdown>{text}</ReactMarkdown>;
-  }, [text]);
-
-  return fetchTextStatus === FetchStatus.Success ? (
-    <pre
-      className={`flex items-center justify-center w-full h-full transition  ${
-        className ? className : ""
-      }`}
+  return fetchTextStatus === FetchStatus.Success &&
+    mdxSource &&
+    "compiledSource" in mdxSource ? (
+    <div
+      className={`flex items-center justify-center w-full h-full transition ${className || ""}`}
     >
-      {markdown}
-    </pre>
+      <MDXClient {...mdxSource} />
+    </div>
   ) : (
     <LoaderIcon className="mx-auto" />
   );

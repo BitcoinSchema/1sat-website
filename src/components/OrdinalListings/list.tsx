@@ -1,22 +1,29 @@
 "use client";
 
-import { resultsPerPage, SCAM_ITEM_BLACKLIST, SCAM_LISTING_USER_BLACKLIST } from "@/constants";
-import type { OrdUtxo } from "@/types/ordinals";
-import { getOutpoints } from "@/utils/address";
-import { getMarketListings } from "@/utils/artifact";
-import { useLocalStorage } from "@/utils/storage";
 import { computed } from "@preact/signals-react";
 import { useSignal, useSignals } from "@preact/signals-react/runtime";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
+import { AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
-import { FaChevronRight } from "react-icons/fa6";
-import { FiLoader } from "react-icons/fi";
-import { ReturnTypes, toBitcoin } from "satoshi-token";
-import JDenticon from "../JDenticon";
-import { selectedType } from "../Wallet/filter";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { toBitcoin } from "satoshi-token";
+import { Button } from "@/components/ui/button";
+import { TableBody, TableCell, TableRow } from "@/components/ui/table";
+import {
+	resultsPerPage,
+	SCAM_ITEM_BLACKLIST,
+	SCAM_LISTING_USER_BLACKLIST,
+} from "@/constants";
+import type { OrdUtxo } from "@/types/ordinals";
+import { getOutpoints } from "@/utils/address";
+import { getMarketListings } from "@/utils/artifact";
+import { useLocalStorage } from "@/utils/storage";
 import Artifact, { ArtifactType } from "../artifact";
+import JDenticon from "../JDenticon";
+import ArtifactModal from "../modal/artifactModal";
+import { selectedType } from "../Wallet/filter";
 import BuyBtn from "./buy";
 import {
 	checkOutpointFormat,
@@ -24,6 +31,7 @@ import {
 	listingName,
 	mintNumber,
 } from "./helpers";
+
 interface Props {
 	term?: string;
 	address?: string;
@@ -36,41 +44,69 @@ const List = ({ term, address, onClick }: Props) => {
 	const isInView = useInView(ref);
 
 	const listings = useSignal<OrdUtxo[]>([]);
+	const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(
+		null,
+	);
+	const [showBackdrop, setShowBackdrop] = useState(false);
 
-	const [selectedArtifactType, setSelectedArtifactType] =
+	const handleRowClick = (e: React.MouseEvent, listing: OrdUtxo) => {
+		e.preventDefault();
+		if (typeof document !== "undefined" && "startViewTransition" in document) {
+			try {
+				const transition = (document as any).startViewTransition(() => {
+					flushSync(() => {
+						setSelectedArtifact(listing);
+					});
+				});
+				transition.ready
+					.then(() => {
+						setShowBackdrop(true);
+					})
+					.catch(() => {
+						setShowBackdrop(true);
+					});
+			} catch {
+				setSelectedArtifact(listing);
+				setShowBackdrop(true);
+			}
+		} else {
+			setSelectedArtifact(listing);
+			setShowBackdrop(true);
+		}
+	};
+
+	const closeModal = () => {
+		setShowBackdrop(false);
+		setSelectedArtifact(null);
+	};
+
+	const [selectedArtifactType, _setSelectedArtifactType] =
 		useLocalStorage<ArtifactType>("1ssmartt", ArtifactType.All);
 
-	// TODO: hook up address and onClick
-
 	useEffect(() => {
-		// init from localStorage when available and not already set
 		if (!selectedType.value && !!selectedArtifactType) {
 			selectedType.value = selectedArtifactType || null;
 		}
 	}, [selectedArtifactType, selectedType.value]);
 
-	const {
-		data,
-		error,
-		fetchNextPage,
-		hasNextPage,
-		isFetching,
-		isFetchingNextPage,
-		status,
-	} = useInfiniteQuery({
-		queryKey: ["ordinals", selectedType.value],
-		queryFn: ({ pageParam }) =>
-			getMarketListings({ pageParam, selectedType: selectedType.value, term }),
-		getNextPageParam: (lastPage, pages, lastPageParam) => {
-			if (lastPage?.length === resultsPerPage) {
-				return lastPageParam + 1;
-			}
-			return undefined;
-		},
-		initialPageParam: 0,
-	});
+	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+		useInfiniteQuery({
+			queryKey: ["ordinals", selectedType.value],
+			queryFn: ({ pageParam }) =>
+				getMarketListings({
+					pageParam,
+					selectedType: selectedType.value,
+					term,
+				}),
+			getNextPageParam: (lastPage, _pages, lastPageParam) => {
+				if (lastPage?.length === resultsPerPage) {
+					return lastPageParam + 1;
+				}
+				return undefined;
+			},
+			initialPageParam: 0,
+		});
 
-	// set the ord utxos
 	useEffect(() => {
 		if (data) {
 			console.log("data", data);
@@ -85,7 +121,6 @@ const List = ({ term, address, onClick }: Props) => {
 				}
 			}
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [data, listings, data?.pages[data.pages.length - 1]]);
 
 	useEffect(() => {
@@ -93,7 +128,6 @@ const List = ({ term, address, onClick }: Props) => {
 		if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
 			fetchNextPage();
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [isInView]);
 
 	const collectionIds = computed(() =>
@@ -110,135 +144,190 @@ const List = ({ term, address, onClick }: Props) => {
 		return collectionIds.value;
 	}, [collectionIds.value]);
 
-	const {
-		data: collectionData,
-		error: collectionsErr,
-		isFetching: isFetchingCollections,
-	} = useQuery({
+	const { data: collectionData } = useQuery({
 		queryKey: ["collections", cids],
 		queryFn: () => getOutpoints(cids, false),
 	});
 
-	// const collections = useSignal(collectionData || []);
-	// console.log({
-	//   collectionIds: collectionIds.value,
-	//   // collections: collections.value,
-	//   collectionData,
-	//   cids,
-	//   isFetchingCollections,
-	//   collectionsErr,
-	// });
-
 	return (
-		listings.value && (
-			<tbody className="h-full">
-				{listings.value.map((listing, idx) => {
-					const scamListing = !!listing.origin?.outpoint && SCAM_ITEM_BLACKLIST.includes(listing.origin.outpoint);
-          const knownScammer =  listing.owner && SCAM_LISTING_USER_BLACKLIST.some((u) => u.address === listing.owner)
-					const size = 100;
-					const collection = listingCollection(listing, collectionData || []);
-					const price = `${toBitcoin(
-						listing?.data?.list?.price || "0",
-					)} BSV`;
-					return (
-						listing && (
-							<tr
-								key={`k-${listing?.txid}-${listing?.vout}-${listing?.height}`}
-							>
-								<td width={100} height={120} className="p-0">
-									<Artifact
-										classNames={{
-											wrapper: "bg-transparent",
-											media: "rounded bg-[#111] text-center p-0 h-[100px] mr-2",
-										}}
-										artifact={listing}
-										size={size}
-										sizes={"100vw"}
-										showFooter={false}
-										priority={false}
-										to={`/outpoint/${listing?.outpoint}/listing`}
-									/>
-								</td>
+		<>
+			{listings.value && (
+				<TableBody>
+					{listings.value.map((listing) => {
+						const scamListing =
+							!!listing.origin?.outpoint &&
+							SCAM_ITEM_BLACKLIST.includes(listing.origin.outpoint);
+						const knownScammer =
+							listing.owner &&
+							SCAM_LISTING_USER_BLACKLIST.some(
+								(u) => u.address === listing.owner,
+							);
+						const size = 80;
+						const collection = listingCollection(listing, collectionData || []);
+						const priceValue = toBitcoin(listing?.data?.list?.price || "0");
 
-								<td className="flex flex-col h-[100px] p-0 pl-4">
-									<div className="my-auto max-w-64 xs:max-w-xs sm:max-w-sm md:max-w-lg truncate overflow-hidden text-ellipses">
-										<Link
-											className="text-lg "
-											href={`/outpoint/${listing?.outpoint}/listing`}
-										>
-											{listingName(listing)}
-										</Link>
-										{collection && (
-											<div className="flex items-center gap-4">
+						return (
+							listing && (
+								<TableRow
+									key={`k-${listing?.txid}-${listing?.vout}-${listing?.height}`}
+									className="border-border hover:bg-muted/50 group cursor-pointer"
+									onClick={(e) => handleRowClick(e, listing)}
+								>
+									{/* Asset Thumbnail */}
+									<TableCell className="py-3 px-4">
+										<div className="w-16 h-16 rounded-md border border-border bg-muted overflow-hidden group-hover:border-primary/50 transition-colors">
+											<Artifact
+												classNames={{
+													wrapper: "bg-transparent",
+													media:
+														"bg-muted text-center p-0 h-full w-full object-cover",
+												}}
+												artifact={listing}
+												size={size}
+												sizes={"100vw"}
+												showFooter={false}
+												thumbnail={true}
+											/>
+										</div>
+									</TableCell>
+
+									{/* Inscription Details */}
+									<TableCell className="py-3 px-4">
+										<div className="flex flex-col gap-1">
+											<Link
+												className="text-sm text-foreground font-medium group-hover:text-primary transition-colors truncate max-w-[200px] md:max-w-[300px]"
+												href={`/outpoint/${listing?.outpoint}/listing`}
+												onClick={(e) => e.stopPropagation()}
+											>
+												{listingName(listing)}
+											</Link>
+											{collection && (
 												<Link
 													href={`/collection/${listing?.origin?.data?.map?.subTypeData?.collectionId}`}
-													className="text-blue-400 hover:text-blue-500"
+													className="text-[10px] text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider"
+													onClick={(e) => e.stopPropagation()}
 												>
 													{collection.name} {mintNumber(listing, collection)}
 												</Link>
+											)}
+											<span className="text-[10px] text-muted-foreground/70">
+												#{listing?.origin?.num}
+											</span>
+											{/* Mobile price */}
+											<div className="md:hidden text-xs mt-1">
+												<span className="text-primary font-medium">
+													{priceValue}
+												</span>
+												<span className="text-muted-foreground ml-1">BSV</span>
+											</div>
+										</div>
+									</TableCell>
+
+									{/* Seller */}
+									<TableCell
+										className="py-3 px-4 hidden md:table-cell"
+										onClick={(e) => e.stopPropagation()}
+									>
+										<Link href={`/signer/${listing?.owner}`} className="block">
+											<div
+												className="w-10 h-10 rounded-md border border-border bg-muted overflow-hidden group-hover:border-primary/50 transition-colors"
+												title={
+													listing?.data?.sigma?.length
+														? listing?.data.sigma[0].address
+														: listing?.owner
+												}
+											>
+												<JDenticon
+													className="w-full h-full"
+													hashOrValue={listing?.owner}
+												/>
+											</div>
+										</Link>
+									</TableCell>
+
+									{/* Price */}
+									<TableCell className="py-3 px-4 text-right hidden md:table-cell">
+										{scamListing ? (
+											<span className="inline-flex items-center gap-1.5 text-destructive text-xs uppercase font-medium">
+												<AlertTriangle className="w-3.5 h-3.5" />
+												Flagged
+											</span>
+										) : knownScammer ? (
+											<span className="inline-flex items-center gap-1.5 text-destructive text-xs uppercase font-medium">
+												<AlertTriangle className="w-3.5 h-3.5" />
+												Scammer
+											</span>
+										) : (
+											<div className="text-sm">
+												<span className="text-primary font-semibold">
+													{priceValue}
+												</span>
+												<span className="text-muted-foreground ml-1 text-xs">
+													BSV
+												</span>
 											</div>
 										)}
-										<div
-											className="flex items-center gap-4 text-neutral-content/25 tooltip"
-											data-tip="Block Number : Position in Block : Transaction Output"
-										>
-											{listing?.origin?.num}
-										</div>
-										<div className={"block md:hidden"}>{price}</div>
-									</div>
-								</td>
-								<td className={"p-0 hidden md:table-cell w-10"}>
-									<Link href={`/signer/${listing?.owner}`}>
-										<div
-											className="tooltip"
-											data-tip={
-												listing?.data?.sigma?.length
-													? listing?.data.sigma[0].address
-													: listing?.owner
-											}
-										>
-											<JDenticon className="w-8" hashOrValue={listing?.owner} />
-										</div>
-									</Link>
-								</td>
-								<td className="p-0 text-xs md:text-sm hidden md:table-cell">
-                  {scamListing ? <span className="text-red-500">FLAGGED</span> : knownScammer ? <span className="text-red-500">KNOWN SCAMMER</span> : listing?.data?.list?.price ? (
-										<BuyBtn
-											satoshis={BigInt(listing.data.list.price)}
-											listing={listing}
-										/>
-									) : (
-										""
-									)}
-								</td>
-								<td className="p-0 md:table-cell hidden text-center w-8">
-									{!scamListing && <Link
-										className="text-sm"
-										href={`/outpoint/${listing?.outpoint}/listing`}
+									</TableCell>
+
+									{/* Action */}
+									<TableCell
+										className="py-3 px-4 text-right"
+										onClick={(e) => e.stopPropagation()}
 									>
-										<FaChevronRight className="w-6 h-6" />
-									</Link>}
-								</td>
-							</tr>
-						)
-					);
-				})}
-				{listings.value.length === 0 && (
-					<tr>
-						<td className="text-center" colSpan={5}>
-							No listings found
-						</td>
-					</tr>
-				)}
-				<tr>
-					<td className="text-center" colSpan={5}>
-						<div ref={ref} className="flex items-center justify-center">
-							{isFetching && <FiLoader className="animate animate-spin" />}
-						</div>
-					</td>
-				</tr>
-			</tbody>
-		)
+										{!scamListing &&
+										!knownScammer &&
+										listing?.data?.list?.price ? (
+											<BuyBtn
+												satoshis={BigInt(listing.data.list.price)}
+												listing={listing}
+											/>
+										) : !scamListing && !knownScammer ? (
+											<Button
+												variant="outline"
+												size="sm"
+												asChild
+												className="rounded-md border-border text-muted-foreground hover:text-primary hover:border-primary hover:bg-primary/10 transition-all font-mono uppercase text-[10px] tracking-widest h-8"
+											>
+												<Link href={`/outpoint/${listing?.outpoint}/listing`}>
+													View
+													<ChevronRight className="w-3 h-3 ml-1" />
+												</Link>
+											</Button>
+										) : null}
+									</TableCell>
+								</TableRow>
+							)
+						);
+					})}
+					{listings.value.length === 0 && (
+						<TableRow>
+							<TableCell colSpan={5} className="py-16 text-center">
+								<div className="text-muted-foreground font-mono text-sm uppercase tracking-widest">
+									No listings found
+								</div>
+							</TableCell>
+						</TableRow>
+					)}
+					<TableRow className="hover:bg-transparent border-0">
+						<TableCell colSpan={5} className="py-8">
+							<div ref={ref} className="flex items-center justify-center">
+								{isFetchingNextPage && (
+									<div className="flex items-center gap-3 text-muted-foreground text-xs">
+										<Loader2 className="w-4 h-4 animate-spin text-primary" />
+										<span className="uppercase tracking-wider">Loading...</span>
+									</div>
+								)}
+							</div>
+						</TableCell>
+					</TableRow>
+				</TableBody>
+			)}
+			<ArtifactModal
+				artifact={selectedArtifact}
+				showBackdrop={showBackdrop}
+				onClose={closeModal}
+			/>
+		</>
 	);
 };
 

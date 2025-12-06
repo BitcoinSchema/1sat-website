@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { Combobox, Transition } from "@headlessui/react";
+import { Combobox } from "@headlessui/react";
 import { computed, useSignal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import clsx from "clsx";
-import { Fragment, useCallback, useEffect } from "react";
+import { useEffect } from "react";
 
 interface DropdownProps {
 	placeholder?: string;
@@ -24,24 +24,24 @@ const Dropdown: React.FC<DropdownProps> = ({
 	renderItem,
 	onPaste,
 }) => {
-  useSignals();
+	useSignals();
 	const hasFocus = useSignal(false);
 	const isSelected = computed(() => items.includes(selectedItem));
 	const filteredItems = computed<string[]>(() =>
 		items
 			.filter((item) =>
-				item.toLowerCase().startsWith(selectedItem.toLowerCase())
+				item.toLowerCase().startsWith(selectedItem.toLowerCase()),
 			)
-			.slice(0, 3)
+			.slice(0, 3),
 	);
 
 	const onItemClicked = (item: string) => {
 		onChange(item);
 	};
 
-  useEffect(() => {
-    console.log({selectedItem})
-  }, [selectedItem])
+	useEffect(() => {
+		console.log({ selectedItem });
+	}, [selectedItem]);
 
 	const handlePaste = (event: React.ClipboardEvent) => {
 		event.preventDefault();
@@ -55,22 +55,19 @@ const Dropdown: React.FC<DropdownProps> = ({
 		<div className="">
 			<Combobox
 				as="div"
-				className={clsx(
-					"relative w-full z-[10] flex-nowrap overflow-visible",
-					{
-						"z-[10]": hasFocus.value,
-            "z-[1]": !hasFocus.value
-					}
-				)}
+				className={clsx("relative w-full z-[10] flex-nowrap overflow-visible", {
+					"z-[10]": hasFocus.value,
+					"z-[1]": !hasFocus.value,
+				})}
 				nullable
 				onChange={onItemClicked}
 				onFocus={() => {
-          console.log("has focus")
-          hasFocus.value = true
-        }}
+					console.log("has focus");
+					hasFocus.value = true;
+				}}
 				onBlur={() => {
-          hasFocus.value = false
-        }}
+					hasFocus.value = false;
+				}}
 			>
 				{({ open }) => (
 					<>
@@ -99,16 +96,18 @@ const Dropdown: React.FC<DropdownProps> = ({
 											key={item}
 											as={"div"}
 											value={item}
-											className={"relative cursor-default select-none text-gray-900"}
+											className={
+												"relative cursor-default select-none text-gray-900"
+											}
 										>
 											{({ active }) => (
 												<button
-                          type="button"
+													type="button"
 													className={clsx(
 														"cursor-pointer select-none relative rounded inline-block text-yellow-500 w-full py-2 pl-4 pr-4",
 														active
 															? "text-yellow-900 bg-yellow-500"
-															: "text-yellow-100"
+															: "text-yellow-100",
 													)}
 													onClick={(e) => {
 														e.preventDefault();
@@ -119,9 +118,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 													{renderItem ? (
 														renderItem(item)
 													) : (
-														<div className="">
-															{item}
-														</div>
+														<div className="">{item}</div>
 													)}
 												</button>
 											)}

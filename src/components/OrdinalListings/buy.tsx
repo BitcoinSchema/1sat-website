@@ -1,13 +1,14 @@
 "use client";
 
-import type { OrdUtxo } from "@/types/ordinals";
 import { useSignal } from "@preact/signals-react";
 import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { toBitcoin } from "satoshi-token";
+import { Button } from "@/components/ui/button";
+import type { OrdUtxo } from "@/types/ordinals";
 import Artifact from "../artifact";
 import BuyArtifactModal from "../modal/buyArtifact";
 import { getOutpoints } from "./helpers";
-import toast from "react-hot-toast";
 
 interface Props {
 	satoshis: bigint;
@@ -16,9 +17,7 @@ interface Props {
 
 const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
 	const showBuy = useSignal(false);
-	const [listingWithScript, setListingWithScript] = useState<OrdUtxo>(
-		listing,
-	);
+	const [listingWithScript, setListingWithScript] = useState<OrdUtxo>(listing);
 
 	const clickBuy = useCallback(() => {
 		showBuy.value = true;
@@ -33,7 +32,7 @@ const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
 						setListingWithScript(res[0]);
 					}
 				})
-				.catch((e) => {
+				.catch((_e) => {
 					toast.error("Failed to get listing script");
 				});
 		}
@@ -43,12 +42,11 @@ const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
 		<Artifact
 			classNames={{
 				wrapper: "bg-transparent",
-				media: "rounded bg-[#111] text-center p-0 w-full mr-2",
+				media: "bg-card text-center p-0 w-full",
 			}}
 			artifact={listing}
 			sizes={"100vw"}
 			showFooter={false}
-			priority={false}
 			showListingTag={false}
 			to={`/outpoint/${listing?.outpoint}`}
 		/>
@@ -60,9 +58,15 @@ const BuyBtn = ({ satoshis = 0n, listing }: Props) => {
 
 	return (
 		<>
-			<button type="button" className="btn btn-ghost" onClick={clickBuy}>
+			<Button
+				type="button"
+				variant="default"
+				size="sm"
+				onClick={clickBuy}
+				className="rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-mono uppercase text-[10px] tracking-widest h-8"
+			>
 				{toBitcoin(satoshis.toString())} BSV
-			</button>
+			</Button>
 			{listingWithScript.script && showBuy.value && (
 				<BuyArtifactModal
 					listing={listingWithScript}

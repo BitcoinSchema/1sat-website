@@ -1,4 +1,9 @@
-import Link from "next/link";
+"use client";
+
+import { useSignals } from "@preact/signals-react/runtime";
+import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { ordAddress } from "@/signals/wallet/address";
 import OwnerTab from "./ownerTab";
 
 export enum OutpointTab {
@@ -12,74 +17,118 @@ export enum OutpointTab {
 
 interface Props {
 	outpoint: string;
-	activeTab: OutpointTab;
 	hasToken: boolean;
 	isListing: boolean;
 	isCollection: boolean;
 	owner: string | undefined;
+	actualOwner: string | undefined;
+	onTabChange?: (tab: OutpointTab) => void;
 }
 
 const OutpointTabs = ({
 	outpoint,
-	activeTab,
 	hasToken,
 	isListing,
 	owner,
+	actualOwner,
 	isCollection,
+	onTabChange,
 }: Props) => {
+	useSignals();
+	const router = useRouter();
+	const pathname = usePathname();
+
+	// Check if the current user is the owner
+	const isOwner =
+		actualOwner && ordAddress.value && actualOwner === ordAddress.value;
+
+	// Show listing tab if it's a listing OR if the user owns it (so they can create a listing)
+	const showListingTab = isListing || isOwner;
+
+	// Derive active tab from URL pathname
+	const activeTab = useMemo(() => {
+		const segments = pathname.split("/");
+		const tabSegment = segments[segments.length - 1];
+		return (tabSegment as OutpointTab) || OutpointTab.Timeline;
+	}, [pathname]);
+
+	const handleTabClick = (tab: OutpointTab) => {
+		if (onTabChange) {
+			onTabChange(tab);
+		} else {
+			// Fallback to router if no handler provided
+			router.push(`/outpoint/${outpoint}/${tab}`);
+		}
+	};
+
+	const buttonClasses = (isActive: boolean) =>
+		`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
+			isActive
+				? "border-border bg-card text-foreground shadow-sm"
+				: "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground"
+		}`;
+
 	return (
-		<div role="tablist" className={"tabs tabs-bordered mb-4 font-mono"}>
-			<Link
+		<div
+			role="tablist"
+			className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 p-1 font-mono"
+		>
+			<button
+				type="button"
 				role="tab"
-				href={`/outpoint/${outpoint}/timeline`}
-				className={`tab ${
-					activeTab === OutpointTab.Timeline ? "tab-active" : ""
-				}`}
+				aria-selected={activeTab === OutpointTab.Timeline}
+				className={buttonClasses(activeTab === OutpointTab.Timeline)}
+				onClick={() => handleTabClick(OutpointTab.Timeline)}
 			>
 				Timeline
-			</Link>
-			<Link
+			</button>
+			<button
+				type="button"
 				role="tab"
-				href={`/outpoint/${outpoint}/inscription`}
-				className={`tab ${
-					activeTab === OutpointTab.Inscription ? "tab-active" : ""
-				}`}
+				aria-selected={activeTab === OutpointTab.Inscription}
+				className={buttonClasses(activeTab === OutpointTab.Inscription)}
+				onClick={() => handleTabClick(OutpointTab.Inscription)}
 			>
 				Details
-			</Link>
+			</button>
 			{hasToken && (
-				<Link
+				<button
+					type="button"
 					role="tab"
-					href={`/outpoint/${outpoint}/token`}
-					className={`tab ${
-						activeTab === OutpointTab.Token ? "tab-active" : ""
-					}`}
+					aria-selected={activeTab === OutpointTab.Token}
+					className={buttonClasses(activeTab === OutpointTab.Token)}
+					onClick={() => handleTabClick(OutpointTab.Token)}
 				>
 					Token
-				</Link>
+				</button>
 			)}
-			<OwnerTab owner={owner} outpoint={outpoint} activeTab={activeTab} />
-			{
-				<Link
+			<OwnerTab
+				owner={owner}
+				outpoint={outpoint}
+				activeTab={activeTab}
+				onTabChange={onTabChange}
+			/>
+			{showListingTab && (
+				<button
+					type="button"
 					role="tab"
-					href={`/outpoint/${outpoint}/listing`}
-					className={`tab ${
-						activeTab === OutpointTab.Listing ? "tab-active" : ""
-					}`}
+					aria-selected={activeTab === OutpointTab.Listing}
+					className={buttonClasses(activeTab === OutpointTab.Listing)}
+					onClick={() => handleTabClick(OutpointTab.Listing)}
 				>
 					Listing
-				</Link>
-			}
+				</button>
+			)}
 			{isCollection && (
-				<Link
+				<button
+					type="button"
 					role="tab"
-					href={`/outpoint/${outpoint}/collection`}
-					className={`tab ${
-						activeTab === OutpointTab.Collection ? "tab-active" : ""
-					}`}
+					aria-selected={activeTab === OutpointTab.Collection}
+					className={buttonClasses(activeTab === OutpointTab.Collection)}
+					onClick={() => handleTabClick(OutpointTab.Collection)}
 				>
 					Collection
-				</Link>
+				</button>
 			)}
 		</div>
 	);

@@ -1,8 +1,8 @@
 "use client";
 
 import { useSignals } from "@preact/signals-react/runtime";
-import { selectedType } from "../Wallet/filter";
 import { ArtifactType } from "../artifact";
+import { selectedType } from "../Wallet/filter";
 
 const None = () => {
 	useSignals();

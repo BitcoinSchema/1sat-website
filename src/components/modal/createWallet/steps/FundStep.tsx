@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { showDepositModal } from "@/signals/wallet";
 
 interface Props {
@@ -18,17 +19,13 @@ export function FundStep({ onClose }: Props) {
 				You will need to fund your wallet in order to use it.
 			</div>
 
-			<div className="modal-action">
-				<button className="btn" type="button" onClick={onClose}>
+			<div className="flex justify-end gap-2 mt-4">
+				<Button variant="outline" type="button" onClick={onClose}>
 					Not Now
-				</button>
-				<button
-					className="btn btn-primary"
-					type="button"
-					onClick={handleFundWallet}
-				>
+				</Button>
+				<Button type="button" onClick={handleFundWallet}>
 					Fund Wallet
-				</button>
+				</Button>
 			</div>
 		</>
 	);

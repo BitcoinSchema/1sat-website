@@ -1,7 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { createWalletStep } from "@/signals/wallet";
 import { CreateWalletStep } from "@/types/wallet";
 
-interface Props {}
+type Props = {};
 
 export function CreatedStep({}: Props) {
 	function handleSecureWallet() {
@@ -13,14 +14,10 @@ export function CreatedStep({}: Props) {
 			<div className="rounded my-2">
 				Wallet created! Secure your wallet backup file to get started.
 			</div>
-			<div className="modal-action">
-				<button
-					className="btn btn-primary"
-					type="button"
-					onClick={handleSecureWallet}
-				>
+			<div className="flex justify-end gap-2 mt-4">
+				<Button type="button" onClick={handleSecureWallet}>
 					Secure Wallet
-				</button>
+				</Button>
 			</div>
 		</>
 	);

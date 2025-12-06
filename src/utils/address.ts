@@ -1,10 +1,9 @@
-import { API_HOST, resultsPerPage } from "@/constants";
-import { WocUtxo, WocUtxoResults } from "@/types/common";
-import type { OrdUtxo } from "@/types/ordinals";
-import { uniq } from "lodash";
-import * as http from "./httpClient";
-import { fetchNftUtxos, fetchPayUtxos, type Utxo } from "js-1sat-ord";
 import { PrivateKey } from "@bsv/sdk";
+import { fetchPayUtxos, type Utxo } from "js-1sat-ord";
+import { uniq } from "lodash";
+import { API_HOST, resultsPerPage } from "@/constants";
+import type { OrdUtxo } from "@/types/ordinals";
+import * as http from "./httpClient";
 
 export const addressFromWif = (payPk: string) => {
 	const pk = PrivateKey.fromWif(payPk);
@@ -47,16 +46,14 @@ export const getOrdUtxos = async (address: string, nextOffset: number) => {
 };
 
 export const getUtxos = async (address: string): Promise<Utxo[]> => {
+	// use gorillapool
+	try {
+		return await fetchPayUtxos(address);
+	} catch (e) {
+		console.log("error", e);
+		return [];
+	}
 
-  // use gorillapool
-  try {
-    return await fetchPayUtxos(address);
-    
-  } catch (e) {
-    console.log("error", e);
-    return [];
-  }
-  
 	// try {
 	// 	// Try beta endpoint first
 	// 		// `https://api.whatsonchain.com/v1/bsv/main/address/${address}/unspent` // deprecated

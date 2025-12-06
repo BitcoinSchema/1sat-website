@@ -1,32 +1,33 @@
 "use client";
 
+import { computed } from "@preact/signals-react";
+import { useSignal, useSignals } from "@preact/signals-react/runtime";
+import { useQuery } from "@tanstack/react-query";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo, useRef } from "react";
+import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
+import { FaHashtag } from "react-icons/fa6";
+import { GiPlainCircle } from "react-icons/gi";
+import { toBitcoin } from "satoshi-token";
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
+import { Button } from "@/components/ui/button";
 import { API_HOST, AssetType, MARKET_API_HOST } from "@/constants";
 import {
-	CurrencyDisplay,
 	bsv20Utxos,
+	CurrencyDisplay,
 	currencyDisplay,
 	exchangeRate,
 	usdRate,
 	utxos,
 } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
+import type { OrdUtxo } from "@/types/ordinals";
 import { getBsv20Utxos, getUtxos } from "@/utils/address";
 import { minFee } from "@/utils/bsv20";
-import { computed } from "@preact/signals-react";
-import { useSignal, useSignals } from "@preact/signals-react/runtime";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
-import { FaExternalLinkAlt, FaFire, FaLock } from "react-icons/fa";
-import { FaHashtag } from "react-icons/fa6";
-import { GiPlainCircle } from "react-icons/gi";
-import { toBitcoin } from "satoshi-token";
 import type { MarketData } from "./list";
-import { useQuery } from "@tanstack/react-query";
-import type { OrdUtxo } from "@/types/ordinals";
 
 type IconProps = {
 	alt: string;
@@ -48,7 +49,7 @@ export const IconWithFallback: React.FC<IconProps> = (props) => {
 			ref={ref}
 			alt={alt}
 			src={imgSrc.value}
-			onError={(e) => {
+			onError={(_e) => {
 				imgSrc.value = oneSatLogo;
 			}}
 			onLoad={(e) => {
@@ -112,7 +113,7 @@ const TickerHeading = ({
 	const bsvNeeded = computed(() => {
 		const satoshis = Math.max(
 			minFee - Number(ticker.fundTotal),
-			(ticker.pendingOps || 0) * 1000 - Number.parseInt(ticker.fundBalance),
+			(ticker.pendingOps || 0) * 1000 - Number.parseInt(ticker.fundBalance, 10),
 		);
 		// console.log({
 		//   satoshis,
@@ -139,7 +140,7 @@ const TickerHeading = ({
 			ticker.contract === "LockToMintBsv20"
 		);
 	}, [ticker]);
-  
+
 	// const bsv21SupplyContent = computed(() => {
 	//   const totalSupply = ticker.amt;
 	//   let text = `${totalSupply?.toLocaleString()} `;
@@ -156,9 +157,9 @@ const TickerHeading = ({
 		enabled: !!id && isLtm,
 	});
 
-  // useEffect(() => {
-  //   console.log({ltmDetails});
-  // }, [ltmDetails]);
+	// useEffect(() => {
+	//   console.log({ltmDetails});
+	// }, [ltmDetails]);
 
 	const supplyContent = computed(() => {
 		if (type === AssetType.BSV20) {
@@ -168,9 +169,9 @@ const TickerHeading = ({
 			if (isPow20) {
 				return renderPOW20Supply();
 			}
-      if (isLtm) {
-        return renderLTMSupply();
-      }
+			if (isLtm) {
+				return renderLTMSupply();
+			}
 			return renderBSV21Supply();
 		}
 		return null;
@@ -180,11 +181,11 @@ const TickerHeading = ({
 		if (!ticker.supply) return null;
 		if (!ticker.max) return null;
 		const totalSupply =
-			Number.parseInt(ticker.supply || ticker.amt || "0") /
+			Number.parseInt(ticker.supply || ticker.amt || "0", 10) /
 			(ticker.dec ? 10 ** ticker.dec : 1);
-		const maxSupply = Number.parseInt(ticker.max) / 10 ** (ticker.dec || 0);
+		const maxSupply = Number.parseInt(ticker.max, 10) / 10 ** (ticker.dec || 0);
 		const mintedOut =
-			Number.parseInt(ticker.supply) === Number.parseInt(ticker.max);
+			Number.parseInt(ticker.supply, 10) === Number.parseInt(ticker.max, 10);
 		const btnDisabled = !ticker.included || paidUp.value;
 
 		return (
@@ -193,34 +194,43 @@ const TickerHeading = ({
 					<Link
 						href={`/inscribe?tab=bsv20&tick=${ticker.tick}`}
 						className={btnDisabled ? "cursor-default" : ""}
+						onClick={(e) => {
+							if (btnDisabled) {
+								e.preventDefault();
+							}
+						}}
+						aria-disabled={btnDisabled}
+						tabIndex={btnDisabled ? -1 : 0}
 					>
-						<button
+						<Button
 							type="button"
+							size="sm"
 							disabled={btnDisabled}
-							className="btn btn-sm btn-accent mr-4"
+							className="mr-4"
 						>
 							Mint {ticker.tick}
-						</button>
+						</Button>
 					</Link>
 				)}
-				<div data-tip="Circulating Supply / Max Supply" className="tooltip tooltip-right">
+				<span
+					title="Circulating Supply / Max Supply"
+					className="text-muted-foreground"
+				>
 					{`${totalSupply.toLocaleString()} / ${maxSupply.toLocaleString()}`}
-				</div>
+				</span>
 			</>
 		);
 	};
 
 	const renderBSV21Supply = () => {
 		const totalSupply =
-			Number.parseInt(ticker.supply || ticker.amt || "0") /
+			Number.parseInt(ticker.supply || ticker.amt || "0", 10) /
 			(ticker.dec ? 10 ** ticker.dec : 1);
 
 		return (
-			<>
-				<div data-tip="Total Supply" className="tooltip tooltip-right">
-					{`${totalSupply.toLocaleString()}`}
-				</div>
-			</>
+			<span title="Total Supply" className="text-muted-foreground">
+				{`${totalSupply.toLocaleString()}`}
+			</span>
 		);
 	};
 
@@ -253,18 +263,27 @@ const TickerHeading = ({
 			<>
 				{!pow20Details.owner && (
 					<Link href={"/mine"}>
-						<button type="button" className="btn btn-sm btn-accent mr-4">
+						<button
+							type="button"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-orange-900/30 text-orange-400 border border-orange-500/50 hover:bg-orange-900/50 transition mr-4"
+						>
 							Mine {ticker.sym}
 						</button>
 					</Link>
 				)}
-				<div data-tip="Remaining Supply / Total Supply" className="tooltip">
+				<span
+					title="Remaining Supply / Total Supply"
+					className="text-muted-foreground"
+				>
 					{supplyText}
-				</div>
+				</span>
 				{!pow20Details.owner && (
-					<div data-tip="Current Mining Difficulty" className="tooltip ml-4">
+					<span
+						title="Current Mining Difficulty"
+						className="text-muted-foreground ml-4"
+					>
 						Difficulty: {currentDifficulty}
-					</div>
+					</span>
 				)}
 			</>
 		);
@@ -278,26 +297,33 @@ const TickerHeading = ({
 		const totalSupply = ltmDetails.origin.data.insc.json.amt;
 		const remainingSupply = ltmDetails.data.bsv20.amt;
 		const decimals = ltmDetails.origin.data.insc.json.dec;
-    console.log({totalSupply, remainingSupply, decimals});
+		console.log({ totalSupply, remainingSupply, decimals });
 		const adjustedTotalSupply = totalSupply / 10 ** decimals;
 		const adjustedRemainingSupply = Number(remainingSupply) / 10 ** decimals;
 
-		const supplyText = remainingSupply === "0"
-			? `Minted Out / ${adjustedTotalSupply.toLocaleString()}`
-			: `${adjustedRemainingSupply.toLocaleString()} / ${adjustedTotalSupply.toLocaleString()}`;
+		const supplyText =
+			remainingSupply === "0"
+				? `Minted Out / ${adjustedTotalSupply.toLocaleString()}`
+				: `${adjustedRemainingSupply.toLocaleString()} / ${adjustedTotalSupply.toLocaleString()}`;
 
 		return (
 			<>
 				{remainingSupply === "0" && (
 					<Link href={"https://locktomint.com"} target="_blank">
-						<button type="button" className="btn btn-sm btn-accent mr-4">
+						<button
+							type="button"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-blue-900/30 text-blue-400 border border-blue-500/50 hover:bg-blue-900/50 transition mr-4"
+						>
 							Mint {ticker.sym}
 						</button>
 					</Link>
 				)}
-				<div data-tip="Remaining Supply / Total Supply" className="tooltip tooltip-right">
+				<span
+					title="Remaining Supply / Total Supply"
+					className="text-muted-foreground"
+				>
 					{supplyText}
-				</div>
+				</span>
 			</>
 		);
 	};
@@ -312,7 +338,6 @@ const TickerHeading = ({
 
 	return (
 		<>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
 			<tr
 				onClick={(e) => {
 					if (id) {
@@ -322,13 +347,13 @@ const TickerHeading = ({
 					}
 					router.push(`/market/${type}/${ticker.tick || ticker.id}`);
 				}}
-				className={`transition ${
+				className={`transition border-b border-border ${
 					id
-						? "active text-xl text-base-content"
-						: "cursor-pointer hover:text-secondary-content"
+						? "bg-muted/50 text-xl text-foreground"
+						: "cursor-pointer hover:bg-muted/30 text-muted-foreground hover:text-foreground"
 				}`}
 			>
-				<th className={"truncate text-ellipsis"}>
+				<td className="truncate text-ellipsis px-4 py-3">
 					<div className="flex items-center">
 						{type === AssetType.BSV21 && (
 							<IconWithFallback
@@ -338,45 +363,47 @@ const TickerHeading = ({
 							/>
 						)}
 						{ticker.num && (
-							<div className="whitespace-nowrap items-end content-end text-right mr-4">
-								<FaHashtag className="m-0 mb-1 w-3 h-3 text-[#555]" />
+							<div className="whitespace-nowrap items-end content-end text-right mr-4 text-muted-foreground">
+								<FaHashtag className="m-0 mb-1 w-3 h-3 text-muted-foreground/50 inline" />
 								{ticker.num}
 							</div>
 						)}
-						<span className="text-4xl mr-4">{ticker.tick || ticker.sym}</span>
+						<span className="text-2xl md:text-4xl mr-4 font-bold text-foreground">
+							{ticker.tick || ticker.sym}
+						</span>
 					</div>
-				</th>
+				</td>
 				{currencyDisplay.value === CurrencyDisplay.BSV && (
-					<th>
+					<td className="px-4 py-3 text-muted-foreground">
 						{ticker.price?.toLocaleString("en-US", {
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 8,
 							useGrouping: false,
 						}) || ""}{" "}
-						<span className="text-accent">sat/token</span>
-					</th>
+						<span className="text-primary">sat/token</span>
+					</td>
 				)}
 				{currencyDisplay.value === CurrencyDisplay.USD && (
-					<th>
+					<td className="px-4 py-3 text-muted-foreground">
 						{usdPrice.value.toLocaleString("en-US", {
 							style: "currency",
 							currency: "USD",
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 8,
 						})}
-						<span className="text-accent">/token</span>
-					</th>
+						<span className="text-primary">/token</span>
+					</td>
 				)}
-				<th>
+				<td className="px-4 py-3">
 					<span
 						className={`ml-2 text-xl ${
-							ticker.pctChange > 0 ? "text-emerald-400" : "text-orange-700"
+							ticker.pctChange > 0 ? "text-emerald-400" : "text-destructive"
 						}`}
 					>
 						{change}
 					</span>
-				</th>
-				<th className="w-full text-right">
+				</td>
+				<td className="px-4 py-3 w-full text-right text-muted-foreground">
 					{currencyDisplay.value === CurrencyDisplay.BSV
 						? `${
 								ticker.marketCap > 0
@@ -399,46 +426,45 @@ const TickerHeading = ({
 										})
 									: 0
 							}`}
-					<br />
-				</th>
+				</td>
 				{type === AssetType.BSV21 && (
-					<th className="text-center w-12">
+					<td className="px-4 py-3 text-center w-12">
 						{isPow20 ? (
-							<div className="tooltip mx-auto" data-tip="POW-20">
+							<span title="POW-20" className="mx-auto">
 								<FaFire className="text-orange-400" />
-							</div>
+							</span>
 						) : isLtm ? (
-							<div className="tooltip mx-auto" data-tip="Lock-to-Mint">
+							<span title="Lock-to-Mint" className="mx-auto">
 								<FaLock className="text-blue-400" />
-							</div>
+							</span>
 						) : (
-							<div className="tooltip mx-auto">
-								<GiPlainCircle className="text-gray-800" />
-							</div>
+							<span className="mx-auto">
+								<GiPlainCircle className="text-muted-foreground/30" />
+							</span>
 						)}
-					</th>
+					</td>
 				)}
-				<th className="break-normal text-right w-48 hover:text-info transition">
+				<td className="px-4 py-3 break-normal text-right w-48 text-muted-foreground hover:text-primary transition">
 					<Link href={`/holders/${type}/${ticker.tick || ticker.id}`}>
 						{(ticker.accounts || 0).toLocaleString()}
 					</Link>
-				</th>
+				</td>
 			</tr>
 			{id && (
-				<tr className="bg-base-200">
+				<tr className="bg-muted/30 border-b border-border">
 					<td
 						colSpan={3}
-						className="font-mono text-sm text-neutral-content/50 bg-[#111]"
+						className="px-4 py-3 font-mono text-sm text-muted-foreground"
 					>
 						{supplyContent.value}
 					</td>
 					<td
 						colSpan={type === AssetType.BSV21 ? 3 : 2}
-						className="text-right text-neutral-content/50 valign-center bg-[#111]"
+						className="px-4 py-3 text-right text-muted-foreground"
 					>
 						<Link
 							href={`/outpoint/${ticker.txid}_${ticker.vout}/token`}
-							className="hover:text-info transition"
+							className="hover:text-primary transition"
 						>
 							Deployment Inscription{" "}
 							<FaExternalLinkAlt className="inline-block ml-2" />
@@ -447,21 +473,21 @@ const TickerHeading = ({
 				</tr>
 			)}
 			{(ticker.pendingOps > 0 || !paidUp.value) && (
-				<tr className="group text-warning bg-warning-content">
-					<td className="" colSpan={type === AssetType.BSV21 ? 5 : 4}>
-						<div
-							className="tooltip tooltip-right"
-							data-tip={`${ticker.pendingOps} pending operations`}
-						>
+				<tr className="group bg-yellow-900/20 border-b border-yellow-500/30">
+					<td
+						className="px-4 py-3 text-yellow-400"
+						colSpan={type === AssetType.BSV21 ? 5 : 4}
+					>
+						<span title={`${ticker.pendingOps} pending operations`}>
 							{bsvNeeded.value > 0
 								? `Needs ${bsvNeeded} BSV`
 								: "Funded. Processing..."}
-						</div>
+						</span>
 					</td>
-					<td className="transition cursor-pointer text-right">
+					<td className="px-4 py-3 transition cursor-pointer text-right">
 						<button
 							type="button"
-							className="btn btn-warning btn-sm whitespace-nowrap"
+							className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-yellow-900/30 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-900/50 transition whitespace-nowrap"
 							onClick={openPaymentModal}
 						>
 							Fund {ticker.tick || ticker.sym}

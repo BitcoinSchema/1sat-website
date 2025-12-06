@@ -1,14 +1,21 @@
 "use client";
-import { Fragment, useRef, useEffect, useState } from "react";
-import JDenticon from "@/components/JDenticon";
-import { AssetType } from "@/constants";
-import { getBalanceText } from "@/utils/wallet";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import Link from "next/link";
-import { getHolders, resultsPerPage } from "@/utils/getHolders";
-import { Holder, TickHolder } from "../pages/TokenMarket/details";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { FiLoader } from "react-icons/fi";
+import JDenticon from "@/components/JDenticon";
+import { Separator } from "@/components/ui/separator";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { AssetType } from "@/constants";
+import { getHolders, resultsPerPage } from "@/utils/getHolders";
+import { getBalanceText } from "@/utils/wallet";
+import type { Holder, TickHolder } from "../pages/TokenMarket/details";
 
 type Props = {
 	type: AssetType;
@@ -22,26 +29,18 @@ const HoldersTable = ({ type, id, details }: Props) => {
 	const [holders, setHolders] = useState<Holder[] | TickHolder[]>([]);
 	const numHolders = (holders || []).length > 0 ? holders.length : 0;
 
-	const {
-		data,
-		error,
-		fetchNextPage,
-		hasNextPage,
-		isFetching,
-		isFetchingNextPage,
-		status,
-	} = useInfiniteQuery({
-		queryKey: ["holders"],
-		queryFn: ({ pageParam }) =>
-			getHolders({ type, id, pageParam, details }),
-		initialPageParam: 0,
-		getNextPageParam: (lastPage, pages, lastPageParam) => {
-			if (lastPage?.length === resultsPerPage) {
-				return lastPageParam + 1;
-			}
-			return undefined;
-		},
-	});
+	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+		useInfiniteQuery({
+			queryKey: ["holders"],
+			queryFn: ({ pageParam }) => getHolders({ type, id, pageParam, details }),
+			initialPageParam: 0,
+			getNextPageParam: (lastPage, _pages, lastPageParam) => {
+				if (lastPage?.length === resultsPerPage) {
+					return lastPageParam + 1;
+				}
+				return undefined;
+			},
+		});
 
 	useEffect(() => {
 		if (data) {
@@ -49,12 +48,11 @@ const HoldersTable = ({ type, id, details }: Props) => {
 			if (pageData !== undefined) {
 				const u = data.pages.reduce(
 					(acc, val) => (acc || []).concat(val || []),
-					[]
+					[],
 				);
 				setHolders(u);
 			}
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [data, data?.pages[data.pages.length - 1]]);
 
 	useEffect(() => {
@@ -63,7 +61,6 @@ const HoldersTable = ({ type, id, details }: Props) => {
 		if (isInView && newPageData && !isFetchingNextPage && hasNextPage) {
 			fetchNextPage();
 		}
-		// eslint-disable-next-line react-hooks-signals/exhaustive-deps-signals
 	}, [isInView]);
 
 	const processHolder = (h: Holder | TickHolder) => {
@@ -72,10 +69,8 @@ const HoldersTable = ({ type, id, details }: Props) => {
 		const numDecimals = details.dec || 0;
 
 		const balanceText = getBalanceText(balance, numDecimals);
-		const tooltip =
-			balance.toString() !== balanceText.trim()
-				? balance.toLocaleString()
-				: "";
+		const tooltipText =
+			balance.toString() !== balanceText.trim() ? balance.toLocaleString() : "";
 
 		return (
 			<Fragment key={`${id}-holder-${h.address}`}>
@@ -83,19 +78,29 @@ const HoldersTable = ({ type, id, details }: Props) => {
 					className="flex items-center text-sm flex-1"
 					href={`/activity/${h.address}/ordinals`}
 				>
-					<JDenticon
-						hashOrValue={h.address}
-						className="w-8 h-8 mr-2"
-					/>
+					<JDenticon hashOrValue={h.address} className="w-8 h-8 mr-2" />
 					<span className="hidden md:block">{h.address}</span>
 				</Link>
-				<div className="w-24 text-right tooltip" data-tip={tooltip}>
-					{balanceText}
-				</div>
+				{tooltipText ? (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div className="w-24 text-right cursor-help">
+								{balanceText}
+							</div>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>{tooltipText}</p>
+						</TooltipContent>
+					</Tooltip>
+				) : (
+					<div className="w-24 text-right">
+						{balanceText}
+					</div>
+				)}
 				<div className="w-24 text-right">{h?.pct?.toFixed(4)}%</div>
 				<div className="flex items-center mb-2 relative col-span-3">
 					<div
-						className="w-full bg-warning/25 rounded h-1"
+						className="w-full bg-amber-500/25 rounded h-1"
 						style={{ width: pctWidth }}
 					>
 						&nbsp;
@@ -106,28 +111,28 @@ const HoldersTable = ({ type, id, details }: Props) => {
 	};
 
 	return (
-		<div className="w-full">
-			{status === "pending" && (
-				<p className="text-center py-10">Loading...</p>
-			)}
-			{!!holders?.length && (
-				<div className="w-full">
-					<div className="grid grid-template-columns-3 p-6">
-						<div className="">
-							Address ({numHolders === 100 ? "100+" : numHolders})
+		<TooltipProvider>
+			<div className="w-full">
+				{status === "pending" && <p className="text-center py-10">Loading...</p>}
+				{!!holders?.length && (
+					<div className="w-full">
+						<div className="grid grid-template-columns-3 p-6">
+							<div className="">
+								Address ({numHolders === 100 ? "100+" : numHolders})
+							</div>
+							<div className="w-24 text-right">Holdings</div>
+							<div className="w-12 text-right">Ownership</div>
+							<Separator className="col-span-3 my-2" />
+							{holders?.map((h) => processHolder(h))}
 						</div>
-						<div className="w-24 text-right">Holdings</div>
-						<div className="w-12 text-right">Ownership</div>
-						<div className="divider col-span-3" />
-						{holders?.map((h) => processHolder(h))}
 					</div>
-				</div>
-			)}
+				)}
 
-			<div ref={ref} className="flex items-center justify-center h-6">
-				{isFetching && <FiLoader className="animate animate-spin" />}
+				<div ref={ref} className="flex items-center justify-center h-6">
+					{isFetchingNextPage && <FiLoader className="animate animate-spin" />}
+				</div>
 			</div>
-		</div>
+		</TooltipProvider>
 	);
 };
 

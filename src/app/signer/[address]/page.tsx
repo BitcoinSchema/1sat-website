@@ -3,12 +3,13 @@ import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
-const Signer = async ({ params }: { params: { address: string } }) => {
+const Signer = async ({ params }: { params: Promise<{ address: string }> }) => {
+	const { address } = await params;
 	const { promise } = http.customFetch<OrdUtxo[]>(
-		`${API_HOST}/api/txos/address/${params.address}/history`
+		`${API_HOST}/api/txos/address/${address}/history`,
 	);
 	const history = await promise;
-	return <SignerPage {...params} history={history} />;
+	return <SignerPage address={address} history={history} />;
 };
 
 export default Signer;

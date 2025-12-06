@@ -1,13 +1,18 @@
-import Footer from "@/components/Footer/footer";
-import Header from "@/components/header";
-import { Spotlight } from "@/components/ui/spotlights";
-import { toastProps } from "@/constants";
-import TanstackProvider from "@/providers/TanstackProvider";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Inter, Ubuntu, Ubuntu_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import Footer from "@/components/Footer/footer";
+import Header from "@/components/header";
+import ScrollToTop from "@/components/ScrollToTop";
+import { Spotlight } from "@/components/ui/spotlights";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { toastProps } from "@/constants";
+import TanstackProvider from "@/providers/TanstackProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
+import WalletBridgeProvider from "@/providers/WalletBridgeProvider";
 import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,7 +22,7 @@ const ubuntu = Ubuntu({
   subsets: ["latin"],
 });
 
-const ubuntuMono = Ubuntu_Mono({
+const _ubuntuMono = Ubuntu_Mono({
   style: "normal",
   weight: ["400", "700"],
   subsets: ["latin"],
@@ -45,29 +50,52 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         <link rel="icon" href="/favicon.ico" />
       </head>
 
-      <body className={`flex flex-col h-100vh ${inter.className}`}>
-        <Spotlight
-          className="-top-40 left-0 md:left-60 md:-top-20"
-          fill="white"
-        />
-        <TanstackProvider>
-          <Header ubuntu={ubuntu} />
-          {/* <Tabs className={`absolute md:relative m-0 md:my-8 bottom-0 left-0 w-full md:w-fit mx-auto ${ubuntuMono.className}`} /> */}
-          {children}
-          <Analytics />
-          <SpeedInsights />
-          <Footer />
-          <Toaster
-            position="bottom-left"
-            reverseOrder={false}
-            toastOptions={toastProps}
+      <body
+        className={`flex flex-col min-h-screen ${inter.className}`}
+      >
+        <ThemeProvider>
+          <Spotlight
+            className="-top-40 left-0 md:left-60 md:-top-20"
+            fill="white"
           />
-        </TanstackProvider>
+          <TanstackProvider>
+            <WalletBridgeProvider>
+              <SidebarProvider defaultOpen={false}>
+                <SidebarInset>
+                  {/* Fixed Header */}
+                  <Header ubuntu={ubuntu} />
+
+                  {/* Main content area - grows to fill space between header and footer */}
+                  <main className="flex-1 w-full relative flex flex-col overflow-y-auto">
+                    {children}
+                  </main>
+
+                  {/* Fixed Footer */}
+                  <Footer />
+                </SidebarInset>
+                <AppSidebar side="right" />
+              </SidebarProvider>
+
+              <Analytics />
+              <SpeedInsights />
+              <Toaster
+                position="bottom-left"
+                reverseOrder={false}
+                toastOptions={toastProps}
+              />
+              <ScrollToTop />
+            </WalletBridgeProvider>
+          </TanstackProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

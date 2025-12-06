@@ -1,9 +1,5 @@
 "use client";
 
-import { FetchStatus, ORDFS } from "@/constants";
-import type { OrdUtxo, SIGMA } from "@/types/ordinals";
-import { getArtifactType } from "@/utils/artifact";
-import { toBase64 } from "@/utils/string";
 import { head } from "lodash";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -14,6 +10,10 @@ import { FaQuestion } from "react-icons/fa6";
 import { IoMdPricetag } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-token";
+import { FetchStatus, ORDFS } from "@/constants";
+import type { OrdUtxo, SIGMA } from "@/types/ordinals";
+import { getArtifactType } from "@/utils/artifact";
+import { toBase64 } from "@/utils/string";
 import ImageWithFallback from "../ImageWithFallback";
 import BuyArtifactModal from "../modal/buyArtifact";
 import Tooltip from "../tooltip";
@@ -82,6 +82,8 @@ type ArtifactProps = {
   sizes: string;
   latest?: boolean;
   showListingTag?: boolean;
+  thumbnail?: boolean;
+  disableLink?: boolean;
 };
 
 const Artifact: React.FC<ArtifactProps> = ({
@@ -99,15 +101,17 @@ const Artifact: React.FC<ArtifactProps> = ({
   sizes,
   latest = false,
   showListingTag = true,
+  thumbnail = false,
+  disableLink = false,
 }) => {
   const router = useRouter();
-  const [imageLoadStatus, setImageLoadStatus] = useState<FetchStatus>(
+  const [_imageLoadStatus, _setImageLoadStatus] = useState<FetchStatus>(
     FetchStatus.Loading,
   );
   const [showZoom, setShowZoom] = useState<boolean>(false);
 
   const [showBuy, setShowBuy] = useState<boolean>(false);
-  const [hoverPrice, setHoverPrice] = useState<boolean>(false);
+  const [_hoverPrice, _setHoverPrice] = useState<boolean>(false);
 
   const contentType = useMemo(
     () =>
@@ -136,10 +140,13 @@ const Artifact: React.FC<ArtifactProps> = ({
   const isListing = useMemo(() => !!artifact?.data?.list, [artifact]);
   const price = useMemo(() => artifact?.data?.list?.price, [artifact]);
   const origin = useMemo(() => artifact?.origin?.outpoint, [artifact]);
-  const src = useMemo(
-    () => (inputSrc ? inputSrc : `${ORDFS}/${artifact?.origin?.outpoint}`),
-    [artifact, inputSrc],
-  );
+  const src = useMemo(() => {
+    if (inputSrc) return inputSrc;
+    const outpoint = artifact?.origin?.outpoint;
+    // Ensure outpoint is a valid string before using in URL
+    if (!outpoint || typeof outpoint !== "string") return "";
+    return `${ORDFS}/${outpoint}`;
+  }, [artifact, inputSrc]);
 
   const type = useMemo(() => {
     return getArtifactType(artifact as OrdUtxo, latest);
@@ -191,16 +198,15 @@ const Artifact: React.FC<ArtifactProps> = ({
         origin={origin}
         src={src}
         className={`${classNames?.media ? classNames.media : ""}`}
+        thumbnail={thumbnail}
       />
     ) : type === ArtifactType.Audio || type === ArtifactType.Audio2 ? (
-      <>
-        <AudioArtifact
-          outPoint={outPoint || origin}
-          src={src}
-          className={`p-1 absolute bottom-0 left-0 w-full ${classNames?.media ? classNames.media : ""
-            }`}
-        />
-      </>
+      <AudioArtifact
+        outPoint={outPoint || origin}
+        src={src}
+        className={`p-1 absolute bottom-0 left-0 w-full ${classNames?.media ? classNames.media : ""
+          }`}
+      />
     ) : type === ArtifactType.SVG ? (
       origin && (
         <SVGArtifact
@@ -223,7 +229,7 @@ const Artifact: React.FC<ArtifactProps> = ({
           mini={(size || 300) < 300}
           origin={origin}
           className={{
-            wrapper: `${clickToZoom ? "cursor-pointer" : ""} w-full`,
+            wrapper: `${clickToZoom ? "cursor-pointer" : ""} w-full h-full`,
             iframe: "",
           }}
           size={size}
@@ -280,26 +286,23 @@ const Artifact: React.FC<ArtifactProps> = ({
         />
       </div>
     ) : type === ArtifactType.Model ? (
-      <>
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-        <div
-          className={`w-full ${classNames?.wrapper || ""} ${classNames?.media || ""
-            }`}
-          onClick={(e) => {
-            if (showFooter) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }}
-          onAuxClick={(e) => {
-            console.log("middle click");
+      <div
+        className={`w-full ${classNames?.wrapper || ""} ${classNames?.media || ""
+          }`}
+        onClick={(e) => {
+          if (showFooter) {
             e.preventDefault();
             e.stopPropagation();
-          }}
-        >
-          <Model src={src} size={size} />
-        </div>
-      </>
+          }
+        }}
+        onAuxClick={(e) => {
+          console.log("middle click");
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <Model src={src} size={size} />
+      </div>
     ) : type === ArtifactType.MarkDown ? (
       <div
         className={`h-full p-4 ${classNames?.wrapper || ""} ${classNames?.media || ""
@@ -374,115 +377,126 @@ const Artifact: React.FC<ArtifactProps> = ({
     num,
     sizes,
     showFooter,
+    thumbnail,
   ]);
 
-  return (
-    <React.Fragment>
-      <Link
-        key={outPoint || origin}
-        className={`${showFooter
-            ? `${type !== ArtifactType.HTML ? "pb-[65px]" : ""} ${classNames?.footer ? classNames.footer : ""
-            }`
-            : ""
-          } ${glow ? "glow" : ""
-          } flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${to ? "cursor-pointer" : "cursor-default"
-          } block transition mx-auto ${classNames?.wrapper ? classNames.wrapper : ""
-          }`}
-        target={to ? "_self" : undefined}
-        href={to || "#"}
-        draggable={false}
-        onClick={(e) => {
-          if (!to) {
-            e.stopPropagation();
-            e.preventDefault();
-            if (txid && onClick) {
-              onClick(txid);
-            }
+  const wrapperClassName = `${showFooter
+      ? `${type !== ArtifactType.HTML ? "pb-[65px]" : ""} ${classNames?.footer ? classNames.footer : ""}`
+      : ""
+    } ${glow ? "glow" : ""
+    } flex flex-col items-center justify-center bg-[#111] w-full h-full relative rounded ${to && !disableLink ? "cursor-pointer" : "cursor-default"
+    } block transition mx-auto ${classNames?.wrapper ? classNames.wrapper : ""}`;
+
+  const footerContent = showFooter === true && num !== undefined && (
+    <div className="text-xs absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
+      <button
+        type="button"
+        className={`rounded bg-[#222] p-2 text-[#aaa] ${onClick && (outPoint || origin) ? "cursor-pointer" : ""}`}
+        onClick={() => {
+          if (onClick && outPoint) {
+            onClick(outPoint);
+            return;
+          }
+          if (onClick && origin) {
+            onClick(origin);
           }
         }}
       >
-        {content}
-        {sigma && head(sigma)?.valid && (
-          <div className="absolute top-0 left-0 ml-2 mt-2">
-            <Tooltip message={`Signed by ${head(sigma)?.address}` || ""}>
-              <CheckmarkIcon className="m-auto" />
-            </Tooltip>
-          </div>
-        )}
-        {isListing && (size || 300) >= 300 && showListingTag && (
-          <div className="absolute top-0 right-0 mr-2 mt-2 pointer-events-none opacity-75">
-            <IoMdPricetag className="m-auto w-6 h-6 text-blue-400" />
-          </div>
-        )}
-        {/* TODO: Show indicator when more than one isncription */}
-        {showFooter === true && num !== undefined && (
-          <div className="text-xs absolute bottom-0 left-0 bg-black bg-opacity-75 flex items-center justify-between w-full p-2 h-[56px]">
-            <button
-              type="button"
-              className={`rounded bg-[#222] p-2 text-[#aaa] ${onClick && (outPoint || origin) ? "cursor-pointer" : ""
-                }`}
-              onClick={() => {
-                if (onClick && outPoint) {
-                  onClick(outPoint);
-                  return;
-                }
-                if (onClick && origin) {
-                  onClick(origin);
-                }
-              }}
-            >
-              #{num}
-            </button>
-            <div className={"hidden md:block"}>&nbsp;</div>
-            <button
-              type="button"
-              className={` ${price !== undefined &&
-                  // type !== ArtifactType.BSV20 &&
-                  !(height && type === ArtifactType.Text && height >= 793000)
-                  ? "cursor-pointer hover:bg-emerald-600 text-white"
-                  : ""
-                } select-none text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
-              onClick={(e) => {
-                // clickToZoom && setShowZoom(true);
-                if (
-                  !(
-                    price !== undefined &&
-                    isListing &&
-                    // type !== ArtifactType.BSV20 &&
-                    !(height && type === ArtifactType.Text && height >= 793000)
-                  )
-                ) {
-                  return;
-                }
-                e.stopPropagation();
-                if (artifact.origin?.data?.bsv20) {
-                  router.push(
-                    artifact.origin?.data?.bsv20?.id
-                      ? `/market/bsv21/${artifact.origin?.data?.bsv20?.id}`
-                      : `/market/bsv20/${artifact.origin?.data?.bsv20?.tick}`,
-                  );
-                  return;
-                }
-                setShowBuy(true);
-              }}
-            // onMouseEnter={() => {
-            //   setHoverPrice(true);
-            // }}
-            // onMouseLeave={() => {
-            //   setHoverPrice(false);
-            // }}
-            >
-              {price !== undefined
-                ? price > 1000
-                  ? `Buy - ${toBitcoin(price)} BSV`
-                  : `Buy - ${price} sat`
-                : contentType}
-            </button>
-          </div>
-        )}
-      </Link>
+        #{num}
+      </button>
+      <div className={"hidden md:block"}>&nbsp;</div>
+      <button
+        type="button"
+        className={` ${price !== undefined &&
+            !(height && type === ArtifactType.Text && height >= 793000)
+            ? "cursor-pointer hover:bg-emerald-600 text-white"
+            : ""
+          } select-none text-right rounded bg-[#222] p-2 text-[#aaa] transition`}
+        onClick={(e) => {
+          if (
+            !(
+              price !== undefined &&
+              isListing &&
+              !(height && type === ArtifactType.Text && height >= 793000)
+            )
+          ) {
+            return;
+          }
+          e.stopPropagation();
+          if (artifact.origin?.data?.bsv20) {
+            router.push(
+              artifact.origin?.data?.bsv20?.id
+                ? `/market/bsv21/${artifact.origin?.data?.bsv20?.id}`
+                : `/market/bsv20/${artifact.origin?.data?.bsv20?.tick}`,
+            );
+            return;
+          }
+          setShowBuy(true);
+        }}
+      >
+        {price !== undefined
+          ? price > 1000
+            ? `Buy - ${toBitcoin(price)} BSV`
+            : `Buy - ${price} sat`
+          : contentType}
+      </button>
+    </div>
+  );
+
+  const innerContent = (
+    <>
+      {content}
+      {sigma && head(sigma)?.valid && (
+        <div className="absolute top-0 left-0 ml-2 mt-2">
+          <Tooltip message={`Signed by ${head(sigma)?.address}` || ""}>
+            <CheckmarkIcon className="m-auto" />
+          </Tooltip>
+        </div>
+      )}
+      {isListing && (size || 300) >= 300 && showListingTag && (
+        <div className="absolute top-0 right-0 mr-2 mt-2 pointer-events-none opacity-75">
+          <IoMdPricetag className="m-auto w-6 h-6 text-blue-400" />
+        </div>
+      )}
+      {footerContent}
+    </>
+  );
+
+  return (
+    <React.Fragment>
+      {disableLink ? (
+        <div
+          key={outPoint || origin}
+          className={wrapperClassName}
+          onClick={(_e) => {
+            if (txid && onClick) {
+              onClick(txid);
+            }
+          }}
+        >
+          {innerContent}
+        </div>
+      ) : (
+        <Link
+          key={outPoint || origin}
+          className={wrapperClassName}
+          target={to ? "_self" : undefined}
+          href={to || "#"}
+          draggable={false}
+          onClick={(e) => {
+            if (!to && !clickToZoom) {
+              e.stopPropagation();
+              e.preventDefault();
+              if (txid && onClick) {
+                onClick(txid);
+              }
+            }
+          }}
+        >
+          {innerContent}
+        </Link>
+      )}
       {showZoom && (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
         <div
           className="z-10 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-50 overflow-hidden"
           onClick={() => setShowZoom(false)}

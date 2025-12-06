@@ -1,15 +1,13 @@
+import { useSignal } from "@preact/signals-react";
+import { useEffect } from "react";
+import { FaCheck } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
 import {
 	ImportWalletFromMnemonicStep,
 	importWalletFromMnemonicStep,
 	mnemonic,
-	ordPk,
 	payPk,
 } from "@/signals/wallet";
-import { setKeys } from "@/signals/wallet/client";
-import { findKeysFromMnemonic } from "@/utils/keys";
-import { useSignal } from "@preact/signals-react";
-import { useEffect } from "react";
-import { FaCheck } from "react-icons/fa";
 
 export function GenerateWalletStep() {
 	const isGeneratingWallet = useSignal(false);
@@ -34,7 +32,7 @@ export function GenerateWalletStep() {
 			// 	});
 			// }
 
-      // TODO: Kick off import utxos process for ordinals and payment utxos
+			// TODO: Kick off import utxos process for ordinals and payment utxos
 
 			isGeneratingWallet.value = false;
 		}
@@ -56,8 +54,8 @@ export function GenerateWalletStep() {
 			<div className="mb-2">
 				{isGeneratingWallet.value && (
 					<div className="text-sm text-gray-500">
-						We are now importing your wallet. This can take a few
-						seconds. Please wait...
+						We are now importing your wallet. This can take a few seconds.
+						Please wait...
 					</div>
 				)}
 
@@ -74,16 +72,13 @@ export function GenerateWalletStep() {
 
 			{isGeneratingWallet.value && (
 				<div className="flex items-center justify-center mt-4">
-					<div className="loading loading-spinner text-warning" />
+					<div className="loading loading-spinner text-amber-500" />
 				</div>
 			)}
 
 			{!isGeneratingWallet.value && payPk.value && (
 				<div className="flex justify-end mt-4">
-					{/* biome-ignore lint/a11y/useButtonType: <explanation> */}
-          <button className="btn btn-primary" onClick={handleNext}>
-						Next
-					</button>
+					<Button onClick={handleNext}>Next</Button>
 				</div>
 			)}
 		</>
