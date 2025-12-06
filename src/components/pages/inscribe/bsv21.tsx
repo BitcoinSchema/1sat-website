@@ -19,8 +19,10 @@ import toast from "react-hot-toast";
 import { IoMdWarning } from "react-icons/io";
 import { RiSettings2Fill } from "react-icons/ri";
 import Artifact from "@/components/artifact";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { FetchStatus } from "@/constants";
 import { chainInfo, indexers, payPk, usdRate } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
@@ -365,7 +367,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 					className="max-w-2xl"
 					onClick={(e) => e.stopPropagation()}
 				>
-					<div className="relative w-full h-[400px] bg-[#333]">
+					<div className="relative w-full h-[400px] bg-muted">
 						{selectedImageURL ? (
 							<Cropper
 								image={selectedImageURL}
@@ -404,11 +406,10 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 					{/* TODO: Autofill */}
 					<div className="flex items-center justify-between my-2">
 						Symbol{" "}
-						<span className="text-[#555]">{"Not required to be unique"}</span>
+						<span className="text-muted-foreground">{"Not required to be unique"}</span>
 					</div>
 					<div className="relative">
-						<input
-							className="text-white w-full rounded p-2"
+						<Input
 							maxLength={255}
 							onKeyDown={(event) => {
 								if (event.key === " " || event.key === "Enter") {
@@ -432,7 +433,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			<div className="my-2 flex items-center">
 				<div className="w-28 mr-4">
 					{!croppedImage && (
-						<div className="text-[#555] text-lg">
+						<div className="text-muted-foreground text-lg">
 							<IconWithFallback
 								icon={null}
 								alt={"Choose an Icon"}
@@ -442,7 +443,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 					)}
 					{croppedImage && isImage && artifact}
 					{croppedImage && !isImage && (
-						<div className="w-full h-full bg-[#111] rounded flex items-center justify-center">
+						<div className="w-full h-full bg-card rounded flex items-center justify-center">
 							X
 						</div>
 					)}
@@ -453,16 +454,16 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 						<div>
 							<div
 								className={`${
-									mintError ? "text-error" : "text-[#555]"
+									mintError ? "text-destructive" : "text-muted-foreground"
 								} text-sm`}
 							>
 								{mintError || "Max Size 100KB, Square Image"}
 							</div>
 						</div>
 					</div>
-					<input
+					<Input
 						type="file"
-						className="file-input w-full"
+						className="cursor-pointer"
 						onChange={handleIconSelection}
 					/>
 				</label>
@@ -470,12 +471,11 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 			<div className="my-2">
 				<label className="block mb-4">
 					<div className="my-2 flex justify-between text-sm">
-						Max Supply <span className="text-[#555]">Whole coins</span>
+						Max Supply <span className="text-muted-foreground">Whole coins</span>
 					</div>
-					<input
+					<Input
 						pattern="\d+"
 						type="text"
-						className="text-white w-full rounded p-2"
 						onChange={(e) => setMaxSupply(e.target.value)}
 						value={maxSupply}
 					/>
@@ -497,8 +497,7 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 						<div className="my-2 flex items-center justify-between">
 							Decimal Precision
 						</div>
-						<input
-							className="text-white w-full rounded p-2"
+						<Input
 							type="number"
 							min={0}
 							max={18}
@@ -515,22 +514,23 @@ const InscribeBsv21: React.FC<InscribeBsv21Props> = ({ inscribedCallback }) => {
 					</label>
 				</div>
 			)}
-			<div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
-				<span className="block w-full">
+			<Alert className="my-2 mb-4">
+				<AlertDescription>
 					BSV21 deployements are indexed immediately. A listing fee of $
 					{`${listingFee.value}`} will be required before it shows up in some
 					areas on the website. This can be paid later.
-				</span>
-			</div>
-			{croppedImage && <hr className="my-2 h-2 border-0 bg-[#222]" />}
+				</AlertDescription>
+			</Alert>
+			{croppedImage && <hr className="my-2 h-2 border-0 bg-border" />}
 
-			<button
+			<Button
 				disabled={submitDisabled}
 				type="submit"
-				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
+				className="w-full p-3 text-xl my-4"
+				size="lg"
 			>
 				Preview
-			</button>
+			</Button>
 		</form>
 	);
 };

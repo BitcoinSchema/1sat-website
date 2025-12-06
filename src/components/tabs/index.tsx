@@ -3,19 +3,23 @@
 import Link from "next/link";
 import { FaHandshakeAngle } from "react-icons/fa6";
 import { GiChisel } from "react-icons/gi";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface Props {
 	showIndicator?: boolean;
 	className?: string;
 }
 
-import { usePathname } from "next/navigation";
-
 export enum Tab {
 	Overview = "overview",
 	Activity = "activity",
 	Listings = "listings",
 }
+
+const tabStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-lg font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-muted/50";
+const activeTabStyles = "bg-background text-foreground shadow";
+const inactiveTabStyles = "text-muted-foreground";
 
 const Tabs = ({ showIndicator, className }: Props) => {
 	const path = usePathname();
@@ -32,12 +36,13 @@ const Tabs = ({ showIndicator, className }: Props) => {
 	return (
 		<div
 			role="tablist"
-			className={`p-4 md:p-1 w-auto font-medium gap-4 tabs uppercase rounded-none md:rounded tabs-boxed ${className}`}
+			className={cn(
+				"inline-flex h-9 items-center justify-center gap-1 rounded-lg bg-muted p-1 text-muted-foreground uppercase",
+				className
+			)}
 		>
 			<Link
-				className={`hover:bg-black/25 tab text-lg ${
-					currentTab === Tab.Activity ? "tab-active" : ""
-				}`}
+				className={cn(tabStyles, currentTab === Tab.Activity ? activeTabStyles : inactiveTabStyles)}
 				role="tab"
 				href={`/activity`}
 			>
@@ -45,9 +50,7 @@ const Tabs = ({ showIndicator, className }: Props) => {
 			</Link>
 
 			<Link
-				className={`hover:bg-black/25 tab text-lg ${
-					currentTab === Tab.Listings ? "tab-active" : ""
-				}`}
+				className={cn(tabStyles, currentTab === Tab.Listings ? activeTabStyles : inactiveTabStyles)}
 				role="tab"
 				href={`/listings`}
 			>

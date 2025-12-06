@@ -1,5 +1,6 @@
 import { ReturnTypes, toBitcoin } from "satoshi-token";
 import { API_HOST, AssetType } from "@/constants";
+import { TableBody, TableRow, TableCell } from "@/components/ui/table";
 import type { BSV20TXO } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
 
@@ -16,7 +17,7 @@ const List = async ({ type }: { type: AssetType.BSV20 | AssetType.BSV21 }) => {
 	}
 
 	return (
-		<tbody className="overflow-auto">
+		<TableBody>
 			{listings
 				// .sort((a, b) => {
 				// 	return Number.parseFloat(a.pricePer) <
@@ -26,17 +27,17 @@ const List = async ({ type }: { type: AssetType.BSV20 | AssetType.BSV21 }) => {
 				// })
 				.map((listing) => {
 					return (
-						<tr key={`${listing.txid}-${listing.vout}-${listing.height}`}>
-							<th className="truncase text-ellipsis">{listingName(listing)}</th>
-							<td>{listingAmount(listing)}</td>
-							<td className="w-full text-right">{satsPerToken(listing)}</td>
-							<td className="break-normal text-right w-96">
+						<TableRow key={`${listing.txid}-${listing.vout}-${listing.height}`}>
+							<TableCell className="truncate text-ellipsis font-medium">{listingName(listing)}</TableCell>
+							<TableCell>{listingAmount(listing)}</TableCell>
+							<TableCell className="w-full text-right">{satsPerToken(listing)}</TableCell>
+							<TableCell className="break-normal text-right w-96">
 								{toBitcoin(listing.price || "0", ReturnTypes.String)} BSV
-							</td>
-						</tr>
+							</TableCell>
+						</TableRow>
 					);
 				})}
-		</tbody>
+		</TableBody>
 	);
 };
 
