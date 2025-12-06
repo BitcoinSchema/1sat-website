@@ -24,7 +24,6 @@ export interface MarketFilters {
 
 const fetchCollectionData = async (url: string) => {
   try {
-    console.log("DEBUG_FETCH_URL", url);
     const { promise } = http.customFetch<OrdUtxo[]>(url);
 
     return (await promise) || [];

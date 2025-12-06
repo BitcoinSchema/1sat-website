@@ -9,59 +9,64 @@ import { LoaderIcon } from "react-hot-toast";
 import { FetchStatus, ORDFS } from "@/constants";
 
 type MarkdownArtifactProps = {
-	origin?: string;
-	className?: string;
+  origin?: string;
+  className?: string;
 };
 
 const MarkdownArtifact: React.FC<MarkdownArtifactProps> = ({
-	origin,
-	className,
+  origin,
+  className,
 }) => {
-	const [mdxSource, setMdxSource] = useState<SerializeResult | null>(null);
-	const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
-		FetchStatus.Idle,
-	);
+  const [mdxSource, setMdxSource] = useState<SerializeResult | null>(null);
+  const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
+    FetchStatus.Idle,
+  );
 
-	useEffect(() => {
-		const fire = async () => {
-			try {
-				setFetchTextStatus(FetchStatus.Loading);
-				const result = await fetch(`${ORDFS}/${origin}`);
-				const resultText = await result.text();
+  useEffect(() => {
+    const fire = async () => {
+      // Ensure origin is a valid string before fetching
+      if (!origin || typeof origin !== "string") {
+        console.error("MarkdownArtifact: Invalid origin", origin);
+        return;
+      }
+      try {
+        setFetchTextStatus(FetchStatus.Loading);
+        const result = await fetch(`${ORDFS}/${origin}`);
+        const resultText = await result.text();
 
-				const mdxSource = await serialize({
-					source: resultText,
-					options: {
-						mdxOptions: {
-							remarkPlugins: [],
-							rehypePlugins: [],
-						},
-					},
-				});
+        const mdxSource = await serialize({
+          source: resultText,
+          options: {
+            mdxOptions: {
+              remarkPlugins: [],
+              rehypePlugins: [],
+            },
+          },
+        });
 
-				setMdxSource(mdxSource);
-				setFetchTextStatus(FetchStatus.Success);
-			} catch (e) {
-				console.error("Failed to fetch inscription", e);
-				setFetchTextStatus(FetchStatus.Error);
-			}
-		};
-		if (!mdxSource && fetchTextStatus === FetchStatus.Idle) {
-			fire();
-		}
-	}, [mdxSource, fetchTextStatus, origin]);
+        setMdxSource(mdxSource);
+        setFetchTextStatus(FetchStatus.Success);
+      } catch (e) {
+        console.error("Failed to fetch inscription", e);
+        setFetchTextStatus(FetchStatus.Error);
+      }
+    };
+    if (!mdxSource && fetchTextStatus === FetchStatus.Idle) {
+      fire();
+    }
+  }, [mdxSource, fetchTextStatus, origin]);
 
-	return fetchTextStatus === FetchStatus.Success &&
-		mdxSource &&
-		"compiledSource" in mdxSource ? (
-		<div
-			className={`flex items-center justify-center w-full h-full transition ${className || ""}`}
-		>
-			<MDXClient {...mdxSource} />
-		</div>
-	) : (
-		<LoaderIcon className="mx-auto" />
-	);
+  return fetchTextStatus === FetchStatus.Success &&
+    mdxSource &&
+    "compiledSource" in mdxSource ? (
+    <div
+      className={`flex items-center justify-center w-full h-full transition ${className || ""}`}
+    >
+      <MDXClient {...mdxSource} />
+    </div>
+  ) : (
+    <LoaderIcon className="mx-auto" />
+  );
 };
 
 export default MarkdownArtifact;

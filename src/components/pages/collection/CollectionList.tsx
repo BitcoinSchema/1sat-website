@@ -108,11 +108,13 @@ export const CollectionList = ({ collectionId }: CollectionListProps) => {
 
   const setLoadingStatus = useCallback(
     (tab: string | Tab, status: FetchStatus) => {
-      const newLoading = new Map(loading);
-      newLoading.set(tab as Tab, status);
-      setLoading(newLoading);
+      setLoading((prevLoading) => {
+        const newLoading = new Map(prevLoading);
+        newLoading.set(tab as Tab, status);
+        return newLoading;
+      });
     },
-    [loading],
+    [],
   );
 
   // Get current filter values
