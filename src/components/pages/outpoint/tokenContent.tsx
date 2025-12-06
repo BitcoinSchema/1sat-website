@@ -9,6 +9,7 @@ interface Props {
 const TokenContent = async ({ outpoint }: Props) => {
 	let _artifact: BSV20TXO | undefined;
 	let inscription: OrdUtxo | undefined;
+
 	try {
 		const url = `${API_HOST}/api/bsv20/outpoint/${outpoint}`;
 		const { promise } = http.customFetch<BSV20TXO>(url);
@@ -26,24 +27,26 @@ const TokenContent = async ({ outpoint }: Props) => {
 	}
 
 	return inscription?.data?.bsv20 ? (
-		<div>
-			<div className="text-[#555]">
+		<div className="space-y-2 text-sm text-foreground">
+			<div className="text-muted-foreground">
 				Asset Type:{" "}
 				{inscription.data.bsv20.id ? AssetType.BSV21 : AssetType.BSV20}
 			</div>
-			<div>op {inscription.data.bsv20.op}</div>
+			<div className="font-medium">op {inscription.data.bsv20.op}</div>
 			<div className="flex items-center gap-2">
-				<div>
+				<div className="font-semibold">
 					{inscription.data.bsv20.amt}{" "}
 					{inscription.data.bsv20.tick || inscription.data.bsv20.sym}
 				</div>
 			</div>
 			{inscription.data.bsv20.reason && (
-				<div>Reason: {inscription.data.bsv20.reason}</div>
+				<div className="text-muted-foreground">
+					Reason: {inscription.data.bsv20.reason}
+				</div>
 			)}
 		</div>
 	) : (
-		<div>Not a token</div>
+		<div className="text-sm text-muted-foreground">Not a token</div>
 	);
 };
 

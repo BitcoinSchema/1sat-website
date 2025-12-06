@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import ArtifactViewer from "@/components/pages/outpoint/ArtifactViewer";
 import OutpointTabs from "@/components/pages/outpoint/tabs";
 import TxDetails from "@/components/transaction";
-import { Separator } from "@/components/ui/separator";
 import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
@@ -56,45 +55,54 @@ export default async function OutpointLayout({
 	const vout = Number.parseInt(voutStr, 10);
 
 	return (
-		<div className="max-w-6xl mx-auto w-full">
-			<div className="mx-auto flex flex-col p-2 md:p-0 min-h-64">
+		<div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6 lg:p-8">
+			<div className="rounded-lg border border-border bg-card shadow-sm">
 				<TxDetails txid={txid} vout={vout} showing={false} />
-				<h2 className={`text-2xl mb-4 ${notoSerif.className}`}>
+			</div>
+
+			<div className="space-y-4">
+				<h2
+					className={`text-3xl font-semibold leading-tight text-foreground ${notoSerif.className}`}
+				>
 					{displayName(finalArtifact, false)}
 				</h2>
-				<div className="flex flex-col md:flex-row gap-4">
-					{finalArtifact?.origin?.data?.insc && (
-						<div className="overflow-hidden h-[550px] relative w-fit">
-							<ArtifactViewer
-								artifact={finalArtifact}
-								size={550}
-								className="h-full"
+
+				<div className="grid gap-6 lg:grid-cols-[minmax(320px,420px)_1fr]">
+					<div className="rounded-lg border border-border bg-card shadow-sm">
+						{finalArtifact?.origin?.data?.insc ? (
+							<div className="relative overflow-hidden rounded-lg">
+								<ArtifactViewer
+									artifact={finalArtifact}
+									size={560}
+									className="h-full w-full"
+								/>
+							</div>
+						) : (
+							<div className="flex min-h-64 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-sm text-muted-foreground">
+								No inscription
+							</div>
+						)}
+					</div>
+
+					<div className="rounded-lg border border-border bg-card shadow-sm">
+						<div className="border-b border-border px-4 py-3">
+							<OutpointTabs
+								outpoint={outpoint}
+								owner={
+									finalArtifact.spend || !!finalArtifact.origin?.data?.bsv20
+										? undefined
+										: finalArtifact?.owner
+								}
+								actualOwner={finalArtifact?.owner}
+								hasToken={!!finalArtifact.origin?.data?.bsv20}
+								isListing={!!finalArtifact.data?.list}
+								isCollection={
+									finalArtifact.origin?.data?.map?.subType === "collection" ||
+									finalArtifact.origin?.data?.map?.subType === "collectionItem"
+								}
 							/>
 						</div>
-					)}
-					{!finalArtifact?.origin?.data?.insc && (
-						<div className="h-full w-full text-[#aaa] flex items-center justify-center min-h-64 bg-[#111] rounded">
-							No inscription
-						</div>
-					)}
-					<Separator className="my-2" />
-					<div className="w-full mx-auto">
-						<OutpointTabs
-							outpoint={outpoint}
-							owner={
-								finalArtifact.spend || !!finalArtifact.origin?.data?.bsv20
-									? undefined
-									: finalArtifact?.owner
-							}
-							actualOwner={finalArtifact?.owner}
-							hasToken={!!finalArtifact.origin?.data?.bsv20}
-							isListing={!!finalArtifact.data?.list}
-							isCollection={
-								finalArtifact.origin?.data?.map?.subType === "collection" ||
-								finalArtifact.origin?.data?.map?.subType === "collectionItem"
-							}
-						/>
-						{children}
+						<div className="px-4 py-5">{children}</div>
 					</div>
 				</div>
 			</div>

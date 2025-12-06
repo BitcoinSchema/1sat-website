@@ -62,8 +62,6 @@ const FlowGrid = ({
 	initialArtifacts: OrdUtxo[];
 	className: string;
 }) => {
-	const sentinelRef = useRef<HTMLDivElement>(null);
-	const [sentinelInView, setSentinelInView] = useState(false);
 	const seenOutpoints = useRef<Set<string>>(new Set());
 	const [visible, setVisible] = useState<Set<string>>(new Set());
 	const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(
@@ -228,26 +226,24 @@ const FlowGrid = ({
 		return cols;
 	}, [allArtifacts, columnCount]);
 
-	// Track sentinel visibility
+	// Track scroll position for infinite scroll
 	useEffect(() => {
-		const sentinel = sentinelRef.current;
-		if (!sentinel) return;
+		const handleScroll = () => {
+			const scrollY = window.scrollY;
+			const windowHeight = window.innerHeight;
+			const documentHeight = document.body.scrollHeight;
 
-		const observer = new IntersectionObserver(
-			([entry]) => setSentinelInView(entry?.isIntersecting ?? false),
-			{ threshold: 0.1, rootMargin: "400px" },
-		);
+			const isNearBottom = scrollY + windowHeight >= documentHeight - 100; // 100px threshold
 
-		observer.observe(sentinel);
-		return () => observer.disconnect();
-	}, []);
+			if (isNearBottom && hasNextPage && !isFetchingNextPage) {
+				fetchNextPage();
+			}
+		};
 
-	// Fetch next page while sentinel stays in view
-	useEffect(() => {
-		if (sentinelInView && hasNextPage && !isFetchingNextPage) {
-			fetchNextPage();
-		}
-	}, [sentinelInView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+		window.addEventListener('scroll', handleScroll);
+		return () => window.removeEventListener('scroll', handleScroll);
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
 
 	const renderArtifact = (artifact: OrdUtxo) => {
 		const outpointStr =
@@ -369,18 +365,6 @@ const FlowGrid = ({
 						))}
 					</div>
 				)}
-
-				{/* Infinite scroll sentinel */}
-				<div
-					ref={sentinelRef}
-					className="h-20 w-full flex items-center justify-center mt-8"
-				>
-					{hasNextPage && (
-						<div className="text-muted-foreground">
-							{isFetchingNextPage ? "Loading more..." : "Scroll for more"}
-						</div>
-					)}
-				</div>
 			</div>
 
 			<ArtifactModal

@@ -82,7 +82,7 @@
 		"js-1sat-ord": "^0.1.88",
 		"jsdom": "27.2.0",
 		"lodash": "^4.17.21",
-		"lucide-react": "^0.555.0",
+		"lucide-react": "^0.556.0",
 		"mime": "^3.0.0",
 		"next": "^16.0.7",
 		"next-mdx-remote-client": "^2.1.7",

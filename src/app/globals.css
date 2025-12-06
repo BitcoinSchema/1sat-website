@@ -38,6 +38,14 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -75,6 +83,15 @@
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  /* Sidebar variables - map to theme */
+  --sidebar: oklch(0.98 0.005 155);
+  --sidebar-foreground: oklch(0.14 0.04 155);
+  --sidebar-primary: oklch(0.48 0.15 155);
+  --sidebar-primary-foreground: oklch(0.98 0.00 0);
+  --sidebar-accent: oklch(0.90 0.04 155);
+  --sidebar-accent-foreground: oklch(0.20 0.06 155);
+  --sidebar-border: oklch(0.88 0.03 155);
+  --sidebar-ring: oklch(0.48 0.15 155);
 }
 
 .dark {
@@ -106,6 +123,15 @@
   --font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Sidebar variables - map to dark theme */
+  --sidebar: oklch(0.11 0.03 155);
+  --sidebar-foreground: oklch(0.92 0.04 155);
+  --sidebar-primary: oklch(0.70 0.18 155);
+  --sidebar-primary-foreground: oklch(0.11 0.05 155);
+  --sidebar-accent: oklch(0.20 0.06 155);
+  --sidebar-accent-foreground: oklch(0.85 0.10 155);
+  --sidebar-border: oklch(0.22 0.05 155);
+  --sidebar-ring: oklch(0.65 0.15 155);
 }
 
 @layer base {

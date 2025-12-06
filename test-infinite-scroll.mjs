@@ -19,7 +19,7 @@ page.on("pageerror", (error) => {
 });
 
 console.log("Loading homepage...");
-await page.goto("http://localhost:3001", {
+await page.goto("http://localhost:4312", {
 	waitUntil: "networkidle",
 	timeout: 30000,
 });
@@ -27,11 +27,30 @@ await page.goto("http://localhost:3001", {
 // Wait for initial images to load
 await page.waitForTimeout(2000);
 
-// Count initial images
-const initialCount = await page.evaluate(() => {
-	return document.querySelectorAll(".columns-1 img").length;
+// Count initial images and check layout
+const initialInfo = await page.evaluate(() => {
+	const images = document.querySelectorAll("img");
+	const flowGrid = document.querySelector('[class*="FlowGrid"]') || document.querySelector('.flex.gap-4');
+	const columns = flowGrid ? flowGrid.querySelectorAll('.flex-1') : [];
+
+	return {
+		imageCount: images.length,
+		flowGridHeight: flowGrid ? flowGrid.offsetHeight : 0,
+		flowGridScrollHeight: flowGrid ? flowGrid.scrollHeight : 0,
+		columnCount: columns.length,
+		bodyHeight: document.body.offsetHeight,
+		bodyScrollHeight: document.body.scrollHeight,
+		windowHeight: window.innerHeight,
+		hasOverflow: document.body.scrollHeight > window.innerHeight
+	};
 });
-console.log(`Initial image count: ${initialCount}`);
+console.log(`Initial layout info:`, initialInfo);
+
+const initialCount = initialInfo.imageCount;
+
+// Check if FlowGrid is rendering
+const flowGridExists = initialInfo.flowGridHeight > 0;
+console.log(`FlowGrid exists: ${flowGridExists}`);
 
 // Scroll to bottom to trigger infinite scroll
 console.log("Scrolling to bottom to trigger infinite scroll...");
@@ -44,7 +63,7 @@ await page.waitForTimeout(3000);
 
 // Count after scroll
 const afterScrollCount = await page.evaluate(() => {
-	return document.querySelectorAll(".columns-1 img").length;
+	return document.querySelectorAll("img").length;
 });
 console.log(`Image count after scroll: ${afterScrollCount}`);
 

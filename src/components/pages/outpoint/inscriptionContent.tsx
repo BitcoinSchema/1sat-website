@@ -18,38 +18,40 @@ const InscriptionContent = async ({ outpoint }: Props) => {
 	}
 
 	return (
-		<div>
-			<div className="my-4 text-xl text-[#aaa]">
+		<div className="space-y-4 text-sm text-foreground">
+			<div className="text-base font-medium text-muted-foreground">
 				{artifact.origin ? "Inscription Origin" : "Not Inscribed"}
 			</div>
 			<Link
-				className="text-xs text-[#555] hover:text-blue-500 transition"
+				className="text-xs text-muted-foreground underline-offset-4 transition hover:text-primary"
 				href={`/outpoint/${artifact.origin?.outpoint}`}
 			>
 				{artifact.origin?.outpoint}
 			</Link>
 			{artifact.origin?.data?.insc && (
-				<div>
-					<div className="my-4 text-xl text-[#555]">File</div>
+				<div className="space-y-2">
+					<div className="text-sm font-medium text-muted-foreground">File</div>
 					<JsonTable data={artifact.origin?.data?.insc.file} />
 				</div>
 			)}
 			{artifact.origin?.data?.b && (
-				<div>
-					<div className="my-4 text-xl text-[#555]">B File</div>
+				<div className="space-y-2">
+					<div className="text-sm font-medium text-muted-foreground">B File</div>
 					<JsonTable data={artifact.origin?.data?.b} />
 				</div>
 			)}
 			{artifact.origin?.data?.map && (
-				<div>
-					<div className="my-4 text-xl text-[#555]">Metadata</div>
+				<div className="space-y-2">
+					<div className="text-sm font-medium text-muted-foreground">Metadata</div>
 					<JsonTable data={artifact.origin?.data?.map} />
 				</div>
 			)}
 			{artifact.origin?.data?.sigma &&
 				artifact.origin?.data?.sigma.length > 0 && (
-					<div>
-						<div className="my-4 text-xl text-[#555]">Sigma Signature</div>
+					<div className="space-y-2">
+						<div className="text-sm font-medium text-muted-foreground">
+							Sigma Signature
+						</div>
 						<JsonTable data={artifact.origin?.data?.sigma[0]} />
 					</div>
 				)}
