@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 import { ordAddress } from "@/signals/wallet/address";
 import { OutpointTab } from "./tabs";
 
+const buttonClasses = (isActive: boolean) =>
+	`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
+		isActive
+			? "border-border bg-card text-foreground shadow-sm"
+			: "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground"
+	}`;
+
 const OwnerTab: React.FC<{
 	owner: string | undefined;
 	activeTab: OutpointTab;
@@ -34,7 +41,8 @@ const OwnerTab: React.FC<{
 			<button
 				type="button"
 				role="tab"
-				className={`tab ${activeTab === OutpointTab.Owner ? "tab-active" : ""}`}
+				aria-selected={activeTab === OutpointTab.Owner}
+				className={buttonClasses(activeTab === OutpointTab.Owner)}
 				onClick={handleClick}
 			>
 				Owner

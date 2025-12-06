@@ -1,6 +1,14 @@
 "use client";
 
 import { ReturnTypes, toBitcoin } from "satoshi-token";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import type { OrdUtxo } from "@/types/ordinals";
 
 interface ModelListingsProps {
@@ -30,41 +38,36 @@ const satsPerModel = (listing: OrdUtxo) => {
 
 const ModelListings: React.FC<ModelListingsProps> = ({ listings }) => {
 	return (
-		<div>
-			<div className="w-full">
-				<table className="table">
-					{/* head */}
-					<thead>
-						<tr>
-							<th>Ticker</th>
-							<th>Amount</th>
-							<th>Sats / Model</th>
-							<th>Total Price</th>
-						</tr>
-					</thead>
-					<tbody className="overflow-auto">
-						{listings.map((listing) => {
-							return (
-								<tr key={`${listing.txid}-${listing.vout}-${listing.height}`}>
-									<th className="truncase text-ellipsis">
-										{listingName(listing)}
-									</th>
-									<td>{listingAmount(listing)}</td>
-									<td>{satsPerModel(listing)}</td>
-									<td className="break-normal">
-										{toBitcoin(
-											listing.data?.list?.price || "0",
-											ReturnTypes.String,
-										)}{" "}
-										BSV
-									</td>
-								</tr>
-							);
-						})}
-					</tbody>
-				</table>
-			</div>
-		</div>
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead>Ticker</TableHead>
+					<TableHead>Amount</TableHead>
+					<TableHead>Sats / Model</TableHead>
+					<TableHead>Total Price</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{listings.map((listing) => {
+					return (
+						<TableRow key={`${listing.txid}-${listing.vout}-${listing.height}`}>
+							<TableCell className="truncate text-ellipsis font-medium">
+								{listingName(listing)}
+							</TableCell>
+							<TableCell>{listingAmount(listing)}</TableCell>
+							<TableCell>{satsPerModel(listing)}</TableCell>
+							<TableCell className="break-normal">
+								{toBitcoin(
+									listing.data?.list?.price || "0",
+									ReturnTypes.String,
+								)}{" "}
+								BSV
+							</TableCell>
+						</TableRow>
+					);
+				})}
+			</TableBody>
+		</Table>
 	);
 };
 

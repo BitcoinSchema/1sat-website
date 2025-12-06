@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type React from "react";
+import { cn } from "@/lib/utils";
 
 interface Props {
 	currentTab: InscriptionTab | undefined;
@@ -21,17 +22,21 @@ export enum InscriptionTab {
 	Collection = "collection",
 }
 
+const tabStyles = "inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-b-2 border-transparent hover:text-foreground hover:border-muted-foreground/50";
+const activeTabStyles = "border-primary text-foreground";
+const inactiveTabStyles = "text-muted-foreground";
+
 const InscriptionTabs: React.FC<Props> = ({
 	currentTab,
 	showIndicator,
 	onClickSelected,
 }) => {
 	return (
-		<div role="tablist" className="tabs tabs-bordered max-w-7xl mx-auto my-8">
+		<div role="tablist" className="inline-flex h-9 items-center justify-center gap-1 max-w-7xl mx-auto my-8 border-b border-border">
 			<Link
 				href={`/inscribe`}
 				role={"tab"}
-				className={`tab ${currentTab === InscriptionTab.Image ? "tab-active" : ""}`}
+				className={cn(tabStyles, currentTab === InscriptionTab.Image ? activeTabStyles : inactiveTabStyles)}
 			>
 				<div
 					onClick={(e: any) =>
@@ -46,7 +51,7 @@ const InscriptionTabs: React.FC<Props> = ({
 			<Link
 				href={`/inscribe?tab=text`}
 				role={"tab"}
-				className={`tab ${currentTab === InscriptionTab.Text ? "tab-active" : ""}`}
+				className={cn(tabStyles, currentTab === InscriptionTab.Text ? activeTabStyles : inactiveTabStyles)}
 			>
 				<div
 					onClick={(e: any) =>
@@ -61,7 +66,7 @@ const InscriptionTabs: React.FC<Props> = ({
 			<Link
 				href={`/inscribe?tab=html`}
 				role={"tab"}
-				className={`tab ${currentTab === InscriptionTab.HTML ? "tab-active" : ""}`}
+				className={cn(tabStyles, currentTab === InscriptionTab.HTML ? activeTabStyles : inactiveTabStyles)}
 			>
 				<div
 					onClick={(e: any) =>
@@ -76,7 +81,7 @@ const InscriptionTabs: React.FC<Props> = ({
 			<Link
 				href={`/inscribe?tab=bsv20`}
 				role={"tab"}
-				className={`tab ${currentTab === InscriptionTab.BSV20 ? "tab-active" : ""}`}
+				className={cn(tabStyles, currentTab === InscriptionTab.BSV20 ? activeTabStyles : inactiveTabStyles)}
 			>
 				<div
 					onClick={(e: any) =>
@@ -91,7 +96,7 @@ const InscriptionTabs: React.FC<Props> = ({
 			<Link
 				href={`/inscribe?tab=bsv21`}
 				role={"tab"}
-				className={`tab ${currentTab === InscriptionTab.BSV21 ? "tab-active" : ""}`}
+				className={cn(tabStyles, currentTab === InscriptionTab.BSV21 ? activeTabStyles : inactiveTabStyles)}
 			>
 				<div
 					onClick={(e: any) =>

@@ -39,8 +39,25 @@ import {
 } from "react-icons/fa";
 import { RiMagicFill, RiSettings2Fill } from "react-icons/ri";
 import { useLocalStorage } from "usehooks-ts";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InscriptionTab } from "./tabs";
 
 enum ActionType {
@@ -630,38 +647,44 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 	}, [confirmedOplBalance]);
 
 	return (
+		<TooltipProvider>
 		<div className="w-full max-w-lg mx-auto">
-			<select
-				className="text-white w-full p-2 rounded my-2 cursor-pointer"
+			<Select
 				value={selectedActionType}
-				onChange={changeSelectedActionType}
+				onValueChange={(value) => changeSelectedActionType({ target: { value } })}
 			>
-				<option value={ActionType.Deploy}>Deploy New Ticker</option>
-				<option value={ActionType.Mint}>Mint Existing Ticker</option>
-			</select>
+				<SelectTrigger className="w-full my-2">
+					<SelectValue placeholder="Select action" />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value={ActionType.Deploy}>Deploy New Ticker</SelectItem>
+					<SelectItem value={ActionType.Mint}>Mint Existing Ticker</SelectItem>
+				</SelectContent>
+			</Select>
 			<div className="my-2">
 				<label className="block mb-4">
 					{/* TODO: Autofill */}
 					<div className="flex items-center justify-between my-2">
 						Ticker{" "}
 						{chainInfo.value && indexers.value && (
-							<span
-								className="text-[#555] hover:text-amber-500 text-sm tooltip transition"
-								data-tip={`Latest block: ${
-									chainInfo.value.blocks
-								} BSV20 Deploy: ${
-									indexers.value["bsv20-deploy"]
-								} BSV20 Mint: ${indexers.value.bsv20} ${
-									selectedBsv20 ? selectedBsv20.tick : ""
-								} Pending Ops: ${selectedBsv20?.pendingOps || "0"}`}
-							>
-								{tickerNote}
-							</span>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span className="text-muted-foreground hover:text-amber-500 text-sm transition cursor-help">
+										{tickerNote}
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>Latest block: {chainInfo.value.blocks}</p>
+									<p>BSV20 Deploy: {indexers.value["bsv20-deploy"]}</p>
+									<p>BSV20 Mint: {indexers.value.bsv20} {selectedBsv20 ? selectedBsv20.tick : ""}</p>
+									<p>Pending Ops: {selectedBsv20?.pendingOps || "0"}</p>
+								</TooltipContent>
+							</Tooltip>
 						)}
 					</div>
 					<div className="relative">
-						<input
-							className="text-white w-full rounded p-2 uppercase"
+						<Input
+							className="uppercase"
 							maxLength={4}
 							pattern="^\S+$"
 							onKeyDown={(event) => {
@@ -689,7 +712,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						{tickerAvailable === true && inSync.value && (
 							<div className="absolute right-0 bottom-0 mb-2 mr-2">
 								{selectedBsv20?.included ? (
-									<FaCheckCircle className="w-5 h-5 text-success" />
+									<FaCheckCircle className="w-5 h-5 text-green-500" />
 								) : selectedBsv20?.pendingOps &&
 									selectedBsv20?.pendingOps > 0 ? (
 									<FaClock className="w-5 h-5 text-amber-500" />
@@ -711,12 +734,12 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				<div className="my-2">
 					<label className="block mb-4">
 						<div className="my-2 flex justify-between text-sm">
-							Max Supply <span className="text-[#555]">Whole coins</span>
+							Max Supply <span className="text-muted-foreground">Whole coins</span>
 						</div>
-						<input
+						<Input
 							pattern="\d+"
 							type="text"
-							className="text-white w-full rounded p-2 uppercase"
+							className="uppercase"
 							onChange={(e) => setMaxSupply(e.target.value)}
 							value={maxSupply}
 						/>
@@ -731,17 +754,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							<div className="my-2 flex justify-between items-center">
 								Amount{" "}
 								{selectedBsv20 && (
-									<Button type="button" size="sm" variant="outline">
-										<span
-											className="text-[#555] cursor-pointer transition hover:text-[#777] text-sm"
-											onClick={() => {
-												setAmount(
-													selectedBsv20?.lim && selectedBsv20.lim !== "0"
-														? selectedBsv20.lim
-														: selectedBsv20.max,
-												);
-											}}
-										>
+									<Button type="button" size="sm" variant="outline"
+										onClick={() => {
+											setAmount(
+												selectedBsv20?.lim && selectedBsv20.lim !== "0"
+													? selectedBsv20.lim
+													: selectedBsv20.max,
+											);
+										}}
+									>
+										<span className="text-muted-foreground cursor-pointer transition hover:text-foreground text-sm">
 											Max:{" "}
 											{selectedBsv20?.lim && selectedBsv20.lim !== "0"
 												? selectedBsv20.lim
@@ -751,9 +773,8 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								)}
 							</div>
 
-							<input
+							<Input
 								disabled={!!mintError}
-								className="text-white w-full rounded p-2"
 								type="number"
 								min={1}
 								max={selectedBsv20?.lim}
@@ -776,18 +797,16 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					<Separator className="mb-4" />
 
 					<div>
-						<div className="p-2 bg-[#111] my-2 rounded flex items-center justify-between">
+						<div className="p-2 bg-card my-2 rounded flex items-center justify-between">
 							<div>{acquireText}</div>
-							<input
-								type="checkbox"
-								className="toggle"
+							<Switch
 								checked={bulkEnabled}
 								disabled={!canEnableBulk}
-								onClick={() => {
-									if (bulkEnabled) {
+								onCheckedChange={(checked) => {
+									if (!checked) {
 										setIterations(1);
 									}
-									setBulkEnabled(!bulkEnabled);
+									setBulkEnabled(checked);
 								}}
 							/>
 						</div>
@@ -796,25 +815,28 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							<label className="block mb-4">
 								<div className="my-2 flex justify-between items-center">
 									<div className="font-mono text-primary/50">{iterations}𝒙</div>
-									<div
-										className="tooltip opacity-75 text-purple-400 font-mono flex items-center"
-										data-tip={`Tier ${currentTier}/5`}
-									>
-										{stars}
-										<div className="mx-1" />
-										<Link href={`/market/bsv20/${bulkMintingTicker}`}>
-											{bulkMintingTicker}
-										</Link>
-									</div>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="opacity-75 text-purple-400 font-mono flex items-center cursor-help">
+												{stars}
+												<div className="mx-1" />
+												<Link href={`/market/bsv20/${bulkMintingTicker}`}>
+													{bulkMintingTicker}
+												</Link>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>
+											<p>Tier {currentTier}/5</p>
+										</TooltipContent>
+									</Tooltip>
 								</div>
-								<input
-									onChange={changeIterations}
-									value={iterations}
+								<Slider
+									value={[iterations]}
+									onValueChange={(value) => setIterations(value[0])}
 									max={maxIterations}
-									type="range"
 									min={1}
-									className="range"
 									step={step}
+									className="my-2"
 								/>
 								<div className="w-full flex justify-between text-xs px-2 text-primary/25">
 									{spacers}
@@ -822,7 +844,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 							</label>
 						)}
 						{bulkEnabled && amount && ticker && (
-							<div className="bg-[#111] text-[#555] rounded p-2 font-mono text-sm">
+							<div className="bg-card text-muted-foreground rounded p-2 font-mono text-sm">
 								<div className="flex items-center justify-between">
 									<div className="w-1/2">Indexing Fee:</div>
 									<div className="w-1/2 text-right">${iterationFeeUsd}</div>
@@ -835,25 +857,29 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 								<div className="flex items-center justify-between">
 									<div className="w-1/2">
 										You will recieve
-										<span
-											className="tooltip text-amber-500"
-											data-tip={
-												!tickerAvailable
-													? "Minted Out"
-													: !inSync.value && indexers.value && chainInfo.value
-														? "The index is not caught up. These tokens may have already been minted."
-														: selectedBsv20?.included
-															? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
-															: `This ticker is not included in the index${
-																	selectedBsv20?.pendingOps &&
-																	selectedBsv20.pendingOps > 0
-																		? ` and has ${selectedBsv20.pendingOps} operations in line ahead of this mint`
-																		: ""
-																}. These tokens may have already been minted.`
-											}
-										>
-											<FaInfoCircle className="ml-2" />
-										</span>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span className="text-amber-500 cursor-help">
+													<FaInfoCircle className="ml-2 inline" />
+												</span>
+											</TooltipTrigger>
+											<TooltipContent className="max-w-xs">
+												<p>
+													{!tickerAvailable
+														? "Minted Out"
+														: !inSync.value && indexers.value && chainInfo.value
+															? "The index is not caught up. These tokens may have already been minted."
+															: selectedBsv20?.included
+																? "Mints will be processed in the order they are assembled into blocks. We cannot gaurantee all tokens will be credited."
+																: `This ticker is not included in the index${
+																		selectedBsv20?.pendingOps &&
+																		selectedBsv20.pendingOps > 0
+																			? ` and has ${selectedBsv20.pendingOps} operations in line ahead of this mint`
+																			: ""
+																	}. These tokens may have already been minted.`}
+												</p>
+											</TooltipContent>
+										</Tooltip>
 									</div>
 									<div className="w-1/2 text-right">
 										{(totalTokens > newSupply
@@ -885,7 +911,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 									Ticker Status
 								</div>
 								<Separator className="mb-4" />
-								<div className="p-2 bg-[#111] my-2 rounded text-amber-500 font-mono">
+								<div className="p-2 bg-card my-2 rounded text-amber-500 font-mono">
 									<Link href={`/market/bsv20/${selectedBsv20?.tick}`}>
 										<FaExclamationCircle className="w-5 h-5 mr-2 inline-flex opacity-50 mb-1" />
 										{selectedBsv20?.tick} is not live. Minted supply may be
@@ -905,11 +931,10 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 					<label className="block mb-4">
 						<div className="flex items-center justify-between my-2">
 							Limit Per Mint{" "}
-							<span className="text-[#555] text-sm">Optional</span>
+							<span className="text-muted-foreground text-sm">Optional</span>
 						</div>
-						<input
-							className="text-white w-full rounded p-2"
-							type="string"
+						<Input
+							type="text"
 							value={limit}
 							pattern="^\S+$"
 							onKeyDown={(event) => {
@@ -938,8 +963,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 						<div className="my-2 flex items-center justify-between">
 							Decimal Precision
 						</div>
-						<input
-							className="text-white w-full rounded p-2"
+						<Input
 							type="number"
 							min={0}
 							max={18}
@@ -951,28 +975,30 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
 				</div>
 			)}
 			{selectedActionType === ActionType.Deploy && (
-				<div className="my-2 flex items-center justify-between mb-4 rounded p-2 text-info-content bg-info">
-					<label className="block w-full">
+				<Alert className="my-2 mb-4">
+					<AlertDescription>
 						While BSV20 deployements themselves are indexed immediately, mints
 						against them are indexed once an initial listing fee is paid. This
 						helps bring minting incentives in line with BSVs insanely low
 						network fees, and keeps this survice running reliably. The Listing
 						Fee for this deployent will be ${`${listingFee}`}. This can be paid
 						later.
-					</label>
-				</div>
+					</AlertDescription>
+				</Alert>
 			)}
-			{preview && <hr className="my-2 h-2 border-0 bg-[#222]" />}
-			<button
+			{preview && <hr className="my-2 h-2 border-0 bg-border" />}
+			<Button
 				disabled={submitDisabled}
 				type="submit"
 				onClick={bulkEnabled && iterations > 1 ? bulkInscribe : clickInscribe}
-				className="w-full disabled:bg-[#222] disabled:text-[#555] hover:bg-yellow-500 transition bg-yellow-600 enabled:cursor-pointer p-3 text-xl rounded my-4 text-white"
+				className="w-full p-3 text-xl my-4"
+				size="lg"
 			>
 				Preview{" "}
 				{selectedActionType === ActionType.Deploy ? "Deployment" : "Mint"}
-			</button>
+			</Button>
 		</div>
+		</TooltipProvider>
 	);
 };
 

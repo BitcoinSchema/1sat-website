@@ -6,6 +6,12 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { FiLoader } from "react-icons/fi";
 import JDenticon from "@/components/JDenticon";
 import { Separator } from "@/components/ui/separator";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { AssetType } from "@/constants";
 import { getHolders, resultsPerPage } from "@/utils/getHolders";
 import { getBalanceText } from "@/utils/wallet";
@@ -63,7 +69,7 @@ const HoldersTable = ({ type, id, details }: Props) => {
 		const numDecimals = details.dec || 0;
 
 		const balanceText = getBalanceText(balance, numDecimals);
-		const tooltip =
+		const tooltipText =
 			balance.toString() !== balanceText.trim() ? balance.toLocaleString() : "";
 
 		return (
@@ -75,9 +81,22 @@ const HoldersTable = ({ type, id, details }: Props) => {
 					<JDenticon hashOrValue={h.address} className="w-8 h-8 mr-2" />
 					<span className="hidden md:block">{h.address}</span>
 				</Link>
-				<div className="w-24 text-right tooltip" data-tip={tooltip}>
-					{balanceText}
-				</div>
+				{tooltipText ? (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div className="w-24 text-right cursor-help">
+								{balanceText}
+							</div>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>{tooltipText}</p>
+						</TooltipContent>
+					</Tooltip>
+				) : (
+					<div className="w-24 text-right">
+						{balanceText}
+					</div>
+				)}
 				<div className="w-24 text-right">{h?.pct?.toFixed(4)}%</div>
 				<div className="flex items-center mb-2 relative col-span-3">
 					<div
@@ -92,26 +111,28 @@ const HoldersTable = ({ type, id, details }: Props) => {
 	};
 
 	return (
-		<div className="w-full">
-			{status === "pending" && <p className="text-center py-10">Loading...</p>}
-			{!!holders?.length && (
-				<div className="w-full">
-					<div className="grid grid-template-columns-3 p-6">
-						<div className="">
-							Address ({numHolders === 100 ? "100+" : numHolders})
+		<TooltipProvider>
+			<div className="w-full">
+				{status === "pending" && <p className="text-center py-10">Loading...</p>}
+				{!!holders?.length && (
+					<div className="w-full">
+						<div className="grid grid-template-columns-3 p-6">
+							<div className="">
+								Address ({numHolders === 100 ? "100+" : numHolders})
+							</div>
+							<div className="w-24 text-right">Holdings</div>
+							<div className="w-12 text-right">Ownership</div>
+							<Separator className="col-span-3 my-2" />
+							{holders?.map((h) => processHolder(h))}
 						</div>
-						<div className="w-24 text-right">Holdings</div>
-						<div className="w-12 text-right">Ownership</div>
-						<Separator className="col-span-3 my-2" />
-						{holders?.map((h) => processHolder(h))}
 					</div>
-				</div>
-			)}
+				)}
 
-			<div ref={ref} className="flex items-center justify-center h-6">
-				{isFetchingNextPage && <FiLoader className="animate animate-spin" />}
+				<div ref={ref} className="flex items-center justify-center h-6">
+					{isFetchingNextPage && <FiLoader className="animate animate-spin" />}
+				</div>
 			</div>
-		</div>
+		</TooltipProvider>
 	);
 };
 
