@@ -43,12 +43,14 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
         const ordAddress = wallet.walletKeys!.ordPk
           ? wifToAddress(wallet.walletKeys!.ordPk)
           : undefined;
+        const payAddress = wifToAddress(wallet.walletKeys!.payPk);
 
         console.log("[WalletBridge] Auto-initializing wallet-toolbox...");
         console.log("[WalletBridge] rootKeyHex length:", rootKeyHex.length);
         console.log("[WalletBridge] ordAddress:", ordAddress?.slice(0, 10) + "...");
+        console.log("[WalletBridge] payAddress:", payAddress?.slice(0, 10) + "...");
 
-        const success = await toolbox.initializeWallet(rootKeyHex, ordAddress);
+        const success = await toolbox.initializeWallet(rootKeyHex, ordAddress, payAddress);
 
         if (success) {
           console.log("[WalletBridge] Wallet-toolbox initialized successfully");

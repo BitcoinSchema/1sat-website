@@ -6,12 +6,8 @@
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
-	--font-sans:
-		"Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-		sans-serif;
-	--font-mono:
-		"JetBrains Mono", ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas,
-		monospace;
+	--font-sans: var(--font-sans);
+	--font-mono: var(--font-mono);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -45,7 +41,7 @@
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
-	--font-serif: "Spectral", ui-serif, Georgia, Cambria, Times New Roman, serif;
+	--font-serif: var(--font-serif);
 	--radius: 0rem;
 	--tracking-tighter: calc(var(--tracking-normal) - 0.05em);
 	--tracking-tight: calc(var(--tracking-normal) - 0.025em);

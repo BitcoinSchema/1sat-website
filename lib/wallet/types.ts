@@ -60,9 +60,9 @@ export interface UTXO {
   change?: boolean;
   labels?: string[];
   description?: string;
-  createdAt?: Date;
   spentTxid?: string;
   spentAt?: Date;
+  createdAt?: Date;
   blockHeight?: number;
 }
 
@@ -98,6 +98,7 @@ export interface WalletOutput {
   createdAt: Date;
   spentTxid?: string;
   spentAt?: Date;
+  data?: any;
   blockHeight?: number;
 }
 

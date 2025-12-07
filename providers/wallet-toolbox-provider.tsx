@@ -62,18 +62,29 @@ interface WalletToolboxContextValue {
   chain: Chain;
   identityKey: string | null;
 
-  // Balance
+  // Balance and assets
   balance: WalletBalance | null;
   ordinals: Ordinal[];
+  bsv20Tokens: TokenBalance[];
+  bsv21Tokens: TokenBalance[];
 
   // Actions
-  initializeWallet: (rootKeyHex: string, ordAddress?: string) => Promise<boolean>;
+  initializeWallet: (rootKeyHex: string, ordAddress?: string, payAddress?: string) => Promise<boolean>;
   destroyWallet: () => Promise<void>;
   refreshBalance: () => Promise<void>;
 
   // Internal services (exposed for advanced usage)
   services: Services | null;
   storageManager: WalletStorageManager | null;
+}
+
+// Token balance interface
+interface TokenBalance {
+  outpoint: string;
+  txid: string;
+  vout: number;
+  data?: any;
+  height?: number;
 }
 
 const WalletToolboxContext = createContext<WalletToolboxContextValue | undefined>(undefined);
@@ -85,6 +96,7 @@ interface WalletToolboxProviderProps {
   // Optional: auto-initialize with these keys
   autoInitRootKeyHex?: string;
   autoInitOrdAddress?: string;
+  autoInitPayAddress?: string;
 }
 
 export function WalletToolboxProvider({
@@ -93,6 +105,7 @@ export function WalletToolboxProvider({
   databaseName = "1sat-wallet",
   autoInitRootKeyHex,
   autoInitOrdAddress,
+  autoInitPayAddress,
 }: WalletToolboxProviderProps) {
   // Core wallet state
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -108,14 +121,17 @@ export function WalletToolboxProvider({
   // Balance state
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [ordinals, setOrdinals] = useState<Ordinal[]>([]);
+  const [bsv20Tokens, setBsv20Tokens] = useState<TokenBalance[]>([]);
+  const [bsv21Tokens, setBsv21Tokens] = useState<TokenBalance[]>([]);
 
   // Services for external API calls
   const gorillaPoolService = useMemo(() => new GorillaPoolService(), []);
   const walletAPI = useMemo(() => new WalletAPI(chain === "main" ? "mainnet" : "testnet"), [chain]);
   const chainService = useMemo(() => new ChainService(chain === "main" ? "mainnet" : "testnet"), [chain]);
 
-  // Store ord address for ordinal lookups
+  // Store wallet addresses for ordinal and balance lookups
   const [ordAddress, setOrdAddress] = useState<string | null>(null);
+  const [payAddress, setPayAddress] = useState<string | null>(null);
 
   /**
    * Initialize the wallet with a root key
@@ -129,7 +145,8 @@ export function WalletToolboxProvider({
    */
   const initializeWallet = useCallback(async (
     rootKeyHex: string,
-    ordAddressParam?: string
+    ordAddressParam?: string,
+    payAddressParam?: string
   ): Promise<boolean> => {
     if (isInitializing || isInitialized) {
       console.warn("[WalletToolbox] Already initializing or initialized");
@@ -154,6 +171,7 @@ export function WalletToolboxProvider({
       setStorageManager(storage);
       setIdentityKey(newIdentityKey);
       setOrdAddress(ordAddressParam || null);
+      setPayAddress(payAddressParam || null);
       setIsInitialized(true);
       setInitError(null);
 
@@ -176,9 +194,9 @@ export function WalletToolboxProvider({
   useEffect(() => {
     if (autoInitRootKeyHex && !isInitialized && !isInitializing) {
       console.log("[WalletToolbox] Auto-initializing with provided keys...");
-      initializeWallet(autoInitRootKeyHex, autoInitOrdAddress);
+      initializeWallet(autoInitRootKeyHex, autoInitOrdAddress, autoInitPayAddress);
     }
-  }, [autoInitRootKeyHex, autoInitOrdAddress, isInitialized, isInitializing, initializeWallet]);
+  }, [autoInitRootKeyHex, autoInitOrdAddress, autoInitPayAddress, isInitialized, isInitializing, initializeWallet]);
 
   /**
    * Destroy the wallet and clear all state
@@ -211,10 +229,17 @@ export function WalletToolboxProvider({
     try {
       // Use 1sat overlay to get balance and ordinals
       if (ordAddress) {
-        // Create overlay service with wallet addresses
+        // Collect all wallet addresses (remove duplicates)
+        const allAddresses = [ordAddress];
+        if (payAddress && payAddress !== ordAddress) {
+          allAddresses.push(payAddress);
+        }
+        console.log("[WalletToolbox] Refreshing for addresses:", allAddresses);
+
+        // Create overlay service with ALL wallet addresses
         const overlayService = new OneSatOverlayService(
           identityKey || ordAddress, // Use identity key as account name
-          [ordAddress] // Owner addresses
+          allAddresses // All owner addresses
         );
 
         // Get balance from overlay
@@ -224,8 +249,10 @@ export function WalletToolboxProvider({
           console.log("[WalletToolbox] Balance from overlay:", overlayBalance);
         }
 
-        // Get ordinals from overlay
-        const overlayOrdinals = await overlayService.getOrdinals(100);
+        // Get ALL ordinals and tokens in a single efficient fetch
+        const { ordinals: overlayOrdinals, tokens: overlayTokens } = await overlayService.getAllOrdinalsAndTokens();
+
+        // Map ordinals
         const mappedOrdinals: Ordinal[] = overlayOrdinals.map(txo => ({
           txid: txo.txid || txo.outpoint.split("_")[0],
           vout: txo.vout ?? parseInt(txo.outpoint.split("_")[1], 10),
@@ -235,7 +262,20 @@ export function WalletToolboxProvider({
           data: txo.data,
         }));
         setOrdinals(mappedOrdinals);
-        console.log(`[WalletToolbox] Ordinals from overlay: ${mappedOrdinals.length}`);
+        console.log(`[WalletToolbox] Ordinals from overlay: ${mappedOrdinals.length} (NFTs)`);
+
+        // Map tokens (all in bsv21 since we can't distinguish without fetching inscription content)
+        const mapToken = (txo: any): TokenBalance => ({
+          outpoint: txo.outpoint,
+          txid: txo.txid || txo.outpoint.split("_")[0],
+          vout: txo.vout ?? parseInt(txo.outpoint.split("_")[1], 10),
+          data: txo.data,
+          height: txo.height,
+        });
+
+        setBsv20Tokens([]); // No easy way to distinguish BSV20 vs BSV21 yet
+        setBsv21Tokens(overlayTokens.map(mapToken));
+        console.log(`[WalletToolbox] Tokens from overlay: ${overlayTokens.length} (BSV20/BSV21 combined)`);
       } else {
         // Fallback to wallet-toolbox internal storage
         const outputs = await wallet.listOutputs({
@@ -261,14 +301,15 @@ export function WalletToolboxProvider({
     } catch (error) {
       console.error("[WalletToolbox] Failed to refresh balance:", error);
     }
-  }, [wallet, isInitialized, ordAddress, identityKey]);
+  }, [wallet, isInitialized, ordAddress, payAddress, identityKey]);
 
-  // Auto-refresh balance when wallet is initialized
+  // Auto-refresh balance when wallet is initialized and address is available
   useEffect(() => {
-    if (isInitialized && wallet) {
+    if (isInitialized && wallet && ordAddress) {
+      console.log("[WalletToolbox] Auto-refreshing balance for addresses:", ordAddress, payAddress);
       refreshBalance();
     }
-  }, [isInitialized, wallet, refreshBalance]);
+  }, [isInitialized, wallet, ordAddress, payAddress, refreshBalance]);
 
   const value = useMemo<WalletToolboxContextValue>(() => ({
     wallet,
@@ -279,6 +320,8 @@ export function WalletToolboxProvider({
     identityKey,
     balance,
     ordinals,
+    bsv20Tokens,
+    bsv21Tokens,
     initializeWallet,
     destroyWallet,
     refreshBalance,
@@ -293,6 +336,8 @@ export function WalletToolboxProvider({
     identityKey,
     balance,
     ordinals,
+    bsv20Tokens,
+    bsv21Tokens,
     initializeWallet,
     destroyWallet,
     refreshBalance,

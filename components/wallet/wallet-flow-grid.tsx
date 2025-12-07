@@ -1,22 +1,27 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
+/**
+ * WalletFlowGrid - Displays wallet ordinals in a masonry grid layout
+ * with infinite scroll, using the same pattern as FlowGrid but
+ * sourcing data from the wallet provider instead of market API.
+ */
+
 import { Box, Music, Play, SquareArrowOutUpRight } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { toBitcoin } from "satoshi-token";
 import ImageWithFallback from "@/components/image-with-fallback";
 import ArtifactModal from "@/components/modal/artifact-modal";
 import { Button } from "@/components/ui/button";
-import { fetchMarketActivity } from "@/lib/api";
-import { getOrdinalThumbnail } from "@/lib/image-utils";
+import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 import type { OrdUtxo } from "@/lib/types/ordinals";
+import { ORDFS } from "@/lib/constants";
+import { getOrdinalThumbnail } from "@/lib/image-utils";
+import { Loader2 } from "lucide-react";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
   <>
     {Array.from({ length: count }).map((_, i) => (
-      // biome-ignore lint/suspicious/noArrayIndexKey: skeletons are static placeholders
       <div key={`skeleton-${i}`} className="relative mb-4 break-inside-avoid">
         <div className="w-full aspect-square rounded-lg bg-muted animate-pulse" />
       </div>
@@ -25,7 +30,7 @@ const LoadingSkeleton = ({ count }: { count: number }) => (
 );
 
 const getContentType = (
-  artifact: OrdUtxo,
+  artifact: OrdUtxo
 ): "video" | "audio" | "3d" | "image" => {
   const contentType = artifact.origin?.data?.insc?.file.type || "";
   if (contentType.startsWith("video/")) return "video";
@@ -42,13 +47,11 @@ const useColumnCount = () => {
   useEffect(() => {
     const updateColumns = () => {
       const width = window.innerWidth;
-      if (width >= 1280)
-        setColumns(4); // xl
-      else if (width >= 1024)
-        setColumns(3); // lg
-      else if (width >= 640)
-        setColumns(2); // sm
-      else setColumns(1);
+      if (width >= 1280) setColumns(5);
+      else if (width >= 1024) setColumns(4);
+      else if (width >= 768) setColumns(3);
+      else if (width >= 640) setColumns(2);
+      else setColumns(2);
     };
 
     updateColumns();
@@ -59,20 +62,48 @@ const useColumnCount = () => {
   return columns;
 };
 
-export default function FlowGrid({ className = "" }: { className?: string }) {
-  // biome-ignore lint/correctness/noUnusedVariables: intended for future optimization
-  const seenOutpoints = useRef<Set<string>>(new Set());
+interface WalletFlowGridProps {
+  className?: string;
+  pageSize?: number;
+}
+
+export default function WalletFlowGrid({
+  className = "",
+  pageSize = 50,
+}: WalletFlowGridProps) {
+  const { ordinals, isInitialized, isInitializing } = useWalletToolbox();
   const [visible, setVisible] = useState<Set<string>>(new Set());
-  const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(
-    null,
-  );
+  const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
   const [showBackdrop, setShowBackdrop] = useState(false);
+  const [displayCount, setDisplayCount] = useState(pageSize);
 
-  // Determine column count
   const columnCount = useColumnCount();
-
-  // Intersection Observer for images
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Convert wallet ordinals to OrdUtxo format
+  const allArtifacts = useMemo((): OrdUtxo[] => {
+    return ordinals.map((ord) => ({
+      txid: ord.txid,
+      vout: ord.vout,
+      outpoint: `${ord.txid}_${ord.vout}`,
+      satoshis: ord.satoshis,
+      script: ord.script || "",
+      height: 0,
+      idx: 0,
+      origin: {
+        outpoint: `${ord.txid}_${ord.vout}`,
+        data: ord.data,
+      },
+      data: ord.data,
+    }));
+  }, [ordinals]);
+
+  // Slice for "infinite scroll" simulation
+  const displayedArtifacts = useMemo(() => {
+    return allArtifacts.slice(0, displayCount);
+  }, [allArtifacts, displayCount]);
+
+  const hasMore = displayCount < allArtifacts.length;
 
   const observeImage = useCallback(
     (element: HTMLElement | null, outpoint: string) => {
@@ -93,21 +124,19 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
             if (newVisible.size > 0) {
               setVisible((prev) => {
                 const next = new Set(prev);
-                newVisible.forEach((id) => {
-                  next.add(id);
-                });
+                newVisible.forEach((id) => next.add(id));
                 return next;
               });
             }
           },
-          { threshold: 0.1 },
+          { threshold: 0.1 }
         );
       }
 
       element.setAttribute("data-outpoint", outpoint);
       observerRef.current.observe(element);
     },
-    [visible],
+    [visible]
   );
 
   useEffect(() => {
@@ -136,7 +165,6 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 
   const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
     e.preventDefault();
-    // Skip view transition for now if it's causing issues, or keep it simple
     if (
       typeof document !== "undefined" &&
       "startViewTransition" in document &&
@@ -149,13 +177,9 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
           });
         });
         transition.ready
-          .then(() => {
-            setShowBackdrop(true);
-          })
-          .catch(() => {
-            setShowBackdrop(true);
-          });
-      } catch (_err) {
+          .then(() => setShowBackdrop(true))
+          .catch(() => setShowBackdrop(true));
+      } catch {
         setSelectedArtifact(artifact);
         setShowBackdrop(true);
       }
@@ -165,77 +189,50 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
     }
   };
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery({
-      queryKey: ["market-flow"],
-      queryFn: fetchMarketActivity,
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
-      initialPageParam: 0,
-    });
-
-  const allArtifacts = useMemo(() => {
-    const flat = data?.pages.flatMap((page) => page.items) || [];
-    const seen = new Set<string>();
-    return flat.filter((artifact) => {
-      if (!artifact?.outpoint) return false;
-      if (!artifact.origin?.outpoint) return false;
-      const outpointStr =
-        artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
-      if (seen.has(outpointStr)) return false;
-      seen.add(outpointStr);
-      return true;
-    });
-  }, [data?.pages]);
-
   // Distribute artifacts into columns
   const columns = useMemo(() => {
     const cols: OrdUtxo[][] = Array.from({ length: columnCount }, () => []);
-    allArtifacts.forEach((artifact, i) => {
+    displayedArtifacts.forEach((artifact, i) => {
       cols[i % columnCount].push(artifact);
     });
     return cols;
-  }, [allArtifacts, columnCount]);
+  }, [displayedArtifacts, columnCount]);
 
-  // Track scroll position for infinite scroll
+  // Infinite scroll handler
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
       const documentHeight = document.body.scrollHeight;
 
-      const isNearBottom = scrollY + windowHeight >= documentHeight - 100; // 100px threshold
+      const isNearBottom = scrollY + windowHeight >= documentHeight - 200;
 
-      if (isNearBottom && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
+      if (isNearBottom && hasMore) {
+        setDisplayCount((prev) => Math.min(prev + pageSize, allArtifacts.length));
       }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasMore, pageSize, allArtifacts.length]);
 
   const renderArtifact = (artifact: OrdUtxo) => {
-    const outpointStr =
-      artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
-    const originOutpoint = artifact.origin?.outpoint;
-
-    if (!originOutpoint) return null;
-
-    const src = `https://ordfs.network/${originOutpoint}`;
+    const outpointStr = artifact.outpoint;
+    const originOutpoint = artifact.origin?.outpoint || outpointStr;
+    const src = `${ORDFS}/${originOutpoint}`;
     const contentType = getContentType(artifact);
     const imgSrc =
       contentType === "image"
-        ? getOrdinalThumbnail(originOutpoint, 375)
+        ? getOrdinalThumbnail(originOutpoint, 300)
         : src;
     const isVisible = visible.has(outpointStr);
 
     return (
       <div
         key={outpointStr}
-        className={`block mb-4 relative break-inside-avoid group transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0"}`}
+        className={`block mb-3 relative break-inside-avoid group transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0"}`}
         ref={(el) => observeImage(el, outpointStr)}
       >
-        {/* Main Click Target - Link */}
         <Link
           href={`/outpoint/${outpointStr}/timeline`}
           className="absolute inset-0 z-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -244,98 +241,95 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
           <span className="sr-only">View Artifact</span>
         </Link>
 
-        {/* Card Content */}
         <div className="relative shadow-md bg-card rounded-lg overflow-hidden pointer-events-none">
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 z-10 h-8 w-8 bg-black/50 hover:bg-black/70 text-white pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-2 right-2 z-10 h-7 w-7 bg-black/50 hover:bg-black/70 text-white pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              window.open(
-                `https://ordfs.network/${artifact.origin?.outpoint}`,
-                "_blank",
-                "noopener,noreferrer",
-              );
+              window.open(`${ORDFS}/${originOutpoint}`, "_blank", "noopener,noreferrer");
             }}
           >
-            <SquareArrowOutUpRight className="w-4 h-4" />
+            <SquareArrowOutUpRight className="w-3.5 h-3.5" />
           </Button>
 
           {contentType === "video" && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-              <div className="p-4 bg-black/60 rounded-full">
-                <Play className="w-12 h-12 text-white fill-white" />
+              <div className="p-3 bg-black/60 rounded-full">
+                <Play className="w-8 h-8 text-white fill-white" />
               </div>
             </div>
           )}
 
           {contentType === "video" ? (
-            <video
-              src={src}
-              className="w-full h-auto"
-              width={375}
-              muted
-              playsInline
-            />
+            <video src={src} className="w-full h-auto" width={300} muted playsInline />
           ) : contentType === "3d" ? (
             <div className="w-full aspect-square bg-gradient-to-br from-purple-900/30 to-blue-900/30 flex items-center justify-center">
-              <Box className="w-24 h-24 text-purple-300/50" />
+              <Box className="w-16 h-16 text-purple-300/50" />
             </div>
           ) : contentType === "audio" ? (
             <div className="w-full aspect-square bg-gradient-to-br from-pink-900/30 to-orange-900/30 flex items-center justify-center">
-              <Music className="w-24 h-24 text-pink-300/50" />
+              <Music className="w-16 h-16 text-pink-300/50" />
             </div>
           ) : (
             <ImageWithFallback
               src={imgSrc}
-              alt={`Image ${artifact.txid}`}
+              alt={`Ordinal ${artifact.txid.slice(0, 8)}`}
               className="w-full h-auto"
-              width={375}
-              height={375}
+              width={300}
+              height={300}
             />
           )}
-
-          <div className="absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none">
-            <p className="text-base font-bold">
-              {toBitcoin(artifact.data?.list?.price || 0)} BSV
-            </p>
-            <p className="text-sm truncate">{String(artifact.data?.map?.name || "")}</p>
-          </div>
         </div>
       </div>
     );
   };
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Loading wallet...</span>
+      </div>
+    );
+  }
+
+  if (!isInitialized) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        Please unlock or create a wallet to view your ordinals.
+      </div>
+    );
+  }
+
   return (
     <>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium">
+          {allArtifacts.length} Ordinal{allArtifacts.length !== 1 ? "s" : ""}
+        </h3>
+      </div>
+
       <div className={`relative ${className}`}>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           {columns.map((colItems, colIndex) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: columns are structural
             <div key={colIndex} className="flex-1 flex flex-col gap-0 min-w-0">
               {colItems.map(renderArtifact)}
-              {/* Add skeletons to columns when loading more */}
-              {isFetchingNextPage && <LoadingSkeleton count={2} />}
             </div>
           ))}
 
-          {allArtifacts.length === 0 && !isFetchingNextPage && (
+          {allArtifacts.length === 0 && (
             <div className="w-full text-center py-20 text-muted-foreground col-span-full">
-              No artifacts found.
+              No ordinals found in your wallet.
             </div>
           )}
         </div>
 
-        {/* Initial loading state */}
-        {allArtifacts.length === 0 && isFetchingNextPage && (
-          <div className="flex gap-4">
-            {Array.from({ length: columnCount }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton columns are static
-              <div key={i} className="flex-1">
-                <LoadingSkeleton count={5} />
-              </div>
-            ))}
+        {hasMore && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         )}
       </div>

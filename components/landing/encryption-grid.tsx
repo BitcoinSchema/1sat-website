@@ -31,6 +31,9 @@ export function EncryptionGrid() {
     
     // Store grid state
     const gridData: { char: string; updateTime: number }[] = [];
+    
+    // Store style
+    let gridColor = "#22c55e"; // Default fallback
 
     const initGrid = () => {
       cols = Math.ceil(width / gridSize);
@@ -62,6 +65,14 @@ export function EncryptionGrid() {
       height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
+      
+      // Update color on resize/theme change (if window resizes, likely theme might change too in some setups, or just good practice)
+      // We try to get the color from the canvas element which inherits text-primary
+      const computed = getComputedStyle(canvas);
+      if (computed.color && computed.color !== "") {
+          gridColor = computed.color;
+      }
+      
       initGrid();
     };
 
@@ -70,14 +81,10 @@ export function EncryptionGrid() {
       // Clear canvas
       ctx.clearRect(0, 0, width, height);
 
-      // Get color from the canvas element's computed style (which inherits text-primary)
-      const computedStyle = getComputedStyle(canvas);
-      const color = computedStyle.color || "#22c55e"; // Fallback
-
       ctx.font = `${gridSize * 0.8}px monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = color;
+      ctx.fillStyle = gridColor;
       
       const isAnimating = Date.now() - lastMouseMoveTime < 500; // Animate for 500ms after last move
 

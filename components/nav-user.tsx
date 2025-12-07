@@ -55,7 +55,7 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="h-8 w-8 rounded-lg overflow-hidden">
-                <SigmaAvatar name={user.address} colors={["#ff3366", "#33ccff", "#33ff99", "#ffcc33", "#cc33ff"]} className="h-full w-full" />
+                <SigmaAvatar name={user.address} colors={["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]} className="h-full w-full" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -73,7 +73,7 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <div className="h-8 w-8 rounded-lg overflow-hidden">
-                  <SigmaAvatar name={user.address} colors={["#ff3366", "#33ccff", "#33ff99", "#ffcc33", "#cc33ff"]} className="h-full w-full" />
+                  <SigmaAvatar name={user.address} colors={["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]} className="h-full w-full" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Keyboard, Palette, User, Wallet } from "lucide-react";
+import { ChevronRight, Keyboard, Palette, User, Wallet, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -21,11 +21,69 @@ import { Switch } from "@/components/ui/switch";
 export function SettingsForm() {
 	const { theme, setTheme } = useTheme();
 	const [themeOrigin, setThemeOrigin] = useState("");
+	const [isLoadingTheme, setIsLoadingTheme] = useState(false);
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
 		setMounted(true);
 	}, []);
+
+	const handleSaveTheme = async () => {
+		if (!themeOrigin) return;
+		setIsLoadingTheme(true);
+		try {
+			const res = await fetch(
+				`https://ordinals.gorillapool.io/content/${themeOrigin}`,
+			);
+			if (!res.ok) throw new Error("Failed to fetch theme");
+
+			const data = await res.json();
+			
+			if (!data.styles) {
+				throw new Error("Invalid theme data: missing styles");
+			}
+
+			let css = "";
+
+			// Process Light Theme
+			if (data.styles.light) {
+				css += ":root {\n";
+				Object.entries(data.styles.light).forEach(([key, value]) => {
+					if (typeof value === "string") {
+						css += `  --${key}: ${value} !important;\n`;
+					}
+				});
+				css += "}\n";
+			}
+
+			// Process Dark Theme
+			if (data.styles.dark) {
+				css += ".dark {\n";
+				Object.entries(data.styles.dark).forEach(([key, value]) => {
+					if (typeof value === "string") {
+						css += `  --${key}: ${value} !important;\n`;
+					}
+				});
+				css += "}\n";
+			}
+			
+			console.log("Injecting CSS:", css);
+
+			// Inject Style Tag
+			let styleTag = document.getElementById("theme-token-styles");
+			if (!styleTag) {
+				styleTag = document.createElement("style");
+				styleTag.id = "theme-token-styles";
+				document.head.appendChild(styleTag);
+			}
+			styleTag.textContent = css;
+
+		} catch (e) {
+			console.error("Error applying theme:", e);
+		} finally {
+			setIsLoadingTheme(false);
+		}
+	};
 
 	if (!mounted) return null;
 
@@ -91,12 +149,24 @@ export function SettingsForm() {
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="theme-origin">Theme Origin</Label>
-						<Input
-							id="theme-origin"
-							placeholder="Enter theme token origin..."
-							value={themeOrigin}
-							onChange={(e) => setThemeOrigin(e.target.value)}
-						/>
+						<div className="flex gap-2">
+							<Input
+								id="theme-origin"
+								placeholder="Enter theme token origin..."
+								value={themeOrigin}
+								onChange={(e) => setThemeOrigin(e.target.value)}
+							/>
+							<Button
+								onClick={handleSaveTheme}
+								disabled={isLoadingTheme || !themeOrigin}
+							>
+								{isLoadingTheme ? (
+									<Loader2 className="h-4 w-4 animate-spin" />
+								) : (
+									"Apply"
+								)}
+							</Button>
+						</div>
 					</div>
 					<Separator />
 					<div className="flex items-center justify-between space-x-2">

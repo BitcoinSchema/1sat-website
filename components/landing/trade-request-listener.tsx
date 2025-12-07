@@ -7,16 +7,18 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { useWallet } from "@/providers/wallet-provider";
 import { wifToAddress } from "@/lib/keys";
 import { TradeDialog } from "./trade-dialog";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import SigmaAvatar from "sigma-avatars";
+import { Bell, Clock } from "lucide-react";
 
 // Truncate address for display
 function truncateAddress(address: string): string {
@@ -90,6 +92,12 @@ export function TradeRequestListener() {
     myFullUserId ? { userId: myFullUserId } : "skip"
   );
 
+  // Subscribe to pending sent requests (for initiator waiting UI)
+  const pendingSentRequests = useQuery(
+    api.trades.getPendingSentRequests,
+    myFullUserId ? { userId: myFullUserId } : "skip"
+  );
+
   // Subscribe to active trade session (to detect when other party closes)
   const activeTradeSession = useQuery(
     api.trades.getTradeSession,
@@ -99,6 +107,7 @@ export function TradeRequestListener() {
   // Mutations
   const acceptRequest = useMutation(api.trades.acceptTradeRequest);
   const declineRequest = useMutation(api.trades.declineTradeRequest);
+  const cancelTradeRequest = useMutation(api.trades.cancelTradeRequest);
   const cancelTrade = useMutation(api.trades.cancelTrade);
 
   // Initialize audio - separate sounds for different events
@@ -241,22 +250,79 @@ export function TradeRequestListener() {
     : "";
   const isPeerWallet = peerWalletAddress.startsWith("1");
 
+  // Get pending request info for waiting UI
+  const pendingRequest = pendingSentRequests?.[0] ?? null;
+  const pendingPeerAddress = pendingRequest
+    ? extractWalletAddress(pendingRequest.toUserId)
+    : "";
+  const isPendingPeerWallet = pendingPeerAddress.startsWith("1");
+
+  // Handle canceling a pending request
+  const handleCancelPendingRequest = async () => {
+    if (pendingRequest) {
+      try {
+        await cancelTradeRequest({ requestId: pendingRequest._id });
+      } catch (error) {
+        console.error("Failed to cancel trade request:", error);
+      }
+    }
+  };
+
   return (
     <>
+      {/* Waiting for response dialog (for initiator) */}
+      <AlertDialog open={!!pendingRequest && !activeSessionId} onOpenChange={(open) => !open && handleCancelPendingRequest()}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <Clock className="w-5 h-5 text-muted-foreground" />
+              Waiting for Response
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="flex items-center gap-3 pt-2">
+                {isPendingPeerWallet && (
+                  <span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
+                    <SigmaAvatar
+                      name={pendingPeerAddress}
+                      colors={["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]}
+                      className="h-full w-full"
+                    />
+                  </span>
+                )}
+                <span>
+                  <span className="text-foreground font-medium font-mono block">
+                    {truncateAddress(pendingPeerAddress)}
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    is deciding whether to accept your request...
+                  </span>
+                </span>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelPendingRequest}>
+              Cancel Request
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Incoming trade request dialog */}
-      <Dialog open={!!incomingRequest} onOpenChange={(open) => !open && handleDecline()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              🔔 Trade Request
-            </DialogTitle>
-            <DialogDescription asChild>
+      <AlertDialog open={!!incomingRequest} onOpenChange={(open) => !open && handleDecline()}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <Bell className="w-5 h-5 text-primary" />
+              Trade Request
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
               <div className="flex items-center gap-3 pt-2">
                 {isPeerWallet && (
                   <span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
                     <SigmaAvatar
                       name={peerWalletAddress}
-                      colors={["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"]}
+                      colors={["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]}
                       className="h-full w-full"
                     />
                   </span>
@@ -270,18 +336,18 @@ export function TradeRequestListener() {
                   </span>
                 </span>
               </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleDecline}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDecline}>
               Decline
-            </Button>
-            <Button onClick={handleAccept}>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAccept}>
               Accept Trade
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Active trade session */}
       {activeSessionId && (

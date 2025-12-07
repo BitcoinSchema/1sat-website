@@ -339,3 +339,22 @@ export const getAcceptedSentRequests = query({
       .collect();
   },
 });
+
+// Get pending sent requests for a user (so initiator knows their request is waiting)
+export const getPendingSentRequests = query({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("tradeRequests")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("fromUserId"), args.userId),
+          q.eq(q.field("status"), "pending")
+        )
+      )
+      .order("desc")
+      .collect();
+  },
+});

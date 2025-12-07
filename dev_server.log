@@ -1,0 +1,17 @@
+
+> 1sat.market@0.0.1 dev
+> next dev -p 8255
+
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:8255
+   - Network:       http://192.168.1.163:8255
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 392ms
+ ○ Compiling / ...
+ GET / 200 in 3.7s (compile: 3.4s, render: 256ms)
+ GET / 200 in 30.1s (compile: 26.3s, render: 3.8s)
+ GET / 200 in 23.9s (compile: 3.2s, render: 20.7s)
+ GET / 200 in 7.4s (compile: 392ms, render: 7.0s)
+[?25h
