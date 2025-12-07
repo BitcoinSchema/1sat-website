@@ -38,7 +38,11 @@ import {
   type ReactNode,
 } from "react";
 import { GorillaPoolService, type Ordinal } from "@/lib/wallet/gorillapool-service";
+import { WalletAPI } from "@/lib/wallet/WalletAPI";
+import { OneSatOverlayService } from "@/lib/wallet/OneSatOverlayService";
 import { ChainService } from "@/lib/wallet/chain-service";
+
+// TODO: Phase 3 - Remove GorillaPoolService once overlay sync is verified
 
 // Types
 type Chain = "main" | "test";
@@ -107,6 +111,7 @@ export function WalletToolboxProvider({
 
   // Services for external API calls
   const gorillaPoolService = useMemo(() => new GorillaPoolService(), []);
+  const walletAPI = useMemo(() => new WalletAPI(chain === "main" ? "mainnet" : "testnet"), [chain]);
   const chainService = useMemo(() => new ChainService(chain === "main" ? "mainnet" : "testnet"), [chain]);
 
   // Store ord address for ordinal lookups
@@ -195,7 +200,7 @@ export function WalletToolboxProvider({
   }, []);
 
   /**
-   * Refresh balance from chain and ordinals from GorillaPool
+   * Refresh balance from 1sat overlay and ordinals
    */
   const refreshBalance = useCallback(async () => {
     if (!wallet || !isInitialized) {
@@ -204,38 +209,59 @@ export function WalletToolboxProvider({
     }
 
     try {
-      // Get outputs from wallet-toolbox storage
-      const outputs = await wallet.listOutputs({
-        basket: "default",
-        include: "locking scripts",
-      });
+      // Use 1sat overlay to get balance and ordinals
+      if (ordAddress) {
+        // Create overlay service with wallet addresses
+        const overlayService = new OneSatOverlayService(
+          identityKey || ordAddress, // Use identity key as account name
+          [ordAddress] // Owner addresses
+        );
 
-      // Calculate balance from spendable outputs
-      let total = 0;
-      if (outputs.outputs) {
-        for (const output of outputs.outputs) {
-          if (output.spendable) {
-            total += output.satoshis || 0;
+        // Get balance from overlay
+        const overlayBalance = await overlayService.getBalance(true);
+        if (overlayBalance) {
+          setBalance(overlayBalance);
+          console.log("[WalletToolbox] Balance from overlay:", overlayBalance);
+        }
+
+        // Get ordinals from overlay
+        const overlayOrdinals = await overlayService.getOrdinals(100);
+        const mappedOrdinals: Ordinal[] = overlayOrdinals.map(txo => ({
+          txid: txo.txid || txo.outpoint.split("_")[0],
+          vout: txo.vout ?? parseInt(txo.outpoint.split("_")[1], 10),
+          satoshis: txo.satoshis ?? 1,
+          script: txo.script || "",
+          owner: ordAddress,
+          data: txo.data,
+        }));
+        setOrdinals(mappedOrdinals);
+        console.log(`[WalletToolbox] Ordinals from overlay: ${mappedOrdinals.length}`);
+      } else {
+        // Fallback to wallet-toolbox internal storage
+        const outputs = await wallet.listOutputs({
+          basket: "default",
+          include: "locking scripts",
+        });
+
+        let total = 0;
+        if (outputs.outputs) {
+          for (const output of outputs.outputs) {
+            if (output.spendable) {
+              total += output.satoshis || 0;
+            }
           }
         }
+
+        setBalance({
+          confirmed: total,
+          unconfirmed: 0,
+          total,
+        });
       }
-
-      setBalance({
-        confirmed: total,
-        unconfirmed: 0,
-        total,
-      });
-
-      // Fetch ordinals separately via GorillaPool
-      if (ordAddress) {
-        const fetchedOrdinals = await gorillaPoolService.getOrdinals(ordAddress);
-        setOrdinals(fetchedOrdinals);
-      }
-
     } catch (error) {
       console.error("[WalletToolbox] Failed to refresh balance:", error);
     }
-  }, [wallet, isInitialized, ordAddress, gorillaPoolService]);
+  }, [wallet, isInitialized, ordAddress, identityKey]);
 
   // Auto-refresh balance when wallet is initialized
   useEffect(() => {

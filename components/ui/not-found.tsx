@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState, MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Particles } from "@/components/ui/particles";
 import { Button } from "@/components/ui/button";
 
 interface NotFoundProps {
@@ -79,13 +78,6 @@ export default function NotFound({
       className={`relative h-[24rem] md:h-screen w-full flex items-center justify-center overflow-hidden bg-white dark:bg-black ${className}`}
       style={{ perspective: "1000px" }}
     >
-      <Particles
-        color={isDark ? "#ffffff" : "#000000"}
-        particleCount={particleCount}
-        particleSize={particleSize}
-        animate={animate}
-        className="absolute inset-0 z-0"
-      />
 
       <div
         ref={imageRef}
@@ -106,14 +98,6 @@ export default function NotFound({
           priority
         />
       </div>
-
-      <Particles
-        color={isDark ? "#ffffff" : "#000000"}
-        particleCount={particleCount}
-        particleSize={particleSize}
-        animate={animate}
-        className="absolute inset-0 z-20 pointer-events-none"
-      />
 
       <div className="relative z-30 mt-16 md:mt-0">
         <Link href={buttonHref} onClick={onButtonClick}>

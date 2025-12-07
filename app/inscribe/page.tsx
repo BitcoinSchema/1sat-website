@@ -1,16 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Page, PageContent, PageHeader, PageTitle } from "@/components/page-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Loader2, Upload, File as FileIcon, Image as ImageIcon, Music, Video, Code } from "lucide-react";
+import { Loader2, File as FileIcon, Image as ImageIcon, Music, Video, Code, Trash2, RefreshCcw, Plus, X } from "lucide-react";
+import {
+  Dropzone,
+  DropZoneArea,
+  DropzoneDescription,
+  DropzoneFileList,
+  DropzoneFileListItem,
+  DropzoneFileMessage,
+  DropzoneTrigger,
+  DropzoneMessage,
+  DropzoneRemoveFile,
+  DropzoneRetryFile,
+  useDropzone,
+} from "@/components/ui/dropzone";
+
+type MetaMap = {
+    key: string;
+    value: string;
+    idx: number;
+};
 
 export default function InscribePage() {
   const [activeTab, setActiveTab] = useState("file");
@@ -18,6 +34,7 @@ export default function InscribePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileType, setFileType] = useState<string>("");
   const [isMinting, setIsMinting] = useState(false);
+  const [metadata, setMetadata] = useState<MetaMap[]>([]);
 
   // BSV20 State
   const [bsv20Mode, setBsv20Mode] = useState<"mint" | "deploy">("mint");
@@ -36,20 +53,70 @@ export default function InscribePage() {
   const [bsv21Decimals, setBsv21Decimals] = useState("0");
   const [bsv21Max, setBsv21Max] = useState("");
 
+  const dropzone = useDropzone({
+    onDropFile: async (droppedFile) => {
+      setFile(droppedFile);
+      setFileType(droppedFile.type);
+      if (droppedFile.type.startsWith("image/")) {
+        setPreviewUrl(URL.createObjectURL(droppedFile));
+      } else {
+        setPreviewUrl(null);
+      }
+      return { status: "success", result: undefined };
+    },
+    onRemoveFile: () => {
+        setFile(null);
+        setFileType("");
+        setPreviewUrl(null);
+        setMetadata([]);
+    },
+    validation: {
+        maxFiles: 1,
+    },
+    shiftOnMaxFiles: true,
+  });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-        const f = e.target.files[0];
-        setFile(f);
-        setFileType(f.type);
-        
-        if (f.type.startsWith("image/")) {
-            setPreviewUrl(URL.createObjectURL(f));
-        } else {
-            setPreviewUrl(null);
-        }
-    }
+  const handleAddMetadata = () => {
+      let key = "";
+      let value = "";
+      const initialKeys = [];
+      
+      // Suggest "name" if not present and file is selected
+      if (!metadata.some((m) => m.key === "name")) {
+          key = "name";
+          value = file?.name || "";
+          initialKeys.push({ key, value, idx: metadata.length });
+      }
+
+      const currentData = metadata.concat(initialKeys);
+      // Always add a new empty row if we didn't just add the name, or if user clicked plus explicitly
+      if (initialKeys.length === 0 || metadata.length > 0) {
+           currentData.push({
+               key: "",
+               value: "",
+               idx: currentData.length
+           });
+      }
+      
+      setMetadata(currentData);
   };
+
+  const updateMetadata = (idx: number, field: "key" | "value", newValue: string) => {
+      setMetadata(prev => prev.map(m => {
+          if (m.idx === idx) {
+              return { 
+                  ...m, 
+                  [field]: field === "key" ? newValue.replaceAll(/[^a-zA-Z0-9]/g, "") : newValue 
+              };
+          }
+          return m;
+      }));
+  };
+
+  const removeMetadata = (idx: number) => {
+      setMetadata(prev => prev.filter(m => m.idx !== idx));
+  };
+
 
   const handleInscribe = async () => {
       setIsMinting(true);
@@ -111,15 +178,88 @@ export default function InscribePage() {
                                 <CardDescription>Upload an image, HTML, or other file.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="grid w-full items-center gap-1.5">
-                                    <Label htmlFor="file">File</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Input id="file" type="file" onChange={handleFileChange} className="cursor-pointer" />
-                                    </div>
+                                <div className="grid w-full gap-1.5">
+                                    <Label htmlFor="file" className="mb-2">File</Label>
+                                    <Dropzone {...dropzone}>
+                                        <DropzoneMessage />
+                                        <DropZoneArea>
+                                            <DropzoneTrigger className="w-full flex items-center justify-center py-8 rounded-lg hover:bg-muted/50 transition-colors bg-transparent">
+                                                <div className="flex flex-col items-center gap-2 text-center">
+                                                    <div className="p-2 bg-muted rounded-full">
+                                                        <FileIcon className="h-6 w-6 text-muted-foreground" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-sm font-medium">Click to select or drag file here</p>
+                                                        <p className="text-xs text-muted-foreground">Any file type up to 10MB</p>
+                                                    </div>
+                                                </div>
+                                            </DropzoneTrigger>
+                                            <DropzoneFileList className="mt-4">
+                                                {dropzone.fileStatuses.map((fileStatus) => (
+                                                    <DropzoneFileListItem key={fileStatus.id} file={fileStatus}>
+                                                        <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                                                            <div className="flex items-center justify-center h-8 w-8 rounded-sm bg-background border flex-shrink-0">
+                                                                {fileStatus.file.type.startsWith('image/') ? (
+                                                                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                                                ) : (
+                                                                    <FileIcon className="h-4 w-4 text-muted-foreground" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col min-w-0">
+                                                                <span className="text-sm font-medium truncate">{fileStatus.fileName}</span>
+                                                                <span className="text-xs text-muted-foreground">{(fileStatus.file.size / 1024).toFixed(2)} KB</span>
+                                                            </div>
+                                                        </div>
+                                                        <DropzoneRetryFile>
+                                                            <RefreshCcw className="h-4 w-4" />
+                                                        </DropzoneRetryFile>
+                                                        <DropzoneRemoveFile>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </DropzoneRemoveFile>
+                                                        <DropzoneFileMessage />
+                                                    </DropzoneFileListItem>
+                                                ))}
+                                            </DropzoneFileList>
+                                        </DropZoneArea>
+                                        <DropzoneDescription className="mt-2 text-center">
+                                            Files are processed locally before inscription.
+                                        </DropzoneDescription>
+                                    </Dropzone>
                                 </div>
-                                <div className="grid w-full items-center gap-1.5">
-                                     <Label htmlFor="meta">Metadata (Optional JSON)</Label>
-                                     <Textarea id="meta" placeholder="{ 'name': 'My Inscription' }" />
+                                
+                                <div className="space-y-2">
+                                     <div className="flex items-center justify-between">
+                                         <Label>Metadata (Optional)</Label>
+                                         <Button size="sm" variant="outline" onClick={handleAddMetadata} className="h-8 gap-1">
+                                             <Plus className="h-3.5 w-3.5" /> Add
+                                         </Button>
+                                     </div>
+                                     <div className="space-y-2">
+                                         {metadata.map((meta, i) => (
+                                             <div key={meta.idx} className="flex gap-2">
+                                                 <Input 
+                                                     placeholder="Key" 
+                                                     value={meta.key} 
+                                                     onChange={(e) => updateMetadata(meta.idx, "key", e.target.value)}
+                                                     className="flex-1"
+                                                 />
+                                                 <Input 
+                                                     placeholder="Value" 
+                                                     value={meta.value} 
+                                                     onChange={(e) => updateMetadata(meta.idx, "value", e.target.value)}
+                                                     className="flex-1"
+                                                 />
+                                                 <Button size="icon" variant="ghost" onClick={() => removeMetadata(meta.idx)} className="h-10 w-10 text-muted-foreground hover:text-destructive">
+                                                     <X className="h-4 w-4" />
+                                                 </Button>
+                                             </div>
+                                         ))}
+                                         {metadata.length === 0 && (
+                                             <div className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-md">
+                                                 No metadata added
+                                             </div>
+                                         )}
+                                     </div>
                                 </div>
                             </CardContent>
                             <CardFooter>

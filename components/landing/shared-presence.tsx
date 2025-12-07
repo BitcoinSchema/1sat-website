@@ -1,105 +1,268 @@
 "use client";
 
+import usePresence from "@convex-dev/presence/react";
+import { useMutation } from "convex/react";
 import { MousePointer2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { api } from "../../convex/_generated/api";
+import { useWallet } from "@/providers/wallet-provider";
+import { wifToAddress } from "@/lib/keys";
 
-import { TradeDialog } from "./trade-dialog";
-
-interface Cursor {
-	id: string;
-	x: number; // Percentage 0-100
-	y: number; // Percentage 0-100
-	color: string;
-	label: string;
+interface CursorData {
+  x: number;
+  y: number;
 }
 
-const COLORS = ["#ff3366", "#33ccff", "#33ff99", "#ffcc33", "#cc33ff"];
+interface Cursor {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+  label: string;
+  address: string;
+  online: boolean;
+}
+
+// Cursor colors - prioritized from most colorful to least
+const CURSOR_COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "hsl(var(--primary))",
+  "hsl(var(--accent))",
+  "hsl(var(--destructive))",
+  "hsl(var(--secondary))",
+];
+
+// Generate a random vibrant color when we run out of base colors
+function generateRandomShade(seed: number): string {
+  const hue = (seed * 137.508) % 360;
+  const saturation = 60 + (seed % 30);
+  const lightness = 45 + (seed % 20);
+  return `hsl(${Math.round(hue)}, ${saturation}%, ${lightness}%)`;
+}
+
+// Get color by index
+function getCursorColor(index: number): string {
+  if (index < CURSOR_COLORS.length) {
+    return CURSOR_COLORS[index];
+  }
+  return generateRandomShade(index);
+}
+
+// Truncate address for display
+function truncateAddress(address: string): string {
+  if (address.length <= 12) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
 
 export function SharedPresence() {
-	const [cursors, setCursors] = useState<Cursor[]>([]);
-	const [selectedPeer, setSelectedPeer] = useState<string | null>(null);
-	const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const throttleRef = useRef<number>(0);
 
-	useEffect(() => {
-		// Initialize mock cursors
-		const mockCursors: Cursor[] = Array.from({ length: 4 }).map((_, i) => ({
-			id: `peer-${Math.random().toString(36).substr(2, 5)}`,
-			x: Math.random() * 80 + 10,
-			y: Math.random() * 80 + 10,
-			color: COLORS[i % COLORS.length],
-			label: `User ${Math.floor(Math.random() * 1000)}`,
-		}));
-		setCursors(mockCursors);
+  // Get wallet context
+  const { walletKeys, isWalletLocked } = useWallet();
 
-		// Animate cursors
-		const interval = setInterval(() => {
-			setCursors((prev) =>
-				prev.map((cursor) => ({
-					...cursor,
-					x: Math.max(5, Math.min(95, cursor.x + (Math.random() - 0.5) * 10)),
-					y: Math.max(5, Math.min(95, cursor.y + (Math.random() - 0.5) * 10)),
-				})),
-			);
-		}, 2000);
+  // Derive the user's address from wallet keys
+  const myAddress = useMemo(() => {
+    if (walletKeys?.ordPk && !isWalletLocked) {
+      try {
+        return wifToAddress(walletKeys.ordPk);
+      } catch (e) {
+        console.error("[SharedPresence] Failed to derive address:", e);
+        return null;
+      }
+    }
+    return null;
+  }, [walletKeys, isWalletLocked]);
 
-		return () => clearInterval(interval);
-	}, []);
+  // Generate a unique session ID for this browser tab
+  const sessionSuffix = useMemo(() => {
+    if (typeof window === "undefined") return Math.random().toString(36).slice(2, 6);
+    let suffix = sessionStorage.getItem("presence-session-suffix");
+    if (!suffix) {
+      suffix = Math.random().toString(36).slice(2, 6);
+      sessionStorage.setItem("presence-session-suffix", suffix);
+    }
+    return suffix;
+  }, []);
 
-	const handleCursorClick = (e: React.SyntheticEvent, cursor: Cursor) => {
-		e.stopPropagation();
-		setSelectedPeer(cursor.label);
-	};
+  // Use address + session suffix as userId
+  const userId = useMemo(() => {
+    if (myAddress) {
+      return `${myAddress}:${sessionSuffix}`;
+    }
+    // Fallback for anonymous users
+    if (typeof window === "undefined") return `anon-${Math.random().toString(36).slice(2, 9)}`;
+    let id = sessionStorage.getItem("presence-user-id");
+    if (!id) {
+      id = `anon-${Math.random().toString(36).slice(2, 9)}`;
+      sessionStorage.setItem("presence-user-id", id);
+    }
+    return id;
+  }, [myAddress, sessionSuffix]);
 
-	const handleContextMenu = (e: React.SyntheticEvent, cursor: Cursor) => {
-		e.preventDefault();
-		e.stopPropagation();
-		setSelectedPeer(cursor.label);
-	};
-	return (
-		<div
-			ref={containerRef}
-			className="w-full h-full overflow-hidden pointer-events-none"
-		>
-			{cursors.map((cursor) => (
-				<button
-					key={cursor.id}
-					type="button" // Important for buttons
-					className="absolute transition-all duration-[2000ms] ease-in-out pointer-events-auto cursor-pointer group p-0 border-none bg-transparent hover:scale-110 z-50" // Adjust styling
-					style={{
-						left: `${cursor.x}%`,
-						top: `${cursor.y}%`,
-						width: "fit-content", // To ensure it doesn't take full width
-						height: "fit-content", // To ensure it doesn't take full height
-					}}
-					onClick={(e) => handleCursorClick(e, cursor)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							handleCursorClick(e as React.SyntheticEvent, cursor); // Fix 'any' here
-						}
-					}}
-					onContextMenu={(e) => handleContextMenu(e, cursor)}
-				>
-					<div className="relative">
-						<MousePointer2
-							className="w-5 h-5 transform -rotate-12 drop-shadow-md"
-							style={{ color: cursor.color, fill: cursor.color }}
-						/>
-						<div
-							className="absolute left-4 top-4 px-2 py-1 text-xs rounded-full text-white font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
-							style={{ backgroundColor: cursor.color }}
-						>
-							{cursor.label}
-						</div>
-						<div className="absolute -inset-4 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse -z-10" />
-					</div>
-				</button>
-			))}
+  // Use official presence hook
+  const presenceState = usePresence(api.presence, "main-room", userId);
 
-			<TradeDialog
-				open={!!selectedPeer}
-				onOpenChange={(open) => !open && setSelectedPeer(null)}
-				peerId={selectedPeer || ""}
-			/>
-		</div>
-	);
+  // Mutations
+  const updateCursor = useMutation(api.presence.updateCursor);
+  const sendTradeRequest = useMutation(api.trades.sendTradeRequest);
+
+  // Track mouse movement and sync to server
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const now = Date.now();
+    if (now - throttleRef.current < 66) return; // ~15fps
+    throttleRef.current = now;
+
+    if (!containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    const clampedX = Math.max(0, Math.min(100, x));
+    const clampedY = Math.max(0, Math.min(100, y));
+
+    updateCursor({
+      roomId: "main-room",
+      userId: userId,
+      data: { x: clampedX, y: clampedY },
+    }).catch(() => { });
+  }, [updateCursor, userId]);
+
+  // Set up mouse tracking
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [handleMouseMove]);
+
+  // Convert presence state to cursor format
+  const cursors: Cursor[] = useMemo(() => {
+    if (!presenceState) return [];
+
+    return presenceState
+      .filter((p) => p.userId !== userId && p.online)
+      .map((p, index) => {
+        const data = p.data as CursorData | undefined;
+        const x = data?.x ?? 50;
+        const y = data?.y ?? 50;
+
+        // Extract wallet address from userId (format: "address:session" or "anon-xxx")
+        const walletAddress = p.userId.includes(":") ? p.userId.split(":")[0] : p.userId;
+        const isWalletUser = walletAddress.startsWith("1");
+
+        return {
+          id: p.userId,
+          x,
+          y,
+          color: getCursorColor(index),
+          label: isWalletUser ? truncateAddress(walletAddress) : walletAddress,
+          address: walletAddress,
+          online: p.online,
+        };
+      });
+  }, [presenceState, userId]);
+
+  // Handle clicking on a cursor to initiate trade
+  const handleCursorClick = async (e: React.SyntheticEvent, cursor: Cursor) => {
+    e.stopPropagation();
+
+    if (!myAddress) {
+      alert("Connect your wallet to trade. You need an unlocked wallet to initiate trades.");
+      return;
+    }
+
+    if (!cursor.address.startsWith("1")) {
+      alert("Cannot trade with anonymous user. The other user needs to connect their wallet.");
+      return;
+    }
+
+    try {
+      const result = await sendTradeRequest({
+        fromUserId: userId,
+        toUserId: cursor.id,
+      });
+
+      if (result.alreadyExists) {
+        console.info("Trade request pending", cursor.label);
+      } else {
+        console.info("Trade request sent!", cursor.label);
+      }
+    } catch (error) {
+      console.error("Failed to send trade request:", error);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, cursor: Cursor) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleCursorClick(e, cursor);
+  };
+
+  const onlineCount = cursors.length;
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full overflow-hidden pointer-events-none relative"
+    >
+      {/* Online indicator */}
+      {presenceState && (
+        <div className="absolute top-4 right-4 pointer-events-auto z-50">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-primary/20 text-sm">
+            <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-muted-foreground">
+              {onlineCount + 1} online
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Other users' cursors */}
+      {cursors.map((cursor) => (
+        <button
+          key={cursor.id}
+          type="button"
+          className="absolute pointer-events-auto cursor-pointer group p-0 border-none bg-transparent hover:scale-110 z-50"
+          style={{
+            left: `${cursor.x}%`,
+            top: `${cursor.y}%`,
+            transform: "translate(-2px, -2px)",
+            transition: "left 0.1s ease-out, top 0.1s ease-out",
+          }}
+          onClick={(e) => handleCursorClick(e, cursor)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleCursorClick(e as React.SyntheticEvent, cursor);
+            }
+          }}
+          onContextMenu={(e) => handleContextMenu(e, cursor)}
+          aria-label={`Click to trade with ${cursor.label}`}
+        >
+          <div className="relative" style={{ color: cursor.color }}>
+            <MousePointer2
+              className="w-6 h-6 transform -rotate-12 drop-shadow-lg"
+              fill="currentColor"
+              strokeWidth={1}
+            />
+            <div
+              className="absolute left-6 top-6 px-2 py-1 text-xs rounded-full text-white font-medium whitespace-nowrap shadow-lg font-mono"
+              style={{ backgroundColor: cursor.color }}
+            >
+              {cursor.label}
+            </div>
+            <div
+              className="absolute -inset-3 rounded-full opacity-0 group-hover:opacity-30 transition-opacity -z-10"
+              style={{ backgroundColor: cursor.color }}
+            />
+          </div>
+        </button>
+      ))}
+    </div>
+  );
 }

@@ -21,7 +21,7 @@ import {
   SidebarInput,
 } from "@/components/ui/sidebar";
 import { useHotkeys } from "@/hooks/use-hotkeys";
-import { FetchStatus, MARKET_API_HOST, ORDFS } from "@/lib/constants";
+import { FetchStatus, ORDFS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 
@@ -60,6 +60,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
   useEffect(() => {
     if (!searchTerm || searchTerm.length < 2) {
       setAutofillResults([]);
+      setFetchStatus(FetchStatus.Idle);
       return;
     }
 
@@ -67,21 +68,17 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
     const timeoutId = setTimeout(async () => {
       setFetchStatus(FetchStatus.Loading);
       try {
-        const [bsv20Res, bsv21Res] = await Promise.all([
-          fetch(`${MARKET_API_HOST}/ticker/autofill/bsv20/${searchTerm}`, {
-            signal: controller.signal,
-          }),
-          fetch(`${MARKET_API_HOST}/ticker/autofill/bsv21/${searchTerm}`, {
-            signal: controller.signal,
-          }),
-        ]);
+        // Use local API route to avoid CORS issues
+        const response = await fetch(`/api/autofill?term=${encodeURIComponent(searchTerm)}`, {
+          signal: controller.signal,
+        });
 
-        const [bsv20, bsv21] = await Promise.all([
-          bsv20Res.ok ? bsv20Res.json() : [],
-          bsv21Res.ok ? bsv21Res.json() : [],
-        ]);
-
-        setAutofillResults([...(bsv20 || []), ...(bsv21 || [])]);
+        if (response.ok) {
+          const results = await response.json();
+          setAutofillResults(results || []);
+        } else {
+          setAutofillResults([]);
+        }
         setFetchStatus(FetchStatus.Success);
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
@@ -186,62 +183,69 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 
           {searchTerm && autofillResults.length > 0 && <CommandSeparator />}
 
-          {/* Autocomplete Results */}
+          {/* Autocomplete Results - BSV21 first, then BSV20 */}
           {autofillResults.length > 0 && (
             <CommandGroup heading="Tokens">
-              {autofillResults.map((token) => {
-                const isBsv20 = token.type === "BSV20";
-                return (
-                  <CommandItem
-                    key={token.id}
-                    value={`${token.tick || ""} ${token.id}`}
-                    onSelect={() => handleTokenSelect(token)}
-                    className="py-3"
-                  >
-                    <div className="flex items-center w-full gap-3">
-                      {/* Icon */}
-                      <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded border border-border bg-muted flex items-center justify-center">
-                        {token.icon ? (
-                          <Image
-                            src={`${ORDFS}/${token.icon}`}
-                            alt={token.tick || ""}
-                            width={32}
-                            height={32}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            #
+              {[...autofillResults]
+                .sort((a, b) => {
+                  // BSV21 comes before BSV20
+                  if (a.type === "BSV21" && b.type === "BSV20") return -1;
+                  if (a.type === "BSV20" && b.type === "BSV21") return 1;
+                  return 0;
+                })
+                .map((token) => {
+                  const isBsv20 = token.type === "BSV20";
+                  return (
+                    <CommandItem
+                      key={token.id}
+                      value={`${token.tick || ""} ${token.id}`}
+                      onSelect={() => handleTokenSelect(token)}
+                      className="py-3"
+                    >
+                      <div className="flex items-center w-full gap-3">
+                        {/* Icon */}
+                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded border border-border bg-muted flex items-center justify-center">
+                          {token.icon ? (
+                            <Image
+                              src={`${ORDFS}/${token.icon}`}
+                              alt={token.tick || ""}
+                              width={32}
+                              height={32}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              #
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="truncate font-medium">
+                            {token.tick || "Unknown"}
                           </span>
-                        )}
-                      </div>
+                          <span className="truncate text-xs text-muted-foreground font-mono">
+                            {isBsv20
+                              ? `#${token.num || token.id.slice(0, 8)}`
+                              : `${token.id.slice(0, 12)}...`}
+                          </span>
+                        </div>
 
-                      {/* Info */}
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <span className="truncate font-medium">
-                          {token.tick || "Unknown"}
-                        </span>
-                        <span className="truncate text-xs text-muted-foreground font-mono">
-                          {isBsv20
-                            ? `#${token.num || token.id.slice(0, 8)}`
-                            : `${token.id.slice(0, 12)}...`}
-                        </span>
-                      </div>
-
-                      {/* Type Badge */}
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${isBsv20
+                        {/* Type Badge */}
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${isBsv20
                             ? "text-orange-400 border-orange-400/30"
                             : "text-purple-400 border-purple-400/30"
-                          }`}
-                      >
-                        {token.type}
-                      </Badge>
-                    </div>
-                  </CommandItem>
-                );
-              })}
+                            }`}
+                        >
+                          {token.type}
+                        </Badge>
+                      </div>
+                    </CommandItem>
+                  );
+                })}
             </CommandGroup>
           )}
         </CommandList>

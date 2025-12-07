@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ConvexClientProvider } from "./ConvexClientProvider";
 import { DualSidebarLayout } from "@/components/dual-sidebar-layout";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -41,18 +42,21 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <QueryProvider>
-            <KeyboardShortcuts />
-            <WalletProvider>
-              <WalletToolboxProvider>
-                <WalletBridge>
-                  <DualSidebarLayout>{children}</DualSidebarLayout>
-                </WalletBridge>
-              </WalletToolboxProvider>
-            </WalletProvider>
-          </QueryProvider>
+          <ConvexClientProvider>
+            <QueryProvider>
+              <KeyboardShortcuts />
+              <WalletProvider>
+                <WalletToolboxProvider>
+                  <WalletBridge>
+                    <DualSidebarLayout>{children}</DualSidebarLayout>
+                  </WalletBridge>
+                </WalletToolboxProvider>
+              </WalletProvider>
+            </QueryProvider>
+          </ConvexClientProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
+
