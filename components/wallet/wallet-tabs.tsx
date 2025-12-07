@@ -8,7 +8,6 @@ const tabs = [
 	{ value: "bsv20", label: "BSV20", href: "/wallet/bsv20" },
 	{ value: "bsv21", label: "BSV21", href: "/wallet/bsv21" },
 	{ value: "history", label: "History", href: "/wallet/history" },
-	{ value: "settings", label: "Settings", href: "/wallet/settings" },
 ];
 
 export function WalletTabs() {
@@ -31,7 +30,7 @@ export function WalletTabs() {
 			}}
 			className="w-full"
 		>
-			<TabsList className="grid w-full grid-cols-5">
+			<TabsList>
 				{tabs.map((tab) => (
 					<TabsTrigger key={tab.value} value={tab.value}>
 						{tab.label}

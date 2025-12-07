@@ -5,9 +5,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Particles } from "@/components/ui/particles";
+import { useWallet } from "@/providers/wallet-provider";
 import { SharedPresence } from "./shared-presence";
 
 export function LandingHero() {
+	const { hasWallet } = useWallet();
+
 	return (
 		<div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background selection:bg-primary/20">
 			{/* Background Layers */}
@@ -51,9 +54,15 @@ export function LandingHero() {
 						className="h-16 px-10 text-lg shadow-[0_0_20px_-5px_var(--primary)] hover:shadow-[0_0_30px_-5px_var(--primary)] transition-all duration-300 scale-100 hover:scale-105 font-bold"
 						asChild
 					>
-						<Link href="/wallet/create">
-							<Wallet className="mr-2 w-6 h-6" /> Create Wallet
-						</Link>
+						{hasWallet ? (
+							<Link href="/wallet">
+								<Wallet className="mr-2 w-6 h-6" /> My Wallet
+							</Link>
+						) : (
+							<Link href="/wallet/create">
+								<Wallet className="mr-2 w-6 h-6" /> Create Wallet
+							</Link>
+						)}
 					</Button>
 					<Button
 						size="lg"

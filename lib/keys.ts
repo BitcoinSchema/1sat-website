@@ -4,10 +4,25 @@
 // It should ONLY be imported and used in Client Components ("use client").
 // Never handle raw private keys or mnemonics on the server side.
 
-import { HD, Mnemonic, type PrivateKey } from "@bsv/sdk";
+import { HD, Mnemonic, PrivateKey } from "@bsv/sdk";
 import type { Keys } from "@/lib/types";
 
 export type { Keys };
+
+/**
+ * Convert a WIF (Wallet Import Format) private key to hex format
+ * Required for wallet-toolbox which uses rootKeyHex format
+ */
+export const wifToRootKeyHex = (wif: string): string => {
+  return PrivateKey.fromWif(wif).toString();
+};
+
+/**
+ * Get the public address from a WIF private key
+ */
+export const wifToAddress = (wif: string): string => {
+  return PrivateKey.fromWif(wif).toAddress();
+};
 
 export const YOURS_WALLET_PATH = "m/44'/236'/0'/1/0";
 export const YOURS_ID_PATH = "m/0'/236'/0'/0/0";
