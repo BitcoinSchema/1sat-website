@@ -1,8 +1,19 @@
+import {
+  Page,
+  PageContent,
+  PageHeader,
+  PageTitle,
+} from "@/components/page-layout";
+
 export default function MinePage() {
-	return (
-		<div className="p-4">
-			<h1 className="text-2xl font-bold mb-4">Mine</h1>
-			<p>Mining interface.</p>
-		</div>
-	);
+  return (
+    <Page>
+      <PageHeader>
+        <PageTitle>Mine</PageTitle>
+      </PageHeader>
+      <PageContent>
+        <p className="text-muted-foreground">Mining interface.</p>
+      </PageContent>
+    </Page>
+  );
 }

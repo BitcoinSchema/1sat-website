@@ -8,10 +8,13 @@
  */
 
 import { useState, useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { PrivateKey } from "@bsv/sdk";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 import { wifToRootKeyHex, wifToAddress } from "@/lib/keys";
+import { Page, PageContent, PageHeader, PageTitle } from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -148,100 +151,106 @@ export default function WalletDiagnosticPage() {
   ];
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Wallet Diagnostics</h1>
+    <Page>
+      <PageHeader className="gap-2 justify-start">
+        <Button variant="ghost" size="icon" asChild className="-ml-2">
+          <Link href="/wallet/settings">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div className="flex-1">
+          <PageTitle>Wallet Diagnostics</PageTitle>
           <p className="text-muted-foreground">Debug and test wallet-toolbox integration</p>
         </div>
         <Badge variant={wallet.isWalletLocked ? "destructive" : "default"}>
           {wallet.isWalletLocked ? "Locked" : "Unlocked"}
         </Badge>
-      </div>
+      </PageHeader>
+      <PageContent className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Legacy Wallet Provider */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Legacy Wallet Provider</CardTitle>
+              <CardDescription>Current wallet-provider.tsx state</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {walletProviderDiagnostics.map((item, i) => (
+                <DiagnosticRow key={i} item={item} />
+              ))}
+            </CardContent>
+          </Card>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Legacy Wallet Provider */}
+          {/* Wallet Toolbox Provider */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Wallet Toolbox Provider</CardTitle>
+              <CardDescription>New wallet-toolbox-provider.tsx state</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {toolboxDiagnostics.map((item, i) => (
+                <DiagnosticRow key={i} item={item} />
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Balance Comparison */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Legacy Wallet Provider</CardTitle>
-            <CardDescription>Current wallet-provider.tsx state</CardDescription>
+            <CardTitle className="text-lg">Balance Comparison</CardTitle>
+            <CardDescription>Compare balances between legacy and toolbox providers</CardDescription>
           </CardHeader>
           <CardContent>
-            {walletProviderDiagnostics.map((item, i) => (
+            {balanceDiagnostics.map((item, i) => (
               <DiagnosticRow key={i} item={item} />
             ))}
           </CardContent>
         </Card>
 
-        {/* Wallet Toolbox Provider */}
+        {/* Test Actions */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Wallet Toolbox Provider</CardTitle>
-            <CardDescription>New wallet-toolbox-provider.tsx state</CardDescription>
+            <CardTitle className="text-lg">Test Actions</CardTitle>
+            <CardDescription>Run diagnostic tests</CardDescription>
           </CardHeader>
-          <CardContent>
-            {toolboxDiagnostics.map((item, i) => (
-              <DiagnosticRow key={i} item={item} />
-            ))}
+          <CardContent className="space-y-4">
+            <div className="flex gap-4">
+              <Button
+                onClick={testToolboxInit}
+                disabled={isTestingToolbox || wallet.isWalletLocked}
+              >
+                {isTestingToolbox ? "Testing..." : "Test Toolbox Init"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => toolbox.refreshBalance()}
+                disabled={!toolbox.isInitialized}
+              >
+                Refresh Toolbox Balance
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => wallet.syncWallet()}
+                disabled={wallet.isWalletLocked}
+              >
+                Sync Legacy Wallet
+              </Button>
+            </div>
+
+            {testResults.length > 0 && (
+              <>
+                <Separator />
+                <div className="bg-muted p-4 rounded-lg font-mono text-sm space-y-1">
+                  {testResults.map((result, i) => (
+                    <div key={i}>{result}</div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Balance Comparison */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Balance Comparison</CardTitle>
-          <CardDescription>Compare balances between legacy and toolbox providers</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {balanceDiagnostics.map((item, i) => (
-            <DiagnosticRow key={i} item={item} />
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Test Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Test Actions</CardTitle>
-          <CardDescription>Run diagnostic tests</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4">
-            <Button
-              onClick={testToolboxInit}
-              disabled={isTestingToolbox || wallet.isWalletLocked}
-            >
-              {isTestingToolbox ? "Testing..." : "Test Toolbox Init"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => toolbox.refreshBalance()}
-              disabled={!toolbox.isInitialized}
-            >
-              Refresh Toolbox Balance
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => wallet.syncWallet()}
-              disabled={wallet.isWalletLocked}
-            >
-              Sync Legacy Wallet
-            </Button>
-          </div>
-
-          {testResults.length > 0 && (
-            <>
-              <Separator />
-              <div className="bg-muted p-4 rounded-lg font-mono text-sm space-y-1">
-                {testResults.map((result, i) => (
-                  <div key={i}>{result}</div>
-                ))}
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      </PageContent>
+    </Page>
   );
 }
