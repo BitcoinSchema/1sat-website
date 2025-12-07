@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, Loader2, LogOut, RefreshCw, Wallet } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -152,7 +153,6 @@ export function WalletSettingsForm() {
 								recovery phrase backed up.
 							</span>
 						</div>
-						import Link from "next/link";
 						<Button variant="destructive" size="sm" asChild>
 							<Link href="/wallet/delete">
 								<LogOut className="h-4 w-4 mr-2" />

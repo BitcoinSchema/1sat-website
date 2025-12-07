@@ -3,32 +3,41 @@
 import { usePathname, useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export function WalletTabs({ children }: { children: React.ReactNode }) {
+const tabs = [
+	{ value: "ordinals", label: "Ordinals", href: "/wallet/ordinals" },
+	{ value: "bsv20", label: "BSV20", href: "/wallet/bsv20" },
+	{ value: "bsv21", label: "BSV21", href: "/wallet/bsv21" },
+	{ value: "history", label: "History", href: "/wallet/history" },
+	{ value: "settings", label: "Settings", href: "/wallet/settings" },
+];
+
+export function WalletTabs() {
 	const router = useRouter();
 	const pathname = usePathname();
 
-	// Determine active tab from URL
-	const segment = pathname?.split("/").pop();
-	// If path is /wallet, segment is 'wallet', default to 'overview'
-	const currentTab = segment === "wallet" ? "overview" : segment;
-
-	const handleTabChange = (value: string) => {
-		if (value === "overview") {
-			router.push("/wallet");
-		} else {
-			router.push(`/wallet/${value}`);
-		}
-	};
+	// Determine the active tab based on the current pathname
+	const activeTab =
+		tabs.find((tab) => pathname.startsWith(tab.href))?.value || "ordinals";
 
 	return (
-		<Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-			<TabsList>
-				<TabsTrigger value="overview">Overview</TabsTrigger>
-				<TabsTrigger value="ordinals">Ordinals</TabsTrigger>
-				<TabsTrigger value="bsv20">BSV20</TabsTrigger>
-				<TabsTrigger value="bsv21">BSV21</TabsTrigger>
+		<Tabs
+			defaultValue={activeTab}
+			value={activeTab}
+			onValueChange={(value) => {
+				const tab = tabs.find((t) => t.value === value);
+				if (tab) {
+					router.push(tab.href);
+				}
+			}}
+			className="w-full"
+		>
+			<TabsList className="grid w-full grid-cols-5">
+				{tabs.map((tab) => (
+					<TabsTrigger key={tab.value} value={tab.value}>
+						{tab.label}
+					</TabsTrigger>
+				))}
 			</TabsList>
-			<div className="mt-4">{children}</div>
 		</Tabs>
 	);
 }

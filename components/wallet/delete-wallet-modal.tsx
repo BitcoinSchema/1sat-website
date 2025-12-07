@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Download, LogOut } from "lucide-react";
+import { Download, LogOut } from "lucide-react";
 import { useState } from "react";
 import {
 	AlertDialog,
@@ -48,38 +48,34 @@ export function DeleteWalletModal({
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent className="bg-background border-destructive sm:max-w-[425px]">
+			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle className="flex items-center gap-2 text-destructive">
-						<LogOut className="h-5 w-5" />
+					<AlertDialogTitle className="flex items-center gap-2">
+						<LogOut className="h-5 w-5 text-destructive" />
 						Sign Out & Remove Wallet
 					</AlertDialogTitle>
-					<AlertDialogDescription className="text-muted-foreground">
-						This will remove your wallet keys from this browser's storage.
+
+					<AlertDialogDescription>
+						This action cannot be undone. This will permanently delete your
+						wallet keys from your browser's storage.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
-				<div className="p-4 border border-yellow-500/20 bg-yellow-500/10 rounded-md text-yellow-600 dark:text-yellow-400 text-sm">
-					<div className="flex items-center gap-2 font-semibold mb-1">
-						<AlertTriangle className="h-4 w-4" />
-						Warning: This action is irreversible
-					</div>
+				<div className="py-4 text-sm text-muted-foreground">
 					<p>
-						Make sure you have your recovery phrase saved safely. Without it,
+						Please ensure you have backed up your recovery phrase. Without it,
 						you will lose access to your funds forever.
 					</p>
 				</div>
 
-				<AlertDialogFooter className="gap-2 sm:gap-0">
-					{/* AlertDialogCancel implies cancel, action implies confirm. 
-                        We want a secondary 'Export' action which acts neither as cancel nor confirm in the traditional sense,
-                        but triggers an action. We can use Button inside footer.
-                    */}
+				<AlertDialogFooter>
 					<AlertDialogCancel>Cancel</AlertDialogCancel>
+
 					<Button variant="secondary" onClick={handleExport}>
 						<Download className="mr-2 h-4 w-4" />
 						Export Keys
 					</Button>
+
 					<AlertDialogAction
 						onClick={handleDelete}
 						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
