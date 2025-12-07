@@ -1,0 +1,16 @@
+{
+  "name": "1Sat Wallet",
+  "short_name": "1Sat",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "description": "The decentralized exchange for Ordinals and BSV20.",
+  "icons": [
+    {
+      "src": "/oneSatLogoDark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
