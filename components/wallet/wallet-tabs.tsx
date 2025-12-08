@@ -3,8 +3,10 @@
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Wallet } from "lucide-react";
 
 const tabs = [
+  { value: "overview", label: "Wallet", href: "/wallet", icon: Wallet },
   { value: "ordinals", label: "Ordinals", href: "/wallet/ordinals" },
   { value: "bsv20", label: "BSV20", href: "/wallet/bsv20" },
   { value: "bsv21", label: "BSV21", href: "/wallet/bsv21" },
@@ -19,9 +21,11 @@ export function WalletTabs({ children }: WalletTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const sortedTabs = [...tabs].sort((a, b) => b.href.length - a.href.length);
+
   // Determine the active tab based on the current pathname
   const activeTab =
-    tabs.find((tab) => pathname.startsWith(tab.href))?.value || "ordinals";
+    sortedTabs.find((tab) => pathname.startsWith(tab.href))?.value || "overview";
 
   return (
     <>
@@ -38,7 +42,8 @@ export function WalletTabs({ children }: WalletTabsProps) {
       >
         <TabsList>
           {tabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
+            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+              {tab.icon && <tab.icon className="h-4 w-4" />}
               {tab.label}
             </TabsTrigger>
           ))}
