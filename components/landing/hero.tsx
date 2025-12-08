@@ -37,11 +37,10 @@ export function LandingHero() {
         </div>
 
         {/* CTAs */}
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto p-4">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Button
-              size="lg"
-              className="h-16 px-10 text-lg shadow-[0_0_20px_-5px_var(--primary)] hover:shadow-[0_0_30px_-5px_var(--primary)] transition-all duration-300 scale-100 hover:scale-105 font-bold"
+              className="shadow-[0_0_20px_-5px_var(--primary)] hover:shadow-[0_0_30px_-5px_var(--primary)] transition-all duration-300 scale-100 hover:scale-105 font-bold"
               asChild
             >
               {hasWallet ? (
@@ -55,9 +54,8 @@ export function LandingHero() {
               )}
             </Button>
             <Button
-              size="lg"
               variant="outline"
-              className="h-16 px-10 text-lg border-primary/20 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 bg-background/50 backdrop-blur-sm"
+              className="border-primary/20 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 bg-background/50 backdrop-blur-sm"
               asChild
             >
               <Link href="/activity">

@@ -86,10 +86,10 @@ export function Logo3D() {
     });
   }, []);
 
-  if (!colors || !font) return <div className="h-[200px] w-full bg-transparent" />;
+  if (!colors || !font) return <div className="h-[280px] md:h-[360px] w-full bg-transparent" />;
 
   return (
-    <div className="w-full min-w-0 h-[400px] relative cursor-default overflow-hidden">
+    <div className="w-full min-w-0 h-[280px] md:h-[360px] relative cursor-default overflow-hidden">
       <Canvas
         dpr={[1, 2]}
         camera={{ position: [0, 0, 28], fov: 30 }}
@@ -116,11 +116,12 @@ function Scene({ colors, font }: {
     border: THREE.Color
   }; font: any
 }) {
+  const isMobile = useIsMobile();
   const controls = useControls({
     Layout: folder({
       wordGap: { value: 10, min: 5, max: 50, step: 1 },
       leftWordOffset: { value: -13, min: -30, max: 0, step: 0.5 },
-      rightWordOffset: { value: 11, min: 0, max: 30, step: 0.5 },
+      rightWordOffset: { value: 10, min: 0, max: 30, step: 0.5 },
       letterSize: { value: 5.5, min: 3, max: 10, step: 0.1 },
       letterSpacing: { value: 0.90, min: 0.5, max: 2.0, step: 0.05 },
     }),
@@ -235,56 +236,79 @@ function Scene({ colors, font }: {
         floatingRange={controls.floatingRange as [number, number]}
       >
         <Rig intensity={1}>
-          <Center top>
-            {/* Main text - stacked vertically on mobile */}
-            <group position={[0, -1, 0]}>
-              {/* 1SAT */}
+          {/* Desktop layout - side by side, no Center wrapper needed since Word self-centers */}
+          {!isMobile && (
+            <group position={[0, -2, 0]}>
               <Word
                 text="1SAT"
-                position={isMobile ? [0, controls.letterSize * 0.6, 0] : [controls.leftWordOffset, 0, 0]}
-                size={isMobile ? controls.letterSize * 0.8 : controls.letterSize}
+                position={[controls.leftWordOffset, 0, 0]}
+                size={controls.letterSize}
                 baseColor={colors.primary}
                 borderColor={colors.primaryForeground}
                 font={font}
                 letterSpacingMult={controls.letterSpacing}
                 materialProps={controls}
               />
-              {/* WALLET */}
               <Word
                 text="WALLET"
-                position={isMobile ? [0, -controls.letterSize * 0.5, 0] : [controls.rightWordOffset, 0, 0]}
-                size={isMobile ? controls.letterSize * 0.8 : controls.letterSize}
+                position={[controls.rightWordOffset, 0, 0]}
+                size={controls.letterSize}
                 baseColor={colors.secondary}
                 borderColor={colors.secondaryForeground}
-                brokenIndices={[1, 4]} // A and E flicker
+                brokenIndices={[1, 4]}
                 font={font}
                 letterSpacingMult={controls.letterSpacing}
                 materialProps={controls}
               />
             </group>
-          </Center>
+          )}
 
-          {/* Neon Sign - Larger, moved up */}
-          <group position={[0, -2, 0]}>
-            <Center>
-              <Text3D
-                font={font.data}
-                size={1.0}
-                height={0.15}
-                letterSpacing={0.05}
-                bevelEnabled
-                bevelSize={0.02}
-                bevelThickness={0.03}
-              >
-                LIVE P2P NETWORK
-                <meshStandardMaterial
-                  color="#10b981"
-                  emissive="#10b981"
-                  emissiveIntensity={2.5}
-                  toneMapped={false}
-                />
-              </Text3D>
-            </Center>
+          {/* Mobile layout - stacked vertically, each word self-centers */}
+          {isMobile && (
+            <group position={[0, -2, 0]}>
+              <Word
+                text="1SAT"
+                position={[0, 2, 0]}
+                size={2.8}
+                baseColor={colors.primary}
+                borderColor={colors.primaryForeground}
+                font={font}
+                letterSpacingMult={controls.letterSpacing}
+                materialProps={controls}
+              />
+              <Word
+                text="WALLET"
+                position={[0, -1.5, 0]}
+                size={2.8}
+                baseColor={colors.secondary}
+                borderColor={colors.secondaryForeground}
+                brokenIndices={[1, 4]}
+                font={font}
+                letterSpacingMult={controls.letterSpacing}
+                materialProps={controls}
+              />
+            </group>
+          )}
+
+          {/* Neon Sign - manually centered */}
+          <group position={[isMobile ? -4 : -7, isMobile ? -5 : -4.5, 0]}>
+            <Text3D
+              font={font.data}
+              size={isMobile ? 0.6 : 1.0}
+              height={isMobile ? 0.1 : 0.15}
+              letterSpacing={0.05}
+              bevelEnabled
+              bevelSize={isMobile ? 0.01 : 0.02}
+              bevelThickness={isMobile ? 0.02 : 0.03}
+            >
+              LIVE P2P NETWORK
+              <meshStandardMaterial
+                color="#10b981"
+                emissive="#10b981"
+                emissiveIntensity={2.5}
+                toneMapped={false}
+              />
+            </Text3D>
           </group>
         </Rig>
       </Float>
