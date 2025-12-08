@@ -16,7 +16,7 @@ export function LandingHero() {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background selection:bg-primary/20">
       {/* Background Layers */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-background to-background z-0" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background z-0" />
       <EncryptionGrid />
 
       {/* Main Content - Lower Z-Index so SharedPresence can float on top if needed, 

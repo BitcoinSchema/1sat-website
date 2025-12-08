@@ -358,8 +358,12 @@ function Rig({ children, intensity = 1, lerpSpeed = 0.05 }: { children: React.Re
       lerpSpeed
     );
 
-    // Locked Y rotation (No swivel)
-    group.current.rotation.y = 0;
+    // Smoothly lock Y rotation to prevent matrix corruption from Float animation conflict
+    group.current.rotation.y = THREE.MathUtils.lerp(
+      group.current.rotation.y,
+      0,
+      lerpSpeed
+    );
   });
 
   return <group ref={group}>{children}</group>;
