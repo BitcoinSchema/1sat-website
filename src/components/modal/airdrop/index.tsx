@@ -193,7 +193,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
       // Update the destinations signal
       destinations.value = distributions.map((d) => ({
-        address: d.address,
+        address: d.address as string,
         receiveAmt: Number(d.tokens),
       }));
 
