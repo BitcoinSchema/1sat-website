@@ -12,56 +12,127 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getOrdinalThumbnail } from "@/lib/image-utils";
 import { InventoryItem, InventorySelector } from "./inventory-selector";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface TradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   peerAddress: string;
   peerLabel: string;
+  sessionId: string;
+  myUserId: string;
 }
 
 // Re-use logic from InventoryItem but add UI specific needs if any
 type TradeSlot = InventoryItem;
 
-export function TradeDialog({ open, onOpenChange, peerAddress, peerLabel }: TradeDialogProps) {
-  const [myLocked, setMyLocked] = useState(false);
-  const [peerLocked, setPeerLocked] = useState(false);
-  const [myItems, setMyItems] = useState<TradeSlot[]>([]);
-  const [peerItems, _setPeerItems] = useState<TradeSlot[]>([]);
+export function TradeDialog({ open, onOpenChange, peerAddress, peerLabel, sessionId, myUserId }: TradeDialogProps) {
   const [showInventory, setShowInventory] = useState(false);
   const { isInitialized } = useWalletToolbox();
+
+  // Convex hooks
+  const trade = useQuery(api.trades.getTradeSession, { sessionId });
+  const updateTradeOffer = useMutation(api.trades.updateTradeOffer);
+  const completeTrade = useMutation(api.trades.completeTrade);
+  const cancelTrade = useMutation(api.trades.cancelTrade);
+
+  // Determine roles
+  const isInitiator = trade?.initiatorId === myUserId;
+
+  // Derive state from trade object
+  const myItems = (isInitiator ? trade?.initiatorItems : trade?.participantItems) || [];
+  const peerItems = (isInitiator ? trade?.participantItems : trade?.initiatorItems) || [];
+  const myLocked = (isInitiator ? trade?.initiatorLocked : trade?.participantLocked) || false;
+  const peerLocked = (isInitiator ? trade?.participantLocked : trade?.initiatorLocked) || false;
 
   // Check if peer has a wallet address (starts with 1)
   const isPeerWallet = peerAddress.startsWith("1");
 
-  const handleAddItem = (item: InventoryItem) => {
-    // Add item from inventory selector
-    const newItem: TradeSlot = {
+  const tradeStatus = trade?.status === "ready" ? "Ready to Swap" : "Negotiating";
+
+  const handleAddItem = async (item: InventoryItem) => {
+    // Avoid adding duplicates by ID
+    if (myItems.some((i: any) => i.id === item.id)) {
+      return;
+    }
+
+    // Sanitize item to match validator
+    const sanitizedItem = {
       id: item.id,
       name: item.name,
       type: item.type,
-      image: item.image,
       amount: item.amount,
-      data: item.data,
-      utxo: item.utxo,
+      image: item.image,
+      utxo: item.utxo
+        ? {
+            txid: item.utxo.txid,
+            vout: item.utxo.vout,
+            satoshis: item.utxo.satoshis,
+          }
+        : undefined,
     };
-    setMyItems([...myItems, newItem]);
+
+    // Construct new items list
+    const newItems = [...myItems, sanitizedItem];
+
+    await updateTradeOffer({
+      sessionId,
+      userId: myUserId,
+      items: newItems,
+      locked: false, // Adding item unlocks
+    });
   };
 
-  const handleLock = () => {
-    setMyLocked(!myLocked);
-    // Simulate peer locking after a delay
-    if (!myLocked) {
-      setTimeout(() => setPeerLocked(true), 2000);
-    } else {
-      setPeerLocked(false);
+  const handleRemoveItem = async (itemId: string) => {
+    const newItems = myItems.filter((i: any) => i.id !== itemId);
+    await updateTradeOffer({
+      sessionId,
+      userId: myUserId,
+      items: newItems,
+      locked: false, // Removing item unlocks
+    });
+  };
+
+  const handleLock = async () => {
+    await updateTradeOffer({
+      sessionId,
+      userId: myUserId,
+      items: myItems,
+      locked: !myLocked,
+    });
+  };
+
+  const handleConfirm = async () => {
+    // For simplicity, completing trade just marks it done in DB
+    // In reality, this would trigger swapping via PSBT (Phase 2)
+    await completeTrade({ sessionId });
+    onOpenChange(false);
+  };
+
+  const handleClose = async (isOpen: boolean) => {
+    if (!isOpen) {
+      // If user closes dialog manually, cancel trade?
+      // Or just close view? TradeRequestListener handles close -> cancel.
+      // So we just call onOpenChange.
+      onOpenChange(false);
     }
   };
 
-  const tradeStatus = myLocked && peerLocked ? "Ready to Swap" : "Negotiating";
+  if (!trade) {
+    // Show a loading state or empty dialog
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading Trade Session...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <>
@@ -71,7 +142,7 @@ export function TradeDialog({ open, onOpenChange, peerAddress, peerLabel }: Trad
         onSelect={handleAddItem}
       />
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[800px] h-[600px] flex flex-col p-0 gap-0 overflow-hidden border shadow-2xl">
           <DialogHeader className="p-6 border-b bg-muted/40 pr-12">
             <div className="flex items-center justify-between">
@@ -130,7 +201,7 @@ export function TradeDialog({ open, onOpenChange, peerAddress, peerLabel }: Trad
                     </Button>
                   </div>
                 )}
-                {myItems.map((item) => (
+                {myItems.map((item: any) => (
                   <Card
                     key={item.id}
                     className="relative overflow-hidden group border-muted-foreground/20"
@@ -159,9 +230,7 @@ export function TradeDialog({ open, onOpenChange, peerAddress, peerLabel }: Trad
                       <button
                         type="button"
                         className="absolute top-1 right-1 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
-                        onClick={() => {
-                          setMyItems(myItems.filter((i) => i.id !== item.id));
-                        }}
+                        onClick={() => handleRemoveItem(item.id)}
                       >
                         <XCircle className="w-4 h-4" />
                       </button>
@@ -214,9 +283,40 @@ export function TradeDialog({ open, onOpenChange, peerAddress, peerLabel }: Trad
               <div className="flex-1 border-2 border-dashed rounded-lg p-4 gap-2 grid grid-cols-2 content-start overflow-y-auto min-h-[300px] bg-muted/20">
                 {peerItems.length === 0 && (
                   <div className="col-span-2 flex flex-col items-center justify-center text-muted-foreground h-full">
-                    <p className="text-sm">Waiting for peer...</p>
+                    {peerLocked ? (
+                      <p className="text-sm">Peer has locked their offer.</p>
+                    ) : (
+                      <p className="text-sm">Waiting for peer...</p>
+                    )}
                   </div>
                 )}
+                {peerItems.map((item: any) => (
+                  <Card
+                    key={item.id}
+                    className="relative overflow-hidden border-muted-foreground/20"
+                  >
+                    <CardContent className="p-2">
+                      <div className="aspect-square bg-black/5 dark:bg-white/5 rounded-md mb-2 overflow-hidden relative flex items-center justify-center">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="text-2xl font-bold p-4 text-center">
+                            {item.name.split(' ').pop()?.[0] || '?'}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium truncate">{item.name}</p>
+                      <Badge variant="secondary" className="text-[10px] h-4 mt-1">
+                        {item.type}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           </div>
@@ -241,6 +341,7 @@ export function TradeDialog({ open, onOpenChange, peerAddress, peerLabel }: Trad
               </Button>
               <Button
                 disabled={!myLocked || !peerLocked}
+                onClick={handleConfirm}
                 variant="default"
                 className="shadow-lg shadow-primary/20"
               >

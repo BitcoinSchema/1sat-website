@@ -91,6 +91,9 @@
 		"Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 		sans-serif;
 	--font-serif: "Spectral", ui-serif, Georgia, Cambria, Times New Roman, serif;
+	--font-mono:
+		"JetBrains Mono", ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas,
+		monospace;
 	--tracking-normal: 0em;
 	--spacing: 0.25rem;
 }

@@ -21,17 +21,17 @@ export function EncryptionGrid() {
     const gridSize = 14; // Smaller text
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#%&@!?<>";
     const spotlightRadius = 300;
-    
+
     // Mouse movement tracking for animation state
     let lastMouseMoveTime = 0;
 
     // Pre-calculate grid dimensions
     let cols = Math.ceil(width / gridSize);
     let rows = Math.ceil(height / gridSize);
-    
+
     // Store grid state
     const gridData: { char: string; updateTime: number }[] = [];
-    
+
     // Store style
     let gridColor = "#22c55e"; // Default fallback
 
@@ -65,14 +65,14 @@ export function EncryptionGrid() {
       height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
-      
+
       // Update color on resize/theme change (if window resizes, likely theme might change too in some setups, or just good practice)
       // We try to get the color from the canvas element which inherits text-primary
       const computed = getComputedStyle(canvas);
       if (computed.color && computed.color !== "") {
-          gridColor = computed.color;
+        gridColor = computed.color;
       }
-      
+
       initGrid();
     };
 
@@ -85,8 +85,8 @@ export function EncryptionGrid() {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = gridColor;
-      
-      const isAnimating = Date.now() - lastMouseMoveTime < 500; // Animate for 500ms after last move
+
+      const isAnimating = Date.now() - lastMouseMoveTime < 16; // Stop immediately when mouse stops (1 frame)
 
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
@@ -102,7 +102,7 @@ export function EncryptionGrid() {
           if (dist < spotlightRadius) {
             // Calculate opacity based on distance
             const opacity = (1 - Math.pow(dist / spotlightRadius, 2)) * 0.5; // Reduce max opacity for subtlety
-            
+
             // Update character randomly (entropy effect) only if animating
             if (isAnimating && time - gridData[idx].updateTime > 50) { // Faster updates (50ms)
               gridData[idx].char = chars[Math.floor(Math.random() * chars.length)];

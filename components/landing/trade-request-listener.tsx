@@ -169,6 +169,10 @@ export function TradeRequestListener() {
           fromUserId: latestRequest.fromUserId,
         });
       }
+    } else if (incomingRequests !== undefined && incomingRequests.length === 0) {
+      // Request was cancelled by sender or handled - clear the dialog
+      setIncomingRequest(null);
+      lastIncomingRequestIdRef.current = null;
     }
   }, [incomingRequests]);
 
@@ -350,12 +354,14 @@ export function TradeRequestListener() {
       </AlertDialog>
 
       {/* Active trade session */}
-      {activeSessionId && (
+      {activeSessionId && myFullUserId && (
         <TradeDialog
           open={!!activeSessionId}
           onOpenChange={handleCloseTradeDialog}
           peerAddress={activePeerAddress}
           peerLabel={truncateAddress(activePeerAddress)}
+          sessionId={activeSessionId}
+          myUserId={myFullUserId}
         />
       )}
     </>
