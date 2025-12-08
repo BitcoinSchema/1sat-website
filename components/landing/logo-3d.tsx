@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Center, Text3D, Environment, Float } from "@react-three/drei";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Glitch, ChromaticAberration, Noise } from "@react-three/postprocessing";
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useControls, folder } from "leva";
 import { Suspense } from "react";
@@ -95,13 +95,13 @@ function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: T
       wordGap: { value: 30, min: 20, max: 50, step: 1 },
       leftWordOffset: { value: -17, min: -30, max: 0, step: 0.5 },
       rightWordOffset: { value: 13, min: 0, max: 30, step: 0.5 },
-      letterSize: { value: 6.5, min: 3, max: 10, step: 0.1 },
+      letterSize: { value: 6.9, min: 3, max: 10, step: 0.1 },
       letterSpacing: { value: 1.0, min: 0.5, max: 2.0, step: 0.05 },
     }),
     Material: folder({
-      roughness: { value: 0.2, min: 0, max: 1, step: 0.05 },
-      metalness: { value: 0.1, min: 0, max: 1, step: 0.05 },
-      transmission: { value: 0.6, min: 0, max: 1, step: 0.05 }, // Glass-like transmission
+      roughness: { value: 0.0, min: 0, max: 1, step: 0.05 },
+      metalness: { value: 0.3, min: 0, max: 1, step: 0.05 },
+      transmission: { value: 0.0, min: 0, max: 1, step: 0.05 }, // Glass-like transmission
       thickness: { value: 0.5, min: 0, max: 5, step: 0.1 },
       opacity: { value: 0.9, min: 0, max: 1, step: 0.05 },
       emissiveIntensity: { value: 0.2, min: 0, max: 2, step: 0.1 },
@@ -109,6 +109,26 @@ function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: T
     Flicker: folder({
       onIntensity: { value: 4, min: 1, max: 10, step: 0.5 },
       offIntensity: { value: 0.2, min: 0, max: 1, step: 0.1 },
+    }),
+    Effects: folder({
+      enableGlitch: { value: true },
+      glitchDelayMin: { value: 1.5, min: 0.1, max: 10, step: 0.1 },
+      glitchDelayMax: { value: 3.5, min: 0.1, max: 10, step: 0.1 },
+      glitchDurationMin: { value: 0.6, min: 0.1, max: 5, step: 0.1 },
+      glitchDurationMax: { value: 1.0, min: 0.1, max: 5, step: 0.1 },
+      glitchStrengthMin: { value: 0.1, min: 0, max: 1, step: 0.05 },
+      glitchStrengthMax: { value: 0.2, min: 0, max: 1, step: 0.05 },
+      glitchRatio: { value: 0.85, min: 0, max: 1, step: 0.05 }, // 0-1, threshold for strong glitch
+      enableChromatic: { value: true },
+      chromaticOffset: { value: 0.002, min: 0, max: 0.05, step: 0.001 },
+      enableNoise: { value: false },
+      noiseOpacity: { value: 0.05, min: 0, max: 0.5, step: 0.01 },
+    }),
+    Animation: folder({
+      floatSpeed: { value: 2.0, min: 0, max: 10, step: 0.1 },
+      floatRotationIntensity: { value: 0.5, min: 0, max: 5, step: 0.1 }, // Reduced default rotation
+      floatIntensity: { value: 2.0, min: 0, max: 10, step: 0.1 }, // Increased float intensity
+      floatingRange: { value: [-1, 2] }, // Larger range for visible bobbing
     })
   });
 
@@ -120,7 +140,7 @@ function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: T
       <pointLight position={[-10, -10, 10]} intensity={0.8} color={colors.primary} />
       <pointLight position={[0, 0, 5]} intensity={0.3} color="#ffffff" />
 
-      {/* Post Processing for Glow */}
+      {/* Post Processing for Glow & Glitch */}
       <EffectComposer>
         <Bloom
           luminanceThreshold={1.2}
@@ -128,11 +148,30 @@ function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: T
           intensity={1.5}
           radius={0.4}
         />
+        <ChromaticAberration
+          offset={new THREE.Vector2(
+            controls.enableChromatic ? controls.chromaticOffset : 0,
+            controls.enableChromatic ? controls.chromaticOffset : 0
+          )}
+        />
+        <Glitch
+          delay={new THREE.Vector2(controls.glitchDelayMin, controls.glitchDelayMax)}
+          duration={new THREE.Vector2(controls.glitchDurationMin, controls.glitchDurationMax)}
+          strength={new THREE.Vector2(controls.glitchStrengthMin, controls.glitchStrengthMax)}
+          active={controls.enableGlitch}
+          ratio={controls.glitchRatio}
+        />
+        <Noise opacity={controls.enableNoise ? controls.noiseOpacity : 0} />
       </EffectComposer>
 
       <Environment preset="city" />
 
-      <Float speed={1.0} rotationIntensity={0.1} floatIntensity={1.0}>
+      <Float
+        speed={controls.floatSpeed}
+        rotationIntensity={controls.floatRotationIntensity}
+        floatIntensity={controls.floatIntensity}
+        floatingRange={controls.floatingRange as [number, number]}
+      >
         <Rig>
           <Center>
             <group>
