@@ -3,7 +3,7 @@
 import usePresence from "@convex-dev/presence/react";
 import { useMutation } from "convex/react";
 import { MousePointer2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { useWallet } from "@/providers/wallet-provider";
 import { wifToAddress } from "@/lib/keys";
@@ -61,6 +61,16 @@ function truncateAddress(address: string): string {
 export function SharedPresence() {
   const containerRef = useRef<HTMLDivElement>(null);
   const throttleRef = useRef<number>(0);
+  const [scrollOpacity, setScrollOpacity] = useState(1);
+
+  // Track scroll for fade effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollOpacity(Math.max(0, 1 - window.scrollY / 200));
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Get wallet context
   const { walletKeys, isWalletLocked } = useWallet();
@@ -211,9 +221,12 @@ export function SharedPresence() {
       ref={containerRef}
       className="w-full h-full overflow-hidden pointer-events-none relative"
     >
-      {/* Online indicator */}
+      {/* Online indicator - Fixed bottom right, fades on scroll */}
       {presenceState && (
-        <div className="absolute top-4 right-4 pointer-events-auto z-50">
+        <div
+          className="fixed bottom-4 right-4 pointer-events-auto z-50 transition-opacity duration-300"
+          style={{ opacity: scrollOpacity }}
+        >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-primary/20 text-sm">
             <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-muted-foreground">

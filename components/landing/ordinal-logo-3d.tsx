@@ -77,8 +77,8 @@ function Scene() {
   );
 }
 
-function Rings({ controls, baseMaterial }: { controls: any, baseMaterial: THREE.MeshPhysicalMaterial }) {
-  const outerRef = useRef<THREE.Group>(null); // Changed to Group ref
+export function Rings({ controls, baseMaterial }: { controls: any, baseMaterial: THREE.MeshPhysicalMaterial }) {
+  const outerRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
     if (outerRef.current && controls.speed > 0) {
@@ -95,26 +95,50 @@ function Rings({ controls, baseMaterial }: { controls: any, baseMaterial: THREE.
   const middleRadius = outerRadius * (151 / 201); // ~1.5
   const innerRadius = outerRadius * (121 / 201); // ~1.2
 
-  // Thickness from controls (or calculated?)
-  // SVG implies filled circles. For rings, we need thickness.
-  // If we want it to look like the SVG which has "gaps", we can make the "Black" ring just a gap?
-  // User said "3 concentric circles". I will render 3 rings.
-  // Let's rely on controls for thickness to give 3D volume.
+  // Create solid disc materials with glow
+  const matOuter = useMemo(() => {
+    const m = baseMaterial.clone();
+    m.color.set(controls.outerColor);
+    m.emissive.set(controls.outerColor);
+    m.emissiveIntensity = controls.emissiveIntensity * 0.3;
+    m.toneMapped = false;
+    return m;
+  }, [baseMaterial, controls.outerColor, controls.emissiveIntensity]);
 
-  const matOuter = useMemo(() => { const m = baseMaterial.clone(); m.color.set(controls.outerColor); m.emissive.set(controls.outerColor); m.emissiveIntensity = controls.emissiveIntensity * 0.2; return m; }, [baseMaterial, controls.outerColor, controls.emissiveIntensity]);
-  const matMiddle = useMemo(() => { const m = baseMaterial.clone(); m.color.set(controls.middleColor); m.emissive.set(controls.middleColor); m.emissiveIntensity = controls.emissiveIntensity * 0.2; return m; }, [baseMaterial, controls.middleColor, controls.emissiveIntensity]);
-  const matInner = useMemo(() => { const m = baseMaterial.clone(); m.color.set(controls.innerColor); m.emissive.set(controls.innerColor); m.emissiveIntensity = controls.emissiveIntensity * 0.5; return m; }, [baseMaterial, controls.innerColor, controls.emissiveIntensity]);
+  const matMiddle = useMemo(() => {
+    const m = baseMaterial.clone();
+    m.color.set(controls.middleColor);
+    m.emissive.set(controls.middleColor);
+    m.emissiveIntensity = controls.emissiveIntensity * 0.3;
+    m.toneMapped = false;
+    return m;
+  }, [baseMaterial, controls.middleColor, controls.emissiveIntensity]);
+
+  const matInner = useMemo(() => {
+    const m = baseMaterial.clone();
+    m.color.set(controls.innerColor);
+    m.emissive.set(controls.innerColor);
+    m.emissiveIntensity = controls.emissiveIntensity * 0.5;
+    m.toneMapped = false;
+    return m;
+  }, [baseMaterial, controls.innerColor, controls.emissiveIntensity]);
 
   return (
     <group ref={outerRef}>
-      {/* Outer Ring */}
-      <Torus args={[outerRadius, controls.thickness, 64, 128]} material={matOuter} />
+      {/* Outer Circle - White (back layer) */}
+      <mesh position={[0, 0, 0]} material={matOuter}>
+        <circleGeometry args={[outerRadius, 64]} />
+      </mesh>
 
-      {/* Middle Ring */}
-      <Torus args={[middleRadius, controls.thickness, 64, 128]} material={matMiddle} />
+      {/* Middle Circle - Black (covers center of white, leaving white ring) */}
+      <mesh position={[0, 0, 0.01]} material={matMiddle}>
+        <circleGeometry args={[middleRadius, 64]} />
+      </mesh>
 
-      {/* Inner Ring */}
-      <Torus args={[innerRadius, controls.thickness, 64, 128]} material={matInner} />
+      {/* Inner Circle - Yellow (covers center of black, leaving black ring) */}
+      <mesh position={[0, 0, 0.02]} material={matInner}>
+        <circleGeometry args={[innerRadius, 64]} />
+      </mesh>
     </group>
   );
 }

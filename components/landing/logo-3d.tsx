@@ -3,24 +3,36 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Center, Text3D, Environment, Float } from "@react-three/drei";
 import { EffectComposer, Bloom, Glitch, ChromaticAberration, Noise } from "@react-three/postprocessing";
+import { Rings } from "./ordinal-logo-3d";
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useControls, folder } from "leva";
 import { Suspense } from "react";
 import * as THREE from "three";
 import { TTFLoader } from "three/examples/jsm/loaders/TTFLoader.js";
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Use Kanit ExtraBold (Regular) TTF directly
 const FONT_TTF_URL = "/fonts/Kanit-ExtraBold.ttf";
 
 export function Logo3D() {
-  const [colors, setColors] = useState<{ primary: THREE.Color; foreground: THREE.Color; border: THREE.Color } | null>(null);
+  const [colors, setColors] = useState<{
+    primary: THREE.Color;
+    primaryForeground: THREE.Color;
+    secondary: THREE.Color;
+    secondaryForeground: THREE.Color;
+    foreground: THREE.Color;
+    border: THREE.Color
+  } | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [font, setFont] = useState<any>(null);
 
   useEffect(() => {
     // Helper to resolve color from a temporary DOM element
     const getThemeColor = (className: string, fallback: string) => {
+      // ... (existing helper logic matches previous implementation, omitting for brevity in diff but assuming function exists in scope or I should verify I am not deleting it)
+      // Actually I am replacing lines 17-60. I need to keep getThemeColor definition or re-include it. 
+      // To be safe I will just replace the setColors call and the type definition using separate chunks or re-include the helper.
       if (typeof window === 'undefined') return new THREE.Color(fallback);
 
       const div = document.createElement('div');
@@ -55,6 +67,9 @@ export function Logo3D() {
 
     setColors({
       primary: getThemeColor("text-primary", "#22c55e"),
+      primaryForeground: getThemeColor("text-primary-foreground", "#000000"),
+      secondary: getThemeColor("text-secondary", "#f4f4f5"),
+      secondaryForeground: getThemeColor("text-secondary-foreground", "#18181b"),
       foreground: getThemeColor("text-foreground", "#ffffff"),
       border: getThemeColor("border", "#3f3f46"),
     });
@@ -74,11 +89,13 @@ export function Logo3D() {
   if (!colors || !font) return <div className="h-[200px] w-full bg-transparent" />;
 
   return (
-    <div className="h-[200px] w-full relative cursor-default">
+    <div className="w-full min-w-0 h-[400px] relative cursor-default overflow-hidden">
       <Canvas
         dpr={[1, 2]}
-        camera={{ position: [0, 0, 22], fov: 35 }}
+        camera={{ position: [0, 0, 28], fov: 30 }}
         gl={{ preserveDrawingBuffer: true, antialias: true, alpha: true }}
+        resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
         <Suspense fallback={null}>
           <Scene colors={colors} font={font} />
@@ -89,14 +106,23 @@ export function Logo3D() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: THREE.Color; border: THREE.Color }; font: any }) {
+function Scene({ colors, font }: {
+  colors: {
+    primary: THREE.Color;
+    primaryForeground: THREE.Color;
+    secondary: THREE.Color;
+    secondaryForeground: THREE.Color;
+    foreground: THREE.Color;
+    border: THREE.Color
+  }; font: any
+}) {
   const controls = useControls({
     Layout: folder({
-      wordGap: { value: 30, min: 20, max: 50, step: 1 },
-      leftWordOffset: { value: -17, min: -30, max: 0, step: 0.5 },
-      rightWordOffset: { value: 13, min: 0, max: 30, step: 0.5 },
-      letterSize: { value: 6.9, min: 3, max: 10, step: 0.1 },
-      letterSpacing: { value: 1.0, min: 0.5, max: 2.0, step: 0.05 },
+      wordGap: { value: 10, min: 5, max: 50, step: 1 },
+      leftWordOffset: { value: -13, min: -30, max: 0, step: 0.5 },
+      rightWordOffset: { value: 11, min: 0, max: 30, step: 0.5 },
+      letterSize: { value: 5.5, min: 3, max: 10, step: 0.1 },
+      letterSpacing: { value: 0.90, min: 0.5, max: 2.0, step: 0.05 },
     }),
     Material: folder({
       roughness: { value: 0.0, min: 0, max: 1, step: 0.05 },
@@ -126,11 +152,46 @@ function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: T
     }),
     Animation: folder({
       floatSpeed: { value: 2.0, min: 0, max: 10, step: 0.1 },
-      floatRotationIntensity: { value: 0.5, min: 0, max: 5, step: 0.1 }, // Reduced default rotation
-      floatIntensity: { value: 2.0, min: 0, max: 10, step: 0.1 }, // Increased float intensity
-      floatingRange: { value: [-1, 2] }, // Larger range for visible bobbing
+      floatRotationIntensity: { value: 0.5, min: 0, max: 5, step: 0.1 },
+      floatIntensity: { value: 2.0, min: 0, max: 10, step: 0.1 },
+      floatingRange: { value: [-0.2, 0.5] }, // Reduced range
+    }),
+    Rings: folder({
+      ringsEnabled: { value: true },
+      ringsScale: { value: 4.0, min: 0.1, max: 20, step: 0.1 },
+      ringsPosition: { value: [0, 2, -15] },
+      ringsOuterColor: "#ffffff",
+      ringsMiddleColor: "#000000",
+      ringsInnerColor: "#F7931A", // Orange/Yellow
+      ringsThickness: { value: 0.1, min: 0.01, max: 1.0, step: 0.01 },
+      ringsGap: { value: 0.1, min: 0, max: 1, step: 0.05 },
+      ringsSpeed: { value: 0.5, min: 0, max: 5, step: 0.1 },
+      ringsEmissive: { value: 1.0, min: 0, max: 5, step: 0.1 },
+      ringsGyro: { value: false },
     })
   });
+
+  // Controls adapter for Rings component
+  const ringsControls = useMemo(() => ({
+    scale: controls.ringsScale,
+    thickness: controls.ringsThickness,
+    gap: controls.ringsGap,
+    outerColor: controls.ringsOuterColor,
+    middleColor: controls.ringsMiddleColor,
+    innerColor: controls.ringsInnerColor,
+    emissiveIntensity: controls.ringsEmissive,
+    speed: controls.ringsSpeed,
+    gyroMode: controls.ringsGyro,
+  }), [controls]);
+
+  // Base material for rings, using shared scene material settings
+  const ringsBaseMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+    metalness: controls.metalness,
+    roughness: controls.roughness,
+    transmission: controls.transmission,
+    clearcoat: 1,
+    clearcoatRoughness: 0.1,
+  }), [controls.metalness, controls.roughness, controls.transmission]);
 
   return (
     <>
@@ -166,33 +227,35 @@ function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: T
 
       <Environment preset="city" />
 
+      {/* Group 1: Main Text & Sign - High Intensity Rig - Float A */}
       <Float
         speed={controls.floatSpeed}
         rotationIntensity={controls.floatRotationIntensity}
         floatIntensity={controls.floatIntensity}
         floatingRange={controls.floatingRange as [number, number]}
       >
-        <Rig>
-          <Center>
-            <group>
-              {/* 1SAT in primary color (yellow) - on left */}
+        <Rig intensity={1}>
+          <Center top>
+            {/* Main text - stacked vertically on mobile */}
+            <group position={[0, -1, 0]}>
+              {/* 1SAT */}
               <Word
                 text="1SAT"
-                position={[controls.leftWordOffset, 0, 0]}
-                size={controls.letterSize}
+                position={isMobile ? [0, controls.letterSize * 0.6, 0] : [controls.leftWordOffset, 0, 0]}
+                size={isMobile ? controls.letterSize * 0.8 : controls.letterSize}
                 baseColor={colors.primary}
-                borderColor={colors.border}
+                borderColor={colors.primaryForeground}
                 font={font}
                 letterSpacingMult={controls.letterSpacing}
                 materialProps={controls}
               />
-              {/* WALLET in foreground color (white) - on right */}
+              {/* WALLET */}
               <Word
                 text="WALLET"
-                position={[controls.rightWordOffset, 0, 0]}
-                size={controls.letterSize}
-                baseColor={colors.foreground}
-                borderColor={colors.border}
+                position={isMobile ? [0, -controls.letterSize * 0.5, 0] : [controls.rightWordOffset, 0, 0]}
+                size={isMobile ? controls.letterSize * 0.8 : controls.letterSize}
+                baseColor={colors.secondary}
+                borderColor={colors.secondaryForeground}
                 brokenIndices={[1, 4]} // A and E flicker
                 font={font}
                 letterSpacingMult={controls.letterSpacing}
@@ -200,13 +263,52 @@ function Scene({ colors, font }: { colors: { primary: THREE.Color; foreground: T
               />
             </group>
           </Center>
+
+          {/* Neon Sign - Larger, moved up */}
+          <group position={[0, -2, 0]}>
+            <Center>
+              <Text3D
+                font={font.data}
+                size={1.0}
+                height={0.15}
+                letterSpacing={0.05}
+                bevelEnabled
+                bevelSize={0.02}
+                bevelThickness={0.03}
+              >
+                LIVE P2P NETWORK
+                <meshStandardMaterial
+                  color="#10b981"
+                  emissive="#10b981"
+                  emissiveIntensity={2.5}
+                  toneMapped={false}
+                />
+              </Text3D>
+            </Center>
+          </group>
         </Rig>
       </Float>
+
+      {/* Group 2: Background Rings - Low Intensity Rig - Float B (Desynced) */}
+      {controls.ringsEnabled && (
+        <Float
+          speed={controls.floatSpeed * 0.7}
+          rotationIntensity={controls.floatRotationIntensity}
+          floatIntensity={controls.floatIntensity}
+          floatingRange={controls.floatingRange as [number, number]}
+        >
+          <Rig intensity={0.05} lerpSpeed={0.02}>
+            <group position={controls.ringsPosition as [number, number, number]} scale={controls.ringsScale}>
+              <Rings controls={ringsControls} baseMaterial={ringsBaseMaterial} />
+            </group>
+          </Rig>
+        </Float>
+      )}
     </>
   );
 }
 
-function Rig({ children }: { children: React.ReactNode }) {
+function Rig({ children, intensity = 1, lerpSpeed = 0.05 }: { children: React.ReactNode, intensity?: number, lerpSpeed?: number }) {
   const group = useRef<THREE.Group>(null);
   const scrollY = useRef(0);
 
@@ -223,15 +325,16 @@ function Rig({ children }: { children: React.ReactNode }) {
 
     const scrollEffect = scrollY.current * 0.002;
     // Inverted mouse direction - negative pointer.y for correct tilt
-    const targetRotationX = (-state.pointer.y * 0.3) + scrollEffect;
+    const targetRotationX = ((-state.pointer.y * 0.3) + scrollEffect) * intensity;
     const clampedRotationX = Math.max(-0.8, Math.min(0.8, targetRotationX));
 
     group.current.rotation.x = THREE.MathUtils.lerp(
       group.current.rotation.x,
       clampedRotationX,
-      0.05
+      lerpSpeed
     );
 
+    // Locked Y rotation (No swivel)
     group.current.rotation.y = 0;
   });
 

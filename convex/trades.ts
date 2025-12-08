@@ -313,8 +313,9 @@ export const cancelTradeRequest = mutation({
   },
   handler: async (ctx, args) => {
     const request = await ctx.db.get(args.requestId);
+    // If request doesn't exist, it was already canceled/deleted - just succeed silently
     if (!request) {
-      throw new Error("Trade request not found");
+      return;
     }
 
     await ctx.db.delete(args.requestId);

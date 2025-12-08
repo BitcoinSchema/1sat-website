@@ -305,7 +305,7 @@ export function TradeRequestListener() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelPendingRequest}>
+            <AlertDialogCancel>
               Cancel Request
             </AlertDialogCancel>
           </AlertDialogFooter>
