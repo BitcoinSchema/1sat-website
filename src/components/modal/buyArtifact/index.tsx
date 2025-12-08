@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  SATS_PER_KB,
   SCAM_ITEM_BLACKLIST,
   SCAM_LISTING_USER_BLACKLIST,
   indexerBuyFee,
@@ -142,6 +143,7 @@ const BuyArtifactModal: React.FC<BuyArtifactModalProps> = ({
         ordAddress: ordAddress.value,
         additionalPayments,
         metaData,
+        satsPerKb: SATS_PER_KB,
       };
 
       if (listing.origin?.data?.map?.royalties) {

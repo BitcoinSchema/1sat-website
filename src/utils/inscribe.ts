@@ -1,6 +1,6 @@
 "use client";
 
-import { toastErrorProps } from "@/constants";
+import { SATS_PER_KB, toastErrorProps } from "@/constants";
 import { payPk } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { PendingTransaction } from "@/types/preview";
@@ -69,6 +69,7 @@ export const handleInscribing = async (
     paymentPk,
     metaData,
     additionalPayments,
+    satsPerKb: SATS_PER_KB,
   };
   const { spentOutpoints, tx, payChange } = await createOrdinals(config);
   return { spentOutpoints, tx, payChange };
@@ -104,6 +105,7 @@ export const handleBulkInscribing = async (
     metaData,
     additionalPayments,
     changeAddress,
+    satsPerKb: SATS_PER_KB,
   };
 
   const { tx, spentOutpoints, payChange } = await createOrdinals(config);
@@ -137,6 +139,7 @@ export const handleBulkInscribingWithData = async (
     metaData: metadata,
     additionalPayments: payments,
     changeAddress,
+    satsPerKb: SATS_PER_KB,
   };
 
   const { tx, spentOutpoints } = await createOrdinals(config);

@@ -1,6 +1,6 @@
 "use client";
 
-import { indexerBuyFee, toastErrorProps, toastProps } from "@/constants";
+import { indexerBuyFee, SATS_PER_KB, toastErrorProps, toastProps } from "@/constants";
 import { bsv20Utxos, ordPk, payPk, utxos } from "@/signals/wallet";
 import { fundingAddress, ordAddress } from "@/signals/wallet/address";
 import type { Listing } from "@/types/bsv20";
@@ -83,6 +83,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 				additionalPayments: [{ to: indexerAddress, amount: indexerBuyFee }],
 				protocol: (listing as Listing).tick ? TokenType.BSV20 : TokenType.BSV21,
 				tokenID: id,
+				satsPerKb: SATS_PER_KB,
 			};
 
 			const { tx, spentOutpoints, tokenChange, payChange } =
@@ -174,6 +175,7 @@ const CancelListingModal: React.FC<CancelListingModalProps> = ({
 				paymentPk: PrivateKey.fromWif(payPk.value),
 				ordPk: PrivateKey.fromWif(ordPk.value),
 				listingUtxos,
+				satsPerKb: SATS_PER_KB,
 			};
 
 			const { tx, spentOutpoints, payChange } = await cancelOrdListings(config);

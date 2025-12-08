@@ -1,6 +1,6 @@
 "use client";
 
-import { toastErrorProps } from "@/constants";
+import { SATS_PER_KB, toastErrorProps } from "@/constants";
 import { payPk, utxos } from "@/signals/wallet";
 import type { PendingTransaction } from "@/types/preview";
 import { useIDBStorage } from "@/utils/storage";
@@ -89,6 +89,7 @@ const WithdrawalModal: React.FC<DespotModalProps> = ({
         utxos: utxos.value as Utxo[],
         paymentPk,
         payments,
+        satsPerKb: SATS_PER_KB,
       };
       try {
         const { tx, spentOutpoints, payChange } = await sendUtxos(sendConfig);

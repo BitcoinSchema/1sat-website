@@ -1,6 +1,6 @@
 "use client";
 
-import { API_HOST, FetchStatus, feeRate, toastErrorProps } from "@/constants";
+import { API_HOST, FetchStatus, SATS_PER_BYTE, toastErrorProps } from "@/constants";
 import {
   bsv20Balances,
   chainInfo,
@@ -556,7 +556,7 @@ const InscribeBsv20: React.FC<InscribeBsv20Props> = ({ inscribedCallback }) => {
       return 0;
     }
     return (
-      (bytesPerIteration * iterations * feeRate +
+      (bytesPerIteration * iterations * SATS_PER_BYTE +
         P2PKH_FULL_INPUT_SIZE * 4) /
       usdRate.value
     ).toFixed(2);

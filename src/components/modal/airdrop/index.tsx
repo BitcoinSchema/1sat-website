@@ -10,6 +10,7 @@ import {
   AssetType,
   FetchStatus,
   MARKET_API_HOST,
+  SATS_PER_KB,
   toastErrorProps,
 } from "@/constants";
 import { ordPk, payPk, utxos } from "@/signals/wallet";
@@ -192,7 +193,7 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
 
       // Update the destinations signal
       destinations.value = distributions.map((d) => ({
-        address: d.address,
+        address: d.address as string,
         receiveAmt: Number(d.tokens),
       }));
 
@@ -220,7 +221,8 @@ const AirdropTokensModal: React.FC<TransferModalProps> = ({
         splitConfig: {
           outputs: 2,
           threshold: 900,
-        }
+        },
+        satsPerKb: SATS_PER_KB,
       };
 
       const { tx, spentOutpoints, payChange, tokenChange } =
