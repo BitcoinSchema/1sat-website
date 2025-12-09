@@ -15,17 +15,18 @@ import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import * as React from "react";
 import { useState } from "react";
-import { useCopyToClipboard } from "usehooks-ts";
 import { NavUser } from "@/components/nav-user";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
+	SoundDialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/sound-dialog";
+import { useCopyWithSound } from "@/hooks/use-copy-with-sound";
+import { useSound } from "@/hooks/use-sound";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -108,7 +109,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		false,
 	);
 	const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
-	const [_, copy] = useCopyToClipboard();
+	const [_, copy] = useCopyWithSound();
+	const { play } = useSound();
 	const [copiedPay, setCopiedPay] = useState(false);
 	const [copiedOrd, setCopiedOrd] = useState(false);
 
@@ -184,12 +186,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<p className="text-sm text-muted-foreground">No Wallet</p>
 						<div className="grid grid-cols-1 gap-2 w-full">
 							<Link href="/wallet/create" className="w-full">
-								<Button variant="outline" className="w-full">
+								<Button variant="outline" className="w-full" onClick={() => play("click")}>
 									<Plus className="h-4 w-4 mr-2" /> Create New
 								</Button>
 							</Link>
 							<Link href="/wallet/import" className="w-full">
-								<Button variant="ghost" className="w-full">
+								<Button variant="ghost" className="w-full" onClick={() => play("click")}>
 									<Import className="h-4 w-4 mr-2" /> Import Existing
 								</Button>
 							</Link>
@@ -305,9 +307,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					</div>
 
 					<div className="grid grid-cols-2 gap-2">
-						<Dialog>
+						<SoundDialog>
 							<DialogTrigger asChild>
-								<Button size="sm" className="w-full gap-2">
+								<Button size="sm" className="w-full gap-2" onClick={() => play("click")}>
 									<ArrowDown className="h-4 w-4" /> Deposit
 								</Button>
 							</DialogTrigger>
@@ -357,11 +359,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									</div>
 								</div>
 							</DialogContent>
-						</Dialog>
+						</SoundDialog>
 
-						<Dialog>
+						<SoundDialog>
 							<DialogTrigger asChild>
-								<Button size="sm" variant="outline" className="w-full gap-2">
+								<Button size="sm" variant="outline" className="w-full gap-2" onClick={() => play("click")}>
 									<Send className="h-4 w-4" /> Send
 								</Button>
 							</DialogTrigger>
@@ -382,9 +384,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										<Input id="amount" placeholder="0.00" type="number" />
 									</div>
 								</div>
-								<Button className="w-full">Confirm Send</Button>
+								<Button className="w-full" onClick={() => play("success")}>Confirm Send</Button>
 							</DialogContent>
-						</Dialog>
+						</SoundDialog>
 					</div>
 				</div>
 			</SidebarHeader>
@@ -398,7 +400,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								{group.items.map((item) => (
 									<SidebarMenuItem key={item.title}>
 										<SidebarMenuButton asChild>
-											<Link href={item.url}>
+											<Link href={item.url} onClick={() => play("click")}>
 												{item.title}
 												{item.shortcut && (
 													<span className="ml-auto text-xs tracking-widest text-muted-foreground hidden md:block">

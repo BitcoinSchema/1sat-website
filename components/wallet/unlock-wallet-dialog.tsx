@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
+	SoundDialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/sound-dialog";
+import { useSound } from "@/hooks/use-sound";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useWallet } from "@/providers/wallet-provider";
@@ -23,6 +24,7 @@ export function UnlockWalletDialog({
 	onOpenChange: (open: boolean) => void;
 }) {
 	const { unlockWallet } = useWallet();
+	const { play } = useSound();
 	const [passphrase, setPassphrase] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -34,15 +36,17 @@ export function UnlockWalletDialog({
 		const success = await unlockWallet(passphrase);
 		setIsLoading(false);
 		if (success) {
+			play("success");
 			onOpenChange(false);
 			setPassphrase("");
 		} else {
+			play("error");
 			setError("Incorrect passphrase. Please try again.");
 		}
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<SoundDialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Unlock Wallet</DialogTitle>
@@ -67,6 +71,6 @@ export function UnlockWalletDialog({
 					</Button>
 				</form>
 			</DialogContent>
-		</Dialog>
+		</SoundDialog>
 	);
 }

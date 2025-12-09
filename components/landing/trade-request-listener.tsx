@@ -8,15 +8,16 @@ import { useWallet } from "@/providers/wallet-provider";
 import { wifToAddress } from "@/lib/keys";
 import { TradeDialog } from "./trade-dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
+  SoundAlertDialog,
+  SoundAlertDialogAction,
+  SoundAlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/sound-alert-dialog";
+import { useSound } from "@/hooks/use-sound";
 import SigmaAvatar from "sigma-avatars";
 import { Bell, Clock } from "lucide-react";
 
@@ -33,18 +34,13 @@ function extractWalletAddress(userId: string): string {
 
 export function TradeRequestListener() {
   const { walletKeys, isWalletLocked } = useWallet();
+  const { play } = useSound();
   const [incomingRequest, setIncomingRequest] = useState<{
     id: Id<"tradeRequests">;
     fromUserId: string;
   } | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activePeerAddress, setActivePeerAddress] = useState<string>("");
-
-  // Sound refs - alert for notifications, dialog for trade dialog open/close
-  const alertSoundRef = useRef<HTMLAudioElement | null>(null);
-  const dialogOpenSoundRef = useRef<HTMLAudioElement | null>(null);
-  const dialogCloseSoundRef = useRef<HTMLAudioElement | null>(null);
-  const declineSoundRef = useRef<HTMLAudioElement | null>(null);
 
   const lastIncomingRequestIdRef = useRef<string | null>(null);
   const lastAcceptedRequestIdRef = useRef<string | null>(null);
@@ -110,49 +106,6 @@ export function TradeRequestListener() {
   const cancelTradeRequest = useMutation(api.trades.cancelTradeRequest);
   const cancelTrade = useMutation(api.trades.cancelTrade);
 
-  // Initialize audio - separate sounds for different events
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Alert sound - for trade request notifications
-      alertSoundRef.current = new Audio("/sounds/alert.mp3");
-      alertSoundRef.current.volume = 0.7;
-
-      // Dialog sound - for trade dialog open/close
-      dialogOpenSoundRef.current = new Audio("/sounds/dialog.mp3");
-      dialogOpenSoundRef.current.volume = 0.5;
-
-      // Dialog close uses same dialog sound but quieter
-      dialogCloseSoundRef.current = new Audio("/sounds/dialog.mp3");
-      dialogCloseSoundRef.current.volume = 0.3;
-
-      // Decline sound - subtle error/negative
-      declineSoundRef.current = new Audio("/sounds/decline.mp3");
-      declineSoundRef.current.volume = 0.5;
-    }
-  }, []);
-
-  // Play functions
-  const playAlertSound = () => {
-    if (alertSoundRef.current) {
-      alertSoundRef.current.currentTime = 0;
-      alertSoundRef.current.play().catch(() => { });
-    }
-  };
-
-  const playDialogOpenSound = () => {
-    if (dialogOpenSoundRef.current) {
-      dialogOpenSoundRef.current.currentTime = 0;
-      dialogOpenSoundRef.current.play().catch(() => { });
-    }
-  };
-
-  const playDialogCloseSound = () => {
-    if (dialogCloseSoundRef.current) {
-      dialogCloseSoundRef.current.currentTime = 0;
-      dialogCloseSoundRef.current.play().catch(() => { });
-    }
-  };
-
   // Handle new incoming requests (recipient side) - play ALERT sound
   useEffect(() => {
     if (incomingRequests && incomingRequests.length > 0) {
@@ -162,7 +115,7 @@ export function TradeRequestListener() {
         lastIncomingRequestIdRef.current = latestRequest._id;
 
         // Play alert sound for notification popup
-        playAlertSound();
+        play("alert");
 
         setIncomingRequest({
           id: latestRequest._id,
@@ -185,7 +138,7 @@ export function TradeRequestListener() {
         lastAcceptedRequestIdRef.current = latestAccepted._id;
 
         // Play dialog open sound for initiator
-        playDialogOpenSound();
+        play("dialog");
 
         const peerWalletAddress = extractWalletAddress(latestAccepted.toUserId);
         setActivePeerAddress(peerWalletAddress);
@@ -199,12 +152,12 @@ export function TradeRequestListener() {
     if (activeTradeSession && activeSessionId) {
       if (activeTradeSession.status === "cancelled" || activeTradeSession.status === "completed") {
         // Play dialog close sound
-        playDialogCloseSound();
+        play("dialog", 0.2);
         setActiveSessionId(null);
         setActivePeerAddress("");
       }
     }
-  }, [activeTradeSession, activeSessionId]);
+  }, [activeTradeSession, activeSessionId, play]);
 
   const handleAccept = async () => {
     if (!incomingRequest) return;
@@ -216,7 +169,7 @@ export function TradeRequestListener() {
       setIncomingRequest(null);
 
       // Play dialog open sound for recipient
-      playDialogOpenSound();
+      play("dialog");
 
       setActiveSessionId(result.sessionId);
     } catch (error) {
@@ -275,7 +228,7 @@ export function TradeRequestListener() {
   return (
     <>
       {/* Waiting for response dialog (for initiator) */}
-      <AlertDialog open={!!pendingRequest && !activeSessionId} onOpenChange={(open) => !open && handleCancelPendingRequest()}>
+      <SoundAlertDialog open={!!pendingRequest && !activeSessionId} onOpenChange={(open) => !open && handleCancelPendingRequest()}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-xl">
@@ -305,15 +258,15 @@ export function TradeRequestListener() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>
+            <SoundAlertDialogCancel>
               Cancel Request
-            </AlertDialogCancel>
+            </SoundAlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </SoundAlertDialog>
 
       {/* Incoming trade request dialog */}
-      <AlertDialog open={!!incomingRequest} onOpenChange={(open) => !open && handleDecline()}>
+      <SoundAlertDialog open={!!incomingRequest} onOpenChange={(open) => !open && handleDecline()} openSound={false}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-xl">
@@ -343,15 +296,15 @@ export function TradeRequestListener() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDecline}>
+            <SoundAlertDialogCancel onClick={handleDecline}>
               Decline
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleAccept}>
+            </SoundAlertDialogCancel>
+            <SoundAlertDialogAction onClick={handleAccept}>
               Accept Trade
-            </AlertDialogAction>
+            </SoundAlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </SoundAlertDialog>
 
       {/* Active trade session */}
       {activeSessionId && myFullUserId && (

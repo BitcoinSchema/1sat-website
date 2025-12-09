@@ -7,7 +7,7 @@ import Artifact from "@/components/artifact";
 import ImageWithFallback from "@/components/image-with-fallback";
 // import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { SoundDialog, DialogContent, DialogTitle } from "@/components/ui/sound-dialog";
 import type { OrdUtxo } from "@/lib/types/ordinals";
 
 const needsFlipButton = (artifact: OrdUtxo): boolean => {
@@ -81,7 +81,7 @@ const ArtifactModal = ({
 
   return (
     <>
-      <Dialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
+      <SoundDialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
         <DialogContent
           className="max-w-[90vw] w-full h-[96vh] p-0 gap-0 bg-background border-border overflow-hidden flex flex-col"
         // hideCloseButton={true} // Not supported in shadcn default, we have manual close button
@@ -201,7 +201,7 @@ const ArtifactModal = ({
             )}
           </section>
         </DialogContent>
-      </Dialog>
+      </SoundDialog>
 
       {/* Placeholder for BuyModal until implemented */}
       {/* {showBuyModal && ...} */}

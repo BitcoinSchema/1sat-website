@@ -9,11 +9,11 @@ import { getOrdinalThumbnail } from "@/lib/image-utils";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
+  SoundDialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/sound-dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -57,7 +57,7 @@ export function InventorySelector({ open, onOpenChange, onSelect }: InventorySel
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <SoundDialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl h-[600px] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-6 border-b">
           <DialogTitle>Select Item for Trade</DialogTitle>
@@ -210,6 +210,6 @@ export function InventorySelector({ open, onOpenChange, onSelect }: InventorySel
           </Tabs>
         </div>
       </DialogContent>
-    </Dialog>
+    </SoundDialog>
   );
 }

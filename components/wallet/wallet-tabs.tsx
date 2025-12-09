@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSound } from "@/hooks/use-sound";
 import { Wallet } from "lucide-react";
 
 const tabs = [
@@ -20,6 +21,7 @@ interface WalletTabsProps {
 export function WalletTabs({ children }: WalletTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { play } = useSound();
 
   const sortedTabs = [...tabs].sort((a, b) => b.href.length - a.href.length);
 
@@ -35,6 +37,7 @@ export function WalletTabs({ children }: WalletTabsProps) {
         onValueChange={(value) => {
           const tab = tabs.find((t) => t.value === value);
           if (tab) {
+            play("click");
             router.push(tab.href);
           }
         }}

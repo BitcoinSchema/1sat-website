@@ -3,15 +3,15 @@
 import { Download, LogOut } from "lucide-react";
 import { useState } from "react";
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
+	SoundAlertDialog,
+	SoundAlertDialogAction,
+	SoundAlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/sound-alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/providers/wallet-provider";
 
@@ -47,7 +47,7 @@ export function DeleteWalletModal({
 	};
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
+		<SoundAlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle className="flex items-center gap-2">
@@ -69,21 +69,22 @@ export function DeleteWalletModal({
 				</div>
 
 				<AlertDialogFooter>
-					<AlertDialogCancel>Cancel</AlertDialogCancel>
+					<SoundAlertDialogCancel>Cancel</SoundAlertDialogCancel>
 
 					<Button variant="secondary" onClick={handleExport}>
 						<Download className="mr-2 h-4 w-4" />
 						Export Keys
 					</Button>
 
-					<AlertDialogAction
+					<SoundAlertDialogAction
 						onClick={handleDelete}
+						sound="decline"
 						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 					>
 						Sign Out
-					</AlertDialogAction>
+					</SoundAlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
-		</AlertDialog>
+		</SoundAlertDialog>
 	);
 }

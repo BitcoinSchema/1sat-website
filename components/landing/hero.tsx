@@ -6,12 +6,14 @@ import { ArrowRight, Globe, Shield, Smartphone, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSound } from "@/hooks/use-sound";
 import { useWallet } from "@/providers/wallet-provider";
 import { SharedPresence } from "./shared-presence";
 import { TradeRequestListener } from "./trade-request-listener";
 
 export function LandingHero() {
   const { hasWallet, isWalletLocked } = useWallet();
+  const { play } = useSound();
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background selection:bg-primary/20">
@@ -42,6 +44,7 @@ export function LandingHero() {
             <Button
               className="shadow-[0_0_20px_-5px_var(--primary)] hover:shadow-[0_0_30px_-5px_var(--primary)] transition-all duration-300 scale-100 hover:scale-105 font-bold"
               asChild
+              onClick={() => play("click")}
             >
               {hasWallet ? (
                 <Link href="/wallet">
@@ -57,6 +60,7 @@ export function LandingHero() {
               variant="outline"
               className="border-primary/20 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 bg-background/50 backdrop-blur-sm"
               asChild
+              onClick={() => play("click")}
             >
               <Link href="/activity">
                 Live Activity <ArrowRight className="ml-2 w-6 h-6" />
