@@ -6,12 +6,12 @@ import { SearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import {
-  Dialog,
+  SoundDialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/sound-dialog"
 
 function Command({
   className,
@@ -36,14 +36,14 @@ function CommandDialog({
   className,
   showCloseButton = true,
   ...props
-}: React.ComponentProps<typeof Dialog> & {
+}: React.ComponentProps<typeof SoundDialog> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
 }) {
   return (
-    <Dialog {...props}>
+    <SoundDialog {...props}>
       <DialogHeader className="sr-only">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
@@ -56,7 +56,7 @@ function CommandDialog({
           {children}
         </Command>
       </DialogContent>
-    </Dialog>
+    </SoundDialog>
   )
 }
 

@@ -4,6 +4,7 @@ import { Activity, Book, Coins, Hammer, Pickaxe, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
+import { useSound } from "@/hooks/use-sound";
 
 import {
 	Sidebar,
@@ -146,6 +147,8 @@ const navData = [
 export function LeftSidebar({
 	...props
 }: React.ComponentProps<typeof Sidebar>) {
+	const { play } = useSound();
+
 	return (
 		<Sidebar {...props}>
 			<SidebarHeader>
@@ -186,7 +189,7 @@ export function LeftSidebar({
 								{group.items.map((item) => (
 									<SidebarMenuItem key={item.title}>
 										<SidebarMenuButton asChild tooltip={item.title}>
-											<Link href={item.url}>
+											<Link href={item.url} onClick={() => play("click")}>
 												<item.icon className="h-4 w-4" />
 
 												<span>{item.title}</span>

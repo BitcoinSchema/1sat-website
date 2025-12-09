@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, File as FileIcon, Image as ImageIcon, Music, Video, Code, Trash2, RefreshCcw, Plus, X } from "lucide-react";
+import { Loader2, File as FileIcon, Image as ImageIcon, Music, Video, Code, Trash2, RefreshCcw, Plus, X, Settings2, Upload } from "lucide-react";
+import { useSound } from "@/hooks/use-sound";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dropzone,
   DropZoneArea,
@@ -29,6 +31,7 @@ type MetaMap = {
 };
 
 export default function InscribePage() {
+  const { play } = useSound();
   const [activeTab, setActiveTab] = useState("file");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -44,17 +47,17 @@ export default function InscribePage() {
   const [bsv20Decimals, setBsv20Decimals] = useState("0");
   const [bsv20Limit, setBsv20Limit] = useState("");
 
-  // BSV21 State
-  const [bsv21Mode, setBsv21Mode] = useState<"mint" | "deploy">("mint");
-  const [bsv21Id, setBsv21Id] = useState("");
-  const [bsv21Amount, setBsv21Amount] = useState("");
-  // Deploy fields for BSV21 could be complex (parent, symbol, etc.) - keeping simple for now
+  // BSV21 State (deploy only - no mint mode in BSV21)
   const [bsv21Symbol, setBsv21Symbol] = useState("");
-  const [bsv21Decimals, setBsv21Decimals] = useState("0");
-  const [bsv21Max, setBsv21Max] = useState("");
+  const [bsv21Max, setBsv21Max] = useState("21000000");
+  const [bsv21Decimals, setBsv21Decimals] = useState("");
+  const [bsv21Icon, setBsv21Icon] = useState<File | null>(null);
+  const [bsv21IconPreview, setBsv21IconPreview] = useState<string | null>(null);
+  const [showBsv21Options, setShowBsv21Options] = useState(false);
 
   const dropzone = useDropzone({
     onDropFile: async (droppedFile) => {
+      play("dialog");
       setFile(droppedFile);
       setFileType(droppedFile.type);
       if (droppedFile.type.startsWith("image/")) {
@@ -117,6 +120,28 @@ export default function InscribePage() {
       setMetadata(prev => prev.filter(m => m.idx !== idx));
   };
 
+  const handleBsv21IconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = e.target.files?.[0];
+      if (!selectedFile) return;
+
+      // Validate it's an image
+      if (!selectedFile.type.startsWith("image/")) {
+          return;
+      }
+
+      play("dialog");
+      setBsv21Icon(selectedFile);
+      setBsv21IconPreview(URL.createObjectURL(selectedFile));
+  };
+
+  const removeBsv21Icon = () => {
+      setBsv21Icon(null);
+      if (bsv21IconPreview) {
+          URL.revokeObjectURL(bsv21IconPreview);
+      }
+      setBsv21IconPreview(null);
+  };
+
 
   const handleInscribe = async () => {
       setIsMinting(true);
@@ -163,7 +188,7 @@ export default function InscribePage() {
         </PageHeader>
         <PageContent>
             <div className="grid gap-6 lg:grid-cols-2">
-                <Tabs defaultValue="file" value={activeTab} onValueChange={setActiveTab} className="w-full lg:col-span-1">
+                <Tabs defaultValue="file" value={activeTab} onValueChange={(value) => { play("click"); setActiveTab(value); }} className="w-full lg:col-span-1">
                     <TabsList className="grid w-full grid-cols-3 mb-4">
                         <TabsTrigger value="file">File</TabsTrigger>
                         <TabsTrigger value="bsv20">BSV20</TabsTrigger>
@@ -371,92 +396,137 @@ export default function InscribePage() {
                     <TabsContent value="bsv21">
                         <Card>
                             <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <CardTitle>BSV21</CardTitle>
-                                    <div className="flex bg-muted rounded-lg p-1">
-                                        <Button 
-                                            variant={bsv21Mode === "mint" ? "secondary" : "ghost"} 
-                                            size="sm" 
-                                            onClick={() => setBsv21Mode("mint")}
-                                            className="h-7 text-xs"
-                                        >
-                                            Mint
-                                        </Button>
-                                        <Button 
-                                            variant={bsv21Mode === "deploy" ? "secondary" : "ghost"} 
-                                            size="sm" 
-                                            onClick={() => setBsv21Mode("deploy")}
-                                            className="h-7 text-xs"
-                                        >
-                                            Deploy
-                                        </Button>
-                                    </div>
-                                </div>
+                                <CardTitle>Deploy New Token</CardTitle>
                                 <CardDescription>
-                                    {bsv21Mode === "mint" ? "Mint BSV21 tokens using ID." : "Deploy a new BSV21 token contract."}
+                                    Deploy a new BSV21 token with an icon. All tokens are minted to your wallet on deployment.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {bsv21Mode === "mint" ? (
-                                    <>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="bsv21-id">Token ID (TxId)</Label>
-                                            <Input 
-                                                id="bsv21-id" 
-                                                placeholder="TxId of deployment" 
-                                                value={bsv21Id} 
-                                                onChange={(e) => setBsv21Id(e.target.value)} 
+                                <div className="grid gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="bsv21-sym">Symbol</Label>
+                                        <span className="text-xs text-muted-foreground">Not required to be unique</span>
+                                    </div>
+                                    <Input
+                                        id="bsv21-sym"
+                                        placeholder="e.g. MYTOKEN"
+                                        value={bsv21Symbol}
+                                        maxLength={255}
+                                        onKeyDown={(e) => {
+                                            if (e.key === " " || e.key === "Enter") {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        onChange={(e) => setBsv21Symbol(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label>Upload Icon</Label>
+                                        <span className="text-xs text-muted-foreground">Square image recommended</span>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        {bsv21IconPreview ? (
+                                            <div className="relative w-20 h-20 rounded-lg overflow-hidden border bg-muted">
+                                                <img
+                                                    src={bsv21IconPreview}
+                                                    alt="Token icon preview"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    className="absolute top-1 right-1 h-6 w-6"
+                                                    onClick={removeBsv21Icon}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="w-20 h-20 rounded-lg border border-dashed bg-muted/50 flex items-center justify-center">
+                                                <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <Label
+                                                htmlFor="bsv21-icon"
+                                                className="flex items-center justify-center gap-2 w-full h-10 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
+                                            >
+                                                <Upload className="h-4 w-4" />
+                                                {bsv21Icon ? "Change Icon" : "Select Image"}
+                                            </Label>
+                                            <input
+                                                type="file"
+                                                id="bsv21-icon"
+                                                accept="image/*"
+                                                className="sr-only"
+                                                onChange={handleBsv21IconSelect}
                                             />
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="bsv21-max">Max Supply</Label>
+                                        <span className="text-xs text-muted-foreground">Whole tokens</span>
+                                    </div>
+                                    <Input
+                                        id="bsv21-max"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="\d+"
+                                        placeholder="21000000"
+                                        value={bsv21Max}
+                                        onChange={(e) => setBsv21Max(e.target.value.replace(/[^0-9]/g, ""))}
+                                    />
+                                </div>
+
+                                <Collapsible open={showBsv21Options} onOpenChange={setShowBsv21Options}>
+                                    <CollapsibleTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="w-full justify-end gap-2 text-primary hover:text-primary"
+                                            onClick={() => play("click")}
+                                        >
+                                            <Settings2 className="h-4 w-4" />
+                                            More Options
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="space-y-4 pt-4">
                                         <div className="grid gap-2">
-                                            <Label htmlFor="bsv21-amount">Amount</Label>
-                                            <Input 
-                                                id="bsv21-amount" 
-                                                type="number" 
-                                                placeholder="1000" 
-                                                value={bsv21Amount} 
-                                                onChange={(e) => setBsv21Amount(e.target.value)} 
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="bsv21-dec">Decimal Precision</Label>
+                                                <span className="text-xs text-muted-foreground">Default: 8</span>
+                                            </div>
+                                            <Input
+                                                id="bsv21-dec"
+                                                type="number"
+                                                min={0}
+                                                max={18}
+                                                placeholder="8"
+                                                value={bsv21Decimals}
+                                                onChange={(e) => setBsv21Decimals(e.target.value)}
                                             />
                                         </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="bsv21-sym">Symbol</Label>
-                                            <Input 
-                                                id="bsv21-sym" 
-                                                placeholder="TEST" 
-                                                value={bsv21Symbol} 
-                                                onChange={(e) => setBsv21Symbol(e.target.value.toUpperCase())} 
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="bsv21-max">Max Supply</Label>
-                                            <Input 
-                                                id="bsv21-max" 
-                                                type="number" 
-                                                placeholder="21000000" 
-                                                value={bsv21Max} 
-                                                onChange={(e) => setBsv21Max(e.target.value)} 
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="bsv21-dec">Decimals</Label>
-                                            <Input 
-                                                id="bsv21-dec" 
-                                                type="number" 
-                                                placeholder="0" 
-                                                value={bsv21Decimals} 
-                                                onChange={(e) => setBsv21Decimals(e.target.value)} 
-                                            />
-                                        </div>
-                                    </>
-                                )}
+                                    </CollapsibleContent>
+                                </Collapsible>
+
+                                <div className="rounded-md bg-blue-500/10 border border-blue-500/20 p-3 text-sm text-blue-200">
+                                    BSV21 deployments are indexed immediately. A listing fee may be required before it shows up in some areas on the website.
+                                </div>
                             </CardContent>
                             <CardFooter>
-                                <Button className="w-full" onClick={handleInscribe} disabled={isMinting}>
+                                <Button
+                                    className="w-full"
+                                    onClick={handleInscribe}
+                                    disabled={!bsv21Symbol || !bsv21Icon || !bsv21Max || isMinting}
+                                >
                                     {isMinting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {bsv21Mode === "mint" ? "Mint Tokens" : "Deploy Contract"}
+                                    Preview
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -481,11 +551,26 @@ export default function InscribePage() {
                                     <div className="text-sm text-muted-foreground">BSV20 {bsv20Mode === "mint" ? "Mint" : "Deploy"}</div>
                                     {bsv20Mode === "mint" && <div className="text-xl">{bsv20Amount}</div>}
                                 </div>
-                            ) : activeTab === "bsv21" && (bsv21Id || bsv21Symbol) ? (
-                                <div className="text-center space-y-2">
-                                    <div className="text-4xl font-bold">{bsv21Symbol || "BSV21"}</div>
-                                    <div className="text-sm text-muted-foreground">BSV21 {bsv21Mode === "mint" ? "Mint" : "Deploy"}</div>
-                                    {bsv21Mode === "mint" && <div className="text-xs font-mono text-muted-foreground break-all">{bsv21Id}</div>}
+                            ) : activeTab === "bsv21" && bsv21Symbol ? (
+                                <div className="text-center space-y-4">
+                                    {bsv21IconPreview ? (
+                                        <div className="mx-auto w-24 h-24 rounded-full overflow-hidden border-2 border-primary/50">
+                                            <img
+                                                src={bsv21IconPreview}
+                                                alt={`${bsv21Symbol} icon`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center text-3xl font-bold">
+                                            {bsv21Symbol[0] || "?"}
+                                        </div>
+                                    )}
+                                    <div className="space-y-1">
+                                        <div className="text-2xl font-bold">{bsv21Symbol}</div>
+                                        <div className="text-sm text-muted-foreground">BSV21 Deploy</div>
+                                        {bsv21Max && <div className="text-sm text-muted-foreground">Supply: {Number(bsv21Max).toLocaleString()}</div>}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="text-muted-foreground text-center">

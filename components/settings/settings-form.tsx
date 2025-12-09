@@ -17,8 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { useSound } from "@/hooks/use-sound";
 
 export function SettingsForm() {
+	const { play } = useSound();
 	const { theme, setTheme } = useTheme();
 	const [themeOrigin, setThemeOrigin] = useState("");
 	const [isLoadingTheme, setIsLoadingTheme] = useState(false);
@@ -182,7 +184,7 @@ export function SettingsForm() {
 			</Card>
 
 			{/* Wallet Settings Link */}
-			<Link href="/wallet/settings" className="md:col-span-2">
+			<Link href="/wallet/settings" className="md:col-span-2" onClick={() => play("click")}>
 				<Card className="hover:bg-accent/50 transition-colors cursor-pointer border-l-4 border-l-primary">
 					<CardContent className="flex items-center justify-between p-6">
 						<div className="flex items-center gap-4">

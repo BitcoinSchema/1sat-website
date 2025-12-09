@@ -24,8 +24,10 @@ import { Switch } from "@/components/ui/switch";
 import { CURRENCY_KEY, PRIVACY_MODE_KEY } from "@/lib/constants";
 import { useSettingsStorage } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
+import { useSound } from "@/hooks/use-sound";
 
 export function WalletSettingsForm() {
+  const { play } = useSound();
   const { syncWallet, isSyncing } = useWallet();
   const [isPrivacyModeEnabled, setIsPrivacyModeEnabled] =
     useSettingsStorage<boolean>(PRIVACY_MODE_KEY, false);
@@ -159,7 +161,7 @@ export function WalletSettingsForm() {
                 View wallet state, test integrations, and debug issues.
               </span>
             </div>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild onClick={() => play("click")}>
               <Link href="/wallet/diagnostics">
                 <Bug className="h-4 w-4 mr-2" />
                 Open
@@ -186,7 +188,7 @@ export function WalletSettingsForm() {
                 recovery phrase backed up.
               </span>
             </div>
-            <Button variant="destructive" size="sm" asChild>
+            <Button variant="destructive" size="sm" asChild onClick={() => play("click")}>
               <Link href="/wallet/delete">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out

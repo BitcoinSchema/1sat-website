@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useSound } from "@/hooks/use-sound";
 
 interface DiagnosticItem {
   label: string;
@@ -50,6 +51,7 @@ function DiagnosticRow({ item }: { item: DiagnosticItem }) {
 }
 
 export default function WalletDiagnosticPage() {
+  const { play } = useSound();
   const wallet = useWallet();
   const toolbox = useWalletToolbox();
 
@@ -153,7 +155,7 @@ export default function WalletDiagnosticPage() {
   return (
     <Page>
       <PageHeader className="gap-2 justify-start">
-        <Button variant="ghost" size="icon" asChild className="-ml-2">
+        <Button variant="ghost" size="icon" asChild className="-ml-2" onClick={() => play("click")}>
           <Link href="/wallet/settings">
             <ArrowLeft className="h-4 w-4" />
           </Link>

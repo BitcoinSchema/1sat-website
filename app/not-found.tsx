@@ -1,10 +1,19 @@
+"use client";
+
 import { ArrowLeft } from "lucide-react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import GlitchCanvas from "@/components/ui/glitch-canvas";
+import { useSound } from "@/hooks/use-sound";
 
 export default function NotFound() {
+  const { play } = useSound();
+
+  useEffect(() => {
+    play("error");
+  }, [play]);
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background text-foreground overflow-hidden font-mono">
       {/* WebGL Background */}
@@ -48,6 +57,7 @@ export default function NotFound() {
           asChild
           size="lg"
           className="group transition-all duration-300 hover:scale-105"
+          onClick={() => play("click")}
         >
           <Link href="/">
             <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />

@@ -15,15 +15,18 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { useSound } from "@/hooks/use-sound";
 
 export default function ImportSelectPage() {
+	const { play } = useSound();
+
 	return (
 		<Page className="max-w-2xl">
 			<PageHeader>
 				<PageTitle>Import Wallet</PageTitle>
 			</PageHeader>
 			<PageContent className="grid gap-6 md:grid-cols-2">
-				<Link href="/wallet/import/json" className="block">
+				<Link href="/wallet/import/json" className="block" onClick={() => play("click")}>
 					<Card className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary/50 h-full">
 						<CardHeader className="text-center pb-2">
 							<div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
@@ -38,7 +41,7 @@ export default function ImportSelectPage() {
 					</Card>
 				</Link>
 
-				<Link href="/wallet/import/mnemonic" className="block">
+				<Link href="/wallet/import/mnemonic" className="block" onClick={() => play("click")}>
 					<Card className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary/50 h-full">
 						<CardHeader className="text-center pb-2">
 							<div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">

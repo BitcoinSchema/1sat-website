@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { fetchMarketActivity } from "@/lib/api";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
 import type { OrdUtxo } from "@/lib/types/ordinals";
+import { useSound } from "@/hooks/use-sound";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
   <>
@@ -60,6 +61,7 @@ const useColumnCount = () => {
 };
 
 export default function FlowGrid({ className = "" }: { className?: string }) {
+  const { play } = useSound();
   // biome-ignore lint/correctness/noUnusedVariables: intended for future optimization
   const seenOutpoints = useRef<Set<string>>(new Set());
   const [visible, setVisible] = useState<Set<string>>(new Set());
@@ -136,6 +138,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 
   const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
     e.preventDefault();
+    play("click");
     // Skip view transition for now if it's causing issues, or keep it simple
     if (
       typeof document !== "undefined" &&

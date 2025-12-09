@@ -20,6 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useWallet } from "@/providers/wallet-provider";
+import { useSound } from "@/hooks/use-sound";
 
 export function NavUser({
   user,
@@ -30,6 +31,7 @@ export function NavUser({
     address: string;
   };
 }) {
+  const { play } = useSound();
   const { isMobile } = useSidebar();
   const { walletKeys } = useWallet();
 
@@ -93,7 +95,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
+            <DropdownMenuItem asChild onClick={() => play("click")}>
               <Link
                 href="/wallet/delete"
                 className="flex w-full items-center text-destructive focus:text-destructive cursor-pointer"

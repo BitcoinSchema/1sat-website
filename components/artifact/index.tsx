@@ -16,6 +16,7 @@ import HTMLArtifact from "./html";
 import JsonArtifact from "./json";
 import TextArtifact from "./text";
 import VideoArtifact from "./video";
+import { useSound } from "@/hooks/use-sound";
 
 type ArtifactProps = {
   artifact: Partial<OrdUtxo>;
@@ -52,6 +53,7 @@ const Artifact: React.FC<ArtifactProps> = ({
   thumbnail = false,
   disableLink = false,
 }) => {
+  const { play } = useSound();
   const router = useRouter();
   const [showZoom, setShowZoom] = useState<boolean>(false);
   // Placeholder for buying logic if needed later
@@ -331,6 +333,8 @@ const Artifact: React.FC<ArtifactProps> = ({
               if (txid && onClick) {
                 onClick(txid);
               }
+            } else if (to) {
+              play("click");
             }
           }}
         >

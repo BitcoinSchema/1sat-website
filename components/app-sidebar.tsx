@@ -219,6 +219,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<Link
 						href="/wallet"
 						className="flex flex-col gap-1 hover:opacity-80 transition-opacity cursor-pointer mb-4"
+						onClick={() => play("click")}
 					>
 						<span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
 							Total Balance

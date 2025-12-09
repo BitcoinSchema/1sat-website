@@ -10,6 +10,7 @@ import { getOrdinalThumbnail } from "@/lib/image-utils";
 import { Loader2, Coins } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSound } from "@/hooks/use-sound";
 
 interface TokenCardProps {
   outpoint: string;
@@ -20,6 +21,7 @@ interface TokenCardProps {
 }
 
 function TokenCard({ outpoint, txid, data, type }: TokenCardProps) {
+  const { play } = useSound();
   const imageUrl = `${ORDFS}/${outpoint}`;
 
   // Extract token info from data
@@ -42,6 +44,7 @@ function TokenCard({ outpoint, txid, data, type }: TokenCardProps) {
     <Link
       href={`/outpoint/${outpoint}/timeline`}
       className="group flex items-center gap-4 p-4 rounded-lg bg-card border border-border hover:border-primary/50 transition-all"
+      onClick={() => play("click")}
     >
       <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
         <Image

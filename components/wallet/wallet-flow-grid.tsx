@@ -18,6 +18,7 @@ import type { OrdUtxo } from "@/lib/types/ordinals";
 import { ORDFS } from "@/lib/constants";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
 import { Loader2 } from "lucide-react";
+import { useSound } from "@/hooks/use-sound";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
   <>
@@ -71,6 +72,7 @@ export default function WalletFlowGrid({
   className = "",
   pageSize = 50,
 }: WalletFlowGridProps) {
+  const { play } = useSound();
   const { ordinals, isInitialized, isInitializing } = useWalletToolbox();
   const [visible, setVisible] = useState<Set<string>>(new Set());
   const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(null);
@@ -165,6 +167,7 @@ export default function WalletFlowGrid({
 
   const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
     e.preventDefault();
+    play("click");
     if (
       typeof document !== "undefined" &&
       "startViewTransition" in document &&
