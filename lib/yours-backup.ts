@@ -15,7 +15,7 @@ export const parseYoursWalletBackup = async (
 ): Promise<Keys | null> => {
 	try {
 		const zip = new JSZip();
-		const zipContent = await zip.loadAsync(file);
+		const _zipContent = await zip.loadAsync(file);
 		const chromeObjectFile = zip.file("chromeStorage.json");
 
 		if (!chromeObjectFile) {
@@ -59,7 +59,7 @@ export const parseYoursWalletBackup = async (
 		// We will throw an error here because we can't return a `Keys` object yet.
 		// We need to modify `ImportJsonPage` to handle this type of backup.
 
-		return null; 
+		return null;
 	} catch (error) {
 		console.error("Failed to parse yours wallet backup", error);
 		return null;

@@ -17,16 +17,6 @@ import * as React from "react";
 import { useState } from "react";
 import { NavUser } from "@/components/nav-user";
 import { Button } from "@/components/ui/button";
-import {
-	SoundDialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/sound-dialog";
-import { useCopyWithSound } from "@/hooks/use-copy-with-sound";
-import { useSound } from "@/hooks/use-sound";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -44,12 +34,22 @@ import {
 	SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+	SoundDialog,
+} from "@/components/ui/sound-dialog";
+import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { UnlockWalletDialog } from "@/components/wallet/unlock-wallet-dialog";
+import { useCopyWithSound } from "@/hooks/use-copy-with-sound";
+import { useSound } from "@/hooks/use-sound";
 import { PRIVACY_MODE_KEY } from "@/lib/constants";
 import { useSettingsStorage } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
@@ -186,12 +186,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<p className="text-sm text-muted-foreground">No Wallet</p>
 						<div className="grid grid-cols-1 gap-2 w-full">
 							<Link href="/wallet/create" className="w-full">
-								<Button variant="outline" className="w-full" onClick={() => play("click")}>
+								<Button
+									variant="outline"
+									className="w-full"
+									onClick={() => play("click")}
+								>
 									<Plus className="h-4 w-4 mr-2" /> Create New
 								</Button>
 							</Link>
 							<Link href="/wallet/import" className="w-full">
-								<Button variant="ghost" className="w-full" onClick={() => play("click")}>
+								<Button
+									variant="ghost"
+									className="w-full"
+									onClick={() => play("click")}
+								>
 									<Import className="h-4 w-4 mr-2" /> Import Existing
 								</Button>
 							</Link>
@@ -310,7 +318,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<div className="grid grid-cols-2 gap-2">
 						<SoundDialog>
 							<DialogTrigger asChild>
-								<Button size="sm" className="w-full gap-2" onClick={() => play("click")}>
+								<Button
+									size="sm"
+									className="w-full gap-2"
+									onClick={() => play("click")}
+								>
 									<ArrowDown className="h-4 w-4" /> Deposit
 								</Button>
 							</DialogTrigger>
@@ -364,7 +376,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 						<SoundDialog>
 							<DialogTrigger asChild>
-								<Button size="sm" variant="outline" className="w-full gap-2" onClick={() => play("click")}>
+								<Button
+									size="sm"
+									variant="outline"
+									className="w-full gap-2"
+									onClick={() => play("click")}
+								>
 									<Send className="h-4 w-4" /> Send
 								</Button>
 							</DialogTrigger>
@@ -385,7 +402,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										<Input id="amount" placeholder="0.00" type="number" />
 									</div>
 								</div>
-								<Button className="w-full" onClick={() => play("success")}>Confirm Send</Button>
+								<Button className="w-full" onClick={() => play("success")}>
+									Confirm Send
+								</Button>
 							</DialogContent>
 						</SoundDialog>
 					</div>

@@ -4,8 +4,6 @@ import { Activity, Book, Coins, Hammer, Pickaxe, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
-import { useSound } from "@/hooks/use-sound";
-
 import {
 	Sidebar,
 	SidebarContent,
@@ -18,6 +16,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import { useSound } from "@/hooks/use-sound";
 
 // Custom 1Sat Icon in Lucide style
 const OneSatIcon = ({ className }: { className?: string }) => (

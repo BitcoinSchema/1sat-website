@@ -28,29 +28,34 @@ import type {
 } from "@/lib/types";
 import { useImportWallet } from "../provider";
 
-const validateJson = (json: any): json is DecryptedBackupJson => {
+const validateJson = (json: unknown): json is DecryptedBackupJson => {
 	if (!json || typeof json !== "object" || json === null) return false;
-	if (typeof json.payPk === "string" && typeof json.ordPk === "string")
+	if (
+		typeof (json as { payPk?: unknown }).payPk === "string" &&
+		typeof (json as { ordPk?: unknown }).ordPk === "string"
+	)
 		return true;
 	return false;
 };
 
-const isEncryptedBackup = (json: any): json is EncryptedBackupJson => {
+const isEncryptedBackup = (json: unknown): json is EncryptedBackupJson => {
 	return (
-		typeof json?.encryptedBackup === "string" &&
-		typeof json?.pubKey === "string"
+		typeof (json as { encryptedBackup?: unknown })?.encryptedBackup ===
+			"string" && typeof (json as { pubKey?: unknown })?.pubKey === "string"
 	);
 };
 
 const validateYoursBackup = (
-	json: any,
+	json: unknown,
 ): json is YoursEncryptedBackup | YoursChromeStorageBackup => {
 	// Yours Wallet / Panda Wallet format
 	return (
-		(typeof json?.encryptedKeys === "string" &&
-			typeof json?.passKey === "string" &&
-			typeof json?.salt === "string") ||
-		(json?.accounts && typeof json?.selectedAccount === "string")
+		(typeof (json as { encryptedKeys?: unknown })?.encryptedKeys === "string" &&
+			typeof (json as { passKey?: unknown })?.passKey === "string" &&
+			typeof (json as { salt?: unknown })?.salt === "string") ||
+		(!!(json as { accounts?: unknown })?.accounts &&
+			typeof (json as { selectedAccount?: unknown })?.selectedAccount ===
+				"string")
 	);
 };
 
@@ -58,7 +63,7 @@ interface PreviewData {
 	fileName: string;
 	isEncrypted: boolean;
 	keys?: Keys; // Only present if plaintext
-	encryptedData?: any; // Store raw data to pass later
+	encryptedData?: unknown; // Store raw data to pass later
 	type: "legacy-plain" | "legacy-enc" | "yours-enc";
 }
 

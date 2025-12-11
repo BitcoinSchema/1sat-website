@@ -6,7 +6,7 @@ import { useSound } from "@/hooks/use-sound";
 import type { SoundName } from "@/lib/sounds";
 
 interface UseCopyWithSoundOptions {
-  successSound?: SoundName;
+	successSound?: SoundName;
 }
 
 /**
@@ -16,20 +16,20 @@ interface UseCopyWithSoundOptions {
  * @returns [copiedValue, copy] - Same API as useCopyToClipboard
  */
 export function useCopyWithSound(options: UseCopyWithSoundOptions = {}) {
-  const { successSound = "success" } = options;
-  const [copiedValue, copyFn] = useCopyToClipboard();
-  const { play } = useSound();
+	const { successSound = "success" } = options;
+	const [copiedValue, copyFn] = useCopyToClipboard();
+	const { play } = useSound();
 
-  const copy = useCallback(
-    async (text: string) => {
-      const success = await copyFn(text);
-      if (success) {
-        play(successSound);
-      }
-      return success;
-    },
-    [copyFn, play, successSound]
-  );
+	const copy = useCallback(
+		async (text: string) => {
+			const success = await copyFn(text);
+			if (success) {
+				play(successSound);
+			}
+			return success;
+		},
+		[copyFn, play, successSound],
+	);
 
-  return [copiedValue, copy] as const;
+	return [copiedValue, copy] as const;
 }

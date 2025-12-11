@@ -2,17 +2,17 @@
 
 import { Download, LogOut } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
-	SoundAlertDialog,
-	SoundAlertDialogAction,
-	SoundAlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
+	SoundAlertDialog,
+	SoundAlertDialogAction,
+	SoundAlertDialogCancel,
 } from "@/components/ui/sound-alert-dialog";
-import { Button } from "@/components/ui/button";
 import { useWallet } from "@/providers/wallet-provider";
 
 interface DeleteWalletModalProps {

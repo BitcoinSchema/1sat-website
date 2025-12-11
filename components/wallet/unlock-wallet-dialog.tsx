@@ -1,19 +1,18 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-	SoundDialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	SoundDialog,
 } from "@/components/ui/sound-dialog";
 import { useSound } from "@/hooks/use-sound";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useWallet } from "@/providers/wallet-provider";
 
 export function UnlockWalletDialog({

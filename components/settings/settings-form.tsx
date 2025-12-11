@@ -1,6 +1,13 @@
 "use client";
 
-import { ChevronRight, Keyboard, Palette, User, Wallet, Loader2 } from "lucide-react";
+import {
+	ChevronRight,
+	Keyboard,
+	Loader2,
+	Palette,
+	User,
+	Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -40,7 +47,7 @@ export function SettingsForm() {
 			if (!res.ok) throw new Error("Failed to fetch theme");
 
 			const data = await res.json();
-			
+
 			if (!data.styles) {
 				throw new Error("Invalid theme data: missing styles");
 			}
@@ -68,7 +75,7 @@ export function SettingsForm() {
 				});
 				css += "}\n";
 			}
-			
+
 			console.log("Injecting CSS:", css);
 
 			// Inject Style Tag
@@ -79,7 +86,6 @@ export function SettingsForm() {
 				document.head.appendChild(styleTag);
 			}
 			styleTag.textContent = css;
-
 		} catch (e) {
 			console.error("Error applying theme:", e);
 		} finally {
@@ -184,7 +190,11 @@ export function SettingsForm() {
 			</Card>
 
 			{/* Wallet Settings Link */}
-			<Link href="/wallet/settings" className="md:col-span-2" onClick={() => play("click")}>
+			<Link
+				href="/wallet/settings"
+				className="md:col-span-2"
+				onClick={() => play("click")}
+			>
 				<Card className="hover:bg-accent/50 transition-colors cursor-pointer border-l-4 border-l-primary">
 					<CardContent className="flex items-center justify-between p-6">
 						<div className="flex items-center gap-4">

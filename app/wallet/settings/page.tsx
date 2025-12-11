@@ -18,7 +18,13 @@ export default function WalletSettingsPage() {
 	return (
 		<Page>
 			<PageHeader className="gap-2 justify-start">
-				<Button variant="ghost" size="icon" asChild className="-ml-2" onClick={() => play("click")}>
+				<Button
+					variant="ghost"
+					size="icon"
+					asChild
+					className="-ml-2"
+					onClick={() => play("click")}
+				>
 					<Link href="/settings">
 						<ArrowLeft className="h-4 w-4" />
 					</Link>

@@ -1,16 +1,16 @@
 // API Endpoints - use environment variables with fallback to production
 export const ORDFS =
-  process.env.NEXT_PUBLIC_ORDFS_URL || "https://ordfs.network";
+	process.env.NEXT_PUBLIC_ORDFS_URL || "https://ordfs.network";
 export const API_HOST =
-  process.env.NEXT_PUBLIC_API_HOST || "https://ordinals.gorillapool.io";
+	process.env.NEXT_PUBLIC_API_HOST || "https://ordinals.gorillapool.io";
 export const MARKET_API_HOST =
-  process.env.NEXT_PUBLIC_MARKET_API_HOST || "https://api.1sat.market";
+	process.env.NEXT_PUBLIC_MARKET_API_HOST || "https://api.1sat.market";
 
 export enum FetchStatus {
-  Idle = "idle",
-  Loading = "loading",
-  Success = "success",
-  Error = "error",
+	Idle = "idle",
+	Loading = "loading",
+	Success = "success",
+	Error = "error",
 }
 
 export const RESULTS_PER_PAGE = 30;
@@ -25,7 +25,7 @@ export const PRIVACY_MODE_KEY = "privacy_mode";
 export const CURRENCY_KEY = "currency";
 
 export enum Bsv20Status {
-  Invalid = -1,
-  Pending = 0,
-  Valid = 1,
+	Invalid = -1,
+	Pending = 0,
+	Valid = 1,
 }

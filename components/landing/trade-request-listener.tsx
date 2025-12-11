@@ -1,322 +1,357 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
+import { Bell, Clock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
-import { useWallet } from "@/providers/wallet-provider";
-import { wifToAddress } from "@/lib/keys";
-import { TradeDialog } from "./trade-dialog";
+import SigmaAvatar from "sigma-avatars";
 import {
-  SoundAlertDialog,
-  SoundAlertDialogAction,
-  SoundAlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	SoundAlertDialog,
+	SoundAlertDialogAction,
+	SoundAlertDialogCancel,
 } from "@/components/ui/sound-alert-dialog";
 import { useSound } from "@/hooks/use-sound";
-import SigmaAvatar from "sigma-avatars";
-import { Bell, Clock } from "lucide-react";
+import { wifToAddress } from "@/lib/keys";
+import { useWallet } from "@/providers/wallet-provider";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { TradeDialog } from "./trade-dialog";
 
 // Truncate address for display
 function truncateAddress(address: string): string {
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	if (address.length <= 12) return address;
+	return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 // Extract wallet address from userId
 function extractWalletAddress(userId: string): string {
-  return userId.includes(":") ? userId.split(":")[0] : userId;
+	return userId.includes(":") ? userId.split(":")[0] : userId;
 }
 
 export function TradeRequestListener() {
-  const { walletKeys, isWalletLocked } = useWallet();
-  const { play } = useSound();
-  const [incomingRequest, setIncomingRequest] = useState<{
-    id: Id<"tradeRequests">;
-    fromUserId: string;
-  } | null>(null);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [activePeerAddress, setActivePeerAddress] = useState<string>("");
+	const { walletKeys, isWalletLocked } = useWallet();
+	const { play } = useSound();
+	const [incomingRequest, setIncomingRequest] = useState<{
+		id: Id<"tradeRequests">;
+		fromUserId: string;
+	} | null>(null);
+	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+	const [activePeerAddress, setActivePeerAddress] = useState<string>("");
 
-  const lastIncomingRequestIdRef = useRef<string | null>(null);
-  const lastAcceptedRequestIdRef = useRef<string | null>(null);
+	const lastIncomingRequestIdRef = useRef<string | null>(null);
+	const lastAcceptedRequestIdRef = useRef<string | null>(null);
 
-  // Derive my address
-  const myAddress = useMemo(() => {
-    if (walletKeys?.ordPk && !isWalletLocked) {
-      try {
-        return wifToAddress(walletKeys.ordPk);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }, [walletKeys, isWalletLocked]);
+	// Derive my address
+	const myAddress = useMemo(() => {
+		if (walletKeys?.ordPk && !isWalletLocked) {
+			try {
+				return wifToAddress(walletKeys.ordPk);
+			} catch {
+				return null;
+			}
+		}
+		return null;
+	}, [walletKeys, isWalletLocked]);
 
-  // Session suffix (same as SharedPresence)
-  const sessionSuffix = useMemo(() => {
-    if (typeof window === "undefined") return Math.random().toString(36).slice(2, 6);
-    let suffix = sessionStorage.getItem("presence-session-suffix");
-    if (!suffix) {
-      suffix = Math.random().toString(36).slice(2, 6);
-      sessionStorage.setItem("presence-session-suffix", suffix);
-    }
-    return suffix;
-  }, []);
+	// Session suffix (same as SharedPresence)
+	const sessionSuffix = useMemo(() => {
+		if (typeof window === "undefined")
+			return Math.random().toString(36).slice(2, 6);
+		let suffix = sessionStorage.getItem("presence-session-suffix");
+		if (!suffix) {
+			suffix = Math.random().toString(36).slice(2, 6);
+			sessionStorage.setItem("presence-session-suffix", suffix);
+		}
+		return suffix;
+	}, []);
 
-  // Full userId with session
-  const myFullUserId = useMemo(() => {
-    if (myAddress) {
-      return `${myAddress}:${sessionSuffix}`;
-    }
-    return null;
-  }, [myAddress, sessionSuffix]);
+	// Full userId with session
+	const myFullUserId = useMemo(() => {
+		if (myAddress) {
+			return `${myAddress}:${sessionSuffix}`;
+		}
+		return null;
+	}, [myAddress, sessionSuffix]);
 
-  // Subscribe to incoming trade requests (for recipient)
-  const incomingRequests = useQuery(
-    api.trades.getIncomingTradeRequests,
-    myFullUserId ? { userId: myFullUserId } : "skip"
-  );
+	// Subscribe to incoming trade requests (for recipient)
+	const incomingRequests = useQuery(
+		api.trades.getIncomingTradeRequests,
+		myFullUserId ? { userId: myFullUserId } : "skip",
+	);
 
-  // Subscribe to accepted sent requests (for initiator)
-  const acceptedSentRequests = useQuery(
-    api.trades.getAcceptedSentRequests,
-    myFullUserId ? { userId: myFullUserId } : "skip"
-  );
+	// Subscribe to accepted sent requests (for initiator)
+	const acceptedSentRequests = useQuery(
+		api.trades.getAcceptedSentRequests,
+		myFullUserId ? { userId: myFullUserId } : "skip",
+	);
 
-  // Subscribe to pending sent requests (for initiator waiting UI)
-  const pendingSentRequests = useQuery(
-    api.trades.getPendingSentRequests,
-    myFullUserId ? { userId: myFullUserId } : "skip"
-  );
+	// Subscribe to pending sent requests (for initiator waiting UI)
+	const pendingSentRequests = useQuery(
+		api.trades.getPendingSentRequests,
+		myFullUserId ? { userId: myFullUserId } : "skip",
+	);
 
-  // Subscribe to active trade session (to detect when other party closes)
-  const activeTradeSession = useQuery(
-    api.trades.getTradeSession,
-    activeSessionId ? { sessionId: activeSessionId } : "skip"
-  );
+	// Subscribe to active trade session (to detect when other party closes)
+	const activeTradeSession = useQuery(
+		api.trades.getTradeSession,
+		activeSessionId ? { sessionId: activeSessionId } : "skip",
+	);
 
-  // Mutations
-  const acceptRequest = useMutation(api.trades.acceptTradeRequest);
-  const declineRequest = useMutation(api.trades.declineTradeRequest);
-  const cancelTradeRequest = useMutation(api.trades.cancelTradeRequest);
-  const cancelTrade = useMutation(api.trades.cancelTrade);
+	// Mutations
+	const acceptRequest = useMutation(api.trades.acceptTradeRequest);
+	const declineRequest = useMutation(api.trades.declineTradeRequest);
+	const cancelTradeRequest = useMutation(api.trades.cancelTradeRequest);
+	const cancelTrade = useMutation(api.trades.cancelTrade);
 
-  // Handle new incoming requests (recipient side) - play ALERT sound
-  useEffect(() => {
-    if (incomingRequests && incomingRequests.length > 0) {
-      const latestRequest = incomingRequests[0];
+	// Handle new incoming requests (recipient side) - play ALERT sound
+	useEffect(() => {
+		if (incomingRequests && incomingRequests.length > 0) {
+			const latestRequest = incomingRequests[0];
 
-      if (lastIncomingRequestIdRef.current !== latestRequest._id) {
-        lastIncomingRequestIdRef.current = latestRequest._id;
+			if (lastIncomingRequestIdRef.current !== latestRequest._id) {
+				lastIncomingRequestIdRef.current = latestRequest._id;
 
-        // Play alert sound for notification popup
-        play("alert");
+				// Play alert sound for notification popup
+				play("alert");
 
-        setIncomingRequest({
-          id: latestRequest._id,
-          fromUserId: latestRequest.fromUserId,
-        });
-      }
-    } else if (incomingRequests !== undefined && incomingRequests.length === 0) {
-      // Request was cancelled by sender or handled - clear the dialog
-      setIncomingRequest(null);
-      lastIncomingRequestIdRef.current = null;
-    }
-  }, [incomingRequests]);
+				setIncomingRequest({
+					id: latestRequest._id,
+					fromUserId: latestRequest.fromUserId,
+				});
+			}
+		} else if (
+			incomingRequests !== undefined &&
+			incomingRequests.length === 0
+		) {
+			// Request was cancelled by sender or handled - clear the dialog
+			setIncomingRequest(null);
+			lastIncomingRequestIdRef.current = null;
+		}
+	}, [
+		incomingRequests, // Play alert sound for notification popup
+		play,
+	]);
 
-  // Handle accepted sent requests (initiator side) - play DIALOG OPEN sound
-  useEffect(() => {
-    if (acceptedSentRequests && acceptedSentRequests.length > 0) {
-      const latestAccepted = acceptedSentRequests[0];
+	// Handle accepted sent requests (initiator side) - play DIALOG OPEN sound
+	useEffect(() => {
+		if (acceptedSentRequests && acceptedSentRequests.length > 0) {
+			const latestAccepted = acceptedSentRequests[0];
 
-      if (lastAcceptedRequestIdRef.current !== latestAccepted._id && latestAccepted.sessionId) {
-        lastAcceptedRequestIdRef.current = latestAccepted._id;
+			if (
+				lastAcceptedRequestIdRef.current !== latestAccepted._id &&
+				latestAccepted.sessionId
+			) {
+				lastAcceptedRequestIdRef.current = latestAccepted._id;
 
-        // Play dialog open sound for initiator
-        play("dialog");
+				// Play dialog open sound for initiator
+				play("dialog");
 
-        const peerWalletAddress = extractWalletAddress(latestAccepted.toUserId);
-        setActivePeerAddress(peerWalletAddress);
-        setActiveSessionId(latestAccepted.sessionId);
-      }
-    }
-  }, [acceptedSentRequests]);
+				const peerWalletAddress = extractWalletAddress(latestAccepted.toUserId);
+				setActivePeerAddress(peerWalletAddress);
+				setActiveSessionId(latestAccepted.sessionId);
+			}
+		}
+	}, [
+		acceptedSentRequests, // Play dialog open sound for initiator
+		play,
+	]);
 
-  // Handle trade session status changes (close sync)
-  useEffect(() => {
-    if (activeTradeSession && activeSessionId) {
-      if (activeTradeSession.status === "cancelled" || activeTradeSession.status === "completed") {
-        // Play dialog close sound
-        play("dialog", 0.2);
-        setActiveSessionId(null);
-        setActivePeerAddress("");
-      }
-    }
-  }, [activeTradeSession, activeSessionId, play]);
+	// Handle trade session status changes (close sync)
+	useEffect(() => {
+		if (activeTradeSession && activeSessionId) {
+			if (
+				activeTradeSession.status === "cancelled" ||
+				activeTradeSession.status === "completed"
+			) {
+				// Play dialog close sound
+				play("dialog", 0.2);
+				setActiveSessionId(null);
+				setActivePeerAddress("");
+			}
+		}
+	}, [activeTradeSession, activeSessionId, play]);
 
-  const handleAccept = async () => {
-    if (!incomingRequest) return;
+	const handleAccept = async () => {
+		if (!incomingRequest) return;
 
-    try {
-      const result = await acceptRequest({ requestId: incomingRequest.id });
-      const peerWalletAddress = extractWalletAddress(incomingRequest.fromUserId);
-      setActivePeerAddress(peerWalletAddress);
-      setIncomingRequest(null);
+		try {
+			const result = await acceptRequest({ requestId: incomingRequest.id });
+			const peerWalletAddress = extractWalletAddress(
+				incomingRequest.fromUserId,
+			);
+			setActivePeerAddress(peerWalletAddress);
+			setIncomingRequest(null);
 
-      // Play dialog open sound for recipient
-      play("dialog");
+			// Play dialog open sound for recipient
+			play("dialog");
 
-      setActiveSessionId(result.sessionId);
-    } catch (error) {
-      console.error("Failed to accept trade request:", error);
-    }
-  };
+			setActiveSessionId(result.sessionId);
+		} catch (error) {
+			console.error("Failed to accept trade request:", error);
+		}
+	};
 
-  const handleDecline = async () => {
-    if (!incomingRequest) return;
+	const handleDecline = async () => {
+		if (!incomingRequest) return;
 
-    try {
-      await declineRequest({ requestId: incomingRequest.id });
-      setIncomingRequest(null);
-    } catch (error) {
-      console.error("Failed to decline trade request:", error);
-    }
-  };
+		try {
+			await declineRequest({ requestId: incomingRequest.id });
+			setIncomingRequest(null);
+		} catch (error) {
+			console.error("Failed to decline trade request:", error);
+		}
+	};
 
-  // Handle closing the trade dialog
-  const handleCloseTradeDialog = async (open: boolean) => {
-    if (!open && activeSessionId) {
-      try {
-        await cancelTrade({ sessionId: activeSessionId });
-      } catch (error) {
-        console.error("Failed to cancel trade:", error);
-      }
-      // Don't play sound here - the effect will handle it via subscription
-      setActiveSessionId(null);
-      setActivePeerAddress("");
-    }
-  };
+	// Handle closing the trade dialog
+	const handleCloseTradeDialog = async (open: boolean) => {
+		if (!open && activeSessionId) {
+			try {
+				await cancelTrade({ sessionId: activeSessionId });
+			} catch (error) {
+				console.error("Failed to cancel trade:", error);
+			}
+			// Don't play sound here - the effect will handle it via subscription
+			setActiveSessionId(null);
+			setActivePeerAddress("");
+		}
+	};
 
-  const peerWalletAddress = incomingRequest
-    ? extractWalletAddress(incomingRequest.fromUserId)
-    : "";
-  const isPeerWallet = peerWalletAddress.startsWith("1");
+	const peerWalletAddress = incomingRequest
+		? extractWalletAddress(incomingRequest.fromUserId)
+		: "";
+	const isPeerWallet = peerWalletAddress.startsWith("1");
 
-  // Get pending request info for waiting UI
-  const pendingRequest = pendingSentRequests?.[0] ?? null;
-  const pendingPeerAddress = pendingRequest
-    ? extractWalletAddress(pendingRequest.toUserId)
-    : "";
-  const isPendingPeerWallet = pendingPeerAddress.startsWith("1");
+	// Get pending request info for waiting UI
+	const pendingRequest = pendingSentRequests?.[0] ?? null;
+	const pendingPeerAddress = pendingRequest
+		? extractWalletAddress(pendingRequest.toUserId)
+		: "";
+	const isPendingPeerWallet = pendingPeerAddress.startsWith("1");
 
-  // Handle canceling a pending request
-  const handleCancelPendingRequest = async () => {
-    if (pendingRequest) {
-      try {
-        await cancelTradeRequest({ requestId: pendingRequest._id });
-      } catch (error) {
-        console.error("Failed to cancel trade request:", error);
-      }
-    }
-  };
+	// Handle canceling a pending request
+	const handleCancelPendingRequest = async () => {
+		if (pendingRequest) {
+			try {
+				await cancelTradeRequest({ requestId: pendingRequest._id });
+			} catch (error) {
+				console.error("Failed to cancel trade request:", error);
+			}
+		}
+	};
 
-  return (
-    <>
-      {/* Waiting for response dialog (for initiator) */}
-      <SoundAlertDialog open={!!pendingRequest && !activeSessionId} onOpenChange={(open) => !open && handleCancelPendingRequest()}>
-        <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-xl">
-              <Clock className="w-5 h-5 text-muted-foreground" />
-              Waiting for Response
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="flex items-center gap-3 pt-2">
-                {isPendingPeerWallet && (
-                  <span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
-                    <SigmaAvatar
-                      name={pendingPeerAddress}
-                      colors={["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]}
-                      className="h-full w-full"
-                    />
-                  </span>
-                )}
-                <span>
-                  <span className="text-foreground font-medium font-mono block">
-                    {truncateAddress(pendingPeerAddress)}
-                  </span>
-                  <span className="text-muted-foreground text-sm">
-                    is deciding whether to accept your request...
-                  </span>
-                </span>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <SoundAlertDialogCancel>
-              Cancel Request
-            </SoundAlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </SoundAlertDialog>
+	return (
+		<>
+			{/* Waiting for response dialog (for initiator) */}
+			<SoundAlertDialog
+				open={!!pendingRequest && !activeSessionId}
+				onOpenChange={(open) => !open && handleCancelPendingRequest()}
+			>
+				<AlertDialogContent className="sm:max-w-md">
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2 text-xl">
+							<Clock className="w-5 h-5 text-muted-foreground" />
+							Waiting for Response
+						</AlertDialogTitle>
+						<AlertDialogDescription asChild>
+							<div className="flex items-center gap-3 pt-2">
+								{isPendingPeerWallet && (
+									<span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
+										<SigmaAvatar
+											name={pendingPeerAddress}
+											colors={[
+												"var(--chart-1)",
+												"var(--chart-2)",
+												"var(--chart-3)",
+												"var(--chart-4)",
+												"var(--chart-5)",
+											]}
+											className="h-full w-full"
+										/>
+									</span>
+								)}
+								<span>
+									<span className="text-foreground font-medium font-mono block">
+										{truncateAddress(pendingPeerAddress)}
+									</span>
+									<span className="text-muted-foreground text-sm">
+										is deciding whether to accept your request...
+									</span>
+								</span>
+							</div>
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<SoundAlertDialogCancel>Cancel Request</SoundAlertDialogCancel>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</SoundAlertDialog>
 
-      {/* Incoming trade request dialog */}
-      <SoundAlertDialog open={!!incomingRequest} onOpenChange={(open) => !open && handleDecline()} openSound={false}>
-        <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-xl">
-              <Bell className="w-5 h-5 text-primary" />
-              Trade Request
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="flex items-center gap-3 pt-2">
-                {isPeerWallet && (
-                  <span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
-                    <SigmaAvatar
-                      name={peerWalletAddress}
-                      colors={["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]}
-                      className="h-full w-full"
-                    />
-                  </span>
-                )}
-                <span>
-                  <span className="text-foreground font-medium font-mono block">
-                    {truncateAddress(peerWalletAddress)}
-                  </span>
-                  <span className="text-muted-foreground text-sm">
-                    wants to trade with you
-                  </span>
-                </span>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <SoundAlertDialogCancel onClick={handleDecline}>
-              Decline
-            </SoundAlertDialogCancel>
-            <SoundAlertDialogAction onClick={handleAccept}>
-              Accept Trade
-            </SoundAlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </SoundAlertDialog>
+			{/* Incoming trade request dialog */}
+			<SoundAlertDialog
+				open={!!incomingRequest}
+				onOpenChange={(open) => !open && handleDecline()}
+				openSound={false}
+			>
+				<AlertDialogContent className="sm:max-w-md">
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2 text-xl">
+							<Bell className="w-5 h-5 text-primary" />
+							Trade Request
+						</AlertDialogTitle>
+						<AlertDialogDescription asChild>
+							<div className="flex items-center gap-3 pt-2">
+								{isPeerWallet && (
+									<span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
+										<SigmaAvatar
+											name={peerWalletAddress}
+											colors={[
+												"var(--chart-1)",
+												"var(--chart-2)",
+												"var(--chart-3)",
+												"var(--chart-4)",
+												"var(--chart-5)",
+											]}
+											className="h-full w-full"
+										/>
+									</span>
+								)}
+								<span>
+									<span className="text-foreground font-medium font-mono block">
+										{truncateAddress(peerWalletAddress)}
+									</span>
+									<span className="text-muted-foreground text-sm">
+										wants to trade with you
+									</span>
+								</span>
+							</div>
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<SoundAlertDialogCancel onClick={handleDecline}>
+							Decline
+						</SoundAlertDialogCancel>
+						<SoundAlertDialogAction onClick={handleAccept}>
+							Accept Trade
+						</SoundAlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</SoundAlertDialog>
 
-      {/* Active trade session */}
-      {activeSessionId && myFullUserId && (
-        <TradeDialog
-          open={!!activeSessionId}
-          onOpenChange={handleCloseTradeDialog}
-          peerAddress={activePeerAddress}
-          peerLabel={truncateAddress(activePeerAddress)}
-          sessionId={activeSessionId}
-          myUserId={myFullUserId}
-        />
-      )}
-    </>
-  );
+			{/* Active trade session */}
+			{activeSessionId && myFullUserId && (
+				<TradeDialog
+					open={!!activeSessionId}
+					onOpenChange={handleCloseTradeDialog}
+					peerAddress={activePeerAddress}
+					peerLabel={truncateAddress(activePeerAddress)}
+					sessionId={activeSessionId}
+					myUserId={myFullUserId}
+				/>
+			)}
+		</>
+	);
 }
