@@ -5,17 +5,10 @@ import { ordAddress } from "@/signals/wallet/address";
 import { useLocalStorage } from "@/utils/storage";
 import { computed } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { Noto_Serif } from "next/font/google";
 import { FaSpinner } from "react-icons/fa";
 import OrdinalListings, { OrdViewMode } from "../OrdinalListings";
 import SAFU from "./safu";
 import WalletTabs from "./tabs";
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const WalletOrdinals = ({
   address: addressProp,

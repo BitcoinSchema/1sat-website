@@ -3,13 +3,6 @@ import WalletHistory from "@/components/Wallet/history";
 import WalletOrdinals from "@/components/Wallet/ordinals";
 import { WalletTab } from "@/components/Wallet/tabs";
 import { getCapitalizedAssetType } from "@/utils/assetType";
-import { Noto_Serif } from "next/font/google";
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const AddressPage = ({
   params,
@@ -18,7 +11,7 @@ const AddressPage = ({
 }) => {
   return (
     <div className="mx-auto w-full max-w-7xl">
-      <h1 className={`text-lg md:text-3xl font-bold md:mb-4 ${notoSerif.className}`}>
+      <h1 className="text-lg md:text-3xl font-bold md:mb-4 font-serif italic">
         Address
       </h1>
       <h2 className="text-sm md:text-xl font-semibold mb-4 md:mb-8">

@@ -1,7 +1,8 @@
 const getKey = async (key: Uint8Array): Promise<CryptoKey> => {
+  const rawKey = new Uint8Array(key).buffer;
   return await crypto.subtle.importKey(
     "raw",
-    key,
+    rawKey,
     { name: "AES-CBC" },
     false,
     ["encrypt", "decrypt"]
@@ -14,10 +15,12 @@ export const encryptData = async (
   iv: Uint8Array
 ): Promise<Uint8Array> => {
   const cryptoKey = await getKey(key);
+  const ivBytes = new Uint8Array(iv);
+  const dataBytes = new Uint8Array(data);
   const encryptedContent = await crypto.subtle.encrypt(
-    { name: "AES-CBC", iv },
+    { name: "AES-CBC", iv: ivBytes },
     cryptoKey,
-    data
+    dataBytes
   );
   
   // Combine IV and encrypted content
@@ -34,8 +37,8 @@ export const decryptData = async(
   key: Uint8Array
 ): Promise<Uint8Array> => {
   const cryptoKey = await getKey(key);
-  const iv = encryptedData.slice(0, 16);
-  const encryptedContent = encryptedData.slice(16);
+  const iv = new Uint8Array(encryptedData.slice(0, 16));
+  const encryptedContent = new Uint8Array(encryptedData.slice(16));
 
   const decryptedContent = await crypto.subtle.decrypt(
     { name: "AES-CBC", iv },
@@ -50,7 +53,7 @@ export const generateEncryptionKey = async (
   publicKey: Uint8Array
 ): Promise<Uint8Array> => {
   const encoder = new TextEncoder();
-  const salt = await crypto.subtle.digest("SHA-256", publicKey);
+  const salt = await crypto.subtle.digest("SHA-256", new Uint8Array(publicKey));
   
   const keyMaterial = await crypto.subtle.importKey(
     "raw",

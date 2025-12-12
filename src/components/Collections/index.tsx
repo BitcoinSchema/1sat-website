@@ -3,19 +3,12 @@
 import { MARKET_API_HOST, ORDFS } from "@/constants";
 import type { Collection } from "@/types/collection";
 import { useQuery } from "@tanstack/react-query";
-import { Noto_Serif } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import FeaturedCollections from "./featured";
 import Artifact from "../artifact";
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const Collections = () => {
   const { data } = useQuery<Collection[]>({
@@ -28,9 +21,9 @@ const Collections = () => {
 
   return (
     <>
-      <h1 className={`px-2 text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>
+      <h1 className="px-2 text-2xl mb-4 font-serif italic">Featured Collections</h1>
       <FeaturedCollections />
-      <h1 className={`text-2xl px-2 mb-4 ${notoSerif.className}`}>Current Hype</h1>
+      <h1 className="text-2xl px-2 mb-4 font-serif italic">Current Hype</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 w-full">
         {data?.map((c) => (
           <div key={c.outpoint} className="relative overflow-hidden mx-auto w-[300px] h-[300px]">
@@ -77,5 +70,4 @@ const Collections = () => {
 };
 
 export default Collections;
-
 

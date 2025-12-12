@@ -2,14 +2,7 @@
 
 import { showUnlockWalletModal } from "@/signals/wallet";
 import { useSignals } from "@preact/signals-react/runtime";
-import { Noto_Serif } from "next/font/google";
 import { BsShieldLockFill } from "react-icons/bs";
-
-const notoSerif = Noto_Serif({
-	style: "italic",
-	weight: ["400", "700"],
-	subsets: ["latin"],
-});
 
 const SAFU = () => {
 	useSignals();
@@ -23,7 +16,7 @@ const SAFU = () => {
 			}}
 		>
 			<div
-				className={`flex items-center text-2xl text-[#555] my-4 ${notoSerif.className}`}
+				className="flex items-center text-2xl text-[#555] my-4 font-serif italic"
 			>
 				<BsShieldLockFill className="w-6 h-6 text-[#555] mr-2" />
 				Funds are SAFU

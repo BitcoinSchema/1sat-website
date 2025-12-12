@@ -1,4 +1,3 @@
-import DOMPurify from "isomorphic-dompurify";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -19,6 +18,7 @@ export async function GET(req: Request) {
 
 		// SVG sanitization
 		if (contentType.startsWith("image/svg+xml")) {
+			const DOMPurify = (await import("isomorphic-dompurify")).default;
 			const svgContent = await response.text();
 			const sanitizedSVG = DOMPurify.sanitize(svgContent, {
 				USE_PROFILES: { svg: true },
@@ -32,6 +32,7 @@ export async function GET(req: Request) {
 
 		// HTML sanitization
 		if (contentType.startsWith("html")) {
+			const DOMPurify = (await import("isomorphic-dompurify")).default;
 			const htmlContent = await response.text();
 			const sanitizedHTML = DOMPurify.sanitize(htmlContent, {
 				USE_PROFILES: { html: true },

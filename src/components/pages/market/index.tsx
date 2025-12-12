@@ -2,7 +2,6 @@ import FeaturedCollections from "@/components/Collections/featured";
 import OrdinalListings, { OrdViewMode } from "@/components/OrdinalListings";
 import { AssetType, SortBy } from "@/constants";
 import type { BSV20TXO, OrdUtxo } from "@/types/ordinals";
-import { Noto_Serif } from "next/font/google";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import TokenMarket from "../TokenMarket";
@@ -21,12 +20,6 @@ export interface MarketPageProps {
   sort?: SortBy;
   dir?: "asc" | "desc";
 }
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const Listings = ({ id, term, sort, dir, selectedAssetType }: { id?: string, term?: string, sort: SortBy, dir: "asc" | "desc", selectedAssetType?: AssetType }) => {
   switch (selectedAssetType) {
@@ -65,7 +58,7 @@ const MarketPage: React.FC<MarketPageProps> = (props) => {
       {props.title && (
         <div className="text-3xl font-bold mb-4">{props.title}</div>
       )}
-      {selectedAssetType === AssetType.Ordinals && <h1 className={`text-2xl mb-4 ${notoSerif.className}`}>Featured Collections</h1>}
+      {selectedAssetType === AssetType.Ordinals && <h1 className="text-2xl mb-4 font-serif italic">Featured Collections</h1>}
 
       {selectedAssetType === AssetType.Ordinals && <FeaturedCollections />}
       {showTabs && (

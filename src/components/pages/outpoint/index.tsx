@@ -4,14 +4,7 @@ import type { Listing } from "@/types/bsv20";
 import type { OrdUtxo } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import * as http from "@/utils/httpClient";
-import { Noto_Serif } from "next/font/google";
 import OutpointTabs, { type OutpointTab } from "./tabs";
-
-const notoSerif = Noto_Serif({
-	style: "italic",
-	weight: ["400", "700"],
-	subsets: ["latin"],
-});
 
 interface Props {
 	artifact: OrdUtxo;
@@ -59,7 +52,7 @@ const OutpointPage = async ({
 			<div className="mx-auto flex flex-col p-2 md:p-0 min-h-64">
 				{artifact && (
 					<>
-						<h2 className={`text-2xl mb-4  ${notoSerif.className}`}>
+						<h2 className="text-2xl mb-4 font-serif italic">
 							{displayName(artifact, false)}
 						</h2>
 						<div className="flex flex-col md:flex-row gap-4">

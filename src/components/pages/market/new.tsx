@@ -17,7 +17,6 @@ import { useSignals } from "@preact/signals-react/runtime";
 import type { Utxo } from "js-1sat-ord";
 import { type CreateOrdListingsConfig, createOrdListings } from "js-1sat-ord";
 import { head } from "lodash";
-import { Noto_Serif } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -30,12 +29,6 @@ import { toSatoshi } from "satoshi-token";
 interface NewListingPageProps {
   type: AssetType;
 }
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
   useSignals();
@@ -213,7 +206,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
       <div className="w-full text-xl px-4 md:px-0 mb-4 flex items-center justify-between">
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <div
-          className={`flex items-center text-[#555] hover:text-blue-500 transition cursor-pointer ${notoSerif.className}`}
+          className="flex items-center text-[#555] hover:text-blue-500 transition cursor-pointer font-serif italic"
           onClick={() => {
             router.back();
           }}
@@ -221,7 +214,7 @@ const NewListingPage: React.FC<NewListingPageProps> = ({ type }) => {
           <FaChevronLeft className="mr-2" />
           Back
         </div>
-        <div className={notoSerif.className}>Create Listing</div>
+        <div className="font-serif italic">Create Listing</div>
       </div>
       <div className="flex flex-col md:flex-row px-4 md:px-0 w-full">
         <div className="md:w-2/3 md:mr-2">

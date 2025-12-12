@@ -1,6 +1,5 @@
 import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
-import { Noto_Serif } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { FaChevronLeft } from "react-icons/fa";
@@ -13,12 +12,6 @@ interface Props {
   collection: OrdUtxo;
   bannerImage?: string;
 }
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const CollectionPage = async ({ stats, collection, bannerImage }: Props) => {
   // Get the collection items
@@ -37,7 +30,7 @@ const CollectionPage = async ({ stats, collection, bannerImage }: Props) => {
   return (
     <div className="2xl:max-w-[80vw] max-w-[90vw] w-full mx-auto">
       <h2 className="text-lg mb-8 flex justify-between items-center">
-        <Link className={`flex items-center text-2xl ${notoSerif.className}`} href="/collection">
+        <Link className="flex items-center text-2xl font-serif italic" href="/collection">
           <FaChevronLeft className="mr-2" />
           {collection.origin?.data?.map?.name}
         </Link>

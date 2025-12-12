@@ -2,6 +2,9 @@
 
 const nextConfig = {
 	reactStrictMode: true,
+	experimental: {
+		esmExternals: "loose",
+	},
 	images: {
 		dangerouslyAllowSVG: true,
 		contentSecurityPolicy:

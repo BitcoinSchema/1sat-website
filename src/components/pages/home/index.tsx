@@ -1,17 +1,10 @@
 import type { OrdUtxo } from "@/types/ordinals";
-import { Noto_Serif } from "next/font/google";
 import type React from "react";
 import { Suspense } from "react";
 import { LoaderIcon } from "react-hot-toast";
 import SlideshowLoader from "./loader";
 import Menu from "./menu";
 import FlowLoader from "./flowLoader";
-
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const HomePage: React.FC = async () => {
   return (
@@ -20,7 +13,7 @@ const HomePage: React.FC = async () => {
         <div className="w-full flex flex-col items-center justify-start h-full">
           <Menu />
           <div
-            className={`divider divider-warning w-64 mx-auto text-warning/50 ${notoSerif.className}`}
+            className="divider divider-warning w-64 mx-auto text-warning/50 font-serif italic"
           >
             BROWSE DEX
           </div>

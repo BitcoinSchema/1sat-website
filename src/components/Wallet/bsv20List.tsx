@@ -29,7 +29,6 @@ import React, {
 import { IoSend } from "react-icons/io5";
 
 import { useLocalStorage } from "@/utils/storage";
-import { Noto_Serif } from "next/font/google";
 import {
   FaChevronRight,
   FaFireFlameCurved,
@@ -51,11 +50,6 @@ enum BalanceTab {
   Listed = 2,
   Unindexed = 3,
 }
-const notoSerif = Noto_Serif({
-  style: "italic",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-});
 
 const Bsv20List = ({
   type,
@@ -713,7 +707,7 @@ const Bsv20List = ({
           <div className="mb-4">{contentTabs.value}</div>
           <div className="md:ml-6">
             <h1 className="mb-4 flex items-center justify-between">
-              <div className={`text-2xl ${notoSerif.className}`}>
+              <div className="text-2xl font-serif italic">
                 {type.toUpperCase()} History
               </div>
               <div className="text-sm text-[#555]" />
