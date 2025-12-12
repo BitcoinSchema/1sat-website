@@ -7,6 +7,18 @@ import { folder, useControls } from "leva";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
+export interface RingsControls {
+	scale: number;
+	thickness: number;
+	gap: number;
+	outerColor: string;
+	middleColor: string;
+	innerColor: string;
+	emissiveIntensity: number;
+	speed: number;
+	gyroMode: boolean;
+}
+
 export function OrdinalLogo3D() {
 	return (
 		<div className="h-[400px] w-full relative cursor-default">
@@ -19,12 +31,6 @@ export function OrdinalLogo3D() {
 			</Canvas>
 		</div>
 	);
-}
-
-interface OrdinalLogoControls extends RingsControls {
-	metalness: number;
-	roughness: number;
-	transmission: number;
 }
 
 function Scene() {
@@ -49,7 +55,7 @@ function Scene() {
 			speed: { value: 0.5, min: 0, max: 5, step: 0.1 },
 			gyroMode: { value: false, label: "Gyroscope Mode" },
 		}),
-	}) as OrdinalLogoControls;
+	});
 
 	// Material
 	const material = useMemo(
@@ -87,25 +93,16 @@ function Scene() {
 
 			<Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
 				<Center>
-					<group scale={controls.scale}>
-						<Rings controls={controls} baseMaterial={material} />
+					<group scale={controls.scale as number}>
+						<Rings
+							controls={controls as RingsControls}
+							baseMaterial={material}
+						/>
 					</group>
 				</Center>
 			</Float>
 		</>
 	);
-}
-
-export interface RingsControls {
-	scale: number;
-	thickness: number;
-	gap: number;
-	outerColor: string;
-	middleColor: string;
-	innerColor: string;
-	emissiveIntensity: number;
-	speed: number;
-	gyroMode: boolean;
 }
 
 export function Rings({
