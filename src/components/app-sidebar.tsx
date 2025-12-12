@@ -71,7 +71,7 @@ import { ThemeToggle } from "./header/ThemeToggle";
 export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typeof Sidebar>) {
   useSignals();
   const router = useRouter();
-  const { setOpenMobile, isMobile } = useSidebar();
+  const { setOpenMobile } = useSidebar();
   const [_pendingTxs, _setPendingTxs] = useIDBStorage<PendingTransaction[]>(
     "1sat-pts",
     [],
@@ -185,17 +185,17 @@ export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typ
 
   const handleUnlockWallet = () => {
     showUnlockWalletModal.value = true;
-    if (isMobile) setOpenMobile(false);
+    setOpenMobile(false);
   };
 
   const handleImportWallet = () => {
     showImportWalletModal.value = true;
-    if (isMobile) setOpenMobile(false);
+    setOpenMobile(false);
   };
 
   const handleProtectKeys = () => {
     showProtectKeysModal.value = true;
-    if (isMobile) setOpenMobile(false);
+    setOpenMobile(false);
   };
 
   const handleFileChange = async (e: FileEvent) => {
@@ -208,12 +208,12 @@ export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typ
       }
     }
     await loadKeysFromBackupFiles(e.target.files[0]);
-    if (isMobile) setOpenMobile(false);
+    setOpenMobile(false);
     router?.push("/wallet");
   };
 
   const handleNavigation = (href: string) => {
-    if (isMobile) setOpenMobile(false);
+    setOpenMobile(false);
     router.push(href);
   };
 
@@ -297,7 +297,7 @@ export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typ
                     <SidebarMenuButton
                       onClick={() => {
                         showDepositModal.value = true;
-                        if (isMobile) setOpenMobile(false);
+                        setOpenMobile(false);
                       }}
                     >
                       <FaWallet />
@@ -309,7 +309,7 @@ export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typ
                       disabled={usdRate.value <= 0 || balance.value === 0}
                       onClick={() => {
                         showWithdrawalModal.value = true;
-                        if (isMobile) setOpenMobile(false);
+                        setOpenMobile(false);
                       }}
                     >
                       <FaWallet />
@@ -347,7 +347,7 @@ export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typ
                         e.preventDefault();
                         copy(ordAddress.value || "");
                         toast.success("Copied Ordinals Address");
-                        if (isMobile) setOpenMobile(false);
+                        setOpenMobile(false);
                       }}
                     >
                       <FaCopy />
@@ -374,7 +374,7 @@ export function AppSidebar({ side = "left", ...props }: React.ComponentProps<typ
                     <SidebarMenuButton
                       onClick={() => {
                         backupKeys();
-                        if (isMobile) setOpenMobile(false);
+                        setOpenMobile(false);
                       }}
                     >
                       <FaWallet />
