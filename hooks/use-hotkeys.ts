@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { type DependencyList, useEffect } from "react";
 
 export function useHotkeys(
 	key: string,
 	callback: () => void,
-	deps: unknown[] = [],
+	deps: DependencyList = [],
 ) {
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {

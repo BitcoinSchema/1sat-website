@@ -1,9 +1,10 @@
 import JSZip from "jszip";
+import type { JsonObject } from "@/lib/types/json";
 import type { Keys } from "./types";
 
 export interface YoursWalletZipBackup {
-	chromeStorage: any;
-	accountData: any;
+	chromeStorage: JsonObject;
+	accountData: JsonObject;
 	blocks?: Uint8Array[];
 	txns?: Uint8Array[];
 	label?: string;
@@ -15,7 +16,7 @@ export const parseYoursWalletBackup = async (
 ): Promise<Keys | null> => {
 	try {
 		const zip = new JSZip();
-		const _zipContent = await zip.loadAsync(file);
+		await zip.loadAsync(file);
 		const chromeObjectFile = zip.file("chromeStorage.json");
 
 		if (!chromeObjectFile) {
@@ -24,14 +25,24 @@ export const parseYoursWalletBackup = async (
 		}
 
 		const chromeObjectData = await chromeObjectFile.async("string");
-		const chromeObject = JSON.parse(chromeObjectData);
+		const chromeObject = JSON.parse(chromeObjectData) as JsonObject;
 
 		// We need to get the encrypted keys from the selected account
 		const selectedAccountAddress = chromeObject.selectedAccount;
-		if (!selectedAccountAddress) return null;
+		if (typeof selectedAccountAddress !== "string") return null;
 
-		const account = chromeObject.accounts[selectedAccountAddress];
-		if (!account || !account.encryptedKeys) return null;
+		const accountsValue = chromeObject.accounts;
+		if (
+			!accountsValue ||
+			typeof accountsValue !== "object" ||
+			Array.isArray(accountsValue)
+		)
+			return null;
+		const account = (accountsValue as JsonObject)[selectedAccountAddress];
+		if (!account || typeof account !== "object" || Array.isArray(account))
+			return null;
+		const encryptedKeys = (account as JsonObject).encryptedKeys;
+		if (typeof encryptedKeys !== "string") return null;
 
 		// The keys are encrypted, we can't decrypt them here without the password
 		// So we return a structure that indicates this needs decryption

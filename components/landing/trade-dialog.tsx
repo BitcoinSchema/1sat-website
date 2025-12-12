@@ -13,9 +13,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import type { TradeItem } from "@/lib/types/trades";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 import { api } from "../../convex/_generated/api";
-import { type InventoryItem, InventorySelector } from "./inventory-selector";
+import { InventorySelector } from "./inventory-selector";
 
 interface TradeDialogProps {
 	open: boolean;
@@ -25,9 +26,6 @@ interface TradeDialogProps {
 	sessionId: string;
 	myUserId: string;
 }
-
-// Re-use logic from InventoryItem but add UI specific needs if any
-type TradeSlot = InventoryItem;
 
 export function TradeDialog({
 	open,
@@ -44,16 +42,17 @@ export function TradeDialog({
 	const trade = useQuery(api.trades.getTradeSession, { sessionId });
 	const updateTradeOffer = useMutation(api.trades.updateTradeOffer);
 	const completeTrade = useMutation(api.trades.completeTrade);
-	const _cancelTrade = useMutation(api.trades.cancelTrade);
 
 	// Determine roles
 	const isInitiator = trade?.initiatorId === myUserId;
 
 	// Derive state from trade object
-	const myItems =
-		(isInitiator ? trade?.initiatorItems : trade?.participantItems) || [];
-	const peerItems =
-		(isInitiator ? trade?.participantItems : trade?.initiatorItems) || [];
+	const myItems = ((isInitiator
+		? trade?.initiatorItems
+		: trade?.participantItems) ?? []) as TradeItem[];
+	const peerItems = ((isInitiator
+		? trade?.participantItems
+		: trade?.initiatorItems) ?? []) as TradeItem[];
 	const myLocked =
 		(isInitiator ? trade?.initiatorLocked : trade?.participantLocked) || false;
 	const peerLocked =
@@ -65,26 +64,21 @@ export function TradeDialog({
 	const tradeStatus =
 		trade?.status === "ready" ? "Ready to Swap" : "Negotiating";
 
-	const handleAddItem = async (item: InventoryItem) => {
+	const handleAddItem = async (item: TradeItem) => {
 		// Avoid adding duplicates by ID
-		if (myItems.some((i: any) => i.id === item.id)) {
+		if (myItems.some((i: TradeItem) => i.id === item.id)) {
 			return;
 		}
 
 		// Sanitize item to match validator
-		const sanitizedItem = {
+		const sanitizedItem: TradeItem = {
 			id: item.id,
 			name: item.name,
 			type: item.type,
 			amount: item.amount,
 			image: item.image,
-			utxo: item.utxo
-				? {
-						txid: item.utxo.txid,
-						vout: item.utxo.vout,
-						satoshis: item.utxo.satoshis,
-					}
-				: undefined,
+			data: item.data,
+			utxo: item.utxo,
 		};
 
 		// Construct new items list
@@ -99,7 +93,7 @@ export function TradeDialog({
 	};
 
 	const handleRemoveItem = async (itemId: string) => {
-		const newItems = myItems.filter((i: any) => i.id !== itemId);
+		const newItems = myItems.filter((i: TradeItem) => i.id !== itemId);
 		await updateTradeOffer({
 			sessionId,
 			userId: myUserId,
@@ -219,7 +213,7 @@ export function TradeDialog({
 										</Button>
 									</div>
 								)}
-								{myItems.map((item: any) => (
+								{myItems.map((item: TradeItem) => (
 									<Card
 										key={item.id}
 										className="relative overflow-hidden group border-muted-foreground/20"
@@ -319,7 +313,7 @@ export function TradeDialog({
 										)}
 									</div>
 								)}
-								{peerItems.map((item: any) => (
+								{peerItems.map((item: TradeItem) => (
 									<Card
 										key={item.id}
 										className="relative overflow-hidden border-muted-foreground/20"

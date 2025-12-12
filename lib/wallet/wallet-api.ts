@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	type Beef,
-	type ChainTracker,
-	Hash,
-	type Transaction,
-	Utils,
-} from "@bsv/sdk";
+import { Hash, Utils } from "@bsv/sdk";
 import type { Chain } from "@bsv/wallet-toolbox/out/src/sdk/types";
 import { WalletError } from "@bsv/wallet-toolbox/out/src/sdk/WalletError";
 import type {
@@ -33,7 +27,7 @@ export class WalletAPI implements WalletServices {
 		this.chainService = new ChainService(network);
 	}
 
-	async getChainTracker(): Promise<ChainTracker> {
+	async getChainTracker(): ReturnType<WalletServices["getChainTracker"]> {
 		// Helper to get current chain tip
 		const info = await this.chainService.getChainInfo();
 		if (!info) throw new Error("Failed to get chain info");
@@ -45,13 +39,13 @@ export class WalletAPI implements WalletServices {
 		throw new Error("ChainTracker not implemented");
 	}
 
-	async getHeaderForHeight(_height: number): Promise<number[]> {
+	async getHeaderForHeight(height: number): Promise<number[]> {
 		// WOC doesn't give raw header easily?
 		// /block/:hash/header returns hex.
 		// We need block hash by height first.
 		// This chain hopping is expensive.
 		// Use a custom indexer if possible.
-		throw new Error("getHeaderForHeight not implemented");
+		throw new Error(`getHeaderForHeight not implemented (height=${height})`);
 	}
 
 	async getHeight(): Promise<number> {
@@ -64,13 +58,16 @@ export class WalletAPI implements WalletServices {
 	}
 
 	async getFiatExchangeRate(
-		_currency: "USD" | "GBP" | "EUR",
-		_base?: "USD" | "GBP" | "EUR",
+		currency: "USD" | "GBP" | "EUR",
+		base?: "USD" | "GBP" | "EUR",
 	): Promise<number> {
+		void currency;
+		void base;
 		return 0;
 	}
 
-	async getRawTx(txid: string, _useNext?: boolean): Promise<GetRawTxResult> {
+	async getRawTx(txid: string, useNext?: boolean): Promise<GetRawTxResult> {
+		void useNext;
 		try {
 			const rawTx = await this.chainService.getRawTransaction(txid);
 			if (!rawTx) {
@@ -91,8 +88,9 @@ export class WalletAPI implements WalletServices {
 
 	async getMerklePath(
 		txid: string,
-		_useNext?: boolean,
+		useNext?: boolean,
 	): Promise<GetMerklePathResult> {
+		void useNext;
 		// WOC /tx/:txid/proof
 		const proof = await this.chainService.getMerkleProof(txid);
 		if (!proof) {
@@ -107,7 +105,10 @@ export class WalletAPI implements WalletServices {
 		throw new Error("getMerklePath not fully implemented for WOC");
 	}
 
-	async postBeef(beef: Beef, txids: string[]): Promise<PostBeefResult[]> {
+	async postBeef(
+		...args: Parameters<WalletServices["postBeef"]>
+	): ReturnType<WalletServices["postBeef"]> {
+		const [beef, txids] = args;
 		// Broadcast BEEF? WOC takes raw tx.
 		// Extract transactions from BEEF and broadcast?
 		// For simple txs, we can broadcast the target tx.
@@ -140,15 +141,18 @@ export class WalletAPI implements WalletServices {
 	}
 
 	async getStatusForTxids(
-		_txids: string[],
-		_useNext?: boolean,
+		txids: string[],
+		useNext?: boolean,
 	): Promise<GetStatusForTxidsResult> {
+		void txids;
+		void useNext;
 		// WOC supports batch check? No.
 		// Loop?
 		throw new Error("getStatusForTxids not implemented");
 	}
 
-	async isUtxo(_output: TableOutput): Promise<boolean> {
+	async isUtxo(output: TableOutput): Promise<boolean> {
+		void output;
 		// Check if output is unspent
 		// TableOutput has lockingScript, not script
 		// This is hard without address. WOC needs address for UTXOs.
@@ -157,19 +161,24 @@ export class WalletAPI implements WalletServices {
 	}
 
 	async getUtxoStatus(
-		_output: string,
-		_outputFormat?: GetUtxoStatusOutputFormat,
-		_outpoint?: string,
-		_useNext?: boolean,
+		output: string,
+		outputFormat?: GetUtxoStatusOutputFormat,
+		outpoint?: string,
+		useNext?: boolean,
 	): Promise<GetUtxoStatusResult> {
+		void output;
+		void outputFormat;
+		void outpoint;
+		void useNext;
 		// output is script hex?
 		throw new Error("getUtxoStatus not implemented");
 	}
 
 	async getScriptHashHistory(
 		hash: string,
-		_useNext?: boolean,
+		useNext?: boolean,
 	): Promise<GetScriptHashHistoryResult> {
+		void useNext;
 		// WOC: /script/:hash/history
 		// We can implement this!
 		const url =
@@ -199,21 +208,27 @@ export class WalletAPI implements WalletServices {
 		}
 	}
 
-	async hashToHeader(_hash: string): Promise<BlockHeader> {
+	async hashToHeader(hash: string): Promise<BlockHeader> {
+		void hash;
 		throw new Error("hashToHeader not implemented");
 	}
 
 	async nLockTimeIsFinal(
-		_txOrLockTime: string | number[] | Transaction | number,
-	): Promise<boolean> {
+		...args: Parameters<WalletServices["nLockTimeIsFinal"]>
+	): ReturnType<WalletServices["nLockTimeIsFinal"]> {
+		void args;
 		return true; // Simplified
 	}
 
-	async getBeefForTxid(_txid: string): Promise<Beef> {
+	async getBeefForTxid(
+		...args: Parameters<WalletServices["getBeefForTxid"]>
+	): ReturnType<WalletServices["getBeefForTxid"]> {
+		void args;
 		throw new Error("getBeefForTxid not implemented");
 	}
 
-	getServicesCallHistory(_reset?: boolean): ServicesCallHistory {
+	getServicesCallHistory(reset?: boolean): ServicesCallHistory {
+		void reset;
 		return {
 			version: 1,
 			getMerklePath: { serviceName: "getMerklePath", historyByProvider: {} },

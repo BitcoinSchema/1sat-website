@@ -64,7 +64,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 					setSrc(initialSrc);
 					setIsSingleImage(false);
 				}
-			} catch (_e) {
+			} catch {
 				setSrc(initialSrc);
 			}
 		}

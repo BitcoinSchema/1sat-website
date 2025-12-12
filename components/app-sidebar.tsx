@@ -95,7 +95,6 @@ const navData = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const {
-		isWalletLocked: _isWalletLocked,
 		isWalletInitialized,
 		hasWallet,
 		balance,
@@ -109,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		false,
 	);
 	const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
-	const [_, copy] = useCopyWithSound();
+	const [, copy] = useCopyWithSound();
 	const { play } = useSound();
 	const [copiedPay, setCopiedPay] = useState(false);
 	const [copiedOrd, setCopiedOrd] = useState(false);

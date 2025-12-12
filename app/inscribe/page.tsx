@@ -347,7 +347,7 @@ export default function InscribePage() {
 											</Button>
 										</div>
 										<div className="space-y-2">
-											{metadata.map((meta, _i) => (
+											{metadata.map((meta) => (
 												<div key={meta.idx} className="flex gap-2">
 													<Input
 														placeholder="Key"

@@ -1,7 +1,6 @@
 "use client";
 
 import { Download, LogOut } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	AlertDialogContent,
@@ -25,7 +24,6 @@ export function DeleteWalletModal({
 	onOpenChange,
 }: DeleteWalletModalProps) {
 	const { deleteWallet, walletKeys } = useWallet();
-	const [_isExporting, _setIsExporting] = useState(false);
 
 	const handleExport = (e: React.MouseEvent) => {
 		e.preventDefault();

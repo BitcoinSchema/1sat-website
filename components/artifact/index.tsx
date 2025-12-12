@@ -2,7 +2,6 @@
 
 import { FileQuestion, Loader2, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { toBitcoin } from "satoshi-token";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,6 @@ const Artifact: React.FC<ArtifactProps> = ({
 	disableLink = false,
 }) => {
 	const { play } = useSound();
-	const _router = useRouter();
 	const [showZoom, setShowZoom] = useState<boolean>(false);
 	// Placeholder for buying logic if needed later
 	// const [showBuy, setShowBuy] = useState<boolean>(false);
@@ -70,7 +68,6 @@ const Artifact: React.FC<ArtifactProps> = ({
 		() => (latest ? artifact?.outpoint : artifact?.origin?.outpoint),
 		[artifact, latest],
 	);
-	const _height = useMemo(() => artifact?.height, [artifact]);
 	const num = useMemo(
 		() =>
 			`${
@@ -324,7 +321,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 					type="button"
 					key={outPoint || origin}
 					className={`${wrapperClassName} border-none p-0 bg-transparent text-left`}
-					onClick={(_e) => {
+					onClick={() => {
 						if (txid && onClick) {
 							onClick(txid);
 						}

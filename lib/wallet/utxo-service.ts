@@ -149,7 +149,7 @@ export class UTXOService {
 			}
 
 			// Mark remaining UTXOs as spent (not in chain response)
-			for (const [_key, utxo] of existingMap) {
+			for (const [, utxo] of existingMap) {
 				if (utxo.spendable) {
 					// Was spendable but no longer in chain UTXOs
 					await this.markAsSpent(utxo.txid, utxo.vout, "unknown");

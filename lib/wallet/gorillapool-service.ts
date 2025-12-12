@@ -1,23 +1,8 @@
 "use client";
 
-export interface Ordinal {
-	txid: string;
-	vout: number;
-	outpoint?: string;
-	satoshis: number;
-	script: string;
-	owner: string;
-	origin?: {
-		outpoint?: string;
-		data?: {
-			insc?: any;
-			bsv20?: any;
-			bsv21?: any;
-			map?: any;
-		};
-	};
-	data?: any;
-}
+import type { WalletOrdinal } from "@/lib/types/ordinals";
+
+export type Ordinal = WalletOrdinal;
 
 export interface CategorizedUtxos {
 	ordinals: Ordinal[];
@@ -25,6 +10,11 @@ export interface CategorizedUtxos {
 	bsv21Tokens: Ordinal[];
 	funding: Ordinal[];
 }
+
+type GorillaPoolResponseItem = Omit<Ordinal, "outpoint" | "owner"> & {
+	outpoint?: string;
+	owner?: string;
+};
 
 export class GorillaPoolService {
 	private baseUrl = "https://ordinals.gorillapool.io/api";
@@ -43,14 +33,14 @@ export class GorillaPoolService {
 				);
 				return [];
 			}
-			const data = await response.json();
-			return Array.isArray(data)
-				? data.map((item: any) => ({
-						...item,
-						outpoint: item.outpoint || `${item.txid}_${item.vout}`,
-						owner: address,
-					}))
-				: [];
+			const data = (await response.json()) as GorillaPoolResponseItem[];
+			if (!Array.isArray(data)) return [];
+
+			return data.map((item) => ({
+				...item,
+				outpoint: item.outpoint || `${item.txid}_${item.vout}`,
+				owner: item.owner || address,
+			}));
 		} catch (error) {
 			console.error("GorillaPool fetch failed:", error);
 			return [];
@@ -68,23 +58,15 @@ export class GorillaPoolService {
 		const funding: Ordinal[] = [];
 
 		for (const utxo of utxos) {
-			const origin = utxo.origin;
-			const originData = origin?.data;
+			const originData = utxo.origin?.data;
 
-			// Check if it's a BSV21 token (has bsv21 data)
 			if (originData?.bsv21) {
 				bsv21Tokens.push(utxo);
-			}
-			// Check if it's a BSV20 token (has bsv20 data but not bsv21)
-			else if (originData?.bsv20) {
+			} else if (originData?.bsv20) {
 				bsv20Tokens.push(utxo);
-			}
-			// Check if it's an ordinal (has inscription data)
-			else if (originData?.insc || origin?.outpoint) {
+			} else if (originData?.insc || utxo.origin?.outpoint) {
 				ordinals.push(utxo);
-			}
-			// Otherwise it's a funding UTXO
-			else {
+			} else {
 				funding.push(utxo);
 			}
 		}
@@ -110,25 +92,16 @@ export class GorillaPoolService {
 		return categorized;
 	}
 
-	/**
-	 * Legacy method - get all ordinals (excluding tokens)
-	 */
 	async getOrdinals(address: string): Promise<Ordinal[]> {
 		const categorized = await this.getCategorizedUtxos(address);
 		return categorized.ordinals;
 	}
 
-	/**
-	 * Get BSV20 tokens
-	 */
 	async getBsv20Tokens(address: string): Promise<Ordinal[]> {
 		const categorized = await this.getCategorizedUtxos(address);
 		return categorized.bsv20Tokens;
 	}
 
-	/**
-	 * Get BSV21 tokens
-	 */
 	async getBsv21Tokens(address: string): Promise<Ordinal[]> {
 		const categorized = await this.getCategorizedUtxos(address);
 		return categorized.bsv21Tokens;

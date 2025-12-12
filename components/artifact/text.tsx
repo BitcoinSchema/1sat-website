@@ -40,11 +40,11 @@ const TextArtifact: React.FC<TextArtifactProps> = ({
 					} else {
 						setIsJson(true);
 					}
-				} catch (_e) {
+				} catch {
 					// not json
 					setText(resultText);
 				}
-			} catch (_e) {
+			} catch {
 				setFetchTextStatus(FetchStatus.Error);
 			}
 		};

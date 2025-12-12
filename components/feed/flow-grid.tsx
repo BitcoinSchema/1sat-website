@@ -62,13 +62,10 @@ const useColumnCount = () => {
 
 export default function FlowGrid({ className = "" }: { className?: string }) {
 	const { play } = useSound();
-	// biome-ignore lint/correctness/noUnusedVariables: intended for future optimization
-	const seenOutpoints = useRef<Set<string>>(new Set());
 	const [visible, setVisible] = useState<Set<string>>(new Set());
 	const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(
 		null,
 	);
-	const [showBackdrop, setShowBackdrop] = useState(false);
 
 	// Determine column count
 	const columnCount = useColumnCount();
@@ -122,7 +119,6 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 	}, []);
 
 	const closeModal = useCallback(() => {
-		setShowBackdrop(false);
 		setSelectedArtifact(null);
 	}, []);
 
@@ -151,20 +147,12 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 						setSelectedArtifact(artifact);
 					});
 				});
-				transition.ready
-					.then(() => {
-						setShowBackdrop(true);
-					})
-					.catch(() => {
-						setShowBackdrop(true);
-					});
-			} catch (_err) {
+				void transition.ready;
+			} catch {
 				setSelectedArtifact(artifact);
-				setShowBackdrop(true);
 			}
 		} else {
 			setSelectedArtifact(artifact);
-			setShowBackdrop(true);
 		}
 	};
 
@@ -343,11 +331,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 				)}
 			</div>
 
-			<ArtifactModal
-				artifact={selectedArtifact}
-				showBackdrop={showBackdrop}
-				onClose={closeModal}
-			/>
+			<ArtifactModal artifact={selectedArtifact} onClose={closeModal} />
 		</>
 	);
 }

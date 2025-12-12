@@ -2,13 +2,14 @@ import { Code, Loader2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { FetchStatus, ORDFS } from "@/lib/constants";
+import type { JsonValue } from "@/lib/types/json";
 import type { OrdUtxo } from "@/lib/types/ordinals";
 import type { ArtifactType } from "@/lib/util/artifact";
 
 type JsonArtifactProps = {
 	origin?: string;
 	className?: string;
-	json?: unknown;
+	json?: JsonValue;
 	type?: ArtifactType;
 	mini?: boolean;
 	artifact?: OrdUtxo;
@@ -20,7 +21,7 @@ const JsonArtifact: React.FC<JsonArtifactProps> = ({
 	json: j,
 	mini = false,
 }) => {
-	const [json, setJson] = useState<unknown | null>(j ?? null);
+	const [json, setJson] = useState<JsonValue | null>(j ?? null);
 	const [fetchTextStatus, setFetchTextStatus] = useState<FetchStatus>(
 		FetchStatus.Idle,
 	);
@@ -33,10 +34,10 @@ const JsonArtifact: React.FC<JsonArtifactProps> = ({
 			try {
 				setFetchTextStatus(FetchStatus.Loading);
 				const result = await fetch(`${ORDFS}/${origin}`);
-				const resultText = await result.json();
+				const resultText = (await result.json()) as JsonValue;
 				setFetchTextStatus(FetchStatus.Success);
 				setJson(resultText);
-			} catch (_e) {
+			} catch {
 				setFetchTextStatus(FetchStatus.Error);
 			}
 		};

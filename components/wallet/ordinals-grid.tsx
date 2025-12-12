@@ -9,10 +9,9 @@ interface OrdinalCardProps {
 	txid: string;
 	vout: number;
 	satoshis: number;
-	data?: any;
 }
 
-function OrdinalCard({ txid, vout, satoshis, data }: OrdinalCardProps) {
+function OrdinalCard({ txid, vout, satoshis }: OrdinalCardProps) {
 	const outpoint = `${txid}_${vout}`;
 	const imageUrl = `${ORDFS}/${outpoint}`;
 
@@ -84,7 +83,6 @@ export function OrdinalsGrid() {
 						txid={ordinal.txid}
 						vout={ordinal.vout}
 						satoshis={ordinal.satoshis}
-						data={ordinal.data}
 					/>
 				))}
 			</div>

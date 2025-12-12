@@ -89,15 +89,21 @@ export class InscriptionIndexer extends Indexer {
 				fieldNo = field.data[0];
 			}
 
+			let file = insc.file;
+			if (!file) {
+				file = { hash: "", size: 0, type: "", content: [] };
+				insc.file = file;
+			}
+
 			switch (fieldNo) {
 				case 0:
-					insc.file.size = value.data?.length || 0;
+					file.size = value.data?.length || 0;
 					if (!value.data?.length) break;
-					insc.file.hash = Utils.toBase64(Hash.sha256(value.data));
-					insc.file.content = value.data;
+					file.hash = Utils.toBase64(Hash.sha256(value.data));
+					file.content = value.data;
 					break;
 				case 1:
-					insc.file.type = new TextDecoder().decode(
+					file.type = new TextDecoder().decode(
 						new Uint8Array(value.data || []),
 					);
 					break;

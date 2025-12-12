@@ -21,6 +21,12 @@ export function OrdinalLogo3D() {
 	);
 }
 
+interface OrdinalLogoControls extends RingsControls {
+	metalness: number;
+	roughness: number;
+	transmission: number;
+}
+
 function Scene() {
 	const controls = useControls("Ordinal Logo", {
 		Layout: folder({
@@ -43,7 +49,7 @@ function Scene() {
 			speed: { value: 0.5, min: 0, max: 5, step: 0.1 },
 			gyroMode: { value: false, label: "Gyroscope Mode" },
 		}),
-	});
+	}) as OrdinalLogoControls;
 
 	// Material
 	const material = useMemo(
@@ -90,11 +96,23 @@ function Scene() {
 	);
 }
 
+export interface RingsControls {
+	scale: number;
+	thickness: number;
+	gap: number;
+	outerColor: string;
+	middleColor: string;
+	innerColor: string;
+	emissiveIntensity: number;
+	speed: number;
+	gyroMode: boolean;
+}
+
 export function Rings({
 	controls,
 	baseMaterial,
 }: {
-	controls: any;
+	controls: RingsControls;
 	baseMaterial: THREE.MeshPhysicalMaterial;
 }) {
 	const outerRef = useRef<THREE.Group>(null);

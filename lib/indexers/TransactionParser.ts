@@ -1,4 +1,6 @@
 import { Transaction } from "@bsv/sdk";
+import type { JsonObject } from "@/lib/types/json";
+import type { Origin } from "@/lib/types/ordinals";
 import { Outpoint } from "./Outpoint";
 import type { Indexer, ParseContext, Txo } from "./types";
 
@@ -9,7 +11,7 @@ export interface ParsedOutput {
 	vout: number;
 	basket: string;
 	tags: string[];
-	customInstructions?: any;
+	customInstructions?: JsonObject;
 }
 
 /**
@@ -17,7 +19,7 @@ export interface ParsedOutput {
  */
 export interface ParseResult {
 	outputs: ParsedOutput[];
-	summary?: any;
+	summary?: JsonObject;
 }
 
 /**
@@ -37,9 +39,13 @@ export interface OrdfsMetadata {
 	outpoint: string;
 	origin?: string;
 	sequence: number;
-	map?: any;
+	map?: JsonObject;
 	parent?: string;
 	output?: string;
+}
+
+interface WalletStorageLike {
+	getRawTxOfKnownValidTransaction?(txid: string): Promise<number[] | undefined>;
 }
 
 /**
@@ -53,7 +59,7 @@ export class TransactionParser {
 	constructor(
 		public indexers: Indexer[],
 		public owners: Set<string>,
-		private walletStorage: any,
+		private walletStorage: WalletStorageLike | null,
 		private walletServices: WalletServices,
 	) {}
 
@@ -208,7 +214,7 @@ export class TransactionParser {
 			if (txo.data.origin) {
 				basket = "1sat";
 				// Add type tag from inscription data
-				const origin = txo.data.origin.data;
+				const origin = txo.data.origin.data as Origin;
 				if (origin?.insc?.file?.type) {
 					tags.push(`type:${origin.insc.file.type}`);
 				}

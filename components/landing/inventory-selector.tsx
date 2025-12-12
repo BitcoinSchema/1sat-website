@@ -13,26 +13,13 @@ import {
 } from "@/components/ui/sound-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
+import type { TradeItem } from "@/lib/types/trades";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 interface InventorySelectorProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onSelect: (item: InventoryItem) => void;
-}
-
-export interface InventoryItem {
-	id: string;
-	name: string;
-	type: "ordinal" | "bsv20" | "satoshis";
-	amount?: string;
-	image: string;
-	data?: any;
-	utxo: {
-		txid: string;
-		vout: number;
-		satoshis: number;
-	};
+	onSelect: (item: TradeItem) => void;
 }
 
 export function InventorySelector({
@@ -122,7 +109,7 @@ export function InventorySelector({
 													name,
 													type: "ordinal",
 													image,
-													data: item.origin?.data || {},
+													data: item.origin?.data,
 													utxo: {
 														txid: item.txid,
 														vout: item.vout,
@@ -177,7 +164,6 @@ export function InventorySelector({
 									const tick =
 										item.data?.bsv20?.tick || item.data?.bsv20?.sym || "TOKEN";
 									const amt = item.data?.bsv20?.amt || "0";
-									const _name = `${tick}`;
 
 									return (
 										<button

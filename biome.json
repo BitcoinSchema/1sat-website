@@ -9,6 +9,7 @@
 		"ignoreUnknown": true,
 		"includes": [
 			"**",
+			"!!**/convex/_generated",
 			"!node_modules",
 			"!.next",
 			"!dist",

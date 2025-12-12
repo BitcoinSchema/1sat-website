@@ -1,4 +1,5 @@
 import type { Transaction } from "@bsv/sdk";
+import type { JsonValue } from "@/lib/types/json";
 import type { Outpoint } from "./Outpoint";
 
 /**
@@ -6,7 +7,8 @@ import type { Outpoint } from "./Outpoint";
  * Tags are concatenated strings in the format "key:value" for searchability
  */
 export interface IndexData {
-	data: any;
+	[key: string]: JsonValue;
+	data: JsonValue;
 	tags: string[];
 }
 
@@ -14,10 +16,11 @@ export interface IndexData {
  * IndexSummary contains transaction-level summary information
  */
 export interface IndexSummary {
+	[key: string]: JsonValue | undefined;
 	id?: string;
 	amount?: number;
 	icon?: string;
-	data?: any;
+	data?: JsonValue;
 }
 
 /**
@@ -70,9 +73,11 @@ export abstract class Indexer {
 	 * Evaluates the index data for the entire transaction and returns a summary.
 	 */
 	async summerize(
-		_ctx: ParseContext,
-		_isBroadcasted: boolean,
+		ctx: ParseContext,
+		isBroadcasted: boolean,
 	): Promise<IndexSummary | undefined> {
+		void ctx;
+		void isBroadcasted;
 		return undefined;
 	}
 }

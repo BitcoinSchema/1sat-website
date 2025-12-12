@@ -1,5 +1,6 @@
 "use client";
 
+import type { JsonObject } from "@/lib/types/json";
 import type { ChainInfo, FeeRate } from "./types";
 
 interface ChainUTXO {
@@ -251,7 +252,7 @@ export class ChainService {
 	}
 
 	// Get merkle proof for a transaction
-	async getMerkleProof(txid: string): Promise<Record<string, unknown> | null> {
+	async getMerkleProof(txid: string): Promise<JsonObject | null> {
 		try {
 			const response = await fetch(`${this.baseUrl}/tx/${txid}/proof`);
 			if (!response.ok) {
@@ -259,7 +260,7 @@ export class ChainService {
 				throw new Error(`Failed to fetch merkle proof: ${response.statusText}`);
 			}
 
-			return await response.json();
+			return (await response.json()) as JsonObject;
 		} catch (error) {
 			console.error("Error fetching merkle proof:", error);
 			return null;

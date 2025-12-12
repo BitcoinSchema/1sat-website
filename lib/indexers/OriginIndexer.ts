@@ -1,4 +1,5 @@
-import type { Inscription } from "./InscriptionIndexer";
+import type { JsonObject, JsonValue } from "@/lib/types/json";
+import type { Origin } from "@/lib/types/ordinals";
 import type { WalletServices } from "./TransactionParser";
 import {
 	type IndexData,
@@ -6,14 +7,6 @@ import {
 	type IndexSummary,
 	type ParseContext,
 } from "./types";
-
-export interface Origin {
-	outpoint?: string;
-	nonce?: number;
-	insc?: Inscription;
-	map?: { [key: string]: any };
-	sigma?: any[];
-}
 
 /**
  * OriginIndexer identifies 1Sat ordinal outputs and tracks their origin chain.
@@ -49,7 +42,9 @@ export class OriginIndexer extends Indexer {
 		const origin: Origin = {
 			outpoint: "",
 			nonce: 0,
-			sigma: txo.data.sigma?.data,
+			sigma: Array.isArray(txo.data.sigma?.data)
+				? (txo.data.sigma.data as JsonValue[])
+				: undefined,
 		};
 
 		// Track accumulated input satoshis to find which input contains our satoshi
@@ -105,14 +100,22 @@ export class OriginIndexer extends Indexer {
 		}
 
 		// Merge MAP data from current output with inherited MAP data
-		origin.map = {
-			...(origin.map || {}),
-			...(txo.data.map?.data || {}),
-		};
+		const inheritedMap = origin.map ?? {};
+		const currentMap =
+			typeof txo.data.map?.data === "object" &&
+			txo.data.map.data !== null &&
+			!Array.isArray(txo.data.map.data)
+				? (txo.data.map.data as JsonObject)
+				: {};
+		origin.map = { ...inheritedMap, ...currentMap };
 
 		// If current output has inscription, use it (overwrites inherited inscription)
-		if (txo.data.insc?.data) {
-			origin.insc = txo.data.insc.data;
+		if (
+			txo.data.insc?.data &&
+			typeof txo.data.insc.data === "object" &&
+			!Array.isArray(txo.data.insc.data)
+		) {
+			origin.insc = txo.data.insc.data as Origin["insc"];
 		}
 
 		// Clear large file content to save space
@@ -153,7 +156,8 @@ export class OriginIndexer extends Indexer {
 					balance--;
 					if (!icon && origin?.insc?.file?.type?.startsWith("image/")) {
 						icon = origin?.outpoint;
-						id = origin.map?.name || "";
+						const nameValue = origin.map?.name;
+						id = typeof nameValue === "string" ? nameValue : "";
 					}
 				}
 			}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Environment, Float, Text3D } from "@react-three/drei";
+import type { FontData as DreiFontData } from "@react-three/drei/core/useFont";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
 	Bloom,
@@ -12,13 +13,57 @@ import {
 import { folder, useControls } from "leva";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import type { FontData as ThreeFontData } from "three/examples/jsm/loaders/FontLoader.js";
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
 import { TTFLoader } from "three/examples/jsm/loaders/TTFLoader.js";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Rings } from "./ordinal-logo-3d";
+import { Rings, type RingsControls } from "./ordinal-logo-3d";
 
 // Use Kanit ExtraBold (Regular) TTF directly
 const FONT_TTF_URL = "/fonts/Kanit-ExtraBold.ttf";
+
+interface LogoControls {
+	wordGap: number;
+	leftWordOffset: number;
+	rightWordOffset: number;
+	letterSize: number;
+	letterSpacing: number;
+	roughness: number;
+	metalness: number;
+	transmission: number;
+	thickness: number;
+	opacity: number;
+	emissiveIntensity: number;
+	onIntensity: number;
+	offIntensity: number;
+	enableGlitch: boolean;
+	glitchDelayMin: number;
+	glitchDelayMax: number;
+	glitchDurationMin: number;
+	glitchDurationMax: number;
+	glitchStrengthMin: number;
+	glitchStrengthMax: number;
+	glitchRatio: number;
+	enableChromatic: boolean;
+	chromaticOffset: number;
+	enableNoise: boolean;
+	noiseOpacity: number;
+	floatSpeed: number;
+	floatRotationIntensity: number;
+	floatIntensity: number;
+	floatingRange: [number, number];
+	ringsEnabled: boolean;
+	ringsScale: number;
+	ringsPosition: [number, number, number];
+	ringsOuterColor: string;
+	ringsMiddleColor: string;
+	ringsInnerColor: string;
+	ringsThickness: number;
+	ringsGap: number;
+	ringsSpeed: number;
+	ringsEmissive: number;
+	ringsGyro: boolean;
+}
 
 export function Logo3D() {
 	const [colors, setColors] = useState<{
@@ -29,8 +74,7 @@ export function Logo3D() {
 		foreground: THREE.Color;
 		border: THREE.Color;
 	} | null>(null);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const [font, setFont] = useState<any>(null);
+	const [font, setFont] = useState<Font | null>(null);
 
 	useEffect(() => {
 		// Helper to resolve color from a temporary DOM element
@@ -129,7 +173,6 @@ export function Logo3D() {
 	);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function Scene({
 	colors,
 	font,
@@ -142,7 +185,7 @@ function Scene({
 		foreground: THREE.Color;
 		border: THREE.Color;
 	};
-	font: any;
+	font: Font;
 }) {
 	const isMobile = useIsMobile();
 	const controls = useControls({
@@ -199,34 +242,63 @@ function Scene({
 			ringsGyro: { value: false },
 		}),
 	});
+	const typedControls = controls as LogoControls;
+	// Adapt Three FontData into Drei FontData for Text3D.
+	const text3dFont = useMemo<DreiFontData>(() => {
+		const source = font.data as ThreeFontData;
+		const glyphs: DreiFontData["glyphs"] = {};
+		for (const key of Object.keys(source.glyphs)) {
+			const glyph = source.glyphs[key];
+			const outline = glyph.o ? glyph.o.split(" ") : [];
+			glyphs[key] = {
+				_cachedOutline: outline,
+				ha: glyph.ha,
+				o: glyph.o ?? "",
+			};
+		}
+		return {
+			boundingBox: {
+				yMin: source.boundingBox?.yMin ?? 0,
+				yMax: source.boundingBox?.yMax ?? 0,
+			},
+			familyName: source.familyName,
+			glyphs,
+			resolution: source.resolution,
+			underlineThickness: source.underlineThickness,
+		};
+	}, [font]);
 
 	// Controls adapter for Rings component
-	const ringsControls = useMemo(
+	const ringsControls = useMemo<RingsControls>(
 		() => ({
-			scale: controls.ringsScale,
-			thickness: controls.ringsThickness,
-			gap: controls.ringsGap,
-			outerColor: controls.ringsOuterColor,
-			middleColor: controls.ringsMiddleColor,
-			innerColor: controls.ringsInnerColor,
-			emissiveIntensity: controls.ringsEmissive,
-			speed: controls.ringsSpeed,
-			gyroMode: controls.ringsGyro,
+			scale: typedControls.ringsScale,
+			thickness: typedControls.ringsThickness,
+			gap: typedControls.ringsGap,
+			outerColor: typedControls.ringsOuterColor,
+			middleColor: typedControls.ringsMiddleColor,
+			innerColor: typedControls.ringsInnerColor,
+			emissiveIntensity: typedControls.ringsEmissive,
+			speed: typedControls.ringsSpeed,
+			gyroMode: typedControls.ringsGyro,
 		}),
-		[controls],
+		[typedControls],
 	);
 
 	// Base material for rings, using shared scene material settings
 	const ringsBaseMaterial = useMemo(
 		() =>
 			new THREE.MeshPhysicalMaterial({
-				metalness: controls.metalness,
-				roughness: controls.roughness,
-				transmission: controls.transmission,
+				metalness: typedControls.metalness,
+				roughness: typedControls.roughness,
+				transmission: typedControls.transmission,
 				clearcoat: 1,
 				clearcoatRoughness: 0.1,
 			}),
-		[controls.metalness, controls.roughness, controls.transmission],
+		[
+			typedControls.metalness,
+			typedControls.roughness,
+			typedControls.transmission,
+		],
 	);
 
 	return (
@@ -304,6 +376,7 @@ function Scene({
 								baseColor={colors.primary}
 								borderColor={colors.primaryForeground}
 								font={font}
+								text3dFont={text3dFont}
 								letterSpacingMult={controls.letterSpacing}
 								materialProps={controls}
 							/>
@@ -315,6 +388,7 @@ function Scene({
 								borderColor={colors.secondaryForeground}
 								brokenIndices={[1, 4]}
 								font={font}
+								text3dFont={text3dFont}
 								letterSpacingMult={controls.letterSpacing}
 								materialProps={controls}
 							/>
@@ -331,6 +405,7 @@ function Scene({
 								baseColor={colors.primary}
 								borderColor={colors.primaryForeground}
 								font={font}
+								text3dFont={text3dFont}
 								letterSpacingMult={controls.letterSpacing}
 								materialProps={controls}
 							/>
@@ -342,6 +417,7 @@ function Scene({
 								borderColor={colors.secondaryForeground}
 								brokenIndices={[1, 4]}
 								font={font}
+								text3dFont={text3dFont}
 								letterSpacingMult={controls.letterSpacing}
 								materialProps={controls}
 							/>
@@ -351,7 +427,7 @@ function Scene({
 					{/* Neon Sign - manually centered */}
 					<group position={[isMobile ? -4 : -7, isMobile ? -5 : -4.5, 0]}>
 						<Text3D
-							font={font.data}
+							font={text3dFont}
 							size={isMobile ? 0.6 : 1.0}
 							height={isMobile ? 0.1 : 0.15}
 							letterSpacing={0.05}
@@ -449,6 +525,7 @@ function Word({
 	borderColor,
 	brokenIndices = [],
 	font,
+	text3dFont,
 	letterSpacingMult = 1.0,
 	materialProps,
 }: {
@@ -459,8 +536,9 @@ function Word({
 	borderColor: THREE.Color;
 	brokenIndices?: number[];
 	font: Font;
+	text3dFont: DreiFontData;
 	letterSpacingMult?: number;
-	materialProps?: any;
+	materialProps?: LogoControls;
 }) {
 	const letters = text.split("");
 
@@ -519,7 +597,7 @@ function Word({
 					baseColor={baseColor}
 					borderColor={borderColor}
 					isBroken={isBroken}
-					font={font}
+					text3dFont={text3dFont}
 					materialProps={materialProps}
 				/>
 			))}
@@ -534,7 +612,7 @@ function Letter({
 	baseColor,
 	borderColor,
 	isBroken,
-	font,
+	text3dFont,
 	materialProps,
 }: {
 	char: string;
@@ -543,8 +621,8 @@ function Letter({
 	baseColor: THREE.Color;
 	borderColor: THREE.Color;
 	isBroken: boolean;
-	font: any;
-	materialProps?: any;
+	text3dFont: DreiFontData;
+	materialProps?: LogoControls;
 }) {
 	const materialRef = useRef<THREE.MeshStandardMaterial>(null);
 
@@ -556,7 +634,6 @@ function Letter({
 	// Default values if props missing
 	const onIntensity = materialProps?.onIntensity ?? 4;
 	const offIntensity = materialProps?.offIntensity ?? 0.2;
-	const _stableIntensity = materialProps?.emissiveIntensity ?? 3;
 
 	useFrame((state) => {
 		if (!materialRef.current) return;
@@ -643,7 +720,7 @@ function Letter({
 		<group position={position}>
 			{/* Main 3D Letter */}
 			<Text3D
-				font={font.data} // Pass raw JSON data to Text3D to fix yMax error
+				font={text3dFont}
 				size={size}
 				height={size * 0.25}
 				curveSegments={64} // Ultra-high segments for perfectly smooth curves
@@ -659,7 +736,7 @@ function Letter({
 
 			{/* Inner glow layer */}
 			<Text3D
-				font={font.data} // Pass raw JSON data
+				font={text3dFont}
 				size={size * 0.92}
 				height={size * 0.05} // Reduced height to avoid z-fighting with main text face
 				position={[size * 0.04, size * 0.04, size * 0.2]}

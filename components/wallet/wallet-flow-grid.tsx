@@ -19,25 +19,6 @@ import { getOrdinalThumbnail } from "@/lib/image-utils";
 import type { OrdUtxo } from "@/lib/types/ordinals";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
-const _LoadingSkeleton = ({ count }: { count: number }) => (
-	<>
-		{(() => {
-			const items = [];
-			for (let slot = 0; slot < count; slot++) {
-				items.push(
-					<div
-						key={`skeleton-${slot}`}
-						className="relative mb-4 break-inside-avoid"
-					>
-						<div className="w-full aspect-square rounded-lg bg-muted animate-pulse" />
-					</div>,
-				);
-			}
-			return items;
-		})()}
-	</>
-);
-
 const getContentType = (
 	artifact: OrdUtxo,
 ): "video" | "audio" | "3d" | "image" => {
@@ -86,7 +67,6 @@ export default function WalletFlowGrid({
 	const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(
 		null,
 	);
-	const [showBackdrop, setShowBackdrop] = useState(false);
 	const [displayCount, setDisplayCount] = useState(pageSize);
 
 	const columnCount = useColumnCount();
@@ -163,7 +143,6 @@ export default function WalletFlowGrid({
 	}, []);
 
 	const closeModal = useCallback(() => {
-		setShowBackdrop(false);
 		setSelectedArtifact(null);
 	}, []);
 
@@ -191,16 +170,12 @@ export default function WalletFlowGrid({
 						setSelectedArtifact(artifact);
 					});
 				});
-				transition.ready
-					.then(() => setShowBackdrop(true))
-					.catch(() => setShowBackdrop(true));
+				void transition.ready;
 			} catch {
 				setSelectedArtifact(artifact);
-				setShowBackdrop(true);
 			}
 		} else {
 			setSelectedArtifact(artifact);
-			setShowBackdrop(true);
 		}
 	};
 
@@ -369,11 +344,7 @@ export default function WalletFlowGrid({
 				)}
 			</div>
 
-			<ArtifactModal
-				artifact={selectedArtifact}
-				showBackdrop={showBackdrop}
-				onClose={closeModal}
-			/>
+			<ArtifactModal artifact={selectedArtifact} onClose={closeModal} />
 		</>
 	);
 }

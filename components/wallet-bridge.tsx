@@ -39,11 +39,17 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 		// Initialize toolbox with keys from legacy wallet
 		const initToolbox = async () => {
 			try {
-				const rootKeyHex = wifToRootKeyHex(wallet.walletKeys?.payPk);
-				const ordAddress = wallet.walletKeys?.ordPk
-					? wifToAddress(wallet.walletKeys?.ordPk)
-					: undefined;
-				const payAddress = wifToAddress(wallet.walletKeys?.payPk);
+				const payPk = wallet.walletKeys?.payPk;
+				if (!payPk) {
+					console.warn("[WalletBridge] Missing payPk, skipping init");
+					initAttemptedRef.current = false;
+					return;
+				}
+
+				const rootKeyHex = wifToRootKeyHex(payPk);
+				const ordPk = wallet.walletKeys?.ordPk;
+				const ordAddress = ordPk ? wifToAddress(ordPk) : undefined;
+				const payAddress = wifToAddress(payPk);
 
 				console.log("[WalletBridge] Auto-initializing wallet-toolbox...");
 				console.log("[WalletBridge] rootKeyHex length:", rootKeyHex.length);

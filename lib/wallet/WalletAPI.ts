@@ -21,7 +21,6 @@ export class WalletAPI implements WalletServices {
 	private onesatBaseUrl: string;
 
 	constructor(network: "mainnet" | "testnet" = "mainnet", ordfsUrl?: string) {
-		this.chain = network === "mainnet" ? "main" : "test";
 		this.ordfsBaseUrl = ordfsUrl || ORDFS;
 		this.onesatBaseUrl =
 			network === "mainnet"

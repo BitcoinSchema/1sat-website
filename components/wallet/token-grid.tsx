@@ -8,28 +8,31 @@ import { Coins, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSound } from "@/hooks/use-sound";
-import { ORDFS } from "@/lib/constants";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
+import type {
+	Bsv20TokenData,
+	Bsv21TokenData,
+	TxoData,
+} from "@/lib/types/ordinals";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 interface TokenCardProps {
 	outpoint: string;
 	txid: string;
 	vout: number;
-	data?: any;
+	data?: TxoData;
 	type: "bsv20" | "bsv21";
 }
 
 function TokenCard({ outpoint, txid, data, type }: TokenCardProps) {
 	const { play } = useSound();
-	const _imageUrl = `${ORDFS}/${outpoint}`;
 
 	// Extract token info from data
-	const tokenInfo = data?.bsv20?.data || data?.bsv21?.data || data || {};
+	const tokenInfo: Bsv20TokenData | Bsv21TokenData =
+		data?.bsv20?.data || data?.bsv21?.data || data?.bsv20 || data?.bsv21 || {};
 	const ticker = tokenInfo.tick || tokenInfo.sym || "Unknown";
 	const amount = tokenInfo.amt ? BigInt(tokenInfo.amt).toString() : "0";
-	const decimals = tokenInfo.dec || 0;
-	const _tokenId = tokenInfo.id || outpoint;
+	const decimals = tokenInfo.dec ?? 0;
 
 	// Format amount with decimals
 	const formatAmount = (amt: string, dec: number) => {

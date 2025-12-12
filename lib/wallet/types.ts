@@ -1,4 +1,5 @@
 import type { Transaction } from "@bsv/sdk";
+import type { JsonValue } from "@/lib/types/json";
 
 // BRC-100 compliant types
 export interface CreateActionResult {
@@ -98,7 +99,7 @@ export interface WalletOutput {
 	createdAt: Date;
 	spentTxid?: string;
 	spentAt?: Date;
-	data?: any;
+	data?: JsonValue;
 	blockHeight?: number;
 }
 

@@ -20,42 +20,40 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import type {
+	AnyEncryptedBackup,
 	DecryptedBackupJson,
 	EncryptedBackupJson,
 	Keys,
 	YoursChromeStorageBackup,
 	YoursEncryptedBackup,
 } from "@/lib/types";
+import type { JsonObject, JsonValue } from "@/lib/types/json";
 import { useImportWallet } from "../provider";
 
-const validateJson = (json: unknown): json is DecryptedBackupJson => {
-	if (!json || typeof json !== "object" || json === null) return false;
-	if (
-		typeof (json as { payPk?: unknown }).payPk === "string" &&
-		typeof (json as { ordPk?: unknown }).ordPk === "string"
-	)
+const validateJson = (json: object): json is DecryptedBackupJson => {
+	const obj = json as JsonObject;
+	if (typeof obj.payPk === "string" && typeof obj.ordPk === "string")
 		return true;
 	return false;
 };
 
-const isEncryptedBackup = (json: unknown): json is EncryptedBackupJson => {
+const isEncryptedBackup = (json: object): json is EncryptedBackupJson => {
+	const obj = json as JsonObject;
 	return (
-		typeof (json as { encryptedBackup?: unknown })?.encryptedBackup ===
-			"string" && typeof (json as { pubKey?: unknown })?.pubKey === "string"
+		typeof obj.encryptedBackup === "string" && typeof obj.pubKey === "string"
 	);
 };
 
 const validateYoursBackup = (
-	json: unknown,
+	json: object,
 ): json is YoursEncryptedBackup | YoursChromeStorageBackup => {
 	// Yours Wallet / Panda Wallet format
+	const obj = json as JsonObject;
 	return (
-		(typeof (json as { encryptedKeys?: unknown })?.encryptedKeys === "string" &&
-			typeof (json as { passKey?: unknown })?.passKey === "string" &&
-			typeof (json as { salt?: unknown })?.salt === "string") ||
-		(!!(json as { accounts?: unknown })?.accounts &&
-			typeof (json as { selectedAccount?: unknown })?.selectedAccount ===
-				"string")
+		(typeof obj.encryptedKeys === "string" &&
+			typeof obj.passKey === "string" &&
+			typeof obj.salt === "string") ||
+		(!!obj.accounts && typeof obj.selectedAccount === "string")
 	);
 };
 
@@ -63,7 +61,7 @@ interface PreviewData {
 	fileName: string;
 	isEncrypted: boolean;
 	keys?: Keys; // Only present if plaintext
-	encryptedData?: unknown; // Store raw data to pass later
+	encryptedData?: AnyEncryptedBackup; // Store raw data to pass later
 	type: "legacy-plain" | "legacy-enc" | "yours-enc";
 }
 
@@ -91,17 +89,26 @@ export default function ImportJsonPage() {
 			if (typeof content !== "string") return;
 
 			try {
-				const json = JSON.parse(content);
-				if (validateJson(json)) {
+				const json = JSON.parse(content) as JsonValue;
+				if (
+					json &&
+					typeof json === "object" &&
+					!Array.isArray(json) &&
+					validateJson(json)
+				) {
 					// Legacy 1Sat Plain JSON
 					const keys: Keys = {
 						payPk: json.payPk,
 						ordPk: json.ordPk,
 						identityPk: json.identityPk,
 						mnemonic: json.mnemonic,
-						changeAddressPath: json.payDerivationPath || "m/0",
-						ordAddressPath: json.ordDerivationPath || "m/0/0",
-						identityAddressPath: json.identityDerivationPath,
+						changeAddressPath:
+							(json.payDerivationPath as string | undefined) || "m/0",
+						ordAddressPath:
+							(json.ordDerivationPath as string | undefined) || "m/0/0",
+						identityAddressPath: json.identityDerivationPath as
+							| string
+							| undefined,
 					};
 					setPreviewData({
 						fileName: file.name,
@@ -109,14 +116,24 @@ export default function ImportJsonPage() {
 						keys,
 						type: "legacy-plain",
 					});
-				} else if (isEncryptedBackup(json)) {
+				} else if (
+					json &&
+					typeof json === "object" &&
+					!Array.isArray(json) &&
+					isEncryptedBackup(json)
+				) {
 					setPreviewData({
 						fileName: file.name,
 						isEncrypted: true,
 						encryptedData: json,
 						type: "legacy-enc",
 					});
-				} else if (validateYoursBackup(json)) {
+				} else if (
+					json &&
+					typeof json === "object" &&
+					!Array.isArray(json) &&
+					validateYoursBackup(json)
+				) {
 					setPreviewData({
 						fileName: file.name,
 						isEncrypted: true,
@@ -124,7 +141,12 @@ export default function ImportJsonPage() {
 						type: "yours-enc",
 					});
 				} else {
-					console.error("Invalid wallet JSON. Keys found:", Object.keys(json));
+					console.error(
+						"Invalid wallet JSON. Keys found:",
+						json && typeof json === "object" && !Array.isArray(json)
+							? Object.keys(json)
+							: [],
+					);
 				}
 			} catch (err) {
 				console.error("Failed to parse JSON", err);
@@ -170,7 +192,7 @@ export default function ImportJsonPage() {
 				? PrivateKey.fromWif(previewData.keys.identityPk).toAddress().toString()
 				: undefined;
 			return { pay, ord, identity };
-		} catch (_e) {
+		} catch {
 			return null;
 		}
 	}, [previewData]);

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { TradeItem } from "../lib/types/trades";
 import { mutation, query } from "./_generated/server";
 
 // Create a new trade session
@@ -68,15 +69,20 @@ export const updateTradeOffer = mutation({
 			throw new Error("User not part of this trade");
 		}
 
-		const updates: Record<string, unknown> = {
-			updatedAt: Date.now(),
-		};
+		const updates: {
+			updatedAt: number;
+			initiatorItems?: TradeItem[];
+			participantItems?: TradeItem[];
+			initiatorLocked?: boolean;
+			participantLocked?: boolean;
+			status?: "ready" | "negotiating";
+		} = { updatedAt: Date.now() };
 
 		if (isInitiator) {
-			updates.initiatorItems = args.items;
+			updates.initiatorItems = args.items as TradeItem[];
 			updates.initiatorLocked = args.locked;
 		} else {
-			updates.participantItems = args.items;
+			updates.participantItems = args.items as TradeItem[];
 			updates.participantLocked = args.locked;
 		}
 

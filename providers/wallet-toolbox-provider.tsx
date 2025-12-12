@@ -31,15 +31,9 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import { ChainService } from "@/lib/wallet/chain-service";
-import {
-	GorillaPoolService,
-	type Ordinal,
-} from "@/lib/wallet/gorillapool-service";
+import type { Ordinal } from "@/lib/wallet/gorillapool-service";
+import type { OneSatTxo } from "@/lib/wallet/OneSatOverlayService";
 import { OneSatOverlayService } from "@/lib/wallet/OneSatOverlayService";
-import { WalletAPI } from "@/lib/wallet/WalletAPI";
-
-// TODO: Phase 3 - Remove GorillaPoolService once overlay sync is verified
 
 // Types
 type Chain = "main" | "test";
@@ -84,7 +78,7 @@ interface TokenBalance {
 	outpoint: string;
 	txid: string;
 	vout: number;
-	data?: any;
+	data?: TxoData;
 	height?: number;
 }
 
@@ -127,17 +121,6 @@ export function WalletToolboxProvider({
 	const [ordinals, setOrdinals] = useState<Ordinal[]>([]);
 	const [bsv20Tokens, setBsv20Tokens] = useState<TokenBalance[]>([]);
 	const [bsv21Tokens, setBsv21Tokens] = useState<TokenBalance[]>([]);
-
-	// Services for external API calls
-	const _gorillaPoolService = useMemo(() => new GorillaPoolService(), []);
-	const _walletAPI = useMemo(
-		() => new WalletAPI(chain === "main" ? "mainnet" : "testnet"),
-		[chain],
-	);
-	const _chainService = useMemo(
-		() => new ChainService(chain === "main" ? "mainnet" : "testnet"),
-		[chain],
-	);
 
 	// Store wallet addresses for ordinal and balance lookups
 	const [ordAddress, setOrdAddress] = useState<string | null>(null);
@@ -289,9 +272,12 @@ export function WalletToolboxProvider({
 				const mappedOrdinals: Ordinal[] = overlayOrdinals.map((txo) => ({
 					txid: txo.txid || txo.outpoint.split("_")[0],
 					vout: txo.vout ?? parseInt(txo.outpoint.split("_")[1], 10),
+					outpoint: txo.outpoint,
 					satoshis: txo.satoshis ?? 1,
 					script: txo.script || "",
 					owner: ordAddress,
+					height: txo.height ?? 0,
+					idx: txo.idx ?? 0,
 					data: txo.data,
 				}));
 				setOrdinals(mappedOrdinals);
@@ -300,7 +286,7 @@ export function WalletToolboxProvider({
 				);
 
 				// Map tokens (all in bsv21 since we can't distinguish without fetching inscription content)
-				const mapToken = (txo: any): TokenBalance => ({
+				const mapToken = (txo: OneSatTxo): TokenBalance => ({
 					outpoint: txo.outpoint,
 					txid: txo.txid || txo.outpoint.split("_")[0],
 					vout: txo.vout ?? parseInt(txo.outpoint.split("_")[1], 10),
@@ -405,3 +391,5 @@ export function useWalletToolbox() {
 	}
 	return context;
 }
+
+import type { TxoData } from "@/lib/types/ordinals";

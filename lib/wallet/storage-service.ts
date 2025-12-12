@@ -1,6 +1,7 @@
 "use client";
 
 import { type IDBPDatabase, openDB } from "idb";
+import type { JsonValue } from "@/lib/types/json";
 import type {
 	WalletCertificate,
 	WalletOutput,
@@ -13,7 +14,7 @@ interface WalletDB {
 	certificates: WalletCertificate;
 	settings: {
 		key: string;
-		value: string | number | boolean | Record<string, unknown>;
+		value: JsonValue;
 	};
 }
 
@@ -26,7 +27,9 @@ export class StorageService {
 		if (this.db) return;
 
 		this.db = await openDB<WalletDB>(this.dbName, this.dbVersion, {
-			upgrade(db, _oldVersion, _newVersion) {
+			upgrade(db, oldVersion, newVersion) {
+				void oldVersion;
+				void newVersion;
 				// Create outputs store
 				if (!db.objectStoreNames.contains("outputs")) {
 					const outputStore = db.createObjectStore("outputs", {
@@ -170,15 +173,12 @@ export class StorageService {
 	}
 
 	// --- Settings ---
-	async setSetting(
-		key: string,
-		value: string | number | boolean | Record<string, unknown>,
-	): Promise<void> {
+	async setSetting(key: string, value: JsonValue): Promise<void> {
 		if (!this.db) throw new Error("Storage not initialized");
 		await this.db.put("settings", { key, value });
 	}
 
-	async getSetting<T = string | number | boolean | Record<string, unknown>>(
+	async getSetting<T extends JsonValue = JsonValue>(
 		key: string,
 	): Promise<T | undefined> {
 		if (!this.db) throw new Error("Storage not initialized");
@@ -238,7 +238,7 @@ export class StorageService {
 		certificates: WalletCertificate[];
 		settings: Array<{
 			key: string;
-			value: string | number | boolean | Record<string, unknown>;
+			value: JsonValue;
 		}>;
 	}> {
 		if (!this.db) throw new Error("Storage not initialized");
@@ -263,7 +263,7 @@ export class StorageService {
 		certificates?: WalletCertificate[];
 		settings?: Array<{
 			key: string;
-			value: string | number | boolean | Record<string, unknown>;
+			value: JsonValue;
 		}>;
 	}): Promise<void> {
 		if (!this.db) throw new Error("Storage not initialized");

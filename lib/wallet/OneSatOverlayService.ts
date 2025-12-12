@@ -9,6 +9,8 @@
  * 3. Ingest into wallet-toolbox with proper baskets
  */
 
+import type { TxoData } from "@/lib/types/ordinals";
+
 const API_BASE = "https://ordinals.1sat.app";
 
 export interface OneSatTxo {
@@ -20,7 +22,7 @@ export interface OneSatTxo {
 	spend?: string;
 	height?: number;
 	idx?: number;
-	data?: { [key: string]: any };
+	data?: TxoData;
 	score?: number;
 }
 
@@ -391,8 +393,9 @@ export class OneSatOverlayService {
 	 * This fetches from overlay and ingests into local storage
 	 */
 	async syncToWallet(
-		_wallet: any,
+		wallet: object,
 	): Promise<{ balance: number; ordinalsCount: number; tokensCount: number }> {
+		void wallet;
 		// Refresh and get balance
 		const balance = await this.getBalance(true);
 

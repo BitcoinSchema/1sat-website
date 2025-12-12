@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import type { JsonValue } from "@/lib/types/json";
 import {
   createContext,
   forwardRef,
@@ -221,16 +222,16 @@ const useDropzone = <TUploadRes, TUploadError = string>(
   const inputId = useId();
   const rootMessageId = `${inputId}-root-message`;
   const rootDescriptionId = `${inputId}-description`;
-  const [rootError, _setRootError] = useState<string | undefined>(undefined);
+  const [rootError, setRootErrorState] = useState<string | undefined>(undefined);
 
   const setRootError = useCallback(
     (error: string | undefined) => {
-      _setRootError(error);
+      setRootErrorState(error);
       if (pOnRootError !== undefined) {
         pOnRootError(error);
       }
     },
-    [pOnRootError, _setRootError],
+    [pOnRootError, setRootErrorState],
   );
 
   const [fileStatuses, dispatch] = useReducer(fileStatusReducer, []);
@@ -242,14 +243,14 @@ const useDropzone = <TUploadRes, TUploadError = string>(
     );
   }, [fileStatuses, rootError]);
 
-  const _uploadFile = useCallback(
+  const uploadFile = useCallback(
     async (file: File, id: string, tries = 0) => {
       const result = await pOnDropFile(file);
 
       if (result.status === "error") {
         if (autoRetry === true && tries < (maxRetryCount ?? Infinity)) {
           dispatch({ type: "update-status", id, status: "pending" });
-          return _uploadFile(file, id, tries + 1);
+          return uploadFile(file, id, tries + 1);
         }
 
         dispatch({
@@ -314,9 +315,9 @@ const useDropzone = <TUploadRes, TUploadError = string>(
       if (!fileStatus || fileStatus.status !== "error") {
         return;
       }
-      await _uploadFile(fileStatus.file, id);
+      await uploadFile(fileStatus.file, id);
     },
-    [canRetry, fileStatuses, _uploadFile],
+    [canRetry, fileStatuses, uploadFile],
   );
 
   const getFileMessageId = (id: string) => `${inputId}-${id}-message`;
@@ -350,10 +351,10 @@ const useDropzone = <TUploadRes, TUploadError = string>(
           await onRemoveFile(fileStatuses[index].id);
         }
 
-        const id = crypto.randomUUID();
-        dispatch({ type: "add", fileName: file.name, file, id });
-        await _uploadFile(file, id);
-      });
+	        const id = crypto.randomUUID();
+	        dispatch({ type: "add", fileName: file.name, file, id });
+	        await uploadFile(file, id);
+	      });
 
       await Promise.all(onDropFilePromises);
       if (pOnAllUploaded !== undefined) {
@@ -386,8 +387,12 @@ const useDropzone = <TUploadRes, TUploadError = string>(
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DropZoneContext = createContext<UseDropzoneReturn<any, any>>({
+type DropzoneDefaultResult = JsonValue | undefined;
+type DropzoneDefaultError = JsonValue | string | undefined;
+
+const DropZoneContext = createContext<
+	UseDropzoneReturn<DropzoneDefaultResult, DropzoneDefaultError>
+>({
   getRootProps: () => ({}) as never,
   getInputProps: () => ({}) as never,
   onRemoveFile: async () => {},
@@ -403,24 +408,34 @@ const DropZoneContext = createContext<UseDropzoneReturn<any, any>>({
   getFileMessageId: () => "",
 });
 
-const useDropzoneContext = <TUploadRes, TUploadError>() => {
-  return useContext(DropZoneContext) as UseDropzoneReturn<
-    TUploadRes,
-    TUploadError
-  >;
+const useDropzoneContext = <
+	TUploadRes extends DropzoneDefaultResult,
+	TUploadError extends DropzoneDefaultError,
+>() => {
+	return useContext(DropZoneContext) as UseDropzoneReturn<
+		TUploadRes,
+		TUploadError
+	>;
 };
 
-interface DropzoneProps<TUploadRes, TUploadError>
-  extends UseDropzoneReturn<TUploadRes, TUploadError> {
-  children: React.ReactNode;
+interface DropzoneProps<
+	TUploadRes extends DropzoneDefaultResult,
+	TUploadError extends DropzoneDefaultError,
+> extends UseDropzoneReturn<TUploadRes, TUploadError> {
+	children: React.ReactNode;
 }
-const Dropzone = <TUploadRes, TUploadError>(
-  props: DropzoneProps<TUploadRes, TUploadError>,
+const Dropzone = <
+	TUploadRes extends DropzoneDefaultResult,
+	TUploadError extends DropzoneDefaultError,
+>(
+	props: DropzoneProps<TUploadRes, TUploadError>,
 ) => {
-  const { children, ...rest } = props;
-  return (
-    <DropZoneContext.Provider value={rest}>{children}</DropZoneContext.Provider>
-  );
+	const { children, ...rest } = props;
+	return (
+		<DropZoneContext.Provider value={rest}>
+			{children}
+		</DropZoneContext.Provider>
+	);
 };
 Dropzone.displayName = "Dropzone";
 
@@ -504,11 +519,11 @@ interface DropzoneFileListContext<TUploadRes, TUploadError> {
 }
 
 const DropzoneFileListContext = createContext<
-  DropzoneFileListContext<unknown, unknown>
+	DropzoneFileListContext<DropzoneDefaultResult, DropzoneDefaultError>
 >({
   onRemoveFile: async () => {},
   onRetry: async () => {},
-  fileStatus: {} as FileStatus<unknown, unknown>,
+  fileStatus: {} as FileStatus<DropzoneDefaultResult, DropzoneDefaultError>,
   canRetry: false,
   dropzoneId: "",
   messageId: "",
@@ -548,7 +563,7 @@ interface DropzoneFileListItemProps<TUploadRes, TUploadError>
 
 const DropzoneFileListItem = forwardRef<
   HTMLLIElement,
-  DropzoneFileListItemProps<unknown, unknown>
+  DropzoneFileListItemProps<DropzoneDefaultResult, DropzoneDefaultError>
 >(({ className, ...props }, ref) => {
   const fileId = props.file.id;
   const {
