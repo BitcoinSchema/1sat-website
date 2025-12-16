@@ -9,7 +9,8 @@ import {
 	Glitch,
 	Noise,
 } from "@react-three/postprocessing";
-import { folder, useControls } from "leva";
+import { Leva, folder, useControls } from "leva";
+import { Loader2 } from "lucide-react";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
@@ -137,10 +138,16 @@ export function Logo3D() {
 	}, []);
 
 	if (!colors || !font)
-		return <div className="h-[280px] md:h-[360px] w-full bg-transparent" />;
+		return (
+			<div className="h-[280px] md:h-[360px] w-full bg-transparent flex items-center justify-center">
+				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		);
 
 	return (
 		<div className="w-full min-w-0 h-[280px] md:h-[360px] relative cursor-default overflow-hidden">
+			{/* Hide leva control panel in production */}
+			<Leva hidden />
 			<Canvas
 				dpr={[1, 2]}
 				camera={{ position: [0, 0, 28], fov: 30 }}
