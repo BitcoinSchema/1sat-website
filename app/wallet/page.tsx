@@ -1,6 +1,5 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import {
 	Page,
@@ -8,8 +7,9 @@ import {
 	PageHeader,
 	PageTitle,
 } from "@/components/page-layout";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SyncProgress } from "@/components/wallet/sync-progress";
+import { TransactionTimeline } from "@/components/wallet/transaction-timeline";
 import { WalletTabs } from "@/components/wallet/wallet-tabs";
 import { useWallet } from "@/providers/wallet-provider";
 
@@ -38,19 +38,12 @@ export default function WalletPage() {
 		<Page>
 			<PageHeader>
 				<PageTitle>Wallet</PageTitle>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={syncWallet}
-					className="ml-auto"
-				>
-					<RefreshCw className="h-4 w-4 mr-2" />
-					Sync
-				</Button>
+				<SyncProgress compact className="ml-auto" />
 			</PageHeader>
 
 			<PageContent>
 				<WalletTabs />
+				<TransactionTimeline className="mt-6" days={30} />
 				<div className="space-y-6 mt-6">
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<Card>

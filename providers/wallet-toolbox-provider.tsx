@@ -3,25 +3,27 @@
 /**
  * Wallet Toolbox Provider
  *
- * This provider integrates @bsv/wallet-toolbox for BRC-100 compliant wallet operations.
- * Based on bsv-desktop's WalletContext.tsx patterns.
+ * This provider integrates @1sat/wallet-toolbox for BRC-100 compliant wallet operations
+ * with 1Sat-specific indexing, sync, and ordinal support.
  *
- * Key components from wallet-toolbox:
- * - Wallet: The main BRC-100 wallet class
- * - WalletStorageManager: Manages storage providers
- * - Services: Network service abstraction
- * - StorageIdb: IndexedDB storage for browser
- * - WalletSigner: Transaction signing
+ * Key components:
+ * - OneSatWallet: Extended wallet with 1Sat indexers and sync
+ * - WalletStorageManager: Manages IndexedDB storage
+ * - OneSatServices: 1Sat-specific network services
  */
 
-// Use client-specific exports for browser compatibility
-// The main index.js requires Node.js dependencies like dotenv
+import { PrivateKey } from "@bsv/sdk";
 import {
-	type Services,
-	SetupClient,
-	type Wallet,
-	type WalletStorageManager,
-} from "@bsv/wallet-toolbox/out/src/index.client";
+	OneSatWallet,
+	StorageIdb,
+	WalletStorageManager,
+	type Chain,
+	type SyncProgressEvent,
+	type SyncStartEvent,
+	type SyncCompleteEvent,
+	type SyncErrorEvent,
+	type SyncTxEvent,
+} from "@1sat/wallet-toolbox";
 import {
 	createContext,
 	type ReactNode,
@@ -29,14 +31,11 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import type { Ordinal } from "@/lib/wallet/gorillapool-service";
-import type { OneSatTxo } from "@/lib/wallet/OneSatOverlayService";
-import { OneSatOverlayService } from "@/lib/wallet/OneSatOverlayService";
-
-// Types
-type Chain = "main" | "test";
+import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
 
 interface WalletBalance {
 	confirmed: number;
@@ -44,14 +43,27 @@ interface WalletBalance {
 	total: number;
 }
 
+// Sync status for real-time UI updates
+interface SyncStatus {
+	isSyncing: boolean;
+	currentAddress: string | null;
+	progress: SyncProgressEvent | null;
+	lastSync: Date | null;
+	error: string | null;
+}
+
 interface WalletToolboxContextValue {
 	// Wallet state
-	wallet: Wallet | null;
+	wallet: OneSatWallet | null;
 	isInitialized: boolean;
 	isInitializing: boolean;
 	initError: string | null;
 	chain: Chain;
 	identityKey: string | null;
+
+	// Sync state
+	syncStatus: SyncStatus;
+	syncWallet: () => Promise<void>;
 
 	// Balance and assets
 	balance: WalletBalance | null;
@@ -69,7 +81,6 @@ interface WalletToolboxContextValue {
 	refreshBalance: () => Promise<void>;
 
 	// Internal services (exposed for advanced usage)
-	services: Services | null;
 	storageManager: WalletStorageManager | null;
 }
 
@@ -85,6 +96,13 @@ interface TokenBalance {
 const WalletToolboxContext = createContext<
 	WalletToolboxContextValue | undefined
 >(undefined);
+
+// Helper to generate random hex string for storage migration
+function randomBytesHex(length: number): string {
+	const bytes = new Uint8Array(length);
+	crypto.getRandomValues(bytes);
+	return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 interface WalletToolboxProviderProps {
 	children: ReactNode;
@@ -105,8 +123,7 @@ export function WalletToolboxProvider({
 	autoInitPayAddress,
 }: WalletToolboxProviderProps) {
 	// Core wallet state
-	const [wallet, setWallet] = useState<Wallet | null>(null);
-	const [services, setServices] = useState<Services | null>(null);
+	const [wallet, setWallet] = useState<OneSatWallet | null>(null);
 	const [storageManager, setStorageManager] =
 		useState<WalletStorageManager | null>(null);
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
@@ -115,6 +132,15 @@ export function WalletToolboxProvider({
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [isInitializing, setIsInitializing] = useState(false);
 	const [initError, setInitError] = useState<string | null>(null);
+
+	// Sync state
+	const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+		isSyncing: false,
+		currentAddress: null,
+		progress: null,
+		lastSync: null,
+		error: null,
+	});
 
 	// Balance state
 	const [balance, setBalance] = useState<WalletBalance | null>(null);
@@ -126,15 +152,13 @@ export function WalletToolboxProvider({
 	const [ordAddress, setOrdAddress] = useState<string | null>(null);
 	const [payAddress, setPayAddress] = useState<string | null>(null);
 
+	// GorillaPool service for ordinal lookups
+	const gorillaPoolRef = useRef(new GorillaPoolService());
+
 	/**
 	 * Initialize the wallet with a root key
 	 *
-	 * Following bsv-desktop pattern:
-	 * 1. Create KeyDeriver from root key
-	 * 2. Create Services for network operations
-	 * 3. Create WalletStorageManager with StorageIdb
-	 * 4. Create WalletSigner
-	 * 5. Create Wallet
+	 * Creates OneSatWallet with 1Sat-specific indexers and sync capabilities
 	 */
 	const initializeWallet = useCallback(
 		async (
@@ -151,23 +175,83 @@ export function WalletToolboxProvider({
 			console.log("[WalletToolbox] Starting wallet initialization...");
 
 			try {
-				// Use SetupClient.createWalletIdb for browser-compatible wallet setup
-				const result = await SetupClient.createWalletIdb({
+				// 1. Derive identity key from root key
+				const rootKey = PrivateKey.fromHex(rootKeyHex);
+				const newIdentityKey = rootKey.toPublicKey().toString();
+
+				// 2. Create IndexedDB storage
+				const storage = new StorageIdb({
 					chain,
-					rootKeyHex,
-					databaseName,
+					commissionSatoshis: 0,
+					commissionPubKeyHex: undefined,
+					feeModel: { model: "sat/kb", value: 1 },
+				});
+				await storage.migrate(databaseName, randomBytesHex(33));
+				await storage.makeAvailable();
+
+				// 3. Create WalletStorageManager with the storage
+				const manager = new WalletStorageManager(newIdentityKey, storage);
+				await manager.makeAvailable();
+
+				// 4. Build owner addresses set
+				const owners = new Set<string>();
+				if (ordAddressParam) owners.add(ordAddressParam);
+				if (payAddressParam && payAddressParam !== ordAddressParam) {
+					owners.add(payAddressParam);
+				}
+
+				// 5. Create OneSatWallet
+				const newWallet = new OneSatWallet({
+					rootKey,
+					storage: manager,
+					chain,
+					owners,
 				});
 
-				const {
-					wallet: newWallet,
-					storage,
-					services: newServices,
-					identityKey: newIdentityKey,
-				} = result;
+				// 6. Setup sync event listeners
+				newWallet.on("sync:start", (event: SyncStartEvent) => {
+					console.log("[WalletToolbox] Sync started:", event);
+					setSyncStatus((prev) => ({
+						...prev,
+						isSyncing: true,
+						currentAddress: event.address,
+						error: null,
+					}));
+				});
+
+				newWallet.on("sync:progress", (event: SyncProgressEvent) => {
+					console.log("[WalletToolbox] Sync progress:", event);
+					setSyncStatus((prev) => ({
+						...prev,
+						progress: event,
+					}));
+				});
+
+				newWallet.on("sync:tx", (event: SyncTxEvent) => {
+					console.log("[WalletToolbox] Sync tx:", event);
+				});
+
+				newWallet.on("sync:complete", (event: SyncCompleteEvent) => {
+					console.log("[WalletToolbox] Sync complete:", event);
+					setSyncStatus((prev) => ({
+						...prev,
+						isSyncing: false,
+						currentAddress: null,
+						lastSync: new Date(),
+					}));
+				});
+
+				newWallet.on("sync:error", (event: SyncErrorEvent) => {
+					console.error("[WalletToolbox] Sync error:", event);
+					setSyncStatus((prev) => ({
+						...prev,
+						isSyncing: false,
+						error: event.error.message,
+					}));
+				});
 
 				setWallet(newWallet);
-				setServices(newServices);
-				setStorageManager(storage);
+				setStorageManager(manager);
 				setIdentityKey(newIdentityKey);
 				setOrdAddress(ordAddressParam || null);
 				setPayAddress(payAddressParam || null);
@@ -219,19 +303,46 @@ export function WalletToolboxProvider({
 
 		// Clear state
 		setWallet(null);
-		setServices(null);
 		setStorageManager(null);
 		setIdentityKey(null);
 		setOrdAddress(null);
+		setPayAddress(null);
 		setIsInitialized(false);
 		setBalance(null);
 		setOrdinals([]);
+		setBsv20Tokens([]);
+		setBsv21Tokens([]);
+		setSyncStatus({
+			isSyncing: false,
+			currentAddress: null,
+			progress: null,
+			lastSync: null,
+			error: null,
+		});
 
 		console.log("[WalletToolbox] Wallet destroyed");
 	}, []);
 
 	/**
-	 * Refresh balance from 1sat overlay and ordinals
+	 * Sync wallet from 1Sat indexer
+	 */
+	const syncWallet = useCallback(async () => {
+		if (!wallet || !isInitialized) {
+			console.warn("[WalletToolbox] Cannot sync - wallet not initialized");
+			return;
+		}
+
+		if (syncStatus.isSyncing) {
+			console.warn("[WalletToolbox] Sync already in progress");
+			return;
+		}
+
+		console.log("[WalletToolbox] Starting wallet sync...");
+		await wallet.syncAll();
+	}, [wallet, isInitialized, syncStatus.isSyncing]);
+
+	/**
+	 * Refresh balance from wallet storage and GorillaPool for ordinals
 	 */
 	const refreshBalance = useCallback(async () => {
 		if (!wallet || !isInitialized) {
@@ -242,101 +353,78 @@ export function WalletToolboxProvider({
 		}
 
 		try {
-			// Use 1sat overlay to get balance and ordinals
-			if (ordAddress) {
-				// Collect all wallet addresses (remove duplicates)
-				const allAddresses = [ordAddress];
-				if (payAddress && payAddress !== ordAddress) {
-					allAddresses.push(payAddress);
-				}
-				console.log("[WalletToolbox] Refreshing for addresses:", allAddresses);
+			// Get balance from wallet storage (fund basket)
+			const fundOutputs = await wallet.listOutputs({
+				basket: "fund",
+				include: "locking scripts",
+			});
 
-				// Create overlay service with ALL wallet addresses
-				const overlayService = new OneSatOverlayService(
-					identityKey || ordAddress, // Use identity key as account name
-					allAddresses, // All owner addresses
-				);
-
-				// Get balance from overlay
-				const overlayBalance = await overlayService.getBalance(true);
-				if (overlayBalance) {
-					setBalance(overlayBalance);
-					console.log("[WalletToolbox] Balance from overlay:", overlayBalance);
-				}
-
-				// Get ALL ordinals and tokens in a single efficient fetch
-				const { ordinals: overlayOrdinals, tokens: overlayTokens } =
-					await overlayService.getAllOrdinalsAndTokens();
-
-				// Map ordinals
-				const mappedOrdinals: Ordinal[] = overlayOrdinals.map((txo) => ({
-					txid: txo.txid || txo.outpoint.split("_")[0],
-					vout: txo.vout ?? parseInt(txo.outpoint.split("_")[1], 10),
-					outpoint: txo.outpoint,
-					satoshis: txo.satoshis ?? 1,
-					script: txo.script || "",
-					owner: ordAddress,
-					height: txo.height ?? 0,
-					idx: txo.idx ?? 0,
-					data: txo.data,
-				}));
-				setOrdinals(mappedOrdinals);
-				console.log(
-					`[WalletToolbox] Ordinals from overlay: ${mappedOrdinals.length} (NFTs)`,
-				);
-
-				// Map tokens (all in bsv21 since we can't distinguish without fetching inscription content)
-				const mapToken = (txo: OneSatTxo): TokenBalance => ({
-					outpoint: txo.outpoint,
-					txid: txo.txid || txo.outpoint.split("_")[0],
-					vout: txo.vout ?? parseInt(txo.outpoint.split("_")[1], 10),
-					data: txo.data,
-					height: txo.height,
-				});
-
-				setBsv20Tokens([]); // No easy way to distinguish BSV20 vs BSV21 yet
-				setBsv21Tokens(overlayTokens.map(mapToken));
-				console.log(
-					`[WalletToolbox] Tokens from overlay: ${overlayTokens.length} (BSV20/BSV21 combined)`,
-				);
-			} else {
-				// Fallback to wallet-toolbox internal storage
-				const outputs = await wallet.listOutputs({
-					basket: "default",
-					include: "locking scripts",
-				});
-
-				let total = 0;
-				if (outputs.outputs) {
-					for (const output of outputs.outputs) {
-						if (output.spendable) {
-							total += output.satoshis || 0;
-						}
+			let total = 0;
+			if (fundOutputs.outputs) {
+				for (const output of fundOutputs.outputs) {
+					if (output.spendable) {
+						total += output.satoshis || 0;
 					}
 				}
+			}
+			setBalance({
+				confirmed: total,
+				unconfirmed: 0,
+				total,
+			});
+			console.log("[WalletToolbox] Balance from storage:", total);
 
-				setBalance({
-					confirmed: total,
-					unconfirmed: 0,
-					total,
-				});
+			// Get ordinals from GorillaPool (more reliable for NFT metadata)
+			if (ordAddress) {
+				const categorized =
+					await gorillaPoolRef.current.getCategorizedUtxos(ordAddress);
+
+				// Also check pay address if different
+				if (payAddress && payAddress !== ordAddress) {
+					const payUtxos =
+						await gorillaPoolRef.current.getCategorizedUtxos(payAddress);
+					categorized.ordinals.push(...payUtxos.ordinals);
+					categorized.bsv20Tokens.push(...payUtxos.bsv20Tokens);
+					categorized.bsv21Tokens.push(...payUtxos.bsv21Tokens);
+				}
+
+				setOrdinals(categorized.ordinals);
+				setBsv20Tokens(
+					categorized.bsv20Tokens.map((o) => ({
+						outpoint: o.outpoint,
+						txid: o.txid,
+						vout: o.vout,
+						height: o.height,
+						data: o.data,
+					})),
+				);
+				setBsv21Tokens(
+					categorized.bsv21Tokens.map((o) => ({
+						outpoint: o.outpoint,
+						txid: o.txid,
+						vout: o.vout,
+						height: o.height,
+						data: o.data,
+					})),
+				);
+
+				console.log(
+					`[WalletToolbox] Ordinals: ${categorized.ordinals.length}, BSV20: ${categorized.bsv20Tokens.length}, BSV21: ${categorized.bsv21Tokens.length}`,
+				);
 			}
 		} catch (error) {
 			console.error("[WalletToolbox] Failed to refresh balance:", error);
 		}
-	}, [wallet, isInitialized, ordAddress, payAddress, identityKey]);
+	}, [wallet, isInitialized, ordAddress, payAddress]);
 
-	// Auto-refresh balance when wallet is initialized and address is available
+	// Auto-sync and refresh when wallet is initialized
 	useEffect(() => {
 		if (isInitialized && wallet && ordAddress) {
-			console.log(
-				"[WalletToolbox] Auto-refreshing balance for addresses:",
-				ordAddress,
-				payAddress,
-			);
-			refreshBalance();
+			console.log("[WalletToolbox] Auto-syncing and refreshing...");
+			// Start sync, then refresh balance
+			syncWallet().then(() => refreshBalance());
 		}
-	}, [isInitialized, wallet, ordAddress, payAddress, refreshBalance]);
+	}, [isInitialized, wallet, ordAddress, syncWallet, refreshBalance]);
 
 	const value = useMemo<WalletToolboxContextValue>(
 		() => ({
@@ -346,6 +434,8 @@ export function WalletToolboxProvider({
 			initError,
 			chain,
 			identityKey,
+			syncStatus,
+			syncWallet,
 			balance,
 			ordinals,
 			bsv20Tokens,
@@ -353,7 +443,6 @@ export function WalletToolboxProvider({
 			initializeWallet,
 			destroyWallet,
 			refreshBalance,
-			services,
 			storageManager,
 		}),
 		[
@@ -363,6 +452,8 @@ export function WalletToolboxProvider({
 			initError,
 			chain,
 			identityKey,
+			syncStatus,
+			syncWallet,
 			balance,
 			ordinals,
 			bsv20Tokens,
@@ -370,7 +461,6 @@ export function WalletToolboxProvider({
 			initializeWallet,
 			destroyWallet,
 			refreshBalance,
-			services,
 			storageManager,
 		],
 	);

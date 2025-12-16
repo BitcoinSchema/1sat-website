@@ -221,14 +221,38 @@ export default function WalletDiagnosticPage() {
 			status: toolbox.wallet ? "success" : "warning",
 		},
 		{
-			label: "Services",
-			value: toolbox.services ? "Connected" : "Not Connected",
-			status: toolbox.services ? "success" : "warning",
-		},
-		{
 			label: "Storage Manager",
 			value: toolbox.storageManager ? "Active" : "Not Active",
 			status: toolbox.storageManager ? "success" : "warning",
+		},
+		{
+			label: "Is Syncing",
+			value: toolbox.syncStatus.isSyncing,
+			status: toolbox.syncStatus.isSyncing ? "info" : "success",
+		},
+		{
+			label: "Sync Address",
+			value: toolbox.syncStatus.currentAddress
+				? `${toolbox.syncStatus.currentAddress.slice(0, 8)}...`
+				: null,
+			status: toolbox.syncStatus.currentAddress ? "info" : "success",
+		},
+		{
+			label: "Sync Progress",
+			value: toolbox.syncStatus.progress
+				? `${toolbox.syncStatus.progress.processed} processed`
+				: null,
+			status: "info",
+		},
+		{
+			label: "Last Sync",
+			value: toolbox.syncStatus.lastSync?.toLocaleTimeString() ?? null,
+			status: toolbox.syncStatus.lastSync ? "success" : "warning",
+		},
+		{
+			label: "Sync Error",
+			value: toolbox.syncStatus.error,
+			status: toolbox.syncStatus.error ? "error" : "success",
 		},
 	];
 
@@ -340,7 +364,7 @@ export default function WalletDiagnosticPage() {
 						<CardDescription>Run diagnostic tests</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="flex gap-4">
+						<div className="flex flex-wrap gap-4">
 							<Button
 								onClick={testToolboxInit}
 								disabled={isTestingToolbox || wallet.isWalletLocked}
@@ -349,10 +373,17 @@ export default function WalletDiagnosticPage() {
 							</Button>
 							<Button
 								variant="outline"
+								onClick={() => toolbox.syncWallet()}
+								disabled={!toolbox.isInitialized || toolbox.syncStatus.isSyncing}
+							>
+								{toolbox.syncStatus.isSyncing ? "Syncing..." : "Sync Toolbox"}
+							</Button>
+							<Button
+								variant="outline"
 								onClick={() => toolbox.refreshBalance()}
 								disabled={!toolbox.isInitialized}
 							>
-								Refresh Toolbox Balance
+								Refresh Balance
 							</Button>
 							<Button
 								variant="outline"
