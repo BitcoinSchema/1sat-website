@@ -10,7 +10,7 @@ import {
 	Noise,
 } from "@react-three/postprocessing";
 import { Leva, folder, useControls } from "leva";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
@@ -140,7 +140,7 @@ export function Logo3D() {
 	if (!colors || !font)
 		return (
 			<div className="h-[280px] md:h-[360px] w-full bg-transparent flex items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+				<Spinner className="size-8 text-muted-foreground" />
 			</div>
 		);
 
