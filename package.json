@@ -11,8 +11,9 @@
 		"format": "biome format --write"
 	},
 	"dependencies": {
+		"@1sat/connect": "^0.0.3",
+		"@1sat/wallet-toolbox": "^0.0.1",
 		"@bsv/sdk": "^1.9.24",
-		"@bsv/wallet-toolbox": "^1.7.14",
 		"@convex-dev/presence": "^0.3.0",
 		"@hookform/resolvers": "^5.2.2",
 		"@radix-ui/react-alert-dialog": "^1.1.15",
@@ -65,7 +66,7 @@
 		"zod": "^4.1.13"
 	},
 	"overrides": {
-		"@bsv/sdk": "^1.9.23"
+		"@bsv/sdk": "^1.9.24"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.8",
