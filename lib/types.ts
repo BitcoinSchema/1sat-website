@@ -41,12 +41,5 @@ export type AnyEncryptedBackup =
 	| YoursEncryptedBackup
 	| YoursChromeStorageBackup;
 
-export type Keys = {
-	payPk: string;
-	ordPk: string;
-	mnemonic?: string;
-	changeAddressPath?: number | string;
-	ordAddressPath?: number | string;
-	identityPk?: string;
-	identityAddressPath?: number | string;
-};
+// Re-export Keys type from SDK
+export type { WalletKeys as Keys } from "@1sat/utils";

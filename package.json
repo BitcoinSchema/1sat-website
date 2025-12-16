@@ -12,6 +12,7 @@
 	},
 	"dependencies": {
 		"@1sat/connect": "^0.0.3",
+		"@1sat/utils": "0.0.3",
 		"@1sat/wallet-toolbox": "^0.0.1",
 		"@bsv/sdk": "^1.9.24",
 		"@convex-dev/presence": "^0.3.0",

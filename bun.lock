@@ -6,6 +6,7 @@
       "name": "1sat-web",
       "dependencies": {
         "@1sat/connect": "^0.0.3",
+        "@1sat/utils": "0.0.3",
         "@1sat/wallet-toolbox": "^0.0.1",
         "@bsv/sdk": "^1.9.24",
         "@convex-dev/presence": "^0.3.0",
@@ -78,6 +79,10 @@
   },
   "packages": {
     "@1sat/connect": ["@1sat/connect@0.0.3", "", { "dependencies": { "eventemitter3": "^5.0.1" } }, "sha512-Ce+va6JIxnCu1+43dC/1GmotKvv/bbpe1ZshllmToNsXmZEfkVSm2BGScgg8ht4nqi8jL15yehDdFCo/FDawAQ=="],
+
+    "@1sat/types": ["@1sat/types@0.0.2", "", { "peerDependencies": { "@bsv/sdk": "^1.9.0" } }, "sha512-/aJtEeMg7HltGdbKkzbwALavGI4yKMbtkf9g3O/KOU83DE7s/k0VV/euL3k6Xb6hSxchQR/UYk9aRoydiEdS/g=="],
+
+    "@1sat/utils": ["@1sat/utils@0.0.3", "", { "dependencies": { "@1sat/types": "^0.0.2", "image-meta": "^0.2.2" }, "peerDependencies": { "@bsv/sdk": "^1.9.0" } }, "sha512-HGuJ9DhBKMkdjLqN26H9MuUAHP5XGI33r+y2ZPAH28fB0wyTorWHFj5b/KRL3KDx54I0mP31GC162jd/RXUn5Q=="],
 
     "@1sat/wallet-toolbox": ["@1sat/wallet-toolbox@0.0.1", "", { "dependencies": { "@bsv/sdk": "^1.9.24", "@bsv/wallet-toolbox": "^1.7.14", "buffer": "^6.0.3" } }, "sha512-feSt6qxgBXs7QWkashz6NuYtisQuuRFYxj+Pr7fnmlbV9rXBuXBcA0NYUCNiFEes53g14hyZv+JN0zSa+CXffg=="],
 
