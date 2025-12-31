@@ -27,10 +27,10 @@ export function SyncProgress({
 
 	const progressPercent = syncStatus.progress
 		? Math.round(
-				(syncStatus.progress.processed /
-					(syncStatus.progress.processed + syncStatus.progress.remaining)) *
+				(syncStatus.progress.done /
+					(syncStatus.progress.done + syncStatus.progress.pending)) *
 					100,
-			)
+			) || 0
 		: 0;
 
 	if (compact) {
@@ -79,16 +79,12 @@ export function SyncProgress({
 						</span>
 					</div>
 					<Progress value={progressPercent} className="h-2" />
-					{syncStatus.currentAddress && (
-						<p className="text-xs text-muted-foreground truncate">
-							Address: {syncStatus.currentAddress.slice(0, 8)}...
-							{syncStatus.currentAddress.slice(-6)}
-						</p>
-					)}
 					{syncStatus.progress && (
 						<p className="text-xs text-muted-foreground">
-							{syncStatus.progress.processed} processed,{" "}
-							{syncStatus.progress.remaining} remaining
+							{syncStatus.progress.done} done, {syncStatus.progress.pending}{" "}
+							pending
+							{syncStatus.progress.failed > 0 &&
+								`, ${syncStatus.progress.failed} failed`}
 						</p>
 					)}
 				</>

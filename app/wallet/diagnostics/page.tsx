@@ -221,26 +221,14 @@ export default function WalletDiagnosticPage() {
 			status: toolbox.wallet ? "success" : "warning",
 		},
 		{
-			label: "Storage Manager",
-			value: toolbox.storageManager ? "Active" : "Not Active",
-			status: toolbox.storageManager ? "success" : "warning",
-		},
-		{
 			label: "Is Syncing",
 			value: toolbox.syncStatus.isSyncing,
 			status: toolbox.syncStatus.isSyncing ? "info" : "success",
 		},
 		{
-			label: "Sync Address",
-			value: toolbox.syncStatus.currentAddress
-				? `${toolbox.syncStatus.currentAddress.slice(0, 8)}...`
-				: null,
-			status: toolbox.syncStatus.currentAddress ? "info" : "success",
-		},
-		{
 			label: "Sync Progress",
 			value: toolbox.syncStatus.progress
-				? `${toolbox.syncStatus.progress.processed} processed`
+				? `${toolbox.syncStatus.progress.done} done, ${toolbox.syncStatus.progress.pending} pending`
 				: null,
 			status: "info",
 		},

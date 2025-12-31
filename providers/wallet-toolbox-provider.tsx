@@ -8,21 +8,22 @@
  *
  * Key components:
  * - OneSatWallet: Extended wallet with 1Sat indexers and sync
- * - WalletStorageManager: Manages IndexedDB storage
- * - OneSatServices: 1Sat-specific network services
+ * - Wallet + WalletStorageManager: Base BRC-100 wallet from @bsv/wallet-toolbox
+ * - IndexedDbSyncQueue: Browser-based sync queue for background processing
  */
 
-import { PrivateKey } from "@bsv/sdk";
+import { PrivateKey, KeyDeriver } from "@bsv/sdk";
+// Use client-specific imports to avoid server-side dependencies (knex, express, etc.)
 import {
-	OneSatWallet,
+	Wallet,
 	StorageIdb,
 	WalletStorageManager,
-	type Chain,
-	type SyncProgressEvent,
-	type SyncStartEvent,
-	type SyncCompleteEvent,
-	type SyncErrorEvent,
-	type SyncTxEvent,
+	type sdk,
+} from "@bsv/wallet-toolbox/out/src/index.client";
+import {
+	OneSatWallet,
+	IndexedDbSyncQueue,
+	type OneSatWalletEvents,
 } from "@1sat/wallet-toolbox";
 import {
 	createContext,
@@ -37,6 +38,8 @@ import {
 import type { Ordinal } from "@/lib/wallet/gorillapool-service";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
 
+type Chain = sdk.Chain;
+
 interface WalletBalance {
 	confirmed: number;
 	unconfirmed: number;
@@ -46,8 +49,7 @@ interface WalletBalance {
 // Sync status for real-time UI updates
 interface SyncStatus {
 	isSyncing: boolean;
-	currentAddress: string | null;
-	progress: SyncProgressEvent | null;
+	progress: { pending: number; done: number; failed: number } | null;
 	lastSync: Date | null;
 	error: string | null;
 }
@@ -79,9 +81,6 @@ interface WalletToolboxContextValue {
 	) => Promise<boolean>;
 	destroyWallet: () => Promise<void>;
 	refreshBalance: () => Promise<void>;
-
-	// Internal services (exposed for advanced usage)
-	storageManager: WalletStorageManager | null;
 }
 
 // Token balance interface
@@ -124,8 +123,6 @@ export function WalletToolboxProvider({
 }: WalletToolboxProviderProps) {
 	// Core wallet state
 	const [wallet, setWallet] = useState<OneSatWallet | null>(null);
-	const [storageManager, setStorageManager] =
-		useState<WalletStorageManager | null>(null);
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
 
 	// UI state
@@ -136,7 +133,6 @@ export function WalletToolboxProvider({
 	// Sync state
 	const [syncStatus, setSyncStatus] = useState<SyncStatus>({
 		isSyncing: false,
-		currentAddress: null,
 		progress: null,
 		lastSync: null,
 		error: null,
@@ -179,7 +175,7 @@ export function WalletToolboxProvider({
 				const rootKey = PrivateKey.fromHex(rootKeyHex);
 				const newIdentityKey = rootKey.toPublicKey().toString();
 
-				// 2. Create IndexedDB storage
+				// 2. Create IndexedDB storage from @bsv/wallet-toolbox
 				const storage = new StorageIdb({
 					chain,
 					commissionSatoshis: 0,
@@ -190,68 +186,77 @@ export function WalletToolboxProvider({
 				await storage.makeAvailable();
 
 				// 3. Create WalletStorageManager with the storage
-				const manager = new WalletStorageManager(newIdentityKey, storage);
-				await manager.makeAvailable();
+				const storageManager = new WalletStorageManager(newIdentityKey, storage);
+				await storageManager.makeAvailable();
 
-				// 4. Build owner addresses set
+				// 4. Create key deriver and base Wallet from @bsv/wallet-toolbox
+				const keyDeriver = new KeyDeriver(rootKey);
+				const baseWallet = new Wallet({
+					chain,
+					keyDeriver,
+					storage: storageManager,
+				});
+
+				// 5. Build owner addresses set
 				const owners = new Set<string>();
 				if (ordAddressParam) owners.add(ordAddressParam);
 				if (payAddressParam && payAddressParam !== ordAddressParam) {
 					owners.add(payAddressParam);
 				}
 
-				// 5. Create OneSatWallet
+				// 6. Create sync queue for background processing
+				const syncQueue = new IndexedDbSyncQueue(newIdentityKey);
+
+				// 7. Create OneSatWallet wrapping the base wallet
 				const newWallet = new OneSatWallet({
-					rootKey,
-					storage: manager,
+					wallet: baseWallet,
+					storage: storageManager,
 					chain,
 					owners,
+					syncQueue,
 				});
 
-				// 6. Setup sync event listeners
-				newWallet.on("sync:start", (event: SyncStartEvent) => {
-					console.log("[WalletToolbox] Sync started:", event);
+				// 8. Setup sync event listeners
+				newWallet.on("sync:start", (event: OneSatWalletEvents["sync:start"]) => {
+					console.log("[WalletToolbox] Sync started:", event.addresses);
 					setSyncStatus((prev) => ({
 						...prev,
 						isSyncing: true,
-						currentAddress: event.address,
 						error: null,
 					}));
 				});
 
-				newWallet.on("sync:progress", (event: SyncProgressEvent) => {
+				newWallet.on("sync:progress", (event: OneSatWalletEvents["sync:progress"]) => {
 					console.log("[WalletToolbox] Sync progress:", event);
 					setSyncStatus((prev) => ({
 						...prev,
-						progress: event,
+						progress: {
+							pending: event.pending,
+							done: event.done,
+							failed: event.failed,
+						},
 					}));
 				});
 
-				newWallet.on("sync:tx", (event: SyncTxEvent) => {
-					console.log("[WalletToolbox] Sync tx:", event);
-				});
-
-				newWallet.on("sync:complete", (event: SyncCompleteEvent) => {
-					console.log("[WalletToolbox] Sync complete:", event);
+				newWallet.on("sync:complete", () => {
+					console.log("[WalletToolbox] Sync complete");
 					setSyncStatus((prev) => ({
 						...prev,
 						isSyncing: false,
-						currentAddress: null,
 						lastSync: new Date(),
 					}));
 				});
 
-				newWallet.on("sync:error", (event: SyncErrorEvent) => {
-					console.error("[WalletToolbox] Sync error:", event);
+				newWallet.on("sync:error", (event: OneSatWalletEvents["sync:error"]) => {
+					console.error("[WalletToolbox] Sync error:", event.message);
 					setSyncStatus((prev) => ({
 						...prev,
 						isSyncing: false,
-						error: event.error.message,
+						error: event.message,
 					}));
 				});
 
 				setWallet(newWallet);
-				setStorageManager(manager);
 				setIdentityKey(newIdentityKey);
 				setOrdAddress(ordAddressParam || null);
 				setPayAddress(payAddressParam || null);
@@ -301,9 +306,13 @@ export function WalletToolboxProvider({
 	const destroyWallet = useCallback(async () => {
 		console.log("[WalletToolbox] Destroying wallet...");
 
+		// Close the wallet if it exists
+		if (wallet) {
+			wallet.close();
+		}
+
 		// Clear state
 		setWallet(null);
-		setStorageManager(null);
 		setIdentityKey(null);
 		setOrdAddress(null);
 		setPayAddress(null);
@@ -314,17 +323,16 @@ export function WalletToolboxProvider({
 		setBsv21Tokens([]);
 		setSyncStatus({
 			isSyncing: false,
-			currentAddress: null,
 			progress: null,
 			lastSync: null,
 			error: null,
 		});
 
 		console.log("[WalletToolbox] Wallet destroyed");
-	}, []);
+	}, [wallet]);
 
 	/**
-	 * Sync wallet from 1Sat indexer
+	 * Sync wallet from 1Sat indexer using queue-based sync
 	 */
 	const syncWallet = useCallback(async () => {
 		if (!wallet || !isInitialized) {
@@ -338,7 +346,7 @@ export function WalletToolboxProvider({
 		}
 
 		console.log("[WalletToolbox] Starting wallet sync...");
-		await wallet.syncAll();
+		await wallet.sync();
 	}, [wallet, isInitialized, syncStatus.isSyncing]);
 
 	/**
@@ -443,7 +451,6 @@ export function WalletToolboxProvider({
 			initializeWallet,
 			destroyWallet,
 			refreshBalance,
-			storageManager,
 		}),
 		[
 			wallet,
@@ -461,7 +468,6 @@ export function WalletToolboxProvider({
 			initializeWallet,
 			destroyWallet,
 			refreshBalance,
-			storageManager,
 		],
 	);
 
