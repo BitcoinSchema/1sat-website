@@ -6,10 +6,7 @@
  * This provider integrates @1sat/wallet-toolbox for BRC-100 compliant wallet operations
  * with 1Sat-specific indexing, sync, and ordinal support.
  *
- * Key components:
- * - OneSatWallet: Extended wallet with 1Sat indexers and sync
- * - Wallet + WalletStorageManager: Base BRC-100 wallet from @bsv/wallet-toolbox
- * - IndexedDbSyncQueue: Browser-based sync queue for background processing
+ * Uses TanStack Query for network request state management.
  */
 
 import { PrivateKey, KeyDeriver } from "@bsv/sdk";
@@ -25,18 +22,19 @@ import {
 	IndexedDbSyncQueue,
 	type OneSatWalletEvents,
 } from "@1sat/wallet-toolbox";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
 	type ReactNode,
 	useCallback,
 	useContext,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
 import type { Ordinal } from "@/lib/wallet/gorillapool-service";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
+import type { TxoData } from "@/lib/types/ordinals";
 
 type Chain = sdk.Chain;
 
@@ -54,6 +52,23 @@ interface SyncStatus {
 	error: string | null;
 }
 
+// Token balance interface
+interface TokenBalance {
+	outpoint: string;
+	txid: string;
+	vout: number;
+	data?: TxoData;
+	height?: number;
+}
+
+// Query result for balance/assets
+interface BalanceQueryResult {
+	balance: WalletBalance;
+	ordinals: Ordinal[];
+	bsv20Tokens: TokenBalance[];
+	bsv21Tokens: TokenBalance[];
+}
+
 interface WalletToolboxContextValue {
 	// Wallet state
 	wallet: OneSatWallet | null;
@@ -65,13 +80,16 @@ interface WalletToolboxContextValue {
 
 	// Sync state
 	syncStatus: SyncStatus;
-	syncWallet: () => Promise<void>;
+	syncWallet: () => void;
+	isSyncPending: boolean;
 
-	// Balance and assets
+	// Balance and assets (from query)
 	balance: WalletBalance | null;
 	ordinals: Ordinal[];
 	bsv20Tokens: TokenBalance[];
 	bsv21Tokens: TokenBalance[];
+	isBalanceLoading: boolean;
+	balanceError: Error | null;
 
 	// Actions
 	initializeWallet: (
@@ -80,16 +98,7 @@ interface WalletToolboxContextValue {
 		payAddress?: string,
 	) => Promise<boolean>;
 	destroyWallet: () => Promise<void>;
-	refreshBalance: () => Promise<void>;
-}
-
-// Token balance interface
-interface TokenBalance {
-	outpoint: string;
-	txid: string;
-	vout: number;
-	data?: TxoData;
-	height?: number;
+	refreshBalance: () => void;
 }
 
 const WalletToolboxContext = createContext<
@@ -102,6 +111,12 @@ function randomBytesHex(length: number): string {
 	crypto.getRandomValues(bytes);
 	return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+// Query keys
+const QUERY_KEYS = {
+	balance: (ordAddress: string | null, payAddress: string | null) =>
+		["wallet-balance", ordAddress, payAddress] as const,
+};
 
 interface WalletToolboxProviderProps {
 	children: ReactNode;
@@ -121,6 +136,8 @@ export function WalletToolboxProvider({
 	autoInitOrdAddress,
 	autoInitPayAddress,
 }: WalletToolboxProviderProps) {
+	const queryClient = useQueryClient();
+
 	// Core wallet state
 	const [wallet, setWallet] = useState<OneSatWallet | null>(null);
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
@@ -130,7 +147,7 @@ export function WalletToolboxProvider({
 	const [isInitializing, setIsInitializing] = useState(false);
 	const [initError, setInitError] = useState<string | null>(null);
 
-	// Sync state
+	// Sync state (managed via events from wallet)
 	const [syncStatus, setSyncStatus] = useState<SyncStatus>({
 		isSyncing: false,
 		progress: null,
@@ -138,26 +155,96 @@ export function WalletToolboxProvider({
 		error: null,
 	});
 
-	// Balance state
-	const [balance, setBalance] = useState<WalletBalance | null>(null);
-	const [ordinals, setOrdinals] = useState<Ordinal[]>([]);
-	const [bsv20Tokens, setBsv20Tokens] = useState<TokenBalance[]>([]);
-	const [bsv21Tokens, setBsv21Tokens] = useState<TokenBalance[]>([]);
-
-	// Store wallet addresses for ordinal and balance lookups
+	// Store wallet addresses for queries
 	const [ordAddress, setOrdAddress] = useState<string | null>(null);
 	const [payAddress, setPayAddress] = useState<string | null>(null);
 
 	// GorillaPool service for ordinal lookups
 	const gorillaPoolRef = useRef(new GorillaPoolService());
 
-	// Track if auto-sync has been done (prevents infinite loop)
-	const hasAutoSynced = useRef(false);
+	// Balance query - fetches from GorillaPool
+	const balanceQuery = useQuery({
+		queryKey: QUERY_KEYS.balance(ordAddress, payAddress),
+		queryFn: async (): Promise<BalanceQueryResult> => {
+			if (!wallet || !isInitialized || !ordAddress) {
+				throw new Error("Wallet not initialized");
+			}
+
+			// Get balance from wallet storage (fund basket)
+			const fundOutputs = await wallet.listOutputs({
+				basket: "fund",
+				include: "locking scripts",
+			});
+
+			let total = 0;
+			if (fundOutputs.outputs) {
+				for (const output of fundOutputs.outputs) {
+					if (output.spendable) {
+						total += output.satoshis || 0;
+					}
+				}
+			}
+
+			// Get ordinals from GorillaPool
+			const categorized =
+				await gorillaPoolRef.current.getCategorizedUtxos(ordAddress);
+
+			// Also check pay address if different
+			if (payAddress && payAddress !== ordAddress) {
+				const payUtxos =
+					await gorillaPoolRef.current.getCategorizedUtxos(payAddress);
+				categorized.ordinals.push(...payUtxos.ordinals);
+				categorized.bsv20Tokens.push(...payUtxos.bsv20Tokens);
+				categorized.bsv21Tokens.push(...payUtxos.bsv21Tokens);
+			}
+
+			console.log(
+				`[WalletToolbox] Balance: ${total}, Ordinals: ${categorized.ordinals.length}, BSV20: ${categorized.bsv20Tokens.length}, BSV21: ${categorized.bsv21Tokens.length}`,
+			);
+
+			return {
+				balance: { confirmed: total, unconfirmed: 0, total },
+				ordinals: categorized.ordinals,
+				bsv20Tokens: categorized.bsv20Tokens.map((o) => ({
+					outpoint: o.outpoint,
+					txid: o.txid,
+					vout: o.vout,
+					height: o.height,
+					data: o.data,
+				})),
+				bsv21Tokens: categorized.bsv21Tokens.map((o) => ({
+					outpoint: o.outpoint,
+					txid: o.txid,
+					vout: o.vout,
+					height: o.height,
+					data: o.data,
+				})),
+			};
+		},
+		enabled: isInitialized && !!wallet && !!ordAddress,
+		staleTime: 30_000, // Consider data fresh for 30s
+		gcTime: 5 * 60_000, // Keep in cache for 5 minutes
+	});
+
+	// Sync mutation
+	const syncMutation = useMutation({
+		mutationFn: async () => {
+			if (!wallet || !isInitialized) {
+				throw new Error("Wallet not initialized");
+			}
+			console.log("[WalletToolbox] Starting wallet sync...");
+			await wallet.sync();
+		},
+		onSuccess: () => {
+			// Invalidate balance query after sync completes
+			queryClient.invalidateQueries({
+				queryKey: QUERY_KEYS.balance(ordAddress, payAddress),
+			});
+		},
+	});
 
 	/**
 	 * Initialize the wallet with a root key
-	 *
-	 * Creates OneSatWallet with 1Sat-specific indexers and sync capabilities
 	 */
 	const initializeWallet = useCallback(
 		async (
@@ -229,17 +316,19 @@ export function WalletToolboxProvider({
 					}));
 				});
 
-				newWallet.on("sync:progress", (event: OneSatWalletEvents["sync:progress"]) => {
-					console.log("[WalletToolbox] Sync progress:", event);
-					setSyncStatus((prev) => ({
-						...prev,
-						progress: {
-							pending: event.pending,
-							done: event.done,
-							failed: event.failed,
-						},
-					}));
-				});
+				newWallet.on(
+					"sync:progress",
+					(event: OneSatWalletEvents["sync:progress"]) => {
+						setSyncStatus((prev) => ({
+							...prev,
+							progress: {
+								pending: event.pending,
+								done: event.done,
+								failed: event.failed,
+							},
+						}));
+					},
+				);
 
 				newWallet.on("sync:complete", () => {
 					console.log("[WalletToolbox] Sync complete");
@@ -267,7 +356,11 @@ export function WalletToolboxProvider({
 				setInitError(null);
 
 				console.log("[WalletToolbox] Wallet initialized successfully");
-				console.log("[WalletToolbox] Identity Key:", newIdentityKey);
+
+				// Trigger initial sync
+				setTimeout(() => {
+					newWallet.sync().catch(console.error);
+				}, 100);
 
 				return true;
 			} catch (error) {
@@ -284,25 +377,6 @@ export function WalletToolboxProvider({
 		[chain, databaseName, isInitializing, isInitialized],
 	);
 
-	// Auto-initialize when keys are provided via props
-	useEffect(() => {
-		if (autoInitRootKeyHex && !isInitialized && !isInitializing) {
-			console.log("[WalletToolbox] Auto-initializing with provided keys...");
-			initializeWallet(
-				autoInitRootKeyHex,
-				autoInitOrdAddress,
-				autoInitPayAddress,
-			);
-		}
-	}, [
-		autoInitRootKeyHex,
-		autoInitOrdAddress,
-		autoInitPayAddress,
-		isInitialized,
-		isInitializing,
-		initializeWallet,
-	]);
-
 	/**
 	 * Destroy the wallet and clear all state
 	 */
@@ -314,16 +388,17 @@ export function WalletToolboxProvider({
 			wallet.close();
 		}
 
+		// Clear query cache for this wallet
+		queryClient.removeQueries({
+			queryKey: QUERY_KEYS.balance(ordAddress, payAddress),
+		});
+
 		// Clear state
 		setWallet(null);
 		setIdentityKey(null);
 		setOrdAddress(null);
 		setPayAddress(null);
 		setIsInitialized(false);
-		setBalance(null);
-		setOrdinals([]);
-		setBsv20Tokens([]);
-		setBsv21Tokens([]);
 		setSyncStatus({
 			isSyncing: false,
 			progress: null,
@@ -331,115 +406,8 @@ export function WalletToolboxProvider({
 			error: null,
 		});
 
-		// Reset auto-sync flag so it can sync again on re-init
-		hasAutoSynced.current = false;
-
 		console.log("[WalletToolbox] Wallet destroyed");
-	}, [wallet]);
-
-	/**
-	 * Sync wallet from 1Sat indexer using queue-based sync
-	 */
-	const syncWallet = useCallback(async () => {
-		if (!wallet || !isInitialized) {
-			console.warn("[WalletToolbox] Cannot sync - wallet not initialized");
-			return;
-		}
-
-		if (syncStatus.isSyncing) {
-			console.warn("[WalletToolbox] Sync already in progress");
-			return;
-		}
-
-		console.log("[WalletToolbox] Starting wallet sync...");
-		await wallet.sync();
-	}, [wallet, isInitialized, syncStatus.isSyncing]);
-
-	/**
-	 * Refresh balance from wallet storage and GorillaPool for ordinals
-	 */
-	const refreshBalance = useCallback(async () => {
-		if (!wallet || !isInitialized) {
-			console.warn(
-				"[WalletToolbox] Cannot refresh balance - wallet not initialized",
-			);
-			return;
-		}
-
-		try {
-			// Get balance from wallet storage (fund basket)
-			const fundOutputs = await wallet.listOutputs({
-				basket: "fund",
-				include: "locking scripts",
-			});
-
-			let total = 0;
-			if (fundOutputs.outputs) {
-				for (const output of fundOutputs.outputs) {
-					if (output.spendable) {
-						total += output.satoshis || 0;
-					}
-				}
-			}
-			setBalance({
-				confirmed: total,
-				unconfirmed: 0,
-				total,
-			});
-			console.log("[WalletToolbox] Balance from storage:", total);
-
-			// Get ordinals from GorillaPool (more reliable for NFT metadata)
-			if (ordAddress) {
-				const categorized =
-					await gorillaPoolRef.current.getCategorizedUtxos(ordAddress);
-
-				// Also check pay address if different
-				if (payAddress && payAddress !== ordAddress) {
-					const payUtxos =
-						await gorillaPoolRef.current.getCategorizedUtxos(payAddress);
-					categorized.ordinals.push(...payUtxos.ordinals);
-					categorized.bsv20Tokens.push(...payUtxos.bsv20Tokens);
-					categorized.bsv21Tokens.push(...payUtxos.bsv21Tokens);
-				}
-
-				setOrdinals(categorized.ordinals);
-				setBsv20Tokens(
-					categorized.bsv20Tokens.map((o) => ({
-						outpoint: o.outpoint,
-						txid: o.txid,
-						vout: o.vout,
-						height: o.height,
-						data: o.data,
-					})),
-				);
-				setBsv21Tokens(
-					categorized.bsv21Tokens.map((o) => ({
-						outpoint: o.outpoint,
-						txid: o.txid,
-						vout: o.vout,
-						height: o.height,
-						data: o.data,
-					})),
-				);
-
-				console.log(
-					`[WalletToolbox] Ordinals: ${categorized.ordinals.length}, BSV20: ${categorized.bsv20Tokens.length}, BSV21: ${categorized.bsv21Tokens.length}`,
-				);
-			}
-		} catch (error) {
-			console.error("[WalletToolbox] Failed to refresh balance:", error);
-		}
-	}, [wallet, isInitialized, ordAddress, payAddress]);
-
-	// Auto-sync and refresh when wallet is initialized (run once)
-	useEffect(() => {
-		if (isInitialized && wallet && ordAddress && !hasAutoSynced.current) {
-			hasAutoSynced.current = true;
-			console.log("[WalletToolbox] Auto-syncing and refreshing...");
-			// Start sync, then refresh balance
-			syncWallet().then(() => refreshBalance());
-		}
-	}, [isInitialized, wallet, ordAddress, syncWallet, refreshBalance]);
+	}, [wallet, queryClient, ordAddress, payAddress]);
 
 	const value = useMemo<WalletToolboxContextValue>(
 		() => ({
@@ -450,14 +418,20 @@ export function WalletToolboxProvider({
 			chain,
 			identityKey,
 			syncStatus,
-			syncWallet,
-			balance,
-			ordinals,
-			bsv20Tokens,
-			bsv21Tokens,
+			syncWallet: () => syncMutation.mutate(),
+			isSyncPending: syncMutation.isPending,
+			balance: balanceQuery.data?.balance ?? null,
+			ordinals: balanceQuery.data?.ordinals ?? [],
+			bsv20Tokens: balanceQuery.data?.bsv20Tokens ?? [],
+			bsv21Tokens: balanceQuery.data?.bsv21Tokens ?? [],
+			isBalanceLoading: balanceQuery.isLoading,
+			balanceError: balanceQuery.error,
 			initializeWallet,
 			destroyWallet,
-			refreshBalance,
+			refreshBalance: () =>
+				queryClient.invalidateQueries({
+					queryKey: QUERY_KEYS.balance(ordAddress, payAddress),
+				}),
 		}),
 		[
 			wallet,
@@ -467,14 +441,15 @@ export function WalletToolboxProvider({
 			chain,
 			identityKey,
 			syncStatus,
-			syncWallet,
-			balance,
-			ordinals,
-			bsv20Tokens,
-			bsv21Tokens,
+			syncMutation,
+			balanceQuery.data,
+			balanceQuery.isLoading,
+			balanceQuery.error,
 			initializeWallet,
 			destroyWallet,
-			refreshBalance,
+			queryClient,
+			ordAddress,
+			payAddress,
 		],
 	);
 
@@ -494,5 +469,3 @@ export function useWalletToolbox() {
 	}
 	return context;
 }
-
-import type { TxoData } from "@/lib/types/ordinals";
