@@ -151,6 +151,9 @@ export function WalletToolboxProvider({
 	// GorillaPool service for ordinal lookups
 	const gorillaPoolRef = useRef(new GorillaPoolService());
 
+	// Track if auto-sync has been done (prevents infinite loop)
+	const hasAutoSynced = useRef(false);
+
 	/**
 	 * Initialize the wallet with a root key
 	 *
@@ -328,6 +331,9 @@ export function WalletToolboxProvider({
 			error: null,
 		});
 
+		// Reset auto-sync flag so it can sync again on re-init
+		hasAutoSynced.current = false;
+
 		console.log("[WalletToolbox] Wallet destroyed");
 	}, [wallet]);
 
@@ -425,9 +431,10 @@ export function WalletToolboxProvider({
 		}
 	}, [wallet, isInitialized, ordAddress, payAddress]);
 
-	// Auto-sync and refresh when wallet is initialized
+	// Auto-sync and refresh when wallet is initialized (run once)
 	useEffect(() => {
-		if (isInitialized && wallet && ordAddress) {
+		if (isInitialized && wallet && ordAddress && !hasAutoSynced.current) {
+			hasAutoSynced.current = true;
 			console.log("[WalletToolbox] Auto-syncing and refreshing...");
 			// Start sync, then refresh balance
 			syncWallet().then(() => refreshBalance());
