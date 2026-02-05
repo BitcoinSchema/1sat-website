@@ -42,4 +42,5 @@ export {
 	findKeysWithVanityOrdinal as findKeysFromMnemonic,
 	generateMnemonic,
 	isValidMnemonic,
+	deriveIdentityKey,
 } from "@1sat/utils";

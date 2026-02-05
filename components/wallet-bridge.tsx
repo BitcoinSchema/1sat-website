@@ -46,12 +46,16 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 					return;
 				}
 
-				const rootKeyHex = wifToRootKeyHex(payPk);
+				// Prefer identity key as BRC-100 root, fall back to pay key for legacy wallets
+				const identityPk = wallet.walletKeys?.identityPk;
+				const rootWif = identityPk || payPk;
+				const rootKeyHex = wifToRootKeyHex(rootWif);
 				const ordPk = wallet.walletKeys?.ordPk;
 				const ordAddress = ordPk ? wifToAddress(ordPk) : undefined;
 				const payAddress = wifToAddress(payPk);
 
 				console.log("[WalletBridge] Auto-initializing wallet-toolbox...");
+				console.log("[WalletBridge] Using identity key:", !!identityPk);
 				console.log("[WalletBridge] rootKeyHex length:", rootKeyHex.length);
 				console.log(
 					"[WalletBridge] ordAddress:",

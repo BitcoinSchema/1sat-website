@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
 	Page,
 	PageContent,
@@ -8,13 +8,20 @@ import {
 	PageTitle,
 } from "@/components/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MigrationBanner } from "@/components/wallet/migration-banner";
 import { SyncProgress } from "@/components/wallet/sync-progress";
 import { TransactionTimeline } from "@/components/wallet/transaction-timeline";
 import { WalletTabs } from "@/components/wallet/wallet-tabs";
+import { detectMigrationStatus } from "@/lib/wallet-migration";
 import { useWallet } from "@/providers/wallet-provider";
 
 export default function WalletPage() {
-	const { balance, transactions, utxos, syncWallet } = useWallet();
+	const { balance, transactions, utxos, syncWallet, walletKeys, isWalletLocked } = useWallet();
+
+	const migrationStatus = useMemo(() => {
+		if (!walletKeys || isWalletLocked) return null;
+		return detectMigrationStatus(walletKeys);
+	}, [walletKeys, isWalletLocked]);
 
 	// Sync wallet on mount
 	useEffect(() => {
@@ -42,6 +49,12 @@ export default function WalletPage() {
 			</PageHeader>
 
 			<PageContent>
+				{migrationStatus?.status === "legacy" && (
+					<MigrationBanner
+						legacyPayAddress={migrationStatus.legacyPayAddress}
+						legacyOrdAddress={migrationStatus.legacyOrdAddress}
+					/>
+				)}
 				<WalletTabs />
 				<TransactionTimeline className="mt-6" days={30} />
 				<div className="space-y-6 mt-6">

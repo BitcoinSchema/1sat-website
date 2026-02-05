@@ -71,6 +71,68 @@ export const clearSessionKeys = () => {
 	}
 };
 
+// --- Encryption Key Cache (for migration re-encryption) ---
+let cachedEncryptionKey: Uint8Array | null = null;
+let cachedPubKeySalt: string | null = null;
+
+export function clearCachedEncryptionKey(): void {
+	cachedEncryptionKey = null;
+	cachedPubKeySalt = null;
+}
+
+/**
+ * Re-encrypt wallet data using the cached encryption key.
+ * Used during migration to update stored keys without requiring the passphrase again.
+ */
+export const reencryptWallet = async (keys: Keys): Promise<boolean> => {
+	const storage = getStorage("localStorage");
+	if (!storage || !cachedEncryptionKey || !cachedPubKeySalt) return false;
+
+	try {
+		const dataStr = JSON.stringify({
+			mnemonic: keys.mnemonic,
+			payPk: keys.payPk,
+			ordPk: keys.ordPk,
+			payDerivationPath: keys.changeAddressPath,
+			ordDerivationPath: keys.ordAddressPath,
+			identityPk: keys.identityPk,
+			identityDerivationPath: keys.identityAddressPath,
+		});
+		const dataBytes = new TextEncoder().encode(dataStr);
+
+		const iv = crypto.getRandomValues(new Uint8Array(16));
+		const encryptedBytes = await encryptData(
+			dataBytes,
+			cachedEncryptionKey,
+			iv,
+		);
+
+		const combined = new Uint8Array(iv.length + encryptedBytes.length);
+		combined.set(iv, 0);
+		combined.set(new Uint8Array(encryptedBytes), iv.length);
+
+		const encryptedBackup =
+			ENCRYPTION_PREFIX + Utils.toBase64(Array.from(combined));
+
+		const backupJson: EncryptedBackupJson = {
+			encryptedBackup,
+			pubKey: cachedPubKeySalt,
+		};
+
+		storage.setItem(WALLET_STORAGE_KEY, JSON.stringify(backupJson));
+		window.dispatchEvent(
+			new StorageEvent("storage", {
+				key: WALLET_STORAGE_KEY,
+				newValue: JSON.stringify(backupJson),
+			}),
+		);
+		return true;
+	} catch (error) {
+		console.error("Failed to re-encrypt wallet:", error);
+		return false;
+	}
+};
+
 // --- Encryption and Decryption Handlers ---
 export const saveEncryptedWallet = async (
 	walletData: Keys,
@@ -93,6 +155,10 @@ export const saveEncryptedWallet = async (
 		);
 
 		if (!encryptionKey) throw new Error("Could not derive encryption key.");
+
+		// Cache for migration re-encryption
+		cachedEncryptionKey = encryptionKey;
+		cachedPubKeySalt = pubKey;
 
 		// 3. Serialize Data
 		const dataStr = JSON.stringify({
@@ -160,6 +226,10 @@ export const loadEncryptedWallet = async (
 			encryptedKeys.pubKey,
 		);
 		if (!encryptionKey) throw new Error("Could not derive decryption key.");
+
+		// Cache for migration re-encryption
+		cachedEncryptionKey = encryptionKey;
+		cachedPubKeySalt = encryptedKeys.pubKey;
 
 		// 2. Decode Data
 		const rawData = encryptedKeys.encryptedBackup.replace(

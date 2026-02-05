@@ -12,8 +12,9 @@
 	},
 	"dependencies": {
 		"@1sat/connect": "^0.0.3",
-		"@1sat/utils": "^0.0.4",
-		"@1sat/wallet": "^0.0.4",
+		"@1sat/utils": "^0.0.5",
+		"@1sat/actions": "^0.0.3",
+		"@1sat/wallet-browser": "^0.0.2",
 		"@bsv/sdk": "^1.10.4",
 		"@bsv/wallet-toolbox": "npm:@bopen-io/wallet-toolbox@1.7.24-idb-fix.1",
 		"@bsv/wallet-toolbox-mobile": "npm:@bopen-io/wallet-toolbox-mobile@1.7.24-idb-fix.1",

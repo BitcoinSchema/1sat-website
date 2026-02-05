@@ -14,7 +14,7 @@ import {
 	createWebWallet,
 	type WebWalletResult,
 	type OneSatServices,
-} from "@1sat/wallet";
+} from "@1sat/wallet-browser";
 
 type Wallet = WebWalletResult["wallet"];
 import { useQuery, useQueryClient } from "@tanstack/react-query";

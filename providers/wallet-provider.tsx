@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import { WALLET_STORAGE_KEY } from "@/lib/constants";
-import { findKeysFromMnemonic } from "@/lib/keys";
+import { deriveIdentityKey, findKeysFromMnemonic } from "@/lib/keys";
 import type { Keys } from "@/lib/types";
 import type {
 	UTXO,
@@ -21,6 +21,7 @@ import type {
 } from "@/lib/wallet/types";
 import { WalletService } from "@/lib/wallet/wallet-service";
 import {
+	clearCachedEncryptionKey,
 	clearSessionKeys,
 	loadEncryptedWallet,
 	loadSessionKeys,
@@ -173,6 +174,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 		setUTXOs([]);
 
 		clearSessionKeys();
+		clearCachedEncryptionKey();
 
 		// Optionally redirect to home or lock screen
 		router.push("/");
@@ -181,7 +183,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 	const createWallet = useCallback(
 		async (mnemonic: string, passphrase: string): Promise<boolean> => {
 			try {
-				const keys = await findKeysFromMnemonic(mnemonic); // Use findKeysFromMnemonic to derive paths
+				const keys = await findKeysFromMnemonic(mnemonic);
+				// Derive identity key from pay + ord (SHA256 of concatenated key bytes)
+				const identityKey = deriveIdentityKey(keys.payPk, keys.ordPk);
+				keys.identityPk = identityKey.toWif();
+				keys.identityAddressPath = "derived";
 				const success = await saveEncryptedWallet(keys, passphrase);
 				if (success) {
 					setWalletKeys(keys);
@@ -216,6 +222,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 	const importWallet = useCallback(
 		async (keys: Keys, passphrase: string): Promise<boolean> => {
 			try {
+				// Derive identity key if not present
+				if (!keys.identityPk && keys.payPk && keys.ordPk) {
+					const identityKey = deriveIdentityKey(keys.payPk, keys.ordPk);
+					keys.identityPk = identityKey.toWif();
+					keys.identityAddressPath = "derived";
+				}
 				const success = await saveEncryptedWallet(keys, passphrase);
 				if (success) {
 					setWalletKeys(keys);
