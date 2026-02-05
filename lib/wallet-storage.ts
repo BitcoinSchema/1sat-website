@@ -4,8 +4,7 @@
 // It is designed for CLIENT-SIDE use only (localStorage/sessionStorage).
 // Never attempt to run this logic on the server.
 
-import { PrivateKey } from "@bsv/sdk";
-import { Buffer } from "buffer";
+import { PrivateKey, Utils } from "@bsv/sdk";
 import { useCallback, useEffect, useState } from "react";
 import {
 	ENCRYPTION_PREFIX,
@@ -105,21 +104,20 @@ export const saveEncryptedWallet = async (
 			identityPk: walletData.identityPk,
 			identityDerivationPath: walletData.identityAddressPath,
 		});
-		// Use Buffer.from for consistency with legacy code
-		const dataBytes = new Uint8Array(Buffer.from(dataStr, "utf8"));
+		const dataBytes = new TextEncoder().encode(dataStr);
 
 		// 4. Encrypt
 		const iv = crypto.getRandomValues(new Uint8Array(16));
 		const encryptedBytes = await encryptData(dataBytes, encryptionKey, iv);
 
-		// 5. Combine IV + Ciphertext using Buffer to match legacy behavior exactly
-		const combined = Buffer.concat([
-			Buffer.from(iv),
-			Buffer.from(encryptedBytes),
-		]);
+		// 5. Combine IV + Ciphertext
+		const combined = new Uint8Array(iv.length + encryptedBytes.length);
+		combined.set(iv, 0);
+		combined.set(new Uint8Array(encryptedBytes), iv.length);
 
 		// 6. Format Output
-		const encryptedBackup = ENCRYPTION_PREFIX + combined.toString("base64");
+		const encryptedBackup =
+			ENCRYPTION_PREFIX + Utils.toBase64(Array.from(combined));
 
 		const backupJson: EncryptedBackupJson = {
 			encryptedBackup,
@@ -163,18 +161,17 @@ export const loadEncryptedWallet = async (
 		);
 		if (!encryptionKey) throw new Error("Could not derive decryption key.");
 
-		// 2. Decode Data using Buffer to match legacy behavior
+		// 2. Decode Data
 		const rawData = encryptedKeys.encryptedBackup.replace(
 			ENCRYPTION_PREFIX,
 			"",
 		);
-		const combinedBytes = new Uint8Array(Buffer.from(rawData, "base64"));
+		const combinedBytes = new Uint8Array(Utils.toArray(rawData, "base64"));
 
-		// 3. Decrypt (combinedBytes contains IV + Ciphertext, legacy decryptData handles slicing)
+		// 3. Decrypt (combinedBytes contains IV + Ciphertext, decryptData handles slicing)
 		const decryptedBytes = await decryptData(combinedBytes, encryptionKey);
 
-		// Use Buffer for decoding to string
-		const jsonStr = Buffer.from(decryptedBytes).toString("utf8");
+		const jsonStr = new TextDecoder().decode(decryptedBytes);
 		const json = JSON.parse(jsonStr);
 
 		// 5. Map back to Keys

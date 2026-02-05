@@ -3,12 +3,11 @@
 /**
  * Sync Progress Component
  *
- * Shows real-time sync progress from wallet-toolbox events.
+ * Shows sync status based on balance query state.
  */
 
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 import { cn } from "@/lib/utils";
 
@@ -25,23 +24,13 @@ export function SyncProgress({
 }: SyncProgressProps) {
 	const { syncStatus, syncWallet, isInitialized } = useWalletToolbox();
 
-	const progressPercent = syncStatus.progress
-		? Math.round(
-				(syncStatus.progress.done /
-					(syncStatus.progress.done + syncStatus.progress.pending)) *
-					100,
-			) || 0
-		: 0;
-
 	if (compact) {
 		return (
 			<div className={cn("flex items-center gap-2", className)}>
 				{syncStatus.isSyncing ? (
 					<>
 						<RefreshCw className="size-4 animate-spin text-muted-foreground" />
-						<span className="text-xs text-muted-foreground">
-							Syncing... {progressPercent}%
-						</span>
+						<span className="text-xs text-muted-foreground">Syncing...</span>
 					</>
 				) : syncStatus.lastSync ? (
 					<span className="text-xs text-muted-foreground">
@@ -68,26 +57,10 @@ export function SyncProgress({
 	return (
 		<div className={cn("space-y-2", className)}>
 			{syncStatus.isSyncing ? (
-				<>
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<RefreshCw className="size-4 animate-spin" />
-							<span className="text-sm font-medium">Syncing wallet...</span>
-						</div>
-						<span className="text-sm text-muted-foreground">
-							{progressPercent}%
-						</span>
-					</div>
-					<Progress value={progressPercent} className="h-2" />
-					{syncStatus.progress && (
-						<p className="text-xs text-muted-foreground">
-							{syncStatus.progress.done} done, {syncStatus.progress.pending}{" "}
-							pending
-							{syncStatus.progress.failed > 0 &&
-								`, ${syncStatus.progress.failed} failed`}
-						</p>
-					)}
-				</>
+				<div className="flex items-center gap-2">
+					<RefreshCw className="size-4 animate-spin" />
+					<span className="text-sm font-medium">Refreshing wallet...</span>
+				</div>
 			) : (
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">

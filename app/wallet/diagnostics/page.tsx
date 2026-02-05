@@ -227,9 +227,7 @@ export default function WalletDiagnosticPage() {
 		},
 		{
 			label: "Sync Progress",
-			value: toolbox.syncStatus.progress
-				? `${toolbox.syncStatus.progress.done} done, ${toolbox.syncStatus.progress.pending} pending`
-				: null,
+			value: toolbox.syncStatus.isSyncing ? "Refreshing..." : null,
 			status: "info",
 		},
 		{
