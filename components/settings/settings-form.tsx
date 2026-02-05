@@ -115,7 +115,7 @@ export function SettingsForm() {
 							/>
 							<AvatarFallback>UN</AvatarFallback>
 						</Avatar>
-						<Button variant="outline" size="sm">
+						<Button variant="outline" size="sm" onClick={() => play("click")}>
 							Change Avatar
 						</Button>
 					</div>
@@ -150,9 +150,10 @@ export function SettingsForm() {
 						<Switch
 							id="dark-mode"
 							checked={theme === "dark"}
-							onCheckedChange={(checked) =>
-								setTheme(checked ? "dark" : "light")
-							}
+							onCheckedChange={(checked) => {
+								play("click");
+								setTheme(checked ? "dark" : "light");
+							}}
 						/>
 					</div>
 					<div className="grid gap-2">
@@ -165,7 +166,7 @@ export function SettingsForm() {
 								onChange={(e) => setThemeOrigin(e.target.value)}
 							/>
 							<Button
-								onClick={handleSaveTheme}
+								onClick={() => { play("click"); handleSaveTheme(); }}
 								disabled={isLoadingTheme || !themeOrigin}
 							>
 								{isLoadingTheme ? (
@@ -184,7 +185,7 @@ export function SettingsForm() {
 								Increase density.
 							</span>
 						</div>
-						<Switch id="compact-mode" />
+						<Switch id="compact-mode" onCheckedChange={() => play("click")} />
 					</div>
 				</CardContent>
 			</Card>

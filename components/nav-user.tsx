@@ -105,11 +105,11 @@ export function NavUser({
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem onSelect={handleExport}>
+							<DropdownMenuItem onSelect={() => { play("click"); handleExport(); }}>
 								<Download className="mr-2 h-4 w-4" />
 								Export Keys
 							</DropdownMenuItem>
-							<DropdownMenuItem>
+							<DropdownMenuItem onSelect={() => play("click")}>
 								<Wallet className="mr-2 h-4 w-4" />
 								Wallet Details
 							</DropdownMenuItem>

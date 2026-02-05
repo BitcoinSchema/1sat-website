@@ -2,10 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSound } from "@/hooks/use-sound";
 
 export function ListingsTabs() {
+	const { play } = useSound();
+
 	return (
-		<Tabs defaultValue="ordinals" className="w-full">
+		<Tabs defaultValue="ordinals" className="w-full" onValueChange={() => play("click")}>
 			<TabsList>
 				<TabsTrigger value="ordinals">Ordinals</TabsTrigger>
 				<TabsTrigger value="tokens">Tokens</TabsTrigger>

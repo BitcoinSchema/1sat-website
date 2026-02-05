@@ -23,6 +23,7 @@ import {
 	type ReactNode,
 	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -143,11 +144,20 @@ export function WalletToolboxProvider({
 				throw new Error("Wallet not initialized");
 			}
 
-			// Get balance from wallet storage (fund basket)
-			const fundOutputs = await wallet.listOutputs({
-				basket: "fund",
-				include: "locking scripts",
-			});
+			const gp = gorillaPoolRef.current;
+
+			// Fetch fund outputs and categorized utxos in parallel
+			const utxoPromises: Promise<Awaited<ReturnType<typeof gp.getCategorizedUtxos>>>[] = [
+				gp.getCategorizedUtxos(ordAddress),
+			];
+			if (payAddress && payAddress !== ordAddress) {
+				utxoPromises.push(gp.getCategorizedUtxos(payAddress));
+			}
+
+			const [fundOutputs, ...utxoResults] = await Promise.all([
+				wallet.listOutputs({ basket: "fund", include: "locking scripts" }),
+				...utxoPromises,
+			]);
 
 			let total = 0;
 			if (fundOutputs.outputs) {
@@ -158,17 +168,12 @@ export function WalletToolboxProvider({
 				}
 			}
 
-			// Get ordinals from GorillaPool
-			const categorized =
-				await gorillaPoolRef.current.getCategorizedUtxos(ordAddress);
-
-			// Also check pay address if different
-			if (payAddress && payAddress !== ordAddress) {
-				const payUtxos =
-					await gorillaPoolRef.current.getCategorizedUtxos(payAddress);
-				categorized.ordinals.push(...payUtxos.ordinals);
-				categorized.bsv20Tokens.push(...payUtxos.bsv20Tokens);
-				categorized.bsv21Tokens.push(...payUtxos.bsv21Tokens);
+			// Merge categorized utxo results
+			const categorized = utxoResults[0];
+			for (let i = 1; i < utxoResults.length; i++) {
+				categorized.ordinals.push(...utxoResults[i].ordinals);
+				categorized.bsv20Tokens.push(...utxoResults[i].bsv20Tokens);
+				categorized.bsv21Tokens.push(...utxoResults[i].bsv21Tokens);
 			}
 
 			console.log(
@@ -285,10 +290,14 @@ export function WalletToolboxProvider({
 	}, [queryClient, ordAddress, payAddress]);
 
 	// Track last successful fetch time for sync status
-	const lastFetchRef = useRef<Date | null>(null);
-	if (balanceQuery.isSuccess && !balanceQuery.isFetching) {
-		lastFetchRef.current = new Date();
-	}
+	const [lastSync, setLastSync] = useState<Date | null>(null);
+	const wasFetchingRef = useRef(false);
+	useEffect(() => {
+		if (wasFetchingRef.current && !balanceQuery.isFetching && balanceQuery.isSuccess) {
+			setLastSync(new Date());
+		}
+		wasFetchingRef.current = balanceQuery.isFetching;
+	}, [balanceQuery.isFetching, balanceQuery.isSuccess]);
 
 	const refreshBalance = useCallback(
 		() =>
@@ -302,10 +311,10 @@ export function WalletToolboxProvider({
 		() => ({
 			isSyncing: balanceQuery.isFetching,
 			progress: null,
-			lastSync: lastFetchRef.current,
+			lastSync,
 			error: balanceQuery.error?.message ?? null,
 		}),
-		[balanceQuery.isFetching, balanceQuery.error],
+		[balanceQuery.isFetching, balanceQuery.error, lastSync],
 	);
 
 	const value = useMemo<WalletToolboxContextValue>(

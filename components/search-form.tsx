@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type * as React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { useSound } from "@/hooks/use-sound";
 import { Badge } from "@/components/ui/badge";
 import {
 	CommandDialog,
@@ -35,13 +36,17 @@ interface Autofill {
 
 export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 	const router = useRouter();
+	const { play } = useSound();
 	const [open, setOpen] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [autofillResults, setAutofillResults] = useState<Autofill[]>([]);
 	const [fetchStatus, setFetchStatus] = useState<FetchStatus>(FetchStatus.Idle);
 
 	// Keyboard shortcut: Cmd+K or Ctrl+K
-	useHotkeys("k", () => setOpen((open) => !open));
+	useHotkeys("k", () => {
+		play("click");
+		setOpen((open) => !open);
+	});
 
 	// Check for #search fragment on mount and hash changes
 	useEffect(() => {
@@ -118,6 +123,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 	// Navigate to token page
 	const handleTokenSelect = useCallback(
 		(token: Autofill) => {
+			play("click");
 			const path =
 				token.type === "BSV20"
 					? `/market/bsv20/${token.tick}`
@@ -125,16 +131,17 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 			handleOpenChange(false);
 			router.push(path);
 		},
-		[router, handleOpenChange],
+		[router, handleOpenChange, play],
 	);
 
 	// Search the market
 	const handleSearchSubmit = useCallback(() => {
 		if (!searchTerm) return;
+		play("click");
 		const path = `/market/search/${encodeURIComponent(searchTerm)}`;
 		handleOpenChange(false);
 		router.push(path);
-	}, [searchTerm, router, handleOpenChange]);
+	}, [searchTerm, router, handleOpenChange, play]);
 
 	return (
 		<>
@@ -148,7 +155,10 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 							id="search"
 							placeholder="Search market..."
 							className="pl-8 cursor-pointer"
-							onClick={() => setOpen(true)}
+							onClick={() => {
+							play("click");
+							setOpen(true);
+						}}
 							readOnly
 						/>
 						<Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
