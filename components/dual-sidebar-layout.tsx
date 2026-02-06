@@ -4,6 +4,7 @@ import { PanelLeft, Wallet } from "lucide-react";
 import type * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { LeftSidebar } from "@/components/left-sidebar";
+import { SidebarSoundEffects } from "@/components/sidebar-sound-effects";
 import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,14 +20,24 @@ import { useHotkeys } from "@/hooks/use-hotkeys";
 function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
 	const { toggleSidebar } = useSidebar();
 	useHotkeys("[", toggleSidebar, [toggleSidebar]);
-	return <>{children}</>;
+	return (
+		<>
+			<SidebarSoundEffects />
+			{children}
+		</>
+	);
 }
 
 // Wrapper to handle Right Sidebar shortcuts and context
 function RightSidebarWrapper({ children }: { children: React.ReactNode }) {
 	const { toggleSidebar } = useSidebar();
 	useHotkeys("]", toggleSidebar, [toggleSidebar]);
-	return <>{children}</>;
+	return (
+		<>
+			<SidebarSoundEffects />
+			{children}
+		</>
+	);
 }
 
 function InnerLayout({ children }: { children: React.ReactNode }) {

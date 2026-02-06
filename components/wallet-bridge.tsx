@@ -23,8 +23,8 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 			return;
 		}
 
-		if (wallet.isWalletLocked || !wallet.walletKeys?.payPk) {
-			// Reset attempt flag when wallet is locked
+		if (!wallet.hasWallet || wallet.isWalletLocked || !wallet.walletKeys?.payPk) {
+			// Reset attempt flag when wallet cannot be initialized.
 			initAttemptedRef.current = false;
 			return;
 		}
@@ -76,17 +76,20 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 					console.log("[WalletBridge] Wallet-toolbox initialized successfully");
 				} else {
 					console.error("[WalletBridge] Wallet-toolbox initialization failed");
+					initAttemptedRef.current = false;
 				}
 			} catch (error) {
 				console.error(
 					"[WalletBridge] Error initializing wallet-toolbox:",
 					error,
 				);
+				initAttemptedRef.current = false;
 			}
 		};
 
 		initToolbox();
 	}, [
+		wallet.hasWallet,
 		wallet.isWalletLocked,
 		wallet.walletKeys,
 		toolbox.isInitialized,
@@ -94,14 +97,22 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 		toolbox.initializeWallet,
 	]);
 
-	// Clean up toolbox when wallet is locked
+	// Clean up toolbox when the source wallet is unavailable.
 	useEffect(() => {
-		if (wallet.isWalletLocked && toolbox.isInitialized) {
-			console.log("[WalletBridge] Wallet locked, destroying toolbox...");
-			toolbox.destroyWallet();
+		const shouldDestroy =
+			!wallet.hasWallet || wallet.isWalletLocked || !wallet.walletKeys?.payPk;
+		if (shouldDestroy && toolbox.isInitialized) {
+			console.log("[WalletBridge] Wallet unavailable, destroying toolbox...");
+			void toolbox.destroyWallet();
 			initAttemptedRef.current = false;
 		}
-	}, [wallet.isWalletLocked, toolbox.isInitialized, toolbox.destroyWallet]);
+	}, [
+		wallet.hasWallet,
+		wallet.isWalletLocked,
+		wallet.walletKeys,
+		toolbox.isInitialized,
+		toolbox.destroyWallet,
+	]);
 
 	return <>{children}</>;
 }

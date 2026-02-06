@@ -48,8 +48,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			if (event.key === WALLET_STORAGE_KEY) {
 				setHasWallet(!!event.newValue);
 				if (!event.newValue) {
-					setIsWalletLocked(true);
+					setIsWalletLocked(false);
 					setWalletKeys(null);
+					clearCachedEncryptionKey();
 				}
 			}
 		};
@@ -64,6 +65,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			!!localStorage.getItem(WALLET_STORAGE_KEY);
 		setHasWallet(encryptedWalletExists);
 
+		// If no encrypted wallet exists, ensure any stale in-memory/session state is cleared.
+		if (!encryptedWalletExists) {
+			clearSessionKeys();
+			clearCachedEncryptionKey();
+			setWalletKeys(null);
+			setIsWalletLocked(false);
+			setIsWalletInitialized(true);
+			return;
+		}
+
 		// Check if keys are in session storage (auto-unlock)
 		const sessionKeys = loadSessionKeys();
 		if (sessionKeys.payPk && sessionKeys.ordPk) {
@@ -76,6 +87,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			setWalletKeys(keys);
 			setIsWalletLocked(false);
 		} else {
+			// Clear partial/stale session key state to avoid wallet/UI desync.
+			if (sessionKeys.payPk || sessionKeys.ordPk || sessionKeys.identityPk) {
+				clearSessionKeys();
+			}
 			setIsWalletLocked(encryptedWalletExists);
 		}
 		setIsWalletInitialized(true);
@@ -167,11 +182,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			);
 		}
 		clearSessionKeys();
+		clearCachedEncryptionKey();
 		setWalletKeys(null);
 		setHasWallet(false);
 		setIsWalletLocked(false);
-		router.push("/");
-	}, [router]);
+	}, []);
 
 	const value = useMemo(
 		() => ({

@@ -271,7 +271,7 @@ export function MigrationWizard() {
 	if (step === "complete" && !sweepResult) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md">
+		<div className="fixed inset-0 z-[120] flex items-center justify-center bg-background backdrop-blur-md">
 			{/* Ambient glow */}
 			<div className="pointer-events-none absolute inset-0 overflow-hidden">
 				<div className="absolute -top-1/4 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/5 blur-[120px]" />

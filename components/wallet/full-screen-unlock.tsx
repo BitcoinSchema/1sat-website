@@ -47,7 +47,7 @@ export function FullScreenUnlock() {
 	if (!isWalletLocked) return null; // Don't show if unlocked
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+		<div className="fixed inset-0 z-[120] flex items-center justify-center bg-background/80 backdrop-blur-sm">
 			<div className="w-full max-w-md p-4 animate-in fade-in zoom-in-95 duration-300">
 				<Card className="w-full border-border/50 shadow-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75">
 					<CardHeader className="space-y-1 text-center">

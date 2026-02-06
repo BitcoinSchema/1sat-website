@@ -11,7 +11,7 @@ export default function DeleteWalletPage() {
 	const handleOpenChange = (isOpen: boolean) => {
 		setOpen(isOpen);
 		if (!isOpen) {
-			router.back();
+			router.replace("/wallet");
 		}
 	};
 

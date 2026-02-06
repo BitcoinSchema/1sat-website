@@ -131,6 +131,7 @@ export default function PermissionsPage() {
 		useWalletToolbox();
 	const [tokens, setTokens] = useState<CategorizedToken[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	const [hasLoadedPermissions, setHasLoadedPermissions] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [revoking, setRevoking] = useState<string | null>(null);
 
@@ -142,6 +143,7 @@ export default function PermissionsPage() {
 			setTokens([]);
 			setLoadError(null);
 			setIsLoading(false);
+			setHasLoadedPermissions(false);
 			return;
 		}
 
@@ -220,17 +222,23 @@ export default function PermissionsPage() {
 			setLoadError(message);
 		} finally {
 			setIsLoading(false);
+			setHasLoadedPermissions(true);
 		}
 	}, [permissionsManager, scope]);
 
 	useEffect(() => {
-		if (!isInitialized) return;
+		if (!isInitialized) {
+			setHasLoadedPermissions(false);
+			return;
+		}
 		if (!permissionsManager || !scope) {
 			setTokens([]);
 			setLoadError(null);
 			setIsLoading(false);
+			setHasLoadedPermissions(false);
 			return;
 		}
+		setHasLoadedPermissions(false);
 		void loadTokens();
 	}, [isInitialized, permissionsManager, scope, loadTokens]);
 
@@ -299,7 +307,7 @@ export default function PermissionsPage() {
 							</CardDescription>
 						</CardHeader>
 					</Card>
-				) : isLoading ? (
+				) : isLoading || !hasLoadedPermissions ? (
 					<div className="flex items-center justify-center py-12">
 						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 					</div>

@@ -1,6 +1,8 @@
 "use client";
 
+import { Wallet as WalletIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useEffect } from "react";
 import {
 	Page,
@@ -8,6 +10,7 @@ import {
 	PageHeader,
 	PageTitle,
 } from "@/components/page-layout";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SyncActivityTerminal } from "@/components/wallet/sync-activity-terminal";
 import { SyncProgress } from "@/components/wallet/sync-progress";
@@ -17,7 +20,12 @@ import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 export default function WalletPage() {
-	const { walletKeys } = useWallet();
+	const {
+		walletKeys,
+		hasWallet,
+		isWalletLocked,
+		isWalletInitialized: isWalletProviderInitialized,
+	} = useWallet();
 	const {
 		balance,
 		syncWallet,
@@ -30,8 +38,9 @@ export default function WalletPage() {
 
 	// Sync wallet on mount
 	useEffect(() => {
+		if (!hasWallet || isWalletLocked || !isInitialized || !wallet) return;
 		syncWallet();
-	}, [syncWallet]);
+	}, [hasWallet, isWalletLocked, isInitialized, wallet, syncWallet]);
 
 	// Format satoshis to BSV
 	const formatBSV = (satoshis: number) => {
@@ -54,12 +63,61 @@ export default function WalletPage() {
 			});
 			return result.actions;
 		},
-		enabled: isInitialized && !!wallet,
+		enabled: hasWallet && !isWalletLocked && isInitialized && !!wallet,
 		staleTime: 30_000,
 	});
 
 	const actions = actionsQuery.data ?? [];
 	const outgoingCount = actions.filter((a) => a.isOutgoing).length;
+
+	if (!isWalletProviderInitialized) {
+		return (
+			<Page>
+				<PageHeader>
+					<PageTitle>Wallet</PageTitle>
+				</PageHeader>
+				<PageContent>
+					<div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+						Loading wallet...
+					</div>
+				</PageContent>
+			</Page>
+		);
+	}
+
+	if (!hasWallet) {
+		return (
+			<Page>
+				<PageHeader>
+					<PageTitle>Wallet</PageTitle>
+				</PageHeader>
+				<PageContent>
+					<Card className="max-w-xl">
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<WalletIcon className="h-5 w-5" />
+								No Wallet Connected
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<p className="text-sm text-muted-foreground">
+								Create or import a wallet to view balances, activity, and
+								connected assets.
+							</p>
+							<div className="flex flex-wrap gap-2">
+								<Button asChild>
+									<Link href="/wallet/create">Create Wallet</Link>
+								</Button>
+								<Button variant="outline" asChild>
+									<Link href="/wallet/import">Import Wallet</Link>
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+				</PageContent>
+			</Page>
+		);
+	}
 
 	return (
 		<Page>
