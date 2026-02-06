@@ -1,14 +1,26 @@
-function requireEnv(name: string): string {
-	const value = process.env[name];
-	if (!value) {
+function requirePublicEnv(name: string, value: string | undefined): string {
+	if (!value || value.trim().length === 0) {
 		throw new Error(`${name} environment variable is required`);
 	}
 	return value;
 }
 
-export const ORDFS = requireEnv("NEXT_PUBLIC_ORDFS_URL");
-export const API_HOST = requireEnv("NEXT_PUBLIC_API_HOST");
-export const MARKET_API_HOST = requireEnv("NEXT_PUBLIC_MARKET_API_HOST");
+const NEXT_PUBLIC_ORDFS_URL = process.env.NEXT_PUBLIC_ORDFS_URL;
+const NEXT_PUBLIC_API_HOST = process.env.NEXT_PUBLIC_API_HOST;
+const NEXT_PUBLIC_MARKET_API_HOST = process.env.NEXT_PUBLIC_MARKET_API_HOST;
+
+export const ORDFS = requirePublicEnv(
+	"NEXT_PUBLIC_ORDFS_URL",
+	NEXT_PUBLIC_ORDFS_URL,
+);
+export const API_HOST = requirePublicEnv(
+	"NEXT_PUBLIC_API_HOST",
+	NEXT_PUBLIC_API_HOST,
+);
+export const MARKET_API_HOST = requirePublicEnv(
+	"NEXT_PUBLIC_MARKET_API_HOST",
+	NEXT_PUBLIC_MARKET_API_HOST,
+);
 
 export enum FetchStatus {
 	Idle = "idle",
