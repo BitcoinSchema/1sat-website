@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Keys } from "@/lib/types";
-import { saveEncryptedWallet, saveSessionKeys } from "@/lib/wallet-storage";
+import { saveEncryptedWallet } from "@/lib/wallet-storage";
 import { useImportWallet } from "../provider";
 
 export default function ImportPassphrasePage() {
@@ -55,8 +55,6 @@ export default function ImportPassphrasePage() {
 			setIsSaving(false);
 
 			if (success) {
-				// Save to session storage to keep wallet unlocked
-				saveSessionKeys(walletKeys.payPk, walletKeys.ordPk, walletKeys.identityPk);
 				router.push("/wallet");
 			} else {
 				setError("Failed to save wallet");
@@ -133,8 +131,6 @@ export default function ImportPassphrasePage() {
 					setWalletKeys(keys);
 					// Save to local storage with the SAME password
 					await saveEncryptedWallet(keys, passphrase);
-					// Save to session storage to keep wallet unlocked
-					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
 					router.push("/wallet");
 				} else {
 					throw new Error("Invalid decrypted key format");

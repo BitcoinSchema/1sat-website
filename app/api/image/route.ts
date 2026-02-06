@@ -18,9 +18,75 @@
  * /api/image?url=https://ordfs.network/abc123_0&w=300&h=300&fit=contain&bg=111111&f=auto
  */
 
+import { lookup } from "node:dns/promises";
 import { ImageProtocols } from "bitcoin-image";
 import { type NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
+
+/**
+ * SSRF protection: block requests to private/reserved IP ranges.
+ * Returns true if the IP is private/link-local/loopback.
+ */
+function isPrivateIP(ip: string): boolean {
+	// IPv4 private ranges
+	if (ip.startsWith("10.")) return true;
+	if (ip.startsWith("172.")) {
+		const second = Number.parseInt(ip.split(".")[1], 10);
+		if (second >= 16 && second <= 31) return true;
+	}
+	if (ip.startsWith("192.168.")) return true;
+	if (ip.startsWith("169.254.")) return true;
+	if (ip.startsWith("127.")) return true;
+	if (ip === "0.0.0.0") return true;
+
+	// IPv6 loopback and link-local
+	if (ip === "::1" || ip === "::") return true;
+	if (ip.startsWith("fe80:")) return true;
+	if (ip.startsWith("fc") || ip.startsWith("fd")) return true;
+
+	return false;
+}
+
+/**
+ * Validate a resolved URL is safe to fetch (not targeting internal services).
+ */
+async function validateUrl(urlStr: string): Promise<boolean> {
+	let parsed: URL;
+	try {
+		parsed = new URL(urlStr);
+	} catch {
+		return false;
+	}
+
+	// Only allow http(s)
+	if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+		return false;
+	}
+
+	const hostname = parsed.hostname;
+
+	// Block localhost aliases
+	if (
+		hostname === "localhost" ||
+		hostname === "[::1]" ||
+		hostname.endsWith(".local")
+	) {
+		return false;
+	}
+
+	// If hostname is an IP literal, check directly
+	if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+		return !isPrivateIP(hostname);
+	}
+
+	// DNS resolve to check the actual IP
+	try {
+		const { address } = await lookup(hostname);
+		return !isPrivateIP(address);
+	} catch {
+		return false;
+	}
+}
 
 // Simple in-memory cache
 const cache = new Map<
@@ -94,10 +160,13 @@ export async function GET(request: NextRequest) {
 			// For now assume it returns a valid HTTP URL for external content
 		}
 
-		// Security Check: Ensure we are fetching from allowed domains if strict
-		// The previous check was for ordfs.network.
-		// Since we are proxying, we might want to respect that or be more open.
-		// Given the user wants to use bitcoin-image, trusting its output (usually ordfs) is likely intended.
+		// SSRF protection: block private/internal IPs
+		if (!(await validateUrl(resolvedUrl))) {
+			return NextResponse.json(
+				{ error: "URL target is not allowed" },
+				{ status: 403 },
+			);
+		}
 
 		console.log(`[ImageAPI] Fetching ${resolvedUrl} (orig: ${rawUrl})`);
 

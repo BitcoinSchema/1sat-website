@@ -31,10 +31,10 @@ function OrdinalCard({ txid, vout, satoshis }: OrdinalCardProps) {
 					sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
 					unoptimized
 				/>
-				<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-				<div className="absolute bottom-0 left-0 right-0 p-2 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+				<div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+				<div className="absolute bottom-0 left-0 right-0 p-2 text-foreground text-xs opacity-0 group-hover:opacity-100 transition-opacity">
 					<div className="truncate font-mono">{outpoint.slice(0, 16)}...</div>
-					<div className="text-white/70">{satoshis} sat</div>
+					<div className="text-foreground/70">{satoshis} sat</div>
 				</div>
 			</a>
 		</div>

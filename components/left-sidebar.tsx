@@ -1,12 +1,23 @@
 "use client";
 
-import { Activity, Book, Coins, Hammer, Pickaxe, Settings } from "lucide-react";
+import {
+	Activity,
+	Book,
+	Coins,
+	Hammer,
+	Pickaxe,
+	Settings,
+	Volume2,
+	VolumeOff,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Sidebar,
 	SidebarContent,
+	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
@@ -16,7 +27,14 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSound } from "@/hooks/use-sound";
+import { useSoundSettings } from "@/hooks/use-sound-settings";
 
 // Custom 1Sat Icon in Lucide style
 const OneSatIcon = ({ className }: { className?: string }) => (
@@ -147,6 +165,7 @@ export function LeftSidebar({
 	...props
 }: React.ComponentProps<typeof Sidebar>) {
 	const { play } = useSound();
+	const { muted, toggleMuted } = useSoundSettings();
 
 	return (
 		<Sidebar {...props}>
@@ -207,6 +226,31 @@ export function LeftSidebar({
 					</SidebarGroup>
 				))}
 			</SidebarContent>
+
+			<SidebarFooter>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								onClick={toggleMuted}
+								aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+							>
+								{muted ? (
+									<VolumeOff className="h-4 w-4 text-muted-foreground" />
+								) : (
+									<Volume2 className="h-4 w-4 text-muted-foreground" />
+								)}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="right">
+							<p>{muted ? "Unmute sounds" : "Mute sounds"}</p>
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			</SidebarFooter>
 
 			<SidebarRail />
 		</Sidebar>

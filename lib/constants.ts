@@ -1,10 +1,14 @@
-// API Endpoints - use environment variables with fallback to production
-export const ORDFS =
-	process.env.NEXT_PUBLIC_ORDFS_URL || "https://ordfs.network";
-export const API_HOST =
-	process.env.NEXT_PUBLIC_API_HOST || "https://ordinals.gorillapool.io";
-export const MARKET_API_HOST =
-	process.env.NEXT_PUBLIC_MARKET_API_HOST || "https://api.1sat.market";
+function requireEnv(name: string): string {
+	const value = process.env[name];
+	if (!value) {
+		throw new Error(`${name} environment variable is required`);
+	}
+	return value;
+}
+
+export const ORDFS = requireEnv("NEXT_PUBLIC_ORDFS_URL");
+export const API_HOST = requireEnv("NEXT_PUBLIC_API_HOST");
+export const MARKET_API_HOST = requireEnv("NEXT_PUBLIC_MARKET_API_HOST");
 
 export enum FetchStatus {
 	Idle = "idle",

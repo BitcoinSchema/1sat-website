@@ -43,7 +43,7 @@ export function ActivityFeed() {
 	}
 
 	if (status === "error") {
-		return <div className="p-4 text-red-500">Error loading activity.</div>;
+		return <div className="p-4 text-destructive">Error loading activity.</div>;
 	}
 
 	return (

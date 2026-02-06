@@ -8,8 +8,19 @@ import {
 	type PermissionRequestLike,
 } from "./permission-keys";
 import { type PermissionScope, saveLocalPermission } from "./permission-store";
-
-const CHANNEL_NAME = "1sat-cwi";
+import {
+	CWI_CHANNEL_NAME,
+	type CWIChannelBaseMessage,
+	type CWIChannelDenyPermissionMessage,
+	type CWIChannelGrantPermissionMessage,
+	type CWIChannelPermissionRequestMessage,
+	type CWIChannelRequestMessage,
+	type CWIChannelResponseMessage,
+	type CWIChannelStatusMessage,
+	type CWIChannelStatusRequestMessage,
+	createChannelEnvelope,
+	isV2ChannelMessage,
+} from "./types";
 
 export interface CWIRelayConfig {
 	getWallet: () => WalletPermissionsManager | null;
@@ -19,28 +30,6 @@ export interface CWIRelayConfig {
 }
 
 type CWIWalletMethod = keyof WalletPermissionsManager | "getBalance";
-
-interface CWIRequestMessage {
-	type: "cwi-request";
-	id: string;
-	call: string;
-	args?: unknown;
-	originator: string;
-}
-
-interface CWIGrantPermissionMessage {
-	type: "cwi-permission-grant";
-	requestID: string;
-}
-
-interface CWIDenyPermissionMessage {
-	type: "cwi-permission-deny";
-	requestID: string;
-}
-
-interface CWIStatusRequestMessage {
-	type: "cwi-status-request";
-}
 
 const VALID_METHODS = new Set([
 	"createAction",
@@ -77,7 +66,7 @@ const VALID_METHODS = new Set([
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null;
 
-const isCWIRequestMessage = (data: unknown): data is CWIRequestMessage =>
+const isCWIRequestMessage = (data: unknown): data is CWIChannelRequestMessage =>
 	isObjectRecord(data) &&
 	data.type === "cwi-request" &&
 	typeof data.id === "string" &&
@@ -86,21 +75,21 @@ const isCWIRequestMessage = (data: unknown): data is CWIRequestMessage =>
 
 const isGrantPermissionMessage = (
 	data: unknown,
-): data is CWIGrantPermissionMessage =>
+): data is CWIChannelGrantPermissionMessage =>
 	isObjectRecord(data) &&
 	data.type === "cwi-permission-grant" &&
 	typeof data.requestID === "string";
 
 const isDenyPermissionMessage = (
 	data: unknown,
-): data is CWIDenyPermissionMessage =>
+): data is CWIChannelDenyPermissionMessage =>
 	isObjectRecord(data) &&
 	data.type === "cwi-permission-deny" &&
 	typeof data.requestID === "string";
 
 const isStatusRequestMessage = (
 	data: unknown,
-): data is CWIStatusRequestMessage =>
+): data is CWIChannelStatusRequestMessage =>
 	isObjectRecord(data) && data.type === "cwi-status-request";
 
 const isValidOrigin = (originator: string): boolean => {
@@ -125,7 +114,7 @@ const isAllowedMethod = (call: string): call is CWIWalletMethod =>
  * 1satwallet.com pages can participate.
  */
 export class CWIRelay {
-	private channel: BroadcastChannel;
+	private channel: BroadcastChannel | null = null;
 	private handler: ((event: MessageEvent) => void) | null = null;
 	private getWallet: () => WalletPermissionsManager | null;
 	private getStatus: () => "locked" | "unlocked" | "no-wallet";
@@ -133,45 +122,69 @@ export class CWIRelay {
 	private getBalance: () => Promise<{ satoshis: number; usd?: number }>;
 	private pendingPermissions = new Map<
 		string,
-		PermissionRequest & { requestID: string }
+		{ request: PermissionRequest & { requestID: string }; sessionId?: string }
 	>();
+	private authPollTimers = new Set<ReturnType<typeof setTimeout>>();
+	private activeSessionId: string | null = null;
+	private activeInvocationCount = 0;
+	private invocationContextStack: Array<{
+		originator: string;
+		sessionId?: string;
+	}> = [];
+	private isStopped = false;
 
 	constructor(config: CWIRelayConfig) {
 		this.getWallet = config.getWallet;
 		this.getStatus = config.getStatus;
 		this.getPersistenceScope = config.getPersistenceScope;
 		this.getBalance = config.getBalance;
-		this.channel = new BroadcastChannel(CHANNEL_NAME);
+		if (typeof BroadcastChannel !== "undefined") {
+			this.channel = new BroadcastChannel(CWI_CHANNEL_NAME);
+		}
 	}
 
 	start(): void {
-		if (this.handler) return;
+		if (this.handler || !this.channel) return;
+		this.isStopped = false;
 
 		this.handler = (event: MessageEvent) => {
+			if (this.isStopped) return;
 			const data = event.data;
 			if (!isObjectRecord(data)) return;
 
 			if (isCWIRequestMessage(data)) {
+				if (!this.acceptSession(data)) return;
 				void this.handleCWIRequest(data);
 				return;
 			}
 
 			if (isGrantPermissionMessage(data)) {
+				if (!this.acceptSession(data)) return;
 				const wallet = this.getWallet();
 				if (!wallet) return;
-				void this.handleGrant(wallet, data.requestID);
+				void this.handleGrant(
+					wallet,
+					data.requestID,
+					this.getMessageSessionId(data),
+				);
 				return;
 			}
 
 			if (isDenyPermissionMessage(data)) {
+				if (!this.acceptSession(data)) return;
 				const wallet = this.getWallet();
 				if (!wallet) return;
-				void this.handleDeny(wallet, data.requestID);
+				void this.handleDeny(
+					wallet,
+					data.requestID,
+					this.getMessageSessionId(data),
+				);
 				return;
 			}
 
 			if (isStatusRequestMessage(data)) {
-				this.sendStatus();
+				if (!this.acceptSession(data)) return;
+				this.sendStatus(this.getMessageSessionId(data));
 			}
 		};
 
@@ -179,19 +192,31 @@ export class CWIRelay {
 	}
 
 	stop(): void {
-		if (this.handler) {
+		if (this.handler && this.channel) {
 			this.channel.removeEventListener("message", this.handler);
 			this.handler = null;
 		}
+		this.isStopped = true;
+		for (const timer of this.authPollTimers) {
+			clearTimeout(timer);
+		}
+		this.authPollTimers.clear();
 		this.pendingPermissions.clear();
-		this.channel.close();
+		this.invocationContextStack = [];
+		this.activeInvocationCount = 0;
+		this.activeSessionId = null;
+		this.channel?.close();
+		this.channel = null;
 	}
 
-	sendStatus(): void {
-		this.channel.postMessage({
+	sendStatus(sessionId?: string): void {
+		const targetSessionId = sessionId ?? this.activeSessionId ?? undefined;
+		const message: CWIChannelStatusMessage = {
 			type: "cwi-status",
 			status: this.getStatus(),
-		});
+			...(targetSessionId ? createChannelEnvelope(targetSessionId) : {}),
+		};
+		this.postToChannel(message);
 	}
 
 	/**
@@ -204,14 +229,17 @@ export class CWIRelay {
 		originator: string,
 		details: PermissionRequest & { requestID: string },
 	): void {
-		this.pendingPermissions.set(requestID, details);
-		this.channel.postMessage({
+		const sessionId = this.resolveSessionForPermission(originator);
+		this.pendingPermissions.set(requestID, { request: details, sessionId });
+		const message: CWIChannelPermissionRequestMessage = {
 			type: "cwi-permission-request",
 			requestID,
 			permissionType,
 			originator,
 			details,
-		});
+			...(sessionId ? createChannelEnvelope(sessionId) : {}),
+		};
+		this.postToChannel(message);
 	}
 
 	/**
@@ -222,9 +250,12 @@ export class CWIRelay {
 	private async handleGrant(
 		wallet: WalletPermissionsManager,
 		requestID: string,
+		sessionId?: string,
 	): Promise<void> {
-		const request = this.pendingPermissions.get(requestID);
-		if (!request) return;
+		const pending = this.pendingPermissions.get(requestID);
+		if (!pending) return;
+		if (pending.sessionId && pending.sessionId !== sessionId) return;
+		const request = pending.request;
 		const key = buildPermissionCacheKey(request as PermissionRequestLike);
 		let didFallback = false;
 
@@ -287,7 +318,10 @@ export class CWIRelay {
 	private async handleDeny(
 		wallet: WalletPermissionsManager,
 		requestID: string,
+		sessionId?: string,
 	): Promise<void> {
+		const pending = this.pendingPermissions.get(requestID);
+		if (pending?.sessionId && pending.sessionId !== sessionId) return;
 		this.pendingPermissions.delete(requestID);
 		try {
 			await wallet.denyPermission(requestID);
@@ -310,91 +344,145 @@ export class CWIRelay {
 		);
 	}
 
-	private async handleCWIRequest(data: CWIRequestMessage): Promise<void> {
+	private async handleCWIRequest(
+		data: CWIChannelRequestMessage,
+	): Promise<void> {
 		const { id, call, args, originator } = data;
+		const sessionId = this.getMessageSessionId(data);
+		this.activeInvocationCount += 1;
+		this.touchActiveSession(sessionId);
 
-		if (!isAllowedMethod(call)) {
-			this.channel.postMessage({
-				type: "cwi-response",
-				id,
-				status: "error",
-				description: `Unknown method: ${call}`,
-				code: 2,
-			});
-			return;
-		}
-
-		if (!isValidOrigin(originator)) {
-			this.channel.postMessage({
-				type: "cwi-response",
-				id,
-				status: "error",
-				description: "Invalid originator",
-				code: 2,
-			});
-			return;
-		}
-
-		// Auth methods are exempt from the locked check — they exist
-		// specifically to query/wait for authentication state.
-		const AUTH_EXEMPT = call === "waitForAuthentication" || call === "isAuthenticated";
-
-		if (!AUTH_EXEMPT) {
-			const status = this.getStatus();
-			const wallet = this.getWallet();
-			if (!wallet || status !== "unlocked") {
-				this.channel.postMessage({
-					type: "cwi-response",
-					id,
-					status: "error",
-					description:
-						status === "locked" ? "Wallet is locked" : "Wallet not available",
-					code: 1,
-				});
+		try {
+			if (!isAllowedMethod(call)) {
+				this.sendResponse(
+					{
+						id,
+						status: "error",
+						description: `Unknown method: ${call}`,
+						code: 2,
+					},
+					sessionId,
+				);
 				return;
 			}
-		} else {
-			// For auth methods when wallet isn't available yet, handle inline.
-			const wallet = this.getWallet();
-			if (!wallet) {
-				if (call === "isAuthenticated") {
-					this.channel.postMessage({
-						type: "cwi-response",
+
+			if (!isValidOrigin(originator)) {
+				this.sendResponse(
+					{
 						id,
-						result: { authenticated: false },
-					});
-					return;
-				}
-				// waitForAuthentication: poll until WPM becomes available
-				const started = Date.now();
-				const poll = (): void => {
-					const w = this.getWallet();
-					if (w) {
-						// WPM available — delegate to normal flow
-						void this.dispatchToWallet(w, id, call, args, originator);
-						return;
-					}
-					if (Date.now() - started > 30_000) {
-						this.channel.postMessage({
-							type: "cwi-response",
+						status: "error",
+						description: "Invalid originator",
+						code: 2,
+					},
+					sessionId,
+				);
+				return;
+			}
+
+			// Auth methods are exempt from the locked check — they exist
+			// specifically to query/wait for authentication state.
+			const AUTH_EXEMPT =
+				call === "waitForAuthentication" || call === "isAuthenticated";
+
+			if (!AUTH_EXEMPT) {
+				const status = this.getStatus();
+				const wallet = this.getWallet();
+				if (!wallet || status !== "unlocked") {
+					this.sendResponse(
+						{
 							id,
 							status: "error",
-							description: "Wallet not available (timeout)",
+							description:
+								status === "locked"
+									? "Wallet is locked"
+									: "Wallet not available",
 							code: 1,
-						});
+						},
+						sessionId,
+					);
+					return;
+				}
+			} else {
+				// For auth methods when wallet isn't available yet, handle inline.
+				const wallet = this.getWallet();
+				if (!wallet) {
+					if (call === "isAuthenticated") {
+						this.sendResponse(
+							{
+								id,
+								result: { authenticated: false },
+							},
+							sessionId,
+						);
 						return;
 					}
-					setTimeout(poll, 500);
-				};
-				poll();
+					// waitForAuthentication: poll until WPM becomes available
+					const started = Date.now();
+					const poll = (): void => {
+						if (this.isStopped) return;
+						const w = this.getWallet();
+						if (w) {
+							// WPM available — delegate to normal flow
+							void this.dispatchToWallet(
+								w,
+								id,
+								call,
+								args,
+								originator,
+								sessionId,
+							);
+							return;
+						}
+						if (Date.now() - started > 30_000) {
+							this.sendResponse(
+								{
+									id,
+									status: "error",
+									description: "Wallet not available (timeout)",
+									code: 1,
+								},
+								sessionId,
+							);
+							return;
+						}
+						const timer = setTimeout(() => {
+							this.authPollTimers.delete(timer);
+							poll();
+						}, 500);
+						this.authPollTimers.add(timer);
+					};
+					poll();
+					return;
+				}
+			}
+
+			// At this point, wallet is guaranteed available (non-exempt checked above,
+			// exempt with null wallet already handled with early return/poll).
+			const wallet = this.getWallet();
+			if (!wallet) {
+				this.sendResponse(
+					{
+						id,
+						status: "error",
+						description: "Wallet not available",
+						code: 1,
+					},
+					sessionId,
+				);
 				return;
 			}
+			await this.dispatchToWallet(
+				wallet,
+				id,
+				call,
+				args,
+				originator,
+				sessionId,
+			);
+		} finally {
+			this.activeInvocationCount = Math.max(0, this.activeInvocationCount - 1);
+			this.touchActiveSession(sessionId);
 		}
-
-		// At this point, wallet is guaranteed available (non-exempt checked above,
-		// exempt with null wallet already handled with early return/poll).
-		const wallet = this.getWallet()!;
-		await this.dispatchToWallet(wallet, id, call, args, originator);
 	}
 
 	private async dispatchToWallet(
@@ -403,15 +491,14 @@ export class CWIRelay {
 		call: string,
 		args: unknown,
 		originator: string,
+		sessionId?: string,
 	): Promise<void> {
+		const context = { originator, sessionId };
+		this.invocationContextStack.push(context);
 		try {
 			if (call === "getBalance") {
 				const result = await this.getBalance();
-				this.channel.postMessage({
-					type: "cwi-response",
-					id,
-					result,
-				});
+				this.sendResponse({ id, result }, sessionId);
 				return;
 			}
 
@@ -420,13 +507,15 @@ export class CWIRelay {
 			const method = call as keyof WalletPermissionsManager;
 			const fn = wallet[method];
 			if (typeof fn !== "function") {
-				this.channel.postMessage({
-					type: "cwi-response",
-					id,
-					status: "error",
-					description: `Method not callable: ${call}`,
-					code: 2,
-				});
+				this.sendResponse(
+					{
+						id,
+						status: "error",
+						description: `Method not callable: ${call}`,
+						code: 2,
+					},
+					sessionId,
+				);
 				return;
 			}
 
@@ -436,11 +525,7 @@ export class CWIRelay {
 				originator,
 			);
 
-			this.channel.postMessage({
-				type: "cwi-response",
-				id,
-				result,
-			});
+			this.sendResponse({ id, result }, sessionId);
 		} catch (err: unknown) {
 			const description = err instanceof Error ? err.message : String(err);
 			const code =
@@ -448,13 +533,96 @@ export class CWIRelay {
 					? (err as { code: number }).code
 					: 1;
 
-			this.channel.postMessage({
-				type: "cwi-response",
-				id,
-				status: "error",
-				description,
-				code,
-			});
+			this.sendResponse(
+				{
+					id,
+					status: "error",
+					description,
+					code,
+				},
+				sessionId,
+			);
+		} finally {
+			const index = this.invocationContextStack.lastIndexOf(context);
+			if (index >= 0) {
+				this.invocationContextStack.splice(index, 1);
+			}
 		}
+	}
+
+	private sendResponse(
+		response: Omit<CWIChannelResponseMessage, "type" | "version" | "sessionId">,
+		sessionId?: string,
+	): void {
+		const message: CWIChannelResponseMessage = {
+			type: "cwi-response",
+			...response,
+			...(sessionId ? createChannelEnvelope(sessionId) : {}),
+		};
+		this.postToChannel(message);
+	}
+
+	private postToChannel(
+		message:
+			| CWIChannelResponseMessage
+			| CWIChannelStatusMessage
+			| CWIChannelPermissionRequestMessage,
+	): boolean {
+		if (this.isStopped || !this.channel) return false;
+		try {
+			this.channel.postMessage(message);
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	private getMessageSessionId(
+		message: CWIChannelBaseMessage,
+	): string | undefined {
+		return isV2ChannelMessage(message) ? message.sessionId : undefined;
+	}
+
+	private acceptSession(message: CWIChannelBaseMessage): boolean {
+		if (isV2ChannelMessage(message)) {
+			if (!this.activeSessionId || this.activeSessionId === message.sessionId) {
+				this.touchActiveSession(message.sessionId);
+				return true;
+			}
+			if (this.canSwitchSession()) {
+				this.touchActiveSession(message.sessionId);
+				return true;
+			}
+			return false;
+		}
+
+		// Legacy v1 messages are accepted only when no v2 session is active.
+		if (message.version == null && message.sessionId == null) {
+			return this.activeSessionId == null;
+		}
+		return false;
+	}
+
+	private canSwitchSession(): boolean {
+		if (!this.activeSessionId) return true;
+		if (this.activeInvocationCount > 0) return false;
+		if (this.pendingPermissions.size > 0) return false;
+		if (this.authPollTimers.size > 0) return false;
+		return true;
+	}
+
+	private touchActiveSession(sessionId?: string): void {
+		if (!sessionId) return;
+		this.activeSessionId = sessionId;
+	}
+
+	private resolveSessionForPermission(originator: string): string | undefined {
+		for (let i = this.invocationContextStack.length - 1; i >= 0; i--) {
+			const context = this.invocationContextStack[i];
+			if (context.originator === originator) {
+				return context.sessionId;
+			}
+		}
+		return this.activeSessionId ?? undefined;
 	}
 }

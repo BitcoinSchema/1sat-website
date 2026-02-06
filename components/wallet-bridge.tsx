@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { wifToAddress, wifToRootKeyHex } from "@/lib/keys";
+import { wifToRootKeyHex } from "@/lib/keys";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
@@ -16,14 +16,17 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 	const wallet = useWallet();
 	const toolbox = useWalletToolbox();
 	const initAttemptedRef = useRef(false);
+	const { hasWallet, isWalletLocked, walletKeys } = wallet;
+	const { isInitialized, isInitializing, initializeWallet, destroyWallet } =
+		toolbox;
 
 	useEffect(() => {
 		// Skip if already initialized or no keys available
-		if (toolbox.isInitialized || toolbox.isInitializing) {
+		if (isInitialized || isInitializing) {
 			return;
 		}
 
-		if (!wallet.hasWallet || wallet.isWalletLocked || !wallet.walletKeys?.payPk) {
+		if (!hasWallet || isWalletLocked || !walletKeys?.payPk) {
 			// Reset attempt flag when wallet cannot be initialized.
 			initAttemptedRef.current = false;
 			return;
@@ -39,7 +42,7 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 		// Initialize toolbox with keys from legacy wallet
 		const initToolbox = async () => {
 			try {
-				const payPk = wallet.walletKeys?.payPk;
+				const payPk = walletKeys?.payPk;
 				if (!payPk) {
 					console.warn("[WalletBridge] Missing payPk, skipping init");
 					initAttemptedRef.current = false;
@@ -47,30 +50,15 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 				}
 
 				// Prefer identity key as BRC-100 root, fall back to pay key for legacy wallets
-				const identityPk = wallet.walletKeys?.identityPk;
+				const identityPk = walletKeys?.identityPk;
 				const rootWif = identityPk || payPk;
 				const rootKeyHex = wifToRootKeyHex(rootWif);
-				const ordPk = wallet.walletKeys?.ordPk;
-				const ordAddress = ordPk ? wifToAddress(ordPk) : undefined;
-				const payAddress = wifToAddress(payPk);
 
 				console.log("[WalletBridge] Auto-initializing wallet-toolbox...");
 				console.log("[WalletBridge] Using identity key:", !!identityPk);
 				console.log("[WalletBridge] rootKeyHex length:", rootKeyHex.length);
-				console.log(
-					"[WalletBridge] ordAddress:",
-					`${ordAddress?.slice(0, 10)}...`,
-				);
-				console.log(
-					"[WalletBridge] payAddress:",
-					`${payAddress?.slice(0, 10)}...`,
-				);
 
-				const success = await toolbox.initializeWallet(
-					rootKeyHex,
-					ordAddress,
-					payAddress,
-				);
+				const success = await initializeWallet(rootKeyHex);
 
 				if (success) {
 					console.log("[WalletBridge] Wallet-toolbox initialized successfully");
@@ -89,30 +77,23 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 
 		initToolbox();
 	}, [
-		wallet.hasWallet,
-		wallet.isWalletLocked,
-		wallet.walletKeys,
-		toolbox.isInitialized,
-		toolbox.isInitializing,
-		toolbox.initializeWallet,
+		hasWallet,
+		isWalletLocked,
+		walletKeys,
+		isInitialized,
+		isInitializing,
+		initializeWallet,
 	]);
 
 	// Clean up toolbox when the source wallet is unavailable.
 	useEffect(() => {
-		const shouldDestroy =
-			!wallet.hasWallet || wallet.isWalletLocked || !wallet.walletKeys?.payPk;
-		if (shouldDestroy && toolbox.isInitialized) {
+		const shouldDestroy = !hasWallet || isWalletLocked || !walletKeys?.payPk;
+		if (shouldDestroy && isInitialized) {
 			console.log("[WalletBridge] Wallet unavailable, destroying toolbox...");
-			void toolbox.destroyWallet();
+			void destroyWallet();
 			initAttemptedRef.current = false;
 		}
-	}, [
-		wallet.hasWallet,
-		wallet.isWalletLocked,
-		wallet.walletKeys,
-		toolbox.isInitialized,
-		toolbox.destroyWallet,
-	]);
+	}, [hasWallet, isWalletLocked, walletKeys, isInitialized, destroyWallet]);
 
 	return <>{children}</>;
 }

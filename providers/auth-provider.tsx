@@ -11,6 +11,7 @@ import {
 	useState,
 } from "react";
 import {
+	AUTH_STATE_CHANGE_EVENT,
 	clearAuthData,
 	loadAccessToken,
 	loadAuthUser,
@@ -44,39 +45,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [accessToken, setAccessToken] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
-	useEffect(() => {
+	const syncFromStorage = useCallback(() => {
 		const storedUser = loadAuthUser();
 		const storedToken = loadAccessToken();
-		if (storedUser) {
-			setUser(storedUser);
-		}
-		if (storedToken) {
-			setAccessToken(storedToken);
-		}
+		setUser(storedUser);
+		setAccessToken(storedToken);
 		setIsLoading(false);
 	}, []);
+
+	useEffect(() => {
+		syncFromStorage();
+	}, [syncFromStorage]);
 
 	// Listen for storage changes (other tabs)
 	useEffect(() => {
 		const handleStorage = (e: StorageEvent) => {
-			if (e.key === "sigma_user") {
-				if (e.newValue) {
-					try {
-						setUser(JSON.parse(e.newValue) as SigmaUserInfo);
-					} catch {
-						setUser(null);
-					}
-				} else {
-					setUser(null);
-				}
-			}
-			if (e.key === "sigma_access_token") {
-				setAccessToken(e.newValue);
+			if (
+				e.key === null ||
+				e.key === "sigma_user" ||
+				e.key === "sigma_access_token"
+			) {
+				syncFromStorage();
 			}
 		};
+
+		const handleAuthStateChanged = () => {
+			syncFromStorage();
+		};
+
 		window.addEventListener("storage", handleStorage);
-		return () => window.removeEventListener("storage", handleStorage);
-	}, []);
+		window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChanged);
+		return () => {
+			window.removeEventListener("storage", handleStorage);
+			window.removeEventListener(
+				AUTH_STATE_CHANGE_EVENT,
+				handleAuthStateChanged,
+			);
+		};
+	}, [syncFromStorage]);
 
 	const signInSigma = useCallback(() => {
 		signInWithSigma();

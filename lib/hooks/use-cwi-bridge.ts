@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	type BridgePermissionRequest,
+	type BridgeTransportState,
 	CWIBridge,
 	type WalletStatus,
 } from "@/lib/cwi/bridge";
@@ -11,6 +12,9 @@ interface CWIBridgeState {
 	status: WalletStatus;
 	activePermission: BridgePermissionRequest | null;
 	queueLength: number;
+	transport: "embed";
+	fallbackRecommended: boolean;
+	reason?: BridgeTransportState["reason"];
 	grantPermission: (requestID: string) => void;
 	denyPermission: (requestID: string) => void;
 	retryStatus: () => void;
@@ -25,6 +29,10 @@ interface CWIBridgeState {
 export function useCWIBridge(): CWIBridgeState {
 	const bridgeRef = useRef<CWIBridge | null>(null);
 	const [status, setStatus] = useState<WalletStatus>("checking");
+	const [transportState, setTransportState] = useState<BridgeTransportState>({
+		transport: "embed",
+		fallbackRecommended: false,
+	});
 	const [permissionQueue, setPermissionQueue] = useState<
 		BridgePermissionRequest[]
 	>([]);
@@ -34,6 +42,7 @@ export function useCWIBridge(): CWIBridgeState {
 	useEffect(() => {
 		const bridge = new CWIBridge({
 			onStatusChange: setStatus,
+			onTransportStateChange: setTransportState,
 			onPermissionRequest: (request) => {
 				setPermissionQueue((prev) => {
 					if (
@@ -77,6 +86,9 @@ export function useCWIBridge(): CWIBridgeState {
 		status,
 		activePermission,
 		queueLength: permissionQueue.length,
+		transport: transportState.transport,
+		fallbackRecommended: transportState.fallbackRecommended,
+		reason: transportState.reason,
 		grantPermission,
 		denyPermission,
 		retryStatus,

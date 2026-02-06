@@ -238,7 +238,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 					<Button
 						variant="ghost"
 						size="icon"
-						className="absolute top-2 right-2 z-10 h-8 w-8 bg-black/50 hover:bg-black/70 text-white pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity"
+						className="absolute top-2 right-2 z-10 h-8 w-8 bg-background/50 hover:bg-background/70 text-foreground pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity"
 						onClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
@@ -254,8 +254,8 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 
 					{contentType === "video" && (
 						<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-							<div className="p-4 bg-black/60 rounded-full">
-								<Play className="w-12 h-12 text-white fill-white" />
+							<div className="p-4 bg-background/60 rounded-full">
+								<Play className="w-12 h-12 text-foreground fill-foreground" />
 							</div>
 						</div>
 					)}
@@ -269,12 +269,12 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 							playsInline
 						/>
 					) : contentType === "3d" ? (
-						<div className="w-full aspect-square bg-gradient-to-br from-purple-900/30 to-blue-900/30 flex items-center justify-center">
-							<Box className="w-24 h-24 text-purple-300/50" />
+						<div className="w-full aspect-square bg-muted flex items-center justify-center">
+							<Box className="w-24 h-24 text-muted-foreground" />
 						</div>
 					) : contentType === "audio" ? (
-						<div className="w-full aspect-square bg-gradient-to-br from-pink-900/30 to-orange-900/30 flex items-center justify-center">
-							<Music className="w-24 h-24 text-pink-300/50" />
+						<div className="w-full aspect-square bg-muted flex items-center justify-center">
+							<Music className="w-24 h-24 text-muted-foreground" />
 						</div>
 					) : (
 						<ImageWithFallback
@@ -286,7 +286,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 						/>
 					)}
 
-					<div className="absolute inset-0 flex flex-col justify-end p-4 text-white bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none">
+					<div className="absolute inset-0 flex flex-col justify-end p-4 text-foreground bg-gradient-to-t from-background via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none">
 						<p className="text-base font-bold">
 							{toBitcoin(artifact.data?.list?.price || 0)} BSV
 						</p>

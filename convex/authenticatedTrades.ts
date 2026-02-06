@@ -1,5 +1,6 @@
+import type { FunctionReference } from "convex/server";
+import { makeFunctionReference } from "convex/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
 import { action } from "./_generated/server";
 import { verifyAccessToken } from "./auth";
 
@@ -11,6 +12,37 @@ import { verifyAccessToken } from "./auth";
  * the caller must prove ownership of the userId they claim.
  */
 
+type PublicMutationRef = FunctionReference<
+	"mutation",
+	"public",
+	Record<string, unknown>,
+	unknown
+>;
+
+type TradeSessionSummary = {
+	initiatorId: string;
+	participantId: string;
+} | null;
+
+const tradesApi: {
+	createTradeSession: PublicMutationRef;
+	updateTradeOffer: PublicMutationRef;
+	completeTrade: PublicMutationRef;
+	sendTradeRequest: PublicMutationRef;
+	getTradeSession: FunctionReference<
+		"query",
+		"public",
+		Record<string, unknown>,
+		TradeSessionSummary
+	>;
+} = {
+	createTradeSession: makeFunctionReference("trades:createTradeSession"),
+	updateTradeOffer: makeFunctionReference("trades:updateTradeOffer"),
+	completeTrade: makeFunctionReference("trades:completeTrade"),
+	sendTradeRequest: makeFunctionReference("trades:sendTradeRequest"),
+	getTradeSession: makeFunctionReference("trades:getTradeSession"),
+};
+
 export const createTradeSession = action({
 	args: {
 		accessToken: v.string(),
@@ -18,7 +50,7 @@ export const createTradeSession = action({
 	},
 	handler: async (ctx, args) => {
 		const identity = await verifyAccessToken(args.accessToken);
-		return ctx.runMutation(api.trades.createTradeSession, {
+		return ctx.runMutation(tradesApi.createTradeSession, {
 			initiatorId: identity.sub,
 			participantId: args.participantId,
 		});
@@ -49,7 +81,7 @@ export const updateTradeOffer = action({
 	},
 	handler: async (ctx, args) => {
 		const identity = await verifyAccessToken(args.accessToken);
-		return ctx.runMutation(api.trades.updateTradeOffer, {
+		return ctx.runMutation(tradesApi.updateTradeOffer, {
 			sessionId: args.sessionId,
 			userId: identity.sub,
 			items: args.items,
@@ -64,9 +96,21 @@ export const completeTrade = action({
 		sessionId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		// Verify token is valid (caller is authenticated)
-		await verifyAccessToken(args.accessToken);
-		return ctx.runMutation(api.trades.completeTrade, {
+		const identity = await verifyAccessToken(args.accessToken);
+		const trade = await ctx.runQuery(tradesApi.getTradeSession, {
+			sessionId: args.sessionId,
+		});
+		if (!trade) {
+			throw new Error("Trade session not found");
+		}
+		if (
+			trade.initiatorId !== identity.sub &&
+			trade.participantId !== identity.sub
+		) {
+			throw new Error("User not part of this trade");
+		}
+
+		return ctx.runMutation(tradesApi.completeTrade, {
 			sessionId: args.sessionId,
 		});
 	},
@@ -79,7 +123,7 @@ export const sendTradeRequest = action({
 	},
 	handler: async (ctx, args) => {
 		const identity = await verifyAccessToken(args.accessToken);
-		return ctx.runMutation(api.trades.sendTradeRequest, {
+		return ctx.runMutation(tradesApi.sendTradeRequest, {
 			fromUserId: identity.sub,
 			toUserId: args.toUserId,
 		});

@@ -50,7 +50,7 @@ export function MigrationOrdinalCard({
 					className={cn(
 						"flex h-5 w-5 items-center justify-center rounded border text-[11px]",
 						isSelected
-							? "bg-primary border-primary text-white"
+							? "bg-primary border-primary text-primary-foreground"
 							: "border-muted-foreground/40",
 					)}
 				>

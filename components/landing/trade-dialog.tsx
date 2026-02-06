@@ -1,8 +1,9 @@
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { ArrowRightLeft, CheckCircle2, Lock, XCircle } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import SigmaAvatar from "sigma-avatars";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { TradeItem } from "@/lib/types/trades";
+import { useAuth } from "@/providers/auth-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 import { api } from "../../convex/_generated/api";
 import { InventorySelector } from "./inventory-selector";
@@ -37,11 +39,20 @@ export function TradeDialog({
 }: TradeDialogProps) {
 	const [showInventory, setShowInventory] = useState(false);
 	const { isInitialized } = useWalletToolbox();
+	const { accessToken } = useAuth();
 
 	// Convex hooks
 	const trade = useQuery(api.trades.getTradeSession, { sessionId });
-	const updateTradeOffer = useMutation(api.trades.updateTradeOffer);
-	const completeTrade = useMutation(api.trades.completeTrade);
+	const updateTradeOffer = useAction(api.authenticatedTrades.updateTradeOffer);
+	const completeTrade = useAction(api.authenticatedTrades.completeTrade);
+
+	const requireAccessToken = () => {
+		if (!accessToken) {
+			toast.error("Sign in with Sigma Identity before modifying a trade.");
+			return null;
+		}
+		return accessToken;
+	};
 
 	// Determine roles
 	const isInitiator = trade?.initiatorId === myUserId;
@@ -83,10 +94,14 @@ export function TradeDialog({
 
 		// Construct new items list
 		const newItems = [...myItems, sanitizedItem];
+		const token = requireAccessToken();
+		if (!token) {
+			return;
+		}
 
 		await updateTradeOffer({
+			accessToken: token,
 			sessionId,
-			userId: myUserId,
 			items: newItems,
 			locked: false, // Adding item unlocks
 		});
@@ -94,18 +109,28 @@ export function TradeDialog({
 
 	const handleRemoveItem = async (itemId: string) => {
 		const newItems = myItems.filter((i: TradeItem) => i.id !== itemId);
+		const token = requireAccessToken();
+		if (!token) {
+			return;
+		}
+
 		await updateTradeOffer({
+			accessToken: token,
 			sessionId,
-			userId: myUserId,
 			items: newItems,
 			locked: false, // Removing item unlocks
 		});
 	};
 
 	const handleLock = async () => {
+		const token = requireAccessToken();
+		if (!token) {
+			return;
+		}
+
 		await updateTradeOffer({
+			accessToken: token,
 			sessionId,
-			userId: myUserId,
 			items: myItems,
 			locked: !myLocked,
 		});
@@ -114,7 +139,12 @@ export function TradeDialog({
 	const handleConfirm = async () => {
 		// For simplicity, completing trade just marks it done in DB
 		// In reality, this would trigger swapping via PSBT (Phase 2)
-		await completeTrade({ sessionId });
+		const token = requireAccessToken();
+		if (!token) {
+			return;
+		}
+
+		await completeTrade({ accessToken: token, sessionId });
 		onOpenChange(false);
 	};
 

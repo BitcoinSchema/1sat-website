@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { isSoundMuted } from "@/hooks/use-sound-settings";
 import { SOUND_VOLUMES, SOUNDS, type SoundName } from "@/lib/sounds";
 
 /**
@@ -8,6 +9,7 @@ import { SOUND_VOLUMES, SOUNDS, type SoundName } from "@/lib/sounds";
  *
  * Uses Web Audio API with HTMLAudioElement for broad compatibility.
  * Sounds are preloaded on mount for instant playback.
+ * Respects the global mute toggle and prefers-reduced-motion.
  *
  * @example
  * const { play } = useSound();
@@ -33,6 +35,8 @@ export function useSound() {
 	}, []);
 
 	const play = useCallback((sound: SoundName, volumeOverride?: number) => {
+		if (isSoundMuted()) return;
+
 		const audio = audioCache.current.get(sound);
 		if (!audio) return;
 

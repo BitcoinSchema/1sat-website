@@ -6,13 +6,7 @@
 
 import { PrivateKey, Utils } from "@bsv/sdk";
 import { useCallback, useEffect, useState } from "react";
-import {
-	ENCRYPTION_PREFIX,
-	OLD_IDENTITY_PK_KEY,
-	OLD_ORD_PK_KEY,
-	OLD_PAY_PK_KEY,
-	WALLET_STORAGE_KEY,
-} from "@/lib/constants";
+import { ENCRYPTION_PREFIX, WALLET_STORAGE_KEY } from "@/lib/constants";
 import {
 	decryptData,
 	encryptData,
@@ -20,68 +14,16 @@ import {
 } from "@/lib/encryption";
 import type { Keys } from "@/lib/types";
 
-// Types
-type StorageType = "localStorage" | "sessionStorage";
-
 interface EncryptedBackupJson {
 	encryptedBackup: string;
 	pubKey: string; // The public key used as salt
 }
 
-// Helper for localStorage/sessionStorage
-const getStorage = (storageType: StorageType): Storage | undefined => {
+const getLocalStorage = (): Storage | undefined => {
 	if (typeof window !== "undefined") {
-		switch (storageType) {
-			case "localStorage":
-				return window.localStorage;
-			case "sessionStorage":
-				return window.sessionStorage;
-		}
+		return window.localStorage;
 	}
 	return undefined;
-};
-
-// --- Session Storage Handlers (Unencrypted Keys) ---
-export const saveSessionKeys = (
-	payPk: string,
-	ordPk: string,
-	identityPk?: string,
-) => {
-	const storage = getStorage("sessionStorage");
-	if (storage) {
-		storage.setItem(OLD_PAY_PK_KEY, payPk);
-		storage.setItem(OLD_ORD_PK_KEY, ordPk);
-		if (identityPk) {
-			storage.setItem(OLD_IDENTITY_PK_KEY, identityPk);
-		} else {
-			storage.removeItem(OLD_IDENTITY_PK_KEY);
-		}
-	}
-};
-
-export const loadSessionKeys = (): {
-	payPk: string | null;
-	ordPk: string | null;
-	identityPk: string | null;
-} => {
-	const storage = getStorage("sessionStorage");
-	if (storage) {
-		return {
-			payPk: storage.getItem(OLD_PAY_PK_KEY),
-			ordPk: storage.getItem(OLD_ORD_PK_KEY),
-			identityPk: storage.getItem(OLD_IDENTITY_PK_KEY),
-		};
-	}
-	return { payPk: null, ordPk: null, identityPk: null };
-};
-
-export const clearSessionKeys = () => {
-	const storage = getStorage("sessionStorage");
-	if (storage) {
-		storage.removeItem(OLD_PAY_PK_KEY);
-		storage.removeItem(OLD_ORD_PK_KEY);
-		storage.removeItem(OLD_IDENTITY_PK_KEY);
-	}
 };
 
 // --- Encryption Key Cache (for migration re-encryption) ---
@@ -98,7 +40,7 @@ export function clearCachedEncryptionKey(): void {
  * Used during migration to update stored keys without requiring the passphrase again.
  */
 export const reencryptWallet = async (keys: Keys): Promise<boolean> => {
-	const storage = getStorage("localStorage");
+	const storage = getLocalStorage();
 	if (!storage || !cachedEncryptionKey || !cachedPubKeySalt) return false;
 
 	try {
@@ -151,7 +93,7 @@ export const saveEncryptedWallet = async (
 	walletData: Keys,
 	passphrase: string,
 ): Promise<boolean> => {
-	const storage = getStorage("localStorage");
+	const storage = getLocalStorage();
 	if (!storage) return false;
 
 	try {
@@ -221,7 +163,7 @@ export const saveEncryptedWallet = async (
 export const loadEncryptedWallet = async (
 	passphrase: string,
 ): Promise<Keys | null> => {
-	const storage = getStorage("localStorage");
+	const storage = getLocalStorage();
 	if (!storage) return null;
 
 	try {

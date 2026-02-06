@@ -47,6 +47,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { LegacySweepBanner } from "@/components/wallet/legacy-sweep-banner";
 import { UnlockWalletDialog } from "@/components/wallet/unlock-wallet-dialog";
 import { useCopyWithSound } from "@/hooks/use-copy-with-sound";
 import { useSound } from "@/hooks/use-sound";
@@ -100,6 +101,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		balance,
 		hasActiveSync: isSyncing,
 		exchangeRate,
+		depositAddress,
 	} = useWalletToolbox();
 
 	const [isPrivacyModeEnabled] = useSettingsStorage<boolean>(
@@ -109,8 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
 	const [, copy] = useCopyWithSound();
 	const { play } = useSound();
-	const [copiedPay, setCopiedPay] = useState(false);
-	const [copiedOrd, setCopiedOrd] = useState(false);
+	const [copiedAddress, setCopiedAddress] = useState(false);
 
 	const bsvBalance = balance ? balance.total / 100_000_000 : 0;
 	const usdBalance = exchangeRate ? bsvBalance * exchangeRate : 0;
@@ -125,16 +126,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		}
 	}, [walletKeys]);
 
-	const ordAddress = React.useMemo(() => {
-		if (!walletKeys?.ordPk) return "";
-		try {
-			return PrivateKey.fromWif(walletKeys.ordPk).toAddress().toString();
-		} catch (e) {
-			console.error("Error deriving ord address:", e);
-			return "";
-		}
-	}, [walletKeys]);
-
 	const identityAddress = React.useMemo(() => {
 		if (!walletKeys?.identityPk) return "";
 		try {
@@ -145,16 +136,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		}
 	}, [walletKeys]);
 
-	const handleCopyPay = () => {
-		copy(payAddress);
-		setCopiedPay(true);
-		setTimeout(() => setCopiedPay(false), 2000);
-	};
+	const resolvedDepositAddress =
+		depositAddress || identityAddress || payAddress;
 
-	const handleCopyOrd = () => {
-		copy(ordAddress);
-		setCopiedOrd(true);
-		setTimeout(() => setCopiedOrd(false), 2000);
+	const handleCopyAddress = () => {
+		copy(resolvedDepositAddress);
+		setCopiedAddress(true);
+		setTimeout(() => setCopiedAddress(false), 2000);
 	};
 
 	if (!isWalletInitialized) {
@@ -214,7 +202,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		);
 	}
 
-	const activeAddress = identityAddress || ordAddress || payAddress;
+	const activeAddress = resolvedDepositAddress || identityAddress || payAddress;
 
 	// State 3: Unlocked (or Locked but covered by overlay)
 	return (
@@ -246,15 +234,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</span>
 					</Link>
 
-					{/* Address Copy Buttons */}
-					<div className="grid grid-cols-1 gap-2 mb-4">
-						<div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50 border border-border/50">
+					<div className="mb-4">
+						<div className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-muted/50 p-2">
 							<div className="flex flex-col overflow-hidden">
-								<span className="text-[10px] uppercase text-muted-foreground font-medium">
-									Payment Address
+								<span className="text-[10px] font-medium text-muted-foreground uppercase">
+									Deposit Address
 								</span>
-								<span className="text-xs truncate font-mono text-foreground/80">
-									{payAddress || "Locked"}
+								<span className="truncate font-mono text-xs text-foreground/80">
+									{resolvedDepositAddress || "Locked"}
 								</span>
 							</div>
 							<TooltipProvider>
@@ -266,52 +253,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 											className="h-6 w-6 shrink-0"
 											onClick={(e) => {
 												e.preventDefault();
-												handleCopyPay();
+												handleCopyAddress();
 											}}
-											disabled={!payAddress}
+											disabled={!resolvedDepositAddress}
+											tttttttttttaria-label="Copy deposit address"
 										>
 											<Copy className="h-3 w-3" />
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent>
-										<p>{copiedPay ? "Copied!" : "Copy Address"}</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						</div>
-
-						<div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50 border border-border/50">
-							<div className="flex flex-col overflow-hidden">
-								<span className="text-[10px] uppercase text-muted-foreground font-medium">
-									Ordinals Address
-								</span>
-								<span className="text-xs truncate font-mono text-foreground/80">
-									{ordAddress || "Locked"}
-								</span>
-							</div>
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-6 w-6 shrink-0"
-											onClick={(e) => {
-												e.preventDefault();
-												handleCopyOrd();
-											}}
-											disabled={!ordAddress}
-										>
-											<Copy className="h-3 w-3" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										<p>{copiedOrd ? "Copied!" : "Copy Address"}</p>
+										<p>{copiedAddress ? "Copied!" : "Copy Address"}</p>
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
 						</div>
 					</div>
+
+					<LegacySweepBanner />
 
 					<div className="grid grid-cols-2 gap-2">
 						<SoundDialog>
@@ -332,10 +290,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									</DialogDescription>
 								</DialogHeader>
 								<div className="flex flex-col items-center gap-4 py-4">
+									{/* bg-white is intentional: QR codes require white background for scanner contrast */}
 									<div className="p-4 bg-white rounded-lg flex items-center justify-center shadow-sm">
-										{payAddress ? (
+										{resolvedDepositAddress ? (
 											<QRCodeSVG
-												value={payAddress}
+												value={resolvedDepositAddress}
 												size={180}
 												className="h-48 w-48"
 											/>
@@ -352,21 +311,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										<div className="flex gap-2">
 											<Input
 												id="address"
-												value={payAddress || "Loading..."}
+												value={resolvedDepositAddress || "Loading..."}
 												readOnly
 												className="font-mono text-xs"
 											/>
 											<Button
 												size="icon"
 												variant="outline"
-												onClick={handleCopyPay}
+												onClick={handleCopyAddress}
 											>
 												<Copy className="h-4 w-4" />
 											</Button>
 										</div>
-										<p className="text-[10px] text-muted-foreground text-center">
-											Send BSV only. For Ordinals, use the Ordinals address.
-										</p>
 									</div>
 								</div>
 							</DialogContent>

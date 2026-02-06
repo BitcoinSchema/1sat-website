@@ -37,8 +37,11 @@ import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 export function WalletSettingsForm() {
 	const { play } = useSound();
-	const { syncWallet, hasActiveSync: isSyncing, isInitialized } =
-		useWalletToolbox();
+	const {
+		syncWallet,
+		hasActiveSync: isSyncing,
+		isInitialized,
+	} = useWalletToolbox();
 	const [isPrivacyModeEnabled, setIsPrivacyModeEnabled] =
 		useSettingsStorage<boolean>(PRIVACY_MODE_KEY, false);
 	const [currency, setCurrency] = useSettingsStorage<string>(
@@ -131,23 +134,23 @@ export function WalletSettingsForm() {
 					<Separator />
 
 					{/* Sync */}
-						<div className="flex items-center justify-between space-x-2">
-							<div className="flex flex-col space-y-1">
-								<Label className="text-base">Blockchain Sync</Label>
-								<span className="text-sm text-muted-foreground">
-									Manually refresh your spendable balance and indexed assets.
-								</span>
-							</div>
-							<Button
+					<div className="flex items-center justify-between space-x-2">
+						<div className="flex flex-col space-y-1">
+							<Label className="text-base">Blockchain Sync</Label>
+							<span className="text-sm text-muted-foreground">
+								Manually refresh your spendable balance and indexed assets.
+							</span>
+						</div>
+						<Button
 							variant="outline"
 							size="sm"
-								onClick={() => {
-									play("click");
-									syncWallet();
-								}}
-								disabled={!isInitialized || isSyncing}
-								className="min-w-[100px]"
-							>
+							onClick={() => {
+								play("click");
+								syncWallet();
+							}}
+							disabled={!isInitialized || isSyncing}
+							className="min-w-[100px]"
+						>
 							{isSyncing ? (
 								<Loader2 className="h-4 w-4 animate-spin mr-2" />
 							) : (
@@ -185,8 +188,8 @@ export function WalletSettingsForm() {
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-2">
-						<div className="p-2 bg-blue-500/10 rounded-full">
-							<Bug className="h-6 w-6 text-blue-500" />
+						<div className="p-2 bg-chart-3/10 rounded-full">
+							<Bug className="h-6 w-6 text-chart-3" />
 						</div>
 						<div>
 							<CardTitle>Developer Tools</CardTitle>

@@ -56,13 +56,13 @@ export function MnemonicGrid({
 	>();
 
 	// Copy to clipboard state (view mode)
-	const [copied, setCopied] = useState(false)
+	const [copied, setCopied] = useState(false);
 	const copyMnemonic = useCallback(async () => {
-		if (!mnemonic) return
-		await navigator.clipboard.writeText(mnemonic)
-		setCopied(true)
-		setTimeout(() => setCopied(false), 2000)
-	}, [mnemonic])
+		if (!mnemonic) return;
+		await navigator.clipboard.writeText(mnemonic);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	}, [mnemonic]);
 
 	// Prove mode state
 	const [proveInput, setProveInput] = useState<string[]>(Array(12).fill(""));

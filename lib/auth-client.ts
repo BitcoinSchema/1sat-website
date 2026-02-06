@@ -35,6 +35,14 @@ const AUTH_KEYS = {
 	refreshToken: "sigma_refresh_token",
 } as const;
 
+export const AUTH_STATE_CHANGE_EVENT = "sigma-auth-state-changed";
+
+function emitAuthStateChanged() {
+	if (typeof window !== "undefined") {
+		window.dispatchEvent(new Event(AUTH_STATE_CHANGE_EVENT));
+	}
+}
+
 export function storeAuthData(data: {
 	user: SigmaUserInfo;
 	access_token: string;
@@ -46,7 +54,10 @@ export function storeAuthData(data: {
 	localStorage.setItem(AUTH_KEYS.idToken, data.id_token);
 	if (data.refresh_token) {
 		localStorage.setItem(AUTH_KEYS.refreshToken, data.refresh_token);
+	} else {
+		localStorage.removeItem(AUTH_KEYS.refreshToken);
 	}
+	emitAuthStateChanged();
 }
 
 export function loadAuthUser(): SigmaUserInfo | null {
@@ -72,6 +83,7 @@ export function clearAuthData() {
 	localStorage.removeItem(AUTH_KEYS.refreshToken);
 	// Also clear the sigma bap_id stored by the plugin
 	localStorage.removeItem("sigma_bap_id");
+	emitAuthStateChanged();
 }
 
 /**

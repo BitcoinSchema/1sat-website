@@ -191,5 +191,5 @@ export default function GlitchCanvas() {
     };
   }, []);
 
-  return <div ref={containerRef} className="fixed inset-0 z-0" />;
+  return <div ref={containerRef} className="fixed inset-0 z-0" aria-hidden="true" />;
 }

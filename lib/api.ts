@@ -1,6 +1,5 @@
+import { API_HOST } from "./constants";
 import type { OrdUtxo } from "./types/ordinals";
-
-const API_HOST = "https://ordinals.gorillapool.io";
 
 export async function fetchMarketActivity({ pageParam = 0 }): Promise<{
 	items: OrdUtxo[];

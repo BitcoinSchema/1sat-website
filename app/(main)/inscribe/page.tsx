@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { toast } from "sonner";
 import {
 	Page,
 	PageContent,
@@ -187,10 +188,10 @@ export default function InscribePage() {
 			// TODO: Implement actual minting logic using js-1sat-ord or WalletService
 			// const tx = await walletService.createInscription(...)
 			await new Promise((resolve) => setTimeout(resolve, 2000)); // Mock delay
-			alert("Inscription created! (Mock)");
+			toast.success("Inscription created! (Mock)");
 		} catch (e) {
 			console.error(e);
-			alert("Error creating inscription");
+			toast.error("Error creating inscription");
 		} finally {
 			setIsMinting(false);
 		}

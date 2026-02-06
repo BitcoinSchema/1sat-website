@@ -39,6 +39,7 @@ export const updateCursor = mutation({
 		data: v.object({
 			x: v.number(),
 			y: v.number(),
+			displayId: v.optional(v.string()),
 		}),
 	},
 	handler: async (ctx, { roomId, userId, data }) => {

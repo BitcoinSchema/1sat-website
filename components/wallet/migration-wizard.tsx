@@ -30,11 +30,26 @@ import {
 	detectMigrationStatus,
 	type MigrationStatus,
 } from "@/lib/wallet-migration";
-import { reencryptWallet, saveSessionKeys } from "@/lib/wallet-storage";
+import { reencryptWallet } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
-type WizardStep = "intro" | "scan" | "preview" | "migrate" | "complete" | "error";
+type WizardStep =
+	| "intro"
+	| "scan"
+	| "preview"
+	| "migrate"
+	| "complete"
+	| "error";
+
+const SCAN_SKELETON_KEYS = [
+	"scan-step-1",
+	"scan-step-2",
+	"scan-step-3",
+	"scan-step-4",
+	"scan-step-5",
+	"scan-step-6",
+] as const;
 
 function downloadBackup() {
 	if (typeof window === "undefined") return;
@@ -174,12 +189,6 @@ export function MigrationWizard() {
 				);
 			}
 
-			saveSessionKeys(
-				updatedKeys.payPk,
-				updatedKeys.ordPk,
-				updatedKeys.identityPk,
-			);
-
 			setProgress("Reinitializing BRC-100 wallet...");
 			setProgressPercent(40);
 			if (toolbox.isInitialized) {
@@ -188,16 +197,9 @@ export function MigrationWizard() {
 
 			await new Promise((r) => setTimeout(r, 500));
 
-			const { wifToHex, wifToAddress } = await import("@1sat/utils");
+			const { wifToHex } = await import("@1sat/utils");
 			const rootKeyHex = wifToHex(identityWif);
-			const ordAddress = wifToAddress(migrationStatus.legacyOrdWif);
-			const payAddress = wifToAddress(migrationStatus.legacyPayWif);
-
-			const initialized = await toolbox.initializeWallet(
-				rootKeyHex,
-				ordAddress,
-				payAddress,
-			);
+			const initialized = await toolbox.initializeWallet(rootKeyHex);
 
 			if (!initialized) {
 				throw new Error("Failed to initialize wallet with identity key");
@@ -218,6 +220,7 @@ export function MigrationWizard() {
 					const result = await executeMigrationSweep({
 						wallet: toolbox.wallet,
 						services: toolbox.services,
+						chain: toolbox.chain,
 						legacyPayWif: migrationStatus.legacyPayWif,
 						legacyOrdWif: migrationStatus.legacyOrdWif,
 						legacyPayAddress: migrationStatus.legacyPayAddress,
@@ -271,7 +274,12 @@ export function MigrationWizard() {
 	if (step === "complete" && !sweepResult) return null;
 
 	return (
-		<div className="fixed inset-0 z-[120] flex items-center justify-center bg-background backdrop-blur-md">
+		<div
+			role="dialog"
+			aria-modal="true"
+			aria-label="Wallet migration"
+			className="fixed inset-0 z-[120] flex items-center justify-center bg-background backdrop-blur-md"
+		>
 			{/* Ambient glow */}
 			<div className="pointer-events-none absolute inset-0 overflow-hidden">
 				<div className="absolute -top-1/4 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/5 blur-[120px]" />
@@ -324,10 +332,7 @@ export function MigrationWizard() {
 				)}
 
 				{step === "error" && error && (
-					<ErrorStep
-						error={error}
-						onRetry={() => setStep("preview")}
-					/>
+					<ErrorStep error={error} onRetry={() => setStep("preview")} />
 				)}
 			</div>
 		</div>
@@ -355,8 +360,8 @@ function IntroStep({
 					Wallet Upgrade Required
 				</h1>
 				<p className="mx-auto max-w-md text-muted-foreground leading-relaxed">
-					Your wallet uses a legacy key structure. We need to derive an
-					identity key and migrate your assets to the new system.
+					Your wallet uses a legacy key structure. We need to derive an identity
+					key and migrate your assets to the new system.
 				</p>
 			</div>
 
@@ -440,8 +445,8 @@ function ScanStep({
 			<div className="mx-auto max-w-sm space-y-4">
 				<Skeleton className="h-16 w-full" />
 				<div className="grid grid-cols-3 gap-3">
-					{Array.from({ length: 6 }).map((_, i) => (
-						<Skeleton key={`skel-${i}`} className="aspect-square w-full" />
+					{SCAN_SKELETON_KEYS.map((key) => (
+						<Skeleton key={key} className="aspect-square w-full" />
 					))}
 				</div>
 				<Skeleton className="h-12 w-full" />
@@ -509,10 +514,7 @@ function PreviewStep({
 
 			{/* Asset sections */}
 			<div className="space-y-3">
-				<FundingSection
-					funding={assets.funding}
-					totalBsv={assets.totalBsv}
-				/>
+				<FundingSection funding={assets.funding} totalBsv={assets.totalBsv} />
 				<OrdinalsSection
 					ordinals={assets.ordinals}
 					selectedOrdinals={selectedOrdinals}
@@ -621,9 +623,7 @@ function CompleteStep({
 							className="flex justify-between border-b border-border/30 pb-2"
 						>
 							<span className="text-muted-foreground">Ordinal Sweep</span>
-							<code className="text-xs font-mono">
-								{txid.slice(0, 16)}...
-							</code>
+							<code className="text-xs font-mono">{txid.slice(0, 16)}...</code>
 						</div>
 					))}
 					{sweepResult.bsv21Txids.map((txid) => (
@@ -632,9 +632,7 @@ function CompleteStep({
 							className="flex justify-between border-b border-border/30 pb-2"
 						>
 							<span className="text-muted-foreground">Token Sweep</span>
-							<code className="text-xs font-mono">
-								{txid.slice(0, 16)}...
-							</code>
+							<code className="text-xs font-mono">{txid.slice(0, 16)}...</code>
 						</div>
 					))}
 					{sweepResult.errors.length > 0 && (
@@ -676,22 +674,14 @@ function CompleteStep({
 // Step: Error
 // ---------------------------------------------------------------------------
 
-function ErrorStep({
-	error,
-	onRetry,
-}: {
-	error: string;
-	onRetry: () => void;
-}) {
+function ErrorStep({ error, onRetry }: { error: string; onRetry: () => void }) {
 	return (
 		<div className="space-y-8 text-center">
 			<div className="space-y-4">
 				<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 ring-1 ring-destructive/20">
 					<AlertTriangle className="h-8 w-8 text-destructive" />
 				</div>
-				<h2 className="text-2xl font-bold tracking-tight">
-					Migration Failed
-				</h2>
+				<h2 className="text-2xl font-bold tracking-tight">Migration Failed</h2>
 				<p className="text-sm text-destructive">{error}</p>
 			</div>
 

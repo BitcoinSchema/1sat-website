@@ -8,7 +8,7 @@ import {
 	sendResponse,
 	walletLockedError,
 } from "@1sat/connect";
-import { P2PKH, PrivateKey, Script, Transaction } from "@bsv/sdk";
+import { P2PKH, PrivateKey, Transaction } from "@bsv/sdk";
 import {
 	AlertTriangle,
 	CheckCircle,
@@ -243,7 +243,6 @@ function SignContent() {
 									onChange={(e) => setPassphrase(e.target.value)}
 									placeholder="Passphrase"
 									className="w-full px-3 py-2 rounded-md border bg-background"
-									autoFocus
 								/>
 								{unlockError && (
 									<p className="text-sm text-destructive mt-2">{unlockError}</p>
