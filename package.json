@@ -8,14 +8,15 @@
 		"start": "next start",
 		"lint": "biome check",
 		"lint:fix": "biome check --write .",
-		"format": "biome format --write"
+		"format": "biome format --write",
+		"cwi:e2e:redirect": "node scripts/cwi-redirect-e2e.mjs"
 	},
 	"dependencies": {
-		"@1sat/actions": "^0.0.4",
-		"@1sat/client": "^0.0.4",
-		"@1sat/connect": "^0.0.3",
-		"@1sat/utils": "^0.0.5",
-		"@1sat/wallet-browser": "0.0.4",
+		"@1sat/actions": "^0.0.5",
+		"@1sat/client": "^0.0.5",
+		"@1sat/connect": "^0.0.5",
+		"@1sat/utils": "^0.0.7",
+		"@1sat/wallet-browser": "0.0.5",
 		"@bsv/sdk": "^2.0.1",
 		"@bsv/wallet-toolbox": "npm:@bopen-io/wallet-toolbox@2.0.4-idb-fix.1",
 		"@bsv/wallet-toolbox-mobile": "npm:@bopen-io/wallet-toolbox-mobile@2.0.4-idb-fix.1",
@@ -72,7 +73,9 @@
 		"zod": "^4.3.2"
 	},
 	"overrides": {
-		"@1sat/client": "^0.0.4"
+		"@1sat/client": "^0.0.5",
+		"@1sat/types": "^0.0.5",
+		"@1sat/wallet": "^0.0.8"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.10",
