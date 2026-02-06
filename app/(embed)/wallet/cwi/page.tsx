@@ -1,0 +1,269 @@
+"use client";
+
+import {
+	CheckCircle,
+	ExternalLink,
+	Loader2,
+	Lock,
+	Shield,
+	ShieldAlert,
+	X,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import type { BridgePermissionRequest } from "@/lib/cwi/bridge";
+import { useCWIBridge } from "@/lib/hooks/use-cwi-bridge";
+
+function PermissionDetails({ details }: { details: unknown }) {
+	const request = details as {
+		type?: string;
+		protocolID?: [number, string];
+		counterparty?: string;
+		basket?: string;
+		spending?: {
+			satoshis: number;
+			lineItems?: Array<{
+				type: string;
+				description: string;
+				satoshis: number;
+			}>;
+		};
+		certificate?: { certType: string; fields: string[] };
+		reason?: string;
+		privileged?: boolean;
+	};
+
+	switch (request.type) {
+		case "protocol":
+			return (
+				<div className="space-y-1 text-sm">
+					<p className="font-medium">Protocol Access</p>
+					{request.protocolID && (
+						<p className="text-muted-foreground">
+							Protocol: {request.protocolID[1]} (Level {request.protocolID[0]})
+						</p>
+					)}
+					{request.counterparty && (
+						<p className="text-muted-foreground truncate">
+							Counterparty: {request.counterparty}
+						</p>
+					)}
+					{request.reason && (
+						<p className="text-muted-foreground">{request.reason}</p>
+					)}
+				</div>
+			);
+		case "basket":
+			return (
+				<div className="space-y-1 text-sm">
+					<p className="font-medium">Basket Access</p>
+					{request.basket && (
+						<p className="text-muted-foreground">Basket: {request.basket}</p>
+					)}
+					{request.reason && (
+						<p className="text-muted-foreground">{request.reason}</p>
+					)}
+				</div>
+			);
+		case "spending":
+			return (
+				<div className="space-y-1 text-sm">
+					<p className="font-medium">Spending Authorization</p>
+					{request.spending && (
+						<p className="text-muted-foreground">
+							Amount: {request.spending.satoshis.toLocaleString()} satoshis
+						</p>
+					)}
+					{request.spending?.lineItems?.map((item) => (
+						<p
+							key={`${item.type}-${item.description}`}
+							className="text-muted-foreground text-xs"
+						>
+							{item.type}: {item.description} ({item.satoshis} sat)
+						</p>
+					))}
+					{request.reason && (
+						<p className="text-muted-foreground">{request.reason}</p>
+					)}
+				</div>
+			);
+		case "certificate":
+			return (
+				<div className="space-y-1 text-sm">
+					<p className="font-medium">Certificate Access</p>
+					{request.certificate && (
+						<>
+							<p className="text-muted-foreground truncate">
+								Type: {request.certificate.certType}
+							</p>
+							<p className="text-muted-foreground">
+								Fields: {request.certificate.fields.join(", ")}
+							</p>
+						</>
+					)}
+					{request.reason && (
+						<p className="text-muted-foreground">{request.reason}</p>
+					)}
+				</div>
+			);
+		default:
+			return null;
+	}
+}
+
+function PermissionCard({
+	permission,
+	onGrant,
+	onDeny,
+}: {
+	permission: BridgePermissionRequest;
+	onGrant: (id: string) => void;
+	onDeny: (id: string) => void;
+}) {
+	const details = permission.details as { privileged?: boolean };
+
+	return (
+		<Card className="w-full max-w-sm">
+			<CardHeader className="text-center space-y-1">
+				<ShieldAlert className="h-10 w-10 mx-auto text-amber-500 mb-2" />
+				<CardTitle className="text-lg">Permission Request</CardTitle>
+				<CardDescription className="truncate">
+					{permission.originator}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="bg-muted/50 rounded-lg p-3">
+					<PermissionDetails details={permission.details} />
+				</div>
+				{details?.privileged && (
+					<Badge variant="destructive" className="w-full justify-center">
+						Privileged Operation
+					</Badge>
+				)}
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						className="flex-1"
+						onClick={() => onDeny(permission.requestID)}
+					>
+						<X className="h-4 w-4 mr-1" />
+						Deny
+					</Button>
+					<Button
+						className="flex-1"
+						onClick={() => onGrant(permission.requestID)}
+					>
+						<CheckCircle className="h-4 w-4 mr-1" />
+						Allow
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function OpenWalletButton() {
+	return (
+		<Button
+			variant="outline"
+			onClick={() => window.open(window.location.origin, "_blank")}
+		>
+			<ExternalLink className="h-4 w-4 mr-1" />
+			Open 1Sat Wallet
+		</Button>
+	);
+}
+
+export default function CWIPage() {
+	const { status, pendingPermission, grantPermission, denyPermission } =
+		useCWIBridge();
+
+	// Checking — waiting for wallet tab response
+	if (status === "checking") {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
+
+	// No wallet tab responding
+	if (status === "no-wallet") {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+				<Card className="w-full max-w-sm">
+					<CardHeader className="text-center">
+						<ShieldAlert className="h-10 w-10 mx-auto text-destructive mb-2" />
+						<CardTitle className="text-lg">Wallet Not Available</CardTitle>
+						<CardDescription>
+							Open 1Sat Wallet in another tab to use CWI.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="flex justify-center">
+						<OpenWalletButton />
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	// Wallet is locked
+	if (status === "locked") {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+				<Card className="w-full max-w-sm">
+					<CardHeader className="text-center space-y-1">
+						<div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
+							<Lock className="w-5 h-5 text-primary" />
+						</div>
+						<CardTitle className="text-lg">Wallet Locked</CardTitle>
+						<CardDescription>
+							Unlock your wallet in the 1Sat Wallet tab to continue.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="flex justify-center">
+						<OpenWalletButton />
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	// Permission request pending
+	if (pendingPermission) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+				<PermissionCard
+					permission={pendingPermission}
+					onGrant={grantPermission}
+					onDeny={denyPermission}
+				/>
+			</div>
+		);
+	}
+
+	// CWI active — bridge is relaying
+	return (
+		<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<Card className="w-full max-w-sm">
+				<CardHeader className="text-center space-y-1">
+					<div className="mx-auto bg-emerald-500/10 p-3 rounded-full w-fit mb-2">
+						<Shield className="w-5 h-5 text-emerald-500" />
+					</div>
+					<CardTitle className="text-lg">CWI Active</CardTitle>
+					<CardDescription>Wallet is ready to receive requests</CardDescription>
+				</CardHeader>
+				<CardContent className="text-center">
+					<Badge variant="default">Listening</Badge>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}

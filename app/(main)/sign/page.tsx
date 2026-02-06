@@ -1,18 +1,5 @@
-'use client'
+"use client";
 
-import { P2PKH, PrivateKey, Script, Transaction } from '@bsv/sdk'
-import {
-	AlertTriangle,
-	CheckCircle,
-	ExternalLink,
-	FileText,
-	Loader2,
-	X,
-} from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
 	ErrorCodes,
 	parsePopupParams,
@@ -20,12 +7,25 @@ import {
 	sendErrorResponse,
 	sendResponse,
 	walletLockedError,
-} from '@1sat/connect'
-import { useWallet } from '@/providers/wallet-provider'
+} from "@1sat/connect";
+import { P2PKH, PrivateKey, Script, Transaction } from "@bsv/sdk";
+import {
+	AlertTriangle,
+	CheckCircle,
+	ExternalLink,
+	FileText,
+	Loader2,
+	X,
+} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useWallet } from "@/providers/wallet-provider";
 
 interface SignTransactionParams {
-	rawtx: string
-	description?: string
+	rawtx: string;
+	description?: string;
 }
 
 /**
@@ -38,120 +38,120 @@ interface SignTransactionParams {
 async function signTransactionWithKeys(
 	rawtx: string,
 	payPk: string,
-	ordPk: string
+	ordPk: string,
 ): Promise<{ rawtx: string; txid: string }> {
-	const tx = Transaction.fromHex(rawtx)
+	const tx = Transaction.fromHex(rawtx);
 
-	const payKey = PrivateKey.fromWif(payPk)
-	const ordKey = PrivateKey.fromWif(ordPk)
-	const payAddress = payKey.toAddress().toString()
-	const ordAddress = ordKey.toAddress().toString()
+	const payKey = PrivateKey.fromWif(payPk);
+	const ordKey = PrivateKey.fromWif(ordPk);
+	const payAddress = payKey.toAddress().toString();
+	const ordAddress = ordKey.toAddress().toString();
 
-	const p2pkh = new P2PKH()
+	const p2pkh = new P2PKH();
 
 	// Sign each input
 	for (let i = 0; i < tx.inputs.length; i++) {
-		const input = tx.inputs[i]
+		const input = tx.inputs[i];
 
 		// Skip if already has unlocking script
 		if (input.unlockingScript && input.unlockingScript.toHex().length > 0) {
-			continue
+			continue;
 		}
 
 		// Skip if already has unlocking template
 		if (input.unlockingScriptTemplate) {
-			continue
+			continue;
 		}
 
 		// Get source output info from the input
-		const sourceTransaction = input.sourceTransaction
+		const sourceTransaction = input.sourceTransaction;
 		if (sourceTransaction && input.sourceOutputIndex !== undefined) {
-			const sourceOutput = sourceTransaction.outputs[input.sourceOutputIndex]
+			const sourceOutput = sourceTransaction.outputs[input.sourceOutputIndex];
 			if (sourceOutput) {
-				const lockingScript = sourceOutput.lockingScript
-				const lockingHex = lockingScript.toHex()
-				const satoshis = sourceOutput.satoshis ?? 0
+				const lockingScript = sourceOutput.lockingScript;
+				const lockingHex = lockingScript.toHex();
+				const satoshis = sourceOutput.satoshis ?? 0;
 
 				// Check which address this output belongs to
-				const payLockScript = p2pkh.lock(payAddress).toHex()
-				const ordLockScript = p2pkh.lock(ordAddress).toHex()
+				const payLockScript = p2pkh.lock(payAddress).toHex();
+				const ordLockScript = p2pkh.lock(ordAddress).toHex();
 
 				if (lockingHex === payLockScript) {
 					input.unlockingScriptTemplate = p2pkh.unlock(
 						payKey,
-						'all',
+						"all",
 						false,
 						satoshis,
-						lockingScript
-					)
+						lockingScript,
+					);
 				} else if (lockingHex === ordLockScript) {
 					input.unlockingScriptTemplate = p2pkh.unlock(
 						ordKey,
-						'all',
+						"all",
 						false,
 						satoshis,
-						lockingScript
-					)
+						lockingScript,
+					);
 				}
 			}
 		}
 	}
 
 	// Sign the transaction
-	await tx.sign()
+	await tx.sign();
 
 	return {
 		rawtx: tx.toHex(),
-		txid: tx.id('hex'),
-	}
+		txid: tx.id("hex"),
+	};
 }
 
 function SignContent() {
-	const searchParams = useSearchParams()
-	const { hasWallet, isWalletLocked, walletKeys, unlockWallet } = useWallet()
-	const [isSigning, setIsSigning] = useState(false)
-	const [passphrase, setPassphrase] = useState('')
-	const [unlockError, setUnlockError] = useState<string | null>(null)
+	const searchParams = useSearchParams();
+	const { hasWallet, isWalletLocked, walletKeys, unlockWallet } = useWallet();
+	const [isSigning, setIsSigning] = useState(false);
+	const [passphrase, setPassphrase] = useState("");
+	const [unlockError, setUnlockError] = useState<string | null>(null);
 
 	// Parse popup parameters
-	const { requestId, origin, appName, params } = parsePopupParams(searchParams)
-	const txParams = params as SignTransactionParams | undefined
+	const { requestId, origin, appName, params } = parsePopupParams(searchParams);
+	const txParams = params as SignTransactionParams | undefined;
 
 	// Validate we have required params
-	const isValidRequest = requestId && origin && txParams?.rawtx
+	const isValidRequest = requestId && origin && txParams?.rawtx;
 
 	// Parse transaction for display
 	const getTxSummary = useCallback(() => {
-		if (!txParams?.rawtx) return null
+		if (!txParams?.rawtx) return null;
 
 		try {
-			const tx = Transaction.fromHex(txParams.rawtx)
-			const txHex = txParams.rawtx
+			const tx = Transaction.fromHex(txParams.rawtx);
+			const txHex = txParams.rawtx;
 			return {
 				size: Math.floor(txHex.length / 2),
 				preview: `${txHex.slice(0, 32)}...${txHex.slice(-32)}`,
 				inputs: tx.inputs.length,
 				outputs: tx.outputs.length,
-			}
+			};
 		} catch {
-			return null
+			return null;
 		}
-	}, [txParams])
+	}, [txParams]);
 
-	const txSummary = getTxSummary()
+	const txSummary = getTxSummary();
 
 	// Handle signing approval
 	const handleApprove = async () => {
-		if (!isValidRequest || !walletKeys || !txParams) return
+		if (!isValidRequest || !walletKeys || !txParams) return;
 
-		setIsSigning(true)
+		setIsSigning(true);
 		try {
 			// Sign the transaction using wallet keys
 			const result = await signTransactionWithKeys(
 				txParams.rawtx,
 				walletKeys.payPk,
-				walletKeys.ordPk
-			)
+				walletKeys.ordPk,
+			);
 
 			sendResponse(
 				requestId,
@@ -159,38 +159,38 @@ function SignContent() {
 					rawtx: result.rawtx,
 					txid: result.txid,
 				},
-				origin
-			)
+				origin,
+			);
 		} catch (error) {
-			console.error('Failed to sign transaction:', error)
+			console.error("Failed to sign transaction:", error);
 			sendErrorResponse(
 				requestId,
 				ErrorCodes.INTERNAL_ERROR,
-				error instanceof Error ? error.message : 'Failed to sign transaction',
-				origin
-			)
+				error instanceof Error ? error.message : "Failed to sign transaction",
+				origin,
+			);
 		} finally {
-			setIsSigning(false)
+			setIsSigning(false);
 		}
-	}
+	};
 
 	// Handle rejection
 	const handleReject = () => {
-		if (!requestId || !origin) return
-		rejectRequest(requestId, origin, 'User rejected transaction signing')
-	}
+		if (!requestId || !origin) return;
+		rejectRequest(requestId, origin, "User rejected transaction signing");
+	};
 
 	// Handle unlock
 	const handleUnlock = async (e: React.FormEvent) => {
-		e.preventDefault()
-		setUnlockError(null)
+		e.preventDefault();
+		setUnlockError(null);
 
-		const success = await unlockWallet(passphrase)
+		const success = await unlockWallet(passphrase);
 		if (!success) {
-			setUnlockError('Invalid passphrase')
+			setUnlockError("Invalid passphrase");
 		}
-		setPassphrase('')
-	}
+		setPassphrase("");
+	};
 
 	// No wallet exists
 	if (!hasWallet) {
@@ -208,9 +208,9 @@ function SignContent() {
 							variant="outline"
 							onClick={() => {
 								if (requestId && origin) {
-									rejectRequest(requestId, origin, 'No wallet exists')
+									rejectRequest(requestId, origin, "No wallet exists");
 								} else {
-									window.close()
+									window.close();
 								}
 							}}
 						>
@@ -219,7 +219,7 @@ function SignContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Wallet is locked
@@ -256,9 +256,9 @@ function SignContent() {
 									className="flex-1"
 									onClick={() => {
 										if (requestId && origin) {
-											walletLockedError(requestId, origin)
+											walletLockedError(requestId, origin);
 										} else {
-											window.close()
+											window.close();
 										}
 									}}
 								>
@@ -272,7 +272,7 @@ function SignContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Invalid request
@@ -293,7 +293,7 @@ function SignContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Sign transaction screen
@@ -307,7 +307,7 @@ function SignContent() {
 				<CardContent className="space-y-6">
 					{/* App info */}
 					<div className="text-center space-y-2">
-						<p className="font-medium text-lg">{appName || 'Unknown App'}</p>
+						<p className="font-medium text-lg">{appName || "Unknown App"}</p>
 						<p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
 							<ExternalLink className="h-3 w-3" />
 							{origin}
@@ -378,7 +378,7 @@ function SignContent() {
 				</CardContent>
 			</Card>
 		</div>
-	)
+	);
 }
 
 export default function SignPage() {
@@ -392,5 +392,5 @@ export default function SignPage() {
 		>
 			<SignContent />
 		</Suspense>
-	)
+	);
 }

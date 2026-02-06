@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import type { WebApplication, WithContext } from "schema-dts";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
-import { DualSidebarLayout } from "@/components/dual-sidebar-layout";
-import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import type { WebApplication, WithContext } from "schema-dts";
+import { JsonLd } from "@/components/json-ld";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WalletBridge } from "@/components/wallet-bridge";
 import { QueryProvider } from "@/providers/query-provider";
 import { WalletProvider } from "@/providers/wallet-provider";
 import { WalletToolboxProvider } from "@/providers/wallet-toolbox-provider";
-import { JsonLd } from "@/components/json-ld";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
 import "./animations.css";
@@ -49,8 +47,7 @@ export const metadata: Metadata = {
 	twitter: {
 		card: "summary_large_image",
 		title: "1Sat Ordinals | BSV NFT Marketplace",
-		description:
-			"Discover, create, and trade Bitcoin SV ordinals and NFTs.",
+		description: "Discover, create, and trade Bitcoin SV ordinals and NFTs.",
 	},
 };
 
@@ -96,12 +93,9 @@ export default function RootLayout({
 				>
 					<ConvexClientProvider>
 						<QueryProvider>
-							<KeyboardShortcuts />
 							<WalletProvider>
 								<WalletToolboxProvider>
-									<WalletBridge>
-										<DualSidebarLayout>{children}</DualSidebarLayout>
-									</WalletBridge>
+									<WalletBridge>{children}</WalletBridge>
 								</WalletToolboxProvider>
 							</WalletProvider>
 						</QueryProvider>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CWI Bridge Test</title>
+  <style>
+    body { font-family: system-ui; max-width: 800px; margin: 2rem auto; background: #111; color: #eee; }
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; }
+    iframe { border: 1px solid #333; border-radius: 8px; width: 100%; height: 300px; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; border-radius: 6px; border: 1px solid #444; background: #222; color: #eee; cursor: pointer; }
+    button:hover { background: #333; }
+    #log { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+    .req { color: #6cf; }
+    .res { color: #6f6; }
+    .err { color: #f66; }
+    .info { color: #aaa; }
+  </style>
+</head>
+<body>
+  <h1>CWI Bridge Test (dApp simulator)</h1>
+
+  <h2>1. iframe</h2>
+  <iframe id="cwi" src="http://localhost:3000/wallet/cwi" allow=""></iframe>
+
+  <h2>2. Send CWI requests</h2>
+  <div>
+    <button onclick="send('getNetwork', {})">getNetwork</button>
+    <button onclick="send('getVersion', {})">getVersion</button>
+    <button onclick="send('isAuthenticated', {})">isAuthenticated</button>
+    <button onclick="send('getHeight', {})">getHeight</button>
+    <button onclick="send('getPublicKey', {identityKey: true, forSelf: true})">getPublicKey (identity)</button>
+    <button onclick="send('listOutputs', {basket: 'default', include: 'locking scripts'})">listOutputs</button>
+    <button onclick="send('bogusMethod', {})">bogusMethod (expect error)</button>
+  </div>
+
+  <h2>3. Log</h2>
+  <div id="log"></div>
+
+  <script>
+    const iframe = document.getElementById('cwi');
+    const logEl = document.getElementById('log');
+    let counter = 0;
+
+    function log(cls, msg) {
+      const line = document.createElement('div');
+      line.className = cls;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function send(method, args) {
+      const id = `test-${++counter}`;
+      const msg = { type: 'CWI', isInvocation: true, id, call: method, args };
+      log('req', `>>> ${method} (${id})`);
+      iframe.contentWindow.postMessage(msg, 'http://localhost:3000');
+    }
+
+    window.addEventListener('message', (event) => {
+      if (event.data?.type !== 'CWI') return;
+      const d = event.data;
+      if (d.status === 'error') {
+        log('err', `<<< ERROR [${d.id}]: ${d.description} (code ${d.code})`);
+      } else {
+        log('res', `<<< OK [${d.id}]: ${JSON.stringify(d.result)}`);
+      }
+    });
+
+    log('info', 'Ready. Make sure localhost:3000 is running and wallet is unlocked in another tab.');
+  </script>
+</body>
+</html>

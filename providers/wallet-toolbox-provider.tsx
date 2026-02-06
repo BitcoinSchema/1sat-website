@@ -15,8 +15,40 @@ import {
 	type WebWalletResult,
 } from "@1sat/wallet-browser";
 import { PrivateKey } from "@bsv/sdk";
+import {
+	type PermissionsManagerConfig,
+	WalletPermissionsManager,
+} from "@bsv/wallet-toolbox/out/src/index.client";
 
 type Wallet = WebWalletResult["wallet"];
+
+const ADMIN_ORIGINATOR =
+	typeof window !== "undefined"
+		? window.location.origin
+		: "https://1satwallet.com";
+
+const PERMISSIONS_CONFIG: PermissionsManagerConfig = {
+	seekProtocolPermissionsForSigning: true,
+	seekProtocolPermissionsForEncrypting: true,
+	seekProtocolPermissionsForHMAC: true,
+	seekPermissionsForKeyLinkageRevelation: true,
+	seekPermissionsForPublicKeyRevelation: false,
+	seekPermissionsForIdentityKeyRevelation: true,
+	seekPermissionsForIdentityResolution: true,
+	seekBasketInsertionPermissions: true,
+	seekBasketRemovalPermissions: true,
+	seekBasketListingPermissions: false,
+	seekPermissionWhenApplyingActionLabels: false,
+	seekPermissionWhenListingActionsByLabel: false,
+	seekCertificateDisclosurePermissions: true,
+	seekCertificateAcquisitionPermissions: true,
+	seekCertificateRelinquishmentPermissions: true,
+	seekCertificateListingPermissions: false,
+	encryptWalletMetadata: true,
+	seekSpendingPermissions: true,
+	seekGroupedPermission: false,
+	differentiatePrivilegedOperations: true,
+};
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -79,6 +111,7 @@ export interface SyncEvent {
 interface WalletToolboxContextValue {
 	// Wallet state
 	wallet: Wallet | null;
+	permissionsManager: WalletPermissionsManager | null;
 	services: OneSatServices | null;
 	isInitialized: boolean;
 	isInitializing: boolean;
@@ -186,6 +219,8 @@ export function WalletToolboxProvider({
 
 	// Core wallet state
 	const [wallet, setWallet] = useState<Wallet | null>(null);
+	const [permissionsManager, setPermissionsManager] =
+		useState<WalletPermissionsManager | null>(null);
 	const [services, setServices] = useState<OneSatServices | null>(null);
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
 	const walletResultRef = useRef<WebWalletResult | null>(null);
@@ -378,6 +413,15 @@ export function WalletToolboxProvider({
 				walletResultRef.current = result;
 				setWallet(result.wallet);
 				setServices(result.services);
+
+				// Wrap wallet with WalletPermissionsManager for external dApp access
+				const wpm = new WalletPermissionsManager(
+					result.wallet,
+					ADMIN_ORIGINATOR,
+					PERMISSIONS_CONFIG,
+				);
+				setPermissionsManager(wpm);
+
 				setIdentityKey(newIdentityKey);
 				setOrdAddress(ordAddressParam || null);
 				setPayAddress(payAddressParam || null);
@@ -419,6 +463,7 @@ export function WalletToolboxProvider({
 
 		// Clear state
 		setWallet(null);
+		setPermissionsManager(null);
 		setServices(null);
 		setIdentityKey(null);
 		setOrdAddress(null);
@@ -471,6 +516,7 @@ export function WalletToolboxProvider({
 	const value = useMemo<WalletToolboxContextValue>(
 		() => ({
 			wallet,
+			permissionsManager,
 			services,
 			isInitialized,
 			isInitializing,
@@ -494,6 +540,7 @@ export function WalletToolboxProvider({
 		}),
 		[
 			wallet,
+			permissionsManager,
 			services,
 			isInitialized,
 			isInitializing,
@@ -519,6 +566,11 @@ export function WalletToolboxProvider({
 		</WalletToolboxContext.Provider>
 	);
 }
+
+export type {
+	PermissionEventHandler,
+	PermissionRequest,
+} from "@bsv/wallet-toolbox/out/src/index.client";
 
 export function useWalletToolbox() {
 	const context = useContext(WalletToolboxContext);

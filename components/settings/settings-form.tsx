@@ -166,7 +166,10 @@ export function SettingsForm() {
 								onChange={(e) => setThemeOrigin(e.target.value)}
 							/>
 							<Button
-								onClick={() => { play("click"); handleSaveTheme(); }}
+								onClick={() => {
+									play("click");
+									handleSaveTheme();
+								}}
 								disabled={isLoadingTheme || !themeOrigin}
 							>
 								{isLoadingTheme ? (

@@ -172,7 +172,7 @@ export function useLegacyAssets(
 		return () => {
 			cancelled = true;
 		};
-	// biome-ignore lint/correctness/useExhaustiveDependencies: scanTrigger triggers rescan
+		// biome-ignore lint/correctness/useExhaustiveDependencies: scanTrigger triggers rescan
 	}, [legacyPayAddress, legacyOrdAddress, scanTrigger]);
 
 	return {

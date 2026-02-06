@@ -9,12 +9,12 @@ import {
 	Glitch,
 	Noise,
 } from "@react-three/postprocessing";
-import { Leva, folder, useControls } from "leva";
-import { Spinner } from "@/components/ui/spinner";
+import { folder, Leva, useControls } from "leva";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
 import { TTFLoader } from "three/examples/jsm/loaders/TTFLoader.js";
+import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Rings, type RingsControls } from "./ordinal-logo-3d";
 

@@ -17,13 +17,13 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+	type ChartConfig,
 	ChartContainer,
 	ChartTooltip,
 	ChartTooltipContent,
-	type ChartConfig,
 } from "@/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
@@ -98,13 +98,18 @@ export function TransactionTimeline({
 
 			// Process actions - assume they're in reverse chronological order
 			// and distribute them across the time range
-			const actionsPerDay = Math.max(1, Math.ceil(result.actions.length / days));
+			const actionsPerDay = Math.max(
+				1,
+				Math.ceil(result.actions.length / days),
+			);
 
 			for (let i = result.actions.length - 1; i >= 0; i--) {
 				const action = result.actions[i];
 
 				// Calculate approximate date based on position
-				const daysAgo = Math.floor((result.actions.length - 1 - i) / actionsPerDay);
+				const daysAgo = Math.floor(
+					(result.actions.length - 1 - i) / actionsPerDay,
+				);
 				const date = new Date(now);
 				date.setDate(date.getDate() - daysAgo);
 				const dateKey = date.toISOString().split("T")[0];
@@ -143,7 +148,9 @@ export function TransactionTimeline({
 			setData(chartData);
 		} catch (err) {
 			console.error("[TransactionTimeline] Failed to load:", err);
-			setError(err instanceof Error ? err.message : "Failed to load transactions");
+			setError(
+				err instanceof Error ? err.message : "Failed to load transactions",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -162,7 +169,9 @@ export function TransactionTimeline({
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="h-[200px] flex items-center justify-center">
-					<p className="text-sm text-muted-foreground">Wallet not initialized</p>
+					<p className="text-sm text-muted-foreground">
+						Wallet not initialized
+					</p>
 				</CardContent>
 			</Card>
 		);

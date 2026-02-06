@@ -1,17 +1,5 @@
-'use client'
+"use client";
 
-import {
-	AlertTriangle,
-	CheckCircle,
-	ExternalLink,
-	Loader2,
-	MessageSquare,
-	X,
-} from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
 	ErrorCodes,
 	parsePopupParams,
@@ -19,11 +7,23 @@ import {
 	sendErrorResponse,
 	sendResponse,
 	walletLockedError,
-} from '@1sat/connect'
-import { useWallet } from '@/providers/wallet-provider'
+} from "@1sat/connect";
+import {
+	AlertTriangle,
+	CheckCircle,
+	ExternalLink,
+	Loader2,
+	MessageSquare,
+	X,
+} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useWallet } from "@/providers/wallet-provider";
 
 interface SignMessageParams {
-	message: string
+	message: string;
 }
 
 /**
@@ -32,46 +32,46 @@ interface SignMessageParams {
  */
 async function signMessageBSM(
 	message: string,
-	privateKeyWif: string
+	privateKeyWif: string,
 ): Promise<{ signature: string; address: string }> {
-	const { BSM, PrivateKey, Utils } = await import('@bsv/sdk')
+	const { BSM, PrivateKey, Utils } = await import("@bsv/sdk");
 
-	const privKey = PrivateKey.fromWif(privateKeyWif)
-	const address = privKey.toAddress().toString()
+	const privKey = PrivateKey.fromWif(privateKeyWif);
+	const address = privKey.toAddress().toString();
 
 	// Sign using BSM - use Utils.toArray for proper encoding
 	// BSM.sign returns the signature in base64 format directly
-	const msgBytes = Utils.toArray(message, 'utf8')
-	const signature = BSM.sign(msgBytes, privKey) as string
+	const msgBytes = Utils.toArray(message, "utf8");
+	const signature = BSM.sign(msgBytes, privKey) as string;
 
-	return { signature, address }
+	return { signature, address };
 }
 
 function SignMessageContent() {
-	const searchParams = useSearchParams()
-	const { hasWallet, isWalletLocked, walletKeys, unlockWallet } = useWallet()
-	const [isSigning, setIsSigning] = useState(false)
-	const [passphrase, setPassphrase] = useState('')
-	const [unlockError, setUnlockError] = useState<string | null>(null)
+	const searchParams = useSearchParams();
+	const { hasWallet, isWalletLocked, walletKeys, unlockWallet } = useWallet();
+	const [isSigning, setIsSigning] = useState(false);
+	const [passphrase, setPassphrase] = useState("");
+	const [unlockError, setUnlockError] = useState<string | null>(null);
 
 	// Parse popup parameters
-	const { requestId, origin, appName, params } = parsePopupParams(searchParams)
-	const msgParams = params as SignMessageParams | undefined
+	const { requestId, origin, appName, params } = parsePopupParams(searchParams);
+	const msgParams = params as SignMessageParams | undefined;
 
 	// Validate we have required params
-	const isValidRequest = requestId && origin && msgParams?.message
+	const isValidRequest = requestId && origin && msgParams?.message;
 
 	// Handle signing approval
 	const handleApprove = useCallback(async () => {
-		if (!isValidRequest || !walletKeys || !msgParams) return
+		if (!isValidRequest || !walletKeys || !msgParams) return;
 
-		setIsSigning(true)
+		setIsSigning(true);
 		try {
 			// Use ordinal key for identity signing (BSM standard)
 			const { signature, address } = await signMessageBSM(
 				msgParams.message,
-				walletKeys.ordPk
-			)
+				walletKeys.ordPk,
+			);
 
 			sendResponse(
 				requestId,
@@ -80,38 +80,38 @@ function SignMessageContent() {
 					signature,
 					address,
 				},
-				origin
-			)
+				origin,
+			);
 		} catch (error) {
-			console.error('Failed to sign message:', error)
+			console.error("Failed to sign message:", error);
 			sendErrorResponse(
 				requestId,
 				ErrorCodes.INTERNAL_ERROR,
-				error instanceof Error ? error.message : 'Failed to sign message',
-				origin
-			)
+				error instanceof Error ? error.message : "Failed to sign message",
+				origin,
+			);
 		} finally {
-			setIsSigning(false)
+			setIsSigning(false);
 		}
-	}, [isValidRequest, walletKeys, msgParams, requestId, origin])
+	}, [isValidRequest, walletKeys, msgParams, requestId, origin]);
 
 	// Handle rejection
 	const handleReject = () => {
-		if (!requestId || !origin) return
-		rejectRequest(requestId, origin, 'User rejected message signing')
-	}
+		if (!requestId || !origin) return;
+		rejectRequest(requestId, origin, "User rejected message signing");
+	};
 
 	// Handle unlock
 	const handleUnlock = async (e: React.FormEvent) => {
-		e.preventDefault()
-		setUnlockError(null)
+		e.preventDefault();
+		setUnlockError(null);
 
-		const success = await unlockWallet(passphrase)
+		const success = await unlockWallet(passphrase);
 		if (!success) {
-			setUnlockError('Invalid passphrase')
+			setUnlockError("Invalid passphrase");
 		}
-		setPassphrase('')
-	}
+		setPassphrase("");
+	};
 
 	// No wallet exists
 	if (!hasWallet) {
@@ -129,9 +129,9 @@ function SignMessageContent() {
 							variant="outline"
 							onClick={() => {
 								if (requestId && origin) {
-									rejectRequest(requestId, origin, 'No wallet exists')
+									rejectRequest(requestId, origin, "No wallet exists");
 								} else {
-									window.close()
+									window.close();
 								}
 							}}
 						>
@@ -140,7 +140,7 @@ function SignMessageContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Wallet is locked
@@ -177,9 +177,9 @@ function SignMessageContent() {
 									className="flex-1"
 									onClick={() => {
 										if (requestId && origin) {
-											walletLockedError(requestId, origin)
+											walletLockedError(requestId, origin);
 										} else {
-											window.close()
+											window.close();
 										}
 									}}
 								>
@@ -193,7 +193,7 @@ function SignMessageContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Invalid request
@@ -214,7 +214,7 @@ function SignMessageContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Sign message screen
@@ -228,7 +228,7 @@ function SignMessageContent() {
 				<CardContent className="space-y-6">
 					{/* App info */}
 					<div className="text-center space-y-2">
-						<p className="font-medium text-lg">{appName || 'Unknown App'}</p>
+						<p className="font-medium text-lg">{appName || "Unknown App"}</p>
 						<p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
 							<ExternalLink className="h-3 w-3" />
 							{origin}
@@ -279,7 +279,7 @@ function SignMessageContent() {
 				</CardContent>
 			</Card>
 		</div>
-	)
+	);
 }
 
 export default function SignMessagePage() {
@@ -293,5 +293,5 @@ export default function SignMessagePage() {
 		>
 			<SignMessageContent />
 		</Suspense>
-	)
+	);
 }

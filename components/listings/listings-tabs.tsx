@@ -8,7 +8,11 @@ export function ListingsTabs() {
 	const { play } = useSound();
 
 	return (
-		<Tabs defaultValue="ordinals" className="w-full" onValueChange={() => play("click")}>
+		<Tabs
+			defaultValue="ordinals"
+			className="w-full"
+			onValueChange={() => play("click")}
+		>
 			<TabsList>
 				<TabsTrigger value="ordinals">Ordinals</TabsTrigger>
 				<TabsTrigger value="tokens">Tokens</TabsTrigger>

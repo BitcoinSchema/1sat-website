@@ -1,96 +1,96 @@
-'use client'
+"use client";
 
-import { CheckCircle, ExternalLink, Loader2, Shield, X } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
 	ErrorCodes,
 	parsePopupParams,
 	rejectRequest,
 	sendResponse,
 	walletLockedError,
-} from '@1sat/connect'
-import { useWallet } from '@/providers/wallet-provider'
+} from "@1sat/connect";
+import { CheckCircle, ExternalLink, Loader2, Shield, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useWallet } from "@/providers/wallet-provider";
 
 function ConnectContent() {
-	const searchParams = useSearchParams()
-	const { hasWallet, isWalletLocked, walletKeys, unlockWallet } = useWallet()
-	const [isConnecting, setIsConnecting] = useState(false)
-	const [passphrase, setPassphrase] = useState('')
-	const [unlockError, setUnlockError] = useState<string | null>(null)
+	const searchParams = useSearchParams();
+	const { hasWallet, isWalletLocked, walletKeys, unlockWallet } = useWallet();
+	const [isConnecting, setIsConnecting] = useState(false);
+	const [passphrase, setPassphrase] = useState("");
+	const [unlockError, setUnlockError] = useState<string | null>(null);
 
 	// Parse popup parameters
-	const { requestId, origin, appName } = parsePopupParams(searchParams)
+	const { requestId, origin, appName } = parsePopupParams(searchParams);
 
 	// Validate we have required params
-	const isValidRequest = requestId && origin
+	const isValidRequest = requestId && origin;
 
 	// Get addresses from wallet keys
 	const getAddresses = useCallback(() => {
-		if (!walletKeys) return null
+		if (!walletKeys) return null;
 
 		// Import dynamically to avoid SSR issues
-		return import('@bsv/sdk').then(({ PrivateKey }) => {
-			const payPk = PrivateKey.fromWif(walletKeys.payPk)
-			const ordPk = PrivateKey.fromWif(walletKeys.ordPk)
+		return import("@bsv/sdk").then(({ PrivateKey }) => {
+			const payPk = PrivateKey.fromWif(walletKeys.payPk);
+			const ordPk = PrivateKey.fromWif(walletKeys.ordPk);
 
 			return {
 				paymentAddress: payPk.toAddress().toString(),
 				ordinalAddress: ordPk.toAddress().toString(),
 				identityPubKey: ordPk.toPublicKey().toString(),
-			}
-		})
-	}, [walletKeys])
+			};
+		});
+	}, [walletKeys]);
 
 	// Handle connection approval
 	const handleApprove = async () => {
-		if (!isValidRequest || !walletKeys) return
+		if (!isValidRequest || !walletKeys) return;
 
-		setIsConnecting(true)
+		setIsConnecting(true);
 		try {
-			const addresses = await getAddresses()
+			const addresses = await getAddresses();
 			if (addresses) {
-				sendResponse(requestId, addresses, origin)
+				sendResponse(requestId, addresses, origin);
 			}
 		} catch (error) {
-			console.error('Failed to get addresses:', error)
+			console.error("Failed to get addresses:", error);
 		} finally {
-			setIsConnecting(false)
+			setIsConnecting(false);
 		}
-	}
+	};
 
 	// Handle rejection
 	const handleReject = () => {
-		if (!isValidRequest) return
-		rejectRequest(requestId, origin)
-	}
+		if (!isValidRequest) return;
+		rejectRequest(requestId, origin);
+	};
 
 	// Handle unlock
 	const handleUnlock = async (e: React.FormEvent) => {
-		e.preventDefault()
-		setUnlockError(null)
+		e.preventDefault();
+		setUnlockError(null);
 
-		const success = await unlockWallet(passphrase)
+		const success = await unlockWallet(passphrase);
 		if (!success) {
-			setUnlockError('Invalid passphrase')
+			setUnlockError("Invalid passphrase");
 		}
-		setPassphrase('')
-	}
+		setPassphrase("");
+	};
 
 	// Close popup when opened without valid params
 	useEffect(() => {
-		if (!isValidRequest && typeof window !== 'undefined') {
+		if (!isValidRequest && typeof window !== "undefined") {
 			// Give a moment for params to load
 			const timeout = setTimeout(() => {
-				if (!searchParams.get('requestId')) {
-					window.close()
+				if (!searchParams.get("requestId")) {
+					window.close();
 				}
-			}, 1000)
-			return () => clearTimeout(timeout)
+			}, 1000);
+			return () => clearTimeout(timeout);
 		}
-	}, [isValidRequest, searchParams])
+	}, [isValidRequest, searchParams]);
 
 	// No wallet exists
 	if (!hasWallet) {
@@ -108,13 +108,9 @@ function ConnectContent() {
 							variant="outline"
 							onClick={() => {
 								if (isValidRequest) {
-									rejectRequest(
-										requestId,
-										origin,
-										'No wallet exists'
-									)
+									rejectRequest(requestId, origin, "No wallet exists");
 								} else {
-									window.close()
+									window.close();
 								}
 							}}
 						>
@@ -123,7 +119,7 @@ function ConnectContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Wallet is locked
@@ -160,9 +156,9 @@ function ConnectContent() {
 									className="flex-1"
 									onClick={() => {
 										if (isValidRequest) {
-											walletLockedError(requestId, origin)
+											walletLockedError(requestId, origin);
 										} else {
-											window.close()
+											window.close();
 										}
 									}}
 								>
@@ -176,7 +172,7 @@ function ConnectContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Invalid request
@@ -197,7 +193,7 @@ function ConnectContent() {
 					</CardContent>
 				</Card>
 			</div>
-		)
+		);
 	}
 
 	// Connection approval screen
@@ -211,7 +207,7 @@ function ConnectContent() {
 				<CardContent className="space-y-6">
 					{/* App info */}
 					<div className="text-center space-y-2">
-						<p className="font-medium text-lg">{appName || 'Unknown App'}</p>
+						<p className="font-medium text-lg">{appName || "Unknown App"}</p>
 						<p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
 							<ExternalLink className="h-3 w-3" />
 							{origin}
@@ -255,7 +251,7 @@ function ConnectContent() {
 				</CardContent>
 			</Card>
 		</div>
-	)
+	);
 }
 
 export default function ConnectPage() {
@@ -269,5 +265,5 @@ export default function ConnectPage() {
 		>
 			<ConnectContent />
 		</Suspense>
-	)
+	);
 }

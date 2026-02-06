@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type * as React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useSound } from "@/hooks/use-sound";
 import { Badge } from "@/components/ui/badge";
 import {
 	CommandDialog,
@@ -23,6 +22,7 @@ import {
 	SidebarInput,
 } from "@/components/ui/sidebar";
 import { useHotkeys } from "@/hooks/use-hotkeys";
+import { useSound } from "@/hooks/use-sound";
 import { FetchStatus, ORDFS } from "@/lib/constants";
 
 // Autofill result type
@@ -156,9 +156,9 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 							placeholder="Search market..."
 							className="pl-8 cursor-pointer"
 							onClick={() => {
-							play("click");
-							setOpen(true);
-						}}
+								play("click");
+								setOpen(true);
+							}}
 							readOnly
 						/>
 						<Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />

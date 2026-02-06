@@ -4,7 +4,6 @@ import { Search } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { useSound } from "@/hooks/use-sound";
 import { Input } from "@/components/ui/input";
 import {
 	DialogContent,
@@ -13,6 +12,7 @@ import {
 	SoundDialog,
 } from "@/components/ui/sound-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSound } from "@/hooks/use-sound";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
 import type { TradeItem } from "@/lib/types/trades";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
@@ -63,7 +63,11 @@ export function InventorySelector({
 				</DialogHeader>
 
 				<div className="flex-1 overflow-hidden">
-					<Tabs defaultValue="ordinals" className="h-full flex flex-col" onValueChange={() => play("click")}>
+					<Tabs
+						defaultValue="ordinals"
+						className="h-full flex flex-col"
+						onValueChange={() => play("click")}
+					>
 						<div className="px-6 pt-4">
 							<TabsList className="w-full justify-start">
 								<TabsTrigger value="ordinals" className="flex-1 max-w-[200px]">

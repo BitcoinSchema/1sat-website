@@ -79,7 +79,13 @@ export function WalletSettingsForm() {
 							</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<Select value={currency} onValueChange={(v) => { play("click"); setCurrency(v); }}>
+							<Select
+								value={currency}
+								onValueChange={(v) => {
+									play("click");
+									setCurrency(v);
+								}}
+							>
 								<SelectTrigger className="w-[100px]">
 									<SelectValue />
 								</SelectTrigger>
@@ -113,7 +119,10 @@ export function WalletSettingsForm() {
 						<Switch
 							id="privacy"
 							checked={isPrivacyModeEnabled}
-							onCheckedChange={(v) => { play("click"); setIsPrivacyModeEnabled(v); }}
+							onCheckedChange={(v) => {
+								play("click");
+								setIsPrivacyModeEnabled(v);
+							}}
 						/>
 					</div>
 
@@ -131,7 +140,10 @@ export function WalletSettingsForm() {
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() => { play("click"); syncWallet(); }}
+							onClick={() => {
+								play("click");
+								syncWallet();
+							}}
 							disabled={isSyncing}
 							className="min-w-[100px]"
 						>

@@ -1,4 +1,4 @@
-import type { Thing, WithContext } from "schema-dts"
+import type { Thing, WithContext } from "schema-dts";
 
 /**
  * Renders JSON-LD structured data for SEO.
@@ -6,12 +6,12 @@ import type { Thing, WithContext } from "schema-dts"
  * @see https://nextjs.org/docs/app/guides/json-ld
  */
 export function JsonLd<T extends Thing>({ data }: { data: WithContext<T> }) {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(data).replace(/</g, "\\u003c"),
-      }}
-    />
-  )
+	return (
+		<script
+			type="application/ld+json"
+			dangerouslySetInnerHTML={{
+				__html: JSON.stringify(data).replace(/</g, "\\u003c"),
+			}}
+		/>
+	);
 }

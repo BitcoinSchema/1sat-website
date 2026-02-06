@@ -105,7 +105,12 @@ export function NavUser({
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem onSelect={() => { play("click"); handleExport(); }}>
+							<DropdownMenuItem
+								onSelect={() => {
+									play("click");
+									handleExport();
+								}}
+							>
 								<Download className="mr-2 h-4 w-4" />
 								Export Keys
 							</DropdownMenuItem>

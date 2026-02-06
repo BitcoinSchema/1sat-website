@@ -8,8 +8,8 @@
 
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 import { cn } from "@/lib/utils";
+import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 interface SyncProgressProps {
 	className?: string;
