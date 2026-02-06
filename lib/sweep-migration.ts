@@ -14,9 +14,21 @@ import type { WalletInterface } from "@bsv/sdk";
 import type { WalletOrdinal } from "@/lib/types/ordinals";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
 
+/** Group UTXOs by owner address so each sweep call uses the correct WIF. */
+function groupByOwner(utxos: WalletOrdinal[]): Map<string, WalletOrdinal[]> {
+	const groups = new Map<string, WalletOrdinal[]>();
+	for (const utxo of utxos) {
+		const group = groups.get(utxo.owner) ?? [];
+		group.push(utxo);
+		groups.set(utxo.owner, group);
+	}
+	return groups;
+}
+
 export interface MigrationSweepParams {
 	wallet: WalletInterface;
 	services: OneSatServices;
+	chain?: "main" | "test";
 	legacyPayWif: string;
 	legacyOrdWif: string;
 	legacyPayAddress: string;
@@ -84,7 +96,10 @@ export async function executeMigrationSweep(
 		errors: [],
 	};
 
-	const ctx = createContext(wallet, { services, chain: "main" });
+	const ctx = createContext(wallet, {
+		services,
+		chain: params.chain ?? "main",
+	});
 
 	// 1. Use pre-scanned assets if all provided, otherwise scan
 	const merged: CategorizedUtxos =
@@ -105,70 +120,76 @@ export async function executeMigrationSweep(
 		return result;
 	}
 
-	// 2. Sweep BSV funding UTXOs
+	// 2. Sweep BSV funding UTXOs (grouped by owner address for correct WIF)
 	if (merged.funding.length > 0) {
-		onProgress(`Sweeping ${merged.funding.length} BSV UTXOs...`);
-		try {
-			const fundingInputs: SweepInput[] = merged.funding.map((u) => ({
-				outpoint: u.outpoint,
-				satoshis: u.satoshis,
-				lockingScript: u.script,
-			}));
+		const fundingByOwner = groupByOwner(merged.funding);
+		for (const [ownerAddr, utxos] of fundingByOwner) {
+			onProgress(`Sweeping ${utxos.length} BSV UTXOs...`);
+			try {
+				const fundingInputs: SweepInput[] = utxos.map((u) => ({
+					outpoint: u.outpoint,
+					satoshis: u.satoshis,
+					lockingScript: u.script,
+				}));
 
-			const bsvResult = await sweepBsv.execute(ctx, {
-				inputs: fundingInputs,
-				wif: legacyPayWif,
-			});
+				const wif =
+					ownerAddr === legacyPayAddress ? legacyPayWif : legacyOrdWif;
 
-			if (bsvResult.error) {
-				result.errors.push(`BSV sweep: ${bsvResult.error}`);
-			} else if (bsvResult.txid) {
-				result.bsvTxid = bsvResult.txid;
+				const bsvResult = await sweepBsv.execute(ctx, {
+					inputs: fundingInputs,
+					wif,
+				});
+
+				if (bsvResult.error) {
+					result.errors.push(`BSV sweep: ${bsvResult.error}`);
+				} else if (bsvResult.txid) {
+					result.bsvTxid = bsvResult.txid;
+				}
+			} catch (error) {
+				result.errors.push(
+					`BSV sweep: ${error instanceof Error ? error.message : String(error)}`,
+				);
 			}
-		} catch (error) {
-			result.errors.push(
-				`BSV sweep: ${error instanceof Error ? error.message : String(error)}`,
-			);
 		}
 	}
 
-	// 3. Sweep ordinals
+	// 3. Sweep ordinals (grouped by owner address for correct WIF)
 	if (merged.ordinals.length > 0) {
-		onProgress(`Sweeping ${merged.ordinals.length} ordinals...`);
-		try {
-			const ordinalInputs: SweepOrdinalInput[] = merged.ordinals.map((u) => ({
-				outpoint: u.outpoint,
-				satoshis: u.satoshis,
-				lockingScript: u.script,
-				contentType: u.origin?.data?.insc?.file?.type,
-				origin: u.origin?.outpoint,
-				name: u.origin?.map?.name as string | undefined,
-			}));
+		const ordinalsByOwner = groupByOwner(merged.ordinals);
+		for (const [ownerAddr, utxos] of ordinalsByOwner) {
+			onProgress(`Sweeping ${utxos.length} ordinals...`);
+			try {
+				const ordinalInputs: SweepOrdinalInput[] = utxos.map((u) => ({
+					outpoint: u.outpoint,
+					satoshis: u.satoshis,
+					lockingScript: u.script,
+					contentType: u.origin?.data?.insc?.file?.type,
+					origin: u.origin?.outpoint,
+					name: u.origin?.map?.name as string | undefined,
+				}));
 
-			// Determine which WIF controls each ordinal based on owner address
-			const ordWif =
-				merged.ordinals[0].owner === legacyPayAddress
-					? legacyPayWif
-					: legacyOrdWif;
+				const wif =
+					ownerAddr === legacyPayAddress ? legacyPayWif : legacyOrdWif;
 
-			const ordResult = await sweepOrdinals.execute(ctx, {
-				inputs: ordinalInputs,
-				wif: ordWif,
-			});
+				const ordResult = await sweepOrdinals.execute(ctx, {
+					inputs: ordinalInputs,
+					wif,
+				});
 
-			if (ordResult.error) {
-				result.errors.push(`Ordinal sweep: ${ordResult.error}`);
-			} else if (ordResult.txid) {
-				result.ordinalTxids.push(ordResult.txid);
+				if (ordResult.error) {
+					result.errors.push(`Ordinal sweep: ${ordResult.error}`);
+				} else if (ordResult.txid) {
+					result.ordinalTxids.push(ordResult.txid);
+				}
+			} catch (error) {
+				result.errors.push(
+					`Ordinal sweep: ${error instanceof Error ? error.message : String(error)}`,
+				);
 			}
-		} catch (error) {
-			result.errors.push(
-				`Ordinal sweep: ${error instanceof Error ? error.message : String(error)}`,
-			);
 		}
 	}
 
-	// 4. Sweep BSV-21 tokens (grouped by tokenId)
+	// 4. Sweep BSV-21 tokens (grouped by tokenId, then by owner address)
 	if (merged.bsv21Tokens.length > 0) {
 		const tokenGroups = new Map<string, typeof merged.bsv21Tokens>();
 		for (const token of merged.bsv21Tokens) {
@@ -181,37 +202,40 @@ export async function executeMigrationSweep(
 		}
 
 		for (const [tokenId, tokens] of tokenGroups) {
-			onProgress(
-				`Sweeping ${tokens.length} tokens (${tokenId.slice(0, 8)}...)...`,
-			);
-			try {
-				const tokenInputs: SweepBsv21Input[] = tokens.map((u) => ({
-					outpoint: u.outpoint,
-					satoshis: u.satoshis,
-					lockingScript: u.script,
-					tokenId,
-					amount: u.data?.bsv21?.amt ?? u.origin?.data?.bsv21?.amt ?? "0",
-				}));
-
-				const tokenWif =
-					tokens[0].owner === legacyPayAddress ? legacyPayWif : legacyOrdWif;
-
-				const tokenResult = await sweepBsv21.execute(ctx, {
-					inputs: tokenInputs,
-					wif: tokenWif,
-				});
-
-				if (tokenResult.error) {
-					result.errors.push(
-						`BSV-21 sweep (${tokenId.slice(0, 8)}): ${tokenResult.error}`,
-					);
-				} else if (tokenResult.txid) {
-					result.bsv21Txids.push(tokenResult.txid);
-				}
-			} catch (error) {
-				result.errors.push(
-					`BSV-21 sweep (${tokenId.slice(0, 8)}): ${error instanceof Error ? error.message : String(error)}`,
+			const tokensByOwner = groupByOwner(tokens);
+			for (const [ownerAddr, ownerTokens] of tokensByOwner) {
+				onProgress(
+					`Sweeping ${ownerTokens.length} tokens (${tokenId.slice(0, 8)}...)...`,
 				);
+				try {
+					const tokenInputs: SweepBsv21Input[] = ownerTokens.map((u) => ({
+						outpoint: u.outpoint,
+						satoshis: u.satoshis,
+						lockingScript: u.script,
+						tokenId,
+						amount: u.data?.bsv21?.amt ?? u.origin?.data?.bsv21?.amt ?? "0",
+					}));
+
+					const wif =
+						ownerAddr === legacyPayAddress ? legacyPayWif : legacyOrdWif;
+
+					const tokenResult = await sweepBsv21.execute(ctx, {
+						inputs: tokenInputs,
+						wif,
+					});
+
+					if (tokenResult.error) {
+						result.errors.push(
+							`BSV-21 sweep (${tokenId.slice(0, 8)}): ${tokenResult.error}`,
+						);
+					} else if (tokenResult.txid) {
+						result.bsv21Txids.push(tokenResult.txid);
+					}
+				} catch (error) {
+					result.errors.push(
+						`BSV-21 sweep (${tokenId.slice(0, 8)}): ${error instanceof Error ? error.message : String(error)}`,
+					);
+				}
 			}
 		}
 	}
