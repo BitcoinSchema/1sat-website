@@ -3,61 +3,100 @@
 <head>
   <title>CWI Bridge Test</title>
   <style>
-    body { font-family: system-ui; max-width: 800px; margin: 2rem auto; background: #111; color: #eee; }
-    h1 { font-size: 1.4rem; }
-    h2 { font-size: 1.1rem; margin-top: 2rem; }
-    iframe { border: 1px solid #333; border-radius: 8px; width: 100%; height: 300px; }
-    button { padding: 0.5rem 1rem; margin: 0.25rem; border-radius: 6px; border: 1px solid #444; background: #222; color: #eee; cursor: pointer; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui; background: #111; color: #eee; height: 100vh; display: grid; grid-template-columns: 1fr 1fr; gap: 0; overflow: hidden; }
+    .panel { padding: 0.75rem; overflow-y: auto; }
+    .buttons { border-right: 1px solid #333; }
+    h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin: 0.5rem 0 0.25rem; }
+    h2:first-child { margin-top: 0; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    button { padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid #444; background: #222; color: #eee; cursor: pointer; white-space: nowrap; }
     button:hover { background: #333; }
     button.primary { background: #1a4a2e; border-color: #2a6a3e; }
     button.primary:hover { background: #2a5a3e; }
-    #log { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+    #log { font-family: monospace; font-size: 0.75rem; line-height: 1.4; white-space: pre-wrap; }
     .req { color: #6cf; }
     .res { color: #6f6; }
     .err { color: #f66; }
     .info { color: #aaa; }
+    .log-header { display: flex; justify-content: space-between; align-items: center; }
+    .log-header button { font-size: 0.7rem; padding: 0.15rem 0.4rem; }
+    .status { display: inline-block; padding: 0.15rem 0.5rem; font-size: 0.7rem; border-radius: 3px; background: #333; }
+    .status.ok { background: #1a4a2e; color: #6f6; }
+    .status.err { background: #4a1a1a; color: #f66; }
+    .status.wait { background: #4a3a1a; color: #fc6; }
+    /* CWI iframe: hidden by default, expands to full-screen overlay for permission dialogs */
+    #cwi {
+      position: fixed;
+      top: 0; left: 0;
+      width: 0; height: 0;
+      border: none;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    #cwi.permission-active {
+      width: 100%;
+      height: 100%;
+      opacity: 1;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
-  <h1>CWI Bridge Test (dApp simulator)</h1>
-
-  <h2>1. iframe</h2>
+  <!-- CWI iframe: hidden until permission dialog needs to show -->
   <iframe id="cwi" src="http://localhost:8255/wallet/cwi" allow=""></iframe>
 
-  <h2>2. Authentication (call first)</h2>
-  <div>
-    <button class="primary" onclick="send('waitForAuthentication', {})">waitForAuthentication</button>
-    <button onclick="send('isAuthenticated', {})">isAuthenticated</button>
+  <div class="panel buttons">
+    <h2>Auth</h2>
+    <div class="btn-row">
+      <button class="primary" onclick="send('waitForAuthentication', {})">waitForAuth</button>
+      <button onclick="send('isAuthenticated', {})">isAuthenticated</button>
+    </div>
+
+    <h2>No-permission</h2>
+    <div class="btn-row">
+      <button onclick="send('getNetwork', {})">getNetwork</button>
+      <button onclick="send('getVersion', {})">getVersion</button>
+      <button onclick="send('getHeight', {})">getHeight</button>
+      <button onclick="send('getBalance', {})">getBalance</button>
+      <button onclick="send('getPublicKey', {identityKey: false, forSelf: true, protocolID: [0, 'tests'], keyID: '1', counterparty: 'self'})">getPublicKey</button>
+      <button onclick="send('listOutputs', {basket: 'todo tokens', include: 'locking scripts'})">listOutputs</button>
+    </div>
+
+    <h2>Permission-triggering</h2>
+    <div class="btn-row">
+      <button onclick="send('getPublicKey', {identityKey: true, forSelf: true})">getPublicKey (identity)</button>
+      <button onclick="send('encrypt', {plaintext: Array.from(new TextEncoder().encode('hello')), protocolID: [0, 'tests'], keyID: '1', counterparty: 'self'})">encrypt</button>
+      <button onclick="send('createSignature', {data: Array.from(new TextEncoder().encode('sign me')), protocolID: [0, 'tests'], keyID: '1', counterparty: 'self'})">createSignature</button>
+      <button onclick="send('createHmac', {data: Array.from(new TextEncoder().encode('hmac me')), protocolID: [0, 'tests'], keyID: '1', counterparty: 'self'})">createHmac</button>
+    </div>
+
+    <h2>Error cases</h2>
+    <div class="btn-row">
+      <button onclick="send('bogusMethod', {})">bogusMethod</button>
+    </div>
+
+    <div style="margin-top: 0.75rem; font-size: 0.7rem; color: #555;">
+      wallet: <span id="wallet-status" class="status wait">checking</span>
+      &nbsp; iframe: <span id="iframe-status" class="status wait">loading</span>
+    </div>
   </div>
 
-  <h2>3. No-permission calls</h2>
-  <div>
-    <button onclick="send('getNetwork', {})">getNetwork</button>
-    <button onclick="send('getVersion', {})">getVersion</button>
-    <button onclick="send('getHeight', {})">getHeight</button>
-    <button onclick="send('getPublicKey', {identityKey: false, forSelf: true})">getPublicKey (non-identity)</button>
-    <button onclick="send('listOutputs', {basket: 'default', include: 'locking scripts'})">listOutputs</button>
+  <div class="panel">
+    <div class="log-header">
+      <h2>Log</h2>
+      <button onclick="logEl.innerHTML=''">Clear</button>
+    </div>
+    <div id="log"></div>
   </div>
-
-  <h2>4. Permission-triggering calls</h2>
-  <div>
-    <button onclick="send('getPublicKey', {identityKey: true, forSelf: true})">getPublicKey (identity)</button>
-    <button onclick="send('encrypt', {plaintext: Array.from(new TextEncoder().encode('hello')), protocolID: [0, 'test'], keyID: '1', counterparty: 'self'})">encrypt</button>
-    <button onclick="send('createSignature', {data: Array.from(new TextEncoder().encode('sign me')), protocolID: [0, 'test'], keyID: '1', counterparty: 'self'})">createSignature</button>
-    <button onclick="send('createHmac', {data: Array.from(new TextEncoder().encode('hmac me')), protocolID: [0, 'test'], keyID: '1', counterparty: 'self'})">createHmac</button>
-  </div>
-
-  <h2>5. Error cases</h2>
-  <div>
-    <button onclick="send('bogusMethod', {})">bogusMethod (expect error)</button>
-  </div>
-
-  <h2>6. Log</h2>
-  <div id="log"></div>
 
   <script>
     const iframe = document.getElementById('cwi');
     const logEl = document.getElementById('log');
+    const iframeStatusEl = document.getElementById('iframe-status');
+    const walletStatusEl = document.getElementById('wallet-status');
     let counter = 0;
 
     function log(cls, msg) {
@@ -78,6 +117,32 @@
     window.addEventListener('message', (event) => {
       if (event.data?.type !== 'CWI') return;
       const d = event.data;
+
+      // CWI state updates from the iframe (status + permission state)
+      if (d.cwiState) {
+        const { status, hasPermission } = d.cwiState;
+
+        // Update wallet status badge
+        walletStatusEl.textContent = status;
+        if (status === 'unlocked') {
+          walletStatusEl.className = 'status ok';
+        } else if (status === 'locked' || status === 'no-wallet') {
+          walletStatusEl.className = 'status err';
+        } else {
+          walletStatusEl.className = 'status wait';
+        }
+
+        // Expand iframe when permission dialog is active
+        if (hasPermission) {
+          iframe.classList.add('permission-active');
+          log('info', 'Permission dialog active — iframe expanded');
+        } else {
+          iframe.classList.remove('permission-active');
+        }
+        return;
+      }
+
+      // CWI responses
       if (d.status === 'error') {
         log('err', `<<< ERROR [${d.id}]: ${d.description} (code ${d.code})`);
       } else {
@@ -85,8 +150,17 @@
       }
     });
 
-    log('info', 'Ready. Make sure localhost:8255 is running and wallet is unlocked in another tab.');
-    log('info', 'Click "waitForAuthentication" first to establish the session.');
+    // Track iframe load status
+    iframe.addEventListener('load', () => {
+      iframeStatusEl.textContent = 'loaded';
+      iframeStatusEl.className = 'status ok';
+    });
+    iframe.addEventListener('error', () => {
+      iframeStatusEl.textContent = 'error';
+      iframeStatusEl.className = 'status err';
+    });
+
+    log('info', 'Ready. Click waitForAuth first.');
   </script>
 </body>
 </html>

@@ -1,14 +1,7 @@
 "use client";
 
-import {
-	CheckCircle,
-	ExternalLink,
-	Loader2,
-	Lock,
-	Shield,
-	ShieldAlert,
-	X,
-} from "lucide-react";
+import { useEffect } from "react";
+import { CheckCircle, ShieldAlert, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -177,18 +170,6 @@ function PermissionCard({
 	);
 }
 
-function OpenWalletButton() {
-	return (
-		<Button
-			variant="outline"
-			onClick={() => window.open(window.location.origin, "_blank")}
-		>
-			<ExternalLink className="h-4 w-4 mr-1" />
-			Open 1Sat Wallet
-		</Button>
-	);
-}
-
 export default function CWIPage() {
 	const {
 		status,
@@ -198,58 +179,22 @@ export default function CWIPage() {
 		denyPermission,
 	} = useCWIBridge();
 
-	// Checking — waiting for wallet tab response
-	if (status === "checking") {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
-				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-			</div>
+	// Notify parent frame about CWI state so it can resize the iframe.
+	useEffect(() => {
+		if (!window.parent || window.parent === window) return;
+		window.parent.postMessage(
+			{
+				type: "CWI",
+				cwiState: {
+					status,
+					hasPermission: !!activePermission,
+				},
+			},
+			"*",
 		);
-	}
+	}, [status, activePermission]);
 
-	// No wallet tab responding
-	if (status === "no-wallet") {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
-				<Card className="w-full max-w-sm">
-					<CardHeader className="text-center">
-						<ShieldAlert className="h-10 w-10 mx-auto text-destructive mb-2" />
-						<CardTitle className="text-lg">Wallet Not Available</CardTitle>
-						<CardDescription>
-							Open 1Sat Wallet in another tab to use CWI.
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="flex justify-center">
-						<OpenWalletButton />
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
-
-	// Wallet is locked
-	if (status === "locked") {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
-				<Card className="w-full max-w-sm">
-					<CardHeader className="text-center space-y-1">
-						<div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
-							<Lock className="w-5 h-5 text-primary" />
-						</div>
-						<CardTitle className="text-lg">Wallet Locked</CardTitle>
-						<CardDescription>
-							Unlock your wallet in the 1Sat Wallet tab to continue.
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="flex justify-center">
-						<OpenWalletButton />
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
-
-	// Permission request pending
+	// Permission request pending — show dialog over dApp with solid background
 	if (activePermission) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -263,21 +208,7 @@ export default function CWIPage() {
 		);
 	}
 
-	// CWI active — bridge is relaying
-	return (
-		<div className="min-h-screen flex items-center justify-center bg-background p-4">
-			<Card className="w-full max-w-sm">
-				<CardHeader className="text-center space-y-1">
-					<div className="mx-auto bg-emerald-500/10 p-3 rounded-full w-fit mb-2">
-						<Shield className="w-5 h-5 text-emerald-500" />
-					</div>
-					<CardTitle className="text-lg">CWI Active</CardTitle>
-					<CardDescription>Wallet is ready to receive requests</CardDescription>
-				</CardHeader>
-				<CardContent className="text-center">
-					<Badge variant="default">Listening</Badge>
-				</CardContent>
-			</Card>
-		</div>
-	);
+	// All other states: transparent so the iframe is invisible over the host
+	// dApp. The bridge still relays postMessage regardless of UI state.
+	return <div className="min-h-screen" />;
 }

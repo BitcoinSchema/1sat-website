@@ -335,20 +335,75 @@ export class CWIRelay {
 			return;
 		}
 
-		const status = this.getStatus();
-		const wallet = this.getWallet();
-		if (!wallet || status !== "unlocked") {
-			this.channel.postMessage({
-				type: "cwi-response",
-				id,
-				status: "error",
-				description:
-					status === "locked" ? "Wallet is locked" : "Wallet not available",
-				code: 1,
-			});
-			return;
+		// Auth methods are exempt from the locked check — they exist
+		// specifically to query/wait for authentication state.
+		const AUTH_EXEMPT = call === "waitForAuthentication" || call === "isAuthenticated";
+
+		if (!AUTH_EXEMPT) {
+			const status = this.getStatus();
+			const wallet = this.getWallet();
+			if (!wallet || status !== "unlocked") {
+				this.channel.postMessage({
+					type: "cwi-response",
+					id,
+					status: "error",
+					description:
+						status === "locked" ? "Wallet is locked" : "Wallet not available",
+					code: 1,
+				});
+				return;
+			}
+		} else {
+			// For auth methods when wallet isn't available yet, handle inline.
+			const wallet = this.getWallet();
+			if (!wallet) {
+				if (call === "isAuthenticated") {
+					this.channel.postMessage({
+						type: "cwi-response",
+						id,
+						result: { authenticated: false },
+					});
+					return;
+				}
+				// waitForAuthentication: poll until WPM becomes available
+				const started = Date.now();
+				const poll = (): void => {
+					const w = this.getWallet();
+					if (w) {
+						// WPM available — delegate to normal flow
+						void this.dispatchToWallet(w, id, call, args, originator);
+						return;
+					}
+					if (Date.now() - started > 30_000) {
+						this.channel.postMessage({
+							type: "cwi-response",
+							id,
+							status: "error",
+							description: "Wallet not available (timeout)",
+							code: 1,
+						});
+						return;
+					}
+					setTimeout(poll, 500);
+				};
+				poll();
+				return;
+			}
 		}
 
+		// At this point, wallet is guaranteed available (non-exempt checked above,
+		// exempt with null wallet already handled with early return/poll).
+		const wallet = this.getWallet()!;
+		await this.dispatchToWallet(wallet, id, call, args, originator);
+	}
+
+	private async dispatchToWallet(
+		wallet: WalletPermissionsManager,
+		id: string,
+		call: string,
+		args: unknown,
+		originator: string,
+	): Promise<void> {
 		try {
 			if (call === "getBalance") {
 				const result = await this.getBalance();
