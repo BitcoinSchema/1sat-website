@@ -1,5 +1,5 @@
-import { Loader2, RotateCcw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Check, Copy, Loader2, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +54,15 @@ export function MnemonicGrid({
 		  }
 		| undefined
 	>();
+
+	// Copy to clipboard state (view mode)
+	const [copied, setCopied] = useState(false)
+	const copyMnemonic = useCallback(async () => {
+		if (!mnemonic) return
+		await navigator.clipboard.writeText(mnemonic)
+		setCopied(true)
+		setTimeout(() => setCopied(false), 2000)
+	}, [mnemonic])
 
 	// Prove mode state
 	const [proveInput, setProveInput] = useState<string[]>(Array(12).fill(""));
@@ -238,6 +247,24 @@ export function MnemonicGrid({
 							/>
 						</div>
 					))}
+				</div>
+			)}
+
+			{mode === "view" && mnemonic && (
+				<div className="flex justify-center">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-muted-foreground"
+						onClick={copyMnemonic}
+					>
+						{copied ? (
+							<Check className="mr-2 h-4 w-4" />
+						) : (
+							<Copy className="mr-2 h-4 w-4" />
+						)}
+						{copied ? "Copied" : "Copy to clipboard"}
+					</Button>
 				</div>
 			)}
 
