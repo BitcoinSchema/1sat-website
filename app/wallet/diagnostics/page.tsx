@@ -9,7 +9,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	Page,
 	PageContent,
@@ -28,6 +28,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useSound } from "@/hooks/use-sound";
 import { wifToAddress, wifToRootKeyHex } from "@/lib/keys";
+import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
+import { detectMigrationStatus } from "@/lib/wallet-migration";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
@@ -84,6 +86,50 @@ export default function WalletDiagnosticPage() {
 	const rootKeyHex = wallet.walletKeys?.payPk
 		? wifToRootKeyHex(wallet.walletKeys.payPk)
 		: null;
+	const identityAddress = wallet.walletKeys?.identityPk
+		? wifToAddress(wallet.walletKeys.identityPk)
+		: null;
+	const identityRootKeyHex = wallet.walletKeys?.identityPk
+		? wifToRootKeyHex(wallet.walletKeys.identityPk)
+		: null;
+
+	// Migration status
+	const migrationStatus = useMemo(() => {
+		if (!wallet.walletKeys || wallet.isWalletLocked) return null;
+		return detectMigrationStatus(wallet.walletKeys);
+	}, [wallet.walletKeys, wallet.isWalletLocked]);
+
+	// Quick scan state
+	const [legacyUtxoCounts, setLegacyUtxoCounts] = useState<{
+		pay: number | null;
+		ord: number | null;
+	}>({ pay: null, ord: null });
+	const [isScanning, setIsScanning] = useState(false);
+
+	const quickScan = async () => {
+		if (migrationStatus?.status !== "legacy") return;
+		setIsScanning(true);
+		try {
+			const gp = new GorillaPoolService();
+			const [payUtxos, ordUtxos] = await Promise.all([
+				gp.getUnspentOutputs(migrationStatus.legacyPayAddress),
+				migrationStatus.legacyPayAddress !== migrationStatus.legacyOrdAddress
+					? gp.getUnspentOutputs(migrationStatus.legacyOrdAddress)
+					: Promise.resolve([]),
+			]);
+			setLegacyUtxoCounts({
+				pay: payUtxos.length,
+				ord:
+					migrationStatus.legacyPayAddress !== migrationStatus.legacyOrdAddress
+						? ordUtxos.length
+						: null,
+			});
+		} catch {
+			setLegacyUtxoCounts({ pay: null, ord: null });
+		} finally {
+			setIsScanning(false);
+		}
+	};
 
 	// Test wallet-toolbox initialization
 	const testToolboxInit = async () => {
@@ -185,9 +231,58 @@ export default function WalletDiagnosticPage() {
 			status: ordAddress ? "success" : "warning",
 		},
 		{
-			label: "Root Key Hex",
+			label: "Root Key Hex (from Pay)",
 			value: rootKeyHex ? `${rootKeyHex.slice(0, 16)}...` : null,
 			status: rootKeyHex ? "success" : "warning",
+		},
+		{
+			label: "Identity Key (WIF)",
+			value: wallet.walletKeys?.identityPk
+				? `${wallet.walletKeys.identityPk.slice(0, 12)}...`
+				: null,
+			status: wallet.walletKeys?.identityPk ? "success" : "warning",
+		},
+		{
+			label: "Identity Address",
+			value: identityAddress,
+			status: identityAddress ? "success" : "warning",
+		},
+		{
+			label: "Root Key Hex (from Identity)",
+			value: identityRootKeyHex
+				? `${identityRootKeyHex.slice(0, 16)}...`
+				: null,
+			status: identityRootKeyHex ? "success" : "info",
+		},
+		{
+			label: "Mnemonic Present",
+			value: !!wallet.walletKeys?.mnemonic,
+			status: wallet.walletKeys?.mnemonic ? "success" : "info",
+		},
+		{
+			label: "Change Address Path",
+			value: wallet.walletKeys?.changeAddressPath ?? null,
+			status: "info",
+		},
+		{
+			label: "Ord Address Path",
+			value: wallet.walletKeys?.ordAddressPath ?? null,
+			status: "info",
+		},
+		{
+			label: "Identity Address Path",
+			value: wallet.walletKeys?.identityAddressPath ?? null,
+			status: "info",
+		},
+		{
+			label: "Migration Status",
+			value: migrationStatus?.status ?? "unknown",
+			status:
+				migrationStatus?.status === "migrated"
+					? "success"
+					: migrationStatus?.status === "legacy"
+						? "warning"
+						: "error",
 		},
 	];
 
@@ -343,6 +438,172 @@ export default function WalletDiagnosticPage() {
 					</CardContent>
 				</Card>
 
+				{/* Migration Status */}
+				<Card>
+					<CardHeader>
+						<div className="flex items-center justify-between">
+							<div>
+								<CardTitle className="text-lg">Migration Status</CardTitle>
+								<CardDescription>
+									Identity key derivation and legacy sweep status
+								</CardDescription>
+							</div>
+							<Badge
+								variant={
+									migrationStatus?.status === "migrated"
+										? "default"
+										: migrationStatus?.status === "legacy"
+											? "secondary"
+											: "destructive"
+								}
+							>
+								{migrationStatus?.status ?? "unknown"}
+							</Badge>
+						</div>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						{migrationStatus?.status === "legacy" && (
+							<>
+								<div className="space-y-2 text-sm">
+									<div className="flex justify-between">
+										<span className="text-muted-foreground">
+											Legacy Pay Address
+										</span>
+										<code className="text-xs font-mono bg-muted px-2 py-1 max-w-[300px] truncate">
+											{migrationStatus.legacyPayAddress}
+										</code>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-muted-foreground">
+											Legacy Ord Address
+										</span>
+										<code className="text-xs font-mono bg-muted px-2 py-1 max-w-[300px] truncate">
+											{migrationStatus.legacyOrdAddress}
+										</code>
+									</div>
+									{legacyUtxoCounts.pay !== null && (
+										<div className="flex justify-between">
+											<span className="text-muted-foreground">
+												Legacy Pay UTXOs
+											</span>
+											<code className="text-xs font-mono bg-muted px-2 py-1">
+												{legacyUtxoCounts.pay}
+											</code>
+										</div>
+									)}
+									{legacyUtxoCounts.ord !== null && (
+										<div className="flex justify-between">
+											<span className="text-muted-foreground">
+												Legacy Ord UTXOs
+											</span>
+											<code className="text-xs font-mono bg-muted px-2 py-1">
+												{legacyUtxoCounts.ord}
+											</code>
+										</div>
+									)}
+								</div>
+								<div className="flex gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={quickScan}
+										disabled={isScanning}
+									>
+										{isScanning ? "Scanning..." : "Quick Scan UTXOs"}
+									</Button>
+									<Button size="sm" asChild>
+										<Link href="/wallet/migrate">Open Migration Tool</Link>
+									</Button>
+								</div>
+							</>
+						)}
+
+						{migrationStatus?.status === "migrated" && (
+							<div className="text-sm text-muted-foreground">
+								Wallet is using the identity key system. No migration needed.
+							</div>
+						)}
+
+						{migrationStatus?.status === "unmigrateable" && (
+							<div className="text-sm text-destructive">
+								Wallet is missing required keys for migration.
+							</div>
+						)}
+					</CardContent>
+				</Card>
+
+				{/* Address Comparison */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-lg">Address Comparison</CardTitle>
+						<CardDescription>
+							Side-by-side view of wallet addresses and root key sources
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="overflow-x-auto">
+							<table className="w-full text-sm">
+								<thead>
+									<tr className="border-b border-border/50">
+										<th className="text-left py-2 pr-4 text-muted-foreground font-normal">
+											Role
+										</th>
+										<th className="text-left py-2 text-muted-foreground font-normal">
+											Address / Value
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr className="border-b border-border/50">
+										<td className="py-2 pr-4 text-muted-foreground">
+											Legacy Pay
+										</td>
+										<td className="py-2">
+											<code className="text-xs font-mono break-all">
+												{payAddress || "n/a"}
+											</code>
+										</td>
+									</tr>
+									<tr className="border-b border-border/50">
+										<td className="py-2 pr-4 text-muted-foreground">
+											Legacy Ord
+										</td>
+										<td className="py-2">
+											<code className="text-xs font-mono break-all">
+												{ordAddress || "n/a"}
+											</code>
+										</td>
+									</tr>
+									<tr className="border-b border-border/50">
+										<td className="py-2 pr-4 text-muted-foreground">
+											Identity
+										</td>
+										<td className="py-2">
+											<code className="text-xs font-mono break-all">
+												{identityAddress || "not derived"}
+											</code>
+										</td>
+									</tr>
+									<tr>
+										<td className="py-2 pr-4 text-muted-foreground">
+											BRC-100 Root Source
+										</td>
+										<td className="py-2">
+											<Badge
+												variant={identityRootKeyHex ? "default" : "secondary"}
+											>
+												{identityRootKeyHex
+													? "Identity Key"
+													: "Pay Key (legacy)"}
+											</Badge>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</CardContent>
+				</Card>
+
 				{/* Test Actions */}
 				<Card>
 					<CardHeader>
@@ -360,7 +621,9 @@ export default function WalletDiagnosticPage() {
 							<Button
 								variant="outline"
 								onClick={() => toolbox.syncWallet()}
-								disabled={!toolbox.isInitialized || toolbox.syncStatus.isSyncing}
+								disabled={
+									!toolbox.isInitialized || toolbox.syncStatus.isSyncing
+								}
 							>
 								{toolbox.syncStatus.isSyncing ? "Syncing..." : "Sync Toolbox"}
 							</Button>

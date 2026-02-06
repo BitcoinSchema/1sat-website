@@ -2,17 +2,16 @@
 
 import {
 	createContext,
-	prepareSweepInputs,
-	sweepBsv,
-	sweepBsv21,
-	sweepOrdinals,
-	type OneSatContext,
 	type SweepBsv21Input,
 	type SweepInput,
 	type SweepOrdinalInput,
+	sweepBsv,
+	sweepBsv21,
+	sweepOrdinals,
 } from "@1sat/actions";
-import type { WalletInterface } from "@bsv/sdk";
 import type { OneSatServices } from "@1sat/wallet-browser";
+import type { WalletInterface } from "@bsv/sdk";
+import type { WalletOrdinal } from "@/lib/types/ordinals";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
 
 export interface MigrationSweepParams {
@@ -23,6 +22,41 @@ export interface MigrationSweepParams {
 	legacyPayAddress: string;
 	legacyOrdAddress: string;
 	onProgress: (stage: string) => void;
+	// Pre-scanned assets (if all three provided, skip scanning)
+	fundingUtxos?: WalletOrdinal[];
+	ordinalUtxos?: WalletOrdinal[];
+	bsv21Utxos?: WalletOrdinal[];
+}
+
+interface CategorizedUtxos {
+	ordinals: WalletOrdinal[];
+	bsv20Tokens: WalletOrdinal[];
+	bsv21Tokens: WalletOrdinal[];
+	funding: WalletOrdinal[];
+}
+
+async function scanLegacyAddresses(
+	params: MigrationSweepParams,
+): Promise<CategorizedUtxos> {
+	const { legacyPayAddress, legacyOrdAddress, onProgress } = params;
+	const gp = new GorillaPoolService();
+
+	onProgress("Scanning legacy addresses...");
+	const addresses = [legacyOrdAddress];
+	if (legacyPayAddress !== legacyOrdAddress) {
+		addresses.push(legacyPayAddress);
+	}
+
+	const allUtxoResults = await Promise.all(
+		addresses.map((addr) => gp.getCategorizedUtxos(addr)),
+	);
+
+	return {
+		ordinals: allUtxoResults.flatMap((r) => r.ordinals),
+		bsv20Tokens: allUtxoResults.flatMap((r) => r.bsv20Tokens),
+		bsv21Tokens: allUtxoResults.flatMap((r) => r.bsv21Tokens),
+		funding: allUtxoResults.flatMap((r) => r.funding),
+	};
 }
 
 export interface SweepResult {
@@ -41,7 +75,6 @@ export async function executeMigrationSweep(
 		legacyPayWif,
 		legacyOrdWif,
 		legacyPayAddress,
-		legacyOrdAddress,
 		onProgress,
 	} = params;
 
@@ -52,31 +85,20 @@ export async function executeMigrationSweep(
 	};
 
 	const ctx = createContext(wallet, { services, chain: "main" });
-	const gp = new GorillaPoolService();
 
-	// 1. Fetch categorized UTXOs for both legacy addresses
-	onProgress("Scanning legacy addresses...");
-	const addresses = [legacyOrdAddress];
-	if (legacyPayAddress !== legacyOrdAddress) {
-		addresses.push(legacyPayAddress);
-	}
-
-	const allUtxoResults = await Promise.all(
-		addresses.map((addr) => gp.getCategorizedUtxos(addr)),
-	);
-
-	// Merge results
-	const merged = {
-		ordinals: allUtxoResults.flatMap((r) => r.ordinals),
-		bsv20Tokens: allUtxoResults.flatMap((r) => r.bsv20Tokens),
-		bsv21Tokens: allUtxoResults.flatMap((r) => r.bsv21Tokens),
-		funding: allUtxoResults.flatMap((r) => r.funding),
-	};
+	// 1. Use pre-scanned assets if all provided, otherwise scan
+	const merged: CategorizedUtxos =
+		params.fundingUtxos && params.ordinalUtxos && params.bsv21Utxos
+			? {
+					ordinals: params.ordinalUtxos,
+					bsv20Tokens: [] as WalletOrdinal[],
+					bsv21Tokens: params.bsv21Utxos,
+					funding: params.fundingUtxos,
+				}
+			: await scanLegacyAddresses(params);
 
 	const totalAssets =
-		merged.ordinals.length +
-		merged.bsv21Tokens.length +
-		merged.funding.length;
+		merged.ordinals.length + merged.bsv21Tokens.length + merged.funding.length;
 
 	if (totalAssets === 0) {
 		onProgress("No assets found at legacy addresses");
@@ -114,16 +136,14 @@ export async function executeMigrationSweep(
 	if (merged.ordinals.length > 0) {
 		onProgress(`Sweeping ${merged.ordinals.length} ordinals...`);
 		try {
-			const ordinalInputs: SweepOrdinalInput[] = merged.ordinals.map(
-				(u) => ({
-					outpoint: u.outpoint,
-					satoshis: u.satoshis,
-					lockingScript: u.script,
-					contentType: u.origin?.data?.insc?.file?.type,
-					origin: u.origin?.outpoint,
-					name: u.origin?.map?.name as string | undefined,
-				}),
-			);
+			const ordinalInputs: SweepOrdinalInput[] = merged.ordinals.map((u) => ({
+				outpoint: u.outpoint,
+				satoshis: u.satoshis,
+				lockingScript: u.script,
+				contentType: u.origin?.data?.insc?.file?.type,
+				origin: u.origin?.outpoint,
+				name: u.origin?.map?.name as string | undefined,
+			}));
 
 			// Determine which WIF controls each ordinal based on owner address
 			const ordWif =
@@ -161,21 +181,20 @@ export async function executeMigrationSweep(
 		}
 
 		for (const [tokenId, tokens] of tokenGroups) {
-			onProgress(`Sweeping ${tokens.length} tokens (${tokenId.slice(0, 8)}...)...`);
+			onProgress(
+				`Sweeping ${tokens.length} tokens (${tokenId.slice(0, 8)}...)...`,
+			);
 			try {
 				const tokenInputs: SweepBsv21Input[] = tokens.map((u) => ({
 					outpoint: u.outpoint,
 					satoshis: u.satoshis,
 					lockingScript: u.script,
 					tokenId,
-					amount:
-						u.data?.bsv21?.amt ?? u.origin?.data?.bsv21?.amt ?? "0",
+					amount: u.data?.bsv21?.amt ?? u.origin?.data?.bsv21?.amt ?? "0",
 				}));
 
 				const tokenWif =
-					tokens[0].owner === legacyPayAddress
-						? legacyPayWif
-						: legacyOrdWif;
+					tokens[0].owner === legacyPayAddress ? legacyPayWif : legacyOrdWif;
 
 				const tokenResult = await sweepBsv21.execute(ctx, {
 					inputs: tokenInputs,
