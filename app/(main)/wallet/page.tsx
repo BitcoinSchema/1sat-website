@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import {
 	Page,
@@ -15,16 +16,19 @@ import { TransactionTimeline } from "@/components/wallet/transaction-timeline";
 import { WalletTabs } from "@/components/wallet/wallet-tabs";
 import { detectMigrationStatus } from "@/lib/wallet-migration";
 import { useWallet } from "@/providers/wallet-provider";
+import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 export default function WalletPage() {
+	const { walletKeys, isWalletLocked } = useWallet();
 	const {
 		balance,
-		transactions,
-		utxos,
 		syncWallet,
-		walletKeys,
-		isWalletLocked,
-	} = useWallet();
+		wallet,
+		isInitialized,
+		ordinals,
+		bsv20Tokens,
+		bsv21Tokens,
+	} = useWalletToolbox();
 
 	const migrationStatus = useMemo(() => {
 		if (!walletKeys || isWalletLocked) return null;
@@ -41,13 +45,28 @@ export default function WalletPage() {
 		return (satoshis / 100000000).toFixed(8);
 	};
 
-	// Calculate stats
-	const totalUTXOs = utxos.length;
-	const recentTxCount = transactions.filter((tx) => {
-		const txDate = new Date(tx.timestamp);
-		const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-		return txDate > dayAgo;
-	}).length;
+	const walletScope = walletKeys?.identityPk ?? walletKeys?.payPk ?? "unknown";
+
+	// Fetch actions (transactions) via BRC-100 wallet
+	const actionsQuery = useQuery({
+		queryKey: ["wallet-actions", walletScope],
+		queryFn: async () => {
+			if (!wallet) throw new Error("Wallet not initialized");
+			const result = await wallet.listActions({
+				labels: [],
+				includeLabels: true,
+				includeInputs: true,
+				includeOutputs: true,
+				limit: 100,
+			});
+			return result.actions;
+		},
+		enabled: isInitialized && !!wallet,
+		staleTime: 30_000,
+	});
+
+	const actions = actionsQuery.data ?? [];
+	const outgoingCount = actions.filter((a) => a.isOutgoing).length;
 
 	return (
 		<Page>
@@ -87,37 +106,33 @@ export default function WalletPage() {
 						</Card>
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">UTXOs</CardTitle>
+								<CardTitle className="text-sm font-medium">Ordinals</CardTitle>
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">{totalUTXOs}</div>
-								<p className="text-xs text-muted-foreground">Unspent outputs</p>
-							</CardContent>
-						</Card>
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									Transactions
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">{transactions.length}</div>
+								<div className="text-2xl font-bold">{ordinals.length}</div>
 								<p className="text-xs text-muted-foreground">
-									Total transactions
+									Indexed inscriptions
 								</p>
 							</CardContent>
 						</Card>
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+								<CardTitle className="text-sm font-medium">Actions</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<div className="text-2xl font-bold">{actions.length}</div>
+								<p className="text-xs text-muted-foreground">Total actions</p>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 								<CardTitle className="text-sm font-medium">
-									24h Activity
+									Outgoing
 								</CardTitle>
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">{recentTxCount}</div>
-								<p className="text-xs text-muted-foreground">
-									Recent transactions
-								</p>
+								<div className="text-2xl font-bold">{outgoingCount}</div>
+								<p className="text-xs text-muted-foreground">Outgoing actions</p>
 							</CardContent>
 						</Card>
 					</div>
@@ -125,28 +140,28 @@ export default function WalletPage() {
 					<div className="grid gap-4 md:grid-cols-2">
 						<Card className="min-h-[300px]">
 							<CardHeader>
-								<CardTitle>Recent Transactions</CardTitle>
+								<CardTitle>Recent Actions</CardTitle>
 							</CardHeader>
 							<CardContent>
-								{transactions.length > 0 ? (
+								{actions.length > 0 ? (
 									<div className="space-y-2">
-										{transactions.slice(0, 5).map((tx) => (
+										{actions.slice(0, 5).map((action) => (
 											<div
-												key={tx.txid}
+												key={action.txid}
 												className="flex justify-between items-center text-sm"
 											>
 												<div className="flex flex-col">
 													<span className="font-mono text-xs">
-														{tx.txid.substring(0, 8)}...
+														{action.txid.substring(0, 8)}...
 													</span>
 													<span className="text-xs text-muted-foreground">
-														{new Date(tx.timestamp).toLocaleString()}
+														{action.description}
 													</span>
 												</div>
 												<div className="text-right">
-													<div>{formatBSV(tx.satoshis)} BSV</div>
+													<div>{formatBSV(action.satoshis)} BSV</div>
 													<div className="text-xs text-muted-foreground">
-														{tx.status}
+														{action.status}
 													</div>
 												</div>
 											</div>
@@ -154,64 +169,36 @@ export default function WalletPage() {
 									</div>
 								) : (
 									<div className="text-sm text-muted-foreground">
-										No transactions yet
+										No actions yet
 									</div>
 								)}
 							</CardContent>
 						</Card>
 						<Card className="min-h-[300px]">
 							<CardHeader>
-								<CardTitle>UTXO Distribution</CardTitle>
+								<CardTitle>Asset Summary</CardTitle>
 							</CardHeader>
 							<CardContent>
-								{utxos.length > 0 ? (
-									<div className="space-y-2">
-										<div className="text-sm">
-											<div className="flex justify-between mb-1">
-												<span>Total UTXOs:</span>
-												<span className="font-mono">{utxos.length}</span>
-											</div>
-											<div className="flex justify-between mb-1">
-												<span>Largest UTXO:</span>
-												<span className="font-mono">
-													{utxos.length > 0
-														? formatBSV(
-																Math.max(...utxos.map((u) => u.satoshis)),
-															)
-														: "0"}{" "}
-													BSV
-												</span>
-											</div>
-											<div className="flex justify-between mb-1">
-												<span>Smallest UTXO:</span>
-												<span className="font-mono">
-													{utxos.length > 0
-														? formatBSV(
-																Math.min(...utxos.map((u) => u.satoshis)),
-															)
-														: "0"}{" "}
-													BSV
-												</span>
-											</div>
-											<div className="flex justify-between">
-												<span>Average UTXO:</span>
-												<span className="font-mono">
-													{utxos.length > 0
-														? formatBSV(
-																utxos.reduce((sum, u) => sum + u.satoshis, 0) /
-																	utxos.length,
-															)
-														: "0"}{" "}
-													BSV
-												</span>
-											</div>
-										</div>
+								<div className="space-y-2 text-sm">
+									<div className="flex justify-between">
+										<span>Ordinals</span>
+										<span className="font-mono">{ordinals.length}</span>
 									</div>
-								) : (
-									<div className="text-sm text-muted-foreground">
-										No UTXOs available
+									<div className="flex justify-between">
+										<span>BSV20 Tokens</span>
+										<span className="font-mono">{bsv20Tokens.length}</span>
 									</div>
-								)}
+									<div className="flex justify-between">
+										<span>BSV21 Tokens</span>
+										<span className="font-mono">{bsv21Tokens.length}</span>
+									</div>
+									<div className="flex justify-between">
+										<span>Spendable Balance</span>
+										<span className="font-mono">
+											{formatBSV(balance?.total ?? 0)} BSV
+										</span>
+									</div>
+								</div>
 							</CardContent>
 						</Card>
 					</div>

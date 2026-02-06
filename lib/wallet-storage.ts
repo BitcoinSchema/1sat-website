@@ -8,6 +8,7 @@ import { PrivateKey, Utils } from "@bsv/sdk";
 import { useCallback, useEffect, useState } from "react";
 import {
 	ENCRYPTION_PREFIX,
+	OLD_IDENTITY_PK_KEY,
 	OLD_ORD_PK_KEY,
 	OLD_PAY_PK_KEY,
 	WALLET_STORAGE_KEY,
@@ -41,26 +42,37 @@ const getStorage = (storageType: StorageType): Storage | undefined => {
 };
 
 // --- Session Storage Handlers (Unencrypted Keys) ---
-export const saveSessionKeys = (payPk: string, ordPk: string) => {
+export const saveSessionKeys = (
+	payPk: string,
+	ordPk: string,
+	identityPk?: string,
+) => {
 	const storage = getStorage("sessionStorage");
 	if (storage) {
 		storage.setItem(OLD_PAY_PK_KEY, payPk);
 		storage.setItem(OLD_ORD_PK_KEY, ordPk);
+		if (identityPk) {
+			storage.setItem(OLD_IDENTITY_PK_KEY, identityPk);
+		} else {
+			storage.removeItem(OLD_IDENTITY_PK_KEY);
+		}
 	}
 };
 
 export const loadSessionKeys = (): {
 	payPk: string | null;
 	ordPk: string | null;
+	identityPk: string | null;
 } => {
 	const storage = getStorage("sessionStorage");
 	if (storage) {
 		return {
 			payPk: storage.getItem(OLD_PAY_PK_KEY),
 			ordPk: storage.getItem(OLD_ORD_PK_KEY),
+			identityPk: storage.getItem(OLD_IDENTITY_PK_KEY),
 		};
 	}
-	return { payPk: null, ordPk: null };
+	return { payPk: null, ordPk: null, identityPk: null };
 };
 
 export const clearSessionKeys = () => {
@@ -68,6 +80,7 @@ export const clearSessionKeys = () => {
 	if (storage) {
 		storage.removeItem(OLD_PAY_PK_KEY);
 		storage.removeItem(OLD_ORD_PK_KEY);
+		storage.removeItem(OLD_IDENTITY_PK_KEY);
 	}
 };
 

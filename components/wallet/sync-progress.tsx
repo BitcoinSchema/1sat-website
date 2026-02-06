@@ -3,10 +3,11 @@
 /**
  * Sync Progress Component
  *
- * Shows sync status based on balance query state.
+ * Shows sync status based on balance query state plus monitor task indicators.
  */
 
 import { RefreshCw } from "lucide-react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
@@ -22,11 +23,39 @@ export function SyncProgress({
 	showButton = true,
 	compact = false,
 }: SyncProgressProps) {
-	const { syncStatus, syncWallet, isInitialized } = useWalletToolbox();
+	const { syncStatus, syncWallet, isInitialized, walletEvents } =
+		useWalletToolbox();
+
+	// Derive monitor stats from walletEvents
+	const { lastProvenHeight, hasRecentTasks } = useMemo(() => {
+		let lastHeight = 0;
+		let latestTaskTimestamp = 0;
+		for (const e of walletEvents) {
+			if (e.type === "proven" && e.blockHeight > lastHeight) {
+				lastHeight = e.blockHeight;
+			}
+			if (e.type === "task:run" && e.timestamp > latestTaskTimestamp) {
+				latestTaskTimestamp = e.timestamp;
+			}
+		}
+		// Consider tasks "recent" if one ran within the last 30 seconds
+		const recent = latestTaskTimestamp > Date.now() - 30_000;
+		return { lastProvenHeight: lastHeight || null, hasRecentTasks: recent };
+	}, [walletEvents]);
+
+	const monitorActive = syncStatus.isSyncing || hasRecentTasks;
 
 	if (compact) {
 		return (
 			<div className={cn("flex items-center gap-2", className)}>
+				{/* Pulsing dot when monitor tasks are running */}
+				{monitorActive && (
+					<span className="relative flex size-2">
+						<span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+						<span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+					</span>
+				)}
+
 				{syncStatus.isSyncing ? (
 					<>
 						<RefreshCw className="size-4 animate-spin text-muted-foreground" />
@@ -50,6 +79,13 @@ export function SyncProgress({
 						</Button>
 					)
 				)}
+
+				{/* Last proven block height */}
+				{lastProvenHeight && (
+					<span className="font-mono text-[10px] text-muted-foreground">
+						blk {lastProvenHeight.toLocaleString()}
+					</span>
+				)}
 			</div>
 		);
 	}
@@ -71,7 +107,14 @@ export function SyncProgress({
 							</>
 						) : syncStatus.lastSync ? (
 							<>
-								<span className="size-2 rounded-full bg-green-500" />
+								{monitorActive ? (
+									<span className="relative flex size-2">
+										<span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+										<span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+									</span>
+								) : (
+									<span className="size-2 rounded-full bg-green-500" />
+								)}
 								<span className="text-sm text-muted-foreground">
 									Synced at {syncStatus.lastSync.toLocaleTimeString()}
 								</span>
@@ -83,6 +126,13 @@ export function SyncProgress({
 									Not synced yet
 								</span>
 							</>
+						)}
+
+						{/* Last proven block height indicator */}
+						{lastProvenHeight && (
+							<span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+								blk {lastProvenHeight.toLocaleString()}
+							</span>
 						)}
 					</div>
 					{showButton && (

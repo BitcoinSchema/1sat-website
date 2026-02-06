@@ -1,25 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-
-import * as React from "react";
+import type { ReactNode } from "react";
 import {
 	createContext,
 	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useState,
 } from "react";
-import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import { WALLET_STORAGE_KEY } from "@/lib/constants";
 import { deriveIdentityKey, findKeysFromMnemonic } from "@/lib/keys";
 import type { Keys } from "@/lib/types";
-import type {
-	UTXO,
-	WalletBalance,
-	WalletTransaction,
-} from "@/lib/wallet/types";
-import { WalletService } from "@/lib/wallet/wallet-service";
 import {
 	clearCachedEncryptionKey,
 	clearSessionKeys,
@@ -33,38 +26,22 @@ interface WalletContextType {
 	hasWallet: boolean;
 	isWalletLocked: boolean;
 	isWalletInitialized: boolean;
-	isSyncing: boolean;
 	walletKeys: Keys | null;
-	walletService: WalletService | null;
-	balance: WalletBalance | null;
-	exchangeRate: number | null;
-	transactions: WalletTransaction[];
-	utxos: UTXO[];
 	unlockWallet: (passphrase: string) => Promise<boolean>;
 	lockWallet: () => void;
 	createWallet: (mnemonic: string, passphrase: string) => Promise<boolean>;
 	importWallet: (keys: Keys, passphrase: string) => Promise<boolean>;
 	deleteWallet: () => void;
-	refreshBalance: () => Promise<void>;
-	syncWallet: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export function WalletProvider({ children }: { children: React.ReactNode }) {
+export function WalletProvider({ children }: { children: ReactNode }) {
 	const router = useRouter();
-	const { rate: exchangeRate } = useExchangeRate();
 	const [hasWallet, setHasWallet] = useState(false);
 	const [isWalletLocked, setIsWalletLocked] = useState(true);
 	const [isWalletInitialized, setIsWalletInitialized] = useState(false);
-	const [isSyncing, setIsSyncing] = useState(false);
 	const [walletKeys, setWalletKeys] = useState<Keys | null>(null);
-	const [walletService, setWalletService] = useState<WalletService | null>(
-		null,
-	);
-	const [balance, setBalance] = useState<WalletBalance | null>(null);
-	const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-	const [utxos, setUTXOs] = useState<UTXO[]>([]);
 
 	useEffect(() => {
 		const handleStorageChange = (event: StorageEvent) => {
@@ -80,25 +57,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 		return () => window.removeEventListener("storage", handleStorageChange);
 	}, []);
 
-	// Helper to refresh wallet data
-	const refreshWalletData = useCallback(async (service: WalletService) => {
-		try {
-			const [newBalance, newTransactions, newUTXOs] = await Promise.all([
-				service.getBalance(),
-				service.getTransactionHistory(),
-				service.getUTXOs(),
-			]);
-			setBalance(newBalance);
-			setTransactions(newTransactions);
-			setUTXOs(newUTXOs);
-		} catch (error) {
-			console.error("Error refreshing wallet data:", error);
-		}
-	}, []);
-
 	// Load wallet on mount
 	useEffect(() => {
-		// Check if an encrypted wallet exists in localStorage
 		const encryptedWalletExists =
 			typeof window !== "undefined" &&
 			!!localStorage.getItem(WALLET_STORAGE_KEY);
@@ -110,24 +70,16 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 			const keys: Keys = {
 				payPk: sessionKeys.payPk,
 				ordPk: sessionKeys.ordPk,
-				mnemonic: "", // Mnemonic might not be in session, but PKs are enough for most ops
+				identityPk: sessionKeys.identityPk ?? undefined,
+				mnemonic: "",
 			};
 			setWalletKeys(keys);
 			setIsWalletLocked(false);
-			setIsSyncing(true);
-
-			const service = new WalletService();
-			service.initialize(keys).then(() => {
-				setWalletService(service);
-				refreshWalletData(service).then(() => {
-					setIsSyncing(false);
-				});
-			});
 		} else {
-			setIsWalletLocked(encryptedWalletExists); // If it exists and not in session, it starts locked
+			setIsWalletLocked(encryptedWalletExists);
 		}
 		setIsWalletInitialized(true);
-	}, [refreshWalletData]);
+	}, []);
 
 	const unlockWallet = useCallback(
 		async (passphrase: string): Promise<boolean> => {
@@ -136,55 +88,29 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 				if (keys) {
 					setWalletKeys(keys);
 					setIsWalletLocked(false);
-					setIsSyncing(true);
-
-					// Initialize wallet service
-					const service = new WalletService();
-					await service.initialize(keys);
-					setWalletService(service);
-
-					// Load wallet data
-					await refreshWalletData(service);
-					setIsSyncing(false);
-
-					// Save to session storage
-					saveSessionKeys(keys.payPk, keys.ordPk);
-
+					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
 					return true;
 				}
 			} catch (error) {
 				console.error("Unlock failed:", error);
-				setIsSyncing(false);
 			}
 			return false;
 		},
-		[refreshWalletData],
+		[],
 	);
-	const lockWallet = useCallback(async () => {
-		// Close wallet service
-		if (walletService) {
-			await walletService.close();
-			setWalletService(null);
-		}
 
+	const lockWallet = useCallback(() => {
 		setWalletKeys(null);
 		setIsWalletLocked(true);
-		setBalance(null);
-		setTransactions([]);
-		setUTXOs([]);
-
 		clearSessionKeys();
 		clearCachedEncryptionKey();
-
-		// Optionally redirect to home or lock screen
 		router.push("/");
-	}, [router, walletService]);
+	}, [router]);
 
 	const createWallet = useCallback(
 		async (mnemonic: string, passphrase: string): Promise<boolean> => {
 			try {
 				const keys = await findKeysFromMnemonic(mnemonic);
-				// Derive identity key from pay + ord (SHA256 of concatenated key bytes)
 				const identityKey = deriveIdentityKey(keys.payPk, keys.ordPk);
 				keys.identityPk = identityKey.toWif();
 				keys.identityAddressPath = "derived";
@@ -193,36 +119,21 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 					setWalletKeys(keys);
 					setHasWallet(true);
 					setIsWalletLocked(false);
-					setIsSyncing(true);
-
-					// Initialize wallet service
-					const service = new WalletService();
-					await service.initialize(keys);
-					setWalletService(service);
-
-					// Load initial wallet data
-					await refreshWalletData(service);
-					setIsSyncing(false);
-
-					// Save to session storage
-					saveSessionKeys(keys.payPk, keys.ordPk);
-
+					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
 					router.push("/wallet");
 					return true;
 				}
 			} catch (error) {
 				console.error("Create wallet failed:", error);
-				setIsSyncing(false);
 			}
 			return false;
 		},
-		[router, refreshWalletData],
+		[router],
 	);
 
 	const importWallet = useCallback(
 		async (keys: Keys, passphrase: string): Promise<boolean> => {
 			try {
-				// Derive identity key if not present
 				if (!keys.identityPk && keys.payPk && keys.ordPk) {
 					const identityKey = deriveIdentityKey(keys.payPk, keys.ordPk);
 					keys.identityPk = identityKey.toWif();
@@ -233,33 +144,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 					setWalletKeys(keys);
 					setHasWallet(true);
 					setIsWalletLocked(false);
-					setIsSyncing(true);
-
-					// Initialize wallet service
-					const service = new WalletService();
-					await service.initialize(keys);
-					setWalletService(service);
-
-					// Load initial wallet data
-					await refreshWalletData(service);
-					setIsSyncing(false);
-
-					// Save to session storage
-					saveSessionKeys(keys.payPk, keys.ordPk);
-
+					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
 					router.push("/wallet");
 					return true;
 				}
 			} catch (error) {
 				console.error("Import wallet failed:", error);
-				setIsSyncing(false);
 			}
 			return false;
 		},
-		[router, refreshWalletData],
+		[router],
 	);
 
-	const deleteWallet = useCallback(async () => {
+	const deleteWallet = useCallback(() => {
 		if (typeof window !== "undefined") {
 			localStorage.removeItem(WALLET_STORAGE_KEY);
 			window.dispatchEvent(
@@ -269,90 +166,35 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 				}),
 			);
 		}
-
 		clearSessionKeys();
-
-		// Close wallet service
-		if (walletService) {
-			await walletService.close();
-			setWalletService(null);
-		}
-
 		setWalletKeys(null);
 		setHasWallet(false);
-		setIsWalletLocked(false); // Technically not locked if it doesn't exist, or irrelevant
-		setBalance(null);
-		setTransactions([]);
-		setUTXOs([]);
-
+		setIsWalletLocked(false);
 		router.push("/");
-	}, [router, walletService]);
+	}, [router]);
 
-	// Refresh balance
-	const refreshBalance = useCallback(async () => {
-		if (walletService) {
-			try {
-				const newBalance = await walletService.getBalance();
-				setBalance(newBalance);
-			} catch (error) {
-				console.error("Error refreshing balance:", error);
-			}
-		}
-	}, [walletService]);
-
-	// Sync wallet with blockchain
-	const syncWallet = useCallback(async () => {
-		if (walletService) {
-			setIsSyncing(true);
-			try {
-				await walletService.sync();
-				await refreshWalletData(walletService);
-			} catch (error) {
-				console.error("Error syncing wallet:", error);
-			} finally {
-				setIsSyncing(false);
-			}
-		}
-	}, [walletService, refreshWalletData]);
-
-	const value = React.useMemo(
+	const value = useMemo(
 		() => ({
 			hasWallet,
 			isWalletLocked,
 			isWalletInitialized,
-			isSyncing,
 			walletKeys,
-			walletService,
-			balance,
-			exchangeRate,
-			transactions,
-			utxos,
 			unlockWallet,
 			lockWallet,
 			createWallet,
 			importWallet,
 			deleteWallet,
-			refreshBalance,
-			syncWallet,
 		}),
 		[
 			hasWallet,
 			isWalletLocked,
 			isWalletInitialized,
-			isSyncing,
 			walletKeys,
-			walletService,
-			balance,
-			exchangeRate,
-			transactions,
-			utxos,
 			unlockWallet,
 			lockWallet,
 			createWallet,
 			importWallet,
 			deleteWallet,
-			refreshBalance,
-			syncWallet,
 		],
 	);
 

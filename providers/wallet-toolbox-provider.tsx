@@ -11,9 +11,11 @@
 
 import {
 	createWebWallet,
+	type MonitorEvent,
 	type OneSatServices,
 	type WebWalletResult,
 } from "@1sat/wallet-browser";
+import { toast } from "sonner";
 import { PrivateKey } from "@bsv/sdk";
 // TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
 import {
@@ -65,6 +67,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { TxoData } from "@/lib/types/ordinals";
 import type { Ordinal } from "@/lib/wallet/gorillapool-service";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
@@ -112,6 +115,16 @@ export interface SyncEvent {
 	message: string;
 }
 
+/** Typed wallet event (extends MonitorEvent with timestamp + id). */
+export type WalletEvent =
+	| { id: number; timestamp: number; type: "broadcast"; txid: string; status: string }
+	| { id: number; timestamp: number; type: "proven"; txid: string; blockHeight: number; blockHash: string }
+	| { id: number; timestamp: number; type: "sync:progress"; stage: string; message: string }
+	| { id: number; timestamp: number; type: "sync:backup"; message: string }
+	| { id: number; timestamp: number; type: "task:run"; taskName: string; result: string }
+	| { id: number; timestamp: number; type: "error"; source: string; message: string }
+	| { id: number; timestamp: number; type: "log"; level: SyncEventLevel; source: string; message: string };
+
 interface WalletToolboxContextValue {
 	// Wallet state
 	wallet: Wallet | null;
@@ -128,6 +141,8 @@ interface WalletToolboxContextValue {
 	syncWallet: () => void;
 	syncEvents: SyncEvent[];
 	clearSyncEvents: () => void;
+	walletEvents: WalletEvent[];
+	clearWalletEvents: () => void;
 	hasActiveSync: boolean;
 
 	// Balance and assets (from query)
@@ -137,6 +152,9 @@ interface WalletToolboxContextValue {
 	bsv21Tokens: TokenBalance[];
 	isBalanceLoading: boolean;
 	balanceError: Error | null;
+
+	// Exchange rate
+	exchangeRate: number | null;
 
 	// Actions
 	initializeWallet: (
@@ -220,6 +238,7 @@ export function WalletToolboxProvider({
 	chain = "main",
 }: WalletToolboxProviderProps) {
 	const queryClient = useQueryClient();
+	const { rate: exchangeRate } = useExchangeRate();
 
 	// Core wallet state
 	const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -242,6 +261,8 @@ export function WalletToolboxProvider({
 	const gorillaPoolRef = useRef(new GorillaPoolService());
 	const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
 	const syncEventIdRef = useRef(0);
+	const [walletEvents, setWalletEvents] = useState<WalletEvent[]>([]);
+	const walletEventIdRef = useRef(0);
 
 	const appendSyncEvent = useCallback(
 		(level: SyncEventLevel, source: string, message: string) => {
@@ -265,6 +286,34 @@ export function WalletToolboxProvider({
 
 	const clearSyncEvents = useCallback(() => {
 		setSyncEvents([]);
+	}, []);
+
+	const appendWalletEvent = useCallback((event: MonitorEvent) => {
+		const base = { id: ++walletEventIdRef.current, timestamp: Date.now() };
+		setWalletEvents((prev) => {
+			const next = [...prev, { ...base, ...event } as WalletEvent];
+			if (next.length <= SYNC_EVENT_LIMIT) return next;
+			return next.slice(next.length - SYNC_EVENT_LIMIT);
+		});
+
+		// Fire toast notifications for key events
+		switch (event.type) {
+			case "broadcast":
+				toast.success(`Transaction broadcast: ${event.txid.slice(0, 8)}...`);
+				break;
+			case "proven":
+				toast.success(
+					`Transaction confirmed at block ${event.blockHeight}`,
+				);
+				break;
+			case "error":
+				toast.error(`${event.source}: ${event.message}`);
+				break;
+		}
+	}, []);
+
+	const clearWalletEvents = useCallback(() => {
+		setWalletEvents([]);
 	}, []);
 
 	useEffect(() => {
@@ -315,7 +364,7 @@ export function WalletToolboxProvider({
 
 			const gp = gorillaPoolRef.current;
 
-			// Fetch fund outputs and categorized utxos in parallel
+			// Fetch spendable sat balance from wallet and categorized assets from indexers
 			const utxoPromises: Promise<
 				Awaited<ReturnType<typeof gp.getCategorizedUtxos>>
 			>[] = [gp.getCategorizedUtxos(ordAddress)];
@@ -330,21 +379,11 @@ export function WalletToolboxProvider({
 			}
 
 			const [fundOutputs, ...utxoResults] = await Promise.all([
-				wallet.listOutputs({ basket: "fund", include: "locking scripts" }),
+				wallet.balance(),
 				...utxoPromises,
 			]);
-			console.log(
-				`[WalletToolbox] listOutputs returned ${fundOutputs.outputs?.length ?? 0} outputs`,
-			);
-
-			let total = 0;
-			if (fundOutputs.outputs) {
-				for (const output of fundOutputs.outputs) {
-					if (output.spendable) {
-						total += output.satoshis || 0;
-					}
-				}
-			}
+			const total = fundOutputs ?? 0;
+			console.log(`[WalletToolbox] balance() returned ${total} sats`);
 
 			// Merge categorized utxo results
 			const categorized = utxoResults[0];
@@ -409,6 +448,7 @@ export function WalletToolboxProvider({
 					privateKey: rootKey,
 					chain,
 					storageIdentityKey: newIdentityKey,
+					onMonitorEvent: appendWalletEvent,
 				});
 
 				// Start the monitor for tx lifecycle management
@@ -426,7 +466,10 @@ export function WalletToolboxProvider({
 				);
 				// Hydrate WPM permission cache from IndexedDB (local fallback store)
 				try {
-					const localPerms = await loadLocalPermissions();
+					const localPerms = await loadLocalPermissions({
+						identityKey: newIdentityKey,
+						chain,
+					});
 					const cache = (
 						wpm as unknown as {
 							permissionCache: Map<
@@ -466,7 +509,7 @@ export function WalletToolboxProvider({
 				setIsInitializing(false);
 			}
 		},
-		[chain, isInitializing, isInitialized],
+		[chain, isInitializing, isInitialized, appendWalletEvent],
 	);
 
 	/**
@@ -552,6 +595,8 @@ export function WalletToolboxProvider({
 			syncWallet: refreshBalance,
 			syncEvents,
 			clearSyncEvents,
+			walletEvents,
+			clearWalletEvents,
 			hasActiveSync,
 			balance: balanceQuery.data?.balance ?? null,
 			ordinals: balanceQuery.data?.ordinals ?? [],
@@ -559,6 +604,7 @@ export function WalletToolboxProvider({
 			bsv21Tokens: balanceQuery.data?.bsv21Tokens ?? [],
 			isBalanceLoading: balanceQuery.isLoading,
 			balanceError: balanceQuery.error,
+			exchangeRate,
 			initializeWallet,
 			destroyWallet,
 			refreshBalance,
@@ -575,11 +621,14 @@ export function WalletToolboxProvider({
 			syncStatus,
 			syncEvents,
 			clearSyncEvents,
+			walletEvents,
+			clearWalletEvents,
 			hasActiveSync,
 			refreshBalance,
 			balanceQuery.data,
 			balanceQuery.isLoading,
 			balanceQuery.error,
+			exchangeRate,
 			initializeWallet,
 			destroyWallet,
 		],

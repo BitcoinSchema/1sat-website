@@ -612,7 +612,11 @@ export default function MigratePage() {
 			}
 
 			// 4. Update session storage
-			saveSessionKeys(updatedKeys.payPk, updatedKeys.ordPk);
+			saveSessionKeys(
+				updatedKeys.payPk,
+				updatedKeys.ordPk,
+				updatedKeys.identityPk,
+			);
 
 			// 5. Reinitialize BRC-100 wallet with identity key
 			setProgress("Reinitializing BRC-100 wallet...");

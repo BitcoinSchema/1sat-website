@@ -35,6 +35,7 @@ const VALID_METHODS = new Set([
 	"getHeaderForHeight",
 	"getNetwork",
 	"getVersion",
+	"getBalance",
 ]);
 
 export type WalletStatus = "checking" | "locked" | "unlocked" | "no-wallet";

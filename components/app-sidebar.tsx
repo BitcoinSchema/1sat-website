@@ -53,6 +53,7 @@ import { useSound } from "@/hooks/use-sound";
 import { PRIVACY_MODE_KEY } from "@/lib/constants";
 import { useSettingsStorage } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
+import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 const navData = [
 	{
@@ -94,14 +95,12 @@ const navData = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+	const { isWalletInitialized, hasWallet, walletKeys } = useWallet();
 	const {
-		isWalletInitialized,
-		hasWallet,
 		balance,
-		isSyncing,
-		walletKeys,
+		hasActiveSync: isSyncing,
 		exchangeRate,
-	} = useWallet();
+	} = useWalletToolbox();
 
 	const [isPrivacyModeEnabled] = useSettingsStorage<boolean>(
 		PRIVACY_MODE_KEY,

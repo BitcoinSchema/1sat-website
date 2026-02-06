@@ -142,21 +142,23 @@ export default function WalletDiagnosticPage() {
 			results.push("Starting wallet-toolbox initialization test...");
 
 			if (!wallet.walletKeys?.payPk) {
-				results.push("❌ No wallet keys available - unlock wallet first");
+				results.push("No wallet keys available - unlock wallet first");
 				setTestResults(results);
 				setIsTestingToolbox(false);
 				return;
 			}
 
-			results.push(`✅ Pay key available: ${payAddress?.slice(0, 8)}...`);
-			results.push(`✅ Ord key available: ${ordAddress?.slice(0, 8)}...`);
-			results.push(`✅ Root key hex length: ${rootKeyHex?.length} chars`);
+			results.push(`Pay key available: ${payAddress?.slice(0, 8)}...`);
+			results.push(`Ord key available: ${ordAddress?.slice(0, 8)}...`);
+			results.push(`Root key hex length: ${rootKeyHex?.length} chars`);
+			// TODO(wallet-v2): Use identity-derived root key for diagnostics init tests.
+			// This test currently uses pay-key root for backward compatibility checks.
 
 			// Try to initialize wallet-toolbox
 			if (!toolbox.isInitialized) {
-				results.push("🔄 Initializing wallet-toolbox...");
+				results.push("Initializing wallet-toolbox...");
 				if (!rootKeyHex || !ordAddress) {
-					results.push("❌ Missing derived wallet keys");
+					results.push("Missing derived wallet keys");
 					setTestResults(results);
 					setIsTestingToolbox(false);
 					return;
@@ -164,28 +166,24 @@ export default function WalletDiagnosticPage() {
 				const success = await toolbox.initializeWallet(rootKeyHex, ordAddress);
 
 				if (success) {
-					results.push("✅ Wallet-toolbox initialized successfully!");
-					results.push(
-						`✅ Identity key: ${toolbox.identityKey?.slice(0, 16)}...`,
-					);
+					results.push("Wallet-toolbox initialized successfully!");
+					results.push(`Identity key: ${toolbox.identityKey?.slice(0, 16)}...`);
 				} else {
-					results.push("❌ Wallet-toolbox initialization failed");
+					results.push("Wallet-toolbox initialization failed");
 				}
 			} else {
-				results.push("✅ Wallet-toolbox already initialized");
-				results.push(
-					`✅ Identity key: ${toolbox.identityKey?.slice(0, 16)}...`,
-				);
+				results.push("Wallet-toolbox already initialized");
+				results.push(`Identity key: ${toolbox.identityKey?.slice(0, 16)}...`);
 			}
 
 			// Test balance refresh
-			results.push("🔄 Refreshing balance...");
+			results.push("Refreshing balance...");
 			await toolbox.refreshBalance();
-			results.push(`✅ Balance: ${toolbox.balance?.total ?? 0} sats`);
-			results.push(`✅ Ordinals: ${toolbox.ordinals.length} items`);
+			results.push(`Balance: ${toolbox.balance?.total ?? 0} sats`);
+			results.push(`Ordinals: ${toolbox.ordinals.length} items`);
 		} catch (error) {
 			results.push(
-				`❌ Error: ${error instanceof Error ? error.message : String(error)}`,
+				`Error: ${error instanceof Error ? error.message : String(error)}`,
 			);
 		}
 
@@ -193,8 +191,8 @@ export default function WalletDiagnosticPage() {
 		setIsTestingToolbox(false);
 	};
 
-	// Provider diagnostics
-	const walletProviderDiagnostics: DiagnosticItem[] = [
+	// Key Manager diagnostics (stripped legacy provider)
+	const keyManagerDiagnostics: DiagnosticItem[] = [
 		{
 			label: "Has Wallet",
 			value: wallet.hasWallet,
@@ -209,16 +207,6 @@ export default function WalletDiagnosticPage() {
 			label: "Is Initialized",
 			value: wallet.isWalletInitialized,
 			status: wallet.isWalletInitialized ? "success" : "info",
-		},
-		{
-			label: "Is Syncing",
-			value: wallet.isSyncing,
-			status: wallet.isSyncing ? "info" : "success",
-		},
-		{
-			label: "Wallet Service",
-			value: wallet.walletService ? "Connected" : "Not Connected",
-			status: wallet.walletService ? "success" : "warning",
 		},
 		{
 			label: "Pay Address",
@@ -339,21 +327,6 @@ export default function WalletDiagnosticPage() {
 
 	const balanceDiagnostics: DiagnosticItem[] = [
 		{
-			label: "Legacy Balance (confirmed)",
-			value: wallet.balance?.confirmed ?? 0,
-			status: "info",
-		},
-		{
-			label: "Legacy Balance (unconfirmed)",
-			value: wallet.balance?.unconfirmed ?? 0,
-			status: "info",
-		},
-		{
-			label: "Legacy Balance (total)",
-			value: wallet.balance?.total ?? 0,
-			status: "info",
-		},
-		{
 			label: "Toolbox Balance (total)",
 			value: toolbox.balance?.total ?? 0,
 			status: "info",
@@ -361,8 +334,8 @@ export default function WalletDiagnosticPage() {
 		{ label: "Ordinals Count", value: toolbox.ordinals.length, status: "info" },
 		{
 			label: "Exchange Rate",
-			value: wallet.exchangeRate,
-			status: wallet.exchangeRate ? "success" : "warning",
+			value: toolbox.exchangeRate,
+			status: toolbox.exchangeRate ? "success" : "warning",
 		},
 	];
 
@@ -392,16 +365,16 @@ export default function WalletDiagnosticPage() {
 			</PageHeader>
 			<PageContent className="space-y-6">
 				<div className="grid gap-6 md:grid-cols-2">
-					{/* Legacy Wallet Provider */}
+					{/* Key Manager (stripped legacy provider) */}
 					<Card>
 						<CardHeader>
-							<CardTitle className="text-lg">Legacy Wallet Provider</CardTitle>
+							<CardTitle className="text-lg">Key Manager</CardTitle>
 							<CardDescription>
-								Current wallet-provider.tsx state
+								wallet-provider.tsx state (key storage only)
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							{walletProviderDiagnostics.map((item) => (
+							{keyManagerDiagnostics.map((item) => (
 								<DiagnosticRow key={item.label} item={item} />
 							))}
 						</CardContent>
@@ -412,7 +385,7 @@ export default function WalletDiagnosticPage() {
 						<CardHeader>
 							<CardTitle className="text-lg">Wallet Toolbox Provider</CardTitle>
 							<CardDescription>
-								New wallet-toolbox-provider.tsx state
+								wallet-toolbox-provider.tsx state
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -423,13 +396,11 @@ export default function WalletDiagnosticPage() {
 					</Card>
 				</div>
 
-				{/* Balance Comparison */}
+				{/* Balance */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="text-lg">Balance Comparison</CardTitle>
-						<CardDescription>
-							Compare balances between legacy and toolbox providers
-						</CardDescription>
+						<CardTitle className="text-lg">Balance</CardTitle>
+						<CardDescription>Toolbox balance and exchange rate</CardDescription>
 					</CardHeader>
 					<CardContent>
 						{balanceDiagnostics.map((item) => (
@@ -633,13 +604,6 @@ export default function WalletDiagnosticPage() {
 								disabled={!toolbox.isInitialized}
 							>
 								Refresh Balance
-							</Button>
-							<Button
-								variant="outline"
-								onClick={() => wallet.syncWallet()}
-								disabled={wallet.isWalletLocked}
-							>
-								Sync Legacy Wallet
 							</Button>
 						</div>
 

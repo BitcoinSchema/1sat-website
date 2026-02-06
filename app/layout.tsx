@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { WalletBridge } from "@/components/wallet-bridge";
 import { QueryProvider } from "@/providers/query-provider";
 import { WalletProvider } from "@/providers/wallet-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { WalletToolboxProvider } from "@/providers/wallet-toolbox-provider";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
@@ -96,6 +97,7 @@ export default function RootLayout({
 							<WalletProvider>
 								<WalletToolboxProvider>
 									<WalletBridge>{children}</WalletBridge>
+									<Toaster position="bottom-right" />
 								</WalletToolboxProvider>
 							</WalletProvider>
 						</QueryProvider>

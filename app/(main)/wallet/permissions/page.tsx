@@ -20,9 +20,11 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { buildPermissionCacheKey } from "@/lib/cwi/permission-keys";
 import {
 	type LocalPermission,
 	loadLocalPermissions,
+	type PermissionScope,
 	removeLocalPermission,
 } from "@/lib/cwi/permission-store";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
@@ -33,6 +35,7 @@ interface CategorizedToken {
 	category: TokenCategory;
 	token: PermissionToken;
 	source: "onchain" | "local";
+	cacheKey?: string;
 	localKey?: string;
 }
 
@@ -77,15 +80,65 @@ function categoryBadgeVariant(
 	}
 }
 
+function buildOnchainCacheKey(
+	category: TokenCategory,
+	token: PermissionToken,
+): string | undefined {
+	switch (category) {
+		case "protocol":
+			if (token.securityLevel === undefined || !token.protocol)
+				return undefined;
+			return buildPermissionCacheKey({
+				type: "protocol",
+				originator: token.originator,
+				privileged: !!token.privileged,
+				protocolID: [token.securityLevel, token.protocol],
+				counterparty: token.counterparty,
+			});
+		case "basket":
+			if (!token.basketName) return undefined;
+			return buildPermissionCacheKey({
+				type: "basket",
+				originator: token.originator,
+				basket: token.basketName,
+			});
+		case "certificate":
+			if (!token.verifier || !token.certType) return undefined;
+			return buildPermissionCacheKey({
+				type: "certificate",
+				originator: token.originator,
+				privileged: !!token.privileged,
+				certificate: {
+					verifier: token.verifier,
+					certType: token.certType,
+					fields: token.certFields ?? [],
+				},
+			});
+		case "spending":
+			if (token.authorizedAmount === undefined) return undefined;
+			return buildPermissionCacheKey({
+				type: "spending",
+				originator: token.originator,
+				spending: {
+					satoshis: token.authorizedAmount,
+				},
+			});
+	}
+}
+
 export default function PermissionsPage() {
-	const { permissionsManager, isInitialized } = useWalletToolbox();
+	const { permissionsManager, isInitialized, identityKey, chain } =
+		useWalletToolbox();
 	const [tokens, setTokens] = useState<CategorizedToken[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [revoking, setRevoking] = useState<string | null>(null);
 
+	const scope: PermissionScope | null =
+		identityKey === null ? null : { identityKey, chain };
+
 	const loadTokens = useCallback(async () => {
-		if (!permissionsManager) {
+		if (!permissionsManager || !scope) {
 			setTokens([]);
 			setLoadError(null);
 			setIsLoading(false);
@@ -102,7 +155,7 @@ export default function PermissionsPage() {
 					permissionsManager.listBasketAccess({}),
 					permissionsManager.listCertificateAccess({}),
 					permissionsManager.listSpendingAuthorizations({}),
-					loadLocalPermissions().catch(() => [] as LocalPermission[]),
+					loadLocalPermissions(scope).catch(() => [] as LocalPermission[]),
 				]);
 
 			const all: CategorizedToken[] = [
@@ -110,34 +163,36 @@ export default function PermissionsPage() {
 					category: "protocol" as const,
 					token,
 					source: "onchain" as const,
+					cacheKey: buildOnchainCacheKey("protocol", token),
 				})),
 				...baskets.map((token) => ({
 					category: "basket" as const,
 					token,
 					source: "onchain" as const,
+					cacheKey: buildOnchainCacheKey("basket", token),
 				})),
 				...certs.map((token) => ({
 					category: "certificate" as const,
 					token,
 					source: "onchain" as const,
+					cacheKey: buildOnchainCacheKey("certificate", token),
 				})),
 				...spending.map((token) => ({
 					category: "spending" as const,
 					token,
 					source: "onchain" as const,
+					cacheKey: buildOnchainCacheKey("spending", token),
 				})),
 			];
 
-			// Build set of on-chain originator+category combos so we can
-			// skip local entries that already have on-chain tokens
 			const onchainKeys = new Set(
-				all.map((t) => `${t.token.originator}:${t.category}`),
+				all
+					.filter((token) => token.source === "onchain" && token.cacheKey)
+					.map((token) => token.cacheKey),
 			);
 
-			// Add local permissions that don't have corresponding on-chain tokens
 			for (const local of localPerms) {
-				const dedupKey = `${local.originator}:${local.type}`;
-				if (onchainKeys.has(dedupKey)) continue;
+				if (onchainKeys.has(local.key)) continue;
 
 				all.push({
 					category: local.type,
@@ -151,11 +206,11 @@ export default function PermissionsPage() {
 						expiry: local.expiry,
 					} as PermissionToken,
 					source: "local",
+					cacheKey: local.key,
 					localKey: local.key,
 				});
 			}
 
-			// Sort by originator
 			all.sort((a, b) => a.token.originator.localeCompare(b.token.originator));
 			setTokens(all);
 		} catch (error) {
@@ -166,21 +221,21 @@ export default function PermissionsPage() {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [permissionsManager]);
+	}, [permissionsManager, scope]);
 
 	useEffect(() => {
 		if (!isInitialized) return;
-		if (!permissionsManager) {
+		if (!permissionsManager || !scope) {
 			setTokens([]);
 			setLoadError(null);
 			setIsLoading(false);
 			return;
 		}
 		void loadTokens();
-	}, [isInitialized, permissionsManager, loadTokens]);
+	}, [isInitialized, permissionsManager, scope, loadTokens]);
 
 	const handleRevoke = async (token: CategorizedToken) => {
-		if (!permissionsManager) return;
+		if (!permissionsManager || !scope) return;
 		const key =
 			token.source === "local" && token.localKey
 				? token.localKey
@@ -188,7 +243,13 @@ export default function PermissionsPage() {
 		setRevoking(key);
 		try {
 			if (token.source === "local" && token.localKey) {
-				await removeLocalPermission(token.localKey);
+				await removeLocalPermission(scope, token.localKey);
+				const internals = permissionsManager as unknown as {
+					permissionCache?: Map<string, { expiry: number; cachedAt: number }>;
+					recentGrants?: Map<string, number>;
+				};
+				internals.permissionCache?.delete(token.localKey);
+				internals.recentGrants?.delete(token.localKey);
 			} else {
 				await permissionsManager.revokePermission(token.token);
 			}
@@ -200,7 +261,6 @@ export default function PermissionsPage() {
 		}
 	};
 
-	// Group by originator
 	const grouped = tokens.reduce<Record<string, CategorizedToken[]>>(
 		(acc, token) => {
 			const key = token.token.originator;

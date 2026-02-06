@@ -7,16 +7,18 @@ import {
 	buildPermissionCacheKey,
 	type PermissionRequestLike,
 } from "./permission-keys";
-import { saveLocalPermission } from "./permission-store";
+import { type PermissionScope, saveLocalPermission } from "./permission-store";
 
 const CHANNEL_NAME = "1sat-cwi";
 
 export interface CWIRelayConfig {
 	getWallet: () => WalletPermissionsManager | null;
 	getStatus: () => "locked" | "unlocked" | "no-wallet";
+	getPersistenceScope: () => PermissionScope | null;
+	getBalance: () => Promise<{ satoshis: number; usd?: number }>;
 }
 
-type CWIWalletMethod = keyof WalletPermissionsManager;
+type CWIWalletMethod = keyof WalletPermissionsManager | "getBalance";
 
 interface CWIRequestMessage {
 	type: "cwi-request";
@@ -69,6 +71,7 @@ const VALID_METHODS = new Set([
 	"getHeaderForHeight",
 	"getNetwork",
 	"getVersion",
+	"getBalance",
 ]);
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
@@ -126,6 +129,8 @@ export class CWIRelay {
 	private handler: ((event: MessageEvent) => void) | null = null;
 	private getWallet: () => WalletPermissionsManager | null;
 	private getStatus: () => "locked" | "unlocked" | "no-wallet";
+	private getPersistenceScope: () => PermissionScope | null;
+	private getBalance: () => Promise<{ satoshis: number; usd?: number }>;
 	private pendingPermissions = new Map<
 		string,
 		PermissionRequest & { requestID: string }
@@ -134,6 +139,8 @@ export class CWIRelay {
 	constructor(config: CWIRelayConfig) {
 		this.getWallet = config.getWallet;
 		this.getStatus = config.getStatus;
+		this.getPersistenceScope = config.getPersistenceScope;
+		this.getBalance = config.getBalance;
 		this.channel = new BroadcastChannel(CHANNEL_NAME);
 	}
 
@@ -159,7 +166,7 @@ export class CWIRelay {
 			if (isDenyPermissionMessage(data)) {
 				const wallet = this.getWallet();
 				if (!wallet) return;
-				void wallet.denyPermission(data.requestID);
+				void this.handleDeny(wallet, data.requestID);
 				return;
 			}
 
@@ -176,6 +183,7 @@ export class CWIRelay {
 			this.channel.removeEventListener("message", this.handler);
 			this.handler = null;
 		}
+		this.pendingPermissions.clear();
 		this.channel.close();
 	}
 
@@ -216,41 +224,53 @@ export class CWIRelay {
 		requestID: string,
 	): Promise<void> {
 		const request = this.pendingPermissions.get(requestID);
+		if (!request) return;
+		const key = buildPermissionCacheKey(request as PermissionRequestLike);
+		let didFallback = false;
 
 		try {
 			await wallet.grantPermission({ requestID, ephemeral: false });
-		} catch {
+			this.pendingPermissions.delete(requestID);
+			return;
+		} catch (error) {
+			if (!this.shouldFallbackToLocalGrant(error)) {
+				this.pendingPermissions.delete(requestID);
+				console.warn(
+					"[CWIRelay] grantPermission failed without local fallback",
+					{
+						requestID,
+						error,
+					},
+				);
+				return;
+			}
+
 			// On-chain token creation failed (likely no funds).
 			// The wallet operation already resolved (WPM resolves promises first),
 			// but cachePermission and markRecentGrant were skipped. Hydrate manually.
-			if (request) {
-				const key = buildPermissionCacheKey(request as PermissionRequestLike);
-				if (key) {
-					const cache = (
-						wallet as unknown as {
-							permissionCache: Map<
-								string,
-								{ expiry: number; cachedAt: number }
-							>;
-						}
-					).permissionCache;
-					cache.set(key, { expiry: 0, cachedAt: Date.now() });
-
-					const recentGrants = (
-						wallet as unknown as { recentGrants: Map<string, number> }
-					).recentGrants;
-					if (request.type !== "spending") {
-						recentGrants.set(key, Date.now() + 15_000);
+			if (key) {
+				const cache = (
+					wallet as unknown as {
+						permissionCache: Map<string, { expiry: number; cachedAt: number }>;
 					}
+				).permissionCache;
+				cache.set(key, { expiry: 0, cachedAt: Date.now() });
+
+				const recentGrants = (
+					wallet as unknown as { recentGrants: Map<string, number> }
+				).recentGrants;
+				if (request.type !== "spending") {
+					recentGrants.set(key, Date.now() + 15_000);
 				}
+				didFallback = true;
 			}
 		}
 
-		// Persist to IndexedDB regardless of on-chain success
-		if (request) {
-			const key = buildPermissionCacheKey(request as PermissionRequestLike);
-			if (key) {
-				await saveLocalPermission({
+		// Persist fallback grants to IndexedDB so they survive reloads.
+		if (didFallback && key) {
+			const scope = this.getPersistenceScope();
+			if (scope) {
+				await saveLocalPermission(scope, {
 					key,
 					type: request.type,
 					originator: request.originator,
@@ -259,8 +279,35 @@ export class CWIRelay {
 					details: request as unknown as Record<string, unknown>,
 				});
 			}
-			this.pendingPermissions.delete(requestID);
 		}
+
+		this.pendingPermissions.delete(requestID);
+	}
+
+	private async handleDeny(
+		wallet: WalletPermissionsManager,
+		requestID: string,
+	): Promise<void> {
+		this.pendingPermissions.delete(requestID);
+		try {
+			await wallet.denyPermission(requestID);
+		} catch (error) {
+			console.warn("[CWIRelay] denyPermission failed", { requestID, error });
+		}
+	}
+
+	private shouldFallbackToLocalGrant(error: unknown): boolean {
+		if (!(error instanceof Error)) return false;
+		const message = error.message.toLowerCase();
+		if (message.includes("request id not found")) return false;
+		return (
+			message.includes("insufficient") ||
+			message.includes("no funds") ||
+			message.includes("not enough") ||
+			message.includes("utxo") ||
+			message.includes("satoshi") ||
+			message.includes("input")
+		);
 	}
 
 	private async handleCWIRequest(data: CWIRequestMessage): Promise<void> {
@@ -303,9 +350,19 @@ export class CWIRelay {
 		}
 
 		try {
+			if (call === "getBalance") {
+				const result = await this.getBalance();
+				this.channel.postMessage({
+					type: "cwi-response",
+					id,
+					result,
+				});
+				return;
+			}
+
 			// TODO(cwi): Add stronger relay authentication between bridge and wallet tab.
 			// BroadcastChannel is same-origin but does not provide session identity.
-			const method = call as CWIWalletMethod;
+			const method = call as keyof WalletPermissionsManager;
 			const fn = wallet[method];
 			if (typeof fn !== "function") {
 				this.channel.postMessage({

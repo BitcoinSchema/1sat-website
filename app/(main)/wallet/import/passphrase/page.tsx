@@ -56,7 +56,7 @@ export default function ImportPassphrasePage() {
 
 			if (success) {
 				// Save to session storage to keep wallet unlocked
-				saveSessionKeys(walletKeys.payPk, walletKeys.ordPk);
+				saveSessionKeys(walletKeys.payPk, walletKeys.ordPk, walletKeys.identityPk);
 				router.push("/wallet");
 			} else {
 				setError("Failed to save wallet");
@@ -134,7 +134,7 @@ export default function ImportPassphrasePage() {
 					// Save to local storage with the SAME password
 					await saveEncryptedWallet(keys, passphrase);
 					// Save to session storage to keep wallet unlocked
-					saveSessionKeys(keys.payPk, keys.ordPk);
+					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
 					router.push("/wallet");
 				} else {
 					throw new Error("Invalid decrypted key format");

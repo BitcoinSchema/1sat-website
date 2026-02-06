@@ -33,11 +33,12 @@ import { Switch } from "@/components/ui/switch";
 import { useSound } from "@/hooks/use-sound";
 import { CURRENCY_KEY, PRIVACY_MODE_KEY } from "@/lib/constants";
 import { useSettingsStorage } from "@/lib/wallet-storage";
-import { useWallet } from "@/providers/wallet-provider";
+import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 export function WalletSettingsForm() {
 	const { play } = useSound();
-	const { syncWallet, isSyncing } = useWallet();
+	const { syncWallet, hasActiveSync: isSyncing, isInitialized } =
+		useWalletToolbox();
 	const [isPrivacyModeEnabled, setIsPrivacyModeEnabled] =
 		useSettingsStorage<boolean>(PRIVACY_MODE_KEY, false);
 	const [currency, setCurrency] = useSettingsStorage<string>(
@@ -130,24 +131,23 @@ export function WalletSettingsForm() {
 					<Separator />
 
 					{/* Sync */}
-					<div className="flex items-center justify-between space-x-2">
-						<div className="flex flex-col space-y-1">
-							<Label className="text-base">Blockchain Sync</Label>
-							<span className="text-sm text-muted-foreground">
-								Manually refresh your UTXOs and transaction history from the
-								blockchain.
-							</span>
-						</div>
-						<Button
+						<div className="flex items-center justify-between space-x-2">
+							<div className="flex flex-col space-y-1">
+								<Label className="text-base">Blockchain Sync</Label>
+								<span className="text-sm text-muted-foreground">
+									Manually refresh your spendable balance and indexed assets.
+								</span>
+							</div>
+							<Button
 							variant="outline"
 							size="sm"
-							onClick={() => {
-								play("click");
-								syncWallet();
-							}}
-							disabled={isSyncing}
-							className="min-w-[100px]"
-						>
+								onClick={() => {
+									play("click");
+									syncWallet();
+								}}
+								disabled={!isInitialized || isSyncing}
+								className="min-w-[100px]"
+							>
 							{isSyncing ? (
 								<Loader2 className="h-4 w-4 animate-spin mr-2" />
 							) : (
