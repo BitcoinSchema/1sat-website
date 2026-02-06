@@ -9,6 +9,7 @@ import {
 } from "@/components/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MigrationBanner } from "@/components/wallet/migration-banner";
+import { SyncActivityTerminal } from "@/components/wallet/sync-activity-terminal";
 import { SyncProgress } from "@/components/wallet/sync-progress";
 import { TransactionTimeline } from "@/components/wallet/transaction-timeline";
 import { WalletTabs } from "@/components/wallet/wallet-tabs";
@@ -16,7 +17,14 @@ import { detectMigrationStatus } from "@/lib/wallet-migration";
 import { useWallet } from "@/providers/wallet-provider";
 
 export default function WalletPage() {
-	const { balance, transactions, utxos, syncWallet, walletKeys, isWalletLocked } = useWallet();
+	const {
+		balance,
+		transactions,
+		utxos,
+		syncWallet,
+		walletKeys,
+		isWalletLocked,
+	} = useWallet();
 
 	const migrationStatus = useMemo(() => {
 		if (!walletKeys || isWalletLocked) return null;
@@ -49,6 +57,7 @@ export default function WalletPage() {
 			</PageHeader>
 
 			<PageContent>
+				<SyncActivityTerminal className="mb-6" />
 				{migrationStatus?.status === "legacy" && (
 					<MigrationBanner
 						legacyPayAddress={migrationStatus.legacyPayAddress}

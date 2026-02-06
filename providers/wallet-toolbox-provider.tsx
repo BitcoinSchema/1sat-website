@@ -9,14 +9,15 @@
  * Uses TanStack Query for network request state management.
  */
 
-import { PrivateKey } from "@bsv/sdk";
 import {
 	createWebWallet,
-	type WebWalletResult,
 	type OneSatServices,
+	type WebWalletResult,
 } from "@1sat/wallet-browser";
+import { PrivateKey } from "@bsv/sdk";
 
 type Wallet = WebWalletResult["wallet"];
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
@@ -28,9 +29,9 @@ import {
 	useRef,
 	useState,
 } from "react";
+import type { TxoData } from "@/lib/types/ordinals";
 import type { Ordinal } from "@/lib/wallet/gorillapool-service";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
-import type { TxoData } from "@/lib/types/ordinals";
 
 type Chain = "main" | "test";
 
@@ -65,6 +66,16 @@ interface SyncStatus {
 	error: string | null;
 }
 
+type SyncEventLevel = "log" | "warn" | "error";
+
+export interface SyncEvent {
+	id: number;
+	timestamp: number;
+	level: SyncEventLevel;
+	source: string;
+	message: string;
+}
+
 interface WalletToolboxContextValue {
 	// Wallet state
 	wallet: Wallet | null;
@@ -78,6 +89,9 @@ interface WalletToolboxContextValue {
 	// Sync state (driven by balance query)
 	syncStatus: SyncStatus;
 	syncWallet: () => void;
+	syncEvents: SyncEvent[];
+	clearSyncEvents: () => void;
+	hasActiveSync: boolean;
 
 	// Balance and assets (from query)
 	balance: WalletBalance | null;
@@ -100,6 +114,58 @@ interface WalletToolboxContextValue {
 const WalletToolboxContext = createContext<
 	WalletToolboxContextValue | undefined
 >(undefined);
+
+const SYNC_EVENT_LIMIT = 500;
+
+const WALLET_LOG_PATTERNS = [
+	/\[WalletBridge\]/,
+	/\[WalletToolbox\]/,
+	/\[createWebWallet\]/,
+	/\[GorillaPool\]/,
+	/\[ChaintracksClient\]/,
+	/\bTaskNewHeader\b/,
+	/\bTaskMonitor[A-Za-z]+\b/,
+];
+
+const stringifyConsoleArg = (arg: unknown): string => {
+	if (typeof arg === "string") return arg;
+	if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+	if (typeof arg === "bigint") return `${arg.toString()}n`;
+	if (arg === undefined) return "undefined";
+	if (arg === null) return "null";
+	if (typeof arg === "object") {
+		try {
+			return JSON.stringify(arg);
+		} catch {
+			return String(arg);
+		}
+	}
+	return String(arg);
+};
+
+const serializeConsoleArgs = (args: unknown[]): string =>
+	args
+		.map((arg) => stringifyConsoleArg(arg))
+		.join(" ")
+		.trim();
+
+const trimLogMessage = (message: string, maxLength = 1200): string => {
+	if (message.length <= maxLength) return message;
+	return `${message.slice(0, maxLength)}...`;
+};
+
+const shouldCaptureWalletLog = (message: string): boolean =>
+	WALLET_LOG_PATTERNS.some((pattern) => pattern.test(message));
+
+const detectWalletLogSource = (message: string): string => {
+	const bracketSource = message.match(/\[([^[\]]+)\]/)?.[1];
+	if (bracketSource) return bracketSource;
+	if (message.includes("TaskNewHeader")) return "TaskNewHeader";
+	if (message.includes("TaskMonitorCallHistory"))
+		return "TaskMonitorCallHistory";
+	if (message.includes("TaskMonitor")) return "TaskMonitor";
+	return "Wallet";
+};
 
 // Query keys
 const QUERY_KEYS = {
@@ -135,6 +201,68 @@ export function WalletToolboxProvider({
 
 	// GorillaPool service for ordinal lookups
 	const gorillaPoolRef = useRef(new GorillaPoolService());
+	const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
+	const syncEventIdRef = useRef(0);
+
+	const appendSyncEvent = useCallback(
+		(level: SyncEventLevel, source: string, message: string) => {
+			setSyncEvents((prev) => {
+				const next = [
+					...prev,
+					{
+						id: ++syncEventIdRef.current,
+						timestamp: Date.now(),
+						level,
+						source,
+						message: trimLogMessage(message),
+					},
+				];
+				if (next.length <= SYNC_EVENT_LIMIT) return next;
+				return next.slice(next.length - SYNC_EVENT_LIMIT);
+			});
+		},
+		[],
+	);
+
+	const clearSyncEvents = useCallback(() => {
+		setSyncEvents([]);
+	}, []);
+
+	useEffect(() => {
+		type ConsoleMethod = (...data: unknown[]) => void;
+
+		const originalLog = console.log.bind(console) as ConsoleMethod;
+		const originalWarn = console.warn.bind(console) as ConsoleMethod;
+		const originalError = console.error.bind(console) as ConsoleMethod;
+
+		const createCapturedMethod =
+			(level: SyncEventLevel, originalMethod: ConsoleMethod): ConsoleMethod =>
+			(...args: unknown[]) => {
+				originalMethod(...args);
+				const message = serializeConsoleArgs(args);
+				if (!message || !shouldCaptureWalletLog(message)) return;
+				appendSyncEvent(level, detectWalletLogSource(message), message);
+			};
+
+		console.log = createCapturedMethod(
+			"log",
+			originalLog,
+		) as typeof console.log;
+		console.warn = createCapturedMethod(
+			"warn",
+			originalWarn,
+		) as typeof console.warn;
+		console.error = createCapturedMethod(
+			"error",
+			originalError,
+		) as typeof console.error;
+
+		return () => {
+			console.log = originalLog as typeof console.log;
+			console.warn = originalWarn as typeof console.warn;
+			console.error = originalError as typeof console.error;
+		};
+	}, [appendSyncEvent]);
 
 	// Balance query - fetches from GorillaPool
 	const balanceQuery = useQuery({
@@ -144,20 +272,31 @@ export function WalletToolboxProvider({
 				throw new Error("Wallet not initialized");
 			}
 
+			console.log("[WalletToolbox] Starting wallet scan request...");
+
 			const gp = gorillaPoolRef.current;
 
 			// Fetch fund outputs and categorized utxos in parallel
-			const utxoPromises: Promise<Awaited<ReturnType<typeof gp.getCategorizedUtxos>>>[] = [
-				gp.getCategorizedUtxos(ordAddress),
-			];
+			const utxoPromises: Promise<
+				Awaited<ReturnType<typeof gp.getCategorizedUtxos>>
+			>[] = [gp.getCategorizedUtxos(ordAddress)];
+			console.log(
+				`[WalletToolbox] Scanning ordinals address ${ordAddress.slice(0, 10)}...`,
+			);
 			if (payAddress && payAddress !== ordAddress) {
 				utxoPromises.push(gp.getCategorizedUtxos(payAddress));
+				console.log(
+					`[WalletToolbox] Scanning payment address ${payAddress.slice(0, 10)}...`,
+				);
 			}
 
 			const [fundOutputs, ...utxoResults] = await Promise.all([
 				wallet.listOutputs({ basket: "fund", include: "locking scripts" }),
 				...utxoPromises,
 			]);
+			console.log(
+				`[WalletToolbox] listOutputs returned ${fundOutputs.outputs?.length ?? 0} outputs`,
+			);
 
 			let total = 0;
 			if (fundOutputs.outputs) {
@@ -293,7 +432,11 @@ export function WalletToolboxProvider({
 	const [lastSync, setLastSync] = useState<Date | null>(null);
 	const wasFetchingRef = useRef(false);
 	useEffect(() => {
-		if (wasFetchingRef.current && !balanceQuery.isFetching && balanceQuery.isSuccess) {
+		if (
+			wasFetchingRef.current &&
+			!balanceQuery.isFetching &&
+			balanceQuery.isSuccess
+		) {
 			setLastSync(new Date());
 		}
 		wasFetchingRef.current = balanceQuery.isFetching;
@@ -309,13 +452,21 @@ export function WalletToolboxProvider({
 
 	const syncStatus = useMemo<SyncStatus>(
 		() => ({
-			isSyncing: balanceQuery.isFetching,
+			isSyncing: isInitializing || balanceQuery.isFetching,
 			progress: null,
 			lastSync,
-			error: balanceQuery.error?.message ?? null,
+			error: initError ?? balanceQuery.error?.message ?? null,
 		}),
-		[balanceQuery.isFetching, balanceQuery.error, lastSync],
+		[
+			isInitializing,
+			balanceQuery.isFetching,
+			initError,
+			balanceQuery.error,
+			lastSync,
+		],
 	);
+
+	const hasActiveSync = isInitializing || balanceQuery.isFetching;
 
 	const value = useMemo<WalletToolboxContextValue>(
 		() => ({
@@ -328,6 +479,9 @@ export function WalletToolboxProvider({
 			identityKey,
 			syncStatus,
 			syncWallet: refreshBalance,
+			syncEvents,
+			clearSyncEvents,
+			hasActiveSync,
 			balance: balanceQuery.data?.balance ?? null,
 			ordinals: balanceQuery.data?.ordinals ?? [],
 			bsv20Tokens: balanceQuery.data?.bsv20Tokens ?? [],
@@ -347,6 +501,9 @@ export function WalletToolboxProvider({
 			chain,
 			identityKey,
 			syncStatus,
+			syncEvents,
+			clearSyncEvents,
+			hasActiveSync,
 			refreshBalance,
 			balanceQuery.data,
 			balanceQuery.isLoading,
