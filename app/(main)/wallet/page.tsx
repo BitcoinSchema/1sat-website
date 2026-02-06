@@ -1,7 +1,7 @@
 "use client";
 
-import { Wallet as WalletIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Wallet as WalletIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import {
@@ -171,13 +171,13 @@ export default function WalletPage() {
 						</Card>
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									Outgoing
-								</CardTitle>
+								<CardTitle className="text-sm font-medium">Outgoing</CardTitle>
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-bold">{outgoingCount}</div>
-								<p className="text-xs text-muted-foreground">Outgoing actions</p>
+								<p className="text-xs text-muted-foreground">
+									Outgoing actions
+								</p>
 							</CardContent>
 						</Card>
 					</div>

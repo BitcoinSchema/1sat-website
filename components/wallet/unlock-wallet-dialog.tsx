@@ -62,6 +62,7 @@ export function UnlockWalletDialog({
 							value={passphrase}
 							onChange={(e) => setPassphrase(e.target.value)}
 							required
+							autoFocus
 						/>
 					</div>
 					{error && <p className="text-sm text-destructive">{error}</p>}

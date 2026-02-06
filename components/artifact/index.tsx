@@ -100,7 +100,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		if (!src || type === undefined) {
 			return (
 				<div
-					className={`flex items-center justify-center w-full h-full rounded bg-white`}
+					className={`flex items-center justify-center w-full h-full rounded bg-background`}
 					style={{ minHeight: size }}
 				>
 					<Loader2 className="m-auto animate-spin" />
@@ -183,7 +183,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 			</div>
 		) : type === ArtifactType.Unknown ? (
 			<div>
-				<FileQuestion className="w-24 text-slate-800" />
+				<FileQuestion className="w-24 text-muted-foreground" />
 			</div>
 		) : (
 			<div
@@ -250,11 +250,11 @@ const Artifact: React.FC<ArtifactProps> = ({
 	} block transition mx-auto ${classNames?.wrapper ? classNames.wrapper : ""}`;
 
 	const footerContent = showFooter === true && num !== undefined && (
-		<div className="text-xs absolute bottom-0 left-0 bg-black/75 flex items-center justify-between w-full p-2 h-[56px]">
+		<div className="text-xs absolute bottom-0 left-0 bg-background/90 flex items-center justify-between w-full p-2 h-[56px]">
 			<Button
 				variant="secondary"
 				size="sm"
-				className="h-auto py-1 px-2 text-[#aaa] bg-[#222] hover:bg-[#333]"
+				className="h-auto py-1 px-2 text-muted-foreground bg-muted hover:bg-muted/80"
 				onClick={(e) => {
 					e.preventDefault();
 					e.stopPropagation();
@@ -273,7 +273,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 			<Button
 				variant="secondary"
 				size="sm"
-				className={`h-auto py-1 px-2 text-[#aaa] bg-[#222] hover:bg-emerald-600 hover:text-white transition ${
+				className={`h-auto py-1 px-2 text-muted-foreground bg-muted hover:bg-chart-4 hover:text-chart-4-foreground transition ${
 					price !== undefined ? "cursor-pointer" : ""
 				}`}
 				onClick={(e) => {
@@ -353,10 +353,10 @@ const Artifact: React.FC<ArtifactProps> = ({
 			{showZoom && (
 				<button
 					type="button"
-					className="z-50 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-black bg-opacity-80 overflow-hidden backdrop-blur-sm border-none p-0 cursor-default"
+					className="z-50 flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-background/80 overflow-hidden backdrop-blur-sm border-none p-0 cursor-default"
 					onClick={() => setShowZoom(false)}
 				>
-					<div className="cursor-pointer absolute top-0 right-0 mr-4 mt-4 text-4xl z-20 p-2 text-white">
+					<div className="cursor-pointer absolute top-0 right-0 mr-4 mt-4 text-4xl z-20 p-2 text-foreground">
 						<X />
 					</div>
 					{content}

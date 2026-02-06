@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useSound } from "@/hooks/use-sound";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useSound } from "@/hooks/use-sound";
 
 interface SidebarSoundEffectsProps {
 	volume?: number;
@@ -12,7 +12,9 @@ interface SidebarSoundEffectsProps {
  * Plays subtle open/close audio whenever the current sidebar context changes.
  * This keeps sound behavior outside the base shadcn sidebar component.
  */
-export function SidebarSoundEffects({ volume = 0.2 }: SidebarSoundEffectsProps) {
+export function SidebarSoundEffects({
+	volume = 0.2,
+}: SidebarSoundEffectsProps) {
 	const { open, openMobile } = useSidebar();
 	const { play } = useSound();
 	const previousOpenRef = useRef<boolean | null>(null);
@@ -42,4 +44,3 @@ export function SidebarSoundEffects({ volume = 0.2 }: SidebarSoundEffectsProps) 
 
 	return null;
 }
-

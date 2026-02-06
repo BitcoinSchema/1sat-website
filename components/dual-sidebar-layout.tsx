@@ -4,8 +4,8 @@ import { PanelLeft, Wallet } from "lucide-react";
 import type * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { LeftSidebar } from "@/components/left-sidebar";
-import { SidebarSoundEffects } from "@/components/sidebar-sound-effects";
 import { SearchForm } from "@/components/search-form";
+import { SidebarSoundEffects } from "@/components/sidebar-sound-effects";
 import { Button } from "@/components/ui/button";
 import {
 	SidebarInset,

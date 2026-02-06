@@ -34,11 +34,19 @@ import {
 	detectMigrationStatus,
 	type MigrationStatus,
 } from "@/lib/wallet-migration";
-import { reencryptWallet, saveSessionKeys } from "@/lib/wallet-storage";
+import { reencryptWallet } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 type MigrationPhase = "scan" | "preview" | "migrate" | "complete" | "error";
+const SCANNING_SKELETON_KEYS = [
+	"scan-card-1",
+	"scan-card-2",
+	"scan-card-3",
+	"scan-card-4",
+	"scan-card-5",
+	"scan-card-6",
+] as const;
 
 // ---------------------------------------------------------------------------
 // Scanning skeleton
@@ -55,8 +63,8 @@ function ScanningState() {
 				<CardContent className="space-y-4">
 					<Skeleton className="h-16 w-full" />
 					<div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-						{Array.from({ length: 6 }).map((_, i) => (
-							<Skeleton key={`skel-${i}`} className="aspect-square w-full" />
+						{SCANNING_SKELETON_KEYS.map((key) => (
+							<Skeleton key={key} className="aspect-square w-full" />
 						))}
 					</div>
 					<Skeleton className="h-12 w-full" />
@@ -338,14 +346,7 @@ export default function MigratePage() {
 				);
 			}
 
-			// 4. Update session storage
-			saveSessionKeys(
-				updatedKeys.payPk,
-				updatedKeys.ordPk,
-				updatedKeys.identityPk,
-			);
-
-			// 5. Reinitialize BRC-100 wallet with identity key
+			// 4. Reinitialize BRC-100 wallet with identity key
 			setProgress("Reinitializing BRC-100 wallet...");
 			setProgressPercent(40);
 			if (toolbox.isInitialized) {
@@ -354,16 +355,9 @@ export default function MigratePage() {
 
 			await new Promise((r) => setTimeout(r, 500));
 
-			const { wifToHex, wifToAddress } = await import("@1sat/utils");
+			const { wifToHex } = await import("@1sat/utils");
 			const rootKeyHex = wifToHex(identityWif);
-			const ordAddress = wifToAddress(migrationStatus.legacyOrdWif);
-			const payAddress = wifToAddress(migrationStatus.legacyPayWif);
-
-			const initialized = await toolbox.initializeWallet(
-				rootKeyHex,
-				ordAddress,
-				payAddress,
-			);
+			const initialized = await toolbox.initializeWallet(rootKeyHex);
 
 			if (!initialized) {
 				throw new Error("Failed to initialize wallet with identity key");
@@ -385,6 +379,7 @@ export default function MigratePage() {
 					const result = await executeMigrationSweep({
 						wallet: toolbox.wallet,
 						services: toolbox.services,
+						chain: toolbox.chain,
 						legacyPayWif: migrationStatus.legacyPayWif,
 						legacyOrdWif: migrationStatus.legacyOrdWif,
 						legacyPayAddress: migrationStatus.legacyPayAddress,

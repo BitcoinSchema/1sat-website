@@ -164,7 +164,6 @@ function SignMessageContent() {
 									onChange={(e) => setPassphrase(e.target.value)}
 									placeholder="Passphrase"
 									className="w-full px-3 py-2 rounded-md border bg-background"
-									autoFocus
 								/>
 								{unlockError && (
 									<p className="text-sm text-destructive mt-2">{unlockError}</p>

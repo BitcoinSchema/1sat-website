@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
+import type * as authenticatedTrades from "../authenticatedTrades.js";
+import type * as cwiAuth from "../cwiAuth.js";
 import type * as presence from "../presence.js";
 import type * as trades from "../trades.js";
 
@@ -18,6 +21,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+	auth: typeof auth;
+	authenticatedTrades: typeof authenticatedTrades;
+	cwiAuth: typeof cwiAuth;
 	presence: typeof presence;
 	trades: typeof trades;
 }>;

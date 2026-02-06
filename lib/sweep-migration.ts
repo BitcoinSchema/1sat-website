@@ -17,6 +17,7 @@ import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
 export interface MigrationSweepParams {
 	wallet: WalletInterface;
 	services: OneSatServices;
+	chain?: "main" | "test";
 	legacyPayWif: string;
 	legacyOrdWif: string;
 	legacyPayAddress: string;
@@ -72,6 +73,7 @@ export async function executeMigrationSweep(
 	const {
 		wallet,
 		services,
+		chain = "main",
 		legacyPayWif,
 		legacyOrdWif,
 		legacyPayAddress,
@@ -84,7 +86,7 @@ export async function executeMigrationSweep(
 		errors: [],
 	};
 
-	const ctx = createContext(wallet, { services, chain: "main" });
+	const ctx = createContext(wallet, { services, chain });
 
 	// 1. Use pre-scanned assets if all provided, otherwise scan
 	const merged: CategorizedUtxos =

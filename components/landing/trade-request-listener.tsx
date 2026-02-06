@@ -16,31 +16,39 @@ import {
 } from "@/components/ui/sound-alert-dialog";
 import { useSound } from "@/hooks/use-sound";
 import { wifToAddress } from "@/lib/keys";
+import { resolveTradeDisplayId } from "@/lib/trade-display-id";
+import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "@/providers/wallet-provider";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { TradeDialog } from "./trade-dialog";
 
-// Truncate address for display
-function truncateAddress(address: string): string {
-	if (address.length <= 12) return address;
-	return `${address.slice(0, 6)}...${address.slice(-4)}`;
+// Truncate identifier for display
+function truncateIdentifier(identifier: string): string {
+	if (identifier.length <= 12) return identifier;
+	return `${identifier.slice(0, 6)}...${identifier.slice(-4)}`;
 }
 
-// Extract wallet address from userId
-function extractWalletAddress(userId: string): string {
+function resolveDisplayId(userId: string): string {
+	const fromMap = resolveTradeDisplayId(userId);
+	if (fromMap) {
+		return fromMap;
+	}
+
+	// Legacy fallback for sessions keyed by wallet address.
 	return userId.includes(":") ? userId.split(":")[0] : userId;
 }
 
 export function TradeRequestListener() {
 	const { walletKeys, isWalletLocked } = useWallet();
+	const { user: authUser } = useAuth();
 	const { play } = useSound();
 	const [incomingRequest, setIncomingRequest] = useState<{
 		id: Id<"tradeRequests">;
-		fromUserId: string;
+		fromDisplayId: string;
 	} | null>(null);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-	const [activePeerAddress, setActivePeerAddress] = useState<string>("");
+	const [activePeerDisplayId, setActivePeerDisplayId] = useState<string>("");
 
 	const lastIncomingRequestIdRef = useRef<string | null>(null);
 	const lastAcceptedRequestIdRef = useRef<string | null>(null);
@@ -69,30 +77,33 @@ export function TradeRequestListener() {
 		return suffix;
 	}, []);
 
-	// Full userId with session
-	const myFullUserId = useMemo(() => {
+	// Canonical trade identity for queries and mutation ownership checks.
+	const tradeUserId = useMemo(() => {
+		if (authUser?.sub) {
+			return authUser.sub;
+		}
 		if (myAddress) {
 			return `${myAddress}:${sessionSuffix}`;
 		}
 		return null;
-	}, [myAddress, sessionSuffix]);
+	}, [authUser?.sub, myAddress, sessionSuffix]);
 
 	// Subscribe to incoming trade requests (for recipient)
 	const incomingRequests = useQuery(
 		api.trades.getIncomingTradeRequests,
-		myFullUserId ? { userId: myFullUserId } : "skip",
+		tradeUserId ? { userId: tradeUserId } : "skip",
 	);
 
 	// Subscribe to accepted sent requests (for initiator)
 	const acceptedSentRequests = useQuery(
 		api.trades.getAcceptedSentRequests,
-		myFullUserId ? { userId: myFullUserId } : "skip",
+		tradeUserId ? { userId: tradeUserId } : "skip",
 	);
 
 	// Subscribe to pending sent requests (for initiator waiting UI)
 	const pendingSentRequests = useQuery(
 		api.trades.getPendingSentRequests,
-		myFullUserId ? { userId: myFullUserId } : "skip",
+		tradeUserId ? { userId: tradeUserId } : "skip",
 	);
 
 	// Subscribe to active trade session (to detect when other party closes)
@@ -120,7 +131,7 @@ export function TradeRequestListener() {
 
 				setIncomingRequest({
 					id: latestRequest._id,
-					fromUserId: latestRequest.fromUserId,
+					fromDisplayId: resolveDisplayId(latestRequest.fromUserId),
 				});
 			}
 		} else if (
@@ -150,8 +161,8 @@ export function TradeRequestListener() {
 				// Play dialog open sound for initiator
 				play("dialog");
 
-				const peerWalletAddress = extractWalletAddress(latestAccepted.toUserId);
-				setActivePeerAddress(peerWalletAddress);
+				const peerDisplayId = resolveDisplayId(latestAccepted.toUserId);
+				setActivePeerDisplayId(peerDisplayId);
 				setActiveSessionId(latestAccepted.sessionId);
 			}
 		}
@@ -170,7 +181,7 @@ export function TradeRequestListener() {
 				// Play dialog close sound
 				play("dialog", 0.2);
 				setActiveSessionId(null);
-				setActivePeerAddress("");
+				setActivePeerDisplayId("");
 			}
 		}
 	}, [activeTradeSession, activeSessionId, play]);
@@ -180,10 +191,7 @@ export function TradeRequestListener() {
 
 		try {
 			const result = await acceptRequest({ requestId: incomingRequest.id });
-			const peerWalletAddress = extractWalletAddress(
-				incomingRequest.fromUserId,
-			);
-			setActivePeerAddress(peerWalletAddress);
+			setActivePeerDisplayId(incomingRequest.fromDisplayId);
 			setIncomingRequest(null);
 
 			// Play dialog open sound for recipient
@@ -216,21 +224,19 @@ export function TradeRequestListener() {
 			}
 			// Don't play sound here - the effect will handle it via subscription
 			setActiveSessionId(null);
-			setActivePeerAddress("");
+			setActivePeerDisplayId("");
 		}
 	};
 
-	const peerWalletAddress = incomingRequest
-		? extractWalletAddress(incomingRequest.fromUserId)
-		: "";
-	const isPeerWallet = peerWalletAddress.startsWith("1");
+	const peerDisplayId = incomingRequest ? incomingRequest.fromDisplayId : "";
+	const isPeerWallet = peerDisplayId.startsWith("1");
 
 	// Get pending request info for waiting UI
 	const pendingRequest = pendingSentRequests?.[0] ?? null;
-	const pendingPeerAddress = pendingRequest
-		? extractWalletAddress(pendingRequest.toUserId)
+	const pendingPeerDisplayId = pendingRequest
+		? resolveDisplayId(pendingRequest.toUserId)
 		: "";
-	const isPendingPeerWallet = pendingPeerAddress.startsWith("1");
+	const isPendingPeerWallet = pendingPeerDisplayId.startsWith("1");
 
 	// Handle canceling a pending request
 	const handleCancelPendingRequest = async () => {
@@ -261,7 +267,7 @@ export function TradeRequestListener() {
 								{isPendingPeerWallet && (
 									<span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
 										<SigmaAvatar
-											name={pendingPeerAddress}
+											name={pendingPeerDisplayId}
 											colors={[
 												"var(--chart-1)",
 												"var(--chart-2)",
@@ -275,7 +281,7 @@ export function TradeRequestListener() {
 								)}
 								<span>
 									<span className="text-foreground font-medium font-mono block">
-										{truncateAddress(pendingPeerAddress)}
+										{truncateIdentifier(pendingPeerDisplayId)}
 									</span>
 									<span className="text-muted-foreground text-sm">
 										is deciding whether to accept your request...
@@ -307,7 +313,7 @@ export function TradeRequestListener() {
 								{isPeerWallet && (
 									<span className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 inline-flex">
 										<SigmaAvatar
-											name={peerWalletAddress}
+											name={peerDisplayId}
 											colors={[
 												"var(--chart-1)",
 												"var(--chart-2)",
@@ -321,7 +327,7 @@ export function TradeRequestListener() {
 								)}
 								<span>
 									<span className="text-foreground font-medium font-mono block">
-										{truncateAddress(peerWalletAddress)}
+										{truncateIdentifier(peerDisplayId)}
 									</span>
 									<span className="text-muted-foreground text-sm">
 										wants to trade with you
@@ -342,14 +348,14 @@ export function TradeRequestListener() {
 			</SoundAlertDialog>
 
 			{/* Active trade session */}
-			{activeSessionId && myFullUserId && (
+			{activeSessionId && tradeUserId && (
 				<TradeDialog
 					open={!!activeSessionId}
 					onOpenChange={handleCloseTradeDialog}
-					peerAddress={activePeerAddress}
-					peerLabel={truncateAddress(activePeerAddress)}
+					peerAddress={activePeerDisplayId}
+					peerLabel={truncateIdentifier(activePeerDisplayId)}
 					sessionId={activeSessionId}
-					myUserId={myFullUserId}
+					myUserId={tradeUserId}
 				/>
 			)}
 		</>

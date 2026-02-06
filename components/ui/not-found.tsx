@@ -75,7 +75,7 @@ export default function NotFound({
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`relative h-[24rem] md:h-screen w-full flex items-center justify-center overflow-hidden bg-white dark:bg-black ${className}`}
+      className={`relative h-[24rem] md:h-screen w-full flex items-center justify-center overflow-hidden bg-background ${className}`}
       style={{ perspective: "1000px" }}
     >
 

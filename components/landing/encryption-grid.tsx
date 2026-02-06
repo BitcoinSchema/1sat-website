@@ -136,6 +136,8 @@ export function EncryptionGrid() {
 
 	return (
 		<canvas
+			aria-hidden="true"
+			tabIndex={-1}
 			ref={canvasRef}
 			className="absolute inset-0 pointer-events-none z-0 text-primary/20"
 			style={{ opacity: 0.4 }}

@@ -27,13 +27,13 @@ export function ActivityFeedItem({ item }: { item: ActivityItem }) {
 	const getIcon = () => {
 		switch (item.type) {
 			case "ordinal-transfer":
-				return <ArrowRightLeft className="w-4 h-4 text-blue-500" />;
+				return <ArrowRightLeft className="w-4 h-4 text-chart-3" />;
 			case "bsv20-transfer":
-				return <Coins className="w-4 h-4 text-yellow-500" />;
+				return <Coins className="w-4 h-4 text-chart-1" />;
 			case "mint":
-				return <Zap className="w-4 h-4 text-green-500" />;
+				return <Zap className="w-4 h-4 text-chart-4" />;
 			case "list":
-				return <Tag className="w-4 h-4 text-purple-500" />;
+				return <Tag className="w-4 h-4 text-chart-5" />;
 		}
 	};
 
@@ -90,7 +90,7 @@ export function ActivityFeedItem({ item }: { item: ActivityItem }) {
 
 					{item.type === "list" && (
 						<div className="text-lg font-bold">
-							{item.data.price} <span className="text-yellow-500">sats</span>
+							{item.data.price} <span className="text-chart-1">sats</span>
 						</div>
 					)}
 				</div>

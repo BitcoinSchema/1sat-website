@@ -3,7 +3,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MigrationOrdinalCard } from "@/components/wallet/migration-ordinal-card";
-import type { OrdinalWithMeta, TokenBalance } from "@/lib/hooks/use-legacy-assets";
+import type {
+	OrdinalWithMeta,
+	TokenBalance,
+} from "@/lib/hooks/use-legacy-assets";
 import type { WalletOrdinal } from "@/lib/types/ordinals";
 
 const ORDINALS_PER_PAGE = 20;

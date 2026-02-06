@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
 		);
 	}
 
-	const bsv20Url = `${MARKET_API_HOST}/ticker/autofill/bsv20/${term}`;
-	const bsv21Url = `${MARKET_API_HOST}/ticker/autofill/bsv21/${term}`;
+	const safeTerm = encodeURIComponent(term);
+	const bsv20Url = `${MARKET_API_HOST}/ticker/autofill/bsv20/${safeTerm}`;
+	const bsv21Url = `${MARKET_API_HOST}/ticker/autofill/bsv21/${safeTerm}`;
 
 	console.log("[Autofill API] Fetching:", bsv20Url, bsv21Url);
 

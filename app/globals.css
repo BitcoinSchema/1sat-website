@@ -88,8 +88,8 @@
 	--sidebar-ring: oklch(0.708 0 0);
 	--destructive-foreground: oklch(0.98 0.002 96);
 	--font-sans:
-		"Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-		sans-serif;
+		"Space Grotesk", ui-sans-serif, system-ui, -apple-system,
+		BlinkMacSystemFont, sans-serif;
 	--font-serif: "Spectral", ui-serif, Georgia, Cambria, Times New Roman, serif;
 	--font-mono:
 		"JetBrains Mono", ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas,
@@ -142,8 +142,8 @@
 	--destructive-foreground: oklch(0.98 0.005 25);
 	--radius: 0rem;
 	--font-sans:
-		"Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-		sans-serif;
+		"Space Grotesk", ui-sans-serif, system-ui, -apple-system,
+		BlinkMacSystemFont, sans-serif;
 	--font-serif: "Spectral", ui-serif, Georgia, Cambria, Times New Roman, serif;
 	--font-mono:
 		"JetBrains Mono", ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas,

@@ -3,10 +3,11 @@ import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import type { WebApplication, WithContext } from "schema-dts";
 import { JsonLd } from "@/components/json-ld";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { WalletBridge } from "@/components/wallet-bridge";
+import { AuthProvider } from "@/providers/auth-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { WalletProvider } from "@/providers/wallet-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { WalletToolboxProvider } from "@/providers/wallet-toolbox-provider";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
@@ -94,12 +95,14 @@ export default function RootLayout({
 				>
 					<ConvexClientProvider>
 						<QueryProvider>
-							<WalletProvider>
-								<WalletToolboxProvider>
-									<WalletBridge>{children}</WalletBridge>
-									<Toaster position="bottom-right" />
-								</WalletToolboxProvider>
-							</WalletProvider>
+							<AuthProvider>
+								<WalletProvider>
+									<WalletToolboxProvider>
+										<WalletBridge>{children}</WalletBridge>
+										<Toaster position="bottom-right" />
+									</WalletToolboxProvider>
+								</WalletProvider>
+							</AuthProvider>
 						</QueryProvider>
 					</ConvexClientProvider>
 				</ThemeProvider>

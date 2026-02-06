@@ -1,6 +1,20 @@
-import type { CWIRequest, CWIResponse } from "./types";
-
-const CHANNEL_NAME = "1sat-cwi";
+import {
+	CWI_CHANNEL_NAME,
+	type CWIChannelBaseMessage,
+	type CWIChannelDenyPermissionMessage,
+	type CWIChannelGrantPermissionMessage,
+	type CWIChannelPermissionRequestMessage,
+	type CWIChannelRequestMessage,
+	type CWIChannelResponseMessage,
+	type CWIChannelStatusMessage,
+	type CWIChannelStatusRequestMessage,
+	type CWIHandshakeReason,
+	type CWIRequest,
+	type CWIResponse,
+	type CWIWalletStatus,
+	createChannelEnvelope,
+	isV2ChannelMessage,
+} from "./types";
 
 /**
  * Valid WalletInterface method names that can be called via CWI.
@@ -40,6 +54,84 @@ const VALID_METHODS = new Set([
 
 export type WalletStatus = "checking" | "locked" | "unlocked" | "no-wallet";
 
+interface HandshakePolicy {
+	maxAttempts: number;
+	baseDelayMs: number;
+	maxDelayMs: number;
+}
+
+const DESKTOP_HANDSHAKE_POLICY: HandshakePolicy = {
+	maxAttempts: 4,
+	baseDelayMs: 350,
+	maxDelayMs: 2_500,
+};
+
+const MOBILE_HANDSHAKE_POLICY: HandshakePolicy = {
+	maxAttempts: 3,
+	baseDelayMs: 220,
+	maxDelayMs: 1_000,
+};
+
+type HandshakeState = "idle" | "probing" | "connected" | "fallback-required";
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null;
+
+const isLikelyMobileRuntime = (): boolean => {
+	if (typeof navigator === "undefined") return false;
+	if (
+		"userAgentData" in navigator &&
+		typeof navigator.userAgentData === "object" &&
+		navigator.userAgentData !== null &&
+		"mobile" in navigator.userAgentData
+	) {
+		const maybeMobile = (
+			navigator.userAgentData as unknown as { mobile?: unknown }
+		).mobile;
+		if (typeof maybeMobile === "boolean") {
+			return maybeMobile;
+		}
+	}
+	const userAgent = navigator.userAgent ?? "";
+	return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
+};
+
+const isChannelBaseMessage = (data: unknown): data is CWIChannelBaseMessage =>
+	isObjectRecord(data) && typeof data.type === "string";
+
+const createSessionId = (): string => {
+	if (
+		typeof crypto !== "undefined" &&
+		typeof crypto.randomUUID === "function"
+	) {
+		return crypto.randomUUID();
+	}
+	return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+};
+
+const isChannelResponseMessage = (
+	data: unknown,
+): data is CWIChannelResponseMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-response" &&
+	typeof data.id === "string";
+
+const isChannelStatusMessage = (
+	data: unknown,
+): data is CWIChannelStatusMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-status" &&
+	typeof data.status === "string";
+
+const isChannelPermissionRequestMessage = (
+	data: unknown,
+): data is CWIChannelPermissionRequestMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-permission-request" &&
+	typeof data.requestID === "string" &&
+	typeof data.permissionType === "string" &&
+	typeof data.originator === "string";
+
 export interface BridgePermissionRequest {
 	requestID: string;
 	permissionType: string;
@@ -47,9 +139,16 @@ export interface BridgePermissionRequest {
 	details: unknown;
 }
 
+export interface BridgeTransportState {
+	transport: "embed";
+	fallbackRecommended: boolean;
+	reason?: CWIHandshakeReason;
+}
+
 export interface CWIBridgeCallbacks {
 	onStatusChange: (status: WalletStatus) => void;
 	onPermissionRequest: (request: BridgePermissionRequest) => void;
+	onTransportStateChange?: (state: BridgeTransportState) => void;
 }
 
 /**
@@ -59,7 +158,7 @@ export interface CWIBridgeCallbacks {
  * via BroadcastChannel (same-origin only).
  */
 export class CWIBridge {
-	private channel: BroadcastChannel;
+	private channel: BroadcastChannel | null = null;
 	private messageHandler: ((event: MessageEvent) => void) | null = null;
 	private channelHandler: ((event: MessageEvent) => void) | null = null;
 	private pendingRequests = new Map<
@@ -68,14 +167,25 @@ export class CWIBridge {
 	>();
 	private callbacks: CWIBridgeCallbacks;
 	private statusTimeout: ReturnType<typeof setTimeout> | null = null;
+	private handshakeState: HandshakeState = "idle";
+	private handshakeAttempt = 0;
+	private isStopped = false;
+	private readonly sessionId = createSessionId();
+	private readonly handshakePolicy: HandshakePolicy;
 
 	constructor(callbacks: CWIBridgeCallbacks) {
 		this.callbacks = callbacks;
-		this.channel = new BroadcastChannel(CHANNEL_NAME);
+		this.handshakePolicy = isLikelyMobileRuntime()
+			? MOBILE_HANDSHAKE_POLICY
+			: DESKTOP_HANDSHAKE_POLICY;
+		if (typeof BroadcastChannel !== "undefined") {
+			this.channel = new BroadcastChannel(CWI_CHANNEL_NAME);
+		}
 	}
 
 	start(): void {
 		if (this.messageHandler) return;
+		this.isStopped = false;
 
 		// Listen for postMessage from dApp parent
 		this.messageHandler = (event: MessageEvent) => {
@@ -87,7 +197,13 @@ export class CWIBridge {
 		this.channelHandler = (event: MessageEvent) => {
 			this.handleChannelMessage(event);
 		};
-		this.channel.addEventListener("message", this.channelHandler);
+		this.channel?.addEventListener("message", this.channelHandler);
+
+		if (!this.channel) {
+			this.callbacks.onStatusChange("no-wallet");
+			this.markFallback("channel_unavailable");
+			return;
+		}
 
 		// Request status from wallet tab
 		this.requestStatus();
@@ -99,40 +215,50 @@ export class CWIBridge {
 			this.messageHandler = null;
 		}
 		if (this.channelHandler) {
-			this.channel.removeEventListener("message", this.channelHandler);
+			this.channel?.removeEventListener("message", this.channelHandler);
 			this.channelHandler = null;
 		}
-		if (this.statusTimeout) {
-			clearTimeout(this.statusTimeout);
-			this.statusTimeout = null;
-		}
-		this.channel.close();
+		this.isStopped = true;
+		this.clearStatusTimeout();
+		this.channel?.close();
+		this.channel = null;
 		this.pendingRequests.clear();
+		this.handshakeState = "idle";
+		this.handshakeAttempt = 0;
 	}
 
 	requestStatus(): void {
-		this.callbacks.onStatusChange("checking");
-		this.channel.postMessage({ type: "cwi-status-request" });
-
-		// If no response after 3s, assume no wallet tab
-		this.statusTimeout = setTimeout(() => {
-			this.statusTimeout = null;
+		if (this.isStopped) return;
+		if (!this.channel) {
 			this.callbacks.onStatusChange("no-wallet");
-		}, 3000);
+			this.markFallback("channel_unavailable");
+			return;
+		}
+
+		this.handshakeState = "probing";
+		this.handshakeAttempt = 0;
+		this.callbacks.onStatusChange("checking");
+		this.emitTransportState({ transport: "embed", fallbackRecommended: false });
+		this.clearStatusTimeout();
+		this.runHandshakeAttempt();
 	}
 
 	grantPermission(requestID: string): void {
-		this.channel.postMessage({
+		const message: CWIChannelGrantPermissionMessage = {
+			...createChannelEnvelope(this.sessionId),
 			type: "cwi-permission-grant",
 			requestID,
-		});
+		};
+		void this.postToChannel(message);
 	}
 
 	denyPermission(requestID: string): void {
-		this.channel.postMessage({
+		const message: CWIChannelDenyPermissionMessage = {
+			...createChannelEnvelope(this.sessionId),
 			type: "cwi-permission-deny",
 			requestID,
-		});
+		};
+		void this.postToChannel(message);
 	}
 
 	private handleDAppMessage(event: MessageEvent): void {
@@ -178,21 +304,40 @@ export class CWIBridge {
 		this.pendingRequests.set(request.id, { source, origin: originator });
 
 		// Forward to wallet tab via BroadcastChannel
-		this.channel.postMessage({
+		const relayMessage: CWIChannelRequestMessage = {
+			...createChannelEnvelope(this.sessionId),
 			type: "cwi-request",
 			id: request.id,
 			call: request.call,
 			args: request.args,
 			originator,
-		});
+		};
+		const posted = this.postToChannel(relayMessage);
+		if (!posted) {
+			this.pendingRequests.delete(request.id);
+			source.postMessage(
+				{
+					type: "CWI",
+					isInvocation: false,
+					id: request.id,
+					status: "error",
+					description: "Bridge channel unavailable",
+					code: 1,
+				} satisfies CWIResponse,
+				originator,
+			);
+			this.markFallback("channel_unavailable");
+		}
 	}
 
 	private handleChannelMessage(event: MessageEvent): void {
 		const data = event.data;
-		if (!data?.type) return;
+		if (!isChannelBaseMessage(data)) return;
+		if (!this.isCurrentSession(data)) return;
 
 		switch (data.type) {
 			case "cwi-response": {
+				if (!isChannelResponseMessage(data)) return;
 				// Route response back to the dApp that made the request
 				const pending = this.pendingRequests.get(data.id);
 				if (!pending) return;
@@ -214,15 +359,13 @@ export class CWIBridge {
 			}
 
 			case "cwi-status": {
-				if (this.statusTimeout) {
-					clearTimeout(this.statusTimeout);
-					this.statusTimeout = null;
-				}
-				this.callbacks.onStatusChange(data.status);
+				if (!isChannelStatusMessage(data)) return;
+				this.onStatusReceived(data.status);
 				break;
 			}
 
 			case "cwi-permission-request": {
+				if (!isChannelPermissionRequestMessage(data)) return;
 				this.callbacks.onPermissionRequest({
 					requestID: data.requestID,
 					permissionType: data.permissionType,
@@ -231,6 +374,97 @@ export class CWIBridge {
 				});
 				break;
 			}
+		}
+	}
+
+	private runHandshakeAttempt(): void {
+		if (this.isStopped || !this.channel) return;
+
+		this.handshakeAttempt += 1;
+		const message: CWIChannelStatusRequestMessage = {
+			...createChannelEnvelope(this.sessionId),
+			type: "cwi-status-request",
+		};
+
+		const posted = this.postToChannel(message);
+		if (!posted) {
+			this.callbacks.onStatusChange("no-wallet");
+			this.markFallback("channel_unavailable");
+			return;
+		}
+
+		const delay = Math.min(
+			this.handshakePolicy.baseDelayMs * 2 ** (this.handshakeAttempt - 1),
+			this.handshakePolicy.maxDelayMs,
+		);
+
+		this.clearStatusTimeout();
+		this.statusTimeout = setTimeout(() => {
+			this.statusTimeout = null;
+			if (this.isStopped || this.handshakeState !== "probing") return;
+			if (this.handshakeAttempt >= this.handshakePolicy.maxAttempts) {
+				this.callbacks.onStatusChange("no-wallet");
+				this.markFallback("wallet_tab_unreachable");
+				return;
+			}
+			this.runHandshakeAttempt();
+		}, delay);
+	}
+
+	private onStatusReceived(status: CWIWalletStatus): void {
+		this.clearStatusTimeout();
+		this.handshakeState = "connected";
+		this.callbacks.onStatusChange(status);
+		if (status === "locked") {
+			this.markFallback("wallet_locked");
+			return;
+		}
+		this.emitTransportState({ transport: "embed", fallbackRecommended: false });
+	}
+
+	private isCurrentSession(message: CWIChannelBaseMessage): boolean {
+		if (isV2ChannelMessage(message)) {
+			return message.sessionId === this.sessionId;
+		}
+		if (message.version == null && message.sessionId == null) {
+			return true;
+		}
+		return false;
+	}
+
+	private markFallback(reason: CWIHandshakeReason): void {
+		this.handshakeState = "fallback-required";
+		this.emitTransportState({
+			transport: "embed",
+			fallbackRecommended: true,
+			reason,
+		});
+	}
+
+	private emitTransportState(state: BridgeTransportState): void {
+		this.callbacks.onTransportStateChange?.(state);
+	}
+
+	private clearStatusTimeout(): void {
+		if (this.statusTimeout) {
+			clearTimeout(this.statusTimeout);
+			this.statusTimeout = null;
+		}
+	}
+
+	private postToChannel(
+		message:
+			| CWIChannelRequestMessage
+			| CWIChannelGrantPermissionMessage
+			| CWIChannelDenyPermissionMessage
+			| CWIChannelStatusRequestMessage,
+	): boolean {
+		if (this.isStopped || !this.channel) return false;
+		try {
+			this.channel.postMessage(message);
+			return true;
+		} catch {
+			return false;
 		}
 	}
 }

@@ -157,13 +157,13 @@ export default function WalletDiagnosticPage() {
 			// Try to initialize wallet-toolbox
 			if (!toolbox.isInitialized) {
 				results.push("Initializing wallet-toolbox...");
-				if (!rootKeyHex || !ordAddress) {
+				if (!rootKeyHex) {
 					results.push("Missing derived wallet keys");
 					setTestResults(results);
 					setIsTestingToolbox(false);
 					return;
 				}
-				const success = await toolbox.initializeWallet(rootKeyHex, ordAddress);
+				const success = await toolbox.initializeWallet(rootKeyHex);
 
 				if (success) {
 					results.push("Wallet-toolbox initialized successfully!");
@@ -299,6 +299,31 @@ export default function WalletDiagnosticPage() {
 			status: toolbox.identityKey ? "success" : "warning",
 		},
 		{
+			label: "Address Manager Ready",
+			value: toolbox.addressManagerReady,
+			status: toolbox.addressManagerReady ? "success" : "warning",
+		},
+		{
+			label: "Deposit Address",
+			value: toolbox.depositAddress,
+			status: toolbox.depositAddress ? "success" : "warning",
+		},
+		{
+			label: "Receive Index",
+			value: toolbox.receiveAddressIndex,
+			status: toolbox.addressManagerReady ? "info" : "warning",
+		},
+		{
+			label: "Receive Window",
+			value: `${toolbox.receiveAddresses.length} addresses`,
+			status: toolbox.receiveAddresses.length > 0 ? "info" : "warning",
+		},
+		{
+			label: "Last Rotated Outpoint",
+			value: toolbox.lastRotationOutpoint,
+			status: toolbox.lastRotationOutpoint ? "info" : "warning",
+		},
+		{
 			label: "Wallet Instance",
 			value: toolbox.wallet ? "Created" : "Not Created",
 			status: toolbox.wallet ? "success" : "warning",
@@ -406,6 +431,49 @@ export default function WalletDiagnosticPage() {
 						{balanceDiagnostics.map((item) => (
 							<DiagnosticRow key={item.label} item={item} />
 						))}
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-lg">Receive Address Window</CardTitle>
+						<CardDescription>
+							Current deposit index and active tracked receive addresses
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-2">
+						{toolbox.receiveAddresses.length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								No receive addresses derived yet.
+							</p>
+						) : (
+							<div className="space-y-1">
+								{toolbox.receiveAddresses.map((address, offset) => {
+									const index = toolbox.receiveAddressIndex + offset;
+									const isCurrent = offset === 0;
+									return (
+										<div
+											key={`${index}:${address}`}
+											className="flex items-center justify-between rounded border border-border/50 px-2 py-1"
+										>
+											<div className="flex items-center gap-2">
+												<Badge variant={isCurrent ? "default" : "secondary"}>
+													#{index}
+												</Badge>
+												{isCurrent && (
+													<span className="text-xs text-muted-foreground">
+														current
+													</span>
+												)}
+											</div>
+											<code className="text-xs font-mono truncate max-w-[320px]">
+												{address}
+											</code>
+										</div>
+									);
+								})}
+							</div>
+						)}
 					</CardContent>
 				</Card>
 

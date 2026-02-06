@@ -1,16 +1,20 @@
 "use client";
 
 import usePresence from "@convex-dev/presence/react";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { MousePointer2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { wifToAddress } from "@/lib/keys";
+import { registerTradeDisplayId } from "@/lib/trade-display-id";
+import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "@/providers/wallet-provider";
 import { api } from "../../convex/_generated/api";
 
 interface CursorData {
 	x: number;
 	y: number;
+	displayId?: string;
 }
 
 interface Cursor {
@@ -19,7 +23,7 @@ interface Cursor {
 	y: number;
 	color: string;
 	label: string;
-	address: string;
+	displayId: string;
 	online: boolean;
 }
 
@@ -52,10 +56,10 @@ function getCursorColor(index: number): string {
 	return generateRandomShade(index);
 }
 
-// Truncate address for display
-function truncateAddress(address: string): string {
-	if (address.length <= 12) return address;
-	return `${address.slice(0, 6)}...${address.slice(-4)}`;
+// Truncate identifier for display
+function truncateIdentifier(identifier: string): string {
+	if (identifier.length <= 12) return identifier;
+	return `${identifier.slice(0, 6)}...${identifier.slice(-4)}`;
 }
 
 export function SharedPresence() {
@@ -74,6 +78,7 @@ export function SharedPresence() {
 
 	// Get wallet context
 	const { walletKeys, isWalletLocked } = useWallet();
+	const { user: authUser, accessToken } = useAuth();
 
 	// Derive the user's address from wallet keys
 	const myAddress = useMemo(() => {
@@ -100,8 +105,11 @@ export function SharedPresence() {
 		return suffix;
 	}, []);
 
-	// Use address + session suffix as userId
+	// Use stable internal identity for routing trade requests.
 	const userId = useMemo(() => {
+		if (authUser?.sub) {
+			return authUser.sub;
+		}
 		if (myAddress) {
 			return `${myAddress}:${sessionSuffix}`;
 		}
@@ -114,14 +122,22 @@ export function SharedPresence() {
 			sessionStorage.setItem("presence-user-id", id);
 		}
 		return id;
-	}, [myAddress, sessionSuffix]);
+	}, [authUser?.sub, myAddress, sessionSuffix]);
+
+	const myDisplayId = useMemo(() => {
+		return authUser?.bap_id || myAddress || userId;
+	}, [authUser?.bap_id, myAddress, userId]);
+
+	useEffect(() => {
+		registerTradeDisplayId(userId, myDisplayId);
+	}, [myDisplayId, userId]);
 
 	// Use official presence hook
 	const presenceState = usePresence(api.presence, "main-room", userId);
 
 	// Mutations
 	const updateCursor = useMutation(api.presence.updateCursor);
-	const sendTradeRequest = useMutation(api.trades.sendTradeRequest);
+	const sendTradeRequest = useAction(api.authenticatedTrades.sendTradeRequest);
 
 	// Track mouse movement and sync to server
 	const handleMouseMove = useCallback(
@@ -142,10 +158,10 @@ export function SharedPresence() {
 			updateCursor({
 				roomId: "main-room",
 				userId: userId,
-				data: { x: clampedX, y: clampedY },
+				data: { x: clampedX, y: clampedY, displayId: myDisplayId },
 			}).catch(() => {});
 		},
-		[updateCursor, userId],
+		[myDisplayId, updateCursor, userId],
 	);
 
 	// Set up mouse tracking
@@ -166,20 +182,18 @@ export function SharedPresence() {
 				const data = p.data as CursorData | undefined;
 				const x = data?.x ?? 50;
 				const y = data?.y ?? 50;
-
-				// Extract wallet address from userId (format: "address:session" or "anon-xxx")
-				const walletAddress = p.userId.includes(":")
-					? p.userId.split(":")[0]
-					: p.userId;
-				const isWalletUser = walletAddress.startsWith("1");
+				const displayId =
+					(typeof data?.displayId === "string" && data.displayId.trim()) ||
+					(p.userId.includes(":") ? p.userId.split(":")[0] : p.userId);
+				registerTradeDisplayId(p.userId, displayId);
 
 				return {
 					id: p.userId,
 					x,
 					y,
 					color: getCursorColor(index),
-					label: isWalletUser ? truncateAddress(walletAddress) : walletAddress,
-					address: walletAddress,
+					label: truncateIdentifier(displayId),
+					displayId,
 					online: p.online,
 				};
 			});
@@ -190,24 +204,30 @@ export function SharedPresence() {
 		e.stopPropagation();
 
 		if (!myAddress) {
-			alert(
-				"Connect your wallet to trade. You need an unlocked wallet to initiate trades.",
+			toast.error("Connect and unlock your wallet to initiate trades.");
+			return;
+		}
+
+		if (cursor.id.startsWith("anon-")) {
+			toast.error(
+				"Cannot trade with anonymous users. The other user must connect a wallet.",
 			);
 			return;
 		}
 
-		if (!cursor.address.startsWith("1")) {
-			alert(
-				"Cannot trade with anonymous user. The other user needs to connect their wallet.",
-			);
+		const token = accessToken;
+		if (!token) {
+			toast.error("Sign in with Sigma Identity before starting a trade.");
 			return;
 		}
 
 		try {
-			const result = await sendTradeRequest({
-				fromUserId: userId,
+			registerTradeDisplayId(cursor.id, cursor.displayId);
+
+			const result = (await sendTradeRequest({
+				accessToken: token,
 				toUserId: cursor.id,
-			});
+			})) as { alreadyExists?: boolean };
 
 			if (result.alreadyExists) {
 				console.info("Trade request pending", cursor.label);
@@ -216,6 +236,7 @@ export function SharedPresence() {
 			}
 		} catch (error) {
 			console.error("Failed to send trade request:", error);
+			toast.error("Failed to send trade request.");
 		}
 	};
 
@@ -239,7 +260,7 @@ export function SharedPresence() {
 					style={{ opacity: scrollOpacity }}
 				>
 					<div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-primary/20 text-sm">
-						<span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+						<span className="flex h-2 w-2 rounded-full bg-chart-4 animate-pulse" />
 						<span className="text-muted-foreground">
 							{onlineCount + 1} online
 						</span>

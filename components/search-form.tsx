@@ -251,8 +251,8 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 													variant="outline"
 													className={`text-xs ${
 														isBsv20
-															? "text-orange-400 border-orange-400/30"
-															: "text-purple-400 border-purple-400/30"
+															? "text-chart-1 border-chart-1/30"
+															: "text-chart-5 border-chart-5/30"
 													}`}
 												>
 													{token.type}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { CheckCircle, ShieldAlert, X } from "lucide-react";
+import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -175,6 +175,9 @@ export default function CWIPage() {
 		status,
 		activePermission,
 		queueLength,
+		transport,
+		fallbackRecommended,
+		reason,
 		grantPermission,
 		denyPermission,
 	} = useCWIBridge();
@@ -188,11 +191,14 @@ export default function CWIPage() {
 				cwiState: {
 					status,
 					hasPermission: !!activePermission,
+					transport,
+					fallbackRecommended,
+					reason,
 				},
 			},
 			"*",
 		);
-	}, [status, activePermission]);
+	}, [status, activePermission, transport, fallbackRecommended, reason]);
 
 	// Permission request pending — show dialog over dApp with solid background
 	if (activePermission) {

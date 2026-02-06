@@ -3,36 +3,61 @@
 /**
  * Wallet Toolbox Provider
  *
- * This provider integrates @1sat/wallet-toolbox for BRC-100 compliant wallet operations
- * with 1Sat-specific indexing and ordinal support.
- *
- * Uses TanStack Query for network request state management.
+ * Integrates @1sat/wallet-browser wallet + address sync with receive address
+ * rotation and TanStack Query powered balance refresh.
  */
 
 import {
+	type AddressManager,
 	createWebWallet,
-	type MonitorEvent,
 	type OneSatServices,
 	type WebWalletResult,
 } from "@1sat/wallet-browser";
-import { toast } from "sonner";
-import { PrivateKey } from "@bsv/sdk";
-// TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
+import { Beef, PrivateKey } from "@bsv/sdk";
 import {
 	type PermissionsManagerConfig,
 	WalletPermissionsManager,
 } from "@bsv/wallet-toolbox/out/src/index.client";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+	createContext,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import { loadLocalPermissions } from "@/lib/cwi/permission-store";
+import {
+	advanceReceiveAddress,
+	buildReceiveAddressManager,
+	getActiveReceiveAddresses,
+	RECEIVE_ADDRESS_PREFIX,
+	RECEIVE_ADDRESS_WINDOW,
+} from "@/lib/receive-address-manager";
+import {
+	createDefaultReceiveAddressState,
+	loadReceiveAddressState,
+	type ReceiveAddressState,
+	saveReceiveAddressState,
+} from "@/lib/receive-address-state";
+import type { TxoData } from "@/lib/types/ordinals";
+import type { Ordinal } from "@/lib/wallet/gorillapool-service";
+import { useSyncEngine } from "./hooks/use-sync-engine";
+import { useWalletBalance } from "./hooks/use-wallet-balance";
+import { useWalletDiagnostics } from "./hooks/use-wallet-diagnostics";
 
 type Wallet = WebWalletResult["wallet"];
+
+type Chain = "main" | "test";
 
 const ADMIN_ORIGINATOR =
 	typeof window !== "undefined"
 		? window.location.origin
 		: "https://1satwallet.com";
 
-// TODO(cwi-permissions): Finalize prompt policy for each permission scope.
-// Revisit which read/list operations should always prompt vs remain implicit.
 const PERMISSIONS_CONFIG: PermissionsManagerConfig = {
 	seekProtocolPermissionsForSigning: true,
 	seekProtocolPermissionsForEncrypting: true,
@@ -56,31 +81,12 @@ const PERMISSIONS_CONFIG: PermissionsManagerConfig = {
 	differentiatePrivilegedOperations: true,
 };
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	createContext,
-	type ReactNode,
-	useCallback,
-	useContext,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
-import { useExchangeRate } from "@/hooks/use-exchange-rate";
-import type { TxoData } from "@/lib/types/ordinals";
-import type { Ordinal } from "@/lib/wallet/gorillapool-service";
-import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
-
-type Chain = "main" | "test";
-
 interface WalletBalance {
 	confirmed: number;
 	unconfirmed: number;
 	total: number;
 }
 
-// Token balance interface
 interface TokenBalance {
 	outpoint: string;
 	txid: string;
@@ -89,15 +95,6 @@ interface TokenBalance {
 	height?: number;
 }
 
-// Query result for balance/assets
-interface BalanceQueryResult {
-	balance: WalletBalance;
-	ordinals: Ordinal[];
-	bsv20Tokens: TokenBalance[];
-	bsv21Tokens: TokenBalance[];
-}
-
-// Sync status for UI components
 interface SyncStatus {
 	isSyncing: boolean;
 	progress: null;
@@ -115,18 +112,54 @@ export interface SyncEvent {
 	message: string;
 }
 
-/** Typed wallet event (extends MonitorEvent with timestamp + id). */
 export type WalletEvent =
-	| { id: number; timestamp: number; type: "broadcast"; txid: string; status: string }
-	| { id: number; timestamp: number; type: "proven"; txid: string; blockHeight: number; blockHash: string }
-	| { id: number; timestamp: number; type: "sync:progress"; stage: string; message: string }
+	| {
+			id: number;
+			timestamp: number;
+			type: "broadcast";
+			txid: string;
+			status: string;
+	  }
+	| {
+			id: number;
+			timestamp: number;
+			type: "proven";
+			txid: string;
+			blockHeight: number;
+			blockHash: string;
+	  }
+	| {
+			id: number;
+			timestamp: number;
+			type: "sync:progress";
+			stage: string;
+			message: string;
+	  }
 	| { id: number; timestamp: number; type: "sync:backup"; message: string }
-	| { id: number; timestamp: number; type: "task:run"; taskName: string; result: string }
-	| { id: number; timestamp: number; type: "error"; source: string; message: string }
-	| { id: number; timestamp: number; type: "log"; level: SyncEventLevel; source: string; message: string };
+	| {
+			id: number;
+			timestamp: number;
+			type: "task:run";
+			taskName: string;
+			result: string;
+	  }
+	| {
+			id: number;
+			timestamp: number;
+			type: "error";
+			source: string;
+			message: string;
+	  }
+	| {
+			id: number;
+			timestamp: number;
+			type: "log";
+			level: SyncEventLevel;
+			source: string;
+			message: string;
+	  };
 
 interface WalletToolboxContextValue {
-	// Wallet state
 	wallet: Wallet | null;
 	permissionsManager: WalletPermissionsManager | null;
 	services: OneSatServices | null;
@@ -136,7 +169,12 @@ interface WalletToolboxContextValue {
 	chain: Chain;
 	identityKey: string | null;
 
-	// Sync state (driven by balance query)
+	depositAddress: string | null;
+	receiveAddressIndex: number;
+	receiveAddresses: string[];
+	addressManagerReady: boolean;
+	lastRotationOutpoint: string | null;
+
 	syncStatus: SyncStatus;
 	syncWallet: () => void;
 	syncEvents: SyncEvent[];
@@ -145,7 +183,6 @@ interface WalletToolboxContextValue {
 	clearWalletEvents: () => void;
 	hasActiveSync: boolean;
 
-	// Balance and assets (from query)
 	balance: WalletBalance | null;
 	ordinals: Ordinal[];
 	bsv20Tokens: TokenBalance[];
@@ -153,15 +190,9 @@ interface WalletToolboxContextValue {
 	isBalanceLoading: boolean;
 	balanceError: Error | null;
 
-	// Exchange rate
 	exchangeRate: number | null;
 
-	// Actions
-	initializeWallet: (
-		rootKeyHex: string,
-		ordAddress?: string,
-		payAddress?: string,
-	) => Promise<boolean>;
+	initializeWallet: (rootKeyHex: string) => Promise<boolean>;
 	destroyWallet: () => Promise<void>;
 	refreshBalance: () => void;
 }
@@ -170,63 +201,21 @@ const WalletToolboxContext = createContext<
 	WalletToolboxContextValue | undefined
 >(undefined);
 
-const SYNC_EVENT_LIMIT = 500;
-
-const WALLET_LOG_PATTERNS = [
-	/\[WalletBridge\]/,
-	/\[WalletToolbox\]/,
-	/\[createWebWallet\]/,
-	/\[GorillaPool\]/,
-	/\[ChaintracksClient\]/,
-	/\bTaskNewHeader\b/,
-	/\bTaskMonitor[A-Za-z]+\b/,
-];
-
-const stringifyConsoleArg = (arg: unknown): string => {
-	if (typeof arg === "string") return arg;
-	if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
-	if (typeof arg === "bigint") return `${arg.toString()}n`;
-	if (arg === undefined) return "undefined";
-	if (arg === null) return "null";
-	if (typeof arg === "object") {
-		try {
-			return JSON.stringify(arg);
-		} catch {
-			return String(arg);
-		}
+function parseOutpoint(
+	outpoint: string,
+): { txid: string; vout: number } | null {
+	const underscoreIndex = outpoint.lastIndexOf("_");
+	if (underscoreIndex <= 0) {
+		return null;
 	}
-	return String(arg);
-};
-
-const serializeConsoleArgs = (args: unknown[]): string =>
-	args
-		.map((arg) => stringifyConsoleArg(arg))
-		.join(" ")
-		.trim();
-
-const trimLogMessage = (message: string, maxLength = 1200): string => {
-	if (message.length <= maxLength) return message;
-	return `${message.slice(0, maxLength)}...`;
-};
-
-const shouldCaptureWalletLog = (message: string): boolean =>
-	WALLET_LOG_PATTERNS.some((pattern) => pattern.test(message));
-
-const detectWalletLogSource = (message: string): string => {
-	const bracketSource = message.match(/\[([^[\]]+)\]/)?.[1];
-	if (bracketSource) return bracketSource;
-	if (message.includes("TaskNewHeader")) return "TaskNewHeader";
-	if (message.includes("TaskMonitorCallHistory"))
-		return "TaskMonitorCallHistory";
-	if (message.includes("TaskMonitor")) return "TaskMonitor";
-	return "Wallet";
-};
-
-// Query keys
-const QUERY_KEYS = {
-	balance: (ordAddress: string | null, payAddress: string | null) =>
-		["wallet-balance", ordAddress, payAddress] as const,
-};
+	const txid = outpoint.slice(0, underscoreIndex);
+	const voutRaw = outpoint.slice(underscoreIndex + 1);
+	const vout = Number.parseInt(voutRaw, 10);
+	if (!txid || Number.isNaN(vout) || vout < 0) {
+		return null;
+	}
+	return { txid, vout };
+}
 
 interface WalletToolboxProviderProps {
 	children: ReactNode;
@@ -240,7 +229,7 @@ export function WalletToolboxProvider({
 	const queryClient = useQueryClient();
 	const { rate: exchangeRate } = useExchangeRate();
 
-	// Core wallet state
+	// -- Core wallet state --
 	const [wallet, setWallet] = useState<Wallet | null>(null);
 	const [permissionsManager, setPermissionsManager] =
 		useState<WalletPermissionsManager | null>(null);
@@ -248,188 +237,209 @@ export function WalletToolboxProvider({
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
 	const walletResultRef = useRef<WebWalletResult | null>(null);
 
-	// UI state
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [isInitializing, setIsInitializing] = useState(false);
 	const [initError, setInitError] = useState<string | null>(null);
 
-	// Store wallet addresses for queries
-	const [ordAddress, setOrdAddress] = useState<string | null>(null);
-	const [payAddress, setPayAddress] = useState<string | null>(null);
+	// -- Receive address state --
+	const [depositAddress, setDepositAddress] = useState<string | null>(null);
+	const [receiveAddressIndex, setReceiveAddressIndex] = useState(0);
+	const [receiveAddresses, setReceiveAddresses] = useState<string[]>([]);
+	const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
+	const [addressManagerReady, setAddressManagerReady] = useState(false);
+	const [lastRotationOutpoint, setLastRotationOutpoint] = useState<
+		string | null
+	>(null);
 
-	// GorillaPool service for ordinal lookups
-	const gorillaPoolRef = useRef(new GorillaPoolService());
-	const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
-	const syncEventIdRef = useRef(0);
-	const [walletEvents, setWalletEvents] = useState<WalletEvent[]>([]);
-	const walletEventIdRef = useRef(0);
+	const addressManagerRef = useRef<AddressManager | null>(null);
+	const receiveStateRef = useRef<ReceiveAddressState>(
+		createDefaultReceiveAddressState(RECEIVE_ADDRESS_WINDOW),
+	);
+	const seenOutpointsRef = useRef(new Set<string>());
+	const rotatingOutpointsRef = useRef(new Set<string>());
+	const [syncRevision, setSyncRevision] = useState(0);
 
-	const appendSyncEvent = useCallback(
-		(level: SyncEventLevel, source: string, message: string) => {
-			setSyncEvents((prev) => {
-				const next = [
-					...prev,
-					{
-						id: ++syncEventIdRef.current,
-						timestamp: Date.now(),
-						level,
-						source,
-						message: trimLogMessage(message),
-					},
-				];
-				if (next.length <= SYNC_EVENT_LIMIT) return next;
-				return next.slice(next.length - SYNC_EVENT_LIMIT);
-			});
+	// -- Diagnostics hook --
+	const {
+		syncEvents,
+		clearSyncEvents,
+		walletEvents,
+		clearWalletEvents,
+		appendWalletEvent,
+	} = useWalletDiagnostics();
+
+	// -- Balance hook --
+	const balanceResult = useWalletBalance({
+		wallet,
+		isInitialized,
+		chain,
+		identityKey,
+		trackedAddresses,
+	});
+	const {
+		refreshBalance,
+		balance,
+		ordinals,
+		bsv20Tokens,
+		bsv21Tokens,
+		isBalanceLoading,
+		balanceError,
+		syncStatus: balanceSyncStatus,
+	} = balanceResult;
+
+	// -- Outpoint script resolution --
+	const resolveOutpointScript = useCallback(
+		async (outpoint: string): Promise<string | null> => {
+			if (!services) return null;
+			const parsed = parseOutpoint(outpoint);
+			if (!parsed) return null;
+
+			const beef = await services.beef.getBeef(parsed.txid);
+			if (!beef) return null;
+
+			const beefTx = Beef.fromBinary(Array.from(beef));
+			const btx = beefTx.findTxid(parsed.txid);
+			const output = btx?.tx?.outputs[parsed.vout];
+			if (!output) return null;
+
+			return output.lockingScript.toHex();
 		},
-		[],
+		[services],
 	);
 
-	const clearSyncEvents = useCallback(() => {
-		setSyncEvents([]);
-	}, []);
-
-	const appendWalletEvent = useCallback((event: MonitorEvent) => {
-		const base = { id: ++walletEventIdRef.current, timestamp: Date.now() };
-		setWalletEvents((prev) => {
-			const next = [...prev, { ...base, ...event } as WalletEvent];
-			if (next.length <= SYNC_EVENT_LIMIT) return next;
-			return next.slice(next.length - SYNC_EVENT_LIMIT);
-		});
-
-		// Fire toast notifications for key events
-		switch (event.type) {
-			case "broadcast":
-				toast.success(`Transaction broadcast: ${event.txid.slice(0, 8)}...`);
-				break;
-			case "proven":
-				toast.success(
-					`Transaction confirmed at block ${event.blockHeight}`,
-				);
-				break;
-			case "error":
-				toast.error(`${event.source}: ${event.message}`);
-				break;
-		}
-	}, []);
-
-	const clearWalletEvents = useCallback(() => {
-		setWalletEvents([]);
-	}, []);
-
-	useEffect(() => {
-		type ConsoleMethod = (...data: unknown[]) => void;
-
-		const originalLog = console.log.bind(console) as ConsoleMethod;
-		const originalWarn = console.warn.bind(console) as ConsoleMethod;
-		const originalError = console.error.bind(console) as ConsoleMethod;
-
-		const createCapturedMethod =
-			(level: SyncEventLevel, originalMethod: ConsoleMethod): ConsoleMethod =>
-			(...args: unknown[]) => {
-				originalMethod(...args);
-				const message = serializeConsoleArgs(args);
-				if (!message || !shouldCaptureWalletLog(message)) return;
-				appendSyncEvent(level, detectWalletLogSource(message), message);
-			};
-
-		console.log = createCapturedMethod(
-			"log",
-			originalLog,
-		) as typeof console.log;
-		console.warn = createCapturedMethod(
-			"warn",
-			originalWarn,
-		) as typeof console.warn;
-		console.error = createCapturedMethod(
-			"error",
-			originalError,
-		) as typeof console.error;
-
-		return () => {
-			console.log = originalLog as typeof console.log;
-			console.warn = originalWarn as typeof console.warn;
-			console.error = originalError as typeof console.error;
-		};
-	}, [appendSyncEvent]);
-
-	// Balance query - fetches from GorillaPool
-	const balanceQuery = useQuery({
-		queryKey: QUERY_KEYS.balance(ordAddress, payAddress),
-		queryFn: async (): Promise<BalanceQueryResult> => {
-			if (!wallet || !isInitialized || !ordAddress) {
-				throw new Error("Wallet not initialized");
+	// -- Queued outpoint handler (receive address rotation) --
+	const handleQueuedOutpoint = useCallback(
+		async (outpoint: string, score: number) => {
+			const addressManager = addressManagerRef.current;
+			const receiveState = receiveStateRef.current;
+			if (!wallet || !identityKey || !addressManager || !addressManagerReady) {
+				return;
 			}
 
-			console.log("[WalletToolbox] Starting wallet scan request...");
+			if (seenOutpointsRef.current.has(outpoint)) {
+				return;
+			}
+			seenOutpointsRef.current.add(outpoint);
+			if (seenOutpointsRef.current.size > 2000) {
+				const oldest = seenOutpointsRef.current.values().next().value;
+				if (oldest) {
+					seenOutpointsRef.current.delete(oldest);
+				}
+			}
 
-			const gp = gorillaPoolRef.current;
-
-			// Fetch spendable sat balance from wallet and categorized assets from indexers
-			const utxoPromises: Promise<
-				Awaited<ReturnType<typeof gp.getCategorizedUtxos>>
-			>[] = [gp.getCategorizedUtxos(ordAddress)];
 			console.log(
-				`[WalletToolbox] Scanning ordinals address ${ordAddress.slice(0, 10)}...`,
+				`[WalletToolbox][Receive] queued outpoint ${outpoint} score ${score}`,
 			);
-			if (payAddress && payAddress !== ordAddress) {
-				utxoPromises.push(gp.getCategorizedUtxos(payAddress));
+
+			const outputScript = await resolveOutpointScript(outpoint);
+			if (!outputScript) {
 				console.log(
-					`[WalletToolbox] Scanning payment address ${payAddress.slice(0, 10)}...`,
+					`[WalletToolbox][Receive] unable to resolve locking script for ${outpoint}`,
 				);
+				return;
 			}
-
-			const [fundOutputs, ...utxoResults] = await Promise.all([
-				wallet.balance(),
-				...utxoPromises,
-			]);
-			const total = fundOutputs ?? 0;
-			console.log(`[WalletToolbox] balance() returned ${total} sats`);
-
-			// Merge categorized utxo results
-			const categorized = utxoResults[0];
-			for (let i = 1; i < utxoResults.length; i++) {
-				categorized.ordinals.push(...utxoResults[i].ordinals);
-				categorized.bsv20Tokens.push(...utxoResults[i].bsv20Tokens);
-				categorized.bsv21Tokens.push(...utxoResults[i].bsv21Tokens);
-			}
-
+			const normalizedOutputScript = outputScript.toLowerCase();
 			console.log(
-				`[WalletToolbox] Balance: ${total}, Ordinals: ${categorized.ordinals.length}, BSV20: ${categorized.bsv20Tokens.length}, BSV21: ${categorized.bsv21Tokens.length}`,
+				`[WalletToolbox][Receive] resolved script for ${outpoint}: ${outputScript.slice(0, 24)}...`,
 			);
 
-			return {
-				balance: { confirmed: total, unconfirmed: 0, total },
-				ordinals: categorized.ordinals,
-				bsv20Tokens: categorized.bsv20Tokens.map((o) => ({
-					outpoint: o.outpoint,
-					txid: o.txid,
-					vout: o.vout,
-					height: o.height,
-					data: o.data,
-				})),
-				bsv21Tokens: categorized.bsv21Tokens.map((o) => ({
-					outpoint: o.outpoint,
-					txid: o.txid,
-					vout: o.vout,
-					height: o.height,
-					data: o.data,
-				})),
-			};
-		},
-		enabled: isInitialized && !!wallet && !!ordAddress,
-		staleTime: 30_000, // Consider data fresh for 30s
-		gcTime: 5 * 60_000, // Keep in cache for 5 minutes
-	});
+			const currentScript = addressManager.getLockingScriptAtIndex(
+				receiveState.currentIndex,
+			);
+			if (!currentScript) {
+				console.log(
+					`[WalletToolbox][Receive] missing current script at index ${receiveState.currentIndex}`,
+				);
+				return;
+			}
+			const normalizedCurrentScript = currentScript.toLowerCase();
 
-	/**
-	 * Initialize the wallet with a root key
-	 */
+			if (normalizedOutputScript !== normalizedCurrentScript) {
+				console.log(
+					`[WalletToolbox][Receive] ${outpoint} does not match current address index ${receiveState.currentIndex}; no rotation`,
+				);
+				return;
+			}
+
+			if (receiveState.lastRotationOutpoint === outpoint) {
+				console.log(
+					`[WalletToolbox][Receive] ${outpoint} already triggered a rotation`,
+				);
+				return;
+			}
+
+			if (rotatingOutpointsRef.current.has(outpoint)) {
+				return;
+			}
+			rotatingOutpointsRef.current.add(outpoint);
+
+			try {
+				const advanced = await advanceReceiveAddress({
+					wallet,
+					identityKey,
+					state: receiveState,
+					addressManager,
+					rotationOutpoint: outpoint,
+					prefix: RECEIVE_ADDRESS_PREFIX,
+					originator: ADMIN_ORIGINATOR,
+				});
+
+				receiveStateRef.current = advanced.state;
+				addressManagerRef.current = advanced.addressManager;
+
+				saveReceiveAddressState({ chain, identityKey }, advanced.state);
+
+				setReceiveAddressIndex(advanced.state.currentIndex);
+				setDepositAddress(advanced.depositAddress);
+				setReceiveAddresses(
+					getActiveReceiveAddresses(advanced.addressManager, advanced.state),
+				);
+				setTrackedAddresses(advanced.addressManager.getAddresses());
+				setLastRotationOutpoint(advanced.state.lastRotationOutpoint ?? null);
+
+				console.log(
+					`[WalletToolbox][Receive] rotated to index ${advanced.state.currentIndex} after ${outpoint}`,
+				);
+
+				setSyncRevision((prev) => prev + 1);
+				refreshBalance();
+			} catch (error) {
+				console.error(
+					"[WalletToolbox][Receive] failed to rotate address:",
+					error,
+				);
+			} finally {
+				rotatingOutpointsRef.current.delete(outpoint);
+			}
+		},
+		[
+			wallet,
+			identityKey,
+			addressManagerReady,
+			resolveOutpointScript,
+			chain,
+			refreshBalance,
+		],
+	);
+
+	// -- Sync engine hook --
+	const syncEngine = useSyncEngine({
+		isInitialized,
+		wallet,
+		services,
+		identityKey,
+		chain,
+		addressManagerReady,
+		addressManagerRef,
+		syncRevision,
+		onQueuedOutpoint: handleQueuedOutpoint,
+		refreshBalance,
+	});
+	const { stopSyncWorkers, syncWallet, syncEngineActive } = syncEngine;
+
+	// -- Wallet init --
 	const initializeWallet = useCallback(
-		async (
-			rootKeyHex: string,
-			ordAddressParam?: string,
-			payAddressParam?: string,
-		): Promise<boolean> => {
+		async (rootKeyHex: string): Promise<boolean> => {
 			if (isInitializing || isInitialized) {
 				console.warn("[WalletToolbox] Already initializing or initialized");
 				return false;
@@ -439,11 +449,9 @@ export function WalletToolboxProvider({
 			console.log("[WalletToolbox] Starting wallet initialization...");
 
 			try {
-				// Derive identity key from root key
 				const rootKey = PrivateKey.fromHex(rootKeyHex);
 				const newIdentityKey = rootKey.toPublicKey().toString();
 
-				// Create wallet using factory
 				const result = await createWebWallet({
 					privateKey: rootKey,
 					chain,
@@ -451,20 +459,17 @@ export function WalletToolboxProvider({
 					onMonitorEvent: appendWalletEvent,
 				});
 
-				// Start the monitor for tx lifecycle management
 				result.monitor.startTasks();
 
 				walletResultRef.current = result;
 				setWallet(result.wallet);
 				setServices(result.services);
 
-				// Wrap wallet with WalletPermissionsManager for external dApp access
 				const wpm = new WalletPermissionsManager(
 					result.wallet,
 					ADMIN_ORIGINATOR,
 					PERMISSIONS_CONFIG,
 				);
-				// Hydrate WPM permission cache from IndexedDB (local fallback store)
 				try {
 					const localPerms = await loadLocalPermissions({
 						identityKey: newIdentityKey,
@@ -485,14 +490,52 @@ export function WalletToolboxProvider({
 						});
 					}
 				} catch {
-					// IndexedDB unavailable — permissions will re-prompt
+					// IndexedDB unavailable — permissions will re-prompt.
 				}
 
-				setPermissionsManager(wpm);
+				const loadedState = loadReceiveAddressState(
+					{ chain, identityKey: newIdentityKey },
+					RECEIVE_ADDRESS_WINDOW,
+				);
+				const receiveState: ReceiveAddressState = {
+					...loadedState,
+					windowSize: RECEIVE_ADDRESS_WINDOW,
+					maxDerivedIndex: Math.max(
+						loadedState.maxDerivedIndex,
+						loadedState.currentIndex + RECEIVE_ADDRESS_WINDOW - 1,
+					),
+				};
 
+				const receiveResult = await buildReceiveAddressManager({
+					wallet: result.wallet,
+					identityKey: newIdentityKey,
+					state: receiveState,
+					prefix: RECEIVE_ADDRESS_PREFIX,
+					originator: ADMIN_ORIGINATOR,
+				});
+
+				setPermissionsManager(wpm);
 				setIdentityKey(newIdentityKey);
-				setOrdAddress(ordAddressParam || null);
-				setPayAddress(payAddressParam || null);
+				setAddressManagerReady(true);
+				setReceiveAddressIndex(receiveResult.state.currentIndex);
+				setDepositAddress(receiveResult.depositAddress || null);
+				setReceiveAddresses(
+					getActiveReceiveAddresses(
+						receiveResult.addressManager,
+						receiveResult.state,
+					),
+				);
+				setTrackedAddresses(receiveResult.addressManager.getAddresses());
+				setLastRotationOutpoint(receiveState.lastRotationOutpoint ?? null);
+				receiveStateRef.current = receiveResult.state;
+				addressManagerRef.current = receiveResult.addressManager;
+				saveReceiveAddressState(
+					{ chain, identityKey: newIdentityKey },
+					receiveResult.state,
+				);
+				seenOutpointsRef.current = new Set();
+				rotatingOutpointsRef.current = new Set();
+
 				setIsInitialized(true);
 				setInitError(null);
 
@@ -504,6 +547,7 @@ export function WalletToolboxProvider({
 				console.error("[WalletToolbox] Failed to initialize wallet:", error);
 				setInitError(errorMessage);
 				setIsInitialized(false);
+				setAddressManagerReady(false);
 				return false;
 			} finally {
 				setIsInitializing(false);
@@ -512,75 +556,55 @@ export function WalletToolboxProvider({
 		[chain, isInitializing, isInitialized, appendWalletEvent],
 	);
 
-	/**
-	 * Destroy the wallet and clear all state
-	 */
+	// -- Wallet destroy --
 	const destroyWallet = useCallback(async () => {
 		console.log("[WalletToolbox] Destroying wallet...");
 
-		// Use the factory's destroy function (stops monitor + destroys wallet)
+		await stopSyncWorkers();
 		if (walletResultRef.current) {
 			await walletResultRef.current.destroy();
 			walletResultRef.current = null;
 		}
 
-		// Clear query cache for this wallet
-		queryClient.removeQueries({
-			queryKey: QUERY_KEYS.balance(ordAddress, payAddress),
-		});
+		queryClient.removeQueries({ queryKey: ["wallet-balance"] });
 
-		// Clear state
 		setWallet(null);
 		setPermissionsManager(null);
 		setServices(null);
 		setIdentityKey(null);
-		setOrdAddress(null);
-		setPayAddress(null);
+		setDepositAddress(null);
+		setReceiveAddressIndex(0);
+		setReceiveAddresses([]);
+		setTrackedAddresses([]);
+		setAddressManagerReady(false);
+		setLastRotationOutpoint(null);
 		setIsInitialized(false);
+		setSyncRevision(0);
+		addressManagerRef.current = null;
+		receiveStateRef.current = createDefaultReceiveAddressState(
+			RECEIVE_ADDRESS_WINDOW,
+		);
+		seenOutpointsRef.current = new Set();
+		rotatingOutpointsRef.current = new Set();
 
 		console.log("[WalletToolbox] Wallet destroyed");
-	}, [queryClient, ordAddress, payAddress]);
+	}, [queryClient, stopSyncWorkers]);
 
-	// Track last successful fetch time for sync status
-	const [lastSync, setLastSync] = useState<Date | null>(null);
-	const wasFetchingRef = useRef(false);
-	useEffect(() => {
-		if (
-			wasFetchingRef.current &&
-			!balanceQuery.isFetching &&
-			balanceQuery.isSuccess
-		) {
-			setLastSync(new Date());
-		}
-		wasFetchingRef.current = balanceQuery.isFetching;
-	}, [balanceQuery.isFetching, balanceQuery.isSuccess]);
-
-	const refreshBalance = useCallback(
-		() =>
-			queryClient.invalidateQueries({
-				queryKey: QUERY_KEYS.balance(ordAddress, payAddress),
-			}),
-		[queryClient, ordAddress, payAddress],
-	);
-
+	// -- Compose sync status with init state --
 	const syncStatus = useMemo<SyncStatus>(
 		() => ({
-			isSyncing: isInitializing || balanceQuery.isFetching,
+			isSyncing: isInitializing || balanceSyncStatus.isSyncing,
 			progress: null,
-			lastSync,
-			error: initError ?? balanceQuery.error?.message ?? null,
+			lastSync: balanceSyncStatus.lastSync,
+			error: initError ?? balanceSyncStatus.error,
 		}),
-		[
-			isInitializing,
-			balanceQuery.isFetching,
-			initError,
-			balanceQuery.error,
-			lastSync,
-		],
+		[isInitializing, balanceSyncStatus, initError],
 	);
 
-	const hasActiveSync = isInitializing || balanceQuery.isFetching;
+	const hasActiveSync =
+		isInitializing || balanceSyncStatus.isSyncing || syncEngineActive;
 
+	// -- Context value --
 	const value = useMemo<WalletToolboxContextValue>(
 		() => ({
 			wallet,
@@ -591,23 +615,28 @@ export function WalletToolboxProvider({
 			initError,
 			chain,
 			identityKey,
+			depositAddress,
+			receiveAddressIndex,
+			receiveAddresses,
+			addressManagerReady,
+			lastRotationOutpoint,
 			syncStatus,
-			syncWallet: refreshBalance,
-			syncEvents,
-			clearSyncEvents,
-			walletEvents,
-			clearWalletEvents,
+			syncWallet: syncWallet,
+			syncEvents: syncEvents,
+			clearSyncEvents: clearSyncEvents,
+			walletEvents: walletEvents,
+			clearWalletEvents: clearWalletEvents,
 			hasActiveSync,
-			balance: balanceQuery.data?.balance ?? null,
-			ordinals: balanceQuery.data?.ordinals ?? [],
-			bsv20Tokens: balanceQuery.data?.bsv20Tokens ?? [],
-			bsv21Tokens: balanceQuery.data?.bsv21Tokens ?? [],
-			isBalanceLoading: balanceQuery.isLoading,
-			balanceError: balanceQuery.error,
+			balance: balance,
+			ordinals: ordinals,
+			bsv20Tokens: bsv20Tokens,
+			bsv21Tokens: bsv21Tokens,
+			isBalanceLoading: isBalanceLoading,
+			balanceError: balanceError,
 			exchangeRate,
 			initializeWallet,
 			destroyWallet,
-			refreshBalance,
+			refreshBalance: refreshBalance,
 		}),
 		[
 			wallet,
@@ -618,19 +647,28 @@ export function WalletToolboxProvider({
 			initError,
 			chain,
 			identityKey,
+			depositAddress,
+			receiveAddressIndex,
+			receiveAddresses,
+			addressManagerReady,
+			lastRotationOutpoint,
 			syncStatus,
+			syncWallet,
 			syncEvents,
 			clearSyncEvents,
 			walletEvents,
 			clearWalletEvents,
 			hasActiveSync,
-			refreshBalance,
-			balanceQuery.data,
-			balanceQuery.isLoading,
-			balanceQuery.error,
+			balance,
+			ordinals,
+			bsv20Tokens,
+			bsv21Tokens,
+			isBalanceLoading,
+			balanceError,
 			exchangeRate,
 			initializeWallet,
 			destroyWallet,
+			refreshBalance,
 		],
 	);
 

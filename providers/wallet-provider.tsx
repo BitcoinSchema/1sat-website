@@ -15,11 +15,8 @@ import { deriveIdentityKey, findKeysFromMnemonic } from "@/lib/keys";
 import type { Keys } from "@/lib/types";
 import {
 	clearCachedEncryptionKey,
-	clearSessionKeys,
 	loadEncryptedWallet,
-	loadSessionKeys,
 	saveEncryptedWallet,
-	saveSessionKeys,
 } from "@/lib/wallet-storage";
 
 interface WalletContextType {
@@ -65,33 +62,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			!!localStorage.getItem(WALLET_STORAGE_KEY);
 		setHasWallet(encryptedWalletExists);
 
-		// If no encrypted wallet exists, ensure any stale in-memory/session state is cleared.
 		if (!encryptedWalletExists) {
-			clearSessionKeys();
 			clearCachedEncryptionKey();
 			setWalletKeys(null);
 			setIsWalletLocked(false);
-			setIsWalletInitialized(true);
-			return;
-		}
-
-		// Check if keys are in session storage (auto-unlock)
-		const sessionKeys = loadSessionKeys();
-		if (sessionKeys.payPk && sessionKeys.ordPk) {
-			const keys: Keys = {
-				payPk: sessionKeys.payPk,
-				ordPk: sessionKeys.ordPk,
-				identityPk: sessionKeys.identityPk ?? undefined,
-				mnemonic: "",
-			};
-			setWalletKeys(keys);
-			setIsWalletLocked(false);
 		} else {
-			// Clear partial/stale session key state to avoid wallet/UI desync.
-			if (sessionKeys.payPk || sessionKeys.ordPk || sessionKeys.identityPk) {
-				clearSessionKeys();
-			}
-			setIsWalletLocked(encryptedWalletExists);
+			setIsWalletLocked(true);
 		}
 		setIsWalletInitialized(true);
 	}, []);
@@ -103,7 +79,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				if (keys) {
 					setWalletKeys(keys);
 					setIsWalletLocked(false);
-					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
 					return true;
 				}
 			} catch (error) {
@@ -117,7 +92,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const lockWallet = useCallback(() => {
 		setWalletKeys(null);
 		setIsWalletLocked(true);
-		clearSessionKeys();
 		clearCachedEncryptionKey();
 		router.push("/");
 	}, [router]);
@@ -134,7 +108,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					setWalletKeys(keys);
 					setHasWallet(true);
 					setIsWalletLocked(false);
-					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
+
 					router.push("/wallet");
 					return true;
 				}
@@ -159,7 +133,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					setWalletKeys(keys);
 					setHasWallet(true);
 					setIsWalletLocked(false);
-					saveSessionKeys(keys.payPk, keys.ordPk, keys.identityPk);
+
 					router.push("/wallet");
 					return true;
 				}
@@ -181,7 +155,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				}),
 			);
 		}
-		clearSessionKeys();
 		clearCachedEncryptionKey();
 		setWalletKeys(null);
 		setHasWallet(false);

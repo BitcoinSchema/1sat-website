@@ -81,6 +81,7 @@
     <div style="margin-top: 0.75rem; font-size: 0.7rem; color: #555;">
       wallet: <span id="wallet-status" class="status wait">checking</span>
       &nbsp; iframe: <span id="iframe-status" class="status wait">loading</span>
+      &nbsp; fallback: <span id="fallback-status" class="status wait">none</span>
     </div>
   </div>
 
@@ -97,6 +98,7 @@
     const logEl = document.getElementById('log');
     const iframeStatusEl = document.getElementById('iframe-status');
     const walletStatusEl = document.getElementById('wallet-status');
+    const fallbackStatusEl = document.getElementById('fallback-status');
     let counter = 0;
 
     function log(cls, msg) {
@@ -120,7 +122,7 @@
 
       // CWI state updates from the iframe (status + permission state)
       if (d.cwiState) {
-        const { status, hasPermission } = d.cwiState;
+        const { status, hasPermission, fallbackRecommended, reason, transport } = d.cwiState;
 
         // Update wallet status badge
         walletStatusEl.textContent = status;
@@ -130,6 +132,16 @@
           walletStatusEl.className = 'status err';
         } else {
           walletStatusEl.className = 'status wait';
+        }
+
+        // Show transport fallback state from bridge handshake
+        if (fallbackRecommended) {
+          fallbackStatusEl.textContent = `${transport || 'embed'}:${reason || 'unknown'}`;
+          fallbackStatusEl.className = 'status err';
+          log('info', `Fallback recommended (${reason || 'unknown'})`);
+        } else {
+          fallbackStatusEl.textContent = `${transport || 'embed'}:ok`;
+          fallbackStatusEl.className = 'status ok';
         }
 
         // Expand iframe when permission dialog is active
