@@ -11,7 +11,8 @@ import {
 	Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { highlight } from "sugar-high";
 import {
 	Page,
 	PageContent,
@@ -26,7 +27,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // ---------------------------------------------------------------------------
 // Code block with copy button
@@ -42,6 +42,7 @@ function CodeBlock({
 	title?: string;
 }) {
 	const [copied, setCopied] = useState(false);
+	const html = useMemo(() => highlight(code), [code]);
 
 	const copy = useCallback(() => {
 		navigator.clipboard.writeText(code);
@@ -70,7 +71,8 @@ function CodeBlock({
 				)}
 			</button>
 			<pre className="overflow-x-auto p-4 text-sm leading-relaxed font-mono">
-				<code>{code}</code>
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: sugar-high output is safe */}
+				<code dangerouslySetInnerHTML={{ __html: html }} />
 			</pre>
 		</div>
 	);
@@ -312,37 +314,14 @@ export default function DocsPage() {
 								request wallet operations from the user. The wallet opens as a
 								popup at{" "}
 								<code className="text-sm bg-muted px-1.5 py-0.5 font-mono">
-									onesatwallet.com
+									1sat.market
 								</code>{" "}
 								where the user approves or rejects each request. No browser
 								extension is required.
 							</p>
 
 							<SubHeading>Install</SubHeading>
-							<Tabs defaultValue="npm">
-								<TabsList>
-									<TabsTrigger value="npm">npm</TabsTrigger>
-									<TabsTrigger value="bun">bun</TabsTrigger>
-									<TabsTrigger value="script">script tag</TabsTrigger>
-								</TabsList>
-								<TabsContent value="npm">
-									<CodeBlock code="npm install @1sat/connect" lang="bash" />
-								</TabsContent>
-								<TabsContent value="bun">
-									<CodeBlock code="bun add @1sat/connect" lang="bash" />
-								</TabsContent>
-								<TabsContent value="script">
-									<CodeBlock
-										code={`<!-- Use an import map or bundler - @1sat/connect is ESM -->
-<script type="module">
-  import { createOneSat } from '@1sat/connect'
-
-  const wallet = createOneSat({ appName: 'My dApp' })
-</script>`}
-										lang="html"
-									/>
-								</TabsContent>
-							</Tabs>
+							<CodeBlock code="bun add @1sat/connect" lang="bash" />
 
 							<SubHeading>Quick Start</SubHeading>
 							<CodeBlock
@@ -870,7 +849,7 @@ try {
 								title="types.ts"
 								code={`interface OneSatConfig {
   appName?: string        // Shown in approval popup
-  popupUrl?: string       // Default: 'https://onesatwallet.com'
+  popupUrl?: string       // Default: 'https://1sat.market'
   timeout?: number        // Default: 300000 (5 min)
   network?: 'main' | 'test'
 }
