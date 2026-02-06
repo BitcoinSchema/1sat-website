@@ -62,9 +62,19 @@ function truncateIdentifier(identifier: string): string {
 	return `${identifier.slice(0, 6)}...${identifier.slice(-4)}`;
 }
 
+function isLegacyDisplayIdValidationError(error: unknown): boolean {
+	const message = error instanceof Error ? error.message : String(error);
+	return (
+		message.includes("displayId") &&
+		message.toLowerCase().includes("extra field")
+	);
+}
+
 export function SharedPresence() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const throttleRef = useRef<number>(0);
+	const supportsDisplayIdRef = useRef(true);
+	const updateInFlightRef = useRef(false);
 	const [scrollOpacity, setScrollOpacity] = useState(1);
 
 	// Track scroll for fade effect
@@ -139,6 +149,41 @@ export function SharedPresence() {
 	const updateCursor = useMutation(api.presence.updateCursor);
 	const sendTradeRequest = useAction(api.authenticatedTrades.sendTradeRequest);
 
+	const sendCursorUpdate = useCallback(
+		async (x: number, y: number) => {
+			if (updateInFlightRef.current) {
+				return;
+			}
+			updateInFlightRef.current = true;
+
+			const fallbackPayload = {
+				roomId: "main-room",
+				userId,
+				data: { x, y },
+			};
+
+			try {
+				if (!supportsDisplayIdRef.current) {
+					await updateCursor(fallbackPayload).catch(() => {});
+					return;
+				}
+
+				await updateCursor({
+					...fallbackPayload,
+					data: { ...fallbackPayload.data, displayId: myDisplayId },
+				});
+			} catch (error) {
+				if (isLegacyDisplayIdValidationError(error)) {
+					supportsDisplayIdRef.current = false;
+					await updateCursor(fallbackPayload).catch(() => {});
+				}
+			} finally {
+				updateInFlightRef.current = false;
+			}
+		},
+		[myDisplayId, updateCursor, userId],
+	);
+
 	// Track mouse movement and sync to server
 	const handleMouseMove = useCallback(
 		(e: MouseEvent) => {
@@ -155,13 +200,9 @@ export function SharedPresence() {
 			const clampedX = Math.max(0, Math.min(100, x));
 			const clampedY = Math.max(0, Math.min(100, y));
 
-			updateCursor({
-				roomId: "main-room",
-				userId: userId,
-				data: { x: clampedX, y: clampedY, displayId: myDisplayId },
-			}).catch(() => {});
+			void sendCursorUpdate(clampedX, clampedY);
 		},
-		[myDisplayId, updateCursor, userId],
+		[sendCursorUpdate],
 	);
 
 	// Set up mouse tracking
