@@ -12,6 +12,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { FullScreenUnlock } from "@/components/wallet/full-screen-unlock";
+import { MigrationWizard } from "@/components/wallet/migration-wizard";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 
 // Wrapper to handle Left Sidebar shortcuts and context
@@ -88,6 +89,7 @@ export function DualSidebarLayout({ children }: { children: React.ReactNode }) {
 		<SidebarProvider defaultOpen={false} cookieName="sidebar_left">
 			<LeftSidebarWrapper>
 				<FullScreenUnlock />
+				<MigrationWizard />
 				<LeftSidebar side="left" collapsible="icon" />
 				<InnerLayout>{children}</InnerLayout>
 			</LeftSidebarWrapper>

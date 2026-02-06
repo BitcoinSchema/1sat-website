@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import {
 	Page,
 	PageContent,
@@ -9,17 +9,15 @@ import {
 	PageTitle,
 } from "@/components/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MigrationBanner } from "@/components/wallet/migration-banner";
 import { SyncActivityTerminal } from "@/components/wallet/sync-activity-terminal";
 import { SyncProgress } from "@/components/wallet/sync-progress";
 import { TransactionTimeline } from "@/components/wallet/transaction-timeline";
 import { WalletTabs } from "@/components/wallet/wallet-tabs";
-import { detectMigrationStatus } from "@/lib/wallet-migration";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 export default function WalletPage() {
-	const { walletKeys, isWalletLocked } = useWallet();
+	const { walletKeys } = useWallet();
 	const {
 		balance,
 		syncWallet,
@@ -29,11 +27,6 @@ export default function WalletPage() {
 		bsv20Tokens,
 		bsv21Tokens,
 	} = useWalletToolbox();
-
-	const migrationStatus = useMemo(() => {
-		if (!walletKeys || isWalletLocked) return null;
-		return detectMigrationStatus(walletKeys);
-	}, [walletKeys, isWalletLocked]);
 
 	// Sync wallet on mount
 	useEffect(() => {
@@ -77,12 +70,6 @@ export default function WalletPage() {
 
 			<PageContent>
 				<SyncActivityTerminal className="mb-6" />
-				{migrationStatus?.status === "legacy" && (
-					<MigrationBanner
-						legacyPayAddress={migrationStatus.legacyPayAddress}
-						legacyOrdAddress={migrationStatus.legacyOrdAddress}
-					/>
-				)}
 				<WalletTabs />
 				<TransactionTimeline className="mt-6" days={30} />
 				<div className="space-y-6 mt-6">
