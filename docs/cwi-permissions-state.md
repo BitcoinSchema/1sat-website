@@ -24,6 +24,11 @@ Wallet tab (localhost:8255) -- CWIRelay -> WalletPermissionsManager
 
 These flags control which operations trigger permission prompts for external originators. Admin originator (the wallet's own UI) bypasses all checks.
 
+Other config flags:
+- `encryptWalletMetadata: true` -- metadata encryption (internal)
+- `seekGroupedPermission: false` -- grouped permission flow disabled (when true, WPM can batch multiple permission types into a single prompt)
+- `differentiatePrivilegedOperations: true` -- privileged vs standard operations get separate permission tokens
+
 ### Enabled (will prompt on first use)
 
 | Flag | Methods affected |
@@ -96,12 +101,27 @@ Two calls share a grant if they produce the same cache key. For protocol permiss
 
 ### Observed behavior in E2E testing
 
-1. `getPublicKey({identityKey: true})` -- **Prompted**. First protocol permission for this originator.
-2. `encrypt({protocolID: [0, 'tests'], counterparty: 'self'})` -- **Auto-granted**. Same protocol+counterparty was already granted by step 1 (identity key revelation uses the same underlying protocol permission scope).
-3. `createSignature({...same args})` -- **Auto-granted**. Cached.
-4. `createHmac({...same args})` -- **Auto-granted**. Cached.
+1. `getPublicKey({identityKey: true})` -- **Prompted**. First protocol permission for this originator. Permission dialog showed "Protocol: identity key retrieval (Level 1), Counterparty: self".
+2. `encrypt({protocolID: [0, 'tests'], counterparty: 'self'})` -- **No prompt**. Returned immediately (~30s after the identity grant).
+3. `createSignature({...same args})` -- **No prompt**. Returned immediately.
+4. `createHmac({...same args})` -- **No prompt**. Returned immediately.
 
-**To trigger separate prompts for each**, use different `protocolID` or `counterparty` values.
+### Open question: why didn't encrypt/sign/hmac prompt?
+
+The identity key grant uses `protocolID: [1, 'identity key retrieval']` while encrypt uses `protocolID: [0, 'tests']`. These produce DIFFERENT cache keys:
+- Identity: `proto:localhost:3333:false:1,identity key retrieval:self`
+- Encrypt: `proto:localhost:3333:false:0,tests:self`
+
+The `recentGrants` window (15s) would have expired by the time encrypt was called (~30s later). Possible explanations:
+
+1. **On-chain token covers broader scope** -- The PushDrop token created during the identity key grant may have been found during the encrypt `findProtocolToken()` lookup. Needs investigation of token matching logic.
+2. **Local fallback grant cached more broadly** -- The relay's `handleGrant` local fallback might have cached at a broader key than expected.
+3. **Permission module delegation** -- The `delegateToPModuleIfNeeded` path may have short-circuited the normal flow.
+4. **The prompt DID happen** -- It's possible the iframe briefly expanded and auto-collapsed too fast to observe. The test timestamps suggest instant response though.
+
+**Research needed**: Run each permission-triggering method in isolation (clear permissions between tests) to confirm which ones actually prompt independently. Use different protocolIDs to avoid any possibility of cache sharing.
+
+**To definitively trigger separate prompts for each**, use different `protocolID` and/or `counterparty` values, and clear cached permissions between tests.
 
 ## Permission Grant Flow
 
@@ -154,6 +174,7 @@ The test page (or any host dApp) uses this to toggle iframe visibility:
 | `getVersion` | `{}` | `{"version":"wallet-brc100-1.0.0"}` | No |
 | `getHeight` | `{}` | `{"height":935157}` | No |
 | `getBalance` | `{}` | `{"satoshis":0,"usd":0}` | No |
+| `getPublicKey` (non-identity) | `{identityKey:false, forSelf:true, protocolID:[0,'tests'], keyID:'1', counterparty:'self'}` | ERROR: "Protocol names must be 5 characters or more" with `'test'`; fixed to `'tests'` (not re-tested after fix) | No (config disabled) |
 | `listOutputs` | `{basket:'todo tokens', include:'locking scripts'}` | `{"totalOutputs":0,"outputs":[]}` | No (config disabled) |
 | `getPublicKey` (identity) | `{identityKey:true, forSelf:true}` | `{"publicKey":"03908c..."}` | Yes -- prompted, allowed |
 | `encrypt` | `{plaintext:[...], protocolID:[0,'tests'], keyID:'1', counterparty:'self'}` | `{"ciphertext":[207,78,...]}` | No (cached from identity grant) |
@@ -170,6 +191,7 @@ The test page (or any host dApp) uses this to toggle iframe visibility:
 
 ## Not Yet Tested
 
+- `getPublicKey` (non-identity) with fixed args (`'tests'`) -- was tested with `'test'` (4 chars) which hit a 5-char minimum validation error; args fixed but not re-tested after fix
 - `decrypt` -- needs ciphertext from encrypt result
 - `verifySignature` -- needs signature from createSignature result
 - `verifyHmac` -- needs hmac from createHmac result
