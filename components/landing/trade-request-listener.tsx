@@ -16,7 +16,10 @@ import {
 } from "@/components/ui/sound-alert-dialog";
 import { useSound } from "@/hooks/use-sound";
 import { wifToAddress } from "@/lib/keys";
-import { resolveTradeDisplayId } from "@/lib/trade-display-id";
+import {
+	inferPublicDisplayId,
+	resolveTradeDisplayId,
+} from "@/lib/trade-display-id";
 import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "@/providers/wallet-provider";
 import { api } from "../../convex/_generated/api";
@@ -35,8 +38,7 @@ function resolveDisplayId(userId: string): string {
 		return fromMap;
 	}
 
-	// Legacy fallback for sessions keyed by wallet address.
-	return userId.includes(":") ? userId.split(":")[0] : userId;
+	return inferPublicDisplayId(userId);
 }
 
 export function TradeRequestListener() {

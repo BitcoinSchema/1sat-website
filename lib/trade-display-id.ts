@@ -64,3 +64,28 @@ export function resolveTradeDisplayId(userId: string): string | null {
 
 	return inMemoryMap.get(normalizedUserId) ?? null;
 }
+
+export function inferPublicDisplayId(userId: string): string {
+	const normalizedUserId = userId.trim();
+	if (!normalizedUserId) {
+		return "anon-user";
+	}
+
+	// Legacy format for wallet identities in presence is `${address}:${session}`.
+	if (normalizedUserId.includes(":")) {
+		return normalizedUserId.split(":")[0] || normalizedUserId;
+	}
+
+	// Anonymous IDs are already safe to show.
+	if (normalizedUserId.startsWith("anon-")) {
+		return normalizedUserId;
+	}
+
+	// Preserve address-like public IDs.
+	if (normalizedUserId.startsWith("1")) {
+		return normalizedUserId;
+	}
+
+	// Fallback for internal auth IDs (e.g. Better Auth `sub`).
+	return `anon-${normalizedUserId.slice(0, 6)}`;
+}

@@ -6,7 +6,10 @@ import { MousePointer2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { wifToAddress } from "@/lib/keys";
-import { registerTradeDisplayId } from "@/lib/trade-display-id";
+import {
+	inferPublicDisplayId,
+	registerTradeDisplayId,
+} from "@/lib/trade-display-id";
 import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "@/providers/wallet-provider";
 import { api } from "../../convex/_generated/api";
@@ -40,6 +43,8 @@ const CURSOR_COLORS = [
 	"hsl(var(--secondary))",
 ];
 
+const DISPLAY_ID_SUPPORT_KEY = "presence_supports_display_id";
+
 // Generate a random vibrant color when we run out of base colors
 function generateRandomShade(seed: number): string {
 	const hue = (seed * 137.508) % 360;
@@ -62,18 +67,34 @@ function truncateIdentifier(identifier: string): string {
 	return `${identifier.slice(0, 6)}...${identifier.slice(-4)}`;
 }
 
-function isLegacyDisplayIdValidationError(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return (
-		message.includes("displayId") &&
-		message.toLowerCase().includes("extra field")
-	);
+function readDisplayIdSupportFromSession(): boolean {
+	if (typeof window === "undefined") {
+		return true;
+	}
+
+	try {
+		return sessionStorage.getItem(DISPLAY_ID_SUPPORT_KEY) !== "legacy";
+	} catch {
+		return true;
+	}
+}
+
+function persistLegacyDisplayIdMode() {
+	if (typeof window === "undefined") {
+		return;
+	}
+
+	try {
+		sessionStorage.setItem(DISPLAY_ID_SUPPORT_KEY, "legacy");
+	} catch {
+		// Ignore storage errors in restricted browser contexts.
+	}
 }
 
 export function SharedPresence() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const throttleRef = useRef<number>(0);
-	const supportsDisplayIdRef = useRef(true);
+	const supportsDisplayIdRef = useRef(readDisplayIdSupportFromSession());
 	const updateInFlightRef = useRef(false);
 	const [scrollOpacity, setScrollOpacity] = useState(1);
 
@@ -135,7 +156,7 @@ export function SharedPresence() {
 	}, [authUser?.sub, myAddress, sessionSuffix]);
 
 	const myDisplayId = useMemo(() => {
-		return authUser?.bap_id || myAddress || userId;
+		return authUser?.bap_id || myAddress || inferPublicDisplayId(userId);
 	}, [authUser?.bap_id, myAddress, userId]);
 
 	useEffect(() => {
@@ -172,10 +193,15 @@ export function SharedPresence() {
 					...fallbackPayload,
 					data: { ...fallbackPayload.data, displayId: myDisplayId },
 				});
-			} catch (error) {
-				if (isLegacyDisplayIdValidationError(error)) {
+			} catch {
+				const fallbackSucceeded = await updateCursor(fallbackPayload).then(
+					() => true,
+					() => false,
+				);
+
+				if (fallbackSucceeded) {
 					supportsDisplayIdRef.current = false;
-					await updateCursor(fallbackPayload).catch(() => {});
+					persistLegacyDisplayIdMode();
 				}
 			} finally {
 				updateInFlightRef.current = false;
@@ -225,7 +251,7 @@ export function SharedPresence() {
 				const y = data?.y ?? 50;
 				const displayId =
 					(typeof data?.displayId === "string" && data.displayId.trim()) ||
-					(p.userId.includes(":") ? p.userId.split(":")[0] : p.userId);
+					inferPublicDisplayId(p.userId);
 				registerTradeDisplayId(p.userId, displayId);
 
 				return {
