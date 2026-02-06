@@ -15,10 +15,12 @@ import {
 	type WebWalletResult,
 } from "@1sat/wallet-browser";
 import { PrivateKey } from "@bsv/sdk";
+// TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
 import {
 	type PermissionsManagerConfig,
 	WalletPermissionsManager,
 } from "@bsv/wallet-toolbox/out/src/index.client";
+import { loadLocalPermissions } from "@/lib/cwi/permission-store";
 
 type Wallet = WebWalletResult["wallet"];
 
@@ -27,6 +29,8 @@ const ADMIN_ORIGINATOR =
 		? window.location.origin
 		: "https://1satwallet.com";
 
+// TODO(cwi-permissions): Finalize prompt policy for each permission scope.
+// Revisit which read/list operations should always prompt vs remain implicit.
 const PERMISSIONS_CONFIG: PermissionsManagerConfig = {
 	seekProtocolPermissionsForSigning: true,
 	seekProtocolPermissionsForEncrypting: true,
@@ -420,6 +424,27 @@ export function WalletToolboxProvider({
 					ADMIN_ORIGINATOR,
 					PERMISSIONS_CONFIG,
 				);
+				// Hydrate WPM permission cache from IndexedDB (local fallback store)
+				try {
+					const localPerms = await loadLocalPermissions();
+					const cache = (
+						wpm as unknown as {
+							permissionCache: Map<
+								string,
+								{ expiry: number; cachedAt: number }
+							>;
+						}
+					).permissionCache;
+					for (const perm of localPerms) {
+						cache.set(perm.key, {
+							expiry: perm.expiry,
+							cachedAt: Date.now(),
+						});
+					}
+				} catch {
+					// IndexedDB unavailable — permissions will re-prompt
+				}
+
 				setPermissionsManager(wpm);
 
 				setIdentityKey(newIdentityKey);

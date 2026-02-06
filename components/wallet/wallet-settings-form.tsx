@@ -7,6 +7,7 @@ import {
 	Loader2,
 	LogOut,
 	RefreshCw,
+	Shield,
 	Wallet,
 } from "lucide-react";
 import Link from "next/link";
@@ -153,6 +154,28 @@ export function WalletSettingsForm() {
 								<RefreshCw className="h-4 w-4 mr-2" />
 							)}
 							{isSyncing ? "Syncing..." : "Sync Now"}
+						</Button>
+					</div>
+
+					<Separator />
+
+					<div className="flex items-center justify-between space-x-2">
+						<div className="flex flex-col space-y-1">
+							<Label className="text-base">Connected Apps</Label>
+							<span className="text-sm text-muted-foreground">
+								Review and revoke permissions granted to external apps.
+							</span>
+						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							asChild
+							onClick={() => play("click")}
+						>
+							<Link href="/wallet/permissions">
+								<Shield className="h-4 w-4 mr-2" />
+								Manage
+							</Link>
 						</Button>
 					</div>
 				</CardContent>

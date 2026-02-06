@@ -120,10 +120,12 @@ function PermissionDetails({ details }: { details: unknown }) {
 
 function PermissionCard({
 	permission,
+	queueLength,
 	onGrant,
 	onDeny,
 }: {
 	permission: BridgePermissionRequest;
+	queueLength: number;
 	onGrant: (id: string) => void;
 	onDeny: (id: string) => void;
 }) {
@@ -145,6 +147,12 @@ function PermissionCard({
 				{details?.privileged && (
 					<Badge variant="destructive" className="w-full justify-center">
 						Privileged Operation
+					</Badge>
+				)}
+				{queueLength > 1 && (
+					<Badge variant="secondary" className="w-full justify-center">
+						{queueLength - 1} more pending request
+						{queueLength - 1 !== 1 ? "s" : ""}
 					</Badge>
 				)}
 				<div className="flex gap-2">
@@ -182,8 +190,13 @@ function OpenWalletButton() {
 }
 
 export default function CWIPage() {
-	const { status, pendingPermission, grantPermission, denyPermission } =
-		useCWIBridge();
+	const {
+		status,
+		activePermission,
+		queueLength,
+		grantPermission,
+		denyPermission,
+	} = useCWIBridge();
 
 	// Checking — waiting for wallet tab response
 	if (status === "checking") {
@@ -237,11 +250,12 @@ export default function CWIPage() {
 	}
 
 	// Permission request pending
-	if (pendingPermission) {
+	if (activePermission) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PermissionCard
-					permission={pendingPermission}
+					permission={activePermission}
+					queueLength={queueLength}
 					onGrant={grantPermission}
 					onDeny={denyPermission}
 				/>

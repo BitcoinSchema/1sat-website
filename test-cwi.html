@@ -9,6 +9,8 @@
     iframe { border: 1px solid #333; border-radius: 8px; width: 100%; height: 300px; }
     button { padding: 0.5rem 1rem; margin: 0.25rem; border-radius: 6px; border: 1px solid #444; background: #222; color: #eee; cursor: pointer; }
     button:hover { background: #333; }
+    button.primary { background: #1a4a2e; border-color: #2a6a3e; }
+    button.primary:hover { background: #2a5a3e; }
     #log { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
     .req { color: #6cf; }
     .res { color: #6f6; }
@@ -20,20 +22,37 @@
   <h1>CWI Bridge Test (dApp simulator)</h1>
 
   <h2>1. iframe</h2>
-  <iframe id="cwi" src="http://localhost:3000/wallet/cwi" allow=""></iframe>
+  <iframe id="cwi" src="http://localhost:8255/wallet/cwi" allow=""></iframe>
 
-  <h2>2. Send CWI requests</h2>
+  <h2>2. Authentication (call first)</h2>
+  <div>
+    <button class="primary" onclick="send('waitForAuthentication', {})">waitForAuthentication</button>
+    <button onclick="send('isAuthenticated', {})">isAuthenticated</button>
+  </div>
+
+  <h2>3. No-permission calls</h2>
   <div>
     <button onclick="send('getNetwork', {})">getNetwork</button>
     <button onclick="send('getVersion', {})">getVersion</button>
-    <button onclick="send('isAuthenticated', {})">isAuthenticated</button>
     <button onclick="send('getHeight', {})">getHeight</button>
-    <button onclick="send('getPublicKey', {identityKey: true, forSelf: true})">getPublicKey (identity)</button>
+    <button onclick="send('getPublicKey', {identityKey: false, forSelf: true})">getPublicKey (non-identity)</button>
     <button onclick="send('listOutputs', {basket: 'default', include: 'locking scripts'})">listOutputs</button>
+  </div>
+
+  <h2>4. Permission-triggering calls</h2>
+  <div>
+    <button onclick="send('getPublicKey', {identityKey: true, forSelf: true})">getPublicKey (identity)</button>
+    <button onclick="send('encrypt', {plaintext: Array.from(new TextEncoder().encode('hello')), protocolID: [0, 'test'], keyID: '1', counterparty: 'self'})">encrypt</button>
+    <button onclick="send('createSignature', {data: Array.from(new TextEncoder().encode('sign me')), protocolID: [0, 'test'], keyID: '1', counterparty: 'self'})">createSignature</button>
+    <button onclick="send('createHmac', {data: Array.from(new TextEncoder().encode('hmac me')), protocolID: [0, 'test'], keyID: '1', counterparty: 'self'})">createHmac</button>
+  </div>
+
+  <h2>5. Error cases</h2>
+  <div>
     <button onclick="send('bogusMethod', {})">bogusMethod (expect error)</button>
   </div>
 
-  <h2>3. Log</h2>
+  <h2>6. Log</h2>
   <div id="log"></div>
 
   <script>
@@ -53,7 +72,7 @@
       const id = `test-${++counter}`;
       const msg = { type: 'CWI', isInvocation: true, id, call: method, args };
       log('req', `>>> ${method} (${id})`);
-      iframe.contentWindow.postMessage(msg, 'http://localhost:3000');
+      iframe.contentWindow.postMessage(msg, 'http://localhost:8255');
     }
 
     window.addEventListener('message', (event) => {
@@ -66,7 +85,8 @@
       }
     });
 
-    log('info', 'Ready. Make sure localhost:3000 is running and wallet is unlocked in another tab.');
+    log('info', 'Ready. Make sure localhost:8255 is running and wallet is unlocked in another tab.');
+    log('info', 'Click "waitForAuthentication" first to establish the session.');
   </script>
 </body>
 </html>

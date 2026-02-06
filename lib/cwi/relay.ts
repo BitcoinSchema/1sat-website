@@ -1,11 +1,116 @@
-import type { WalletPermissionsManager } from "@bsv/wallet-toolbox/out/src/index.client";
+// TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
+import type {
+	PermissionRequest,
+	WalletPermissionsManager,
+} from "@bsv/wallet-toolbox/out/src/index.client";
+import {
+	buildPermissionCacheKey,
+	type PermissionRequestLike,
+} from "./permission-keys";
+import { saveLocalPermission } from "./permission-store";
 
 const CHANNEL_NAME = "1sat-cwi";
 
 export interface CWIRelayConfig {
-	wallet: WalletPermissionsManager;
+	getWallet: () => WalletPermissionsManager | null;
 	getStatus: () => "locked" | "unlocked" | "no-wallet";
 }
+
+type CWIWalletMethod = keyof WalletPermissionsManager;
+
+interface CWIRequestMessage {
+	type: "cwi-request";
+	id: string;
+	call: string;
+	args?: unknown;
+	originator: string;
+}
+
+interface CWIGrantPermissionMessage {
+	type: "cwi-permission-grant";
+	requestID: string;
+}
+
+interface CWIDenyPermissionMessage {
+	type: "cwi-permission-deny";
+	requestID: string;
+}
+
+interface CWIStatusRequestMessage {
+	type: "cwi-status-request";
+}
+
+const VALID_METHODS = new Set([
+	"createAction",
+	"signAction",
+	"abortAction",
+	"listActions",
+	"internalizeAction",
+	"listOutputs",
+	"relinquishOutput",
+	"getPublicKey",
+	"revealCounterpartyKeyLinkage",
+	"revealSpecificKeyLinkage",
+	"encrypt",
+	"decrypt",
+	"createHmac",
+	"verifyHmac",
+	"createSignature",
+	"verifySignature",
+	"acquireCertificate",
+	"listCertificates",
+	"proveCertificate",
+	"relinquishCertificate",
+	"discoverByIdentityKey",
+	"discoverByAttributes",
+	"isAuthenticated",
+	"waitForAuthentication",
+	"getHeight",
+	"getHeaderForHeight",
+	"getNetwork",
+	"getVersion",
+]);
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null;
+
+const isCWIRequestMessage = (data: unknown): data is CWIRequestMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-request" &&
+	typeof data.id === "string" &&
+	typeof data.call === "string" &&
+	typeof data.originator === "string";
+
+const isGrantPermissionMessage = (
+	data: unknown,
+): data is CWIGrantPermissionMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-permission-grant" &&
+	typeof data.requestID === "string";
+
+const isDenyPermissionMessage = (
+	data: unknown,
+): data is CWIDenyPermissionMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-permission-deny" &&
+	typeof data.requestID === "string";
+
+const isStatusRequestMessage = (
+	data: unknown,
+): data is CWIStatusRequestMessage =>
+	isObjectRecord(data) && data.type === "cwi-status-request";
+
+const isValidOrigin = (originator: string): boolean => {
+	try {
+		const parsed = new URL(originator);
+		return parsed.protocol === "https:" || parsed.protocol === "http:";
+	} catch {
+		return false;
+	}
+};
+
+const isAllowedMethod = (call: string): call is CWIWalletMethod =>
+	VALID_METHODS.has(call);
 
 /**
  * CWI Relay — runs in the wallet tab.
@@ -19,11 +124,15 @@ export interface CWIRelayConfig {
 export class CWIRelay {
 	private channel: BroadcastChannel;
 	private handler: ((event: MessageEvent) => void) | null = null;
-	private wallet: WalletPermissionsManager;
+	private getWallet: () => WalletPermissionsManager | null;
 	private getStatus: () => "locked" | "unlocked" | "no-wallet";
+	private pendingPermissions = new Map<
+		string,
+		PermissionRequest & { requestID: string }
+	>();
 
 	constructor(config: CWIRelayConfig) {
-		this.wallet = config.wallet;
+		this.getWallet = config.getWallet;
 		this.getStatus = config.getStatus;
 		this.channel = new BroadcastChannel(CHANNEL_NAME);
 	}
@@ -33,24 +142,29 @@ export class CWIRelay {
 
 		this.handler = (event: MessageEvent) => {
 			const data = event.data;
-			if (!data?.type) return;
+			if (!isObjectRecord(data)) return;
 
-			switch (data.type) {
-				case "cwi-request":
-					void this.handleCWIRequest(data);
-					break;
-				case "cwi-permission-grant":
-					void this.wallet.grantPermission({
-						requestID: data.requestID,
-						ephemeral: false,
-					});
-					break;
-				case "cwi-permission-deny":
-					void this.wallet.denyPermission(data.requestID);
-					break;
-				case "cwi-status-request":
-					this.sendStatus();
-					break;
+			if (isCWIRequestMessage(data)) {
+				void this.handleCWIRequest(data);
+				return;
+			}
+
+			if (isGrantPermissionMessage(data)) {
+				const wallet = this.getWallet();
+				if (!wallet) return;
+				void this.handleGrant(wallet, data.requestID);
+				return;
+			}
+
+			if (isDenyPermissionMessage(data)) {
+				const wallet = this.getWallet();
+				if (!wallet) return;
+				void wallet.denyPermission(data.requestID);
+				return;
+			}
+
+			if (isStatusRequestMessage(data)) {
+				this.sendStatus();
 			}
 		};
 
@@ -74,13 +188,15 @@ export class CWIRelay {
 
 	/**
 	 * Send a permission request to the iframe bridge for user approval.
+	 * Stashes the full request so handleGrant can build cache keys.
 	 */
 	sendPermissionRequest(
 		requestID: string,
 		permissionType: string,
 		originator: string,
-		details: unknown,
+		details: PermissionRequest & { requestID: string },
 	): void {
+		this.pendingPermissions.set(requestID, details);
 		this.channel.postMessage({
 			type: "cwi-permission-request",
 			requestID,
@@ -90,29 +206,107 @@ export class CWIRelay {
 		});
 	}
 
-	private async handleCWIRequest(data: {
-		id: string;
-		call: string;
-		args: unknown;
-		originator: string;
-	}): Promise<void> {
+	/**
+	 * Grant permission with fallback: if the on-chain token creation fails
+	 * (e.g. no funds), manually hydrate WPM's in-memory cache and persist
+	 * the grant to IndexedDB so it survives reloads.
+	 */
+	private async handleGrant(
+		wallet: WalletPermissionsManager,
+		requestID: string,
+	): Promise<void> {
+		const request = this.pendingPermissions.get(requestID);
+
+		try {
+			await wallet.grantPermission({ requestID, ephemeral: false });
+		} catch {
+			// On-chain token creation failed (likely no funds).
+			// The wallet operation already resolved (WPM resolves promises first),
+			// but cachePermission and markRecentGrant were skipped. Hydrate manually.
+			if (request) {
+				const key = buildPermissionCacheKey(request as PermissionRequestLike);
+				if (key) {
+					const cache = (
+						wallet as unknown as {
+							permissionCache: Map<
+								string,
+								{ expiry: number; cachedAt: number }
+							>;
+						}
+					).permissionCache;
+					cache.set(key, { expiry: 0, cachedAt: Date.now() });
+
+					const recentGrants = (
+						wallet as unknown as { recentGrants: Map<string, number> }
+					).recentGrants;
+					if (request.type !== "spending") {
+						recentGrants.set(key, Date.now() + 15_000);
+					}
+				}
+			}
+		}
+
+		// Persist to IndexedDB regardless of on-chain success
+		if (request) {
+			const key = buildPermissionCacheKey(request as PermissionRequestLike);
+			if (key) {
+				await saveLocalPermission({
+					key,
+					type: request.type,
+					originator: request.originator,
+					expiry: 0,
+					grantedAt: Date.now(),
+					details: request as unknown as Record<string, unknown>,
+				});
+			}
+			this.pendingPermissions.delete(requestID);
+		}
+	}
+
+	private async handleCWIRequest(data: CWIRequestMessage): Promise<void> {
 		const { id, call, args, originator } = data;
 
-		// Validate originator is present
-		if (!originator) {
+		if (!isAllowedMethod(call)) {
 			this.channel.postMessage({
 				type: "cwi-response",
 				id,
 				status: "error",
-				description: "Missing originator",
+				description: `Unknown method: ${call}`,
 				code: 2,
 			});
 			return;
 		}
 
+		if (!isValidOrigin(originator)) {
+			this.channel.postMessage({
+				type: "cwi-response",
+				id,
+				status: "error",
+				description: "Invalid originator",
+				code: 2,
+			});
+			return;
+		}
+
+		const status = this.getStatus();
+		const wallet = this.getWallet();
+		if (!wallet || status !== "unlocked") {
+			this.channel.postMessage({
+				type: "cwi-response",
+				id,
+				status: "error",
+				description:
+					status === "locked" ? "Wallet is locked" : "Wallet not available",
+				code: 1,
+			});
+			return;
+		}
+
 		try {
-			const method = call as keyof WalletPermissionsManager;
-			const fn = this.wallet[method];
+			// TODO(cwi): Add stronger relay authentication between bridge and wallet tab.
+			// BroadcastChannel is same-origin but does not provide session identity.
+			const method = call as CWIWalletMethod;
+			const fn = wallet[method];
 			if (typeof fn !== "function") {
 				this.channel.postMessage({
 					type: "cwi-response",
@@ -125,7 +319,7 @@ export class CWIRelay {
 			}
 
 			const result = await (fn as (...a: unknown[]) => unknown).call(
-				this.wallet,
+				wallet,
 				args ?? {},
 				originator,
 			);

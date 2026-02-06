@@ -1,5 +1,6 @@
 "use client";
 
+// TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
 import type { PermissionToken } from "@bsv/wallet-toolbox/out/src/index.client";
 import { ArrowLeft, Key, Loader2, Shield, Trash2, Wallet } from "lucide-react";
 import Link from "next/link";
@@ -19,6 +20,11 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	type LocalPermission,
+	loadLocalPermissions,
+	removeLocalPermission,
+} from "@/lib/cwi/permission-store";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 type TokenCategory = "protocol" | "basket" | "certificate" | "spending";
@@ -26,6 +32,8 @@ type TokenCategory = "protocol" | "basket" | "certificate" | "spending";
 interface CategorizedToken {
 	category: TokenCategory;
 	token: PermissionToken;
+	source: "onchain" | "local";
+	localKey?: string;
 }
 
 function tokenLabel(token: CategorizedToken): string {
@@ -72,57 +80,118 @@ function categoryBadgeVariant(
 export default function PermissionsPage() {
 	const { permissionsManager, isInitialized } = useWalletToolbox();
 	const [tokens, setTokens] = useState<CategorizedToken[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const [isLoading, setIsLoading] = useState(false);
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [revoking, setRevoking] = useState<string | null>(null);
 
 	const loadTokens = useCallback(async () => {
-		if (!permissionsManager) return;
+		if (!permissionsManager) {
+			setTokens([]);
+			setLoadError(null);
+			setIsLoading(false);
+			return;
+		}
+
 		setIsLoading(true);
+		setLoadError(null);
 
-		const [protocols, baskets, certs, spending] = await Promise.all([
-			permissionsManager.listProtocolPermissions({}),
-			permissionsManager.listBasketAccess({}),
-			permissionsManager.listCertificateAccess({}),
-			permissionsManager.listSpendingAuthorizations({}),
-		]);
+		try {
+			const [protocols, baskets, certs, spending, localPerms] =
+				await Promise.all([
+					permissionsManager.listProtocolPermissions({}),
+					permissionsManager.listBasketAccess({}),
+					permissionsManager.listCertificateAccess({}),
+					permissionsManager.listSpendingAuthorizations({}),
+					loadLocalPermissions().catch(() => [] as LocalPermission[]),
+				]);
 
-		const all: CategorizedToken[] = [
-			...protocols.map((token) => ({
-				category: "protocol" as const,
-				token,
-			})),
-			...baskets.map((token) => ({
-				category: "basket" as const,
-				token,
-			})),
-			...certs.map((token) => ({
-				category: "certificate" as const,
-				token,
-			})),
-			...spending.map((token) => ({
-				category: "spending" as const,
-				token,
-			})),
-		];
+			const all: CategorizedToken[] = [
+				...protocols.map((token) => ({
+					category: "protocol" as const,
+					token,
+					source: "onchain" as const,
+				})),
+				...baskets.map((token) => ({
+					category: "basket" as const,
+					token,
+					source: "onchain" as const,
+				})),
+				...certs.map((token) => ({
+					category: "certificate" as const,
+					token,
+					source: "onchain" as const,
+				})),
+				...spending.map((token) => ({
+					category: "spending" as const,
+					token,
+					source: "onchain" as const,
+				})),
+			];
 
-		// Sort by originator
-		all.sort((a, b) => a.token.originator.localeCompare(b.token.originator));
-		setTokens(all);
-		setIsLoading(false);
+			// Build set of on-chain originator+category combos so we can
+			// skip local entries that already have on-chain tokens
+			const onchainKeys = new Set(
+				all.map((t) => `${t.token.originator}:${t.category}`),
+			);
+
+			// Add local permissions that don't have corresponding on-chain tokens
+			for (const local of localPerms) {
+				const dedupKey = `${local.originator}:${local.type}`;
+				if (onchainKeys.has(dedupKey)) continue;
+
+				all.push({
+					category: local.type,
+					token: {
+						txid: "",
+						tx: [],
+						outputIndex: 0,
+						outputScript: "",
+						satoshis: 0,
+						originator: local.originator,
+						expiry: local.expiry,
+					} as PermissionToken,
+					source: "local",
+					localKey: local.key,
+				});
+			}
+
+			// Sort by originator
+			all.sort((a, b) => a.token.originator.localeCompare(b.token.originator));
+			setTokens(all);
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : "Failed to load permissions";
+			setTokens([]);
+			setLoadError(message);
+		} finally {
+			setIsLoading(false);
+		}
 	}, [permissionsManager]);
 
 	useEffect(() => {
-		if (isInitialized && permissionsManager) {
-			void loadTokens();
+		if (!isInitialized) return;
+		if (!permissionsManager) {
+			setTokens([]);
+			setLoadError(null);
+			setIsLoading(false);
+			return;
 		}
+		void loadTokens();
 	}, [isInitialized, permissionsManager, loadTokens]);
 
 	const handleRevoke = async (token: CategorizedToken) => {
 		if (!permissionsManager) return;
-		const key = `${token.token.txid}:${token.token.outputIndex}`;
+		const key =
+			token.source === "local" && token.localKey
+				? token.localKey
+				: `${token.token.txid}:${token.token.outputIndex}`;
 		setRevoking(key);
 		try {
-			await permissionsManager.revokePermission(token.token);
+			if (token.source === "local" && token.localKey) {
+				await removeLocalPermission(token.localKey);
+			} else {
+				await permissionsManager.revokePermission(token.token);
+			}
 			await loadTokens();
 		} catch (err) {
 			console.error("Failed to revoke permission:", err);
@@ -153,10 +222,37 @@ export default function PermissionsPage() {
 				<PageTitle>Connected Apps</PageTitle>
 			</PageHeader>
 			<PageContent>
-				{isLoading ? (
+				{!isInitialized ? (
 					<div className="flex items-center justify-center py-12">
 						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 					</div>
+				) : !permissionsManager ? (
+					<Card>
+						<CardHeader className="text-center">
+							<Shield className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+							<CardTitle className="text-lg">
+								Unlock Wallet To Manage Apps
+							</CardTitle>
+							<CardDescription>
+								Connected app permissions are available after your wallet is
+								unlocked.
+							</CardDescription>
+						</CardHeader>
+					</Card>
+				) : isLoading ? (
+					<div className="flex items-center justify-center py-12">
+						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+					</div>
+				) : loadError ? (
+					<Card>
+						<CardHeader className="text-center">
+							<Shield className="h-10 w-10 mx-auto text-destructive mb-2" />
+							<CardTitle className="text-lg">
+								Failed To Load Permissions
+							</CardTitle>
+							<CardDescription>{loadError}</CardDescription>
+						</CardHeader>
+					</Card>
 				) : tokens.length === 0 ? (
 					<Card>
 						<CardHeader className="text-center">
@@ -183,7 +279,10 @@ export default function PermissionsPage() {
 								</CardHeader>
 								<CardContent className="space-y-2">
 									{originTokens.map((ct) => {
-										const key = `${ct.token.txid}:${ct.token.outputIndex}`;
+										const key =
+											ct.source === "local" && ct.localKey
+												? ct.localKey
+												: `${ct.token.txid}:${ct.token.outputIndex}`;
 										const isExpired =
 											ct.token.expiry > 0 &&
 											ct.token.expiry < Date.now() / 1000;
@@ -203,6 +302,14 @@ export default function PermissionsPage() {
 													<span className="text-sm truncate">
 														{tokenLabel(ct)}
 													</span>
+													{ct.source === "local" && (
+														<Badge
+															variant="outline"
+															className="text-xs text-muted-foreground"
+														>
+															local
+														</Badge>
+													)}
 													{isExpired && (
 														<Badge
 															variant="outline"

@@ -16,8 +16,7 @@ export function useExchangeRate() {
 				if (!response.ok) throw new Error("Failed to fetch exchange rate");
 				const data = await response.json();
 				setRate(Number(data.rate));
-			} catch (err) {
-				console.error(err);
+			} catch {
 				setError("Failed to load exchange rate");
 			} finally {
 				setLoading(false);
