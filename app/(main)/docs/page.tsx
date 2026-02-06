@@ -813,11 +813,11 @@ try {
 									["InsufficientFundsError", "4004", "Not enough BSV"],
 									[
 										"PopupBlockedError",
-										"4010",
+										"4006",
 										"Browser blocked the popup window",
 									],
-									["PopupClosedError", "4011", "Popup was closed unexpectedly"],
-									["TimeoutError", "4020", "Request exceeded timeout"],
+									["PopupClosedError", "4007", "Popup was closed unexpectedly"],
+									["TimeoutError", "4008", "Request exceeded timeout"],
 								].map(([cls, code, desc]) => (
 									<div
 										key={code}
