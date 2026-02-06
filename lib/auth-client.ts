@@ -2,10 +2,26 @@ import type { SigmaUserInfo } from "@sigma-auth/better-auth-plugin/client";
 import { sigmaClient } from "@sigma-auth/better-auth-plugin/client";
 import { createAuthClient } from "better-auth/client";
 
-const SIGMA_CLIENT_ID = process.env.NEXT_PUBLIC_SIGMA_CLIENT_ID || "1sat-web";
+function getBaseURL() {
+	if (typeof window !== "undefined") {
+		return `${window.location.origin}/api/auth`;
+	}
+	const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+	if (!appUrl) {
+		throw new Error(
+			"NEXT_PUBLIC_APP_URL is required for server-side auth client initialization",
+		);
+	}
+	return `${appUrl}/api/auth`;
+}
+
+const SIGMA_CLIENT_ID = process.env.NEXT_PUBLIC_SIGMA_CLIENT_ID;
+if (!SIGMA_CLIENT_ID) {
+	throw new Error("NEXT_PUBLIC_SIGMA_CLIENT_ID is required");
+}
 
 export const authClient = createAuthClient({
-	baseURL: "/api/auth",
+	baseURL: getBaseURL(),
 	plugins: [sigmaClient()],
 });
 

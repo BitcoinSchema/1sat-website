@@ -1,8 +1,12 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 
-const SIGMA_AUTH_URL =
-	process.env.NEXT_PUBLIC_SIGMA_AUTH_URL || "https://auth.sigmaidentity.com";
+const SIGMA_AUTH_URL = process.env.NEXT_PUBLIC_SIGMA_AUTH_URL;
+if (!SIGMA_AUTH_URL) {
+	throw new Error(
+		"NEXT_PUBLIC_SIGMA_AUTH_URL environment variable is required",
+	);
+}
 
 /**
  * Verify a Sigma Identity access token by calling the userinfo endpoint.
