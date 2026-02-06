@@ -16,7 +16,7 @@ import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
  */
 export function useCWIRelay(): void {
 	const { permissionsManager } = useWalletToolbox();
-	const { hasWallet, isWalletLocked } = useWallet();
+	const { hasWallet } = useWallet();
 	const relayRef = useRef<CWIRelay | null>(null);
 
 	// Refs so the relay always reads current state without re-creation
@@ -26,10 +26,13 @@ export function useCWIRelay(): void {
 	const statusRef = useRef<() => "locked" | "unlocked" | "no-wallet">(
 		() => "no-wallet",
 	);
+	// Derive status from WPM existence — if permissionsManager is set,
+	// the toolbox wallet is initialized and unlocked. The base wallet
+	// provider's isWalletLocked can be out of sync with the toolbox path.
 	statusRef.current = () => {
+		if (walletRef.current) return "unlocked";
 		if (!hasWallet) return "no-wallet";
-		if (isWalletLocked) return "locked";
-		return "unlocked";
+		return "locked";
 	};
 
 	// Single relay instance — lives for the lifetime of the component
@@ -82,8 +85,8 @@ export function useCWIRelay(): void {
 		};
 	}, [permissionsManager]);
 
-	// Broadcast status changes when wallet state changes
+	// Broadcast status changes when wallet state or WPM changes
 	useEffect(() => {
 		relayRef.current?.sendStatus();
-	}, [hasWallet, isWalletLocked]);
+	}, [hasWallet, permissionsManager]);
 }
