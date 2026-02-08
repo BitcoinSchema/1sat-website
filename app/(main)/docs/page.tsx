@@ -53,16 +53,16 @@ function CodeBlock({
 	return (
 		<div className="group relative border border-border bg-muted/40">
 			{title && (
-				<div className="flex items-center justify-between border-b border-border px-4 py-2 text-xs text-muted-foreground font-mono">
+				<div className="flex items-center justify-between border-border border-b px-4 py-2 font-mono text-muted-foreground text-xs">
 					<span>{title}</span>
 					<span className="uppercase tracking-widest opacity-50">{lang}</span>
 				</div>
 			)}
 			<button
-				type="button"
-				onClick={copy}
-				className="absolute right-2 top-2 p-1.5 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
 				aria-label="Copy code"
+				className="absolute top-2 right-2 p-1.5 text-muted-foreground opacity-0 transition-colors hover:text-foreground group-hover:opacity-100"
+				onClick={copy}
+				type="button"
 			>
 				{copied ? (
 					<Check className="size-3.5" />
@@ -70,7 +70,7 @@ function CodeBlock({
 					<Copy className="size-3.5" />
 				)}
 			</button>
-			<pre className="overflow-x-auto p-4 text-sm leading-relaxed font-mono">
+			<pre className="overflow-x-auto p-4 font-mono text-sm leading-relaxed">
 				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: sugar-high output is safe */}
 				<code dangerouslySetInnerHTML={{ __html: html }} />
 			</pre>
@@ -86,6 +86,7 @@ const sections = [
 	{ id: "getting-started", label: "Getting Started" },
 	{ id: "detect-provider", label: "Detect Provider" },
 	{ id: "connect", label: "Connect" },
+	{ id: "challenge-signing", label: "Challenge Signing" },
 	{ id: "addresses", label: "Get Addresses" },
 	{ id: "balance", label: "Get Balance" },
 	{ id: "send-bsv", label: "Sign Transaction" },
@@ -110,7 +111,7 @@ function TableOfContents() {
 					}
 				}
 			},
-			{ rootMargin: "-20% 0px -60% 0px", threshold: 0 },
+			{ rootMargin: "-20% 0px -60% 0px", threshold: 0 }
 		);
 
 		for (const s of sections) {
@@ -123,18 +124,18 @@ function TableOfContents() {
 
 	return (
 		<nav className="sticky top-6 space-y-1">
-			<p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+			<p className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-widest">
 				On this page
 			</p>
 			{sections.map((s) => (
 				<a
-					key={s.id}
-					href={`#${s.id}`}
 					className={`block py-1 text-sm transition-colors ${
 						active === s.id
-							? "text-primary font-medium"
+							? "font-medium text-primary"
 							: "text-muted-foreground hover:text-foreground"
 					}`}
+					href={`#${s.id}`}
+					key={s.id}
 				>
 					{s.label}
 				</a>
@@ -156,12 +157,12 @@ function SectionHeading({
 }) {
 	return (
 		<h2
+			className="group flex scroll-mt-6 items-center gap-2 font-bold text-xl tracking-tight"
 			id={id}
-			className="group flex items-center gap-2 text-xl font-bold tracking-tight scroll-mt-6"
 		>
 			<a
+				className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
 				href={`#${id}`}
-				className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
 			>
 				<Hash className="size-4" />
 			</a>
@@ -179,8 +180,8 @@ function SubHeading({
 }) {
 	return (
 		<h3
+			className="scroll-mt-6 font-semibold text-base text-foreground/90 tracking-tight"
 			id={id}
-			className="text-base font-semibold tracking-tight text-foreground/90 scroll-mt-6"
 		>
 			{children}
 		</h3>
@@ -210,15 +211,15 @@ function MethodSig({
 
 	return (
 		<div className="flex items-start gap-3 border border-border bg-muted/30 px-4 py-3">
-			<code className="text-sm font-mono font-semibold text-foreground">
+			<code className="font-mono font-semibold text-foreground text-sm">
 				{name}({params || ""})
 			</code>
-			<ArrowRight className="size-3.5 mt-1 shrink-0 text-muted-foreground" />
-			<code className="text-sm font-mono text-muted-foreground">{returns}</code>
+			<ArrowRight className="mt-1 size-3.5 shrink-0 text-muted-foreground" />
+			<code className="font-mono text-muted-foreground text-sm">{returns}</code>
 			{badge && (
 				<Badge
-					variant="outline"
 					className={`ml-auto text-[10px] uppercase tracking-wider ${badgeColor[badge]}`}
+					variant="outline"
 				>
 					{badge}
 				</Badge>
@@ -237,25 +238,25 @@ export default function DocsPage() {
 			<PageHeader>
 				<div>
 					<PageTitle>Developer Documentation</PageTitle>
-					<p className="text-muted-foreground mt-1">
+					<p className="mt-1 text-muted-foreground">
 						Integrate 1Sat Wallet into your application via the provider API
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
 					<Link
+						className="inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
 						href="https://github.com/b-open-io/1sat-sdk"
-						target="_blank"
 						rel="noopener noreferrer"
-						className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+						target="_blank"
 					>
 						SDK
 						<ExternalLink className="size-3" />
 					</Link>
 					<Link
+						className="inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
 						href="https://www.npmjs.com/package/@1sat/connect"
-						target="_blank"
 						rel="noopener noreferrer"
-						className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+						target="_blank"
 					>
 						npm
 						<ExternalLink className="size-3" />
@@ -264,11 +265,11 @@ export default function DocsPage() {
 			</PageHeader>
 
 			<PageContent>
-				<div className="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-10">
+				<div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_200px]">
 					{/* Main content */}
-					<div className="space-y-12 min-w-0">
+					<div className="min-w-0 space-y-12">
 						{/* Hero cards */}
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 							<Card className="border-primary/20">
 								<CardHeader className="pb-2">
 									<Plug className="size-5 text-primary" />
@@ -313,7 +314,7 @@ export default function DocsPage() {
 								1Sat Wallet exposes a provider API that lets any web application
 								request wallet operations from the user. The wallet opens as a
 								popup at{" "}
-								<code className="text-sm bg-muted px-1.5 py-0.5 font-mono">
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
 									1sat.market
 								</code>{" "}
 								where the user approves or rejects each request. No browser
@@ -325,7 +326,6 @@ export default function DocsPage() {
 
 							<SubHeading>Quick Start</SubHeading>
 							<CodeBlock
-								title="app.ts"
 								code={`import { createOneSat } from '@1sat/connect'
 
 const wallet = createOneSat({
@@ -346,6 +346,7 @@ const { txid } = await wallet.inscribe({
   contentType: 'text/plain',
 })
 console.log('Inscribed:', txid)`}
+								title="app.ts"
 							/>
 						</section>
 
@@ -356,12 +357,12 @@ console.log('Inscribed:', txid)`}
 							</SectionHeading>
 							<p className="text-muted-foreground leading-relaxed">
 								The{" "}
-								<code className="text-sm bg-muted px-1.5 py-0.5 font-mono">
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
 									createOneSat()
 								</code>{" "}
 								factory handles provider detection automatically. It checks for
 								a browser extension first (
-								<code className="text-sm bg-muted px-1.5 py-0.5 font-mono">
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
 									window.onesat
 								</code>
 								), then falls back to the popup-based provider.
@@ -396,17 +397,27 @@ try {
 							</SectionHeading>
 							<p className="text-muted-foreground leading-relaxed">
 								Calling{" "}
-								<code className="text-sm bg-muted px-1.5 py-0.5 font-mono">
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
 									connect()
 								</code>{" "}
 								opens the wallet popup where the user can approve the
 								connection. On approval, you receive the user's payment address,
-								ordinal address, and identity public key.
+								ordinal address, and identity public key. You can optionally
+								pass a{" "}
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+									challenge
+								</code>{" "}
+								to get a BSM signature in the same popup — see{" "}
+								<a className="text-primary underline" href="#challenge-signing">
+									Challenge Signing
+								</a>{" "}
+								below.
 							</p>
 							<MethodSig
-								name="connect"
-								returns="Promise<ConnectResult>"
 								badge="connection"
+								name="connect"
+								params="params?: ConnectParams"
+								returns="Promise<ConnectResult>"
 							/>
 							<CodeBlock
 								code={`try {
@@ -423,9 +434,9 @@ try {
 
 							<SubHeading>Disconnect</SubHeading>
 							<MethodSig
+								badge="connection"
 								name="disconnect"
 								returns="Promise<void>"
-								badge="connection"
 							/>
 							<CodeBlock
 								code={`await wallet.disconnect()
@@ -433,12 +444,86 @@ try {
 							/>
 
 							<SubHeading>Check Connection</SubHeading>
-							<MethodSig name="isConnected" returns="boolean" badge="read" />
+							<MethodSig badge="read" name="isConnected" returns="boolean" />
 							<CodeBlock
 								code={`if (wallet.isConnected()) {
   // Wallet is connected, safe to call methods
 }`}
 							/>
+						</section>
+
+						{/* Challenge Signing */}
+						<section className="space-y-4">
+							<SectionHeading id="challenge-signing">
+								Challenge Signing
+							</SectionHeading>
+							<p className="text-muted-foreground leading-relaxed">
+								When your app needs to verify wallet ownership (e.g. during
+								authentication), pass a{" "}
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+									challenge
+								</code>{" "}
+								string to{" "}
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+									connect()
+								</code>
+								. The wallet signs the challenge with BSM during the same popup
+								interaction, so the user only sees one popup instead of two.
+								This avoids browsers blocking a second{" "}
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+									window.open
+								</code>{" "}
+								call.
+							</p>
+							<CodeBlock
+								code={`import { createOneSat, PopupBlockedError } from '@1sat/connect'
+
+const wallet = createOneSat({ appName: 'My dApp' })
+
+// Build a challenge for your server to verify
+const timestamp = new Date().toISOString()
+const challenge = \`/api/auth|$\{timestamp}\`
+
+// Single popup: connect + sign in one user gesture
+const result = await wallet.connect({ challenge })
+
+console.log('Payment:', result.paymentAddress)
+console.log('Ordinal:', result.ordinalAddress)
+
+// signedMessage is present when a challenge was provided
+if (result.signedMessage) {
+  console.log('Signature:', result.signedMessage.signature)
+  console.log('Address:', result.signedMessage.address)
+  console.log('Message:', result.signedMessage.message)
+
+  // Send to your server for BSM verification
+  await fetch('/api/auth', {
+    method: 'POST',
+    body: JSON.stringify({
+      address: result.signedMessage.address,
+      signature: result.signedMessage.signature,
+      message: challenge,
+    }),
+  })
+}`}
+								title="Challenge + Connect in one popup"
+							/>
+							<p className="text-muted-foreground leading-relaxed">
+								If no{" "}
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+									challenge
+								</code>{" "}
+								is provided,{" "}
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+									signedMessage
+								</code>{" "}
+								will be{" "}
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
+									undefined
+								</code>{" "}
+								and the popup behaves exactly as before — fully backward
+								compatible.
+							</p>
 						</section>
 
 						{/* Addresses */}
@@ -451,14 +536,14 @@ try {
 								at any time.
 							</p>
 							<MethodSig
+								badge="read"
 								name="getAddresses"
 								returns="{ paymentAddress, ordinalAddress } | null"
-								badge="read"
 							/>
 							<MethodSig
+								badge="read"
 								name="getIdentityPubKey"
 								returns="string | null"
-								badge="read"
 							/>
 							<CodeBlock
 								code={`const addrs = wallet.getAddresses()
@@ -476,9 +561,9 @@ const identityPubKey = wallet.getIdentityPubKey()
 						<section className="space-y-4">
 							<SectionHeading id="balance">Get Balance</SectionHeading>
 							<MethodSig
+								badge="read"
 								name="getBalance"
 								returns="Promise<BalanceResult>"
-								badge="read"
 							/>
 							<CodeBlock
 								code={`const { satoshis, usd } = await wallet.getBalance()
@@ -495,10 +580,10 @@ console.log(\`\${satoshis} sats ($\${usd?.toFixed(2)} USD)\`)`}
 								approves.
 							</p>
 							<MethodSig
+								badge="write"
 								name="signTransaction"
 								params="request: SignTransactionRequest"
 								returns="Promise<SignTransactionResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`const { rawtx, txid } = await wallet.signTransaction({
@@ -517,10 +602,10 @@ console.log('Signed TXID:', txid)`}
 								authentication, attestation, and identity verification.
 							</p>
 							<MethodSig
+								badge="write"
 								name="signMessage"
 								params="message: string"
 								returns="Promise<SignMessageResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`const { message, signature, address } = await wallet.signMessage('Authenticate to My dApp')
@@ -537,10 +622,10 @@ console.log('Signed by:', address)
 
 							<SubHeading>Inscribe</SubHeading>
 							<MethodSig
+								badge="write"
 								name="inscribe"
 								params="request: InscribeRequest"
 								returns="Promise<InscribeResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`// Inscribe text
@@ -575,10 +660,10 @@ const { txid } = await wallet.inscribe({
 
 							<SubHeading>Get Ordinals</SubHeading>
 							<MethodSig
+								badge="read"
 								name="getOrdinals"
 								params="options?: ListOptions"
 								returns="Promise<OrdinalOutput[]>"
-								badge="read"
 							/>
 							<CodeBlock
 								code={`// Get first 20 ordinals
@@ -594,10 +679,10 @@ const page2 = await wallet.getOrdinals({ limit: 20, offset: 20 })`}
 
 							<SubHeading>Transfer Ordinals</SubHeading>
 							<MethodSig
+								badge="write"
 								name="sendOrdinals"
 								params="request: SendOrdinalsRequest"
 								returns="Promise<SendResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`const { txid } = await wallet.sendOrdinals({
@@ -617,10 +702,10 @@ const page2 = await wallet.getOrdinals({ limit: 20, offset: 20 })`}
 
 							<SubHeading>Get Tokens</SubHeading>
 							<MethodSig
+								badge="read"
 								name="getTokens"
 								params="options?: ListOptions"
 								returns="Promise<TokenOutput[]>"
-								badge="read"
 							/>
 							<CodeBlock
 								code={`const tokens = await wallet.getTokens()
@@ -632,10 +717,10 @@ for (const tok of tokens) {
 
 							<SubHeading>Transfer Tokens</SubHeading>
 							<MethodSig
+								badge="write"
 								name="transferToken"
 								params="request: TransferTokenRequest"
 								returns="Promise<SendResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`const { txid } = await wallet.transferToken({
@@ -658,10 +743,10 @@ for (const tok of tokens) {
 
 							<SubHeading>Create Listing</SubHeading>
 							<MethodSig
+								badge="write"
 								name="createListing"
 								params="request: CreateListingRequest"
 								returns="Promise<ListingResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`const { txid, listingOutpoints } = await wallet.createListing({
@@ -672,10 +757,10 @@ for (const tok of tokens) {
 
 							<SubHeading>Purchase Listing</SubHeading>
 							<MethodSig
+								badge="write"
 								name="purchaseListing"
 								params="request: PurchaseListingRequest"
 								returns="Promise<SendResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`const { txid } = await wallet.purchaseListing({
@@ -685,10 +770,10 @@ for (const tok of tokens) {
 
 							<SubHeading>Cancel Listing</SubHeading>
 							<MethodSig
+								badge="write"
 								name="cancelListing"
 								params="request: CancelListingRequest"
 								returns="Promise<SendResult>"
-								badge="write"
 							/>
 							<CodeBlock
 								code={`const { txid } = await wallet.cancelListing({
@@ -705,20 +790,20 @@ for (const tok of tokens) {
 								keep your app in sync with the wallet.
 							</p>
 
-							<div className="border border-border divide-y divide-border">
+							<div className="divide-y divide-border border border-border">
 								<div className="grid grid-cols-[140px_1fr] text-sm">
-									<div className="px-4 py-2.5 font-mono font-semibold bg-muted/30">
+									<div className="bg-muted/30 px-4 py-2.5 font-mono font-semibold">
 										connect
 									</div>
 									<div className="px-4 py-2.5 text-muted-foreground">
 										User approved connection. Receives{" "}
-										<code className="bg-muted px-1 py-0.5 text-xs font-mono">
+										<code className="bg-muted px-1 py-0.5 font-mono text-xs">
 											ConnectResult
 										</code>
 									</div>
 								</div>
 								<div className="grid grid-cols-[140px_1fr] text-sm">
-									<div className="px-4 py-2.5 font-mono font-semibold bg-muted/30">
+									<div className="bg-muted/30 px-4 py-2.5 font-mono font-semibold">
 										disconnect
 									</div>
 									<div className="px-4 py-2.5 text-muted-foreground">
@@ -726,7 +811,7 @@ for (const tok of tokens) {
 									</div>
 								</div>
 								<div className="grid grid-cols-[140px_1fr] text-sm">
-									<div className="px-4 py-2.5 font-mono font-semibold bg-muted/30">
+									<div className="bg-muted/30 px-4 py-2.5 font-mono font-semibold">
 										accountChange
 									</div>
 									<div className="px-4 py-2.5 text-muted-foreground">
@@ -794,15 +879,15 @@ try {
 }`}
 							/>
 
-							<div className="border border-border divide-y divide-border">
-								<div className="grid grid-cols-[260px_60px_1fr] text-sm font-mono">
-									<div className="px-4 py-2 bg-muted/50 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+							<div className="divide-y divide-border border border-border">
+								<div className="grid grid-cols-[260px_60px_1fr] font-mono text-sm">
+									<div className="bg-muted/50 px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
 										Error Class
 									</div>
-									<div className="px-4 py-2 bg-muted/50 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+									<div className="bg-muted/50 px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
 										Code
 									</div>
-									<div className="px-4 py-2 bg-muted/50 font-semibold text-xs uppercase tracking-wider text-muted-foreground font-sans">
+									<div className="bg-muted/50 px-4 py-2 font-sans font-semibold text-muted-foreground text-xs uppercase tracking-wider">
 										When
 									</div>
 								</div>
@@ -820,14 +905,14 @@ try {
 									["TimeoutError", "4008", "Request exceeded timeout"],
 								].map(([cls, code, desc]) => (
 									<div
-										key={code}
 										className="grid grid-cols-[260px_60px_1fr] text-sm"
+										key={code}
 									>
 										<div className="px-4 py-2 font-mono">{cls}</div>
-										<div className="px-4 py-2 text-muted-foreground font-mono">
+										<div className="px-4 py-2 font-mono text-muted-foreground">
 											{code}
 										</div>
-										<div className="px-4 py-2 text-muted-foreground font-sans">
+										<div className="px-4 py-2 font-sans text-muted-foreground">
 											{desc}
 										</div>
 									</div>
@@ -840,24 +925,28 @@ try {
 							<SectionHeading id="types">Types Reference</SectionHeading>
 							<p className="text-muted-foreground leading-relaxed">
 								All types are exported from{" "}
-								<code className="text-sm bg-muted px-1.5 py-0.5 font-mono">
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
 									@1sat/connect
 								</code>{" "}
 								for TypeScript projects.
 							</p>
 							<CodeBlock
-								title="types.ts"
 								code={`interface OneSatConfig {
   appName?: string        // Shown in approval popup
-  popupUrl?: string       // Default: 'https://1sat.market'
+  popupUrl?: string       // Default: 'https://www.1satwallet.com'
   timeout?: number        // Default: 300000 (5 min)
   network?: 'main' | 'test'
+}
+
+interface ConnectParams {
+  challenge?: string      // Optional BSM challenge signed in same popup
 }
 
 interface ConnectResult {
   paymentAddress: string
   ordinalAddress: string
   identityPubKey: string
+  signedMessage?: SignMessageResult  // Present when challenge was provided
 }
 
 interface BalanceResult {
@@ -954,19 +1043,19 @@ interface ListOptions {
 }
 
 type OneSatEvent = 'connect' | 'disconnect' | 'accountChange'`}
+								title="types.ts"
 							/>
 
 							<SubHeading>Global Declaration</SubHeading>
 							<p className="text-muted-foreground leading-relaxed">
 								If you access{" "}
-								<code className="text-sm bg-muted px-1.5 py-0.5 font-mono">
+								<code className="bg-muted px-1.5 py-0.5 font-mono text-sm">
 									window.onesat
 								</code>{" "}
 								directly (e.g. with a browser extension), add this declaration
 								to your project:
 							</p>
 							<CodeBlock
-								title="global.d.ts"
 								code={`import type { OneSatProvider } from '@1sat/connect'
 
 declare global {
@@ -974,6 +1063,7 @@ declare global {
     onesat?: OneSatProvider
   }
 }`}
+								title="global.d.ts"
 							/>
 						</section>
 					</div>
