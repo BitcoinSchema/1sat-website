@@ -1,11 +1,14 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 
-const SIGMA_AUTH_URL = process.env.NEXT_PUBLIC_SIGMA_AUTH_URL;
-if (!SIGMA_AUTH_URL) {
-	throw new Error(
-		"NEXT_PUBLIC_SIGMA_AUTH_URL environment variable is required",
-	);
+function getSigmaAuthUrl(): string {
+	const url = process.env.NEXT_PUBLIC_SIGMA_AUTH_URL;
+	if (!url) {
+		throw new Error(
+			"NEXT_PUBLIC_SIGMA_AUTH_URL environment variable is required"
+		);
+	}
+	return url;
 }
 
 /**
@@ -18,11 +21,14 @@ export async function verifyAccessToken(token: string): Promise<{
 	name?: string;
 	email?: string;
 }> {
-	const response = await fetch(`${SIGMA_AUTH_URL}/api/auth/oauth2/userinfo`, {
-		headers: {
-			Authorization: `Bearer ${token}`,
-		},
-	});
+	const response = await fetch(
+		`${getSigmaAuthUrl()}/api/auth/oauth2/userinfo`,
+		{
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		}
+	);
 
 	if (!response.ok) {
 		throw new Error("Invalid or expired access token");
