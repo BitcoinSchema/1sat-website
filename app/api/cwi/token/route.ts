@@ -4,11 +4,13 @@ import { checkRateLimit } from "@/lib/cwi/rate-limit";
 import {
 	computePKCEChallenge,
 	decryptResultPayload,
+	handleCorsPreflightRequest,
 	hasMatchingOrigin,
 	isAllowedOriginScheme,
 	isValidBase64UrlValue,
 	parseAbsoluteUrl,
 	parseOriginHeader,
+	withCorsHeaders,
 } from "@/lib/cwi/redirect-utils";
 
 export const runtime = "nodejs";
@@ -41,10 +43,17 @@ const getConvexClient = (): ConvexHttpClient => {
 	return new ConvexHttpClient(convexUrl);
 };
 
-const badRequest = (error: string, status = 400) =>
-	NextResponse.json({ error }, { status });
+export function OPTIONS(request: NextRequest) {
+	return handleCorsPreflightRequest(request);
+}
 
 export async function POST(request: NextRequest) {
+	// Scoped helpers that auto-attach CORS headers for this request
+	const cors = <T extends NextResponse>(r: T) =>
+		withCorsHeaders(r, request.headers);
+	const fail = (error: string, status = 400) =>
+		cors(NextResponse.json({ error }, { status }));
+
 	const clientIp =
 		request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 	if (
@@ -54,40 +63,49 @@ export async function POST(request: NextRequest) {
 			RATE_LIMIT_WINDOW_MS,
 		)
 	) {
-		return NextResponse.json({ error: "rate_limit_exceeded" }, { status: 429 });
+		return fail("rate_limit_exceeded", 429);
 	}
 
 	let body: TokenBody;
 	try {
 		body = (await request.json()) as TokenBody;
 	} catch {
-		return badRequest("invalid_json_body");
+		return fail("invalid_json_body");
 	}
 
+	// Origin validation — errors before origin is confirmed don't need CORS
 	const origin = parseOriginHeader(request.headers);
 	if (!origin) {
-		return badRequest("missing_origin_header");
+		return NextResponse.json(
+			{ error: "missing_origin_header" },
+			{ status: 400 },
+		);
 	}
 	if (!isAllowedOriginScheme(origin)) {
-		return badRequest("origin_must_be_https_or_loopback_http");
+		return NextResponse.json(
+			{ error: "origin_must_be_https_or_loopback_http" },
+			{ status: 400 },
+		);
 	}
 
+	// redirect_uri validation
 	if (
 		typeof body.redirect_uri !== "string" ||
 		body.redirect_uri.length > 2048
 	) {
-		return badRequest("invalid_redirect_uri");
+		return fail("invalid_redirect_uri");
 	}
 	const redirectUri = parseAbsoluteUrl(body.redirect_uri);
-	if (!redirectUri || !isAllowedOriginScheme(redirectUri)) {
-		return badRequest("invalid_redirect_uri");
+	if (!(redirectUri && isAllowedOriginScheme(redirectUri))) {
+		return fail("invalid_redirect_uri");
 	}
 	if (!hasMatchingOrigin(origin, redirectUri)) {
-		return badRequest("redirect_uri_origin_mismatch");
+		return fail("redirect_uri_origin_mismatch");
 	}
 
+	// Code & verifier validation
 	if (typeof body.code !== "string" || body.code.length < 16) {
-		return badRequest("invalid_code");
+		return fail("invalid_code");
 	}
 	if (
 		typeof body.code_verifier !== "string" ||
@@ -95,11 +113,11 @@ export async function POST(request: NextRequest) {
 		body.code_verifier.length > 128 ||
 		!isValidBase64UrlValue(body.code_verifier, 43, 128)
 	) {
-		return badRequest("invalid_code_verifier");
+		return fail("invalid_code_verifier");
 	}
 
+	// Exchange authorization code
 	const client = getConvexClient();
-
 	const convex = client as unknown as ConvexMutationRunner;
 	const exchangeResult = (await convex.mutation("cwiAuth:exchangeAuthCode", {
 		codeId: body.code,
@@ -111,37 +129,44 @@ export async function POST(request: NextRequest) {
 	})) as ExchangeAuthCodeResponse;
 
 	if (!exchangeResult?.ok) {
-		return NextResponse.json(
-			{
-				error: exchangeResult?.error ?? "invalid_grant",
-				error_description:
-					exchangeResult?.errorDescription ??
-					"authorization_code_exchange_failed",
-			},
-			{ status: 400 },
+		return cors(
+			NextResponse.json(
+				{
+					error: exchangeResult?.error ?? "invalid_grant",
+					error_description:
+						exchangeResult?.errorDescription ??
+						"authorization_code_exchange_failed",
+				},
+				{ status: 400 },
+			),
 		);
 	}
 
 	if (exchangeResult.error) {
-		return NextResponse.json(
-			{
-				error: exchangeResult.error,
-				error_description:
-					exchangeResult.errorDescription ?? "authorization_request_failed",
-			},
-			{ status: 400 },
+		return cors(
+			NextResponse.json(
+				{
+					error: exchangeResult.error,
+					error_description:
+						exchangeResult.errorDescription ?? "authorization_request_failed",
+				},
+				{ status: 400 },
+			),
 		);
 	}
 
 	try {
 		const result = decryptResultPayload(exchangeResult.resultCiphertext ?? "");
-		return NextResponse.json({
-			result,
-		});
+		return cors(NextResponse.json({ result }));
 	} catch {
-		return NextResponse.json(
-			{ error: "invalid_grant", error_description: "invalid_result_payload" },
-			{ status: 400 },
+		return cors(
+			NextResponse.json(
+				{
+					error: "invalid_grant",
+					error_description: "invalid_result_payload",
+				},
+				{ status: 400 },
+			),
 		);
 	}
 }

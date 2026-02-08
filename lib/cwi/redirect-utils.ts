@@ -4,6 +4,7 @@ import {
 	createHash,
 	randomBytes,
 } from "node:crypto";
+import { type NextRequest, NextResponse } from "next/server";
 
 export const REDIRECT_AUTH_REQUEST_TTL_MS = 5 * 60 * 1000;
 export const REDIRECT_AUTH_CODE_TTL_MS = 5 * 60 * 1000;
@@ -215,4 +216,51 @@ export const decryptResultPayload = (ciphertext: string): unknown => {
 	]);
 	const decoded = new TextDecoder().decode(decrypted);
 	return JSON.parse(decoded);
+};
+
+// ---------------------------------------------------------------------------
+// CORS helpers for CWI redirect endpoints
+// ---------------------------------------------------------------------------
+
+const CORS_HEADERS_BASE = {
+	"Access-Control-Allow-Methods": "POST, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type",
+	"Access-Control-Max-Age": "86400",
+} as const;
+
+/** Build CORS headers reflecting the validated request Origin. */
+const buildCorsHeaders = (headers: Headers): Record<string, string> | null => {
+	const origin = parseOriginHeader(headers);
+	if (!(origin && isAllowedOriginScheme(origin))) {
+		return null;
+	}
+	return {
+		"Access-Control-Allow-Origin": origin.origin,
+		...CORS_HEADERS_BASE,
+	};
+};
+
+/** CORS preflight (OPTIONS) response. 204 if origin is valid, 403 otherwise. */
+export const handleCorsPreflightRequest = (
+	request: NextRequest,
+): NextResponse => {
+	const corsHeaders = buildCorsHeaders(request.headers);
+	if (!corsHeaders) {
+		return new NextResponse(null, { status: 403 });
+	}
+	return new NextResponse(null, { status: 204, headers: corsHeaders });
+};
+
+/** Append CORS headers to an existing response. */
+export const withCorsHeaders = (
+	response: NextResponse,
+	requestHeaders: Headers,
+): NextResponse => {
+	const corsHeaders = buildCorsHeaders(requestHeaders);
+	if (corsHeaders) {
+		for (const [key, value] of Object.entries(corsHeaders)) {
+			response.headers.set(key, value);
+		}
+	}
+	return response;
 };

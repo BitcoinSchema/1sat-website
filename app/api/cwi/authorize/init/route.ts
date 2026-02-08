@@ -4,6 +4,7 @@ import { checkRateLimit } from "@/lib/cwi/rate-limit";
 import {
 	CWI_REDIRECT_METHODS,
 	generateOpaqueToken,
+	handleCorsPreflightRequest,
 	hasMatchingOrigin,
 	isAllowedOriginScheme,
 	isValidBase64UrlValue,
@@ -13,6 +14,7 @@ import {
 	parseAbsoluteUrl,
 	parseOriginHeader,
 	REDIRECT_AUTH_REQUEST_TTL_MS,
+	withCorsHeaders,
 } from "@/lib/cwi/redirect-utils";
 
 export const runtime = "nodejs";
@@ -47,10 +49,17 @@ const getConvexClient = (): ConvexHttpClient => {
 	return new ConvexHttpClient(convexUrl);
 };
 
-const badRequest = (error: string, status = 400) =>
-	NextResponse.json({ error }, { status });
+export function OPTIONS(request: NextRequest) {
+	return handleCorsPreflightRequest(request);
+}
 
 export async function POST(request: NextRequest) {
+	// Scoped helpers that auto-attach CORS headers for this request
+	const cors = <T extends NextResponse>(r: T) =>
+		withCorsHeaders(r, request.headers);
+	const fail = (error: string, status = 400) =>
+		cors(NextResponse.json({ error }, { status }));
+
 	const clientIp =
 		request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 	if (
@@ -60,83 +69,95 @@ export async function POST(request: NextRequest) {
 			RATE_LIMIT_WINDOW_MS,
 		)
 	) {
-		return NextResponse.json({ error: "rate_limit_exceeded" }, { status: 429 });
+		return fail("rate_limit_exceeded", 429);
 	}
 
 	let body: AuthorizeInitBody;
 	try {
 		body = (await request.json()) as AuthorizeInitBody;
 	} catch {
-		return badRequest("invalid_json_body");
+		return fail("invalid_json_body");
 	}
 
+	// Origin validation — errors before origin is confirmed don't need CORS
 	const origin = parseOriginHeader(request.headers);
 	if (!origin) {
-		return badRequest("missing_origin_header");
+		return NextResponse.json(
+			{ error: "missing_origin_header" },
+			{ status: 400 },
+		);
 	}
 	if (!isAllowedOriginScheme(origin)) {
-		return badRequest("origin_must_be_https_or_loopback_http");
+		return NextResponse.json(
+			{ error: "origin_must_be_https_or_loopback_http" },
+			{ status: 400 },
+		);
 	}
 
+	// redirect_uri validation
 	if (
 		typeof body.redirect_uri !== "string" ||
 		body.redirect_uri.length > 2048
 	) {
-		return badRequest("invalid_redirect_uri");
+		return fail("invalid_redirect_uri");
 	}
 	const redirectUri = parseAbsoluteUrl(body.redirect_uri);
 	if (!redirectUri) {
-		return badRequest("invalid_redirect_uri");
+		return fail("invalid_redirect_uri");
 	}
 	if (!isAllowedOriginScheme(redirectUri)) {
-		return badRequest("redirect_uri_must_be_https_or_loopback_http");
+		return fail("redirect_uri_must_be_https_or_loopback_http");
 	}
 	if (!hasMatchingOrigin(origin, redirectUri)) {
-		return badRequest("redirect_uri_origin_mismatch");
+		return fail("redirect_uri_origin_mismatch");
 	}
 
+	// Method validation
 	if (typeof body.call !== "string" || !isValidRedirectMethod(body.call)) {
-		return badRequest("unknown_method");
+		return fail("unknown_method");
 	}
 
+	// State & nonce validation
 	if (
 		typeof body.state !== "string" ||
 		body.state.length < 8 ||
 		body.state.length > 512
 	) {
-		return badRequest("invalid_state");
+		return fail("invalid_state");
 	}
 	if (
 		typeof body.nonce !== "string" ||
 		body.nonce.length < 8 ||
 		body.nonce.length > 512
 	) {
-		return badRequest("invalid_nonce");
+		return fail("invalid_nonce");
 	}
 
+	// PKCE validation
 	if (
 		body.code_challenge_method !== undefined &&
 		body.code_challenge_method !== "S256"
 	) {
-		return badRequest("only_s256_code_challenge_method_allowed");
+		return fail("only_s256_code_challenge_method_allowed");
 	}
 	const codeChallengeMethod = "S256" as const;
 	if (
 		typeof body.code_challenge !== "string" ||
 		!isValidBase64UrlValue(body.code_challenge, 43, 128)
 	) {
-		return badRequest("invalid_code_challenge");
+		return fail("invalid_code_challenge");
 	}
 
+	// Args normalization
 	const { stableArgs, argsHash, argsSize } = normalizeArgsAndHash(
 		body.args ?? {},
 	);
 	if (argsSize > MAX_CWI_ARGS_BYTES) {
-		return badRequest("args_too_large", 413);
+		return fail("args_too_large", 413);
 	}
 
+	// Create auth request in Convex
 	const client = getConvexClient();
-
 	const requestId = generateOpaqueToken(18);
 	const now = Date.now();
 	const expiresAt = now + REDIRECT_AUTH_REQUEST_TTL_MS;
@@ -157,18 +178,18 @@ export async function POST(request: NextRequest) {
 	})) as CreateAuthRequestResponse;
 
 	if (!createResult?.ok) {
-		return badRequest(
-			createResult?.errorDescription ?? "request_creation_failed",
-		);
+		return fail(createResult?.errorDescription ?? "request_creation_failed");
 	}
 
 	const authorizeUrl = new URL("/wallet/cwi/authorize", request.nextUrl.origin);
 	authorizeUrl.searchParams.set("requestId", requestId);
 
-	return NextResponse.json({
-		requestId,
-		authorizeUrl: authorizeUrl.toString(),
-		expiresAt,
-		supportedMethods: CWI_REDIRECT_METHODS,
-	});
+	return cors(
+		NextResponse.json({
+			requestId,
+			authorizeUrl: authorizeUrl.toString(),
+			expiresAt,
+			supportedMethods: CWI_REDIRECT_METHODS,
+		}),
+	);
 }
