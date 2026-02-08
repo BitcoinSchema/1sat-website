@@ -23,7 +23,7 @@ import type { Keys } from "@/lib/types";
 interface MnemonicGridProps {
 	onSubmit?: (keys: Keys) => void;
 	onVerify?: (isValid: boolean) => void;
-	mode?: "edit" | "view" | "prove";
+	mode?: "edit" | "view" | "prove" | "spot-check";
 	mnemonic?: string;
 }
 
@@ -85,6 +85,39 @@ export function MnemonicGrid({
 		}
 		return items;
 	}, [mode, mnemonic]);
+
+	// Spot-check mode state: pick 3 random positions
+	const spotCheckIndices = useMemo(() => {
+		if (mode !== "spot-check" || !mnemonic) return [];
+		const indices: number[] = [];
+		const pool = Array.from({ length: 12 }, (_, i) => i);
+		for (let i = pool.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[pool[i], pool[j]] = [pool[j], pool[i]];
+		}
+		indices.push(...pool.slice(0, 3));
+		indices.sort((a, b) => a - b);
+		return indices;
+	}, [mode, mnemonic]);
+
+	const [spotCheckInput, setSpotCheckInput] = useState<Record<number, string>>(
+		{},
+	);
+
+	// Verify spot-check mode input
+	useEffect(() => {
+		if (mode === "spot-check" && onVerify && mnemonic) {
+			const words = mnemonic.split(" ");
+			const allCorrect =
+				spotCheckIndices.length === 3 &&
+				spotCheckIndices.every(
+					(idx) =>
+						spotCheckInput[idx] !== undefined &&
+						spotCheckInput[idx].toLowerCase().trim() === words[idx],
+				);
+			onVerify(allCorrect);
+		}
+	}, [mode, spotCheckInput, mnemonic, onVerify, spotCheckIndices]);
 
 	// Verify prove mode input
 	useEffect(() => {
@@ -170,7 +203,46 @@ export function MnemonicGrid({
 
 	return (
 		<div className="flex flex-col gap-4">
-			{mode === "prove" ? (
+			{mode === "spot-check" ? (
+				<div className="flex flex-col gap-3">
+					{spotCheckIndices.map((idx) => {
+						const words = mnemonic?.split(" ") ?? [];
+						const isCorrect =
+							spotCheckInput[idx]?.toLowerCase().trim() === words[idx];
+						const hasInput =
+							spotCheckInput[idx] !== undefined && spotCheckInput[idx] !== "";
+						return (
+							<div key={`spot-${idx}`} className="flex items-center gap-3">
+								<span className="text-sm text-muted-foreground w-24 shrink-0 text-right">
+									Word #{idx + 1}
+								</span>
+								<Input
+									value={spotCheckInput[idx] ?? ""}
+									onChange={(e) =>
+										setSpotCheckInput((prev) => ({
+											...prev,
+											[idx]: e.target.value,
+										}))
+									}
+									placeholder={`Enter word #${idx + 1}`}
+									className={`font-mono max-w-48 ${
+										hasInput
+											? isCorrect
+												? "border-green-600 focus-visible:ring-green-600/50"
+												: "border-destructive focus-visible:ring-destructive/50"
+											: ""
+									}`}
+									autoComplete="off"
+									spellCheck={false}
+								/>
+								{hasInput && isCorrect && (
+									<Check className="h-4 w-4 text-green-600 shrink-0" />
+								)}
+							</div>
+						);
+					})}
+				</div>
+			) : mode === "prove" ? (
 				<>
 					<div className="grid grid-cols-2 md:grid-cols-3 gap-2">
 						{proveSlots.map((slot) => {

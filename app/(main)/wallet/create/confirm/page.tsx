@@ -39,13 +39,13 @@ export default function ConfirmWalletPage() {
 					<CardHeader>
 						<CardTitle>Confirm Seed Phrase</CardTitle>
 						<CardDescription>
-							Please verify your seed phrase by selecting the words in correct
-							order.
+							Verify you saved your seed phrase by entering the words at the
+							positions shown below.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<MnemonicGrid
-							mode="prove"
+							mode="spot-check"
 							mnemonic={mnemonic}
 							onVerify={(isValid) => setIsVerified(isValid)}
 						/>
