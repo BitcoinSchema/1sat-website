@@ -204,18 +204,32 @@ function SignContent() {
 						<p className="text-muted-foreground">
 							You need to create or import a wallet before signing transactions.
 						</p>
-						<Button
-							variant="outline"
-							onClick={() => {
-								if (requestId && origin) {
-									rejectRequest(requestId, origin, "No wallet exists");
-								} else {
-									window.close();
-								}
-							}}
-						>
-							Close
-						</Button>
+						<div className="flex gap-2 justify-center">
+							<Button
+								variant="default"
+								onClick={() => {
+									window.open(
+										`${window.location.origin}/wallet/create`,
+										"_blank",
+									);
+								}}
+							>
+								<ExternalLink className="h-4 w-4 mr-2" />
+								Create Wallet
+							</Button>
+							<Button
+								variant="outline"
+								onClick={() => {
+									if (requestId && origin) {
+										rejectRequest(requestId, origin, "No wallet exists");
+									} else {
+										window.close();
+									}
+								}}
+							>
+								Close
+							</Button>
+						</div>
 					</CardContent>
 				</Card>
 			</div>
