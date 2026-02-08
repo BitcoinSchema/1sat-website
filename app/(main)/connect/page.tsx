@@ -13,6 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWallet } from "@/providers/wallet-provider";
 
+interface ConnectRequestParams {
+	challenge?: string;
+}
+
 function ConnectContent() {
 	const searchParams = useSearchParams();
 	const { hasWallet, isWalletLocked, walletKeys, unlockWallet } = useWallet();
@@ -21,7 +25,8 @@ function ConnectContent() {
 	const [unlockError, setUnlockError] = useState<string | null>(null);
 
 	// Parse popup parameters
-	const { requestId, origin, appName } = parsePopupParams(searchParams);
+	const { requestId, origin, appName, params } = parsePopupParams(searchParams);
+	const connectParams = params as ConnectRequestParams | undefined;
 
 	// Validate we have required params
 	const isValidRequest = requestId && origin;
@@ -45,14 +50,40 @@ function ConnectContent() {
 
 	// Handle connection approval
 	const handleApprove = async () => {
-		if (!isValidRequest || !walletKeys) return;
+		if (!(isValidRequest && walletKeys)) return;
 
 		setIsConnecting(true);
 		try {
 			const addresses = await getAddresses();
-			if (addresses) {
-				sendResponse(requestId, addresses, origin);
+			if (!addresses) return;
+
+			// If a challenge was provided, sign it with BSM in the same popup
+			let signedMessage:
+				| {
+						message: string;
+						signature: string;
+						address: string;
+				  }
+				| undefined;
+
+			if (connectParams?.challenge) {
+				const { BSM, PrivateKey, Utils } = await import("@bsv/sdk");
+				const ordPk = PrivateKey.fromWif(walletKeys.ordPk);
+				const msgBytes = Utils.toArray(connectParams.challenge, "utf8");
+				const signature = BSM.sign(msgBytes, ordPk) as string;
+
+				signedMessage = {
+					message: connectParams.challenge,
+					signature,
+					address: ordPk.toAddress().toString(),
+				};
 			}
+
+			sendResponse(
+				requestId,
+				signedMessage ? { ...addresses, signedMessage } : addresses,
+				origin
+			);
 		} catch (error) {
 			console.error("Failed to get addresses:", error);
 		} finally {
@@ -94,30 +125,29 @@ function ConnectContent() {
 	// No wallet exists
 	if (!hasWallet) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="flex min-h-screen items-center justify-center bg-background p-4">
 				<Card className="w-full max-w-md">
 					<CardHeader className="text-center">
 						<CardTitle className="text-destructive">No Wallet Found</CardTitle>
 					</CardHeader>
-					<CardContent className="text-center space-y-4">
+					<CardContent className="space-y-4 text-center">
 						<p className="text-muted-foreground">
 							You need to create or import a wallet before connecting to dApps.
 						</p>
-						<div className="flex gap-2 justify-center">
+						<div className="flex justify-center gap-2">
 							<Button
-								variant="default"
 								onClick={() => {
 									window.open(
 										`${window.location.origin}/wallet/create`,
-										"_blank",
+										"_blank"
 									);
 								}}
+								variant="default"
 							>
-								<ExternalLink className="h-4 w-4 mr-2" />
+								<ExternalLink className="mr-2 h-4 w-4" />
 								Create Wallet
 							</Button>
 							<Button
-								variant="outline"
 								onClick={() => {
 									if (isValidRequest) {
 										rejectRequest(requestId, origin, "No wallet exists");
@@ -125,6 +155,7 @@ function ConnectContent() {
 										window.close();
 									}
 								}}
+								variant="outline"
 							>
 								Close
 							</Button>
@@ -138,33 +169,31 @@ function ConnectContent() {
 	// Wallet is locked
 	if (isWalletLocked) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="flex min-h-screen items-center justify-center bg-background p-4">
 				<Card className="w-full max-w-md">
 					<CardHeader className="text-center">
-						<Shield className="h-12 w-12 mx-auto text-primary mb-2" />
+						<Shield className="mx-auto mb-2 h-12 w-12 text-primary" />
 						<CardTitle>Unlock Wallet</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<form onSubmit={handleUnlock} className="space-y-4">
+						<form className="space-y-4" onSubmit={handleUnlock}>
 							<div>
-								<p className="text-sm text-muted-foreground mb-4 text-center">
+								<p className="mb-4 text-center text-muted-foreground text-sm">
 									Enter your passphrase to continue
 								</p>
 								<input
-									type="password"
-									value={passphrase}
+									className="w-full rounded-md border bg-background px-3 py-2"
 									onChange={(e) => setPassphrase(e.target.value)}
 									placeholder="Passphrase"
-									className="w-full px-3 py-2 rounded-md border bg-background"
+									type="password"
+									value={passphrase}
 								/>
 								{unlockError && (
-									<p className="text-sm text-destructive mt-2">{unlockError}</p>
+									<p className="mt-2 text-destructive text-sm">{unlockError}</p>
 								)}
 							</div>
 							<div className="flex gap-2">
 								<Button
-									type="button"
-									variant="outline"
 									className="flex-1"
 									onClick={() => {
 										if (isValidRequest) {
@@ -173,10 +202,12 @@ function ConnectContent() {
 											window.close();
 										}
 									}}
+									type="button"
+									variant="outline"
 								>
 									Cancel
 								</Button>
-								<Button type="submit" className="flex-1">
+								<Button className="flex-1" type="submit">
 									Unlock
 								</Button>
 							</div>
@@ -190,16 +221,16 @@ function ConnectContent() {
 	// Invalid request
 	if (!isValidRequest) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="flex min-h-screen items-center justify-center bg-background p-4">
 				<Card className="w-full max-w-md">
 					<CardHeader className="text-center">
 						<CardTitle className="text-destructive">Invalid Request</CardTitle>
 					</CardHeader>
-					<CardContent className="text-center space-y-4">
+					<CardContent className="space-y-4 text-center">
 						<p className="text-muted-foreground">
 							This page was opened without valid connection parameters.
 						</p>
-						<Button variant="outline" onClick={() => window.close()}>
+						<Button onClick={() => window.close()} variant="outline">
 							Close
 						</Button>
 					</CardContent>
@@ -210,52 +241,58 @@ function ConnectContent() {
 
 	// Connection approval screen
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-background p-4">
+		<div className="flex min-h-screen items-center justify-center bg-background p-4">
 			<Card className="w-full max-w-md">
 				<CardHeader className="text-center">
-					<CheckCircle className="h-12 w-12 mx-auto text-primary mb-2" />
+					<CheckCircle className="mx-auto mb-2 h-12 w-12 text-primary" />
 					<CardTitle>Connect to dApp</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-6">
 					{/* App info */}
-					<div className="text-center space-y-2">
+					<div className="space-y-2 text-center">
 						<p className="font-medium text-lg">{appName || "Unknown App"}</p>
-						<p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+						<p className="flex items-center justify-center gap-1 text-muted-foreground text-sm">
 							<ExternalLink className="h-3 w-3" />
 							{origin}
 						</p>
 					</div>
 
 					{/* Permissions */}
-					<div className="bg-muted/50 rounded-lg p-4 space-y-2">
-						<p className="text-sm font-medium">This app will be able to:</p>
-						<ul className="text-sm text-muted-foreground space-y-1">
+					<div className="space-y-2 rounded-lg bg-muted/50 p-4">
+						<p className="font-medium text-sm">This app will be able to:</p>
+						<ul className="space-y-1 text-muted-foreground text-sm">
 							<li>- View your wallet addresses</li>
 							<li>- Request transaction signatures</li>
 							<li>- Request message signatures</li>
 						</ul>
+						{connectParams?.challenge && (
+							<p className="mt-2 border-t pt-2 text-muted-foreground text-sm">
+								A verification signature will also be provided to prove wallet
+								ownership.
+							</p>
+						)}
 					</div>
 
 					{/* Action buttons */}
 					<div className="flex gap-3">
 						<Button
-							variant="outline"
 							className="flex-1"
-							onClick={handleReject}
 							disabled={isConnecting}
+							onClick={handleReject}
+							variant="outline"
 						>
-							<X className="h-4 w-4 mr-2" />
+							<X className="mr-2 h-4 w-4" />
 							Reject
 						</Button>
 						<Button
 							className="flex-1"
-							onClick={handleApprove}
 							disabled={isConnecting}
+							onClick={handleApprove}
 						>
 							{isConnecting ? (
-								<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							) : (
-								<CheckCircle className="h-4 w-4 mr-2" />
+								<CheckCircle className="mr-2 h-4 w-4" />
 							)}
 							Connect
 						</Button>
@@ -270,7 +307,7 @@ export default function ConnectPage() {
 	return (
 		<Suspense
 			fallback={
-				<div className="min-h-screen flex items-center justify-center bg-background">
+				<div className="flex min-h-screen items-center justify-center bg-background">
 					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 				</div>
 			}
