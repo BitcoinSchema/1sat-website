@@ -38,7 +38,7 @@
 		"@react-three/drei": "^10.7.7",
 		"@react-three/fiber": "^9.5.0",
 		"@react-three/postprocessing": "^3.0.4",
-		"@sigma-auth/better-auth-plugin": "^0.0.73",
+		"@sigma-auth/better-auth-plugin": "^0.0.75",
 		"@tanstack/react-query": "^5.90.16",
 		"@tanstack/react-query-devtools": "^5.91.2",
 		"@theme-token/sdk": "^0.0.12",
