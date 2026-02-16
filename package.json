@@ -47,7 +47,7 @@
 		"bitcoin-auth": "^0.0.7",
 		"bitcoin-backup": "^0.0.5",
 		"bitcoin-image": "^0.0.3",
-		"bsv-bap": "^0.1.13",
+		"bsv-bap": "0.1.18",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",
