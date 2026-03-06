@@ -14,9 +14,9 @@
 	"dependencies": {
 		"@1sat/actions": "^0.0.5",
 		"@1sat/client": "^0.0.5",
-		"@1sat/connect": "0.0.6",
+		"@1sat/connect": "0.0.9",
 		"@1sat/utils": "^0.0.7",
-		"@1sat/wallet-browser": "0.0.5",
+		"@1sat/wallet-remote": "0.0.3",
 		"@bsv/sdk": "^2.0.4",
 		"@bsv/wallet-toolbox": "npm:@bopen-io/wallet-toolbox@2.0.4-idb-fix.1",
 		"@bsv/wallet-toolbox-mobile": "npm:@bopen-io/wallet-toolbox-mobile@2.0.4-idb-fix.1",
@@ -78,7 +78,7 @@
 	"overrides": {
 		"@1sat/client": "^0.0.5",
 		"@1sat/types": "^0.0.5",
-		"@1sat/wallet": "^0.0.8"
+		"@1sat/wallet": "0.0.17"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.3",

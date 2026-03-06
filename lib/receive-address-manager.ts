@@ -4,7 +4,7 @@ import {
 	type AddressDerivation,
 	AddressManager,
 	BRC29_PROTOCOL_ID,
-} from "@1sat/wallet-browser";
+} from "@1sat/wallet-remote";
 import { PublicKey, Utils, type WalletInterface } from "@bsv/sdk";
 import type { ReceiveAddressState } from "@/lib/receive-address-state";
 

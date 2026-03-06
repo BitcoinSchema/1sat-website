@@ -24,11 +24,19 @@ interface TokenBalance {
 	height?: number;
 }
 
+interface LegacyFundingUtxo {
+	outpoint: string;
+	satoshis: number;
+	lockingScript: string;
+}
+
 interface BalanceQueryResult {
 	balance: WalletBalance;
 	ordinals: Ordinal[];
 	bsv20Tokens: TokenBalance[];
 	bsv21Tokens: TokenBalance[];
+	legacyBalance: number;
+	legacyFundingUtxos: LegacyFundingUtxo[];
 }
 
 interface UseWalletBalanceOptions {
@@ -51,6 +59,8 @@ export interface WalletBalanceResult {
 	ordinals: Ordinal[];
 	bsv20Tokens: TokenBalance[];
 	bsv21Tokens: TokenBalance[];
+	legacyBalance: number;
+	legacyFundingUtxos: LegacyFundingUtxo[];
 	isBalanceLoading: boolean;
 	balanceError: Error | null;
 	refreshBalance: () => void;
@@ -112,10 +122,21 @@ export function useWalletBalance({
 				categorized.ordinals.push(...utxoResults[i].ordinals);
 				categorized.bsv20Tokens.push(...utxoResults[i].bsv20Tokens);
 				categorized.bsv21Tokens.push(...utxoResults[i].bsv21Tokens);
+				categorized.funding.push(...utxoResults[i].funding);
 			}
 
+			const legacyFundingUtxos = categorized.funding.map((u) => ({
+				outpoint: u.outpoint,
+				satoshis: u.satoshis,
+				lockingScript: u.script,
+			}));
+			const legacyBalance = legacyFundingUtxos.reduce(
+				(sum, u) => sum + u.satoshis,
+				0,
+			);
+
 			console.log(
-				`[WalletToolbox] Balance: ${total}, Ordinals: ${categorized.ordinals.length}, BSV20: ${categorized.bsv20Tokens.length}, BSV21: ${categorized.bsv21Tokens.length}`,
+				`[WalletToolbox] Balance: ${total}, Legacy: ${legacyBalance}, Ordinals: ${categorized.ordinals.length}, BSV20: ${categorized.bsv20Tokens.length}, BSV21: ${categorized.bsv21Tokens.length}`,
 			);
 
 			return {
@@ -135,6 +156,8 @@ export function useWalletBalance({
 					height: o.height,
 					data: o.data,
 				})),
+				legacyBalance,
+				legacyFundingUtxos,
 			};
 		},
 		enabled: isInitialized && !!wallet && trackedAddresses.length > 0,
@@ -176,6 +199,8 @@ export function useWalletBalance({
 		ordinals: balanceQuery.data?.ordinals ?? [],
 		bsv20Tokens: balanceQuery.data?.bsv20Tokens ?? [],
 		bsv21Tokens: balanceQuery.data?.bsv21Tokens ?? [],
+		legacyBalance: balanceQuery.data?.legacyBalance ?? 0,
+		legacyFundingUtxos: balanceQuery.data?.legacyFundingUtxos ?? [],
 		isBalanceLoading: balanceQuery.isLoading,
 		balanceError: balanceQuery.error,
 		refreshBalance,

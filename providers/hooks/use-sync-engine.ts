@@ -6,11 +6,11 @@ import {
 	AddressSyncProcessor,
 	AddressSyncQueueIdb,
 	type OneSatServices,
-	type WebWalletResult,
-} from "@1sat/wallet-browser";
+	type RemoteWalletResult,
+} from "@1sat/wallet-remote";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Wallet = WebWalletResult["wallet"];
+type Wallet = RemoteWalletResult["wallet"];
 
 interface UseSyncEngineOptions {
 	isInitialized: boolean;

@@ -3,16 +3,16 @@
 /**
  * Wallet Toolbox Provider
  *
- * Integrates @1sat/wallet-browser wallet + address sync with receive address
+ * Integrates @1sat/wallet-remote wallet + address sync with receive address
  * rotation and TanStack Query powered balance refresh.
  */
 
 import {
 	type AddressManager,
-	createWebWallet,
+	createRemoteWallet,
 	type OneSatServices,
-	type WebWalletResult,
-} from "@1sat/wallet-browser";
+	type RemoteWalletResult,
+} from "@1sat/wallet-remote";
 import { Beef, PrivateKey } from "@bsv/sdk";
 import {
 	type PermissionsManagerConfig,
@@ -49,7 +49,7 @@ import { useSyncEngine } from "./hooks/use-sync-engine";
 import { useWalletBalance } from "./hooks/use-wallet-balance";
 import { useWalletDiagnostics } from "./hooks/use-wallet-diagnostics";
 
-type Wallet = WebWalletResult["wallet"];
+type Wallet = RemoteWalletResult["wallet"];
 
 type Chain = "main" | "test";
 
@@ -187,6 +187,8 @@ interface WalletToolboxContextValue {
 	ordinals: Ordinal[];
 	bsv20Tokens: TokenBalance[];
 	bsv21Tokens: TokenBalance[];
+	legacyBalance: number;
+	legacyFundingUtxos: { outpoint: string; satoshis: number; lockingScript: string }[];
 	isBalanceLoading: boolean;
 	balanceError: Error | null;
 
@@ -235,7 +237,7 @@ export function WalletToolboxProvider({
 		useState<WalletPermissionsManager | null>(null);
 	const [services, setServices] = useState<OneSatServices | null>(null);
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
-	const walletResultRef = useRef<WebWalletResult | null>(null);
+	const walletResultRef = useRef<RemoteWalletResult | null>(null);
 
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [isInitializing, setIsInitializing] = useState(false);
@@ -265,7 +267,6 @@ export function WalletToolboxProvider({
 		clearSyncEvents,
 		walletEvents,
 		clearWalletEvents,
-		appendWalletEvent,
 	} = useWalletDiagnostics();
 
 	// -- Balance hook --
@@ -282,6 +283,8 @@ export function WalletToolboxProvider({
 		ordinals,
 		bsv20Tokens,
 		bsv21Tokens,
+		legacyBalance,
+		legacyFundingUtxos,
 		isBalanceLoading,
 		balanceError,
 		syncStatus: balanceSyncStatus,
@@ -452,14 +455,14 @@ export function WalletToolboxProvider({
 				const rootKey = PrivateKey.fromHex(rootKeyHex);
 				const newIdentityKey = rootKey.toPublicKey().toString();
 
-				const result = await createWebWallet({
+				const result = await createRemoteWallet({
 					privateKey: rootKey,
 					chain,
-					storageIdentityKey: newIdentityKey,
-					onMonitorEvent: appendWalletEvent,
+					remoteStorageUrl:
+						chain === "main"
+							? "https://1sat.shruggr.cloud/1sat/wallet"
+							: "https://testnet.api.1sat.app/1sat/wallet",
 				});
-
-				result.monitor.startTasks();
 
 				walletResultRef.current = result;
 				setWallet(result.wallet);
@@ -553,7 +556,7 @@ export function WalletToolboxProvider({
 				setIsInitializing(false);
 			}
 		},
-		[chain, isInitializing, isInitialized, appendWalletEvent],
+		[chain, isInitializing, isInitialized],
 	);
 
 	// -- Wallet destroy --
@@ -631,6 +634,8 @@ export function WalletToolboxProvider({
 			ordinals: ordinals,
 			bsv20Tokens: bsv20Tokens,
 			bsv21Tokens: bsv21Tokens,
+			legacyBalance,
+			legacyFundingUtxos,
 			isBalanceLoading: isBalanceLoading,
 			balanceError: balanceError,
 			exchangeRate,
@@ -663,6 +668,8 @@ export function WalletToolboxProvider({
 			ordinals,
 			bsv20Tokens,
 			bsv21Tokens,
+			legacyBalance,
+			legacyFundingUtxos,
 			isBalanceLoading,
 			balanceError,
 			exchangeRate,

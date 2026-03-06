@@ -1,6 +1,5 @@
 "use client";
 
-import type { MonitorEvent } from "@1sat/wallet-browser";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
@@ -69,7 +68,6 @@ export interface WalletDiagnosticsResult {
 	clearSyncEvents: () => void;
 	walletEvents: WalletEvent[];
 	clearWalletEvents: () => void;
-	appendWalletEvent: (event: MonitorEvent) => void;
 }
 
 export function useWalletDiagnostics(): WalletDiagnosticsResult {
@@ -100,27 +98,6 @@ export function useWalletDiagnostics(): WalletDiagnosticsResult {
 
 	const clearSyncEvents = useCallback(() => {
 		setSyncEvents([]);
-	}, []);
-
-	const appendWalletEvent = useCallback((event: MonitorEvent) => {
-		const base = { id: ++walletEventIdRef.current, timestamp: Date.now() };
-		setWalletEvents((prev) => {
-			const next = [...prev, { ...base, ...event } as WalletEvent];
-			if (next.length <= SYNC_EVENT_LIMIT) return next;
-			return next.slice(next.length - SYNC_EVENT_LIMIT);
-		});
-
-		switch (event.type) {
-			case "broadcast":
-				toast.success(`Transaction broadcast: ${event.txid.slice(0, 8)}...`);
-				break;
-			case "proven":
-				toast.success(`Transaction confirmed at block ${event.blockHeight}`);
-				break;
-			case "error":
-				toast.error(`${event.source}: ${event.message}`);
-				break;
-		}
 	}, []);
 
 	const clearWalletEvents = useCallback(() => {
@@ -169,6 +146,5 @@ export function useWalletDiagnostics(): WalletDiagnosticsResult {
 		clearSyncEvents,
 		walletEvents,
 		clearWalletEvents,
-		appendWalletEvent,
 	};
 }
