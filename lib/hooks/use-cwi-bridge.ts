@@ -15,8 +15,10 @@ interface CWIBridgeState {
 	transport: "embed";
 	fallbackRecommended: boolean;
 	reason?: BridgeTransportState["reason"];
+	storageAccessRequired: boolean;
 	grantPermission: (requestID: string) => void;
 	denyPermission: (requestID: string) => void;
+	grantStorageAccess: () => void;
 	retryStatus: () => void;
 }
 
@@ -36,6 +38,7 @@ export function useCWIBridge(): CWIBridgeState {
 	const [permissionQueue, setPermissionQueue] = useState<
 		BridgePermissionRequest[]
 	>([]);
+	const [storageAccessRequired, setStorageAccessRequired] = useState(false);
 
 	const activePermission = permissionQueue[0] ?? null;
 
@@ -53,6 +56,7 @@ export function useCWIBridge(): CWIBridgeState {
 					return [...prev, request];
 				});
 			},
+			onStorageAccessRequired: () => setStorageAccessRequired(true),
 		});
 		bridge.start();
 		bridgeRef.current = bridge;
@@ -82,6 +86,14 @@ export function useCWIBridge(): CWIBridgeState {
 		bridgeRef.current?.requestStatus();
 	}, []);
 
+	const grantStorageAccess = useCallback(() => {
+		const bridge = bridgeRef.current;
+		if (!bridge) return;
+		void bridge.retryWithGesture().then((granted) => {
+			if (granted) setStorageAccessRequired(false);
+		});
+	}, []);
+
 	return {
 		status,
 		activePermission,
@@ -89,8 +101,10 @@ export function useCWIBridge(): CWIBridgeState {
 		transport: transportState.transport,
 		fallbackRecommended: transportState.fallbackRecommended,
 		reason: transportState.reason,
+		storageAccessRequired,
 		grantPermission,
 		denyPermission,
+		grantStorageAccess,
 		retryStatus,
 	};
 }

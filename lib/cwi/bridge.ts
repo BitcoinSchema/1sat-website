@@ -149,6 +149,7 @@ export interface CWIBridgeCallbacks {
 	onStatusChange: (status: WalletStatus) => void;
 	onPermissionRequest: (request: BridgePermissionRequest) => void;
 	onTransportStateChange?: (state: BridgeTransportState) => void;
+	onStorageAccessRequired?: () => void;
 }
 
 /**
@@ -178,9 +179,6 @@ export class CWIBridge {
 		this.handshakePolicy = isLikelyMobileRuntime()
 			? MOBILE_HANDSHAKE_POLICY
 			: DESKTOP_HANDSHAKE_POLICY;
-		if (typeof BroadcastChannel !== "undefined") {
-			this.channel = new BroadcastChannel(CWI_CHANNEL_NAME);
-		}
 	}
 
 	start(): void {
@@ -193,20 +191,76 @@ export class CWIBridge {
 		};
 		window.addEventListener("message", this.messageHandler);
 
-		// Listen for BroadcastChannel messages from wallet tab
+		// Acquire BroadcastChannel (may need storage access in cross-site iframes)
+		void this.acquireChannel();
+	}
+
+	/**
+	 * Retry channel acquisition with a user gesture (click inside iframe).
+	 * Call this from a click handler when onStorageAccessRequired fires.
+	 */
+	async retryWithGesture(): Promise<boolean> {
+		const channel = await this.tryStorageAccess();
+		if (!channel) return false;
+		this.attachChannel(channel);
+		this.requestStatus();
+		return true;
+	}
+
+	private attachChannel(channel: BroadcastChannel): void {
+		this.channel = channel;
 		this.channelHandler = (event: MessageEvent) => {
 			this.handleChannelMessage(event);
 		};
-		this.channel?.addEventListener("message", this.channelHandler);
+		this.channel.addEventListener("message", this.channelHandler);
+	}
 
-		if (!this.channel) {
-			this.callbacks.onStatusChange("no-wallet");
-			this.markFallback("channel_unavailable");
+	private async acquireChannel(): Promise<void> {
+		if (this.isThirdPartyContext()) {
+			const channel = await this.tryStorageAccess();
+			if (channel) {
+				this.attachChannel(channel);
+				this.requestStatus();
+				return;
+			}
+			// Auto-grant failed — need user gesture
+			this.callbacks.onStorageAccessRequired?.();
 			return;
 		}
 
-		// Request status from wallet tab
-		this.requestStatus();
+		// Same-site context — regular BroadcastChannel works
+		if (typeof BroadcastChannel !== "undefined") {
+			this.attachChannel(new BroadcastChannel(CWI_CHANNEL_NAME));
+			this.requestStatus();
+			return;
+		}
+
+		this.callbacks.onStatusChange("no-wallet");
+		this.markFallback("channel_unavailable");
+	}
+
+	private async tryStorageAccess(): Promise<BroadcastChannel | null> {
+		try {
+			const rsa = document.requestStorageAccess.bind(document) as unknown as (
+				types: { BroadcastChannel: boolean },
+			) => Promise<{ BroadcastChannel: (name: string) => BroadcastChannel }>;
+			const handle = await rsa({ BroadcastChannel: true });
+			return handle.BroadcastChannel(CWI_CHANNEL_NAME);
+		} catch {
+			return null;
+		}
+	}
+
+	private isThirdPartyContext(): boolean {
+		try {
+			if (window.self === window.top) return false;
+			const parentOrigin = document.referrer
+				? new URL(document.referrer).origin
+				: null;
+			return parentOrigin !== window.location.origin;
+		} catch {
+			return true;
+		}
 	}
 
 	stop(): void {

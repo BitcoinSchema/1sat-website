@@ -178,9 +178,13 @@ export default function CWIPage() {
 		transport,
 		fallbackRecommended,
 		reason,
+		storageAccessRequired,
 		grantPermission,
 		denyPermission,
+		grantStorageAccess,
 	} = useCWIBridge();
+
+	const showOverlay = !!activePermission || storageAccessRequired;
 
 	// Notify parent frame about CWI state so it can resize the iframe.
 	useEffect(() => {
@@ -190,7 +194,7 @@ export default function CWIPage() {
 				type: "CWI",
 				cwiState: {
 					status,
-					hasPermission: !!activePermission,
+					hasPermission: showOverlay,
 					transport,
 					fallbackRecommended,
 					reason,
@@ -198,7 +202,28 @@ export default function CWIPage() {
 			},
 			"*",
 		);
-	}, [status, activePermission, transport, fallbackRecommended, reason]);
+	}, [status, showOverlay, transport, fallbackRecommended, reason]);
+
+	if (storageAccessRequired) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+				<Card className="w-full max-w-sm">
+					<CardHeader className="text-center space-y-1">
+						<CardTitle className="text-lg">Connect Wallet</CardTitle>
+						<CardDescription>
+							Click below to allow wallet communication
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Button className="w-full" onClick={grantStorageAccess}>
+							<CheckCircle className="h-4 w-4 mr-1" />
+							Allow Connection
+						</Button>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
 
 	// Permission request pending — show dialog over dApp with solid background
 	if (activePermission) {
