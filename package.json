@@ -12,7 +12,7 @@
 		"cwi:e2e:redirect": "node scripts/cwi-redirect-e2e.mjs"
 	},
 	"dependencies": {
-		"@1sat/actions": "^0.0.19",
+		"@1sat/actions": "^0.0.20",
 		"@1sat/client": "^0.0.5",
 		"@1sat/connect": "0.0.9",
 		"@1sat/utils": "^0.0.7",
