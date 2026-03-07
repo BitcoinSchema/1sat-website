@@ -4,7 +4,6 @@ import {
 	createContext,
 	type SweepBsv21Input,
 	type SweepInput,
-	type SweepOrdinalInput,
 	sweepBsv,
 	sweepBsv21,
 	sweepOrdinals,
@@ -138,13 +137,10 @@ export async function executeMigrationSweep(
 	if (merged.ordinals.length > 0) {
 		onProgress(`Sweeping ${merged.ordinals.length} ordinals...`);
 		try {
-			const ordinalInputs: SweepOrdinalInput[] = merged.ordinals.map((u) => ({
+			const ordinalInputs: SweepInput[] = merged.ordinals.map((u) => ({
 				outpoint: u.outpoint,
 				satoshis: u.satoshis,
 				lockingScript: u.script,
-				contentType: u.origin?.data?.insc?.file?.type,
-				origin: u.origin?.outpoint,
-				name: u.origin?.map?.name as string | undefined,
 			}));
 
 			// Determine which WIF controls each ordinal based on owner address

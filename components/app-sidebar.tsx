@@ -1,8 +1,10 @@
 "use client";
 
+import { createContext, sendBsv } from "@1sat/actions";
 import { PrivateKey } from "@bsv/sdk";
 import {
 	ArrowDown,
+	Check,
 	Copy,
 	Import,
 	Loader2,
@@ -10,11 +12,12 @@ import {
 	QrCode,
 	Send,
 	Wallet,
+	X,
 } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import * as React from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { NavUser } from "@/components/nav-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +105,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		hasActiveSync: isSyncing,
 		exchangeRate,
 		depositAddress,
+		wallet,
+		services,
+		chain,
+		refreshBalance,
 	} = useWalletToolbox();
 
 	const [isPrivacyModeEnabled] = useSettingsStorage<boolean>(
@@ -112,6 +119,41 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const [, copy] = useCopyWithSound();
 	const { play } = useSound();
 	const [copiedAddress, setCopiedAddress] = useState(false);
+
+	const [sendRecipient, setSendRecipient] = useState("");
+	const [sendAmount, setSendAmount] = useState("");
+	const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+	const [sendResult, setSendResult] = useState<string>("");
+	const [sendDialogOpen, setSendDialogOpen] = useState(false);
+
+	const handleSend = useCallback(async () => {
+		if (!wallet || !sendRecipient || !sendAmount) return;
+		const satoshis = Math.round(Number.parseFloat(sendAmount) * 100_000_000);
+		if (satoshis <= 0 || Number.isNaN(satoshis)) return;
+
+		setSendStatus("sending");
+		setSendResult("");
+
+		const ctx = createContext(wallet, { services: services ?? undefined, chain });
+		const isPaymail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sendRecipient);
+		const result = await sendBsv.execute(ctx, {
+			requests: [isPaymail
+				? { paymail: sendRecipient, satoshis }
+				: { address: sendRecipient, satoshis }
+			],
+		});
+
+		if (result.error) {
+			setSendStatus("error");
+			setSendResult(result.error);
+			play("error");
+		} else {
+			setSendStatus("success");
+			setSendResult(result.txid || "");
+			play("success");
+			refreshBalance?.();
+		}
+	}, [wallet, services, chain, sendRecipient, sendAmount, play, refreshBalance]);
 
 	const bsvBalance = balance ? balance.total / 100_000_000 : 0;
 	const usdBalance = exchangeRate ? bsvBalance * exchangeRate : 0;
@@ -328,7 +370,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</DialogContent>
 						</SoundDialog>
 
-						<SoundDialog>
+						<SoundDialog open={sendDialogOpen} onOpenChange={(open) => {
+							setSendDialogOpen(open);
+							if (!open) {
+								setSendRecipient("");
+								setSendAmount("");
+								setSendStatus("idle");
+								setSendResult("");
+							}
+						}}>
 							<DialogTrigger asChild>
 								<Button
 									size="sm"
@@ -343,22 +393,64 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								<DialogHeader>
 									<DialogTitle>Send Funds</DialogTitle>
 									<DialogDescription>
-										Enter the recipient address and amount to send.
+										Enter a recipient address or paymail and amount to send.
 									</DialogDescription>
 								</DialogHeader>
-								<div className="grid gap-4 py-4">
-									<div className="grid gap-2">
-										<Label htmlFor="recipient">Recipient Address</Label>
-										<Input id="recipient" placeholder="1A1z..." />
+								{sendStatus === "success" ? (
+									<div className="flex flex-col items-center gap-3 py-4">
+										<Check className="h-8 w-8 text-green-500" />
+										<p className="text-sm font-medium">Transaction sent!</p>
+										<p className="text-xs text-muted-foreground font-mono break-all">{sendResult}</p>
 									</div>
-									<div className="grid gap-2">
-										<Label htmlFor="amount">Amount (BSV)</Label>
-										<Input id="amount" placeholder="0.00" type="number" />
+								) : sendStatus === "error" ? (
+									<div className="flex flex-col items-center gap-3 py-4">
+										<X className="h-8 w-8 text-destructive" />
+										<p className="text-sm font-medium">Send failed</p>
+										<p className="text-xs text-muted-foreground">{sendResult}</p>
+										<Button variant="outline" size="sm" onClick={() => setSendStatus("idle")}>
+											Try Again
+										</Button>
 									</div>
-								</div>
-								<Button className="w-full" onClick={() => play("success")}>
-									Confirm Send
-								</Button>
+								) : (
+									<>
+										<div className="grid gap-4 py-4">
+											<div className="grid gap-2">
+												<Label htmlFor="recipient">Recipient</Label>
+												<Input
+													id="recipient"
+													placeholder="1A1z... or user@example.com"
+													value={sendRecipient}
+													onChange={(e) => setSendRecipient(e.target.value)}
+													disabled={sendStatus === "sending"}
+												/>
+											</div>
+											<div className="grid gap-2">
+												<Label htmlFor="amount">Amount (BSV)</Label>
+												<Input
+													id="amount"
+													placeholder="0.00"
+													type="number"
+													step="0.00000001"
+													min="0"
+													value={sendAmount}
+													onChange={(e) => setSendAmount(e.target.value)}
+													disabled={sendStatus === "sending"}
+												/>
+											</div>
+										</div>
+										<Button
+											className="w-full"
+											onClick={handleSend}
+											disabled={sendStatus === "sending" || !sendRecipient || !sendAmount}
+										>
+											{sendStatus === "sending" ? (
+												<><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</>
+											) : (
+												"Confirm Send"
+											)}
+										</Button>
+									</>
+								)}
 							</DialogContent>
 						</SoundDialog>
 					</div>
