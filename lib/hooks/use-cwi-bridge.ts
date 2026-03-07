@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+	type BridgeCounterpartyPermissionRequest,
+	type BridgeGroupedPermissionRequest,
 	type BridgePermissionRequest,
 	type BridgeTransportState,
 	CWIBridge,
@@ -11,6 +13,8 @@ import {
 interface CWIBridgeState {
 	status: WalletStatus;
 	activePermission: BridgePermissionRequest | null;
+	activeGroupedPermission: BridgeGroupedPermissionRequest | null;
+	activeCounterpartyPermission: BridgeCounterpartyPermissionRequest | null;
 	queueLength: number;
 	transport: "embed";
 	fallbackRecommended: boolean;
@@ -18,6 +22,10 @@ interface CWIBridgeState {
 	storageAccessRequired: boolean;
 	grantPermission: (requestID: string) => void;
 	denyPermission: (requestID: string) => void;
+	grantGroupedPermission: (requestID: string, granted: unknown) => void;
+	denyGroupedPermission: (requestID: string) => void;
+	grantCounterpartyPermission: (requestID: string, granted: unknown) => void;
+	denyCounterpartyPermission: (requestID: string) => void;
 	grantStorageAccess: () => void;
 	retryStatus: () => void;
 }
@@ -38,9 +46,17 @@ export function useCWIBridge(): CWIBridgeState {
 	const [permissionQueue, setPermissionQueue] = useState<
 		BridgePermissionRequest[]
 	>([]);
+	const [groupedQueue, setGroupedQueue] = useState<
+		BridgeGroupedPermissionRequest[]
+	>([]);
+	const [counterpartyQueue, setCounterpartyQueue] = useState<
+		BridgeCounterpartyPermissionRequest[]
+	>([]);
 	const [storageAccessRequired, setStorageAccessRequired] = useState(false);
 
 	const activePermission = permissionQueue[0] ?? null;
+	const activeGroupedPermission = groupedQueue[0] ?? null;
+	const activeCounterpartyPermission = counterpartyQueue[0] ?? null;
 
 	useEffect(() => {
 		const bridge = new CWIBridge({
@@ -48,6 +64,26 @@ export function useCWIBridge(): CWIBridgeState {
 			onTransportStateChange: setTransportState,
 			onPermissionRequest: (request) => {
 				setPermissionQueue((prev) => {
+					if (
+						prev.some((existing) => existing.requestID === request.requestID)
+					) {
+						return prev;
+					}
+					return [...prev, request];
+				});
+			},
+			onGroupedPermissionRequest: (request) => {
+				setGroupedQueue((prev) => {
+					if (
+						prev.some((existing) => existing.requestID === request.requestID)
+					) {
+						return prev;
+					}
+					return [...prev, request];
+				});
+			},
+			onCounterpartyPermissionRequest: (request) => {
+				setCounterpartyQueue((prev) => {
 					if (
 						prev.some((existing) => existing.requestID === request.requestID)
 					) {
@@ -65,6 +101,8 @@ export function useCWIBridge(): CWIBridgeState {
 			bridge.stop();
 			bridgeRef.current = null;
 			setPermissionQueue([]);
+			setGroupedQueue([]);
+			setCounterpartyQueue([]);
 		};
 	}, []);
 
@@ -82,6 +120,40 @@ export function useCWIBridge(): CWIBridgeState {
 		bridgeRef.current?.denyPermission(requestID);
 	}, []);
 
+	const grantGroupedPermission = useCallback(
+		(requestID: string, granted: unknown) => {
+			setGroupedQueue((prev) =>
+				prev.filter((request) => request.requestID !== requestID),
+			);
+			bridgeRef.current?.grantGroupedPermission(requestID, granted);
+		},
+		[],
+	);
+
+	const denyGroupedPermission = useCallback((requestID: string) => {
+		setGroupedQueue((prev) =>
+			prev.filter((request) => request.requestID !== requestID),
+		);
+		bridgeRef.current?.denyGroupedPermission(requestID);
+	}, []);
+
+	const grantCounterpartyPermission = useCallback(
+		(requestID: string, granted: unknown) => {
+			setCounterpartyQueue((prev) =>
+				prev.filter((request) => request.requestID !== requestID),
+			);
+			bridgeRef.current?.grantCounterpartyPermission(requestID, granted);
+		},
+		[],
+	);
+
+	const denyCounterpartyPermission = useCallback((requestID: string) => {
+		setCounterpartyQueue((prev) =>
+			prev.filter((request) => request.requestID !== requestID),
+		);
+		bridgeRef.current?.denyCounterpartyPermission(requestID);
+	}, []);
+
 	const retryStatus = useCallback(() => {
 		bridgeRef.current?.requestStatus();
 	}, []);
@@ -94,16 +166,25 @@ export function useCWIBridge(): CWIBridgeState {
 		});
 	}, []);
 
+	const totalQueue =
+		permissionQueue.length + groupedQueue.length + counterpartyQueue.length;
+
 	return {
 		status,
 		activePermission,
-		queueLength: permissionQueue.length,
+		activeGroupedPermission,
+		activeCounterpartyPermission,
+		queueLength: totalQueue,
 		transport: transportState.transport,
 		fallbackRecommended: transportState.fallbackRecommended,
 		reason: transportState.reason,
 		storageAccessRequired,
 		grantPermission,
 		denyPermission,
+		grantGroupedPermission,
+		denyGroupedPermission,
+		grantCounterpartyPermission,
+		denyCounterpartyPermission,
 		grantStorageAccess,
 		retryStatus,
 	};

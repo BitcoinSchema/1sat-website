@@ -81,6 +81,49 @@ export interface CWIChannelPermissionRequestMessage
 	details: unknown;
 }
 
+export interface CWIChannelGroupedPermissionRequestMessage
+	extends CWIChannelBaseMessage {
+	type: "cwi-grouped-permission-request";
+	requestID: string;
+	originator: string;
+	permissions: unknown;
+}
+
+export interface CWIChannelGrantGroupedPermissionMessage
+	extends CWIChannelBaseMessage {
+	type: "cwi-grouped-permission-grant";
+	requestID: string;
+	granted: unknown;
+}
+
+export interface CWIChannelDenyGroupedPermissionMessage
+	extends CWIChannelBaseMessage {
+	type: "cwi-grouped-permission-deny";
+	requestID: string;
+}
+
+export interface CWIChannelCounterpartyPermissionRequestMessage
+	extends CWIChannelBaseMessage {
+	type: "cwi-counterparty-permission-request";
+	requestID: string;
+	originator: string;
+	counterparty: string;
+	permissions: unknown;
+}
+
+export interface CWIChannelGrantCounterpartyPermissionMessage
+	extends CWIChannelBaseMessage {
+	type: "cwi-counterparty-permission-grant";
+	requestID: string;
+	granted: unknown;
+}
+
+export interface CWIChannelDenyCounterpartyPermissionMessage
+	extends CWIChannelBaseMessage {
+	type: "cwi-counterparty-permission-deny";
+	requestID: string;
+}
+
 export interface CWIChannelResponseMessage extends CWIChannelBaseMessage {
 	type: "cwi-response";
 	id: string;

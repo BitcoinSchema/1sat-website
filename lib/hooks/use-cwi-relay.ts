@@ -1,7 +1,11 @@
 "use client";
 
 // TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
-import type { PermissionEventHandler } from "@bsv/wallet-toolbox/out/src/index.client";
+import type {
+	CounterpartyPermissionEventHandler,
+	GroupedPermissionEventHandler,
+	PermissionEventHandler,
+} from "@bsv/wallet-toolbox/out/src/index.client";
 import { useEffect, useRef } from "react";
 import type { PermissionScope } from "@/lib/cwi/permission-store";
 import { CWIRelay } from "@/lib/cwi/relay";
@@ -115,10 +119,45 @@ export function useCWIRelay(): void {
 			ids.push(permissionsManager.bindCallback(event, handler));
 		}
 
+		const groupedHandler: GroupedPermissionEventHandler = (request) => {
+			relay.sendGroupedPermissionRequest(
+				request.requestID,
+				request.originator,
+				request.permissions,
+			);
+		};
+		const groupedId = permissionsManager.bindCallback(
+			"onGroupedPermissionRequested",
+			groupedHandler,
+		);
+
+		const counterpartyHandler: CounterpartyPermissionEventHandler = (
+			request,
+		) => {
+			relay.sendCounterpartyPermissionRequest(
+				request.requestID,
+				request.originator,
+				request.counterparty,
+				request.permissions,
+			);
+		};
+		const counterpartyId = permissionsManager.bindCallback(
+			"onCounterpartyPermissionRequested",
+			counterpartyHandler,
+		);
+
 		return () => {
 			for (let i = 0; i < events.length; i++) {
 				permissionsManager.unbindCallback(events[i], ids[i]);
 			}
+			permissionsManager.unbindCallback(
+				"onGroupedPermissionRequested",
+				groupedId,
+			);
+			permissionsManager.unbindCallback(
+				"onCounterpartyPermissionRequested",
+				counterpartyId,
+			);
 		};
 	}, [permissionsManager]);
 

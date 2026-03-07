@@ -1,8 +1,14 @@
 import {
 	CWI_CHANNEL_NAME,
 	type CWIChannelBaseMessage,
+	type CWIChannelCounterpartyPermissionRequestMessage,
+	type CWIChannelDenyCounterpartyPermissionMessage,
+	type CWIChannelDenyGroupedPermissionMessage,
 	type CWIChannelDenyPermissionMessage,
+	type CWIChannelGrantCounterpartyPermissionMessage,
+	type CWIChannelGrantGroupedPermissionMessage,
 	type CWIChannelGrantPermissionMessage,
+	type CWIChannelGroupedPermissionRequestMessage,
 	type CWIChannelPermissionRequestMessage,
 	type CWIChannelRequestMessage,
 	type CWIChannelResponseMessage,
@@ -132,11 +138,41 @@ const isChannelPermissionRequestMessage = (
 	typeof data.permissionType === "string" &&
 	typeof data.originator === "string";
 
+const isChannelGroupedPermissionRequestMessage = (
+	data: unknown,
+): data is CWIChannelGroupedPermissionRequestMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-grouped-permission-request" &&
+	typeof data.requestID === "string" &&
+	typeof data.originator === "string";
+
+const isChannelCounterpartyPermissionRequestMessage = (
+	data: unknown,
+): data is CWIChannelCounterpartyPermissionRequestMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-counterparty-permission-request" &&
+	typeof data.requestID === "string" &&
+	typeof data.originator === "string" &&
+	typeof data.counterparty === "string";
+
 export interface BridgePermissionRequest {
 	requestID: string;
 	permissionType: string;
 	originator: string;
 	details: unknown;
+}
+
+export interface BridgeGroupedPermissionRequest {
+	requestID: string;
+	originator: string;
+	permissions: unknown;
+}
+
+export interface BridgeCounterpartyPermissionRequest {
+	requestID: string;
+	originator: string;
+	counterparty: string;
+	permissions: unknown;
 }
 
 export interface BridgeTransportState {
@@ -148,6 +184,12 @@ export interface BridgeTransportState {
 export interface CWIBridgeCallbacks {
 	onStatusChange: (status: WalletStatus) => void;
 	onPermissionRequest: (request: BridgePermissionRequest) => void;
+	onGroupedPermissionRequest?: (
+		request: BridgeGroupedPermissionRequest,
+	) => void;
+	onCounterpartyPermissionRequest?: (
+		request: BridgeCounterpartyPermissionRequest,
+	) => void;
 	onTransportStateChange?: (state: BridgeTransportState) => void;
 	onStorageAccessRequired?: () => void;
 }
@@ -315,6 +357,44 @@ export class CWIBridge {
 		void this.postToChannel(message);
 	}
 
+	grantGroupedPermission(requestID: string, granted: unknown): void {
+		const message: CWIChannelGrantGroupedPermissionMessage = {
+			...createChannelEnvelope(this.sessionId),
+			type: "cwi-grouped-permission-grant",
+			requestID,
+			granted,
+		};
+		void this.postToChannel(message);
+	}
+
+	denyGroupedPermission(requestID: string): void {
+		const message: CWIChannelDenyGroupedPermissionMessage = {
+			...createChannelEnvelope(this.sessionId),
+			type: "cwi-grouped-permission-deny",
+			requestID,
+		};
+		void this.postToChannel(message);
+	}
+
+	grantCounterpartyPermission(requestID: string, granted: unknown): void {
+		const message: CWIChannelGrantCounterpartyPermissionMessage = {
+			...createChannelEnvelope(this.sessionId),
+			type: "cwi-counterparty-permission-grant",
+			requestID,
+			granted,
+		};
+		void this.postToChannel(message);
+	}
+
+	denyCounterpartyPermission(requestID: string): void {
+		const message: CWIChannelDenyCounterpartyPermissionMessage = {
+			...createChannelEnvelope(this.sessionId),
+			type: "cwi-counterparty-permission-deny",
+			requestID,
+		};
+		void this.postToChannel(message);
+	}
+
 	private handleDAppMessage(event: MessageEvent): void {
 		// Only accept trusted browser events
 		if (!event.isTrusted) return;
@@ -428,6 +508,27 @@ export class CWIBridge {
 				});
 				break;
 			}
+
+			case "cwi-grouped-permission-request": {
+				if (!isChannelGroupedPermissionRequestMessage(data)) return;
+				this.callbacks.onGroupedPermissionRequest?.({
+					requestID: data.requestID,
+					originator: data.originator,
+					permissions: data.permissions,
+				});
+				break;
+			}
+
+			case "cwi-counterparty-permission-request": {
+				if (!isChannelCounterpartyPermissionRequestMessage(data)) return;
+				this.callbacks.onCounterpartyPermissionRequest?.({
+					requestID: data.requestID,
+					originator: data.originator,
+					counterparty: data.counterparty,
+					permissions: data.permissions,
+				});
+				break;
+			}
 		}
 	}
 
@@ -511,6 +612,10 @@ export class CWIBridge {
 			| CWIChannelRequestMessage
 			| CWIChannelGrantPermissionMessage
 			| CWIChannelDenyPermissionMessage
+			| CWIChannelGrantGroupedPermissionMessage
+			| CWIChannelDenyGroupedPermissionMessage
+			| CWIChannelGrantCounterpartyPermissionMessage
+			| CWIChannelDenyCounterpartyPermissionMessage
 			| CWIChannelStatusRequestMessage,
 	): boolean {
 		if (this.isStopped || !this.channel) return false;

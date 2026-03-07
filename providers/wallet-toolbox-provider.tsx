@@ -77,7 +77,7 @@ const PERMISSIONS_CONFIG: PermissionsManagerConfig = {
 	seekCertificateListingPermissions: false,
 	encryptWalletMetadata: true,
 	seekSpendingPermissions: true,
-	seekGroupedPermission: false,
+	seekGroupedPermission: true,
 	differentiatePrivilegedOperations: true,
 };
 

@@ -11,8 +11,14 @@ import { type PermissionScope, saveLocalPermission } from "./permission-store";
 import {
 	CWI_CHANNEL_NAME,
 	type CWIChannelBaseMessage,
+	type CWIChannelCounterpartyPermissionRequestMessage,
+	type CWIChannelDenyCounterpartyPermissionMessage,
+	type CWIChannelDenyGroupedPermissionMessage,
 	type CWIChannelDenyPermissionMessage,
+	type CWIChannelGrantCounterpartyPermissionMessage,
+	type CWIChannelGrantGroupedPermissionMessage,
 	type CWIChannelGrantPermissionMessage,
+	type CWIChannelGroupedPermissionRequestMessage,
 	type CWIChannelPermissionRequestMessage,
 	type CWIChannelRequestMessage,
 	type CWIChannelResponseMessage,
@@ -85,6 +91,34 @@ const isDenyPermissionMessage = (
 ): data is CWIChannelDenyPermissionMessage =>
 	isObjectRecord(data) &&
 	data.type === "cwi-permission-deny" &&
+	typeof data.requestID === "string";
+
+const isGrantGroupedPermissionMessage = (
+	data: unknown,
+): data is CWIChannelGrantGroupedPermissionMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-grouped-permission-grant" &&
+	typeof data.requestID === "string";
+
+const isDenyGroupedPermissionMessage = (
+	data: unknown,
+): data is CWIChannelDenyGroupedPermissionMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-grouped-permission-deny" &&
+	typeof data.requestID === "string";
+
+const isGrantCounterpartyPermissionMessage = (
+	data: unknown,
+): data is CWIChannelGrantCounterpartyPermissionMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-counterparty-permission-grant" &&
+	typeof data.requestID === "string";
+
+const isDenyCounterpartyPermissionMessage = (
+	data: unknown,
+): data is CWIChannelDenyCounterpartyPermissionMessage =>
+	isObjectRecord(data) &&
+	data.type === "cwi-counterparty-permission-deny" &&
 	typeof data.requestID === "string";
 
 const isStatusRequestMessage = (
@@ -182,6 +216,38 @@ export class CWIRelay {
 				return;
 			}
 
+			if (isGrantGroupedPermissionMessage(data)) {
+				if (!this.acceptSession(data)) return;
+				const wallet = this.getWallet();
+				if (!wallet) return;
+				void this.handleGrantGrouped(wallet, data);
+				return;
+			}
+
+			if (isDenyGroupedPermissionMessage(data)) {
+				if (!this.acceptSession(data)) return;
+				const wallet = this.getWallet();
+				if (!wallet) return;
+				void wallet.denyGroupedPermission(data.requestID);
+				return;
+			}
+
+			if (isGrantCounterpartyPermissionMessage(data)) {
+				if (!this.acceptSession(data)) return;
+				const wallet = this.getWallet();
+				if (!wallet) return;
+				void this.handleGrantCounterparty(wallet, data);
+				return;
+			}
+
+			if (isDenyCounterpartyPermissionMessage(data)) {
+				if (!this.acceptSession(data)) return;
+				const wallet = this.getWallet();
+				if (!wallet) return;
+				void wallet.denyCounterpartyPermission(data.requestID);
+				return;
+			}
+
 			if (isStatusRequestMessage(data)) {
 				if (!this.acceptSession(data)) return;
 				this.sendStatus(this.getMessageSessionId(data));
@@ -240,6 +306,68 @@ export class CWIRelay {
 			...(sessionId ? createChannelEnvelope(sessionId) : {}),
 		};
 		this.postToChannel(message);
+	}
+
+	sendGroupedPermissionRequest(
+		requestID: string,
+		originator: string,
+		permissions: unknown,
+	): void {
+		const sessionId = this.resolveSessionForPermission(originator);
+		const message: CWIChannelGroupedPermissionRequestMessage = {
+			type: "cwi-grouped-permission-request",
+			requestID,
+			originator,
+			permissions,
+			...(sessionId ? createChannelEnvelope(sessionId) : {}),
+		};
+		this.postToChannel(message);
+	}
+
+	sendCounterpartyPermissionRequest(
+		requestID: string,
+		originator: string,
+		counterparty: string,
+		permissions: unknown,
+	): void {
+		const sessionId = this.resolveSessionForPermission(originator);
+		const message: CWIChannelCounterpartyPermissionRequestMessage = {
+			type: "cwi-counterparty-permission-request",
+			requestID,
+			originator,
+			counterparty,
+			permissions,
+			...(sessionId ? createChannelEnvelope(sessionId) : {}),
+		};
+		this.postToChannel(message);
+	}
+
+	private async handleGrantGrouped(
+		wallet: WalletPermissionsManager,
+		data: CWIChannelGrantGroupedPermissionMessage,
+	): Promise<void> {
+		try {
+			await wallet.grantGroupedPermission({
+				requestID: data.requestID,
+				granted: data.granted as Record<string, unknown>,
+			});
+		} catch (error) {
+			console.warn("[CWI-RELAY] grantGroupedPermission failed", error);
+		}
+	}
+
+	private async handleGrantCounterparty(
+		wallet: WalletPermissionsManager,
+		data: CWIChannelGrantCounterpartyPermissionMessage,
+	): Promise<void> {
+		try {
+			await wallet.grantCounterpartyPermission({
+				requestID: data.requestID,
+				granted: data.granted as Record<string, unknown>,
+			});
+		} catch (error) {
+			console.warn("[CWI-RELAY] grantCounterpartyPermission failed", error);
+		}
 	}
 
 	/**
@@ -566,7 +694,9 @@ export class CWIRelay {
 		message:
 			| CWIChannelResponseMessage
 			| CWIChannelStatusMessage
-			| CWIChannelPermissionRequestMessage,
+			| CWIChannelPermissionRequestMessage
+			| CWIChannelGroupedPermissionRequestMessage
+			| CWIChannelCounterpartyPermissionRequestMessage,
 	): boolean {
 		if (this.isStopped || !this.channel) return false;
 		try {
