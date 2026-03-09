@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import type {
 	SyncEvent,
 	WalletEvent,
@@ -74,7 +73,6 @@ export function useWalletDiagnostics(): WalletDiagnosticsResult {
 	const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
 	const syncEventIdRef = useRef(0);
 	const [walletEvents, setWalletEvents] = useState<WalletEvent[]>([]);
-	const walletEventIdRef = useRef(0);
 
 	const appendSyncEvent = useCallback(
 		(level: SyncEventLevel, source: string, message: string) => {

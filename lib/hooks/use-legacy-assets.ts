@@ -108,6 +108,7 @@ export function useLegacyAssets(
 		setScanTrigger((prev) => prev + 1);
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scanTrigger is an intentional rescan signal
 	useEffect(() => {
 		if (!legacyPayAddress && !legacyOrdAddress) return;
 
@@ -172,7 +173,6 @@ export function useLegacyAssets(
 		return () => {
 			cancelled = true;
 		};
-		// biome-ignore lint/correctness/useExhaustiveDependencies: scanTrigger triggers rescan
 	}, [legacyPayAddress, legacyOrdAddress, scanTrigger]);
 
 	return {

@@ -71,7 +71,6 @@ function CodeBlock({
 				)}
 			</button>
 			<pre className="overflow-x-auto p-4 font-mono text-sm leading-relaxed">
-				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: sugar-high output is safe */}
 				<code dangerouslySetInnerHTML={{ __html: html }} />
 			</pre>
 		</div>

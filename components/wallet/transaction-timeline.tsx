@@ -8,15 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import {
-	Area,
-	AreaChart,
-	CartesianGrid,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	type ChartConfig,
@@ -125,7 +117,8 @@ export function TransactionTimeline({
 					});
 				}
 
-				const dayData = dailyData.get(dateKey)!;
+				const dayData = dailyData.get(dateKey);
+				if (!dayData) continue;
 				dayData.txCount++;
 
 				// Calculate incoming/outgoing based on isOutgoing flag

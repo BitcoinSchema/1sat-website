@@ -26,23 +26,16 @@ export function MigrationOrdinalCard({
 	const contentType = ordinal.contentType || "";
 
 	return (
-		<div
+		<button
+			type="button"
 			className={cn(
-				"relative aspect-square cursor-pointer border transition-all",
+				"relative aspect-square w-full cursor-pointer border transition-all",
 				isSelected
 					? "ring-2 ring-primary bg-primary/5"
 					: "border-border/50 hover:border-primary/30 bg-muted/30",
 			)}
 			onClick={onToggle}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					onToggle();
-				}
-			}}
-			role="checkbox"
-			aria-checked={isSelected}
-			tabIndex={0}
+			aria-pressed={isSelected}
 		>
 			{/* Selection checkbox */}
 			<div className="absolute top-1.5 right-1.5 z-10">
@@ -95,6 +88,6 @@ export function MigrationOrdinalCard({
 					</p>
 				)}
 			</div>
-		</div>
+		</button>
 	);
 }
