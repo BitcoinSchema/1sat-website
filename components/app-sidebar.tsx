@@ -122,7 +122,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const [sendRecipient, setSendRecipient] = useState("");
 	const [sendAmount, setSendAmount] = useState("");
-	const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+	const [sendStatus, setSendStatus] = useState<
+		"idle" | "sending" | "success" | "error"
+	>("idle");
 	const [sendResult, setSendResult] = useState<string>("");
 	const [sendDialogOpen, setSendDialogOpen] = useState(false);
 
@@ -134,12 +136,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		setSendStatus("sending");
 		setSendResult("");
 
-		const ctx = createContext(wallet, { services: services ?? undefined, chain });
+		const ctx = createContext(wallet, {
+			services: services ?? undefined,
+			chain,
+		});
 		const isPaymail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sendRecipient);
 		const result = await sendBsv.execute(ctx, {
-			requests: [isPaymail
-				? { paymail: sendRecipient, satoshis }
-				: { address: sendRecipient, satoshis }
+			requests: [
+				isPaymail
+					? { paymail: sendRecipient, satoshis }
+					: { address: sendRecipient, satoshis },
 			],
 		});
 
@@ -153,7 +159,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			play("success");
 			refreshBalance?.();
 		}
-	}, [wallet, services, chain, sendRecipient, sendAmount, play, refreshBalance]);
+	}, [
+		wallet,
+		services,
+		chain,
+		sendRecipient,
+		sendAmount,
+		play,
+		refreshBalance,
+	]);
 
 	const bsvBalance = balance ? balance.total / 100_000_000 : 0;
 	const usdBalance = exchangeRate ? bsvBalance * exchangeRate : 0;
@@ -298,7 +312,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 												handleCopyAddress();
 											}}
 											disabled={!resolvedDepositAddress}
-											tttttttttttaria-label="Copy deposit address"
+											aria-label="Copy deposit address"
 										>
 											<Copy className="h-3 w-3" />
 										</Button>
@@ -310,8 +324,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</TooltipProvider>
 						</div>
 					</div>
-
-					<LegacySweepBanner />
 
 					<div className="grid grid-cols-2 gap-2">
 						<SoundDialog>
@@ -370,15 +382,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</DialogContent>
 						</SoundDialog>
 
-						<SoundDialog open={sendDialogOpen} onOpenChange={(open) => {
-							setSendDialogOpen(open);
-							if (!open) {
-								setSendRecipient("");
-								setSendAmount("");
-								setSendStatus("idle");
-								setSendResult("");
-							}
-						}}>
+						<SoundDialog
+							open={sendDialogOpen}
+							onOpenChange={(open) => {
+								setSendDialogOpen(open);
+								if (!open) {
+									setSendRecipient("");
+									setSendAmount("");
+									setSendStatus("idle");
+									setSendResult("");
+								}
+							}}
+						>
 							<DialogTrigger asChild>
 								<Button
 									size="sm"
@@ -400,14 +415,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									<div className="flex flex-col items-center gap-3 py-4">
 										<Check className="h-8 w-8 text-green-500" />
 										<p className="text-sm font-medium">Transaction sent!</p>
-										<p className="text-xs text-muted-foreground font-mono break-all">{sendResult}</p>
+										<p className="text-xs text-muted-foreground font-mono break-all">
+											{sendResult}
+										</p>
 									</div>
 								) : sendStatus === "error" ? (
 									<div className="flex flex-col items-center gap-3 py-4">
 										<X className="h-8 w-8 text-destructive" />
 										<p className="text-sm font-medium">Send failed</p>
-										<p className="text-xs text-muted-foreground">{sendResult}</p>
-										<Button variant="outline" size="sm" onClick={() => setSendStatus("idle")}>
+										<p className="text-xs text-muted-foreground">
+											{sendResult}
+										</p>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setSendStatus("idle")}
+										>
 											Try Again
 										</Button>
 									</div>
@@ -441,10 +464,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										<Button
 											className="w-full"
 											onClick={handleSend}
-											disabled={sendStatus === "sending" || !sendRecipient || !sendAmount}
+											disabled={
+												sendStatus === "sending" ||
+												!sendRecipient ||
+												!sendAmount
+											}
 										>
 											{sendStatus === "sending" ? (
-												<><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</>
+												<>
+													<Loader2 className="h-4 w-4 animate-spin mr-2" />{" "}
+													Sending...
+												</>
 											) : (
 												"Confirm Send"
 											)}
@@ -458,6 +488,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarSeparator className="my-4" />
 			<SidebarContent>
+				<LegacySweepBanner />
 				{navData.map((group) => (
 					<SidebarGroup key={group.title}>
 						<SidebarGroupLabel>{group.title}</SidebarGroupLabel>
