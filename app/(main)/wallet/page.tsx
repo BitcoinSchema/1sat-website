@@ -57,7 +57,13 @@ export default function WalletPage() {
 	const [sweepError, setSweepError] = useState<string | null>(null);
 
 	const handleSweepBsv = useCallback(async () => {
-		if (!wallet || !services || !walletKeys?.payPk || legacyFundingUtxos.length === 0) return;
+		if (
+			!wallet ||
+			!services ||
+			!walletKeys?.payPk ||
+			legacyFundingUtxos.length === 0
+		)
+			return;
 		setIsSweeping(true);
 		setSweepError(null);
 		try {
@@ -76,7 +82,14 @@ export default function WalletPage() {
 		} finally {
 			setIsSweeping(false);
 		}
-	}, [wallet, services, walletKeys?.payPk, legacyFundingUtxos, chain, refreshBalance]);
+	}, [
+		wallet,
+		services,
+		walletKeys?.payPk,
+		legacyFundingUtxos,
+		chain,
+		refreshBalance,
+	]);
 
 	const walletScope = walletKeys?.identityPk ?? walletKeys?.payPk ?? "unknown";
 
@@ -181,32 +194,36 @@ export default function WalletPage() {
 							</CardContent>
 						</Card>
 						{legacyBalance > 0 && (
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">
-									Legacy Balance
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">
-									{formatBSV(legacyBalance)} BSV
-								</div>
-								<p className="text-xs text-muted-foreground mb-2">
-									{legacyFundingUtxos.length} UTXO{legacyFundingUtxos.length !== 1 ? "s" : ""} on old addresses
-								</p>
-								<Button
-									size="sm"
-									onClick={handleSweepBsv}
-									disabled={isSweeping || !walletKeys?.payPk}
-								>
-									{isSweeping ? "Sweeping..." : "Sweep to Wallet"}
-								</Button>
-								{sweepError && (
-									<p className="text-xs text-destructive mt-1">{sweepError}</p>
-								)}
-							</CardContent>
-						</Card>
-					)}
+							<Card>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium">
+										Legacy Balance
+									</CardTitle>
+								</CardHeader>
+								<CardContent>
+									<div className="text-2xl font-bold">
+										{formatBSV(legacyBalance)} BSV
+									</div>
+									<p className="text-xs text-muted-foreground mb-2">
+										{legacyFundingUtxos.length} UTXO
+										{legacyFundingUtxos.length !== 1 ? "s" : ""} on old
+										addresses
+									</p>
+									<Button
+										size="sm"
+										onClick={handleSweepBsv}
+										disabled={isSweeping || !walletKeys?.payPk}
+									>
+										{isSweeping ? "Sweeping..." : "Sweep to Wallet"}
+									</Button>
+									{sweepError && (
+										<p className="text-xs text-destructive mt-1">
+											{sweepError}
+										</p>
+									)}
+								</CardContent>
+							</Card>
+						)}
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 								<CardTitle className="text-sm font-medium">Ordinals</CardTitle>

@@ -188,7 +188,11 @@ interface WalletToolboxContextValue {
 	bsv20Tokens: TokenBalance[];
 	bsv21Tokens: TokenBalance[];
 	legacyBalance: number;
-	legacyFundingUtxos: { outpoint: string; satoshis: number; lockingScript: string }[];
+	legacyFundingUtxos: {
+		outpoint: string;
+		satoshis: number;
+		lockingScript: string;
+	}[];
 	isBalanceLoading: boolean;
 	balanceError: Error | null;
 
@@ -262,12 +266,8 @@ export function WalletToolboxProvider({
 	const [syncRevision, setSyncRevision] = useState(0);
 
 	// -- Diagnostics hook --
-	const {
-		syncEvents,
-		clearSyncEvents,
-		walletEvents,
-		clearWalletEvents,
-	} = useWalletDiagnostics();
+	const { syncEvents, clearSyncEvents, walletEvents, clearWalletEvents } =
+		useWalletDiagnostics();
 
 	// -- Balance hook --
 	const balanceResult = useWalletBalance({

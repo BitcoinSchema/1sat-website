@@ -111,7 +111,7 @@ function TableOfContents() {
 					}
 				}
 			},
-			{ rootMargin: "-20% 0px -60% 0px", threshold: 0 }
+			{ rootMargin: "-20% 0px -60% 0px", threshold: 0 },
 		);
 
 		for (const s of sections) {

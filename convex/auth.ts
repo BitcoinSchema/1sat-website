@@ -5,7 +5,7 @@ function getSigmaAuthUrl(): string {
 	const url = process.env.NEXT_PUBLIC_SIGMA_AUTH_URL;
 	if (!url) {
 		throw new Error(
-			"NEXT_PUBLIC_SIGMA_AUTH_URL environment variable is required"
+			"NEXT_PUBLIC_SIGMA_AUTH_URL environment variable is required",
 		);
 	}
 	return url;
@@ -27,7 +27,7 @@ export async function verifyAccessToken(token: string): Promise<{
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
-		}
+		},
 	);
 
 	if (!response.ok) {

@@ -82,7 +82,7 @@ function ConnectContent() {
 			sendResponse(
 				requestId,
 				signedMessage ? { ...addresses, signedMessage } : addresses,
-				origin
+				origin,
 			);
 		} catch (error) {
 			console.error("Failed to get addresses:", error);
@@ -139,7 +139,7 @@ function ConnectContent() {
 								onClick={() => {
 									window.open(
 										`${window.location.origin}/wallet/create`,
-										"_blank"
+										"_blank",
 									);
 								}}
 								variant="default"

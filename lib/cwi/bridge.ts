@@ -283,9 +283,11 @@ export class CWIBridge {
 
 	private async tryStorageAccess(): Promise<BroadcastChannel | null> {
 		try {
-			const rsa = document.requestStorageAccess.bind(document) as unknown as (
-				types: { BroadcastChannel: boolean },
-			) => Promise<{ BroadcastChannel: (name: string) => BroadcastChannel }>;
+			const rsa = document.requestStorageAccess.bind(
+				document,
+			) as unknown as (types: {
+				BroadcastChannel: boolean;
+			}) => Promise<{ BroadcastChannel: (name: string) => BroadcastChannel }>;
 			const handle = await rsa({ BroadcastChannel: true });
 			return handle.BroadcastChannel(CWI_CHANNEL_NAME);
 		} catch {

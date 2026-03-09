@@ -243,19 +243,14 @@ function GroupedPermissionCard({
 					{permission.originator}
 				</CardDescription>
 				{perms.description && (
-					<p className="text-sm text-muted-foreground">
-						{perms.description}
-					</p>
+					<p className="text-sm text-muted-foreground">{perms.description}</p>
 				)}
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{entries.length > 0 && (
 					<div className="bg-muted/50 rounded-lg p-3 space-y-2">
 						{entries.map((entry) => (
-							<div
-								key={`${entry.label}-${entry.detail}`}
-								className="text-sm"
-							>
+							<div key={`${entry.label}-${entry.detail}`} className="text-sm">
 								<span className="font-medium">{entry.label}: </span>
 								<span className="text-muted-foreground break-all">
 									{entry.detail}
@@ -352,10 +347,7 @@ function CounterpartyPermissionCard({
 						</span>
 					</div>
 					{entries.map((entry) => (
-						<div
-							key={`${entry.label}-${entry.detail}`}
-							className="text-sm"
-						>
+						<div key={`${entry.label}-${entry.detail}`} className="text-sm">
 							<span className="font-medium">{entry.label}: </span>
 							<span className="text-muted-foreground break-all">
 								{entry.detail}
