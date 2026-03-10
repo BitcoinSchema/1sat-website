@@ -66,7 +66,7 @@ export function MnemonicGrid({
 
 	// Prove mode state
 	const [proveInput, setProveInput] = useState<string[]>(Array(12).fill(""));
-	const proveSlots = useMemo(
+	const mnemonicSlots = useMemo(
 		() => Array.from({ length: 12 }, (_, slot) => slot),
 		[],
 	);
@@ -245,7 +245,7 @@ export function MnemonicGrid({
 			) : mode === "prove" ? (
 				<>
 					<div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-						{proveSlots.map((slot) => {
+						{mnemonicSlots.map((slot) => {
 							const word = proveInput[slot];
 							return (
 								<div key={`prove-slot-${slot}`} className="relative">
@@ -301,24 +301,27 @@ export function MnemonicGrid({
 				</>
 			) : (
 				<div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-					{inputMnemonic.map((word, index) => (
-						<div key={`word-input-${index}-${word}`} className="relative">
-							<span className="absolute left-2 top-2.5 text-xs text-muted-foreground select-none">
-								{index + 1}.
-							</span>
-							<Input
-								value={word}
-								onChange={(e) => handleWordChange(index, e.target.value)}
-								onPaste={(e) => handlePaste(e, index)}
-								readOnly={mode === "view"}
-								className={`pl-8 font-mono ${
-									!bip39words.includes(word) && word && mode === "edit"
-										? "border-destructive focus-visible:ring-destructive"
-										: ""
-								}`}
-							/>
-						</div>
-					))}
+					{mnemonicSlots.map((slot) => {
+						const word = inputMnemonic[slot] ?? "";
+						return (
+							<div key={`word-input-${slot}`} className="relative">
+								<span className="absolute left-2 top-2.5 text-xs text-muted-foreground select-none">
+									{slot + 1}.
+								</span>
+								<Input
+									value={word}
+									onChange={(e) => handleWordChange(slot, e.target.value)}
+									onPaste={(e) => handlePaste(e, slot)}
+									readOnly={mode === "view"}
+									className={`pl-8 font-mono ${
+										!bip39words.includes(word) && word && mode === "edit"
+											? "border-destructive focus-visible:ring-destructive"
+											: ""
+									}`}
+								/>
+							</div>
+						);
+					})}
 				</div>
 			)}
 
