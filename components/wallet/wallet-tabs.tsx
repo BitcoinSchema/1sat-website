@@ -9,6 +9,7 @@ import { useSound } from "@/hooks/use-sound";
 const tabs = [
 	{ value: "overview", label: "Wallet", href: "/wallet", icon: Wallet },
 	{ value: "ordinals", label: "Ordinals", href: "/wallet/ordinals" },
+	{ value: "opns", label: "OpNS", href: "/wallet/opns" },
 	{ value: "bsv20", label: "BSV20", href: "/wallet/bsv20" },
 	{ value: "bsv21", label: "BSV21", href: "/wallet/bsv21" },
 	{ value: "history", label: "History", href: "/wallet/history" },

@@ -78,7 +78,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 
 	const { outpoint, originOutpoint, contentType, name } = artifact;
 	const contentClass = classifyContentType(contentType);
-	const src = `${ORDFS}/${originOutpoint}`;
+	const src = `${ORDFS}/content/${originOutpoint}`;
 	const allowScroll = contentClass === "image" || contentClass === "text" || contentClass === "html";
 
 	return (

@@ -30,7 +30,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({
 			}
 			try {
 				setFetchTextStatus(FetchStatus.Loading);
-				const result = await fetch(`${ORDFS}/${origin}`);
+				const result = await fetch(`${ORDFS}/content/${origin}`);
 				const resultText = await result.text();
 				setFetchTextStatus(FetchStatus.Success);
 				try {

@@ -52,7 +52,7 @@ export function getOrdinalThumbnail(
 	outpoint: string,
 	size: number = 300,
 ): string {
-	const source = `${ORDFS}/${outpoint}`;
+	const source = `${ORDFS}/content/${outpoint}`;
 	return getImageUrl(source, {
 		width: size,
 		height: size,

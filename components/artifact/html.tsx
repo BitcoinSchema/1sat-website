@@ -31,7 +31,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 				return;
 			}
 
-			const initialSrc = `${ORDFS}/${origin}`;
+			const initialSrc = `${ORDFS}/content/${origin}`;
 
 			try {
 				const res = await fetch(initialSrc);

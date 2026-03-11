@@ -221,7 +221,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 												<div className="relative h-8 w-8 shrink-0 overflow-hidden rounded border border-border bg-muted flex items-center justify-center">
 													{token.icon ? (
 														<Image
-															src={`${ORDFS}/${token.icon}`}
+															src={`${ORDFS}/content/${token.icon}`}
 															alt={token.tick || ""}
 															width={32}
 															height={32}

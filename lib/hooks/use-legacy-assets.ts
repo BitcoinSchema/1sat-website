@@ -36,7 +36,7 @@ function enrichOrdinal(utxo: WalletOrdinal): OrdinalWithMeta {
 	const name =
 		(utxo.origin?.map?.name as string | undefined) ??
 		(utxo.origin?.data?.map?.name as string | undefined);
-	const contentUrl = `${ORDFS}/${utxo.origin?.outpoint || utxo.outpoint}`;
+	const contentUrl = `${ORDFS}/content/${utxo.origin?.outpoint || utxo.outpoint}`;
 
 	return { ...utxo, contentType, name, contentUrl };
 }
@@ -78,7 +78,7 @@ function groupBsv21Tokens(utxos: WalletOrdinal[]): TokenBalance[] {
 		balances.push({
 			tokenId,
 			symbol: group.symbol,
-			icon: `${ORDFS}/${tokenId}`,
+			icon: `${ORDFS}/content/${tokenId}`,
 			decimals: group.decimals,
 			totalAmount: totalAmount.toString(),
 			outputs: group.outputs,

@@ -21,11 +21,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Keys } from "@/lib/types";
-import { saveEncryptedWallet } from "@/lib/wallet-storage";
+import { useWallet } from "@/providers/wallet-provider";
 import { useImportWallet } from "../provider";
 
 export default function ImportPassphrasePage() {
 	const router = useRouter();
+	const { importWallet } = useWallet();
 	const { walletKeys, setWalletKeys, encryptedBackup } = useImportWallet();
 	const [passphrase, setPassphrase] = useState("");
 	const [confirmPassphrase, setConfirmPassphrase] = useState("");
@@ -51,12 +52,10 @@ export default function ImportPassphrasePage() {
 				return;
 
 			setIsSaving(true);
-			const success = await saveEncryptedWallet(walletKeys, passphrase);
+			const success = await importWallet(walletKeys, passphrase);
 			setIsSaving(false);
 
-			if (success) {
-				router.push("/wallet");
-			} else {
+			if (!success) {
 				setError("Failed to save wallet");
 			}
 		} else {
@@ -129,9 +128,10 @@ export default function ImportPassphrasePage() {
 
 				if (keys) {
 					setWalletKeys(keys);
-					// Save to local storage with the SAME password
-					await saveEncryptedWallet(keys, passphrase);
-					router.push("/wallet");
+					const success = await importWallet(keys, passphrase);
+					if (!success) {
+						throw new Error("Failed to save wallet");
+					}
 				} else {
 					throw new Error("Invalid decrypted key format");
 				}

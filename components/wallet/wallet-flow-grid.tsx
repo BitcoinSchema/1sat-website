@@ -193,7 +193,7 @@ export default function WalletFlowGrid({
 	const renderArtifact = (artifact: WalletOutput) => {
 		const outpointStr = getDisplayOutpoint(artifact);
 		const originOutpoint = getOriginOutpoint(artifact);
-		const src = `${ORDFS}/${originOutpoint}`;
+		const src = `${ORDFS}/content/${originOutpoint}`;
 		const contentType = classifyContent(artifact);
 		const imgSrc =
 			contentType === "image" ? getOrdinalThumbnail(originOutpoint, 300) : src;
@@ -223,7 +223,7 @@ export default function WalletFlowGrid({
 							e.preventDefault();
 							e.stopPropagation();
 							window.open(
-								`${ORDFS}/${originOutpoint}`,
+								`${ORDFS}/content/${originOutpoint}`,
 								"_blank",
 								"noopener,noreferrer",
 							);

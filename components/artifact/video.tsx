@@ -17,7 +17,7 @@ const VideoArtifact: React.FC<VideoArtifactProps> = ({
 	thumbnail = false,
 }) => {
 	const [playing, setPlaying] = useState(false);
-	const videoSrc = src ? src : `${ORDFS}/${origin}`;
+	const videoSrc = src ? src : `${ORDFS}/content/${origin}`;
 	const needsHeightConstraint = className?.includes("h-full");
 
 	// Thumbnail mode - show poster image with play button overlay

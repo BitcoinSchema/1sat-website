@@ -33,7 +33,7 @@ const JsonArtifact: React.FC<JsonArtifactProps> = ({
 			}
 			try {
 				setFetchTextStatus(FetchStatus.Loading);
-				const result = await fetch(`${ORDFS}/${origin}`);
+				const result = await fetch(`${ORDFS}/content/${origin}`);
 				const resultText = (await result.json()) as JsonValue;
 				setFetchTextStatus(FetchStatus.Success);
 				setJson(resultText);

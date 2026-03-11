@@ -4,7 +4,7 @@
     "": {
       "name": "1sat.market",
       "dependencies": {
-        "@1sat/actions": "0.0.38",
+        "@1sat/actions": "0.0.44",
         "@1sat/client": "0.0.9",
         "@1sat/connect": "0.0.9",
         "@1sat/types": "0.0.10",
@@ -89,7 +89,7 @@
     "@1sat/wallet": "0.0.20",
   },
   "packages": {
-    "@1sat/actions": ["@1sat/actions@0.0.38", "", { "dependencies": { "@1sat/client": "^0.0.9", "@1sat/types": "^0.0.10", "@1sat/utils": "^0.0.8", "@1sat/wallet": "^0.0.20", "@bopen-io/templates": "1.2.1" }, "peerDependencies": { "@bsv/sdk": "^2.0.4" } }, "sha512-d+tY1JxzDfiNwlyIfW/RIUVL4jduUHNVReaqhJaswzOO3avWf4Vrbq9qqd7wh+FdN++nt6fYOk6FC6IRo8aNHg=="],
+    "@1sat/actions": ["@1sat/actions@0.0.44", "", { "dependencies": { "@1sat/client": "^0.0.9", "@1sat/types": "^0.0.10", "@1sat/utils": "^0.0.8", "@1sat/wallet": "^0.0.20", "@bopen-io/templates": "1.2.2" }, "peerDependencies": { "@bsv/sdk": "^2.0.4" } }, "sha512-CkjiyDvx0jiWiD2zuWIGpywRjsZ3b5b6UDxOYN7aVLK9n+I3C+ZLCi/i9WrIWy4JC8phghzR7jJ7TdRNQVz7sg=="],
 
     "@1sat/client": ["@1sat/client@0.0.9", "", { "dependencies": { "@1sat/types": "^0.0.6", "@bsv/wallet-toolbox": "^2.0.20" }, "peerDependencies": { "@bsv/sdk": "^2.0.4" } }, "sha512-J23v+Gi3HvlQVUizLnvSAEIstJS5UYZVO67FaA0Waq9IH92x2Q6BhTDmQtoaKu4Tr5CRCvOwN1rykXmc6t2ehg=="],
 
@@ -149,7 +149,7 @@
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.4.6", "", { "os": "win32", "cpu": "x64" }, "sha512-7++XhnsPlr1HDbor5amovPjOH6vsrFOCdp93iKXhFn6bcMUI6soodj3WWKfgEO6JosKU1W5n3uky3WW9RlRjTg=="],
 
-    "@bopen-io/templates": ["@bopen-io/templates@1.2.1", "", { "dependencies": { "@bsv/sdk": "^2.0.4" }, "peerDependencies": { "sigma-protocol": "^0.1.9" }, "optionalPeers": ["sigma-protocol"] }, "sha512-/nt8FwbtpZxhHH2TqNRQ4e5B8lTcxzxARsiHbBeEI9WYbmD7y3I/tIB5EYinjhPjpTrUa/XrHLZnCJp3n5vgAA=="],
+    "@bopen-io/templates": ["@bopen-io/templates@1.2.2", "", { "dependencies": { "@bsv/sdk": "^2.0.4" }, "peerDependencies": { "sigma-protocol": "^0.1.9" }, "optionalPeers": ["sigma-protocol"] }, "sha512-ubhy0f20l3q+EIfee9sY0ijaC+x7+OsVp8IO7Qgrq5YbuBBfgVuVjuU3DAO0847YPCqZwcYorcdjZDJnuAFrLA=="],
 
     "@bsv/auth-express-middleware": ["@bsv/auth-express-middleware@2.0.4", "", { "dependencies": { "@bsv/sdk": "^2.0.4", "express": "^5.1.0" } }, "sha512-E1OL/OsyElJTzwYNxAG2ThZLEH1Q6LCJSVx8GSazxCSmVPuQUdK0dAxW2Uscer2otq7BzEdYayRR0I7+E/8UAA=="],
 

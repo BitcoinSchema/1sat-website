@@ -89,7 +89,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		const outpoint = artifact?.origin?.outpoint;
 		// Ensure outpoint is a valid string before using in URL
 		if (!outpoint || typeof outpoint !== "string") return "";
-		return `${ORDFS}/${outpoint}`;
+		return `${ORDFS}/content/${outpoint}`;
 	}, [artifact, inputSrc]);
 
 	const type = useMemo(() => {

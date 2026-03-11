@@ -54,13 +54,13 @@ export function OrdinalsGrid() {
 							className="group relative aspect-square overflow-hidden rounded-lg bg-muted/50 border border-border/50 hover:border-primary/50 transition-all"
 						>
 							<a
-								href={`${ORDFS}/${originOutpoint}`}
+								href={`${ORDFS}/content/${originOutpoint}`}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="block w-full h-full"
 							>
 								<Image
-									src={`${ORDFS}/${originOutpoint}`}
+									src={`${ORDFS}/content/${originOutpoint}`}
 									alt={`Ordinal ${outpoint.slice(0, 8)}...`}
 									fill
 									className="object-cover transition-transform group-hover:scale-105"

@@ -17,7 +17,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
 			<div className="text-white mb-4">Audio Artifact</div>
 			<audio
 				className={`w-full transition ${className ? className : ""}`}
-				src={src ? src : `${ORDFS}/${outPoint}`}
+				src={src ? src : `${ORDFS}/content/${outPoint}`}
 				id={`${src ? src : outPoint}_audio`}
 				controls
 			>
