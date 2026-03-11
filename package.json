@@ -12,11 +12,12 @@
 		"cwi:e2e:redirect": "node scripts/cwi-redirect-e2e.mjs"
 	},
 	"dependencies": {
-		"@1sat/actions": "^0.0.22",
-		"@1sat/client": "^0.0.5",
+		"@1sat/actions": "0.0.38",
+		"@1sat/client": "0.0.9",
 		"@1sat/connect": "0.0.9",
-		"@1sat/utils": "^0.0.7",
-		"@1sat/wallet-remote": "0.0.3",
+		"@1sat/types": "0.0.10",
+		"@1sat/utils": "0.0.8",
+		"@1sat/wallet-remote": "0.0.7",
 		"@bsv/sdk": "^2.0.7",
 		"@bsv/wallet-toolbox": "^2.1.5",
 		"@bsv/wallet-toolbox-mobile": "^2.1.5",
@@ -76,9 +77,9 @@
 		"zod": "^4.3.6"
 	},
 	"overrides": {
-		"@1sat/client": "^0.0.5",
-		"@1sat/types": "^0.0.9",
-		"@1sat/wallet": "0.0.17"
+		"@1sat/client": "0.0.9",
+		"@1sat/types": "0.0.10",
+		"@1sat/wallet": "0.0.20"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.6",

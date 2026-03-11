@@ -1,43 +1,47 @@
 "use client";
 
-import { Info, ShoppingCart, SquareArrowOutUpRight, X } from "lucide-react";
+import { Info, SquareArrowOutUpRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import Artifact from "@/components/artifact";
 import ImageWithFallback from "@/components/image-with-fallback";
-// import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
 import {
 	DialogContent,
 	DialogTitle,
 	SoundDialog,
 } from "@/components/ui/sound-dialog";
-import type { OrdUtxo } from "@/lib/types/ordinals";
 
-const needsFlipButton = (artifact: OrdUtxo): boolean => {
-	const contentType = artifact.origin?.data?.insc?.file.type || "";
-	return (
-		contentType.startsWith("video/") ||
-		contentType.includes("model/") ||
-		contentType.includes("gltf") ||
-		contentType.startsWith("audio/") ||
-		contentType.startsWith("text/") ||
-		contentType.includes("html")
-	);
-};
+const ORDFS = "https://ordfs.network";
 
-const shouldAllowScroll = (artifact: OrdUtxo): boolean => {
-	const contentType = artifact.origin?.data?.insc?.file.type || "";
-	return (
-		contentType.startsWith("image/") ||
-		contentType.startsWith("text/") ||
-		contentType.includes("html")
-	);
-};
+/**
+ * Minimal artifact shape for the modal.
+ * Works with both WalletOutput (via adapter) and OrdUtxo (marketplace).
+ */
+export interface ArtifactModalItem {
+	/** Display outpoint (txid_vout format) */
+	outpoint: string;
+	/** Origin outpoint for ORDFS content URL */
+	originOutpoint: string;
+	/** MIME content type */
+	contentType: string;
+	/** Display name */
+	name?: string;
+}
 
 interface ArtifactModalProps {
-	artifact: OrdUtxo | null;
+	artifact: ArtifactModalItem | null;
 	onClose: () => void;
+}
+
+function classifyContentType(
+	ct: string,
+): "video" | "audio" | "3d" | "text" | "html" | "image" {
+	if (ct.startsWith("video/")) return "video";
+	if (ct.startsWith("audio/")) return "audio";
+	if (ct.includes("model/") || ct.includes("gltf")) return "3d";
+	if (ct.includes("html")) return "html";
+	if (ct.startsWith("text/")) return "text";
+	return "image";
 }
 
 const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
@@ -72,43 +76,27 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 
 	if (!artifact) return null;
 
-	const requiresFlipButton = needsFlipButton(artifact);
-	const allowScroll = shouldAllowScroll(artifact);
-	const ordinalName =
-		artifact.data?.map?.name || artifact.origin?.data?.map?.name;
+	const { outpoint, originOutpoint, contentType, name } = artifact;
+	const contentClass = classifyContentType(contentType);
+	const src = `${ORDFS}/${originOutpoint}`;
+	const allowScroll = contentClass === "image" || contentClass === "text" || contentClass === "html";
 
 	return (
 		<SoundDialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
-			<DialogContent
-				className="max-w-[90vw] w-full h-[96vh] p-0 gap-0 bg-background border-border overflow-hidden flex flex-col"
-				// hideCloseButton={true} // Not supported in shadcn default, we have manual close button
-			>
-				{/* VisuallyHidden wrapper for accessibility if needed, but shadcn might require Title for SR */}
+			<DialogContent className="max-w-[90vw] w-full h-[96vh] p-0 gap-0 bg-background border-border overflow-hidden flex flex-col">
 				<div className="sr-only">
-					<DialogTitle>{String(ordinalName || "Artifact Preview")}</DialogTitle>
+					<DialogTitle>{name || "Artifact Preview"}</DialogTitle>
 				</div>
 
 				<div className="flex items-center justify-between gap-2 px-4 h-12 border-b border-border shrink-0">
 					<p className="text-sm font-medium text-foreground truncate">
-						{String(ordinalName || "\u00A0")}
+						{name || "\u00A0"}
 					</p>
 					<div className="flex gap-1 items-center">
-						{artifact.data?.list?.price && (
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={(e) => {
-									e.stopPropagation();
-								}}
-								className="h-8 w-8"
-							>
-								<ShoppingCart className="w-4 h-4" />
-							</Button>
-						)}
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => router.push(`/outpoint/${artifact.outpoint}`)}
+							onClick={() => router.push(`/outpoint/${outpoint}`)}
 							className="h-8 w-8"
 						>
 							<Info className="w-4 h-4" />
@@ -117,11 +105,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							variant="ghost"
 							size="icon"
 							onClick={() =>
-								window.open(
-									`https://ordfs.network/${artifact.origin?.outpoint}`,
-									"_blank",
-									"noopener,noreferrer",
-								)
+								window.open(src, "_blank", "noopener,noreferrer")
 							}
 							className="h-8 w-8"
 						>
@@ -146,27 +130,37 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 					onMouseMove={allowScroll ? handleMouseMove : undefined}
 					onMouseUp={allowScroll ? handleMouseUp : undefined}
 					onMouseLeave={allowScroll ? handleMouseUp : undefined}
-					style={
-						{
-							cursor: allowScroll
-								? isDragging
-									? "grabbing"
-									: "grab"
-								: "default",
-						} as React.CSSProperties
-					}
+					style={{
+						cursor: allowScroll
+							? isDragging
+								? "grabbing"
+								: "grab"
+							: "default",
+					}}
 				>
-					{requiresFlipButton ? (
-						<Artifact
-							artifact={artifact}
-							sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
-							showFooter={false}
-							showListingTag={false}
-							clickToZoom={false}
-							classNames={{
-								wrapper: "w-full h-full",
-								media: "w-full h-full",
-							}}
+					{contentClass === "video" ? (
+						<video
+							src={src}
+							controls
+							className="max-w-full max-h-full"
+							playsInline
+						/>
+					) : contentClass === "audio" ? (
+						<div className="flex items-center justify-center w-full p-8">
+							<audio src={src} controls className="w-full max-w-lg" />
+						</div>
+					) : contentClass === "html" ? (
+						<iframe
+							src={src}
+							title="Artifact"
+							className="w-full h-full border-0"
+							sandbox="allow-scripts"
+						/>
+					) : contentClass === "text" ? (
+						<iframe
+							src={src}
+							title="Artifact"
+							className="w-full h-full border-0"
 						/>
 					) : (
 						<div
@@ -177,7 +171,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							}
 						>
 							<ImageWithFallback
-								src={`https://ordfs.network/${artifact.origin?.outpoint}`}
+								src={src}
 								alt="Full size artifact"
 								className={
 									allowScroll
@@ -185,13 +179,11 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 										: "max-w-full max-h-full object-contain select-none"
 								}
 								draggable={false}
-								width={1200} // Provide default width/height for next/image if unknown
+								width={1200}
 								height={1200}
-								style={
-									{
-										viewTransitionName: `artifact-${artifact.outpoint}`,
-									} as React.CSSProperties
-								}
+								style={{
+									viewTransitionName: `artifact-${outpoint}`,
+								}}
 							/>
 						</div>
 					)}

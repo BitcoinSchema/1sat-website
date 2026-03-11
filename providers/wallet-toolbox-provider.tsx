@@ -8,6 +8,11 @@
  */
 
 import {
+	type OneSatContext,
+	type WalletOutput,
+	createContext as createOneSatContext,
+} from "@1sat/actions";
+import {
 	type AddressManager,
 	createRemoteWallet,
 	type OneSatServices,
@@ -44,7 +49,6 @@ import {
 	saveReceiveAddressState,
 } from "@/lib/receive-address-state";
 import type { TxoData } from "@/lib/types/ordinals";
-import type { Ordinal } from "@/lib/wallet/gorillapool-service";
 import { useSyncEngine } from "./hooks/use-sync-engine";
 import { useWalletBalance } from "./hooks/use-wallet-balance";
 import { useWalletDiagnostics } from "./hooks/use-wallet-diagnostics";
@@ -183,8 +187,10 @@ interface WalletToolboxContextValue {
 	clearWalletEvents: () => void;
 	hasActiveSync: boolean;
 
+	oneSatContext: OneSatContext | null;
+
 	balance: WalletBalance | null;
-	ordinals: Ordinal[];
+	ordinals: WalletOutput[];
 	bsv20Tokens: TokenBalance[];
 	bsv21Tokens: TokenBalance[];
 	legacyBalance: number;
@@ -269,11 +275,19 @@ export function WalletToolboxProvider({
 	const { syncEvents, clearSyncEvents, walletEvents, clearWalletEvents } =
 		useWalletDiagnostics();
 
+	// -- OneSat action context --
+	const oneSatContext = useMemo<OneSatContext | null>(() => {
+		if (!wallet) return null;
+		return createOneSatContext(wallet, {
+			services: services ?? undefined,
+			chain,
+		});
+	}, [wallet, services, chain]);
+
 	// -- Balance hook --
 	const balanceResult = useWalletBalance({
-		wallet,
+		ctx: oneSatContext,
 		isInitialized,
-		chain,
 		identityKey,
 		trackedAddresses,
 	});
@@ -281,8 +295,6 @@ export function WalletToolboxProvider({
 		refreshBalance,
 		balance,
 		ordinals,
-		bsv20Tokens,
-		bsv21Tokens,
 		legacyBalance,
 		legacyFundingUtxos,
 		isBalanceLoading,
@@ -462,6 +474,7 @@ export function WalletToolboxProvider({
 						chain === "main"
 							? "https://1sat.shruggr.cloud/1sat/wallet"
 							: "https://testnet.api.1sat.app/1sat/wallet",
+					localBackup: true,
 				});
 
 				walletResultRef.current = result;
@@ -630,10 +643,11 @@ export function WalletToolboxProvider({
 			walletEvents: walletEvents,
 			clearWalletEvents: clearWalletEvents,
 			hasActiveSync,
+			oneSatContext,
 			balance: balance,
 			ordinals: ordinals,
-			bsv20Tokens: bsv20Tokens,
-			bsv21Tokens: bsv21Tokens,
+			bsv20Tokens: [],
+			bsv21Tokens: [],
 			legacyBalance,
 			legacyFundingUtxos,
 			isBalanceLoading: isBalanceLoading,
@@ -664,10 +678,9 @@ export function WalletToolboxProvider({
 			walletEvents,
 			clearWalletEvents,
 			hasActiveSync,
+			oneSatContext,
 			balance,
 			ordinals,
-			bsv20Tokens,
-			bsv21Tokens,
 			legacyBalance,
 			legacyFundingUtxos,
 			isBalanceLoading,

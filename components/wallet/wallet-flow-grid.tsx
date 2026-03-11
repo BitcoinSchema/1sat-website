@@ -1,36 +1,28 @@
 "use client";
 
-/**
- * WalletFlowGrid - Displays wallet ordinals in a masonry grid layout
- * with infinite scroll, using the same pattern as FlowGrid but
- * sourcing data from the wallet provider instead of market API.
- */
-
+import type { WalletOutput } from "@1sat/actions";
 import { Box, Loader2, Music, Play, SquareArrowOutUpRight } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import ImageWithFallback from "@/components/image-with-fallback";
-import ArtifactModal from "@/components/modal/artifact-modal";
+import ArtifactModal, {
+	type ArtifactModalItem,
+} from "@/components/modal/artifact-modal";
 import { Button } from "@/components/ui/button";
 import { useSound } from "@/hooks/use-sound";
 import { ORDFS } from "@/lib/constants";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
-import type { OrdUtxo } from "@/lib/types/ordinals";
+import {
+	classifyContent,
+	getContentType,
+	getDisplayOutpoint,
+	getName,
+	getOriginOutpoint,
+	parseWalletOutpoint,
+} from "@/lib/wallet/wallet-output-utils";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
-const getContentType = (
-	artifact: OrdUtxo,
-): "video" | "audio" | "3d" | "image" => {
-	const contentType = artifact.origin?.data?.insc?.file.type || "";
-	if (contentType.startsWith("video/")) return "video";
-	if (contentType.startsWith("audio/")) return "audio";
-	if (contentType.includes("model/") || contentType.includes("gltf"))
-		return "3d";
-	return "image";
-};
-
-// Hook to determine number of columns based on window width
 const useColumnCount = () => {
 	const [columns, setColumns] = useState(1);
 
@@ -64,38 +56,19 @@ export default function WalletFlowGrid({
 	const { play } = useSound();
 	const { ordinals, isInitialized, isInitializing } = useWalletToolbox();
 	const [visible, setVisible] = useState<Set<string>>(new Set());
-	const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(
-		null,
-	);
+	const [selectedArtifact, setSelectedArtifact] =
+		useState<ArtifactModalItem | null>(null);
 	const [displayCount, setDisplayCount] = useState(pageSize);
 
 	const columnCount = useColumnCount();
 	const observerRef = useRef<IntersectionObserver | null>(null);
 
-	// Convert wallet ordinals to OrdUtxo format
-	const allArtifacts = useMemo((): OrdUtxo[] => {
-		return ordinals.map((ord) => ({
-			txid: ord.txid,
-			vout: ord.vout,
-			outpoint: `${ord.txid}_${ord.vout}`,
-			satoshis: ord.satoshis,
-			script: ord.script || "",
-			height: 0,
-			idx: 0,
-			origin: {
-				outpoint: `${ord.txid}_${ord.vout}`,
-				data: ord.data,
-			},
-			data: ord.data,
-		}));
-	}, [ordinals]);
+	const displayedArtifacts = useMemo(
+		() => ordinals.slice(0, displayCount),
+		[ordinals, displayCount],
+	);
 
-	// Slice for "infinite scroll" simulation
-	const displayedArtifacts = useMemo(() => {
-		return allArtifacts.slice(0, displayCount);
-	}, [allArtifacts, displayCount]);
-
-	const hasMore = displayCount < allArtifacts.length;
+	const hasMore = displayCount < ordinals.length;
 
 	const observeImage = useCallback(
 		(element: HTMLElement | null, outpoint: string) => {
@@ -105,20 +78,20 @@ export default function WalletFlowGrid({
 				observerRef.current = new IntersectionObserver(
 					(entries) => {
 						const newVisible = new Set<string>();
-						entries.forEach((entry) => {
+						for (const entry of entries) {
 							if (entry.isIntersecting) {
 								const id = entry.target.getAttribute("data-outpoint");
 								if (id) newVisible.add(id);
 								observerRef.current?.unobserve(entry.target);
 							}
-						});
+						}
 
 						if (newVisible.size > 0) {
 							setVisible((prev) => {
 								const next = new Set(prev);
-								newVisible.forEach((id) => {
+								for (const id of newVisible) {
 									next.add(id);
-								});
+								}
 								return next;
 							});
 						}
@@ -156,9 +129,15 @@ export default function WalletFlowGrid({
 		return () => window.removeEventListener("keydown", handleEscape);
 	}, [selectedArtifact, closeModal]);
 
-	const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
+	const handleCardClick = (e: React.MouseEvent, artifact: WalletOutput) => {
 		e.preventDefault();
 		play("click");
+		const modalItem: ArtifactModalItem = {
+			outpoint: getDisplayOutpoint(artifact),
+			originOutpoint: getOriginOutpoint(artifact),
+			contentType: getContentType(artifact),
+			name: getName(artifact),
+		};
 		if (
 			typeof document !== "undefined" &&
 			"startViewTransition" in document &&
@@ -167,24 +146,26 @@ export default function WalletFlowGrid({
 			try {
 				const transition = document.startViewTransition(() => {
 					flushSync(() => {
-						setSelectedArtifact(artifact);
+						setSelectedArtifact(modalItem);
 					});
 				});
 				void transition.ready;
 			} catch {
-				setSelectedArtifact(artifact);
+				setSelectedArtifact(modalItem);
 			}
 		} else {
-			setSelectedArtifact(artifact);
+			setSelectedArtifact(modalItem);
 		}
 	};
 
-	// Distribute artifacts into columns
 	const columns = useMemo(() => {
-		const cols: OrdUtxo[][] = Array.from({ length: columnCount }, () => []);
-		displayedArtifacts.forEach((artifact, i) => {
-			cols[i % columnCount].push(artifact);
-		});
+		const cols: WalletOutput[][] = Array.from(
+			{ length: columnCount },
+			() => [],
+		);
+		for (let i = 0; i < displayedArtifacts.length; i++) {
+			cols[i % columnCount].push(displayedArtifacts[i]);
+		}
 		return cols;
 	}, [displayedArtifacts, columnCount]);
 	const columnIds = useMemo(
@@ -192,34 +173,32 @@ export default function WalletFlowGrid({
 		[columnCount],
 	);
 
-	// Infinite scroll handler
 	useEffect(() => {
 		const handleScroll = () => {
 			const scrollY = window.scrollY;
 			const windowHeight = window.innerHeight;
 			const documentHeight = document.body.scrollHeight;
 
-			const isNearBottom = scrollY + windowHeight >= documentHeight - 200;
-
-			if (isNearBottom && hasMore) {
+			if (scrollY + windowHeight >= documentHeight - 200 && hasMore) {
 				setDisplayCount((prev) =>
-					Math.min(prev + pageSize, allArtifacts.length),
+					Math.min(prev + pageSize, ordinals.length),
 				);
 			}
 		};
 
 		window.addEventListener("scroll", handleScroll);
 		return () => window.removeEventListener("scroll", handleScroll);
-	}, [hasMore, pageSize, allArtifacts.length]);
+	}, [hasMore, pageSize, ordinals.length]);
 
-	const renderArtifact = (artifact: OrdUtxo) => {
-		const outpointStr = artifact.outpoint;
-		const originOutpoint = artifact.origin?.outpoint || outpointStr;
+	const renderArtifact = (artifact: WalletOutput) => {
+		const outpointStr = getDisplayOutpoint(artifact);
+		const originOutpoint = getOriginOutpoint(artifact);
 		const src = `${ORDFS}/${originOutpoint}`;
-		const contentType = getContentType(artifact);
+		const contentType = classifyContent(artifact);
 		const imgSrc =
 			contentType === "image" ? getOrdinalThumbnail(originOutpoint, 300) : src;
 		const isVisible = visible.has(outpointStr);
+		const { txid } = parseWalletOutpoint(artifact);
 
 		return (
 			<div
@@ -280,7 +259,7 @@ export default function WalletFlowGrid({
 					) : (
 						<ImageWithFallback
 							src={imgSrc}
-							alt={`Ordinal ${artifact.txid.slice(0, 8)}`}
+							alt={`Ordinal ${txid.slice(0, 8)}`}
 							className="w-full h-auto"
 							width={300}
 							height={300}
@@ -312,7 +291,7 @@ export default function WalletFlowGrid({
 		<>
 			<div className="flex items-center justify-between mb-4">
 				<h3 className="text-lg font-medium">
-					{allArtifacts.length} Ordinal{allArtifacts.length !== 1 ? "s" : ""}
+					{ordinals.length} Ordinal{ordinals.length !== 1 ? "s" : ""}
 				</h3>
 			</div>
 
@@ -330,7 +309,7 @@ export default function WalletFlowGrid({
 						);
 					})}
 
-					{allArtifacts.length === 0 && (
+					{ordinals.length === 0 && (
 						<div className="w-full text-center py-20 text-muted-foreground col-span-full">
 							No ordinals found in your wallet.
 						</div>

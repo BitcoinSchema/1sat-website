@@ -7,7 +7,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { toBitcoin } from "satoshi-token";
 import ImageWithFallback from "@/components/image-with-fallback";
-import ArtifactModal from "@/components/modal/artifact-modal";
+import ArtifactModal, {
+	type ArtifactModalItem,
+} from "@/components/modal/artifact-modal";
 import { Button } from "@/components/ui/button";
 import { useSound } from "@/hooks/use-sound";
 import { fetchMarketActivity } from "@/lib/api";
@@ -63,9 +65,8 @@ const useColumnCount = () => {
 export default function FlowGrid({ className = "" }: { className?: string }) {
 	const { play } = useSound();
 	const [visible, setVisible] = useState<Set<string>>(new Set());
-	const [selectedArtifact, setSelectedArtifact] = useState<OrdUtxo | null>(
-		null,
-	);
+	const [selectedArtifact, setSelectedArtifact] =
+		useState<ArtifactModalItem | null>(null);
 
 	// Determine column count
 	const columnCount = useColumnCount();
@@ -135,7 +136,14 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 	const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
 		e.preventDefault();
 		play("click");
-		// Skip view transition for now if it's causing issues, or keep it simple
+		const modalItem: ArtifactModalItem = {
+			outpoint: artifact.outpoint,
+			originOutpoint: artifact.origin?.outpoint ?? artifact.outpoint,
+			contentType: artifact.origin?.data?.insc?.file.type ?? "",
+			name:
+				(artifact.data?.map?.name as string | undefined) ??
+				(artifact.origin?.data?.map?.name as string | undefined),
+		};
 		if (
 			typeof document !== "undefined" &&
 			"startViewTransition" in document &&
@@ -144,15 +152,15 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 			try {
 				const transition = document.startViewTransition(() => {
 					flushSync(() => {
-						setSelectedArtifact(artifact);
+						setSelectedArtifact(modalItem);
 					});
 				});
 				void transition.ready;
 			} catch {
-				setSelectedArtifact(artifact);
+				setSelectedArtifact(modalItem);
 			}
 		} else {
-			setSelectedArtifact(artifact);
+			setSelectedArtifact(modalItem);
 		}
 	};
 

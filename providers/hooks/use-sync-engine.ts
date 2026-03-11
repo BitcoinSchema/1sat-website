@@ -2,12 +2,11 @@
 
 import {
 	type AddressManager,
-	AddressSyncFetcher,
-	AddressSyncProcessor,
-	AddressSyncQueueIdb,
 	type OneSatServices,
 	type RemoteWalletResult,
 } from "@1sat/wallet-remote";
+import { syncAddresses, createContext as createActionContext } from "@1sat/actions";
+import { RECEIVE_ADDRESS_PREFIX } from "@/lib/receive-address-manager";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Wallet = RemoteWalletResult["wallet"];
@@ -43,26 +42,48 @@ export function useSyncEngine({
 	onQueuedOutpoint,
 	refreshBalance,
 }: UseSyncEngineOptions): SyncEngineResult {
-	const syncQueueRef = useRef<AddressSyncQueueIdb | null>(null);
-	const syncFetcherRef = useRef<AddressSyncFetcher | null>(null);
-	const syncProcessorRef = useRef<AddressSyncProcessor | null>(null);
 	const [syncEngineActive, setSyncEngineActive] = useState(false);
+	const abortRef = useRef(false);
 
 	const stopSyncWorkers = useCallback(async () => {
-		syncFetcherRef.current?.stop();
-		syncFetcherRef.current = null;
-
-		syncProcessorRef.current?.stop();
-		syncProcessorRef.current = null;
-
-		if (syncQueueRef.current) {
-			await syncQueueRef.current.close().catch(() => {
-				// No-op cleanup failure.
-			});
-			syncQueueRef.current = null;
-		}
+		abortRef.current = true;
 		setSyncEngineActive(false);
 	}, []);
+
+	const runSync = useCallback(async () => {
+		if (!wallet || !services) return;
+
+		const addressManager = addressManagerRef.current;
+		if (!addressManager) return;
+
+		const count = addressManager.getAddresses().length || 5;
+
+		const ctx = createActionContext(wallet, { chain, services });
+		setSyncEngineActive(true);
+		abortRef.current = false;
+
+		try {
+			const result = await syncAddresses.execute(ctx, {
+				prefix: RECEIVE_ADDRESS_PREFIX,
+				count,
+			});
+
+			if (!abortRef.current) {
+				console.log(
+					`[WalletToolbox][Sync] complete: processed=${result.processed} failed=${result.failed}`,
+				);
+				refreshBalance();
+			}
+		} catch (error) {
+			if (!abortRef.current) {
+				console.error("[WalletToolbox][Sync] failed:", error);
+			}
+		} finally {
+			if (!abortRef.current) {
+				setSyncEngineActive(false);
+			}
+		}
+	}, [wallet, services, chain, addressManagerRef, refreshBalance]);
 
 	useEffect(() => {
 		if (
@@ -77,88 +98,14 @@ export function useSyncEngine({
 		}
 
 		console.log(
-			`[WalletToolbox][Sync] starting workers (revision=${syncRevision})`,
+			`[WalletToolbox][Sync] starting sync (revision=${syncRevision})`,
 		);
 
-		let cancelled = false;
-
-		const startSyncWorkers = async () => {
-			try {
-				syncFetcherRef.current?.stop();
-				syncProcessorRef.current?.stop();
-
-				if (!syncQueueRef.current) {
-					syncQueueRef.current = new AddressSyncQueueIdb(
-						`${chain}:${identityKey}`,
-					);
-				}
-				const syncQueue = syncQueueRef.current;
-				const addressManager = addressManagerRef.current;
-				if (!syncQueue || !addressManager) {
-					return;
-				}
-
-				const fetcher = new AddressSyncFetcher({
-					services,
-					syncQueue,
-					addressManager,
-				});
-				const processor = new AddressSyncProcessor({
-					wallet,
-					services,
-					syncQueue,
-					addressManager,
-					network: chain === "main" ? "mainnet" : "testnet",
-				});
-
-				fetcher.on("fetch:queued", ({ outpoint, score }) => {
-					void onQueuedOutpoint(outpoint, score);
-				});
-				fetcher.on("fetch:error", ({ message }) => {
-					console.error("[WalletToolbox][SyncFetcher]", message);
-				});
-
-				processor.on("process:progress", ({ pending, done, failed }) => {
-					console.log(
-						`[WalletToolbox][SyncProcessor] pending=${pending} done=${done} failed=${failed}`,
-					);
-					refreshBalance();
-				});
-				processor.on("process:complete", () => {
-					console.log("[WalletToolbox][SyncProcessor] complete");
-					refreshBalance();
-				});
-				processor.on("process:error", ({ message }) => {
-					console.error("[WalletToolbox][SyncProcessor]", message);
-				});
-
-				syncFetcherRef.current = fetcher;
-				syncProcessorRef.current = processor;
-				setSyncEngineActive(true);
-
-				void processor.start().catch((error) => {
-					console.error("[WalletToolbox] Processor failed to start:", error);
-				});
-
-				const height = await services.chaintracks.currentHeight();
-				if (!cancelled) {
-					void fetcher.fetch(height).catch((error) => {
-						console.error("[WalletToolbox] Fetcher failed:", error);
-					});
-				}
-			} catch (error) {
-				console.error("[WalletToolbox] Failed to start sync workers:", error);
-			}
-		};
-
-		void startSyncWorkers();
+		abortRef.current = false;
+		void runSync();
 
 		return () => {
-			cancelled = true;
-			syncFetcherRef.current?.stop();
-			syncFetcherRef.current = null;
-			syncProcessorRef.current?.stop();
-			syncProcessorRef.current = null;
+			abortRef.current = true;
 			setSyncEngineActive(false);
 		};
 	}, [
@@ -169,21 +116,14 @@ export function useSyncEngine({
 		chain,
 		addressManagerReady,
 		addressManagerRef,
-		onQueuedOutpoint,
-		refreshBalance,
 		syncRevision,
+		runSync,
 	]);
 
 	const syncWallet = useCallback(() => {
 		refreshBalance();
-		if (!services || !syncFetcherRef.current) return;
-		void services.chaintracks
-			.currentHeight()
-			.then((height) => syncFetcherRef.current?.fetch(height))
-			.catch((error) => {
-				console.error("[WalletToolbox] Manual sync failed:", error);
-			});
-	}, [services, refreshBalance]);
+		void runSync();
+	}, [runSync, refreshBalance]);
 
 	return {
 		syncEngineActive,

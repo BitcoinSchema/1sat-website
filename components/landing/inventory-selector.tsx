@@ -3,7 +3,6 @@
 import { Search } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
 	DialogContent,
@@ -15,6 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSound } from "@/hooks/use-sound";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
 import type { TradeItem } from "@/lib/types/trades";
+import {
+	getContentType,
+	getDisplayOutpoint,
+	getName,
+	parseWalletOutpoint,
+} from "@/lib/wallet/wallet-output-utils";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 interface InventorySelectorProps {
@@ -29,20 +34,13 @@ export function InventorySelector({
 	onSelect,
 }: InventorySelectorProps) {
 	const { play } = useSound();
-	const { ordinals, bsv21Tokens, isInitialized } = useWalletToolbox();
+	const { ordinals, isInitialized } = useWalletToolbox();
 	const [search, setSearch] = useState("");
 
 	const filteredOrdinals = ordinals.filter((o) => {
 		if (!search) return true;
-		const itemData = o.origin?.data;
-		const name = `Ordinal #${itemData?.insc?.num || o.txid.slice(0, 8)}`;
-		return name.toLowerCase().includes(search.toLowerCase());
-	});
-
-	const filteredTokens = bsv21Tokens.filter((t) => {
-		if (!search) return true;
 		const name =
-			t.data?.bsv20?.tick || t.data?.bsv20?.sym || t.txid.slice(0, 8);
+			getName(o) ?? `Ordinal ${parseWalletOutpoint(o).txid.slice(0, 8)}`;
 		return name.toLowerCase().includes(search.toLowerCase());
 	});
 
@@ -73,9 +71,6 @@ export function InventorySelector({
 								<TabsTrigger value="ordinals" className="flex-1 max-w-[200px]">
 									Ordinals ({filteredOrdinals.length})
 								</TabsTrigger>
-								<TabsTrigger value="tokens" className="flex-1 max-w-[200px]">
-									Tokens ({filteredTokens.length})
-								</TabsTrigger>
 							</TabsList>
 						</div>
 
@@ -95,13 +90,12 @@ export function InventorySelector({
 							)}
 							<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 								{filteredOrdinals.map((item) => {
-									const outpoint = `${item.txid}_${item.vout}`;
-									const itemData = item.origin?.data;
-									const num = itemData?.insc?.num;
-									const name = num
-										? `Inscription #${num}`
-										: `Ordinal ${item.txid.slice(0, 4)}...${item.txid.slice(-4)}`;
-									const type = itemData?.insc?.file?.type || "Unknown";
+									const outpoint = getDisplayOutpoint(item);
+									const { txid, vout } = parseWalletOutpoint(item);
+									const name =
+										getName(item) ??
+										`Ordinal ${txid.slice(0, 4)}...${txid.slice(-4)}`;
+									const type = getContentType(item) || "Unknown";
 									const image = getOrdinalThumbnail(outpoint, 200);
 
 									return (
@@ -116,10 +110,9 @@ export function InventorySelector({
 													name,
 													type: "ordinal",
 													image,
-													data: item.origin?.data,
 													utxo: {
-														txid: item.txid,
-														vout: item.vout,
+														txid,
+														vout,
 														satoshis: item.satoshis,
 													},
 												});
@@ -146,70 +139,6 @@ export function InventorySelector({
 												</div>
 												<div className="text-xs text-muted-foreground mt-1 truncate">
 													{type}
-												</div>
-											</div>
-										</button>
-									);
-								})}
-							</div>
-						</TabsContent>
-
-						<TabsContent value="tokens" className="flex-1 overflow-y-auto p-6">
-							{!isInitialized && (
-								<div className="text-center py-10 text-muted-foreground">
-									Wallet loading...
-								</div>
-							)}
-							{isInitialized && filteredTokens.length === 0 && (
-								<div className="text-center py-10 text-muted-foreground">
-									No tokens found
-								</div>
-							)}
-							<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-								{filteredTokens.map((item) => {
-									const outpoint = item.outpoint;
-									const tick =
-										item.data?.bsv20?.tick || item.data?.bsv20?.sym || "TOKEN";
-									const amt = item.data?.bsv20?.amt || "0";
-
-									return (
-										<button
-											type="button"
-											key={outpoint}
-											className="border rounded-lg overflow-hidden hover:border-primary cursor-pointer transition-colors bg-card text-left"
-											onClick={() => {
-												play("click");
-												onSelect({
-													id: outpoint,
-													name: `${amt} ${tick}`,
-													type: "bsv20",
-													image: "", // Tokens might need specific icons
-													amount: amt,
-													data: item.data,
-													utxo: {
-														txid: item.txid,
-														vout: item.vout,
-														satoshis: 1, // Usually 1 sat for tokens
-													},
-												});
-												onOpenChange(false);
-											}}
-										>
-											<div className="aspect-square relative bg-muted/20 flex flex-col items-center justify-center p-4">
-												<div className="text-2xl font-bold">{tick[0]}</div>
-												<Badge
-													variant="outline"
-													className="mt-2 text-[10px] break-all max-w-full"
-												>
-													{tick}
-												</Badge>
-											</div>
-											<div className="p-3">
-												<div className="font-medium text-sm truncate">
-													{amt} {tick}
-												</div>
-												<div className="text-xs text-muted-foreground mt-1 truncate">
-													BSV-20
 												</div>
 											</div>
 										</button>

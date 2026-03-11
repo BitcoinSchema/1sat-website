@@ -3,43 +3,11 @@
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { ORDFS } from "@/lib/constants";
+import {
+	getDisplayOutpoint,
+	getOriginOutpoint,
+} from "@/lib/wallet/wallet-output-utils";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
-
-interface OrdinalCardProps {
-	txid: string;
-	vout: number;
-	satoshis: number;
-}
-
-function OrdinalCard({ txid, vout, satoshis }: OrdinalCardProps) {
-	const outpoint = `${txid}_${vout}`;
-	const imageUrl = `${ORDFS}/${outpoint}`;
-
-	return (
-		<div className="group relative aspect-square overflow-hidden rounded-lg bg-muted/50 border border-border/50 hover:border-primary/50 transition-all">
-			<a
-				href={`https://ordfs.network/${outpoint}`}
-				target="_blank"
-				rel="noopener noreferrer"
-				className="block w-full h-full"
-			>
-				<Image
-					src={imageUrl}
-					alt={`Ordinal ${outpoint.slice(0, 8)}...`}
-					fill
-					className="object-cover transition-transform group-hover:scale-105"
-					sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-					unoptimized
-				/>
-				<div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-				<div className="absolute bottom-0 left-0 right-0 p-2 text-foreground text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-					<div className="truncate font-mono">{outpoint.slice(0, 16)}...</div>
-					<div className="text-foreground/70">{satoshis} sat</div>
-				</div>
-			</a>
-		</div>
-	);
-}
 
 export function OrdinalsGrid() {
 	const { ordinals, isInitialized, isInitializing } = useWalletToolbox();
@@ -77,14 +45,41 @@ export function OrdinalsGrid() {
 				</h3>
 			</div>
 			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-				{ordinals.map((ordinal) => (
-					<OrdinalCard
-						key={`${ordinal.txid}_${ordinal.vout}`}
-						txid={ordinal.txid}
-						vout={ordinal.vout}
-						satoshis={ordinal.satoshis}
-					/>
-				))}
+				{ordinals.map((ordinal) => {
+					const outpoint = getDisplayOutpoint(ordinal);
+					const originOutpoint = getOriginOutpoint(ordinal);
+					return (
+						<div
+							key={outpoint}
+							className="group relative aspect-square overflow-hidden rounded-lg bg-muted/50 border border-border/50 hover:border-primary/50 transition-all"
+						>
+							<a
+								href={`${ORDFS}/${originOutpoint}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="block w-full h-full"
+							>
+								<Image
+									src={`${ORDFS}/${originOutpoint}`}
+									alt={`Ordinal ${outpoint.slice(0, 8)}...`}
+									fill
+									className="object-cover transition-transform group-hover:scale-105"
+									sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+									unoptimized
+								/>
+								<div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+								<div className="absolute bottom-0 left-0 right-0 p-2 text-foreground text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+									<div className="truncate font-mono">
+										{outpoint.slice(0, 16)}...
+									</div>
+									<div className="text-foreground/70">
+										{ordinal.satoshis} sat
+									</div>
+								</div>
+							</a>
+						</div>
+					);
+				})}
 			</div>
 		</div>
 	);

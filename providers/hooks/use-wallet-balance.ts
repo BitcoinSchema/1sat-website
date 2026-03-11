@@ -1,27 +1,20 @@
 "use client";
 
+import {
+	type OneSatContext,
+	type WalletOutput,
+	getOrdinals,
+} from "@1sat/actions";
+import { specOpWalletBalance } from "@bsv/wallet-toolbox/out/src/sdk/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { TxoData } from "@/lib/types/ordinals";
 import type { Ordinal } from "@/lib/wallet/gorillapool-service";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
-
-type Wallet = {
-	balance: () => Promise<number>;
-};
 
 interface WalletBalance {
 	confirmed: number;
 	unconfirmed: number;
 	total: number;
-}
-
-interface TokenBalance {
-	outpoint: string;
-	txid: string;
-	vout: number;
-	data?: TxoData;
-	height?: number;
 }
 
 interface LegacyFundingUtxo {
@@ -32,17 +25,14 @@ interface LegacyFundingUtxo {
 
 interface BalanceQueryResult {
 	balance: WalletBalance;
-	ordinals: Ordinal[];
-	bsv20Tokens: TokenBalance[];
-	bsv21Tokens: TokenBalance[];
+	ordinals: WalletOutput[];
 	legacyBalance: number;
 	legacyFundingUtxos: LegacyFundingUtxo[];
 }
 
 interface UseWalletBalanceOptions {
-	wallet: Wallet | null;
+	ctx: OneSatContext | null;
 	isInitialized: boolean;
-	chain: "main" | "test";
 	identityKey: string | null;
 	trackedAddresses: string[];
 }
@@ -56,9 +46,7 @@ interface SyncStatus {
 
 export interface WalletBalanceResult {
 	balance: WalletBalance | null;
-	ordinals: Ordinal[];
-	bsv20Tokens: TokenBalance[];
-	bsv21Tokens: TokenBalance[];
+	ordinals: WalletOutput[];
 	legacyBalance: number;
 	legacyFundingUtxos: LegacyFundingUtxo[];
 	isBalanceLoading: boolean;
@@ -69,14 +57,15 @@ export interface WalletBalanceResult {
 }
 
 export function useWalletBalance({
-	wallet,
+	ctx,
 	isInitialized,
-	chain,
 	identityKey,
 	trackedAddresses,
 }: UseWalletBalanceOptions): WalletBalanceResult {
 	const queryClient = useQueryClient();
 	const gorillaPoolRef = useRef(new GorillaPoolService());
+
+	const chain = ctx?.chain ?? "main";
 
 	const addressesKey = useMemo(
 		() => trackedAddresses.join(","),
@@ -90,14 +79,14 @@ export function useWalletBalance({
 	const balanceQuery = useQuery({
 		queryKey: balanceQueryKey,
 		queryFn: async (): Promise<BalanceQueryResult> => {
-			if (!wallet || !isInitialized || trackedAddresses.length === 0) {
+			if (!ctx || !isInitialized || trackedAddresses.length === 0) {
 				throw new Error("Wallet not initialized");
 			}
 
 			console.log("[WalletToolbox] Starting wallet scan request...");
 			const gp = gorillaPoolRef.current;
 
-			const results = await Promise.all(
+			const legacyResults = await Promise.all(
 				trackedAddresses.map(async (address) => {
 					console.log(
 						`[WalletToolbox] Scanning receive address ${address.slice(0, 10)}...`,
@@ -106,26 +95,18 @@ export function useWalletBalance({
 				}),
 			);
 
-			const [fundOutputs, ...utxoResults] = await Promise.all([
-				wallet.balance(),
-				...results,
+			const [balanceResult, ordinalsResult] = await Promise.all([
+				ctx.wallet.listOutputs({ basket: specOpWalletBalance }),
+				getOrdinals.execute(ctx, {}),
 			]);
-			const total = fundOutputs ?? 0;
+			const total = balanceResult.totalOutputs;
 
-			const categorized = utxoResults[0] ?? {
-				ordinals: [],
-				bsv20Tokens: [],
-				bsv21Tokens: [],
-				funding: [],
-			};
-			for (let i = 1; i < utxoResults.length; i++) {
-				categorized.ordinals.push(...utxoResults[i].ordinals);
-				categorized.bsv20Tokens.push(...utxoResults[i].bsv20Tokens);
-				categorized.bsv21Tokens.push(...utxoResults[i].bsv21Tokens);
-				categorized.funding.push(...utxoResults[i].funding);
+			const legacyFunding: Ordinal[] = [];
+			for (const result of legacyResults) {
+				legacyFunding.push(...result.funding);
 			}
 
-			const legacyFundingUtxos = categorized.funding.map((u) => ({
+			const legacyFundingUtxos = legacyFunding.map((u) => ({
 				outpoint: u.outpoint,
 				satoshis: u.satoshis,
 				lockingScript: u.script,
@@ -136,31 +117,17 @@ export function useWalletBalance({
 			);
 
 			console.log(
-				`[WalletToolbox] Balance: ${total}, Legacy: ${legacyBalance}, Ordinals: ${categorized.ordinals.length}, BSV20: ${categorized.bsv20Tokens.length}, BSV21: ${categorized.bsv21Tokens.length}`,
+				`[WalletToolbox] Balance: ${total}, Legacy: ${legacyBalance}, Ordinals: ${ordinalsResult.outputs.length}`,
 			);
 
 			return {
 				balance: { confirmed: total, unconfirmed: 0, total },
-				ordinals: categorized.ordinals,
-				bsv20Tokens: categorized.bsv20Tokens.map((o) => ({
-					outpoint: o.outpoint,
-					txid: o.txid,
-					vout: o.vout,
-					height: o.height,
-					data: o.data,
-				})),
-				bsv21Tokens: categorized.bsv21Tokens.map((o) => ({
-					outpoint: o.outpoint,
-					txid: o.txid,
-					vout: o.vout,
-					height: o.height,
-					data: o.data,
-				})),
+				ordinals: ordinalsResult.outputs,
 				legacyBalance,
 				legacyFundingUtxos,
 			};
 		},
-		enabled: isInitialized && !!wallet && trackedAddresses.length > 0,
+		enabled: isInitialized && !!ctx && trackedAddresses.length > 0,
 		staleTime: 30_000,
 		gcTime: 5 * 60_000,
 	});
@@ -197,8 +164,6 @@ export function useWalletBalance({
 	return {
 		balance: balanceQuery.data?.balance ?? null,
 		ordinals: balanceQuery.data?.ordinals ?? [],
-		bsv20Tokens: balanceQuery.data?.bsv20Tokens ?? [],
-		bsv21Tokens: balanceQuery.data?.bsv21Tokens ?? [],
 		legacyBalance: balanceQuery.data?.legacyBalance ?? 0,
 		legacyFundingUtxos: balanceQuery.data?.legacyFundingUtxos ?? [],
 		isBalanceLoading: balanceQuery.isLoading,
