@@ -474,7 +474,6 @@ export function WalletToolboxProvider({
 						chain === "main"
 							? "https://1sat.shruggr.cloud/1sat/wallet"
 							: "https://testnet.api.1sat.app/1sat/wallet",
-					localBackup: true,
 				});
 
 				walletResultRef.current = result;
