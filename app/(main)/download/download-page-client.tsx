@@ -1,7 +1,6 @@
 "use client";
 
 import { Check, Download, ExternalLink } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DownloadInfo } from "./page";
@@ -42,9 +41,9 @@ interface DownloadPageClientProps {
 
 export function DownloadPageClient({
 	macos,
-	windows,
+	windows: _windows,
 }: DownloadPageClientProps) {
-	const [platform, setPlatform] = useState<Platform>("macos");
+	const [_platform, setPlatform] = useState<Platform>("macos");
 
 	useEffect(() => {
 		setPlatform(detectPlatform());
@@ -60,27 +59,20 @@ export function DownloadPageClient({
 				<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
 					<div className="text-center">
 						<h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-							Download{" "}
-							<span className="text-primary">1Sat</span> Wallet
+							Download <span className="text-primary">1Sat</span> Wallet
 						</h1>
 						<p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-							A native BSV wallet with Touch ID, on-chain browsing,
-							and a built-in indexer. Your keys never leave the Secure Enclave.
+							A native BSV wallet with Touch ID, on-chain browsing, and a
+							built-in indexer. Your keys never leave the Secure Enclave.
 						</p>
 
 						{/* Download buttons */}
 						<div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-							<Button
-								size="lg"
-								className="gap-3 h-14 px-8 text-base"
-								asChild
-							>
+							<Button size="lg" className="gap-3 h-14 px-8 text-base" asChild>
 								<a href={macUrl}>
 									<AppleLogo className="h-5 w-5" />
 									<div className="text-left">
-										<div className="text-xs opacity-80">
-											Download for
-										</div>
+										<div className="text-xs opacity-80">Download for</div>
 										<div className="font-semibold">macOS</div>
 									</div>
 								</a>
@@ -92,20 +84,16 @@ export function DownloadPageClient({
 								disabled
 							>
 								<div className="text-left">
-									<div className="text-xs opacity-80">
-										Coming soon for
-									</div>
-									<div className="font-semibold">
-										Windows & Linux
-									</div>
+									<div className="text-xs opacity-80">Coming soon for</div>
+									<div className="font-semibold">Windows & Linux</div>
 								</div>
 							</Button>
 						</div>
 
 						<p className="text-sm text-muted-foreground">
 							Version {version}
-							{macos?.size ? ` (${formatBytes(macos.size)})` : null}{" "}
-							&middot; Requires macOS 12+ &middot; Apple Silicon
+							{macos?.size ? ` (${formatBytes(macos.size)})` : null} &middot;
+							Requires macOS 12+ &middot; Apple Silicon
 						</p>
 					</div>
 				</div>
@@ -125,8 +113,7 @@ export function DownloadPageClient({
 							</div>
 							<h3 className="font-semibold mb-2">Install</h3>
 							<p className="text-sm text-muted-foreground">
-								Download the DMG, drag to Applications, and open
-								1Sat Wallet
+								Download the DMG, drag to Applications, and open 1Sat Wallet
 							</p>
 						</div>
 
@@ -134,12 +121,10 @@ export function DownloadPageClient({
 							<div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-xl font-bold">
 								2
 							</div>
-							<h3 className="font-semibold mb-2">
-								Create or Import
-							</h3>
+							<h3 className="font-semibold mb-2">Create or Import</h3>
 							<p className="text-sm text-muted-foreground">
-								Generate a new wallet or import an existing
-								mnemonic. Your keys are protected by Touch ID.
+								Generate a new wallet or import an existing mnemonic. Your keys
+								are protected by Touch ID.
 							</p>
 						</div>
 
@@ -147,12 +132,10 @@ export function DownloadPageClient({
 							<div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-xl font-bold">
 								3
 							</div>
-							<h3 className="font-semibold mb-2">
-								Connect to BSV
-							</h3>
+							<h3 className="font-semibold mb-2">Connect to BSV</h3>
 							<p className="text-sm text-muted-foreground">
-								The built-in indexer syncs the blockchain locally.
-								Browse on-chain content and manage ordinals.
+								The built-in indexer syncs the blockchain locally. Browse
+								on-chain content and manage ordinals.
 							</p>
 						</div>
 					</div>
@@ -168,46 +151,34 @@ export function DownloadPageClient({
 
 					<div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
 						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">
-								Touch ID Key Protection
-							</h3>
+							<h3 className="font-semibold mb-2">Touch ID Key Protection</h3>
 							<p className="text-sm text-muted-foreground">
-								Private keys are encrypted in the macOS Secure
-								Enclave. Unlock with Touch ID — keys never leave
-								the hardware.
+								Private keys are encrypted in the macOS Secure Enclave. Unlock
+								with Touch ID — keys never leave the hardware.
 							</p>
 						</div>
 
 						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">
-								Built-in Browser
-							</h3>
+							<h3 className="font-semibold mb-2">Built-in Browser</h3>
 							<p className="text-sm text-muted-foreground">
-								Browse on-chain inscriptions, dApps, and ORDFS
-								content natively with per-origin permission
-								scoping.
+								Browse on-chain inscriptions, dApps, and ORDFS content natively
+								with per-origin permission scoping.
 							</p>
 						</div>
 
 						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">
-								Local Indexer
-							</h3>
+							<h3 className="font-semibold mb-2">Local Indexer</h3>
 							<p className="text-sm text-muted-foreground">
-								1sat-stack runs as a sidecar, syncing the
-								blockchain locally. No third-party APIs needed for
-								core wallet operations.
+								1sat-stack runs as a sidecar, syncing the blockchain locally. No
+								third-party APIs needed for core wallet operations.
 							</p>
 						</div>
 
 						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">
-								BRC-100 Compatible
-							</h3>
+							<h3 className="font-semibold mb-2">BRC-100 Compatible</h3>
 							<p className="text-sm text-muted-foreground">
-								Full wallet interface spec support. Connect dApps
-								via HTTP on standard ports with manifest-based
-								trust.
+								Full wallet interface spec support. Connect dApps via HTTP on
+								standard ports with manifest-based trust.
 							</p>
 						</div>
 					</div>
@@ -257,15 +228,12 @@ export function DownloadPageClient({
 
 					<div className="space-y-6">
 						<div className="border-b pb-6">
-							<h3 className="font-medium mb-2">
-								How are my keys protected?
-							</h3>
+							<h3 className="font-medium mb-2">How are my keys protected?</h3>
 							<p className="text-sm text-muted-foreground">
-								Your root key is encrypted using the macOS Secure
-								Enclave (P-256 ECIES) and stored in the system
-								keychain. It can only be decrypted with Touch ID
-								biometric authentication. The key never exists
-								unencrypted on disk.
+								Your root key is encrypted using the macOS Secure Enclave (P-256
+								ECIES) and stored in the system keychain. It can only be
+								decrypted with Touch ID biometric authentication. The key never
+								exists unencrypted on disk.
 							</p>
 						</div>
 
@@ -274,11 +242,10 @@ export function DownloadPageClient({
 								What is the built-in indexer?
 							</h3>
 							<p className="text-sm text-muted-foreground">
-								1sat-stack is a local BSV indexing server that
-								syncs blockchain data to your machine. It serves
-								ORDFS content, tracks your UTXOs, and provides
-								the data layer for wallet operations — all without
-								relying on external services.
+								1sat-stack is a local BSV indexing server that syncs blockchain
+								data to your machine. It serves ORDFS content, tracks your
+								UTXOs, and provides the data layer for wallet operations — all
+								without relying on external services.
 							</p>
 						</div>
 
@@ -287,10 +254,9 @@ export function DownloadPageClient({
 								Can I browse on-chain content?
 							</h3>
 							<p className="text-sm text-muted-foreground">
-								Yes. The built-in browser loads inscriptions and
-								dApps via the 1sat:// protocol. Each inscription
-								gets its own permission scope so on-chain apps
-								request wallet access independently.
+								Yes. The built-in browser loads inscriptions and dApps via the
+								1sat:// protocol. Each inscription gets its own permission scope
+								so on-chain apps request wallet access independently.
 							</p>
 						</div>
 
@@ -299,10 +265,9 @@ export function DownloadPageClient({
 								Will Windows and Linux be supported?
 							</h3>
 							<p className="text-sm text-muted-foreground">
-								Yes. The wallet is built on Electrobun which
-								supports all platforms. macOS with Apple Silicon
-								is the first release target, with Windows and
-								Linux coming next.
+								Yes. The wallet is built on Electrobun which supports all
+								platforms. macOS with Apple Silicon is the first release target,
+								with Windows and Linux coming next.
 							</p>
 						</div>
 					</div>
@@ -313,9 +278,7 @@ export function DownloadPageClient({
 			<section className="py-20 bg-gradient-to-b from-background via-primary/5 to-background">
 				<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 					<div className="text-center">
-						<h2 className="text-3xl font-bold mb-4">
-							Ready to get started?
-						</h2>
+						<h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
 						<p className="text-muted-foreground mb-8">
 							Download 1Sat Wallet and take control of your BSV.
 						</p>
@@ -326,12 +289,7 @@ export function DownloadPageClient({
 									Download for macOS
 								</a>
 							</Button>
-							<Button
-								variant="outline"
-								size="lg"
-								className="gap-2"
-								asChild
-							>
+							<Button variant="outline" size="lg" className="gap-2" asChild>
 								<a
 									href="https://github.com/b-open-io/1sat-sdk"
 									target="_blank"
