@@ -1,9 +1,9 @@
 "use client";
 
 import {
+	getOrdinals,
 	type OneSatContext,
 	type WalletOutput,
-	getOrdinals,
 } from "@1sat/actions";
 import { specOpWalletBalance } from "@bsv/wallet-toolbox/out/src/sdk/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

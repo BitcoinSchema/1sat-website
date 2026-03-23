@@ -1,13 +1,16 @@
 "use client";
 
 import {
-	type AddressManager,
-	type OneSatServices,
-	type RemoteWalletResult,
+	createContext as createActionContext,
+	syncAddresses,
+} from "@1sat/actions";
+import type {
+	AddressManager,
+	OneSatServices,
+	RemoteWalletResult,
 } from "@1sat/wallet-remote";
-import { syncAddresses, createContext as createActionContext } from "@1sat/actions";
-import { RECEIVE_ADDRESS_PREFIX } from "@/lib/receive-address-manager";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RECEIVE_ADDRESS_PREFIX } from "@/lib/receive-address-manager";
 
 type Wallet = RemoteWalletResult["wallet"];
 
@@ -20,7 +23,6 @@ interface UseSyncEngineOptions {
 	addressManagerReady: boolean;
 	addressManagerRef: React.RefObject<AddressManager | null>;
 	syncRevision: number;
-	onQueuedOutpoint: (outpoint: string, score: number) => void;
 	refreshBalance: () => void;
 }
 
@@ -39,7 +41,6 @@ export function useSyncEngine({
 	addressManagerReady,
 	addressManagerRef,
 	syncRevision,
-	onQueuedOutpoint,
 	refreshBalance,
 }: UseSyncEngineOptions): SyncEngineResult {
 	const [syncEngineActive, setSyncEngineActive] = useState(false);
@@ -113,7 +114,6 @@ export function useSyncEngine({
 		wallet,
 		services,
 		identityKey,
-		chain,
 		addressManagerReady,
 		addressManagerRef,
 		syncRevision,

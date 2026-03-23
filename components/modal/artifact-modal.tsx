@@ -79,7 +79,10 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 	const { outpoint, originOutpoint, contentType, name } = artifact;
 	const contentClass = classifyContentType(contentType);
 	const src = `${ORDFS}/content/${originOutpoint}`;
-	const allowScroll = contentClass === "image" || contentClass === "text" || contentClass === "html";
+	const allowScroll =
+		contentClass === "image" ||
+		contentClass === "text" ||
+		contentClass === "html";
 
 	return (
 		<SoundDialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
@@ -104,9 +107,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() =>
-								window.open(src, "_blank", "noopener,noreferrer")
-							}
+							onClick={() => window.open(src, "_blank", "noopener,noreferrer")}
 							className="h-8 w-8"
 						>
 							<SquareArrowOutUpRight className="w-4 h-4" />
@@ -144,10 +145,14 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							controls
 							className="max-w-full max-h-full"
 							playsInline
-						/>
+						>
+							<track kind="captions" />
+						</video>
 					) : contentClass === "audio" ? (
 						<div className="flex items-center justify-center w-full p-8">
-							<audio src={src} controls className="w-full max-w-lg" />
+							<audio src={src} controls className="w-full max-w-lg">
+								<track kind="captions" />
+							</audio>
 						</div>
 					) : contentClass === "html" ? (
 						<iframe
