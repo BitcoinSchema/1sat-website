@@ -3,7 +3,7 @@
 /**
  * Wallet Toolbox Provider
  *
- * Integrates @1sat/wallet-remote wallet + address sync with receive address
+ * Integrates @1sat/wallet-browser wallet + address sync with receive address
  * rotation and TanStack Query powered balance refresh.
  */
 
@@ -14,10 +14,10 @@ import {
 } from "@1sat/actions";
 import {
 	type AddressManager,
-	createRemoteWallet,
+	createWebWallet,
 	type OneSatServices,
-	type RemoteWalletResult,
-} from "@1sat/wallet-remote";
+	type WebWalletResult,
+} from "@1sat/wallet-browser";
 import { Beef, PrivateKey } from "@bsv/sdk";
 import {
 	type PermissionsManagerConfig,
@@ -53,7 +53,7 @@ import { useSyncEngine } from "./hooks/use-sync-engine";
 import { useWalletBalance } from "./hooks/use-wallet-balance";
 import { useWalletDiagnostics } from "./hooks/use-wallet-diagnostics";
 
-type Wallet = RemoteWalletResult["wallet"];
+type Wallet = WebWalletResult["wallet"];
 
 type Chain = "main" | "test";
 
@@ -247,7 +247,7 @@ export function WalletToolboxProvider({
 		useState<WalletPermissionsManager | null>(null);
 	const [services, setServices] = useState<OneSatServices | null>(null);
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
-	const walletResultRef = useRef<RemoteWalletResult | null>(null);
+	const walletResultRef = useRef<WebWalletResult | null>(null);
 
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [isInitializing, setIsInitializing] = useState(false);
@@ -467,13 +467,14 @@ export function WalletToolboxProvider({
 				const rootKey = PrivateKey.fromHex(rootKeyHex);
 				const newIdentityKey = rootKey.toPublicKey().toString();
 
-				const result = await createRemoteWallet({
+				const result = await createWebWallet({
 					privateKey: rootKey,
 					chain,
-					remoteStorageUrl:
+					activeRemote:
 						chain === "main"
-							? "https://1sat.shruggr.cloud/1sat/wallet"
+							? "https://api.1sat.app/1sat/wallet"
 							: "https://testnet.api.1sat.app/1sat/wallet",
+					storageIdentityKey: rootKey.toPublicKey().toString(),
 				});
 
 				walletResultRef.current = result;
