@@ -8,7 +8,7 @@ import {
 	sweepBsv21,
 	sweepOrdinals,
 } from "@1sat/actions";
-import type { OneSatServices } from "@1sat/wallet-remote";
+import type { OneSatServices } from "@1sat/wallet-browser";
 import type { WalletInterface } from "@bsv/sdk";
 import type { WalletOrdinal } from "@/lib/types/ordinals";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";

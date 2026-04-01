@@ -12,12 +12,12 @@
 		"cwi:e2e:redirect": "node scripts/cwi-redirect-e2e.mjs"
 	},
 	"dependencies": {
-		"@1sat/actions": "0.0.44",
+		"@1sat/actions": "0.0.45",
 		"@1sat/client": "0.0.9",
 		"@1sat/connect": "0.0.9",
 		"@1sat/types": "0.0.10",
 		"@1sat/utils": "0.0.8",
-		"@1sat/wallet-remote": "0.0.7",
+		"@1sat/wallet-browser": "^0.0.19",
 		"@bsv/sdk": "^2.0.7",
 		"@bsv/wallet-toolbox": "^2.1.5",
 		"@bsv/wallet-toolbox-mobile": "^2.1.5",
