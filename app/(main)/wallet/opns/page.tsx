@@ -80,16 +80,15 @@ export default function WalletOpnsPage() {
 								Please unlock or create a wallet to view your OpNS names.
 							</p>
 						)}
-						{loading && (
-							<p className="text-muted-foreground">Loading...</p>
-						)}
+						{loading && <p className="text-muted-foreground">Loading...</p>}
 						{isInitialized && !loading && opnsNames.length === 0 && (
 							<p className="text-muted-foreground">No OpNS names found.</p>
 						)}
 						{isInitialized && opnsNames.length > 0 && (
 							<>
 								<h2 className="text-lg font-semibold mb-3">
-									{opnsNames.length} OpNS Name{opnsNames.length !== 1 ? "s" : ""}
+									{opnsNames.length} OpNS Name
+									{opnsNames.length !== 1 ? "s" : ""}
 								</h2>
 								<div className="grid gap-2">
 									{opnsNames.map((output) => {

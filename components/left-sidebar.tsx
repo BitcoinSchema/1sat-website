@@ -4,6 +4,7 @@ import {
 	Activity,
 	Book,
 	Coins,
+	Download,
 	Hammer,
 	Pickaxe,
 	Settings,
@@ -138,6 +139,16 @@ const navData = [
 		title: "System",
 
 		items: [
+			{
+				title: "Download",
+
+				url: "/download",
+
+				icon: Download,
+
+				shortcut: "g w",
+			},
+
 			{
 				title: "Documentation",
 

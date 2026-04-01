@@ -180,9 +180,7 @@ export default function WalletFlowGrid({
 			const documentHeight = document.body.scrollHeight;
 
 			if (scrollY + windowHeight >= documentHeight - 200 && hasMore) {
-				setDisplayCount((prev) =>
-					Math.min(prev + pageSize, ordinals.length),
-				);
+				setDisplayCount((prev) => Math.min(prev + pageSize, ordinals.length));
 			}
 		};
 

@@ -8,9 +8,9 @@
  */
 
 import {
+	createContext as createOneSatContext,
 	type OneSatContext,
 	type WalletOutput,
-	createContext as createOneSatContext,
 } from "@1sat/actions";
 import {
 	type AddressManager,
@@ -323,7 +323,7 @@ export function WalletToolboxProvider({
 	);
 
 	// -- Queued outpoint handler (receive address rotation) --
-	const handleQueuedOutpoint = useCallback(
+	const _handleQueuedOutpoint = useCallback(
 		async (outpoint: string, score: number) => {
 			const addressManager = addressManagerRef.current;
 			const receiveState = receiveStateRef.current;
@@ -447,7 +447,6 @@ export function WalletToolboxProvider({
 		addressManagerReady,
 		addressManagerRef,
 		syncRevision,
-		onQueuedOutpoint: handleQueuedOutpoint,
 		refreshBalance,
 	});
 	const { stopSyncWorkers, syncWallet, syncEngineActive } = syncEngine;
