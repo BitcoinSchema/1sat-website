@@ -9,7 +9,7 @@ import {
 	sweepOrdinals,
 } from "@1sat/actions";
 import type { OneSatServices } from "@1sat/wallet-browser";
-import type { WalletInterface } from "@bsv/sdk";
+import { PrivateKey, type WalletInterface } from "@bsv/sdk";
 import type { WalletOrdinal } from "@/lib/types/ordinals";
 import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
 
@@ -116,9 +116,10 @@ export async function executeMigrationSweep(
 				lockingScript: u.script,
 			}));
 
+			const payKey = PrivateKey.fromWif(legacyPayWif);
 			const bsvResult = await sweepBsv.execute(ctx, {
 				inputs: fundingInputs,
-				wif: legacyPayWif,
+				keys: fundingInputs.map(() => payKey),
 			});
 
 			if (bsvResult.error) {
@@ -143,15 +144,16 @@ export async function executeMigrationSweep(
 				lockingScript: u.script,
 			}));
 
-			// Determine which WIF controls each ordinal based on owner address
-			const ordWif =
-				merged.ordinals[0].owner === legacyPayAddress
-					? legacyPayWif
-					: legacyOrdWif;
+			// Sign each ordinal with the key controlling its owner address
+			const payKey = PrivateKey.fromWif(legacyPayWif);
+			const ordKey = PrivateKey.fromWif(legacyOrdWif);
+			const ordinalKeys = merged.ordinals.map((u) =>
+				u.owner === legacyPayAddress ? payKey : ordKey,
+			);
 
 			const ordResult = await sweepOrdinals.execute(ctx, {
 				inputs: ordinalInputs,
-				wif: ordWif,
+				keys: ordinalKeys,
 			});
 
 			if (ordResult.error) {
@@ -191,12 +193,15 @@ export async function executeMigrationSweep(
 					amount: u.data?.bsv21?.amt ?? u.origin?.data?.bsv21?.amt ?? "0",
 				}));
 
-				const tokenWif =
-					tokens[0].owner === legacyPayAddress ? legacyPayWif : legacyOrdWif;
+				const payKey = PrivateKey.fromWif(legacyPayWif);
+				const ordKey = PrivateKey.fromWif(legacyOrdWif);
+				const tokenKeys = tokens.map((u) =>
+					u.owner === legacyPayAddress ? payKey : ordKey,
+				);
 
 				const tokenResult = await sweepBsv21.execute(ctx, {
 					inputs: tokenInputs,
-					wif: tokenWif,
+					keys: tokenKeys,
 				});
 
 				if (tokenResult.error) {

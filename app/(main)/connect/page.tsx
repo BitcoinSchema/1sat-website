@@ -5,7 +5,7 @@ import {
 	rejectRequest,
 	sendResponse,
 	walletLockedError,
-} from "@1sat/connect";
+} from "@/lib/connect-popup";
 import { CheckCircle, ExternalLink, Loader2, Shield, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";

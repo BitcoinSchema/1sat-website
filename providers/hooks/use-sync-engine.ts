@@ -8,7 +8,6 @@ import {
 import { syncAddresses, syncMessages, createContext as createActionContext } from "@1sat/actions";
 import { RECEIVE_ADDRESS_PREFIX } from "@/lib/receive-address-manager";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RECEIVE_ADDRESS_PREFIX } from "@/lib/receive-address-manager";
 
 type Wallet = WebWalletResult["wallet"];
 
