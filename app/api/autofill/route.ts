@@ -13,29 +13,14 @@ export async function GET(request: NextRequest) {
 	}
 
 	const safeTerm = encodeURIComponent(term);
-	const bsv20Url = `${MARKET_API_HOST}/ticker/autofill/bsv20/${safeTerm}`;
+	// BSV20 is deprecated on this site — BSV21 only
 	const bsv21Url = `${MARKET_API_HOST}/ticker/autofill/bsv21/${safeTerm}`;
 
-	console.log("[Autofill API] Fetching:", bsv20Url, bsv21Url);
-
 	try {
-		const [bsv20Res, bsv21Res] = await Promise.all([
-			fetch(bsv20Url),
-			fetch(bsv21Url),
-		]);
+		const bsv21Res = await fetch(bsv21Url);
+		const bsv21 = bsv21Res.ok ? await bsv21Res.json() : [];
 
-		console.log("[Autofill API] BSV20 status:", bsv20Res.status);
-		console.log("[Autofill API] BSV21 status:", bsv21Res.status);
-
-		const [bsv20, bsv21] = await Promise.all([
-			bsv20Res.ok ? bsv20Res.json() : [],
-			bsv21Res.ok ? bsv21Res.json() : [],
-		]);
-
-		console.log("[Autofill API] BSV20 results:", bsv20?.length || 0);
-		console.log("[Autofill API] BSV21 results:", bsv21?.length || 0);
-
-		return NextResponse.json([...(bsv20 || []), ...(bsv21 || [])]);
+		return NextResponse.json(bsv21 || []);
 	} catch (error) {
 		console.error("[Autofill API] Error:", error);
 		return NextResponse.json(
