@@ -1,6 +1,6 @@
 "use client";
 
-import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Loader2 } from "lucide-react";
 import { Suspense, useState } from "react";
@@ -39,8 +39,10 @@ const ModelArtifact = ({ src, className }: ModelArtifactProps) => {
 				<directionalLight position={[5, 5, 5]} intensity={1} />
 				<Suspense fallback={null}>
 					<Model src={src} />
-					<Environment preset="city" />
 				</Suspense>
+				{/* no Environment preset — it fetches an HDR from a third-party
+				CDN at runtime and throws when unreachable */}
+				<hemisphereLight intensity={0.8} groundColor="#111111" />
 				<OrbitControls enablePan={false} makeDefault />
 			</Canvas>
 			<noscript>
