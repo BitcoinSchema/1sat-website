@@ -1,7 +1,14 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import type { WalletOutput } from "@1sat/actions";
+import { Loader2, Tag, X } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
+import {
+	isListed,
+	ListOrdinalDialog,
+} from "@/components/market/list-ordinal-dialog";
+import { Button } from "@/components/ui/button";
 import { ORDFS } from "@/lib/constants";
 import {
 	getDisplayOutpoint,
@@ -11,6 +18,9 @@ import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 export function OrdinalsGrid() {
 	const { ordinals, isInitialized, isInitializing } = useWalletToolbox();
+	const [dialogOrdinal, setDialogOrdinal] = useState<WalletOutput | null>(
+		null,
+	);
 
 	if (isInitializing) {
 		return (
@@ -77,10 +87,39 @@ export function OrdinalsGrid() {
 									</div>
 								</div>
 							</a>
+							{isListed(ordinal) && (
+								<span className="absolute top-1.5 left-1.5 rounded bg-primary/90 text-primary-foreground text-[10px] font-medium px-1.5 py-0.5">
+									Listed
+								</span>
+							)}
+							<Button
+								size="sm"
+								variant="secondary"
+								className="absolute top-1.5 right-1.5 h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+								onClick={(e) => {
+									e.preventDefault();
+									setDialogOrdinal(ordinal);
+								}}
+							>
+								{isListed(ordinal) ? (
+									<X className="w-3.5 h-3.5" />
+								) : (
+									<Tag className="w-3.5 h-3.5" />
+								)}
+							</Button>
 						</div>
 					);
 				})}
 			</div>
+			{dialogOrdinal && (
+				<ListOrdinalDialog
+					ordinal={dialogOrdinal}
+					open={!!dialogOrdinal}
+					onOpenChange={(open) => {
+						if (!open) setDialogOrdinal(null);
+					}}
+				/>
+			)}
 		</div>
 	);
 }

@@ -5,6 +5,7 @@ import {
 	PageTitle,
 } from "@/components/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import HistoryList from "@/components/wallet/history-list";
 import { WalletTabs } from "@/components/wallet/wallet-tabs";
 
 export default function WalletHistoryPage() {
@@ -21,9 +22,7 @@ export default function WalletHistoryPage() {
 							<CardTitle>Transaction History</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<div className="text-sm text-muted-foreground">
-								No recent transactions found for this wallet.
-							</div>
+							<HistoryList />
 						</CardContent>
 					</Card>
 				</div>
