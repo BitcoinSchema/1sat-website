@@ -12,6 +12,7 @@ import type { OrdUtxo } from "@/lib/types/ordinals";
 import { ArtifactType, getArtifactType } from "@/lib/util/artifact";
 import ImageWithFallback from "../image-with-fallback";
 import AudioArtifact from "./audio";
+import ModelArtifact from "./model";
 import HTMLArtifact from "./html";
 import JsonArtifact from "./json";
 import TextArtifact from "./text";
@@ -170,9 +171,13 @@ const Artifact: React.FC<ArtifactProps> = ({
 				/>
 			</div>
 		) : type === ArtifactType.Model ? (
-			<div className="w-full h-full flex items-center justify-center bg-muted">
-				<p className="text-xs text-muted-foreground">Model not supported yet</p>
-			</div>
+			thumbnail ? (
+				<div className="w-full h-full flex items-center justify-center bg-muted">
+					<p className="text-xs text-muted-foreground font-mono">3D</p>
+				</div>
+			) : (
+				<ModelArtifact src={src} className={classNames?.media} />
+			)
 		) : type === ArtifactType.PDF ? (
 			<div
 				className={`h-full p-4 ${classNames?.wrapper || ""} ${
