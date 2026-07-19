@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 	title: "1Sat Ordinals | BSV NFT Marketplace & Explorer",
 	description:
 		"Discover, create, and trade Bitcoin SV ordinals and NFTs. Explore inscriptions, list collectibles, and manage your digital assets on the 1Sat Ordinals marketplace. The premier BSV ordinals platform.",
-	metadataBase: new URL("https://1satordinals.com"),
+	metadataBase: new URL("https://1satwallet.com"),
 	keywords: [
 		"1sat ordinals",
 		"BSV NFT",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 		title: "1Sat Ordinals | BSV NFT Marketplace & Explorer",
 		description:
 			"Discover, create, and trade Bitcoin SV ordinals and NFTs on the premier BSV ordinals platform.",
-		url: "https://1satordinals.com",
+		url: "https://1satwallet.com",
 		siteName: "1Sat Ordinals",
 		type: "website",
 	},
@@ -57,7 +57,7 @@ const jsonLd: WithContext<WebApplication> = {
 	"@context": "https://schema.org",
 	"@type": "WebApplication",
 	name: "1Sat Ordinals",
-	url: "https://1satordinals.com",
+	url: "https://1satwallet.com",
 	description:
 		"Discover, create, and trade Bitcoin SV ordinals and NFTs on the premier BSV ordinals marketplace.",
 	applicationCategory: "Cryptocurrency",
@@ -70,7 +70,7 @@ const jsonLd: WithContext<WebApplication> = {
 	provider: {
 		"@type": "Organization",
 		name: "1Sat Ordinals",
-		url: "https://1satordinals.com",
+		url: "https://1satwallet.com",
 	},
 };
 

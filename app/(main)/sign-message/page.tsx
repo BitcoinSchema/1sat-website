@@ -1,13 +1,13 @@
 "use client";
 
+import { ErrorCodes } from "@1sat/connect";
 import {
-	ErrorCodes,
 	parsePopupParams,
 	rejectRequest,
 	sendErrorResponse,
 	sendResponse,
 	walletLockedError,
-} from "@1sat/connect";
+} from "@/lib/connect-popup";
 import {
 	AlertTriangle,
 	CheckCircle,

@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 		title: "Download 1Sat Wallet | Native BSV Desktop Wallet",
 		description:
 			"Native BSV desktop wallet with Touch ID, Secure Enclave key protection, built-in browser, and local indexer. BRC-100 compatible. Download for macOS Apple Silicon.",
-		url: "https://1satordinals.com/download",
+		url: "https://1satwallet.com/download",
 		siteName: "1Sat Ordinals",
 		type: "website",
 	},
@@ -57,7 +57,7 @@ const jsonLd: WithContext<SoftwareApplication> = {
 	"@type": "SoftwareApplication",
 	name: "1Sat Wallet",
 	url: "https://1satwallet.com",
-	downloadUrl: "https://1satordinals.com/download",
+	downloadUrl: "https://1satwallet.com/download",
 	description:
 		"Native BSV desktop wallet with Touch ID, Secure Enclave key protection, a built-in browser, and a local indexer. BRC-100 compatible.",
 	applicationCategory: "FinanceApplication",
@@ -70,7 +70,7 @@ const jsonLd: WithContext<SoftwareApplication> = {
 	provider: {
 		"@type": "Organization",
 		name: "1Sat Ordinals",
-		url: "https://1satordinals.com",
+		url: "https://1satwallet.com",
 	},
 };
 

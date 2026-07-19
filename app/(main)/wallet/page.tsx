@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, sweepBsv } from "@1sat/actions";
+import { PrivateKey } from "@bsv/sdk";
 import { useQuery } from "@tanstack/react-query";
 import { Wallet as WalletIcon } from "lucide-react";
 import Link from "next/link";
@@ -68,9 +69,10 @@ export default function WalletPage() {
 		setSweepError(null);
 		try {
 			const ctx = createContext(wallet, { services, chain });
+			const payKey = PrivateKey.fromWif(walletKeys.payPk);
 			const result = await sweepBsv.execute(ctx, {
 				inputs: legacyFundingUtxos,
-				wif: walletKeys.payPk,
+				keys: legacyFundingUtxos.map(() => payKey),
 			});
 			if (result.error) {
 				setSweepError(result.error);
