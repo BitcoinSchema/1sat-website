@@ -39,7 +39,7 @@ const Timeline = ({ history, listing, spends }: Props) => {
 						</Link>
 					);
 				} else if (h.data?.insc?.file && !h.spend?.length) {
-					text = (
+					text = listing.owner ? (
 						<>
 							Minted by{" "}
 							<Link href={`/signer/${listing.owner}`}>
@@ -49,6 +49,8 @@ const Timeline = ({ history, listing, spends }: Props) => {
 								/>
 							</Link>
 						</>
+					) : (
+						<>Minted</>
 					);
 				} else if (h.spend?.length) {
 					const spentListing = spends.find((s) => s.txid === h.spend);

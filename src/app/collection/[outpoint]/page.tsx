@@ -3,8 +3,23 @@ import { API_HOST } from "@/constants";
 import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
+import { isValidOutpoint } from "@/utils/validation";
+import { notFound } from "next/navigation";
+
+// Cache rendered pages at the CDN and revalidate in the background.
+// The empty generateStaticParams opts the route into ISR.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+	return [];
+}
 
 const Collection = async ({ params }: { params: { outpoint: string } }) => {
+	// Reject junk like /collection/[object Object] before hitting upstream APIs
+	if (!isValidOutpoint(params.outpoint)) {
+		notFound();
+	}
+
 	// Get the Ordinal TXO
 	let collection: OrdUtxo | undefined;
 	const collectionUrl = `${API_HOST}/api/txos/${params.outpoint}`;
@@ -40,9 +55,27 @@ export async function generateMetadata({
 }: {
 	params: { outpoint: string };
 }) {
-	const details = await fetch(
-		`${API_HOST}/api/inscriptions/${params.outpoint}`
-	).then((res) => res.json() as Promise<OrdUtxo>);
+	const fallbackMetadata = {
+		title: "Collection - 1SatOrdinals",
+		description: "Explore collections on 1SatOrdinals.",
+	};
+
+	if (!isValidOutpoint(params.outpoint)) {
+		return fallbackMetadata;
+	}
+
+	let details: OrdUtxo;
+	try {
+		const res = await fetch(`${API_HOST}/api/inscriptions/${params.outpoint}`, {
+			next: { revalidate: 300 },
+		});
+		if (!res.ok) {
+			return fallbackMetadata;
+		}
+		details = (await res.json()) as OrdUtxo;
+	} catch (e) {
+		return fallbackMetadata;
+	}
 
 	const collectionName =
 		details.origin?.data?.map?.name ||
@@ -50,7 +83,7 @@ export async function generateMetadata({
 		details.origin?.data?.bsv20?.sym ||
 		details.origin?.data?.insc?.json?.tick ||
 		details.origin?.data?.insc?.json?.p ||
-		details.origin?.data?.insc?.file.type ||
+		details.origin?.data?.insc?.file?.type ||
 		"Mystery Outpoint";
 
 	return {

@@ -2,6 +2,9 @@ import type { WalletTab } from "@/components/Wallet/tabs";
 import { AssetType } from "@/constants";
 
 export function getCapitalizedAssetType(assetType: AssetType | WalletTab) {
+	if (!assetType || typeof assetType !== "string") {
+		return "";
+	}
 	const types: (AssetType | WalletTab)[] = [
 		AssetType.BSV20,
 		AssetType.BSV21,

@@ -2,12 +2,25 @@ import SignerPage from "@/components/pages/signer";
 import { API_HOST } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
+import { isValidBase58Address } from "@/utils/validation";
+import { notFound } from "next/navigation";
 
 const Signer = async ({ params }: { params: { address: string } }) => {
-	const { promise } = http.customFetch<OrdUtxo[]>(
-		`${API_HOST}/api/txos/address/${params.address}/history`
-	);
-	const history = await promise;
+	// Reject junk like /signer/null before hitting the upstream API
+	if (!isValidBase58Address(params.address)) {
+		notFound();
+	}
+
+	let history: OrdUtxo[] = [];
+	try {
+		const { promise } = http.customFetch<OrdUtxo[]>(
+			`${API_HOST}/api/txos/address/${params.address}/history`
+		);
+		history = (await promise) || [];
+	} catch (e) {
+		console.error("Failed to fetch address history", e);
+		notFound();
+	}
 	return <SignerPage {...params} history={history} />;
 };
 

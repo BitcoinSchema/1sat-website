@@ -39,8 +39,8 @@ export const getArtifactType = (
 ): ArtifactType => {
   let artifactType: ArtifactType = ArtifactType.Unknown;
   const t = latest
-    ? txo?.data?.insc?.file.type
-    : txo?.origin?.data?.insc?.file.type || undefined;
+    ? txo?.data?.insc?.file?.type
+    : txo?.origin?.data?.insc?.file?.type || undefined;
   // console.log("TYPE", t);
   const protocol = txo.origin?.data?.insc?.json?.p;
   if (!t) {
@@ -173,7 +173,7 @@ export const getMarketListings = async ({
   const final =
     selectedType !== ArtifactType.All
       ? result.filter((o) => {
-        return o.origin?.data?.insc?.file.type?.startsWith(
+        return o.origin?.data?.insc?.file?.type?.startsWith(
           artifactTypeMap.get(selectedType as ArtifactType) as string,
         );
       })
