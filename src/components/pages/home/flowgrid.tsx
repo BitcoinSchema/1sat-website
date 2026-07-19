@@ -23,7 +23,7 @@ const LoadingSkeleton = ({ count }: { count: number }) => (
 const getContentType = (
 	artifact: OrdUtxo,
 ): "video" | "audio" | "3d" | "image" => {
-	const contentType = artifact.origin?.data?.insc?.file.type || "";
+	const contentType = artifact.origin?.data?.insc?.file?.type || "";
 	if (contentType.startsWith("video/")) return "video";
 	if (contentType.startsWith("audio/")) return "audio";
 	if (contentType.includes("model/") || contentType.includes("gltf"))

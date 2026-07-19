@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { OrdUtxo } from "@/types/ordinals";
 
 const needsFlipButton = (artifact: OrdUtxo): boolean => {
-  const contentType = artifact.origin?.data?.insc?.file.type || "";
+  const contentType = artifact.origin?.data?.insc?.file?.type || "";
   return (
     contentType.startsWith("video/") ||
     contentType.includes("model/") ||
@@ -24,7 +24,7 @@ const needsFlipButton = (artifact: OrdUtxo): boolean => {
 };
 
 const shouldAllowScroll = (artifact: OrdUtxo): boolean => {
-  const contentType = artifact.origin?.data?.insc?.file.type || "";
+  const contentType = artifact.origin?.data?.insc?.file?.type || "";
   return (
     contentType.startsWith("image/") ||
     contentType.startsWith("text/") ||

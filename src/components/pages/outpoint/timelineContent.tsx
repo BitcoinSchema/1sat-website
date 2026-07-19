@@ -26,16 +26,18 @@ const TimelineContent = async ({ outpoint }: Props) => {
 				const spendOutpoints = history
 					.filter((h) => h.spend)
 					.map((h) => h.outpoint);
-				const urlSpends = `${API_HOST}/api/txos/outpoints`;
-				const { promise: promiseSpends } = http.customFetch<OrdUtxo[]>(
-					urlSpends,
-					{
-						method: "POST",
-						body: JSON.stringify(spendOutpoints),
-					},
-				);
+				if (spendOutpoints.length > 0) {
+					const urlSpends = `${API_HOST}/api/txos/outpoints`;
+					const { promise: promiseSpends } = http.customFetch<OrdUtxo[]>(
+						urlSpends,
+						{
+							method: "POST",
+							body: JSON.stringify(spendOutpoints),
+						},
+					);
 
-				spends = await promiseSpends;
+					spends = await promiseSpends;
+				}
 			} catch (e) {
 				console.error("Failed to get inscription history", e);
 			}

@@ -6,6 +6,15 @@ import WalletLayout from "@/components/Wallet/WalletLayout";
 
 import { getCapitalizedAssetType } from "@/utils/assetType";
 
+// Wallet pages are client-rendered — build them statically and 404 anything
+// that isn't a known tab (e.g. /wallet/[object Object]) without invoking a
+// serverless function
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+	return Object.values(WalletTab).map((tab) => ({ tab }));
+}
+
 const WalletPage = async ({
 	params,
 }: {

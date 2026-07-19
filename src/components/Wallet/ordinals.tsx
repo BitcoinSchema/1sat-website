@@ -315,7 +315,7 @@ export const getWalletOrdUtxos = async ({
 		selectedType !== ArtifactType.All &&
 		selectedType !== ("theme" as ArtifactType)
 			? result.filter((o) =>
-					o.origin?.data?.insc?.file.type?.startsWith(
+					o.origin?.data?.insc?.file?.type?.startsWith(
 						artifactTypeMap.get(selectedType) as string,
 					),
 				)

@@ -201,7 +201,7 @@ const List = ({ term, address, onClick }: Props) => {
 											>
 												{listingName(listing)}
 											</Link>
-											{collection && (
+											{collection && listing?.origin?.data?.map?.subTypeData?.collectionId && (
 												<Link
 													href={`/collection/${listing?.origin?.data?.map?.subTypeData?.collectionId}`}
 													className="text-[10px] text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider"
@@ -228,21 +228,23 @@ const List = ({ term, address, onClick }: Props) => {
 										className="py-3 px-4 hidden md:table-cell"
 										onClick={(e) => e.stopPropagation()}
 									>
-										<Link href={`/signer/${listing?.owner}`} className="block">
-											<div
-												className="w-10 h-10 rounded-md border border-border bg-muted overflow-hidden group-hover:border-primary/50 transition-colors"
-												title={
-													listing?.data?.sigma?.length
-														? listing?.data.sigma[0].address
-														: listing?.owner
-												}
-											>
-												<JDenticon
-													className="w-full h-full"
-													hashOrValue={listing?.owner}
-												/>
-											</div>
-										</Link>
+										{listing?.owner && (
+											<Link href={`/signer/${listing.owner}`} className="block">
+												<div
+													className="w-10 h-10 rounded-md border border-border bg-muted overflow-hidden group-hover:border-primary/50 transition-colors"
+													title={
+														listing?.data?.sigma?.length
+															? listing?.data.sigma[0].address
+															: listing?.owner
+													}
+												>
+													<JDenticon
+														className="w-full h-full"
+														hashOrValue={listing?.owner}
+													/>
+												</div>
+											</Link>
+										)}
 									</TableCell>
 
 									{/* Price */}

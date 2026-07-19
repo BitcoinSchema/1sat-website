@@ -6,6 +6,7 @@ import { API_HOST, ORDFS } from "@/constants";
 import type { OrdUtxo, SigilMeta } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import { getNotoSerifItalicFont } from "@/utils/font";
+import { isValidOutpoint } from "@/utils/validation";
 
 export const runtime = "edge";
 
@@ -16,7 +17,11 @@ export const size = {
 };
 export const contentType = "image/png";
 
-// {"rank":1113,"image":"b://cbacb16c3a03729165542f20404827f1ee91bc1f9783089c41c59524ebf75a22","score":"6.81","title":"Rare Sirloins #2149","number":2149,"rarity":"Common","series":2180,"attributes":[{"count":36,"value":"Blue","rarity":"Epic","trait_type":"Meat"},{"count":117,"value":"Free Range Egg","rarity":"Common","trait_type":"Garnish"},{"count":154,"value":"Pees","rarity":"Common","trait_type":"Side 1"},{"count":89,"value":"Banana","rarity":"Common","trait_type":"Side 2"},{"count":54,"value":"Fresh Water","rarity":"Common","trait_type":"Background"}]}
+// Cache generated images at the CDN — inscription content is immutable
+const cacheHeaders = {
+	"Cache-Control":
+		"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+};
 
 export default async function Image({
 	params,
@@ -25,33 +30,68 @@ export default async function Image({
 }) {
 	const notoSerif = await getNotoSerifItalicFont();
 
-	const details = await fetch(
-		`${API_HOST}/api/inscriptions/${params.outpoint}`,
-		{
-			next: { revalidate: 86400 }, // Cache for 24 hours - opengraph images rarely change
-			headers: {
-				"Cache-Control":
-					"public, s-maxage=86400, stale-while-revalidate=604800",
+	const imageOptions = {
+		...size,
+		headers: cacheHeaders,
+		fonts: [
+			{
+				name: "Noto Serif",
+				data: notoSerif,
+				style: "italic" as const,
+				weight: 400 as const,
 			},
-		},
-	).then((res) => res.json() as Promise<OrdUtxo>);
+		],
+	};
 
-	const isImageInscription =
-		details.origin?.data?.insc?.file.type?.startsWith("image");
+	const fallback = (label: string) =>
+		new ImageResponse(
+			<Container>
+				{label}
+				<Gradient />
+				<Logo />
+			</Container>,
+			imageOptions,
+		);
+
+	if (!isValidOutpoint(params.outpoint)) {
+		return fallback("1Sat Ordinals");
+	}
+
+	let details: OrdUtxo;
+	try {
+		const res = await fetch(`${API_HOST}/api/inscriptions/${params.outpoint}`, {
+			next: { revalidate: 86400 },
+		});
+		if (!res.ok) {
+			return fallback("Mystery Outpoint");
+		}
+		details = (await res.json()) as OrdUtxo;
+	} catch (_e) {
+		return fallback("Mystery Outpoint");
+	}
 
 	const sigilData = details.origin?.data?.map?.sigil;
 	let sigilImageTxid: string | undefined;
 	if (sigilData) {
-		const sigil = JSON.parse(sigilData) as SigilMeta;
-		sigilImageTxid = sigil.image.split("b://")[1];
+		try {
+			const sigil = JSON.parse(sigilData) as SigilMeta;
+			sigilImageTxid = sigil.image?.split("b://")[1];
+		} catch (_e) {
+			// ignore malformed sigil metadata
+		}
 	}
-	// const url = `${ORDFS}/${params.outpoint}`;
-	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_fill,h_${size.height},w_${size.width},b_rgb:111111/${ORDFS}/${sigilImageTxid || params.outpoint}`;
+
+	const isImageInscription =
+		details.origin?.data?.insc?.file?.type?.startsWith("image");
+
+	// f_png forces cloudinary to convert the source to a format satori can
+	// always render (source inscriptions may be webp/svg/unknown)
+	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_fill,h_${size.height},w_${size.width},b_rgb:111111,f_png/${ORDFS}/${sigilImageTxid || params.outpoint}`;
 
 	const name = displayName(details, false);
 	return new ImageResponse(
 		<Container>
-			{isImageInscription || sigilData ? (
+			{isImageInscription || sigilImageTxid ? (
 				<img src={url} alt={alt} {...size} />
 			) : (
 				name || "Mystery Outpoint"
@@ -80,16 +120,6 @@ export default async function Image({
 			<Gradient />
 			<Logo />
 		</Container>,
-		{
-			...size,
-			fonts: [
-				{
-					name: "Noto Serif",
-					data: notoSerif,
-					style: "italic",
-					weight: 400,
-				},
-			],
-		},
+		imageOptions,
 	);
 }

@@ -6,6 +6,7 @@ import { API_HOST, ORDFS } from "@/constants";
 import type { OrdUtxo, SigilMeta } from "@/types/ordinals";
 import { displayName } from "@/utils/artifact";
 import { getNotoSerifItalicFont } from "@/utils/font";
+import { isValidOutpoint } from "@/utils/validation";
 
 export const runtime = "edge";
 
@@ -16,6 +17,12 @@ export const size = {
 };
 export const contentType = "image/png";
 
+// Cache generated images at the CDN — inscription content is immutable
+const cacheHeaders = {
+	"Cache-Control":
+		"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+};
+
 export default async function Image({
 	params,
 }: {
@@ -23,39 +30,69 @@ export default async function Image({
 }) {
 	const notoSerif = await getNotoSerifItalicFont();
 
-	const detailsUrl = `${API_HOST}/api/inscriptions/${params.outpoint}`;
-	const details = await fetch(detailsUrl, {
-		next: { revalidate: 86400 }, // Cache for 24 hours - opengraph images rarely change
-		headers: {
-			"Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
-		},
-	}).then((res) => {
+	const imageOptions = {
+		...size,
+		headers: cacheHeaders,
+		fonts: [
+			{
+				name: "Noto Serif",
+				data: notoSerif,
+				style: "italic" as const,
+				weight: 400 as const,
+			},
+		],
+	};
+
+	const fallback = (label: string) =>
+		new ImageResponse(
+			<Container>
+				{label}
+				<Gradient />
+				<Logo />
+			</Container>,
+			imageOptions,
+		);
+
+	if (!isValidOutpoint(params.outpoint)) {
+		return fallback("1Sat Ordinals");
+	}
+
+	let details: OrdUtxo;
+	try {
+		const detailsUrl = `${API_HOST}/api/inscriptions/${params.outpoint}`;
+		const res = await fetch(detailsUrl, {
+			next: { revalidate: 86400 }, // opengraph source data rarely changes
+		});
 		if (!res.ok) {
-			throw new Error(`Error fetching JSON from ${detailsUrl}`);
+			return fallback("Mystery Outpoint");
 		}
-		return res.json() as Promise<OrdUtxo>;
-	});
+		details = (await res.json()) as OrdUtxo;
+	} catch (_e) {
+		return fallback("Mystery Outpoint");
+	}
 
 	const sigilData = details.origin?.data?.map?.sigil;
 	let sigilImageTxid: string | undefined;
 	if (sigilData) {
-		const sigil = JSON.parse(sigilData) as SigilMeta;
-		sigilImageTxid = sigil.image.split("b://")[1];
+		try {
+			const sigil = JSON.parse(sigilData) as SigilMeta;
+			sigilImageTxid = sigil.image?.split("b://")[1];
+		} catch (_e) {
+			// ignore malformed sigil metadata
+		}
 	}
 
-	// const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_crop,b_rgb:111111,g_center,h_${size.height},w_${size.width}/f_auto/${ORDFS}/${params.outpoint}`;
-	// use this instead https://res.cloudinary.com/tonicpow/image/fetch/c_fill,h_630,w_1200,b_rgb:111111/https://ordfs.network/f0542a36cfd31fdcd6bd4667b79e22741c361283f359e89d7b1a053ec28b2c24_0
-	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_fill,h_${size.height},w_${size.width},b_rgb:111111/${ORDFS}/${sigilImageTxid || params.outpoint}`;
-	console.log("Opengraph image url:", url);
+	// f_png forces cloudinary to convert the source to a format satori can
+	// always render (source inscriptions may be webp/svg/unknown)
+	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_fill,h_${size.height},w_${size.width},b_rgb:111111,f_png/${ORDFS}/${sigilImageTxid || params.outpoint}`;
 
 	const isImageInscription =
-		details?.origin?.data?.insc?.file.type?.startsWith("image");
-	// const url = `${ORDFS}/${params.outpoint}`;
+		details?.origin?.data?.insc?.file?.type?.startsWith("image");
 
 	const name = displayName(details, false);
 	return new ImageResponse(
 		<Container>
-			{isImageInscription || sigilData ? (
+			{isImageInscription || sigilImageTxid ? (
 				<img src={url} alt={alt} {...size} />
 			) : (
 				name || "Mystery Outpoint"
@@ -84,25 +121,6 @@ export default async function Image({
 			<Gradient />
 			<Logo />
 		</Container>,
-		{
-			...size,
-			fonts: [
-				{
-					name: "Noto Serif",
-					data: notoSerif,
-					style: "italic",
-					weight: 400,
-				},
-			],
-		},
+		imageOptions,
 	);
 }
-
-// export const displayName = (details: OrdUtxo): string | undefined => {
-//   return details.origin?.data?.map?.name || details.origin?.data?.map?.subTypeData.name ||
-//     details.origin?.data?.bsv20?.tick ||
-//     details.origin?.data?.bsv20?.sym ||
-//     details.origin?.data?.insc?.json?.tick ||
-//     details.origin?.data?.insc?.json?.p ||
-//     details.origin?.data?.insc?.file.type;
-// }

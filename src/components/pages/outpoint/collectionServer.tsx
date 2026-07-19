@@ -30,9 +30,14 @@ const CollectionServer = async ({ outpoint }: Props) => {
 		return <div>Not a collection</div>;
 	}
 
+	const collectionId = artifact.origin?.data?.map?.subTypeData?.collectionId;
+	if (!collectionId) {
+		return <div>Collection not found</div>;
+	}
+
 	// Get the Ordinal TXO
 	let collection: OrdUtxo | undefined;
-	const collectionUrl = `${API_HOST}/api/txos/${artifact.origin?.data?.map?.subTypeData.collectionId}`;
+	const collectionUrl = `${API_HOST}/api/txos/${collectionId}`;
 	try {
 		const { promise: promiseCollection } =
 			http.customFetch<OrdUtxo>(collectionUrl);

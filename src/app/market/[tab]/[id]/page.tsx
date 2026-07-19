@@ -1,8 +1,17 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import MarketPage from "@/components/pages/market";
 import { API_HOST, AssetType } from "@/constants";
 import type { BSV20 } from "@/types/bsv20";
 import { getCapitalizedAssetType } from "@/utils/assetType";
+import { isValidOutpoint } from "@/utils/validation";
+
+// Cache rendered pages at the CDN and revalidate in the background.
+// The empty generateStaticParams opts the route into ISR.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+	return [];
+}
 
 const Market = async ({
 	params,
@@ -11,6 +20,14 @@ const Market = async ({
 }) => {
 	const { tab, id } = await params;
 	// hit the details request
+
+	// BSV21 ids (and ordinals listings) are outpoints — reject junk early
+	if (
+		(tab === AssetType.BSV21 || tab === AssetType.Ordinals) &&
+		!isValidOutpoint(id)
+	) {
+		notFound();
+	}
 
 	const tickOrId = decodeURIComponent(id);
 	switch (tab) {
@@ -26,7 +43,7 @@ const Market = async ({
 		case AssetType.BSV21:
 			return <MarketPage selectedAssetType={AssetType.BSV21} id={tickOrId} />;
 		default:
-			return null;
+			notFound();
 	}
 };
 export default Market;
@@ -38,19 +55,20 @@ export async function generateMetadata({
 }) {
 	const { tab, id } = await params;
 	let ticker: string | undefined;
-	let _icon: string | undefined;
 	const assetType = getCapitalizedAssetType(tab);
 	if (tab === AssetType.BSV20) {
 		ticker = id;
-	} else if (tab === AssetType.BSV21) {
-		const detailsUrl = `${API_HOST}/api/bsv20/id/${id}`;
-		const details = await fetch(detailsUrl).then(
-			(res) => res.json() as Promise<BSV20>,
-		);
-		ticker = details.sym;
-		_icon =
-			details.icon ||
-			"b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
+	} else if (tab === AssetType.BSV21 && isValidOutpoint(id)) {
+		try {
+			const detailsUrl = `${API_HOST}/api/bsv20/id/${id}`;
+			const res = await fetch(detailsUrl, { next: { revalidate: 300 } });
+			if (res.ok) {
+				const details = (await res.json()) as BSV20;
+				ticker = details.sym;
+			}
+		} catch (_e) {
+			// fall through to generic metadata
+		}
 	}
 
 	const name = ticker || "Mystery Outpoint";
