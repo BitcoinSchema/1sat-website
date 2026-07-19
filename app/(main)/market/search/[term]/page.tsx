@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import ImageWithFallback from "@/components/image-with-fallback";
+import { stackContentUrl, toUrlOutpoint } from "@/lib/stack";
 import {
 	Page,
 	PageContent,
@@ -17,7 +20,11 @@ type MarketSearchItem = {
 	txid?: string;
 	vout?: number;
 	origin?: {
+		outpoint?: string;
 		data?: {
+			map?: {
+				name?: string;
+			};
 			insc?: {
 				file?: {
 					type?: string;
@@ -69,16 +76,37 @@ export default async function SearchResultsPage({ params }: SearchPageProps) {
 			<PageContent>
 				{results.length > 0 ? (
 					<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-						{results.map((item) => (
-							<div
-								key={item.outpoint || `${item.txid}_${item.vout}`}
-								className="aspect-square bg-muted rounded-lg overflow-hidden border border-border"
-							>
-								<div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-									{item.origin?.data?.insc?.file?.type || "Item"}
-								</div>
-							</div>
-						))}
+						{results.map((item) => {
+							const outpoint = item.outpoint || `${item.txid}_${item.vout}`;
+							const originOutpoint = item.origin?.outpoint || outpoint;
+							const itemType = item.origin?.data?.insc?.file?.type || "";
+							const itemName =
+								item.origin?.data?.map?.name || itemType || "Item";
+							return (
+								<Link
+									key={outpoint}
+									href={`/outpoint/${toUrlOutpoint(outpoint)}`}
+									className="group rounded-lg overflow-hidden border border-border bg-muted hover:border-primary/50 transition-colors"
+								>
+									<div className="aspect-square overflow-hidden">
+										{itemType.startsWith("image") ? (
+											<ImageWithFallback
+												src={stackContentUrl(originOutpoint)}
+												alt={itemName}
+												width={300}
+												height={300}
+												className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+											/>
+										) : (
+											<div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs font-mono p-2 text-center break-all">
+												{itemType || "Item"}
+											</div>
+										)}
+									</div>
+									<div className="p-2 text-sm truncate">{itemName}</div>
+								</Link>
+							);
+						})}
 					</div>
 				) : (
 					<div className="text-center py-12">
