@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, deployBsv21Mint, inscribe } from "@1sat/actions";
 import {
 	Code,
 	File as FileIcon,
@@ -54,6 +55,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSound } from "@/hooks/use-sound";
+import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 type MetaMap = {
 	key: string;
@@ -61,8 +63,20 @@ type MetaMap = {
 	idx: number;
 };
 
+const fileToBase64 = async (f: File): Promise<string> => {
+	const buffer = await f.arrayBuffer();
+	const bytes = new Uint8Array(buffer);
+	let binary = "";
+	const chunk = 0x8000;
+	for (let i = 0; i < bytes.length; i += chunk) {
+		binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+	}
+	return btoa(binary);
+};
+
 export default function InscribePage() {
 	const { play } = useSound();
+	const { wallet, services, chain, refreshBalance } = useWalletToolbox();
 	const [activeTab, setActiveTab] = useState("file");
 	const [file, setFile] = useState<File | null>(null);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -183,15 +197,95 @@ export default function InscribePage() {
 	};
 
 	const handleInscribe = async () => {
+		if (!wallet) {
+			toast.error("Unlock your wallet to inscribe");
+			return;
+		}
 		setIsMinting(true);
 		try {
-			// TODO: Implement actual minting logic using js-1sat-ord or WalletService
-			// const tx = await walletService.createInscription(...)
-			await new Promise((resolve) => setTimeout(resolve, 2000)); // Mock delay
-			toast.success("Inscription created! (Mock)");
+			const ctx = createContext(wallet, {
+				services: services ?? undefined,
+				chain,
+			});
+
+			if (activeTab === "file") {
+				if (!file) {
+					toast.error("Choose a file to inscribe");
+					return;
+				}
+				const map: Record<string, string> = {};
+				for (const m of metadata) {
+					if (m.key && m.value) map[m.key] = m.value;
+				}
+				const result = await inscribe.execute(ctx, {
+					base64Content: await fileToBase64(file),
+					contentType: fileType || "application/octet-stream",
+					map: Object.keys(map).length ? map : undefined,
+					// stream large files as multi-tx OrdFS chains
+					stream: file.size > 900_000 ? true : undefined,
+				});
+				if (result.error) throw new Error(result.error);
+				play("success");
+				toast.success(`Inscription created! ${result.txid ?? ""}`);
+			} else if (activeTab === "bsv20") {
+				// BSV20 v1 ops are JSON inscriptions with the bsv-20 content type
+				const op =
+					bsv20Mode === "deploy"
+						? {
+								p: "bsv-20",
+								op: "deploy",
+								tick: bsv20Ticker,
+								max: bsv20Max,
+								...(bsv20Limit ? { lim: bsv20Limit } : {}),
+								...(bsv20Decimals !== "0" ? { dec: bsv20Decimals } : {}),
+							}
+						: {
+								p: "bsv-20",
+								op: "mint",
+								tick: bsv20Ticker,
+								amt: bsv20Amount,
+							};
+				if (!bsv20Ticker) {
+					toast.error("Enter a ticker");
+					return;
+				}
+				const result = await inscribe.execute(ctx, {
+					base64Content: btoa(JSON.stringify(op)),
+					contentType: "application/bsv-20",
+				});
+				if (result.error) throw new Error(result.error);
+				play("success");
+				toast.success(
+					`BSV20 ${bsv20Mode} inscribed! ${result.txid ?? ""}`,
+				);
+			} else if (activeTab === "bsv21") {
+				if (!bsv21Symbol || !bsv21Max) {
+					toast.error("Enter a symbol and supply");
+					return;
+				}
+				let icon: string | undefined;
+				if (bsv21Icon) {
+					icon = `data:${bsv21Icon.type};base64,${await fileToBase64(bsv21Icon)}`;
+				}
+				const result = await deployBsv21Mint.execute(ctx, {
+					symbol: bsv21Symbol,
+					amount: bsv21Max,
+					decimals: bsv21Decimals ? Number(bsv21Decimals) : undefined,
+					icon,
+				});
+				if (result.error) throw new Error(result.error);
+				play("success");
+				toast.success(
+					`Token deployed! ${result.tokenId ?? result.txid ?? ""}`,
+				);
+			}
+			refreshBalance?.();
 		} catch (e) {
 			console.error(e);
-			toast.error("Error creating inscription");
+			play("error");
+			toast.error(
+				e instanceof Error ? e.message : "Error creating inscription",
+			);
 		} finally {
 			setIsMinting(false);
 		}
