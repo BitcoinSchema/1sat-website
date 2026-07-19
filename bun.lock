@@ -60,6 +60,7 @@
         "react-hook-form": "^7.71.2",
         "recharts": "^2.15.4",
         "satoshi-token": "^0.0.7",
+        "sharp": "^0.34.5",
         "sigma-avatars": "^0.0.3",
         "sigma-protocol": "^0.1.9",
         "sonner": "^2.0.7",
