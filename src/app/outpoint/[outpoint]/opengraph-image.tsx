@@ -96,6 +96,27 @@ export default async function Image({
 			) : (
 				name || "Mystery Outpoint"
 			)}
+			{name && (
+				<div
+					style={{
+						fontFamily: "Noto Serif",
+						fontStyle: "italic",
+						fontWeight: 400,
+						fontSize: "3rem",
+						top: 0,
+						left: 0,
+						position: "absolute",
+						background: "rgba(0, 0, 0, 0.5)",
+						width: "100%",
+						padding: ".5rem",
+						whiteSpace: "nowrap",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+					}}
+				>
+					{name || ""}
+				</div>
+			)}
 			<Gradient />
 			<Logo />
 		</Container>,
