@@ -35,6 +35,12 @@ const nextConfig: NextConfig = {
 				port: "",
 				pathname: "/**",
 			},
+			{
+				protocol: "https",
+				hostname: "api.1sat.app",
+				port: "",
+				pathname: "/content/**",
+			},
 		],
 	},
 };
