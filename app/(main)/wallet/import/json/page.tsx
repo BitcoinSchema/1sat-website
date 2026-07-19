@@ -334,15 +334,15 @@ export default function ImportJsonPage() {
 										or click to browse
 									</p>
 								</div>
-								<input
-									ref={fileInputRef}
-									type="file"
-									className="hidden"
-									accept=".json"
-									onChange={handleFileChange}
-								/>
 							</Button>
 						)}
+						<input
+							ref={fileInputRef}
+							type="file"
+							className="sr-only"
+							accept=".json,application/json,text/plain"
+							onChange={handleFileChange}
+						/>
 						<div className="mt-4 flex justify-start">
 							<Button variant="ghost" onClick={() => router.back()}>
 								Back

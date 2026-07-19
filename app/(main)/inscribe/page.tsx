@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, deployBsv21Mint, inscribe } from "@1sat/actions";
 import {
 	Code,
 	File as FileIcon,
@@ -54,6 +55,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSound } from "@/hooks/use-sound";
+import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 type MetaMap = {
 	key: string;
@@ -61,22 +63,26 @@ type MetaMap = {
 	idx: number;
 };
 
+const fileToBase64 = async (f: File): Promise<string> => {
+	const buffer = await f.arrayBuffer();
+	const bytes = new Uint8Array(buffer);
+	let binary = "";
+	const chunk = 0x8000;
+	for (let i = 0; i < bytes.length; i += chunk) {
+		binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+	}
+	return btoa(binary);
+};
+
 export default function InscribePage() {
 	const { play } = useSound();
+	const { wallet, services, chain, refreshBalance } = useWalletToolbox();
 	const [activeTab, setActiveTab] = useState("file");
 	const [file, setFile] = useState<File | null>(null);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [fileType, setFileType] = useState<string>("");
 	const [isMinting, setIsMinting] = useState(false);
 	const [metadata, setMetadata] = useState<MetaMap[]>([]);
-
-	// BSV20 State
-	const [bsv20Mode, setBsv20Mode] = useState<"mint" | "deploy">("mint");
-	const [bsv20Ticker, setBsv20Ticker] = useState("");
-	const [bsv20Amount, setBsv20Amount] = useState("");
-	const [bsv20Max, setBsv20Max] = useState("");
-	const [bsv20Decimals, setBsv20Decimals] = useState("0");
-	const [bsv20Limit, setBsv20Limit] = useState("");
 
 	// BSV21 State (deploy only - no mint mode in BSV21)
 	const [bsv21Symbol, setBsv21Symbol] = useState("");
@@ -183,15 +189,64 @@ export default function InscribePage() {
 	};
 
 	const handleInscribe = async () => {
+		if (!wallet) {
+			toast.error("Unlock your wallet to inscribe");
+			return;
+		}
 		setIsMinting(true);
 		try {
-			// TODO: Implement actual minting logic using js-1sat-ord or WalletService
-			// const tx = await walletService.createInscription(...)
-			await new Promise((resolve) => setTimeout(resolve, 2000)); // Mock delay
-			toast.success("Inscription created! (Mock)");
+			const ctx = createContext(wallet, {
+				services: services ?? undefined,
+				chain,
+			});
+
+			if (activeTab === "file") {
+				if (!file) {
+					toast.error("Choose a file to inscribe");
+					return;
+				}
+				const map: Record<string, string> = {};
+				for (const m of metadata) {
+					if (m.key && m.value) map[m.key] = m.value;
+				}
+				const result = await inscribe.execute(ctx, {
+					base64Content: await fileToBase64(file),
+					contentType: fileType || "application/octet-stream",
+					map: Object.keys(map).length ? map : undefined,
+					// stream large files as multi-tx OrdFS chains
+					stream: file.size > 900_000 ? true : undefined,
+				});
+				if (result.error) throw new Error(result.error);
+				play("success");
+				toast.success(`Inscription created! ${result.txid ?? ""}`);
+			} else if (activeTab === "bsv21") {
+				if (!bsv21Symbol || !bsv21Max) {
+					toast.error("Enter a symbol and supply");
+					return;
+				}
+				let icon: string | undefined;
+				if (bsv21Icon) {
+					icon = `data:${bsv21Icon.type};base64,${await fileToBase64(bsv21Icon)}`;
+				}
+				const result = await deployBsv21Mint.execute(ctx, {
+					symbol: bsv21Symbol,
+					amount: bsv21Max,
+					decimals: bsv21Decimals ? Number(bsv21Decimals) : undefined,
+					icon,
+				});
+				if (result.error) throw new Error(result.error);
+				play("success");
+				toast.success(
+					`Token deployed! ${result.tokenId ?? result.txid ?? ""}`,
+				);
+			}
+			refreshBalance?.();
 		} catch (e) {
 			console.error(e);
-			toast.error("Error creating inscription");
+			play("error");
+			toast.error(
+				e instanceof Error ? e.message : "Error creating inscription",
+			);
 		} finally {
 			setIsMinting(false);
 		}
@@ -258,7 +313,6 @@ export default function InscribePage() {
 					>
 						<TabsList className="grid w-full grid-cols-3 mb-4">
 							<TabsTrigger value="file">File</TabsTrigger>
-							<TabsTrigger value="bsv20">BSV20</TabsTrigger>
 							<TabsTrigger value="bsv21">BSV21</TabsTrigger>
 						</TabsList>
 
@@ -399,111 +453,6 @@ export default function InscribePage() {
 							</Card>
 						</TabsContent>
 
-						{/* BSV20 Tab */}
-						<TabsContent value="bsv20">
-							<Card>
-								<CardHeader>
-									<div className="flex items-center justify-between">
-										<CardTitle>BSV20</CardTitle>
-										<div className="flex bg-muted rounded-lg p-1">
-											<Button
-												variant={bsv20Mode === "mint" ? "secondary" : "ghost"}
-												size="sm"
-												onClick={() => setBsv20Mode("mint")}
-												className="h-7 text-xs"
-											>
-												Mint
-											</Button>
-											<Button
-												variant={bsv20Mode === "deploy" ? "secondary" : "ghost"}
-												size="sm"
-												onClick={() => setBsv20Mode("deploy")}
-												className="h-7 text-xs"
-											>
-												Deploy
-											</Button>
-										</div>
-									</div>
-									<CardDescription>
-										{bsv20Mode === "mint"
-											? "Mint existing BSV20 tokens."
-											: "Deploy a new BSV20 token ticker."}
-									</CardDescription>
-								</CardHeader>
-								<CardContent className="space-y-4">
-									<div className="grid gap-2">
-										<Label htmlFor="bsv20-ticker">Ticker</Label>
-										<Input
-											id="bsv20-ticker"
-											placeholder="e.g. PEPE"
-											value={bsv20Ticker}
-											onChange={(e) =>
-												setBsv20Ticker(e.target.value.toUpperCase())
-											}
-											maxLength={4}
-										/>
-									</div>
-
-									{bsv20Mode === "mint" ? (
-										<div className="grid gap-2">
-											<Label htmlFor="bsv20-amount">Amount</Label>
-											<Input
-												id="bsv20-amount"
-												type="number"
-												placeholder="1000"
-												value={bsv20Amount}
-												onChange={(e) => setBsv20Amount(e.target.value)}
-											/>
-										</div>
-									) : (
-										<>
-											<div className="grid gap-2">
-												<Label htmlFor="bsv20-max">Max Supply</Label>
-												<Input
-													id="bsv20-max"
-													type="number"
-													placeholder="21000000"
-													value={bsv20Max}
-													onChange={(e) => setBsv20Max(e.target.value)}
-												/>
-											</div>
-											<div className="grid gap-2">
-												<Label htmlFor="bsv20-limit">Mint Limit</Label>
-												<Input
-													id="bsv20-limit"
-													type="number"
-													placeholder="1000"
-													value={bsv20Limit}
-													onChange={(e) => setBsv20Limit(e.target.value)}
-												/>
-											</div>
-											<div className="grid gap-2">
-												<Label htmlFor="bsv20-dec">Decimals</Label>
-												<Input
-													id="bsv20-dec"
-													type="number"
-													placeholder="0"
-													value={bsv20Decimals}
-													onChange={(e) => setBsv20Decimals(e.target.value)}
-												/>
-											</div>
-										</>
-									)}
-								</CardContent>
-								<CardFooter>
-									<Button
-										className="w-full"
-										onClick={handleInscribe}
-										disabled={!bsv20Ticker || isMinting}
-									>
-										{isMinting && (
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										)}
-										{bsv20Mode === "mint" ? "Mint Tokens" : "Deploy Ticker"}
-									</Button>
-								</CardFooter>
-							</Card>
-						</TabsContent>
 
 						{/* BSV21 Tab */}
 						<TabsContent value="bsv21">
@@ -680,16 +629,6 @@ export default function InscribePage() {
 							<CardContent className="flex flex-col items-center justify-center min-h-[300px]">
 								{activeTab === "file" && file ? (
 									renderFilePreview()
-								) : activeTab === "bsv20" && bsv20Ticker ? (
-									<div className="text-center space-y-2">
-										<div className="text-4xl font-bold">{bsv20Ticker}</div>
-										<div className="text-sm text-muted-foreground">
-											BSV20 {bsv20Mode === "mint" ? "Mint" : "Deploy"}
-										</div>
-										{bsv20Mode === "mint" && (
-											<div className="text-xl">{bsv20Amount}</div>
-										)}
-									</div>
 								) : activeTab === "bsv21" && bsv21Symbol ? (
 									<div className="text-center space-y-4">
 										{bsv21IconPreview ? (

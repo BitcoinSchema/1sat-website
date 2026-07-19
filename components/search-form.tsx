@@ -124,10 +124,8 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
 	const handleTokenSelect = useCallback(
 		(token: Autofill) => {
 			play("click");
-			const path =
-				token.type === "BSV20"
-					? `/market/bsv20/${token.tick}`
-					: `/market/bsv21/${token.id}`;
+			// BSV20 is deprecated on this site — token results are BSV21
+			const path = `/market/bsv21/${token.id}`;
 			handleOpenChange(false);
 			router.push(path);
 		},
