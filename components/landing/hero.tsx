@@ -4,6 +4,7 @@ import { ArrowRight, Globe, Shield, Smartphone, Wallet } from "lucide-react";
 import Link from "next/link";
 import { EncryptionGrid } from "@/components/landing/encryption-grid";
 import { Logo3D } from "@/components/landing/logo-3d";
+import { ThreeBoundary } from "@/components/landing/three-boundary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSound } from "@/hooks/use-sound";
@@ -28,7 +29,9 @@ export function LandingHero() {
 			<div className="relative z-10 text-center w-full animate-in fade-in duration-1000">
 				{/* Hero Content */}
 				<div>
-					<Logo3D />
+					<ThreeBoundary>
+						<Logo3D />
+					</ThreeBoundary>
 
 					<p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
 						Satoshi's favorite asset wallet (soon™).

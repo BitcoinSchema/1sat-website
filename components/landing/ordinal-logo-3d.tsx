@@ -1,6 +1,6 @@
 "use client";
 
-import { Center, Environment, Float } from "@react-three/drei";
+import { Center, Float } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { folder, useControls } from "leva";
@@ -80,7 +80,11 @@ function Scene() {
 				color={controls.innerColor}
 			/>
 
-			<Environment preset="city" />
+			{/* self-contained lighting — Environment presets fetch an HDR from a
+			third-party CDN at runtime and crash the page when unreachable */}
+			<hemisphereLight intensity={0.9} groundColor="#111111" />
+			<directionalLight position={[5, 8, 5]} intensity={1.4} />
+			<directionalLight position={[-5, -2, -5]} intensity={0.5} />
 
 			<EffectComposer>
 				<Bloom
