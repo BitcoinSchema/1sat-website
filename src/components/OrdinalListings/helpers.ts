@@ -57,7 +57,7 @@ export const getOrdList = async ({
 	const final =
 		selectedType !== ArtifactType.All
 			? result.filter((o) => {
-					return o.origin?.data?.insc?.file.type?.startsWith(
+					return o.origin?.data?.insc?.file?.type?.startsWith(
 						artifactTypeMap.get(selectedType as ArtifactType) as string,
 					);
 				})
@@ -96,11 +96,11 @@ export const listingName = (listing: OrdUtxo) => {
 	if (listing?.origin?.data?.bsv20) {
 		return listing?.origin.data.bsv20.tick;
 	}
-	switch (listing?.origin?.data?.insc?.file.type.split(";")[0]) {
+	switch (listing?.origin?.data?.insc?.file?.type?.split(";")[0]) {
 		case "text/html": {
 			const nameFromMeta =
 				listing?.origin?.data.map?.name ||
-				listing?.origin.data.map?.subTypeData.name;
+				listing?.origin?.data?.map?.subTypeData?.name;
 			if (nameFromMeta) {
 				return nameFromMeta;
 			}

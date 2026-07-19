@@ -38,7 +38,7 @@ const Timeline = ({ history, listing, spends }: Props) => {
 							</Link>
 						);
 					} else if (h.data?.insc?.file && !h.spend?.length) {
-						text = (
+						text = listing.owner ? (
 							<>
 								Minted by{" "}
 								<Link
@@ -48,6 +48,8 @@ const Timeline = ({ history, listing, spends }: Props) => {
 									<JDenticon hashOrValue={listing.owner} className="h-4 w-4" />
 								</Link>
 							</>
+						) : (
+							<>Minted</>
 						);
 					} else if (h.spend?.length) {
 						const spentListing = spends.find((s) => s.txid === h.spend);

@@ -3,16 +3,25 @@
 import { useSignals } from "@preact/signals-react/runtime";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import { payPk } from "@/signals/wallet";
 
 interface LogoProps {
 	ubuntu: { className: string };
-	hostname: string;
 }
 
-const Logo = ({ ubuntu, hostname }: LogoProps) => {
+// The brand label varies by hostname. This used to come from headers() in
+// the server Header, which forced every page into dynamic (uncacheable)
+// rendering. Read it client-side instead: default to the production brand
+// and correct after hydration for alpha/local hosts.
+const Logo = ({ ubuntu }: LogoProps) => {
 	useSignals();
+	const [hostname, setHostname] = useState<string>("1sat.market");
+
+	useEffect(() => {
+		setHostname(window.location.host);
+	}, []);
 
 	const isMarket = hostname === "1sat.market";
 	const isAlpha =

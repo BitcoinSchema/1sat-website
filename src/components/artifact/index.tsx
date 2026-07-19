@@ -116,8 +116,8 @@ const Artifact: React.FC<ArtifactProps> = ({
   const contentType = useMemo(
     () =>
       latest
-        ? artifact?.data?.insc?.file.type
-        : artifact?.origin?.data?.insc?.file.type || "image/png",
+        ? artifact?.data?.insc?.file?.type
+        : artifact?.origin?.data?.insc?.file?.type || "image/png",
     [artifact, latest],
   );
   const outPoint = useMemo(

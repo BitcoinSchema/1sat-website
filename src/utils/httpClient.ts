@@ -111,19 +111,31 @@ export const customFetch = <T>(
     );
   });
 
+  // Parse a response body as JSON without letting a non-JSON body (e.g. an
+  // upstream HTML error page) escape as a raw SyntaxError
+  const safeJson = async (response: Response): Promise<unknown> => {
+    try {
+      return await response.json();
+    } catch (_e) {
+      throw new GenericRequestError(HttpErrors.UnknownRequestError, {
+        message: "Invalid JSON response",
+      });
+    }
+  };
+
   // handle result
   const returnPromise: Promise<T> = responsePromise.then(
     async (response: Response) => {
       if (response.status < 300) {
         return response.status !== 204
-          ? ((await response.json()) as unknown as T)
+          ? ((await safeJson(response)) as unknown as T)
           : // the logic is that if you have a specific case that needs to handle a 204 then you should declare the T as your type | undefined
           // this makes working with apis that don't use 204 (most of the time) a lot easier
           (undefined as unknown as T);
       } else {
         switch (response.status) {
           case 400:
-            throw new InvalidRequestError(await response.json());
+            throw new InvalidRequestError(await safeJson(response));
           case 401:
             throw new GenericRequestError(
               HttpErrors.UnauthenticatedRequestError,
@@ -131,7 +143,7 @@ export const customFetch = <T>(
           case 403:
             throw new GenericRequestError(
               HttpErrors.ForbiddenRequestError,
-              await response.json(),
+              await safeJson(response),
             );
           case 404:
             throw new GenericRequestError(HttpErrors.NotFoundRequestError);
@@ -140,17 +152,17 @@ export const customFetch = <T>(
           case 417:
             throw new GenericRequestError(
               HttpErrors.ExpectationFailed,
-              await response.json(),
+              await safeJson(response),
             );
           case 422:
             throw new GenericRequestError(
               HttpErrors.UnprocessableRequestError,
-              await response.json(),
+              await safeJson(response),
             );
           default:
             throw new GenericRequestError(
               HttpErrors.UnknownRequestError,
-              await response.json(),
+              await safeJson(response),
             );
         }
       }

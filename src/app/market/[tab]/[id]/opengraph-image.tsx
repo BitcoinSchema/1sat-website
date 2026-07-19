@@ -4,6 +4,7 @@ import { Logo } from "@/components/og/Logo";
 import { API_HOST, AssetType, ORDFS } from "@/constants";
 import type { BSV20 } from "@/types/bsv20";
 import { getNotoSerifItalicFont } from "@/utils/font";
+import { isValidOutpoint } from "@/utils/validation";
 
 export const runtime = "edge";
 
@@ -13,6 +14,12 @@ export const size = {
 	height: 630,
 };
 export const contentType = "image/png";
+
+// Cache generated images at the CDN
+const cacheHeaders = {
+	"Cache-Control":
+		"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+};
 
 export default async function Image({
 	params,
@@ -25,15 +32,20 @@ export default async function Image({
 	let icon: string | undefined;
 	if (params.tab === AssetType.BSV20) {
 		ticker = params.id;
-	} else {
-		const detailsUrl = `${API_HOST}/api/bsv20/id/${params.id}`;
-		const details = await fetch(detailsUrl).then(
-			(res) => res.json() as Promise<BSV20>,
-		);
-		ticker = details.sym;
-		icon =
-			details.icon ||
-			"b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
+	} else if (isValidOutpoint(params.id)) {
+		try {
+			const detailsUrl = `${API_HOST}/api/bsv20/id/${params.id}`;
+			const res = await fetch(detailsUrl, { next: { revalidate: 86400 } });
+			if (res.ok) {
+				const details = (await res.json()) as BSV20;
+				ticker = details.sym;
+				icon =
+					details.icon ||
+					"b974de563db7ca7a42f421bb8a55c61680417404c661deb7a052773eb24344e3_0";
+			}
+		} catch (_e) {
+			// fall through to a generic image
+		}
 	}
 
 	return new ImageResponse(
@@ -56,7 +68,7 @@ export default async function Image({
 					{params.tab === AssetType.BSV21 ? "BSV21" : "BSV20"}
 				</div>
 			}
-			{
+			{icon && (
 				<img
 					width="50"
 					height="50"
@@ -66,12 +78,13 @@ export default async function Image({
 						marginRight: ".5rem",
 					}}
 				/>
-			}
+			)}
 			{ticker || "Mystery Outpoint"}
 			<Logo />
 		</Container>,
 		{
 			...size,
+			headers: cacheHeaders,
 			fonts: [
 				{
 					name: "Noto Serif",

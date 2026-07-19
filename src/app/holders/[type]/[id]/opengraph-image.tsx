@@ -16,6 +16,12 @@ export const size = {
 };
 export const contentType = "image/png";
 
+// Cache generated images at the CDN
+const cacheHeaders = {
+	"Cache-Control":
+		"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+};
+
 export default async function Image({
 	params,
 }: {
@@ -31,9 +37,14 @@ export default async function Image({
 			? `${API_HOST}/api/bsv20/tick/${id}`
 			: `${API_HOST}/api/bsv20/id/${id}`;
 
-	const details = await getDetails(new NextRequest(url), type, id);
+	let details: BSV20 | undefined;
+	try {
+		details = await getDetails(new NextRequest(url), type, id);
+	} catch (_e) {
+		// fall through to a generic image
+	}
 
-	const tokenName = type === AssetType.BSV20 ? id : details.sym;
+	const tokenName = (type === AssetType.BSV20 ? id : details?.sym) || id;
 
 	return new ImageResponse(
 		<Container>
@@ -53,6 +64,7 @@ export default async function Image({
 		</Container>,
 		{
 			...size,
+			headers: cacheHeaders,
 			fonts: [
 				{
 					name: "Noto Serif",

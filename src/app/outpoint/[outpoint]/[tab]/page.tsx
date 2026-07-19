@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import CollectionServer from "@/components/pages/outpoint/collectionServer";
 import InscriptionContent from "@/components/pages/outpoint/inscriptionContent";
 import ListingServer from "@/components/pages/outpoint/listingServer";
@@ -7,6 +8,17 @@ import TokenContent from "@/components/pages/outpoint/tokenContent";
 import { API_HOST } from "@/constants";
 import { OutpointTab } from "@/types/common";
 import type { OrdUtxo } from "@/types/ordinals";
+import { isValidOutpoint } from "@/utils/validation";
+
+// Cache rendered pages at the CDN and revalidate in the background so
+// repeat/crawler traffic doesn't invoke a serverless render every time.
+// The empty generateStaticParams opts the route into ISR — pages render on
+// demand and are cached for the revalidate window.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+	return [];
+}
 
 // Transaction I/O display types used by transaction components
 export type IODisplay = {
@@ -31,6 +43,12 @@ type OutpointParams = {
 
 const Outpoint = async ({ params }: { params: Promise<OutpointParams> }) => {
 	const { outpoint, tab } = await params;
+	if (
+		!isValidOutpoint(outpoint) ||
+		!Object.values(OutpointTab).includes(tab as OutpointTab)
+	) {
+		notFound();
+	}
 	const currentTab = tab as OutpointTab;
 
 	// Render just the tab content - layout handles the rest
@@ -60,12 +78,30 @@ export async function generateMetadata({
 	params: Promise<{ outpoint: string; tab: string }>;
 }) {
 	const { outpoint } = await params;
-	const details = await fetch(`${API_HOST}/api/inscriptions/${outpoint}`).then(
-		(res) => res.json() as Promise<OrdUtxo>,
-	);
+	const fallbackMetadata = {
+		title: "Outpoint - 1SatOrdinals",
+		description: "Explore item details on 1SatOrdinals.",
+	};
+
+	if (!isValidOutpoint(outpoint)) {
+		return fallbackMetadata;
+	}
+
+	let details: OrdUtxo;
+	try {
+		const res = await fetch(`${API_HOST}/api/inscriptions/${outpoint}`, {
+			next: { revalidate: 300 },
+		});
+		if (!res.ok) {
+			return fallbackMetadata;
+		}
+		details = (await res.json()) as OrdUtxo;
+	} catch (_e) {
+		return fallbackMetadata;
+	}
 
 	const isImageInscription =
-		details.origin?.data?.insc?.file.type?.startsWith("image");
+		details.origin?.data?.insc?.file?.type?.startsWith("image");
 
 	const name =
 		details.origin?.data?.map?.name ||
@@ -73,7 +109,7 @@ export async function generateMetadata({
 		details.origin?.data?.bsv20?.sym ||
 		details.origin?.data?.insc?.json?.tick ||
 		details.origin?.data?.insc?.json?.p ||
-		details.origin?.data?.insc?.file.type ||
+		details.origin?.data?.insc?.file?.type ||
 		"Mystery Outpoint";
 
 	const title = `${details.data?.list && (!details.spend || details.spend?.length === 0) ? "Buy " : ""}${name} - 1SatOrdinals`;

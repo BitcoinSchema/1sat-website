@@ -1,9 +1,19 @@
+import { notFound } from "next/navigation";
 import CollectionLayout from "@/components/Collections/CollectionLayout";
 import CollectionPage from "@/components/pages/collection";
 import { API_HOST } from "@/constants";
 import type { CollectionStats } from "@/types/collection";
 import type { OrdUtxo } from "@/types/ordinals";
 import * as http from "@/utils/httpClient";
+import { isValidOutpoint } from "@/utils/validation";
+
+// Cache rendered pages at the CDN and revalidate in the background.
+// The empty generateStaticParams opts the route into ISR.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 // Helper to add timeout to promises
 const withTimeout = <T,>(
@@ -27,6 +37,10 @@ const Collection = async ({
   params: Promise<{ outpoint: string }>;
 }) => {
   const { outpoint } = await params;
+  // Reject junk like /collection/[object Object] before hitting upstream APIs
+  if (!isValidOutpoint(outpoint)) {
+    notFound();
+  }
   const TIMEOUT_MS = 8000; // 8 second timeout to leave buffer before Vercel's 10s limit
 
   // Get the Ordinal TXO
@@ -100,6 +114,12 @@ export async function generateMetadata({
   params: Promise<{ outpoint: string }>;
 }) {
   const { outpoint } = await params;
+  if (!isValidOutpoint(outpoint)) {
+    return {
+      title: "Collection - 1SatOrdinals",
+      description: "Explore collections on 1SatOrdinals.",
+    };
+  }
   const METADATA_TIMEOUT = 5000; // 5 second timeout for metadata
 
   let details: OrdUtxo | undefined;
@@ -123,7 +143,7 @@ export async function generateMetadata({
     details.origin?.data?.bsv20?.sym ||
     details.origin?.data?.insc?.json?.tick ||
     details.origin?.data?.insc?.json?.p ||
-    details.origin?.data?.insc?.file.type ||
+    details.origin?.data?.insc?.file?.type ||
     "Mystery Outpoint"
     : "Collection";
 
