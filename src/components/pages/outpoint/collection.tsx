@@ -34,9 +34,14 @@ const OutpointCollection = async ({ outpoint }: Props) => {
     return <div>Not a collection</div>;
   }
 
+  const collectionId = artifact.origin?.data?.map?.subTypeData?.collectionId;
+  if (!collectionId) {
+    return <div>Collection not found</div>;
+  }
+
   // Get the Ordinal TXO
   let collection: OrdUtxo | undefined;
-  const collectionUrl = `${API_HOST}/api/txos/${artifact.origin?.data?.map?.subTypeData.collectionId}`;
+  const collectionUrl = `${API_HOST}/api/txos/${collectionId}`;
   try {
     const { promise: promiseCollection } =
       http.customFetch<OrdUtxo>(collectionUrl);
@@ -47,7 +52,7 @@ const OutpointCollection = async ({ outpoint }: Props) => {
 
   // Get the collection stats
   let stats: CollectionStats | undefined;
-  const collectionStatsUrl = `${API_HOST}/api/collections/${artifact.origin?.data?.map?.subTypeData.collectionId}/stats`;
+  const collectionStatsUrl = `${API_HOST}/api/collections/${collectionId}/stats`;
   try {
     const { promise } =
       http.customFetch<CollectionStats>(collectionStatsUrl);

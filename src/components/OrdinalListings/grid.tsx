@@ -203,7 +203,7 @@ export const getWalletOrdUtxos = async ({
   const final =
     selectedType !== ArtifactType.All
       ? result.filter((o) => {
-        return o.origin?.data?.insc?.file.type?.startsWith(
+        return o.origin?.data?.insc?.file?.type?.startsWith(
           artifactTypeMap.get(
             selectedType as ArtifactType
           ) as string

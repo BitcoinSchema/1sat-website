@@ -4,6 +4,7 @@ import type { InputOutpoint } from "@/app/outpoint/[outpoint]/[tab]/page";
 import { API_HOST } from "@/constants";
 import { Signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import OutpointHeading from "../pages/outpoint/heading";
 import DisplayIO from "./display";
@@ -19,6 +20,10 @@ export interface TxDetailsProps {
 
 const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
   useSignals();
+  const searchParams = useSearchParams();
+  // "showing" can be passed as a prop, or driven by the ?details=true query
+  // param (read client-side so the server page stays cacheable)
+  const showingResolved = showing ?? searchParams.get("details") === "true";
   const [rawtx, setRawtx] = useState<string | undefined>();
   const [inputOutpoints, setInputOutpoints] = useState<InputOutpoint[]>([]);
   const [outputSpends, setOutputSpends] = useState<string[]>([]);
@@ -96,10 +101,9 @@ const TxDetails = ({ txid, vout, showing }: TxDetailsProps) => {
 
   useMemo(() => {
     if (showDetails.value === undefined) {
-      showDetails.value = showing !== false;
-      showing = showDetails.value;
+      showDetails.value = showingResolved !== false;
     }
-  }, [showing, showDetails]);
+  }, [showingResolved, showDetails]);
 
   // useEffect(() => {
   //   console.log({ showDetails: showDetails.value });

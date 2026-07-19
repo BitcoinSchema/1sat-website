@@ -3,16 +3,22 @@ import { Logo } from "@/components/og/Logo";
 import { API_HOST, ORDFS } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
 import { getNotoSerifItalicFont } from "@/utils/font";
+import { isValidOutpoint } from "@/utils/validation";
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "1Sat Ordinals Inscription";
+export const alt = "1Sat Ordinals Collection";
 export const size = {
 	width: 1200,
 	height: 630,
 };
 export const contentType = "image/png";
+
+// Cache generated images at the CDN — inscription content is immutable
+const cacheHeaders = {
+	"Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+};
 
 export default async function Image({
 	params,
@@ -21,15 +27,50 @@ export default async function Image({
 }) {
 	const notoSerif = await getNotoSerifItalicFont();
 
-	const details = await fetch(
-		`${API_HOST}/api/inscriptions/${params.outpoint}`,
-	).then((res) => res.json() as Promise<OrdUtxo>);
+	const imageOptions = {
+		...size,
+		headers: cacheHeaders,
+		fonts: [
+			{
+				name: "Noto Serif",
+				data: notoSerif,
+				style: "italic" as const,
+				weight: 400 as const,
+			},
+		],
+	};
+
+	const fallback = (label: string) =>
+		new ImageResponse(
+			(
+				<Container>
+					{label}
+					<Logo />
+				</Container>
+			),
+			imageOptions,
+		);
+
+	if (!isValidOutpoint(params.outpoint)) {
+		return fallback("1Sat Ordinals");
+	}
+
+	let details: OrdUtxo;
+	try {
+		const res = await fetch(`${API_HOST}/api/inscriptions/${params.outpoint}`);
+		if (!res.ok) {
+			return fallback("Mystery Outpoint");
+		}
+		details = (await res.json()) as OrdUtxo;
+	} catch (e) {
+		return fallback("Mystery Outpoint");
+	}
 
 	const isImageInscription =
-		details.origin?.data?.insc?.file.type?.startsWith("image");
-	//	const url = `${ORDFS}/${params.outpoint}`;
-	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_crop,b_rgb:111111,g_center,h_${size.height},w_${size.width}/f_auto/${ORDFS}/${params.outpoint}`;
-	console.log({ url });
+		details.origin?.data?.insc?.file?.type?.startsWith("image");
+	// f_png forces cloudinary to convert the source to a format satori can
+	// always render (source inscriptions may be webp/svg/unknown)
+	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_crop,b_rgb:111111,g_center,h_${size.height},w_${size.width},f_png/${ORDFS}/${params.outpoint}`;
 	return new ImageResponse(
 		<Container>
 			{isImageInscription ? (
@@ -41,22 +82,12 @@ export default async function Image({
 				details.origin?.data?.bsv20?.sym ||
 				details.origin?.data?.insc?.json?.tick ||
 				details.origin?.data?.insc?.json?.p ||
-				details.origin?.data?.insc?.file.type ||
+				details.origin?.data?.insc?.file?.type ||
 				"Mystery Outpoint"
 			)}
 
 			<Logo />
 		</Container>,
-		{
-			...size,
-			fonts: [
-				{
-					name: "Noto Serif",
-					data: notoSerif,
-					style: "italic",
-					weight: 400,
-				},
-			],
-		},
+		imageOptions,
 	);
 }

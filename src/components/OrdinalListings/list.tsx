@@ -168,10 +168,10 @@ const List = ({ term, address, onClick }: Props) => {
 										>
 											{listingName(listing)}
 										</Link>
-										{collection && (
+										{collection && listing?.origin?.data?.map?.subTypeData?.collectionId && (
 											<div className="flex items-center gap-4">
 												<Link
-													href={`/collection/${listing?.origin?.data?.map?.subTypeData?.collectionId}`}
+													href={`/collection/${listing.origin.data.map.subTypeData.collectionId}`}
 													className="text-blue-400 hover:text-blue-500"
 												>
 													{collection.name} {mintNumber(listing, collection)}
@@ -188,18 +188,20 @@ const List = ({ term, address, onClick }: Props) => {
 									</div>
 								</td>
 								<td className={"p-0 hidden md:table-cell w-10"}>
-									<Link href={`/signer/${listing?.owner}`}>
-										<div
-											className="tooltip"
-											data-tip={
-												listing?.data?.sigma?.length
-													? listing?.data.sigma[0].address
-													: listing?.owner
-											}
-										>
-											<JDenticon className="w-8" hashOrValue={listing?.owner} />
-										</div>
-									</Link>
+									{listing?.owner && (
+										<Link href={`/signer/${listing.owner}`}>
+											<div
+												className="tooltip"
+												data-tip={
+													listing?.data?.sigma?.length
+														? listing?.data.sigma[0].address
+														: listing?.owner
+												}
+											>
+												<JDenticon className="w-8" hashOrValue={listing?.owner} />
+											</div>
+										</Link>
+									)}
 								</td>
 								<td className="p-0 text-xs md:text-sm hidden md:table-cell">
                   {scamListing ? <span className="text-red-500">FLAGGED</span> : knownScammer ? <span className="text-red-500">KNOWN SCAMMER</span> : listing?.data?.list?.price ? (
