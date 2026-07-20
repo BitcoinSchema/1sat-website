@@ -7,6 +7,7 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	useSidebar,
 } from "@/components/ui/sidebar";
 import { useLegacyAssets } from "@/lib/hooks/use-legacy-assets";
 import { detectMigrationStatus } from "@/lib/wallet-migration";
@@ -16,6 +17,7 @@ const DISMISSED_KEY = "legacy_sweep_banner_dismissed_v1";
 
 export function LegacySweepBanner() {
 	const { walletKeys, isWalletLocked } = useWallet();
+	const { isMobile, setOpenMobile } = useSidebar();
 
 	const [dismissed, setDismissed] = useState(false);
 
@@ -72,12 +74,17 @@ export function LegacySweepBanner() {
 
 	return (
 		<SidebarMenu>
-			<SidebarMenuItem>
+			<SidebarMenuItem className="relative">
 				<SidebarMenuButton
 					asChild
-					className="text-chart-1 hover:text-chart-1 hover:bg-chart-1/10 pr-1"
+					className="text-chart-1 hover:text-chart-1 hover:bg-chart-1/10 pr-8 h-auto"
 				>
-					<Link href="/wallet">
+					<Link
+						href="/wallet"
+						onClick={() => {
+							if (isMobile) setOpenMobile(false);
+						}}
+					>
 						<AlertTriangle className="h-4 w-4 shrink-0" />
 						<div className="flex flex-col min-w-0">
 							<span className="truncate">Legacy assets</span>
@@ -86,16 +93,18 @@ export function LegacySweepBanner() {
 								need sweeping
 							</span>
 						</div>
-						<button
-							type="button"
-							onClick={dismiss}
-							aria-label="Dismiss legacy sweep notice"
-							className="ml-auto shrink-0 rounded p-1 opacity-60 hover:opacity-100 hover:bg-chart-1/20 transition-opacity"
-						>
-							<X className="h-3 w-3" />
-						</button>
 					</Link>
 				</SidebarMenuButton>
+				{/* dismiss lives outside the anchor — nested interactive elements
+				inside a link misfire tap handling on iOS */}
+				<button
+					type="button"
+					onClick={dismiss}
+					aria-label="Dismiss legacy sweep notice"
+					className="absolute right-1 top-1/2 -translate-y-1/2 shrink-0 rounded p-1 opacity-60 hover:opacity-100 hover:bg-chart-1/20 transition-opacity"
+				>
+					<X className="h-3 w-3" />
+				</button>
 			</SidebarMenuItem>
 		</SidebarMenu>
 	);
