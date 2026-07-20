@@ -1,6 +1,13 @@
 "use client";
 
-import { Wallet } from "lucide-react";
+import {
+	AtSign,
+	CircleDollarSign,
+	Coins,
+	Gem,
+	History,
+	Wallet,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,11 +15,21 @@ import { useSound } from "@/hooks/use-sound";
 
 const tabs = [
 	{ value: "overview", label: "Wallet", href: "/wallet", icon: Wallet },
-	{ value: "ordinals", label: "Ordinals", href: "/wallet/ordinals" },
-	{ value: "opns", label: "OpNS", href: "/wallet/opns" },
-	{ value: "bsv20", label: "BSV20", href: "/wallet/bsv20" },
-	{ value: "bsv21", label: "BSV21", href: "/wallet/bsv21" },
-	{ value: "history", label: "History", href: "/wallet/history" },
+	{ value: "ordinals", label: "Ordinals", href: "/wallet/ordinals", icon: Gem },
+	{ value: "opns", label: "OpNS", href: "/wallet/opns", icon: AtSign },
+	{ value: "bsv20", label: "BSV20", href: "/wallet/bsv20", icon: Coins },
+	{
+		value: "bsv21",
+		label: "BSV21",
+		href: "/wallet/bsv21",
+		icon: CircleDollarSign,
+	},
+	{
+		value: "history",
+		label: "History",
+		href: "/wallet/history",
+		icon: History,
+	},
 ];
 
 interface WalletTabsProps {
@@ -50,10 +67,13 @@ export function WalletTabs({ children }: WalletTabsProps) {
 						<TabsTrigger
 							key={tab.value}
 							value={tab.value}
-							className="flex items-center gap-2"
+							className="flex items-center gap-1.5"
+							title={tab.label}
+							aria-label={tab.label}
 						>
-							{tab.icon && <tab.icon className="h-4 w-4" />}
-							{tab.label}
+							{tab.icon && <tab.icon className="h-4 w-4 shrink-0" />}
+							{/* icon-only on mobile so the tab row fits the viewport */}
+							<span className="hidden sm:inline">{tab.label}</span>
 						</TabsTrigger>
 					))}
 				</TabsList>
