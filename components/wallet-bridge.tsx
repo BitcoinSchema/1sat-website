@@ -15,7 +15,12 @@ import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 export function WalletBridge({ children }: { children: React.ReactNode }) {
 	const wallet = useWallet();
 	const toolbox = useWalletToolbox();
-	const initAttemptedRef = useRef(false);
+	// Tracks the payPk an init attempt was made for. A failed attempt is NOT
+	// retried for the same keys — unbounded retry here previously looped
+	// forever when initialization failed consistently (e.g. storage endpoint
+	// unreachable). The attempt resets only when the keys change or the
+	// wallet locks.
+	const initAttemptKeyRef = useRef<string | null>(null);
 	const { hasWallet, isWalletLocked, walletKeys } = wallet;
 	const { isInitialized, isInitializing, initializeWallet, destroyWallet } =
 		toolbox;
@@ -27,17 +32,17 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 		}
 
 		if (!hasWallet || isWalletLocked || !walletKeys?.payPk) {
-			// Reset attempt flag when wallet cannot be initialized.
-			initAttemptedRef.current = false;
+			// Reset attempt tracking when wallet cannot be initialized.
+			initAttemptKeyRef.current = null;
 			return;
 		}
 
-		// Prevent multiple init attempts
-		if (initAttemptedRef.current) {
+		// One attempt per key set — success or failure
+		if (initAttemptKeyRef.current === walletKeys.payPk) {
 			return;
 		}
 
-		initAttemptedRef.current = true;
+		initAttemptKeyRef.current = walletKeys.payPk;
 
 		// Initialize toolbox with keys from legacy wallet
 		const initToolbox = async () => {
@@ -45,7 +50,7 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 				const payPk = walletKeys?.payPk;
 				if (!payPk) {
 					console.warn("[WalletBridge] Missing payPk, skipping init");
-					initAttemptedRef.current = false;
+					initAttemptKeyRef.current = null;
 					return;
 				}
 
@@ -63,15 +68,15 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 				if (success) {
 					console.log("[WalletBridge] Wallet-toolbox initialized successfully");
 				} else {
+					// Do NOT reset the attempt key — the provider surfaces
+					// initError; retry happens on lock/unlock or key change.
 					console.error("[WalletBridge] Wallet-toolbox initialization failed");
-					initAttemptedRef.current = false;
 				}
 			} catch (error) {
 				console.error(
 					"[WalletBridge] Error initializing wallet-toolbox:",
 					error,
 				);
-				initAttemptedRef.current = false;
 			}
 		};
 
@@ -91,7 +96,7 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 		if (shouldDestroy && isInitialized) {
 			console.log("[WalletBridge] Wallet unavailable, destroying toolbox...");
 			void destroyWallet();
-			initAttemptedRef.current = false;
+			initAttemptKeyRef.current = null;
 		}
 	}, [hasWallet, isWalletLocked, walletKeys, isInitialized, destroyWallet]);
 
