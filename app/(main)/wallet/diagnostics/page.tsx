@@ -7,6 +7,7 @@
  * It shows wallet state, connection status, balance, and allows testing operations.
  */
 
+import { OneSatServices } from "@1sat/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -28,7 +29,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useSound } from "@/hooks/use-sound";
 import { wifToAddress, wifToRootKeyHex } from "@/lib/keys";
-import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
+import { STACK_URL } from "@/lib/stack";
 import { detectMigrationStatus } from "@/lib/wallet-migration";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
@@ -110,11 +111,15 @@ export default function WalletDiagnosticPage() {
 		if (migrationStatus?.status !== "legacy") return;
 		setIsScanning(true);
 		try {
-			const gp = new GorillaPoolService();
+			const services = new OneSatServices("main", STACK_URL);
+			const searchUnspent = (address: string) =>
+				services.txo
+					.search(`own:${address}`, { unspent: true, limit: 0 })
+					.then((outputs) => outputs ?? []);
 			const [payUtxos, ordUtxos] = await Promise.all([
-				gp.getUnspentOutputs(migrationStatus.legacyPayAddress),
+				searchUnspent(migrationStatus.legacyPayAddress),
 				migrationStatus.legacyPayAddress !== migrationStatus.legacyOrdAddress
-					? gp.getUnspentOutputs(migrationStatus.legacyOrdAddress)
+					? searchUnspent(migrationStatus.legacyOrdAddress)
 					: Promise.resolve([]),
 			]);
 			setLegacyUtxoCounts({

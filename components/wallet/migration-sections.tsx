@@ -1,6 +1,7 @@
 "use client";
 
 import type { IndexedOutput } from "@1sat/types";
+import { CheckCircle2, Circle, Loader2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MigrationOrdinalCard } from "@/components/wallet/migration-ordinal-card";
@@ -8,6 +9,7 @@ import type {
 	EnrichedOrdinal,
 	TokenBalance,
 } from "@/lib/hooks/use-legacy-assets";
+import type { SweepStepState } from "@/lib/sweep-migration";
 
 const ORDINALS_PER_PAGE = 20;
 
@@ -320,6 +322,73 @@ export function LockedSection({ locked }: { locked: IndexedOutput[] }) {
 				These coins are time-locked on chain and cannot be swept until they
 				unlock. Sweep them later once the lock height passes.
 			</p>
+		</div>
+	);
+}
+
+function StepIcon({ status }: { status: SweepStepState["status"] }) {
+	switch (status) {
+		case "done":
+			return <CheckCircle2 className="h-4 w-4 shrink-0 text-chart-2" />;
+		case "error":
+			return <XCircle className="h-4 w-4 shrink-0 text-destructive" />;
+		case "active":
+			return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />;
+		default:
+			return <Circle className="h-4 w-4 shrink-0 text-muted-foreground/40" />;
+	}
+}
+
+/** Live per-stage sweep progress: one row per asset category / token. */
+export function SweepStepsList({ steps }: { steps: SweepStepState[] }) {
+	if (steps.length === 0) return null;
+
+	return (
+		<div className="space-y-2 text-left">
+			{steps.map((step) => (
+				<div
+					key={step.id}
+					className="flex items-start gap-2.5 border border-border/40 bg-muted/10 px-3 py-2"
+				>
+					<div className="mt-0.5">
+						<StepIcon status={step.status} />
+					</div>
+					<div className="min-w-0 flex-1">
+						<div className="flex items-baseline justify-between gap-2">
+							<span
+								className={
+									step.status === "pending"
+										? "text-sm text-muted-foreground"
+										: "text-sm font-medium"
+								}
+							>
+								{step.label}
+							</span>
+							{step.txids.length > 0 && (
+								<span className="text-[10px] text-muted-foreground shrink-0">
+									{step.txids.length} tx{step.txids.length !== 1 ? "s" : ""}
+								</span>
+							)}
+						</div>
+						{step.detail && (
+							<p className="truncate text-xs text-muted-foreground animate-pulse">
+								{step.detail}
+							</p>
+						)}
+						{step.error && (
+							<p className="text-xs text-destructive/90">{step.error}</p>
+						)}
+						{step.txids.map((txid) => (
+							<code
+								key={txid}
+								className="block truncate font-mono text-[10px] text-muted-foreground"
+							>
+								{txid}
+							</code>
+						))}
+					</div>
+				</div>
+			))}
 		</div>
 	);
 }

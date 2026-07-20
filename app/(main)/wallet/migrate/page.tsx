@@ -28,11 +28,16 @@ import {
 	OpnsSection,
 	OrdinalsSection,
 	RunSection,
+	SweepStepsList,
 	TokensSection,
 } from "@/components/wallet/migration-sections";
 import { useLegacyAssets } from "@/lib/hooks/use-legacy-assets";
 import { deriveIdentityKey } from "@/lib/keys";
-import { executeMigrationSweep, type SweepResult } from "@/lib/sweep-migration";
+import {
+	executeMigrationSweep,
+	type SweepProgress,
+	type SweepResult,
+} from "@/lib/sweep-migration";
 import {
 	detectMigrationStatus,
 	type MigrationStatus,
@@ -55,13 +60,16 @@ const SCANNING_SKELETON_KEYS = [
 // Scanning skeleton
 // ---------------------------------------------------------------------------
 
-function ScanningState() {
+function ScanningState({ scanDetail }: { scanDetail: string | null }) {
 	return (
 		<div className="space-y-6">
 			<Card>
 				<CardHeader>
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-4 w-72" />
+					<CardTitle>Scanning Legacy Addresses</CardTitle>
+					<CardDescription className="animate-pulse">
+						{scanDetail ??
+							"Looking for BSV, ordinals, tokens and MNEE at your legacy addresses..."}
+					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<Skeleton className="h-16 w-full" />
@@ -84,9 +92,11 @@ function ScanningState() {
 function MigrationProgress({
 	progress,
 	progressPercent,
+	sweepProgress,
 }: {
 	progress: string;
 	progressPercent: number;
+	sweepProgress: SweepProgress | null;
 }) {
 	return (
 		<Card>
@@ -101,6 +111,7 @@ function MigrationProgress({
 				<div className="text-sm text-muted-foreground animate-pulse">
 					{progress}
 				</div>
+				{sweepProgress && <SweepStepsList steps={sweepProgress.steps} />}
 			</CardContent>
 		</Card>
 	);
@@ -113,33 +124,42 @@ function MigrationProgress({
 function CompletionState({
 	sweepResult,
 	onBackToWallet,
+	onRetryFailed,
 }: {
 	sweepResult: SweepResult | null;
 	onBackToWallet: () => void;
+	onRetryFailed: () => void;
 }) {
+	const hadErrors = (sweepResult?.errors.length ?? 0) > 0;
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{sweepResult ? "Migration Complete" : "Already Migrated"}
+					{sweepResult
+						? hadErrors
+							? "Sweep Finished With Errors"
+							: "Migration Complete"
+						: "Already Migrated"}
 				</CardTitle>
 				<CardDescription>
 					{sweepResult
-						? "Your wallet has been migrated to the identity key system."
+						? hadErrors
+							? "Some assets could not be swept. You can rescan and retry the remainder — successfully swept assets are already safe in your wallet."
+							: "Your wallet has been migrated to the identity key system."
 						: "Your wallet is already using the identity key system and no sweepable assets remain at your legacy addresses."}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{sweepResult && (
 					<div className="space-y-2 text-sm">
-						{sweepResult.bsvTxid && (
-							<div className="flex justify-between">
+						{sweepResult.bsvTxids.map((txid) => (
+							<div key={txid} className="flex justify-between">
 								<span className="text-muted-foreground">BSV Sweep</span>
 								<code className="text-xs font-mono">
-									{sweepResult.bsvTxid.slice(0, 16)}...
+									{txid.slice(0, 16)}...
 								</code>
 							</div>
-						)}
+						))}
 						{sweepResult.ordinalTxids.map((txid) => (
 							<div key={txid} className="flex justify-between">
 								<span className="text-muted-foreground">Ordinal Sweep</span>
@@ -176,15 +196,21 @@ function CompletionState({
 								))}
 							</div>
 						)}
-						{!sweepResult.bsvTxid &&
+						{sweepResult.bsvTxids.length === 0 &&
 							sweepResult.ordinalTxids.length === 0 &&
 							sweepResult.bsv21Txids.length === 0 &&
+							!sweepResult.mneeTxid &&
 							sweepResult.errors.length === 0 && (
 								<p className="text-sm text-muted-foreground">
 									No assets found at legacy addresses.
 								</p>
 							)}
 					</div>
+				)}
+				{hadErrors && (
+					<Button className="w-full" onClick={onRetryFailed}>
+						Rescan &amp; Retry Failed Sweeps
+					</Button>
 				)}
 				<Button variant="outline" className="w-full" onClick={onBackToWallet}>
 					Back to Wallet
@@ -239,6 +265,10 @@ export default function MigratePage() {
 	const [phase, setPhase] = useState<MigrationPhase>("scan");
 	const [progress, setProgress] = useState("");
 	const [progressPercent, setProgressPercent] = useState(0);
+	const [sweepProgress, setSweepProgress] = useState<SweepProgress | null>(
+		null,
+	);
+	const [scanDetail, setScanDetail] = useState<string | null>(null);
 	const [sweepResult, setSweepResult] = useState<SweepResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
@@ -291,6 +321,7 @@ export default function MigratePage() {
 		legacy?.payAddress ?? null,
 		legacy?.ordAddress ?? null,
 		legacy?.identityAddress ?? null,
+		(p) => setScanDetail(p.detail ?? p.phase),
 	);
 
 	// Sweepable asset counts (opns names sweep together with ordinals)
@@ -378,6 +409,7 @@ export default function MigratePage() {
 		setPhase("migrate");
 		setError(null);
 		setProgressPercent(0);
+		setSweepProgress(null);
 
 		try {
 			let identityWif = legacy.identityWif;
@@ -440,7 +472,12 @@ export default function MigratePage() {
 				setProgress(
 					`Sweeping ${totalSweepable} asset${totalSweepable !== 1 ? "s" : ""}...`,
 				);
-				setProgressPercent(60);
+				// Pre-sweep stages (key derivation, re-encryption, re-init) span
+				// 0-60%; the sweep's own unit-based percent fills the rest. For a
+				// sweep-only re-entry the sweep owns the whole bar.
+				const base = legacy.sweepOnly ? 0 : 60;
+				const span = 100 - base;
+				setProgressPercent(base);
 
 				const result = await executeMigrationSweep({
 					wallet: toolbox.wallet,
@@ -449,9 +486,10 @@ export default function MigratePage() {
 					legacyPayWif: legacy.payWif,
 					legacyOrdWif: legacy.ordWif,
 					legacyIdentityWif: identityWif,
-					onProgress: (stage) => {
-						setProgress(stage);
-						setProgressPercent((prev) => Math.min(prev + 10, 95));
+					onProgress: (p) => {
+						setProgress(p.message);
+						setProgressPercent(base + Math.round((p.percent / 100) * span));
+						setSweepProgress(p);
 					},
 					funding: assets.funding,
 					ordinals: sweepOrdinals,
@@ -464,6 +502,7 @@ export default function MigratePage() {
 				assets.rescan();
 			} else {
 				setSweepResult({
+					bsvTxids: [],
 					ordinalTxids: [],
 					bsv21Txids: [],
 					errors: [],
@@ -511,7 +550,9 @@ export default function MigratePage() {
 
 			<PageContent className="space-y-4">
 				{/* Scanning */}
-				{phase === "scan" && assets.loading && <ScanningState />}
+				{phase === "scan" && assets.loading && (
+					<ScanningState scanDetail={scanDetail} />
+				)}
 
 				{/* Scan error */}
 				{phase === "scan" && assets.error && (
@@ -630,6 +671,7 @@ export default function MigratePage() {
 					<MigrationProgress
 						progress={progress}
 						progressPercent={progressPercent}
+						sweepProgress={sweepProgress}
 					/>
 				)}
 
@@ -638,6 +680,13 @@ export default function MigratePage() {
 					<CompletionState
 						sweepResult={sweepResult}
 						onBackToWallet={() => router.push("/wallet")}
+						onRetryFailed={() => {
+							setSweepResult(null);
+							setSweepProgress(null);
+							setScanDetail(null);
+							setPhase("scan");
+							assets.rescan();
+						}}
 					/>
 				)}
 

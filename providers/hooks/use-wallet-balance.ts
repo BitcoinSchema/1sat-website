@@ -8,8 +8,6 @@ import {
 import { specOpWalletBalance } from "@bsv/wallet-toolbox/out/src/sdk/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Ordinal } from "@/lib/wallet/gorillapool-service";
-import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
 
 interface WalletBalance {
 	confirmed: number;
@@ -20,7 +18,6 @@ interface WalletBalance {
 interface LegacyFundingUtxo {
 	outpoint: string;
 	satoshis: number;
-	lockingScript: string;
 }
 
 interface BalanceQueryResult {
@@ -63,7 +60,6 @@ export function useWalletBalance({
 	trackedAddresses,
 }: UseWalletBalanceOptions): WalletBalanceResult {
 	const queryClient = useQueryClient();
-	const gorillaPoolRef = useRef(new GorillaPoolService());
 
 	const chain = ctx?.chain ?? "main";
 
@@ -84,14 +80,38 @@ export function useWalletBalance({
 			}
 
 			console.log("[WalletToolbox] Starting wallet scan request...");
-			const gp = gorillaPoolRef.current;
 
+			// Legacy balance hint from the stack index (display-only — the
+			// migrate flow does its own forced re-sync before sweeping).
+			// Funding = plain sats>1 outputs without token/lock event tags.
 			const legacyResults = await Promise.all(
 				trackedAddresses.map(async (address) => {
-					console.log(
-						`[WalletToolbox] Scanning receive address ${address.slice(0, 10)}...`,
-					);
-					return gp.getCategorizedUtxos(address);
+					try {
+						const outputs =
+							(await ctx.services?.txo.search(`own:${address}`, {
+								unspent: true,
+								events: true,
+								sats: true,
+								limit: 0,
+							})) ?? [];
+						return outputs.filter((out) => {
+							const events = out.events ?? [];
+							if ((out.satoshis ?? 0) <= 1) return false;
+							return !events.some(
+								(e) =>
+									e.startsWith("bsv21:") ||
+									e.startsWith("lock:") ||
+									e === "type:application/bsv-20" ||
+									e === "type:Token",
+							);
+						});
+					} catch (error) {
+						console.warn(
+							`[WalletToolbox] Legacy scan failed for ${address.slice(0, 10)}:`,
+							error,
+						);
+						return [];
+					}
 				}),
 			);
 
@@ -101,15 +121,9 @@ export function useWalletBalance({
 			]);
 			const total = balanceResult.totalOutputs;
 
-			const legacyFunding: Ordinal[] = [];
-			for (const result of legacyResults) {
-				legacyFunding.push(...result.funding);
-			}
-
-			const legacyFundingUtxos = legacyFunding.map((u) => ({
+			const legacyFundingUtxos = legacyResults.flat().map((u) => ({
 				outpoint: u.outpoint,
-				satoshis: u.satoshis,
-				lockingScript: u.script,
+				satoshis: u.satoshis ?? 0,
 			}));
 			const legacyBalance = legacyFundingUtxos.reduce(
 				(sum, u) => sum + u.satoshis,
