@@ -19,6 +19,7 @@ import {
 	Bsv20Section,
 	FundingSection,
 	LockedSection,
+	MneeSection,
 	OpnsSection,
 	OrdinalsSection,
 	RunSection,
@@ -212,7 +213,7 @@ export function MigrationWizard() {
 				const totalSweepable =
 					assets.funding.length + sweepOrdinals.length + bsv21OutputCount;
 
-				if (totalSweepable > 0) {
+				if (totalSweepable > 0 || assets.mneeBalance > 0) {
 					setProgress(
 						`Sweeping ${totalSweepable} asset${totalSweepable !== 1 ? "s" : ""}...`,
 					);
@@ -232,6 +233,7 @@ export function MigrationWizard() {
 						funding: assets.funding,
 						ordinals: sweepOrdinals,
 						bsv21Tokens: assets.bsv21Tokens,
+						mneeBalance: assets.mneeBalance,
 					});
 
 					setSweepResult(result);
@@ -257,6 +259,7 @@ export function MigrationWizard() {
 		toolbox,
 		assets.funding,
 		assets.bsv21Tokens,
+		assets.mneeBalance,
 		sweepOrdinals,
 		bsv21OutputCount,
 	]);
@@ -528,6 +531,7 @@ function PreviewStep({
 				/>
 				<OpnsSection opnsNames={assets.opnsNames} />
 				<TokensSection tokens={assets.bsv21Tokens} />
+				<MneeSection mneeBalance={assets.mneeBalance} />
 				<Bsv20Section tokens={assets.bsv20Tokens} />
 				<LockedSection locked={assets.locked} />
 				<RunSection run={assets.run} />
@@ -640,6 +644,14 @@ function CompleteStep({
 							<code className="text-xs font-mono">{txid.slice(0, 16)}...</code>
 						</div>
 					))}
+					{sweepResult.mneeTxid && (
+						<div className="flex justify-between border-b border-border/30 pb-2">
+							<span className="text-muted-foreground">MNEE Sweep</span>
+							<code className="text-xs font-mono">
+								{sweepResult.mneeTxid.slice(0, 16)}...
+							</code>
+						</div>
+					)}
 					{sweepResult.errors.length > 0 && (
 						<div className="space-y-1 pt-2">
 							<p className="text-sm font-medium text-destructive">

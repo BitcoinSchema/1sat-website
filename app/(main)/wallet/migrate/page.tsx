@@ -24,6 +24,7 @@ import {
 	Bsv20Section,
 	FundingSection,
 	LockedSection,
+	MneeSection,
 	OpnsSection,
 	OrdinalsSection,
 	RunSection,
@@ -155,6 +156,14 @@ function CompletionState({
 								</code>
 							</div>
 						))}
+						{sweepResult.mneeTxid && (
+							<div className="flex justify-between">
+								<span className="text-muted-foreground">MNEE Sweep</span>
+								<code className="text-xs font-mono">
+									{sweepResult.mneeTxid.slice(0, 16)}...
+								</code>
+							</div>
+						)}
 						{sweepResult.errors.length > 0 && (
 							<div className="space-y-1">
 								<p className="text-sm font-medium text-destructive">
@@ -310,7 +319,7 @@ export default function MigratePage() {
 
 		if (assets.loading || assets.error) return;
 
-		if (legacy.sweepOnly && totalAssets === 0) {
+		if (legacy.sweepOnly && totalAssets === 0 && assets.mneeBalance <= 0) {
 			// Already migrated and legacy addresses are empty
 			setPhase("complete");
 		} else {
@@ -322,6 +331,7 @@ export default function MigratePage() {
 		phase,
 		assets.loading,
 		assets.error,
+		assets.mneeBalance,
 		totalAssets,
 	]);
 
@@ -426,7 +436,7 @@ export default function MigratePage() {
 				sweepOrdinals.length +
 				assets.bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
 
-			if (totalSweepable > 0) {
+			if (totalSweepable > 0 || assets.mneeBalance > 0) {
 				setProgress(
 					`Sweeping ${totalSweepable} asset${totalSweepable !== 1 ? "s" : ""}...`,
 				);
@@ -446,6 +456,7 @@ export default function MigratePage() {
 					funding: assets.funding,
 					ordinals: sweepOrdinals,
 					bsv21Tokens: assets.bsv21Tokens,
+					mneeBalance: assets.mneeBalance,
 				});
 
 				setSweepResult(result);
@@ -568,6 +579,8 @@ export default function MigratePage() {
 
 							<TokensSection tokens={assets.bsv21Tokens} />
 
+							<MneeSection mneeBalance={assets.mneeBalance} />
+
 							<Bsv20Section tokens={assets.bsv20Tokens} />
 
 							<LockedSection locked={assets.locked} />
@@ -576,15 +589,17 @@ export default function MigratePage() {
 						</div>
 
 						{/* No assets found */}
-						{totalAssets === 0 && assets.bsv20Tokens.length === 0 && (
-							<Card>
-								<CardContent className="py-8 text-center text-muted-foreground">
-									No assets found at legacy addresses.
-									{!legacy.sweepOnly &&
-										" Migration will still derive your identity key."}
-								</CardContent>
-							</Card>
-						)}
+						{totalAssets === 0 &&
+							assets.bsv20Tokens.length === 0 &&
+							assets.mneeBalance <= 0 && (
+								<Card>
+									<CardContent className="py-8 text-center text-muted-foreground">
+										No assets found at legacy addresses.
+										{!legacy.sweepOnly &&
+											" Migration will still derive your identity key."}
+									</CardContent>
+								</Card>
+							)}
 
 						{/* Migration CTA */}
 						<Separator />
