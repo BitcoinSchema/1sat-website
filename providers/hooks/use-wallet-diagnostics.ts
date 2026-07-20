@@ -14,7 +14,7 @@ const WALLET_LOG_PATTERNS = [
 	/\[WalletBridge\]/,
 	/\[WalletToolbox\]/,
 	/\[createWebWallet\]/,
-	/\[GorillaPool\]/,
+	/\[Migration\]/,
 	/\[ChaintracksClient\]/,
 	/\[Receive\]/,
 	/\bTaskNewHeader\b/,

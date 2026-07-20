@@ -23,12 +23,17 @@ import {
 	OpnsSection,
 	OrdinalsSection,
 	RunSection,
+	SweepStepsList,
 	TokensSection,
 } from "@/components/wallet/migration-sections";
 import { WALLET_STORAGE_KEY } from "@/lib/constants";
 import { useLegacyAssets } from "@/lib/hooks/use-legacy-assets";
 import { deriveIdentityKey } from "@/lib/keys";
-import { executeMigrationSweep, type SweepResult } from "@/lib/sweep-migration";
+import {
+	executeMigrationSweep,
+	type SweepProgress,
+	type SweepResult,
+} from "@/lib/sweep-migration";
 import {
 	detectMigrationStatus,
 	type MigrationStatus,
@@ -78,6 +83,10 @@ export function MigrationWizard() {
 	const [step, setStep] = useState<WizardStep>("intro");
 	const [progress, setProgress] = useState("");
 	const [progressPercent, setProgressPercent] = useState(0);
+	const [sweepProgress, setSweepProgress] = useState<SweepProgress | null>(
+		null,
+	);
+	const [scanDetail, setScanDetail] = useState<string | null>(null);
 	const [sweepResult, setSweepResult] = useState<SweepResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
@@ -110,6 +119,8 @@ export function MigrationWizard() {
 	const assets = useLegacyAssets(
 		shouldScan ? legacyPayAddress : null,
 		shouldScan ? legacyOrdAddress : null,
+		null,
+		(p) => setScanDetail(p.detail ?? p.phase),
 	);
 
 	// Transition from scan to preview when scan completes
@@ -217,6 +228,8 @@ export function MigrationWizard() {
 					setProgress(
 						`Sweeping ${totalSweepable} asset${totalSweepable !== 1 ? "s" : ""}...`,
 					);
+					// Pre-sweep stages span 0-60%; the sweep's unit-based percent
+					// fills the remaining 40%
 					setProgressPercent(60);
 
 					const result = await executeMigrationSweep({
@@ -226,9 +239,10 @@ export function MigrationWizard() {
 						legacyPayWif: migrationStatus.legacyPayWif,
 						legacyOrdWif: migrationStatus.legacyOrdWif,
 						legacyIdentityWif: identityWif,
-						onProgress: (stage) => {
-							setProgress(stage);
-							setProgressPercent((prev) => Math.min(prev + 10, 95));
+						onProgress: (p) => {
+							setProgress(p.message);
+							setProgressPercent(60 + Math.round((p.percent / 100) * 40));
+							setSweepProgress(p);
 						},
 						funding: assets.funding,
 						ordinals: sweepOrdinals,
@@ -237,8 +251,10 @@ export function MigrationWizard() {
 					});
 
 					setSweepResult(result);
+					assets.rescan();
 				} else {
 					setSweepResult({
+						bsvTxids: [],
 						ordinalTxids: [],
 						bsv21Txids: [],
 						errors: [],
@@ -260,6 +276,7 @@ export function MigrationWizard() {
 		assets.funding,
 		assets.bsv21Tokens,
 		assets.mneeBalance,
+		assets.rescan,
 		sweepOrdinals,
 		bsv21OutputCount,
 	]);
@@ -302,7 +319,11 @@ export function MigrationWizard() {
 				)}
 
 				{step === "scan" && (
-					<ScanStep error={assets.error} onRetry={assets.rescan} />
+					<ScanStep
+						error={assets.error}
+						scanDetail={scanDetail}
+						onRetry={assets.rescan}
+					/>
 				)}
 
 				{step === "preview" && migrationStatus?.status === "legacy" && (
@@ -321,12 +342,23 @@ export function MigrationWizard() {
 				)}
 
 				{step === "migrate" && (
-					<MigrateStep progress={progress} progressPercent={progressPercent} />
+					<MigrateStep
+						progress={progress}
+						progressPercent={progressPercent}
+						sweepProgress={sweepProgress}
+					/>
 				)}
 
 				{step === "complete" && (
 					<CompleteStep
 						sweepResult={sweepResult}
+						onRetryFailed={() => {
+							setSweepResult(null);
+							setSweepProgress(null);
+							setScanDetail(null);
+							setStep("scan");
+							assets.rescan();
+						}}
 						onDismiss={() => {
 							// Force re-render by navigating to wallet
 							router.push("/wallet");
@@ -413,9 +445,11 @@ function IntroStep({
 
 function ScanStep({
 	error,
+	scanDetail,
 	onRetry,
 }: {
 	error: string | null;
+	scanDetail: string | null;
 	onRetry: () => void;
 }) {
 	if (error) {
@@ -443,8 +477,8 @@ function ScanStep({
 					<Loader2 className="h-8 w-8 text-primary animate-spin" />
 				</div>
 				<h2 className="text-xl font-semibold">Scanning Legacy Addresses</h2>
-				<p className="text-sm text-muted-foreground">
-					Looking for BSV, ordinals, and tokens...
+				<p className="text-sm text-muted-foreground animate-pulse">
+					{scanDetail ?? "Looking for BSV, ordinals, tokens and MNEE..."}
 				</p>
 			</div>
 			<div className="mx-auto max-w-sm space-y-4">
@@ -566,9 +600,11 @@ function PreviewStep({
 function MigrateStep({
 	progress,
 	progressPercent,
+	sweepProgress,
 }: {
 	progress: string;
 	progressPercent: number;
+	sweepProgress: SweepProgress | null;
 }) {
 	return (
 		<div className="space-y-8 text-center">
@@ -586,6 +622,7 @@ function MigrateStep({
 				<p className="text-sm text-muted-foreground animate-pulse">
 					{progress}
 				</p>
+				{sweepProgress && <SweepStepsList steps={sweepProgress.steps} />}
 			</div>
 		</div>
 	);
@@ -597,35 +634,51 @@ function MigrateStep({
 
 function CompleteStep({
 	sweepResult,
+	onRetryFailed,
 	onDismiss,
 }: {
 	sweepResult: SweepResult | null;
+	onRetryFailed: () => void;
 	onDismiss: () => void;
 }) {
+	const hadErrors = (sweepResult?.errors.length ?? 0) > 0;
 	return (
 		<div className="space-y-8 text-center">
 			<div className="space-y-4">
-				<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-chart-2/10 ring-1 ring-chart-2/20">
-					<CheckCircle2 className="h-8 w-8 text-chart-2" />
+				<div
+					className={
+						hadErrors
+							? "mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 ring-1 ring-destructive/20"
+							: "mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-chart-2/10 ring-1 ring-chart-2/20"
+					}
+				>
+					{hadErrors ? (
+						<AlertTriangle className="h-8 w-8 text-destructive" />
+					) : (
+						<CheckCircle2 className="h-8 w-8 text-chart-2" />
+					)}
 				</div>
 				<h2 className="text-2xl font-bold tracking-tight">
-					Migration Complete
+					{hadErrors ? "Migration Finished With Errors" : "Migration Complete"}
 				</h2>
 				<p className="text-sm text-muted-foreground">
-					Your wallet has been upgraded to the identity key system.
+					{hadErrors
+						? "Your identity key is set up, but some assets could not be swept. Swept assets are already safe — you can rescan and retry the remainder."
+						: "Your wallet has been upgraded to the identity key system."}
 				</p>
 			</div>
 
 			{sweepResult && (
 				<div className="mx-auto max-w-sm space-y-2 text-sm text-left">
-					{sweepResult.bsvTxid && (
-						<div className="flex justify-between border-b border-border/30 pb-2">
+					{sweepResult.bsvTxids.map((txid) => (
+						<div
+							key={txid}
+							className="flex justify-between border-b border-border/30 pb-2"
+						>
 							<span className="text-muted-foreground">BSV Sweep</span>
-							<code className="text-xs font-mono">
-								{sweepResult.bsvTxid.slice(0, 16)}...
-							</code>
+							<code className="text-xs font-mono">{txid.slice(0, 16)}...</code>
 						</div>
-					)}
+					))}
 					{sweepResult.ordinalTxids.map((txid) => (
 						<div
 							key={txid}
@@ -664,9 +717,10 @@ function CompleteStep({
 							))}
 						</div>
 					)}
-					{!sweepResult.bsvTxid &&
+					{sweepResult.bsvTxids.length === 0 &&
 						sweepResult.ordinalTxids.length === 0 &&
 						sweepResult.bsv21Txids.length === 0 &&
+						!sweepResult.mneeTxid &&
 						sweepResult.errors.length === 0 && (
 							<p className="text-center text-muted-foreground">
 								No assets found at legacy addresses.
@@ -675,14 +729,27 @@ function CompleteStep({
 				</div>
 			)}
 
-			<Button
-				onClick={onDismiss}
-				className="mx-auto h-12 px-8 text-base gap-2"
-				size="lg"
-			>
-				Go to Wallet
-				<ArrowRight className="h-4 w-4" />
-			</Button>
+			<div className="mx-auto flex max-w-sm flex-col gap-3">
+				{hadErrors && (
+					<Button
+						onClick={onRetryFailed}
+						className="h-12 px-8 text-base gap-2"
+						size="lg"
+					>
+						<RefreshCw className="h-4 w-4" />
+						Rescan &amp; Retry Failed Sweeps
+					</Button>
+				)}
+				<Button
+					onClick={onDismiss}
+					variant={hadErrors ? "outline" : "default"}
+					className="h-12 px-8 text-base gap-2"
+					size="lg"
+				>
+					Go to Wallet
+					<ArrowRight className="h-4 w-4" />
+				</Button>
+			</div>
 		</div>
 	);
 }

@@ -197,7 +197,6 @@ interface WalletToolboxContextValue {
 	legacyFundingUtxos: {
 		outpoint: string;
 		satoshis: number;
-		lockingScript: string;
 	}[];
 	isBalanceLoading: boolean;
 	balanceError: Error | null;
