@@ -35,6 +35,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 	SidebarSeparator,
+	useSidebar,
 } from "@/components/ui/sidebar";
 import {
 	DialogContent,
@@ -118,6 +119,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
 	const [, copy] = useCopyWithSound();
 	const { play } = useSound();
+	const { isMobile, setOpenMobile } = useSidebar();
+
+	// Navigation from the sidebar must close the mobile sheet — otherwise the
+	// overlay stays on top of the new page and taps appear to do nothing
+	const handleNav = () => {
+		play("click");
+		if (isMobile) setOpenMobile(false);
+	};
 	const [copiedAddress, setCopiedAddress] = useState(false);
 
 	const [sendRecipient, setSendRecipient] = useState("");
@@ -231,7 +240,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								<Button
 									variant="outline"
 									className="w-full"
-									onClick={() => play("click")}
+									onClick={handleNav}
 								>
 									<Plus className="h-4 w-4 mr-2" /> Create New
 								</Button>
@@ -240,7 +249,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								<Button
 									variant="ghost"
 									className="w-full"
-									onClick={() => play("click")}
+									onClick={handleNav}
 								>
 									<Import className="h-4 w-4 mr-2" /> Import Existing
 								</Button>
@@ -269,7 +278,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<Link
 						href="/wallet"
 						className="flex flex-col gap-1 hover:opacity-80 transition-opacity cursor-pointer mb-4"
-						onClick={() => play("click")}
+						onClick={handleNav}
 					>
 						<span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
 							Total Balance
@@ -497,7 +506,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								{group.items.map((item) => (
 									<SidebarMenuItem key={item.title}>
 										<SidebarMenuButton asChild>
-											<Link href={item.url} onClick={() => play("click")}>
+											<Link href={item.url} onClick={handleNav}>
 												{item.title}
 												{item.shortcut && (
 													<span className="ml-auto text-xs tracking-widest text-muted-foreground hidden md:block">
