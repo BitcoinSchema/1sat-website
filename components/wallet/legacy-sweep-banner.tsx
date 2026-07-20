@@ -48,19 +48,22 @@ export function LegacySweepBanner() {
 		migrationStatus?.status === "migrated"
 			? (migrationStatus.legacyOrdAddress ?? null)
 			: null;
+	const legacyIdentityAddress =
+		migrationStatus?.status === "migrated"
+			? (migrationStatus.legacyIdentityAddress ?? null)
+			: null;
 
-	const { funding, ordinals, bsv21Tokens, loading } = useLegacyAssets(
-		legacyPayAddress,
-		legacyOrdAddress,
-	);
+	const { funding, ordinals, opnsNames, bsv21Tokens, loading } =
+		useLegacyAssets(legacyPayAddress, legacyOrdAddress, legacyIdentityAddress);
 
 	const sweepableAssetCount = useMemo(() => {
 		return (
 			funding.length +
 			ordinals.length +
+			opnsNames.length +
 			bsv21Tokens.reduce((sum, token) => sum + token.outputs.length, 0)
 		);
-	}, [funding.length, ordinals.length, bsv21Tokens]);
+	}, [funding.length, ordinals.length, opnsNames.length, bsv21Tokens]);
 
 	const shouldShow =
 		!dismissed &&
@@ -80,7 +83,7 @@ export function LegacySweepBanner() {
 					className="text-chart-1 hover:text-chart-1 hover:bg-chart-1/10 pr-8 h-auto"
 				>
 					<Link
-						href="/wallet"
+						href="/wallet/migrate"
 						onClick={() => {
 							if (isMobile) setOpenMobile(false);
 						}}

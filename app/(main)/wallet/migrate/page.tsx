@@ -23,13 +23,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Bsv20Section,
 	FundingSection,
+	LockedSection,
+	OpnsSection,
 	OrdinalsSection,
+	RunSection,
 	TokensSection,
 } from "@/components/wallet/migration-sections";
 import { useLegacyAssets } from "@/lib/hooks/use-legacy-assets";
 import { deriveIdentityKey } from "@/lib/keys";
 import { executeMigrationSweep, type SweepResult } from "@/lib/sweep-migration";
-import type { WalletOrdinal } from "@/lib/types/ordinals";
 import {
 	detectMigrationStatus,
 	type MigrationStatus,
@@ -123,7 +125,7 @@ function CompletionState({
 				<CardDescription>
 					{sweepResult
 						? "Your wallet has been migrated to the identity key system."
-						: "Your wallet is already using the identity key system."}
+						: "Your wallet is already using the identity key system and no sweepable assets remain at your legacy addresses."}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
@@ -243,33 +245,85 @@ export default function MigratePage() {
 		return detectMigrationStatus(walletKeys);
 	}, [walletKeys, isWalletLocked]);
 
-	// Scan legacy assets
-	const legacyPayAddress =
-		migrationStatus?.status === "legacy"
-			? migrationStatus.legacyPayAddress
-			: null;
-	const legacyOrdAddress =
-		migrationStatus?.status === "legacy"
-			? migrationStatus.legacyOrdAddress
-			: null;
+	// Legacy key material is available in both the "legacy" (pre-migration)
+	// and "migrated" (sweep-only re-entry) states
+	const legacy = useMemo(() => {
+		if (!migrationStatus) return null;
+		if (migrationStatus.status === "legacy") {
+			return {
+				sweepOnly: false,
+				payWif: migrationStatus.legacyPayWif,
+				ordWif: migrationStatus.legacyOrdWif,
+				identityWif: undefined as string | undefined,
+				payAddress: migrationStatus.legacyPayAddress,
+				ordAddress: migrationStatus.legacyOrdAddress,
+				identityAddress: undefined as string | undefined,
+			};
+		}
+		if (
+			migrationStatus.status === "migrated" &&
+			migrationStatus.legacyPayWif &&
+			migrationStatus.legacyOrdWif
+		) {
+			return {
+				sweepOnly: true,
+				payWif: migrationStatus.legacyPayWif,
+				ordWif: migrationStatus.legacyOrdWif,
+				identityWif: migrationStatus.legacyIdentityWif,
+				payAddress: migrationStatus.legacyPayAddress ?? null,
+				ordAddress: migrationStatus.legacyOrdAddress ?? null,
+				identityAddress: migrationStatus.legacyIdentityAddress,
+			};
+		}
+		return null;
+	}, [migrationStatus]);
 
-	const assets = useLegacyAssets(legacyPayAddress, legacyOrdAddress);
+	const assets = useLegacyAssets(
+		legacy?.payAddress ?? null,
+		legacy?.ordAddress ?? null,
+		legacy?.identityAddress ?? null,
+	);
+
+	// Sweepable asset counts (opns names sweep together with ordinals)
+	const totalAssets =
+		assets.funding.length +
+		assets.ordinals.length +
+		assets.opnsNames.length +
+		assets.bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
 
 	// Transition from scan to preview when scan completes
 	useEffect(() => {
 		if (!migrationStatus) return;
 
-		if (migrationStatus.status === "migrated") {
-			setPhase("complete");
-		} else if (migrationStatus.status === "legacy") {
-			if (!assets.loading && !assets.error) {
-				setPhase("preview");
+		if (phase !== "scan") return;
+
+		if (!legacy) {
+			if (migrationStatus.status === "migrated") {
+				// Migrated and no recoverable legacy keys — nothing to sweep
+				setPhase("complete");
+			} else {
+				setError("Wallet cannot be migrated (missing pay or ord key)");
+				setPhase("error");
 			}
-		} else {
-			setError("Wallet cannot be migrated (missing pay or ord key)");
-			setPhase("error");
+			return;
 		}
-	}, [migrationStatus, assets.loading, assets.error]);
+
+		if (assets.loading || assets.error) return;
+
+		if (legacy.sweepOnly && totalAssets === 0) {
+			// Already migrated and legacy addresses are empty
+			setPhase("complete");
+		} else {
+			setPhase("preview");
+		}
+	}, [
+		migrationStatus,
+		legacy,
+		phase,
+		assets.loading,
+		assets.error,
+		totalAssets,
+	]);
 
 	// Select all ordinals by default when assets load
 	useEffect(() => {
@@ -299,108 +353,110 @@ export default function MigratePage() {
 		setSelectedOrdinals(new Set());
 	}, []);
 
-	// Build pre-scanned asset arrays for sweep
-	const selectedOrdinalUtxos = useMemo(() => {
-		return assets.ordinals.filter((o) =>
-			selectedOrdinals.has(o.outpoint),
-		) as WalletOrdinal[];
-	}, [assets.ordinals, selectedOrdinals]);
+	// Ordinals to sweep: user selection plus all OpNS names
+	const sweepOrdinals = useMemo(() => {
+		return [
+			...assets.ordinals.filter((o) => selectedOrdinals.has(o.outpoint)),
+			...assets.opnsNames,
+		];
+	}, [assets.ordinals, assets.opnsNames, selectedOrdinals]);
 
-	const bsv21Utxos = useMemo(() => {
-		return assets.bsv21Tokens.flatMap((tb) => tb.outputs);
-	}, [assets.bsv21Tokens]);
-
-	// Run migration
+	// Run migration (or sweep-only re-entry for already-migrated wallets)
 	const runMigration = useCallback(async () => {
-		if (!walletKeys || !migrationStatus || migrationStatus.status !== "legacy")
-			return;
+		if (!walletKeys || !legacy) return;
 
 		setPhase("migrate");
 		setError(null);
 		setProgressPercent(0);
 
 		try {
-			// 1. Derive identity key
-			setProgress("Deriving identity key...");
-			setProgressPercent(10);
-			const identityKey = deriveIdentityKey(
-				migrationStatus.legacyPayWif,
-				migrationStatus.legacyOrdWif,
-			);
-			const identityWif = identityKey.toWif();
+			let identityWif = legacy.identityWif;
 
-			// 2. Update keys with identity
-			const updatedKeys = {
-				...walletKeys,
-				identityPk: identityWif,
-				identityAddressPath: "derived" as string | number | undefined,
-			};
+			if (!legacy.sweepOnly) {
+				// 1. Derive identity key
+				setProgress("Deriving identity key...");
+				setProgressPercent(10);
+				const identityKey = deriveIdentityKey(legacy.payWif, legacy.ordWif);
+				identityWif = identityKey.toWif();
 
-			// 3. Re-encrypt wallet
-			setProgress("Updating encrypted wallet...");
-			setProgressPercent(25);
-			const reencrypted = await reencryptWallet(updatedKeys);
-			if (!reencrypted) {
+				// 2. Update keys with identity
+				const updatedKeys = {
+					...walletKeys,
+					identityPk: identityWif,
+					identityAddressPath: "derived" as string | number | undefined,
+				};
+
+				// 3. Re-encrypt wallet
+				setProgress("Updating encrypted wallet...");
+				setProgressPercent(25);
+				const reencrypted = await reencryptWallet(updatedKeys);
+				if (!reencrypted) {
+					throw new Error(
+						"Failed to re-encrypt wallet. Try unlocking your wallet again first.",
+					);
+				}
+
+				// 4. Reinitialize BRC-100 wallet with identity key
+				setProgress("Reinitializing BRC-100 wallet...");
+				setProgressPercent(40);
+				if (toolbox.isInitialized) {
+					await toolbox.destroyWallet();
+				}
+
+				await new Promise((r) => setTimeout(r, 500));
+
+				const { wifToHex } = await import("@1sat/utils");
+				const rootKeyHex = wifToHex(identityWif);
+				const initialized = await toolbox.initializeWallet(rootKeyHex);
+
+				if (!initialized) {
+					throw new Error("Failed to initialize wallet with identity key");
+				}
+			}
+
+			// 5. Sweep legacy assets
+			if (!toolbox.wallet || !toolbox.services) {
 				throw new Error(
-					"Failed to re-encrypt wallet. Try unlocking your wallet again first.",
+					"BRC-100 wallet is not initialized — unlock your wallet and try again",
 				);
 			}
 
-			// 4. Reinitialize BRC-100 wallet with identity key
-			setProgress("Reinitializing BRC-100 wallet...");
-			setProgressPercent(40);
-			if (toolbox.isInitialized) {
-				await toolbox.destroyWallet();
-			}
+			const totalSweepable =
+				assets.funding.length +
+				sweepOrdinals.length +
+				assets.bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
 
-			await new Promise((r) => setTimeout(r, 500));
+			if (totalSweepable > 0) {
+				setProgress(
+					`Sweeping ${totalSweepable} asset${totalSweepable !== 1 ? "s" : ""}...`,
+				);
+				setProgressPercent(60);
 
-			const { wifToHex } = await import("@1sat/utils");
-			const rootKeyHex = wifToHex(identityWif);
-			const initialized = await toolbox.initializeWallet(rootKeyHex);
+				const result = await executeMigrationSweep({
+					wallet: toolbox.wallet,
+					services: toolbox.services,
+					chain: toolbox.chain,
+					legacyPayWif: legacy.payWif,
+					legacyOrdWif: legacy.ordWif,
+					legacyIdentityWif: identityWif,
+					onProgress: (stage) => {
+						setProgress(stage);
+						setProgressPercent((prev) => Math.min(prev + 10, 95));
+					},
+					funding: assets.funding,
+					ordinals: sweepOrdinals,
+					bsv21Tokens: assets.bsv21Tokens,
+				});
 
-			if (!initialized) {
-				throw new Error("Failed to initialize wallet with identity key");
-			}
-
-			// 6. Sweep legacy assets
-			if (toolbox.wallet && toolbox.services) {
-				const totalSweepable =
-					assets.funding.length +
-					selectedOrdinalUtxos.length +
-					bsv21Utxos.length;
-
-				if (totalSweepable > 0) {
-					setProgress(
-						`Sweeping ${totalSweepable} asset${totalSweepable !== 1 ? "s" : ""}...`,
-					);
-					setProgressPercent(60);
-
-					const result = await executeMigrationSweep({
-						wallet: toolbox.wallet,
-						services: toolbox.services,
-						chain: toolbox.chain,
-						legacyPayWif: migrationStatus.legacyPayWif,
-						legacyOrdWif: migrationStatus.legacyOrdWif,
-						legacyPayAddress: migrationStatus.legacyPayAddress,
-						legacyOrdAddress: migrationStatus.legacyOrdAddress,
-						onProgress: (stage) => {
-							setProgress(stage);
-							setProgressPercent((prev) => Math.min(prev + 10, 95));
-						},
-						fundingUtxos: assets.funding,
-						ordinalUtxos: selectedOrdinalUtxos,
-						bsv21Utxos,
-					});
-
-					setSweepResult(result);
-				} else {
-					setSweepResult({
-						ordinalTxids: [],
-						bsv21Txids: [],
-						errors: [],
-					});
-				}
+				setSweepResult(result);
+				// Refresh so the banner and any re-entry reflect what's left
+				assets.rescan();
+			} else {
+				setSweepResult({
+					ordinalTxids: [],
+					bsv21Txids: [],
+					errors: [],
+				});
 			}
 
 			setProgressPercent(100);
@@ -410,20 +466,7 @@ export default function MigratePage() {
 			setError(err instanceof Error ? err.message : String(err));
 			setPhase("error");
 		}
-	}, [
-		walletKeys,
-		migrationStatus,
-		toolbox,
-		assets.funding,
-		selectedOrdinalUtxos,
-		bsv21Utxos,
-	]);
-
-	// Asset counts for the summary
-	const totalAssets =
-		assets.funding.length +
-		assets.ordinals.length +
-		assets.bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
+	}, [walletKeys, legacy, toolbox, assets, sweepOrdinals]);
 
 	// Locked state
 	if (isWalletLocked || !walletKeys) {
@@ -472,15 +515,20 @@ export default function MigratePage() {
 				)}
 
 				{/* Preview: show categorized assets */}
-				{phase === "preview" && migrationStatus?.status === "legacy" && (
+				{phase === "preview" && legacy && (
 					<>
 						{/* Legacy addresses */}
 						<Card>
 							<CardHeader>
-								<CardTitle>Migration Required</CardTitle>
+								<CardTitle>
+									{legacy.sweepOnly
+										? "Legacy Assets Found"
+										: "Migration Required"}
+								</CardTitle>
 								<CardDescription>
-									Your wallet uses the legacy payment key as its BRC-100 root.
-									Review the assets below, then migrate.
+									{legacy.sweepOnly
+										? "Your wallet is already migrated, but assets remain at your legacy addresses. Review them below, then sweep."
+										: "Your wallet uses the legacy payment key as its BRC-100 root. Review the assets below, then migrate."}
 								</CardDescription>
 							</CardHeader>
 							<CardContent className="space-y-2 text-sm">
@@ -488,17 +536,13 @@ export default function MigratePage() {
 									<span className="text-muted-foreground">
 										Legacy Pay Address
 									</span>
-									<code className="text-xs">
-										{migrationStatus.legacyPayAddress}
-									</code>
+									<code className="text-xs">{legacy.payAddress}</code>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-muted-foreground">
 										Legacy Ord Address
 									</span>
-									<code className="text-xs">
-										{migrationStatus.legacyOrdAddress}
-									</code>
+									<code className="text-xs">{legacy.ordAddress}</code>
 								</div>
 							</CardContent>
 						</Card>
@@ -520,17 +564,24 @@ export default function MigratePage() {
 								onPageChange={setOrdinalPage}
 							/>
 
+							<OpnsSection opnsNames={assets.opnsNames} />
+
 							<TokensSection tokens={assets.bsv21Tokens} />
 
 							<Bsv20Section tokens={assets.bsv20Tokens} />
+
+							<LockedSection locked={assets.locked} />
+
+							<RunSection run={assets.run} />
 						</div>
 
 						{/* No assets found */}
 						{totalAssets === 0 && assets.bsv20Tokens.length === 0 && (
 							<Card>
 								<CardContent className="py-8 text-center text-muted-foreground">
-									No assets found at legacy addresses. Migration will still
-									derive your identity key.
+									No assets found at legacy addresses.
+									{!legacy.sweepOnly &&
+										" Migration will still derive your identity key."}
 								</CardContent>
 							</Card>
 						)}
@@ -540,14 +591,18 @@ export default function MigratePage() {
 
 						<div className="space-y-3">
 							<div className="text-xs text-muted-foreground">
-								This will: derive your identity key, re-encrypt your wallet
-								backup, reinitialize the BRC-100 wallet
-								{totalAssets > 0 &&
-									", and sweep all selected assets from legacy addresses"}
-								.
+								{legacy.sweepOnly
+									? "This will sweep all selected assets from your legacy addresses into your BRC-100 wallet."
+									: `This will: derive your identity key, re-encrypt your wallet backup, reinitialize the BRC-100 wallet${
+											totalAssets > 0
+												? ", and sweep all selected assets from legacy addresses"
+												: ""
+										}.`}
 							</div>
 							<Button onClick={runMigration} className="w-full">
-								Derive Identity Key &amp; Sweep
+								{legacy.sweepOnly
+									? "Sweep Legacy Assets"
+									: "Derive Identity Key & Sweep"}
 								{totalAssets > 0 &&
 									` (${totalAssets} asset${totalAssets !== 1 ? "s" : ""})`}
 							</Button>
