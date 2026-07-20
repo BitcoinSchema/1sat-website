@@ -251,6 +251,7 @@ export function WalletToolboxProvider({
 
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [isInitializing, setIsInitializing] = useState(false);
+	const initGuardRef = useRef(false);
 	const [initError, setInitError] = useState<string | null>(null);
 
 	// -- Receive address state --
@@ -454,10 +455,11 @@ export function WalletToolboxProvider({
 	// -- Wallet init --
 	const initializeWallet = useCallback(
 		async (rootKeyHex: string): Promise<boolean> => {
-			if (isInitializing || isInitialized) {
+			if (initGuardRef.current) {
 				console.warn("[WalletToolbox] Already initializing or initialized");
 				return false;
 			}
+			initGuardRef.current = true;
 
 			setIsInitializing(true);
 			console.log("[WalletToolbox] Starting wallet initialization...");
@@ -466,13 +468,16 @@ export function WalletToolboxProvider({
 				const rootKey = PrivateKey.fromHex(rootKeyHex);
 				const newIdentityKey = rootKey.toPublicKey().toString();
 
+				// wallet.1sat.app is the hosted BRC-100 storage server (the old
+				// api.1sat.app/1sat/wallet URL 404s, and wallet-browser >=0.0.7x
+				// verifies the storage connection eagerly at init)
+				const activeRemote =
+					process.env.NEXT_PUBLIC_WALLET_STORAGE_URL ||
+					(chain === "main" ? "https://wallet.1sat.app" : undefined);
 				const result = await createWebWallet({
 					privateKey: rootKey,
 					chain,
-					activeRemote:
-						chain === "main"
-							? "https://api.1sat.app/1sat/wallet"
-							: "https://testnet.api.1sat.app/1sat/wallet",
+					activeRemote,
 					storageIdentityKey: rootKey.toPublicKey().toString(),
 				});
 
@@ -563,12 +568,15 @@ export function WalletToolboxProvider({
 				setInitError(errorMessage);
 				setIsInitialized(false);
 				setAddressManagerReady(false);
+				initGuardRef.current = false;
 				return false;
 			} finally {
 				setIsInitializing(false);
 			}
 		},
-		[chain, isInitializing, isInitialized],
+		// guard state lives in initGuardRef so this callback keeps a stable
+		// identity — its churn re-fired the WalletBridge init effect
+		[chain],
 	);
 
 	// -- Wallet destroy --
@@ -576,6 +584,7 @@ export function WalletToolboxProvider({
 		console.log("[WalletToolbox] Destroying wallet...");
 
 		await stopSyncWorkers();
+		initGuardRef.current = false;
 		if (walletResultRef.current) {
 			await walletResultRef.current.destroy();
 			walletResultRef.current = null;

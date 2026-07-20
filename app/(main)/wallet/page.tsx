@@ -34,6 +34,7 @@ export default function WalletPage() {
 		wallet,
 		services,
 		isInitialized,
+		initError,
 		ordinals,
 		bsv20Tokens,
 		bsv21Tokens,
@@ -173,6 +174,17 @@ export default function WalletPage() {
 			</PageHeader>
 
 			<PageContent>
+				{initError && (
+					<div className="mb-6 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm">
+						<p className="font-medium text-destructive">
+							Wallet initialization failed
+						</p>
+						<p className="mt-1 text-muted-foreground break-all">{initError}</p>
+						<p className="mt-2 text-xs text-muted-foreground">
+							Lock and unlock the wallet to retry.
+						</p>
+					</div>
+				)}
 				<SyncActivityTerminal className="mb-6" />
 				<WalletTabs />
 				<TransactionTimeline className="mt-6" days={30} />
