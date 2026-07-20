@@ -1,13 +1,13 @@
 "use client";
 
+import type { IndexedOutput } from "@1sat/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MigrationOrdinalCard } from "@/components/wallet/migration-ordinal-card";
 import type {
-	OrdinalWithMeta,
+	EnrichedOrdinal,
 	TokenBalance,
 } from "@/lib/hooks/use-legacy-assets";
-import type { WalletOrdinal } from "@/lib/types/ordinals";
 
 const ORDINALS_PER_PAGE = 20;
 
@@ -15,9 +15,13 @@ export function formatSats(sats: number): string {
 	return sats.toLocaleString();
 }
 
-export function formatTokenAmount(rawAmount: string, decimals: number): string {
-	if (decimals === 0) return rawAmount;
-	const padded = rawAmount.padStart(decimals + 1, "0");
+export function formatTokenAmount(
+	rawAmount: string | bigint,
+	decimals: number,
+): string {
+	const raw = rawAmount.toString();
+	if (decimals === 0) return raw;
+	const padded = raw.padStart(decimals + 1, "0");
 	const intPart = padded.slice(0, -decimals) || "0";
 	const decPart = padded.slice(-decimals).replace(/0+$/, "");
 	return decPart ? `${intPart}.${decPart}` : intPart;
@@ -27,7 +31,7 @@ export function FundingSection({
 	funding,
 	totalBsv,
 }: {
-	funding: WalletOrdinal[];
+	funding: IndexedOutput[];
 	totalBsv: number;
 }) {
 	if (funding.length === 0) return null;
@@ -65,7 +69,7 @@ export function OrdinalsSection({
 	ordinalPage,
 	onPageChange,
 }: {
-	ordinals: OrdinalWithMeta[];
+	ordinals: EnrichedOrdinal[];
 	selectedOrdinals: Set<string>;
 	onToggle: (outpoint: string) => void;
 	onSelectAll: () => void;
@@ -164,6 +168,32 @@ export function OrdinalsSection({
 	);
 }
 
+export function OpnsSection({ opnsNames }: { opnsNames: EnrichedOrdinal[] }) {
+	if (opnsNames.length === 0) return null;
+
+	return (
+		<div className="bg-gradient-to-br from-chart-3/5 to-transparent border border-chart-3/20 p-5">
+			<div className="flex items-center gap-2 mb-3">
+				<span className="h-2 w-2 bg-chart-3" />
+				<span className="text-sm font-semibold text-chart-3">OpNS Names</span>
+				<Badge variant="secondary" className="text-xs ml-auto">
+					{opnsNames.length} domain{opnsNames.length !== 1 ? "s" : ""}
+				</Badge>
+			</div>
+			<div className="flex flex-wrap gap-2">
+				{opnsNames.map((item) => (
+					<Badge key={item.outpoint} variant="outline" className="text-xs">
+						{item.name || item.outpoint.slice(0, 12)}
+					</Badge>
+				))}
+			</div>
+			<p className="text-xs text-muted-foreground mt-3">
+				OpNS domains are swept along with your ordinals.
+			</p>
+		</div>
+	);
+}
+
 export function TokensSection({ tokens }: { tokens: TokenBalance[] }) {
 	if (tokens.length === 0) return null;
 
@@ -204,6 +234,11 @@ export function TokensSection({ tokens }: { tokens: TokenBalance[] }) {
 								<div className="text-xs text-muted-foreground">
 									{formatTokenAmount(tb.totalAmount, tb.decimals)}{" "}
 									{tb.symbol || ""}
+									{!tb.isActive && (
+										<span className="text-destructive ml-1">
+											(not validated — will be skipped)
+										</span>
+									)}
 								</div>
 							</div>
 						</div>
@@ -218,13 +253,8 @@ export function TokensSection({ tokens }: { tokens: TokenBalance[] }) {
 	);
 }
 
-export function Bsv20Section({ tokens }: { tokens: WalletOrdinal[] }) {
+export function Bsv20Section({ tokens }: { tokens: IndexedOutput[] }) {
 	if (tokens.length === 0) return null;
-
-	const ticks = tokens.map((t) => {
-		const bsv20 = t.origin?.data?.bsv20 ?? t.data?.bsv20;
-		return bsv20?.tick || bsv20?.sym || "?";
-	});
 
 	return (
 		<div className="bg-gradient-to-br from-muted/20 to-transparent border border-muted/30 p-5">
@@ -233,26 +263,58 @@ export function Bsv20Section({ tokens }: { tokens: WalletOrdinal[] }) {
 				<span className="text-sm font-semibold text-muted-foreground">
 					BSV-20 Tokens
 				</span>
+				<Badge variant="secondary" className="text-xs ml-auto">
+					{tokens.length} output{tokens.length !== 1 ? "s" : ""}
+				</Badge>
 			</div>
-			<p className="text-xs text-muted-foreground mb-3">
-				BSV-20 tokens cannot be swept automatically.
+			<p className="text-xs text-muted-foreground">
+				BSV-20 is deprecated and cannot be swept. These outputs will remain at
+				your legacy address.
 			</p>
-			<div className="flex flex-wrap gap-2">
-				{ticks.slice(0, 10).map((tick, i) => (
-					<Badge
-						key={`${tick}-${tokens[i]?.outpoint}`}
-						variant="outline"
-						className="text-xs text-muted-foreground"
-					>
-						{tick}
-					</Badge>
-				))}
-				{ticks.length > 10 && (
-					<span className="text-xs text-muted-foreground">
-						+{ticks.length - 10} more
-					</span>
-				)}
+		</div>
+	);
+}
+
+export function LockedSection({ locked }: { locked: IndexedOutput[] }) {
+	if (locked.length === 0) return null;
+
+	return (
+		<div className="bg-gradient-to-br from-muted/20 to-transparent border border-muted/30 p-5">
+			<div className="flex items-center gap-2 mb-3">
+				<span className="h-2 w-2 bg-muted-foreground" />
+				<span className="text-sm font-semibold text-muted-foreground">
+					Time-Locked Outputs
+				</span>
+				<Badge variant="secondary" className="text-xs ml-auto">
+					{locked.length} output{locked.length !== 1 ? "s" : ""}
+				</Badge>
 			</div>
+			<p className="text-xs text-muted-foreground">
+				These coins are time-locked on chain and cannot be swept until they
+				unlock. Sweep them later once the lock height passes.
+			</p>
+		</div>
+	);
+}
+
+export function RunSection({ run }: { run: IndexedOutput[] }) {
+	if (run.length === 0) return null;
+
+	return (
+		<div className="bg-gradient-to-br from-destructive/5 to-transparent border border-destructive/20 p-5">
+			<div className="flex items-center gap-2 mb-3">
+				<span className="h-2 w-2 bg-destructive" />
+				<span className="text-sm font-semibold text-destructive">
+					RUN Protocol Outputs
+				</span>
+				<Badge variant="secondary" className="text-xs ml-auto">
+					{run.length} output{run.length !== 1 ? "s" : ""}
+				</Badge>
+			</div>
+			<p className="text-xs text-muted-foreground">
+				These outputs belong to RUN protocol transactions and are quarantined
+				from the BSV sweep so token state is not destroyed as fees.
+			</p>
 		</div>
 	);
 }

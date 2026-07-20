@@ -2,62 +2,15 @@
 
 import {
 	createContext,
-	type SweepBsv21Input,
-	type SweepInput,
+	prepareSweepInputs,
 	sweepBsv,
 	sweepBsv21,
 	sweepOrdinals,
+	type TokenBalance,
 } from "@1sat/actions";
+import type { IndexedOutput } from "@1sat/types";
 import type { OneSatServices } from "@1sat/wallet-browser";
 import { PrivateKey, type WalletInterface } from "@bsv/sdk";
-import type { WalletOrdinal } from "@/lib/types/ordinals";
-import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
-
-export interface MigrationSweepParams {
-	wallet: WalletInterface;
-	services: OneSatServices;
-	chain?: "main" | "test";
-	legacyPayWif: string;
-	legacyOrdWif: string;
-	legacyPayAddress: string;
-	legacyOrdAddress: string;
-	onProgress: (stage: string) => void;
-	// Pre-scanned assets (if all three provided, skip scanning)
-	fundingUtxos?: WalletOrdinal[];
-	ordinalUtxos?: WalletOrdinal[];
-	bsv21Utxos?: WalletOrdinal[];
-}
-
-interface CategorizedUtxos {
-	ordinals: WalletOrdinal[];
-	bsv20Tokens: WalletOrdinal[];
-	bsv21Tokens: WalletOrdinal[];
-	funding: WalletOrdinal[];
-}
-
-async function scanLegacyAddresses(
-	params: MigrationSweepParams,
-): Promise<CategorizedUtxos> {
-	const { legacyPayAddress, legacyOrdAddress, onProgress } = params;
-	const gp = new GorillaPoolService();
-
-	onProgress("Scanning legacy addresses...");
-	const addresses = [legacyOrdAddress];
-	if (legacyPayAddress !== legacyOrdAddress) {
-		addresses.push(legacyPayAddress);
-	}
-
-	const allUtxoResults = await Promise.all(
-		addresses.map((addr) => gp.getCategorizedUtxos(addr)),
-	);
-
-	return {
-		ordinals: allUtxoResults.flatMap((r) => r.ordinals),
-		bsv20Tokens: allUtxoResults.flatMap((r) => r.bsv20Tokens),
-		bsv21Tokens: allUtxoResults.flatMap((r) => r.bsv21Tokens),
-		funding: allUtxoResults.flatMap((r) => r.funding),
-	};
-}
 
 export interface SweepResult {
 	bsvTxid?: string;
@@ -66,6 +19,46 @@ export interface SweepResult {
 	errors: string[];
 }
 
+export interface MigrationSweepParams {
+	wallet: WalletInterface;
+	services: OneSatServices;
+	chain?: "main" | "test";
+	legacyPayWif: string;
+	legacyOrdWif: string;
+	legacyIdentityWif?: string;
+	onProgress: (stage: string) => void;
+	funding: IndexedOutput[];
+	ordinals: IndexedOutput[];
+	bsv21Tokens: TokenBalance[];
+}
+
+const getOwner = (output: IndexedOutput): string | undefined =>
+	output.events?.find((e) => e.startsWith("own:"))?.slice(4);
+
+// Resolve the signing key for each output from its own: event. A missing
+// key is a hard error BEFORE building the tx — signing with the wrong key
+// used to fail the whole sweep with no diagnostic.
+const buildKeys = (
+	outputs: IndexedOutput[],
+	keyMap: Map<string, PrivateKey>,
+): PrivateKey[] =>
+	outputs.map((output) => {
+		const owner = getOwner(output);
+		const key = owner ? keyMap.get(owner) : undefined;
+		if (!key) {
+			throw new Error(
+				`No key for output ${output.outpoint} (owner: ${owner ?? "unknown"})`,
+			);
+		}
+		return key;
+	});
+
+/**
+ * Sweep legacy assets into the BRC-100 wallet. Mirrors the yours-wallet /
+ * @1sat/sweep-ui sweeper: BEEF-derived locking scripts via
+ * prepareSweepInputs, per-output key resolution from own: events, and
+ * per-token overlay-validated BSV-21 amounts.
+ */
 export async function executeMigrationSweep(
 	params: MigrationSweepParams,
 ): Promise<SweepResult> {
@@ -75,9 +68,25 @@ export async function executeMigrationSweep(
 		chain = "main",
 		legacyPayWif,
 		legacyOrdWif,
-		legacyPayAddress,
+		legacyIdentityWif,
 		onProgress,
+		funding,
+		ordinals,
+		bsv21Tokens,
 	} = params;
+
+	const ctx = createContext(wallet, { services, chain });
+
+	const keyMap = new Map<string, PrivateKey>();
+	for (const wif of [legacyPayWif, legacyOrdWif, legacyIdentityWif]) {
+		if (!wif) continue;
+		try {
+			const key = PrivateKey.fromWif(wif);
+			keyMap.set(key.toPublicKey().toAddress(), key);
+		} catch {
+			// skip malformed keys; buildKeys errors identify affected outputs
+		}
+	}
 
 	const result: SweepResult = {
 		ordinalTxids: [],
@@ -85,43 +94,24 @@ export async function executeMigrationSweep(
 		errors: [],
 	};
 
-	const ctx = createContext(wallet, { services, chain });
-
-	// 1. Use pre-scanned assets if all provided, otherwise scan
-	const merged: CategorizedUtxos =
-		params.fundingUtxos && params.ordinalUtxos && params.bsv21Utxos
-			? {
-					ordinals: params.ordinalUtxos,
-					bsv20Tokens: [] as WalletOrdinal[],
-					bsv21Tokens: params.bsv21Utxos,
-					funding: params.fundingUtxos,
-				}
-			: await scanLegacyAddresses(params);
-
 	const totalAssets =
-		merged.ordinals.length + merged.bsv21Tokens.length + merged.funding.length;
-
+		funding.length +
+		ordinals.length +
+		bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
 	if (totalAssets === 0) {
 		onProgress("No assets found at legacy addresses");
 		return result;
 	}
 
-	// 2. Sweep BSV funding UTXOs
-	if (merged.funding.length > 0) {
-		onProgress(`Sweeping ${merged.funding.length} BSV UTXOs...`);
+	// 1. BSV funding
+	if (funding.length > 0) {
+		onProgress(`Sweeping ${funding.length} BSV UTXOs...`);
 		try {
-			const fundingInputs: SweepInput[] = merged.funding.map((u) => ({
-				outpoint: u.outpoint,
-				satoshis: u.satoshis,
-				lockingScript: u.script,
-			}));
-
-			const payKey = PrivateKey.fromWif(legacyPayWif);
+			const inputs = await prepareSweepInputs(ctx, funding);
 			const bsvResult = await sweepBsv.execute(ctx, {
-				inputs: fundingInputs,
-				keys: fundingInputs.map(() => payKey),
+				inputs,
+				keys: buildKeys(funding, keyMap),
 			});
-
 			if (bsvResult.error) {
 				result.errors.push(`BSV sweep: ${bsvResult.error}`);
 			} else if (bsvResult.txid) {
@@ -134,28 +124,16 @@ export async function executeMigrationSweep(
 		}
 	}
 
-	// 3. Sweep ordinals
-	if (merged.ordinals.length > 0) {
-		onProgress(`Sweeping ${merged.ordinals.length} ordinals...`);
+	// 2. Ordinals (listed ordinals are swept via OrdLock cancel inside the
+	// action; BSV-20 content is refused by the action's guard)
+	if (ordinals.length > 0) {
+		onProgress(`Sweeping ${ordinals.length} ordinals...`);
 		try {
-			const ordinalInputs: SweepInput[] = merged.ordinals.map((u) => ({
-				outpoint: u.outpoint,
-				satoshis: u.satoshis,
-				lockingScript: u.script,
-			}));
-
-			// Sign each ordinal with the key controlling its owner address
-			const payKey = PrivateKey.fromWif(legacyPayWif);
-			const ordKey = PrivateKey.fromWif(legacyOrdWif);
-			const ordinalKeys = merged.ordinals.map((u) =>
-				u.owner === legacyPayAddress ? payKey : ordKey,
-			);
-
+			const inputs = await prepareSweepInputs(ctx, ordinals);
 			const ordResult = await sweepOrdinals.execute(ctx, {
-				inputs: ordinalInputs,
-				keys: ordinalKeys,
+				inputs,
+				keys: buildKeys(ordinals, keyMap),
 			});
-
 			if (ordResult.error) {
 				result.errors.push(`Ordinal sweep: ${ordResult.error}`);
 			} else if (ordResult.txid) {
@@ -168,57 +146,48 @@ export async function executeMigrationSweep(
 		}
 	}
 
-	// 4. Sweep BSV-21 tokens (grouped by tokenId)
-	if (merged.bsv21Tokens.length > 0) {
-		const tokenGroups = new Map<string, typeof merged.bsv21Tokens>();
-		for (const token of merged.bsv21Tokens) {
-			const tokenId =
-				token.origin?.data?.bsv21?.id ?? token.data?.bsv21?.id ?? "";
-			if (!tokenId) continue;
-			const group = tokenGroups.get(tokenId) ?? [];
-			group.push(token);
-			tokenGroups.set(tokenId, group);
+	// 3. BSV-21 tokens — one tx per token, amounts from the overlay-validated
+	// map (never the origin mint amount), inactive tokens skipped
+	for (const token of bsv21Tokens) {
+		const label = token.symbol ?? token.tokenId.slice(0, 8);
+		if (!token.isActive) {
+			result.errors.push(`Token ${label}: not active on the overlay — skipped`);
+			continue;
 		}
+		if (token.outputs.length === 0) continue;
+		onProgress(`Sweeping ${label} (${token.outputs.length} outputs)...`);
+		try {
+			const sweepInputs = await prepareSweepInputs(ctx, token.outputs);
+			const sweepInputMap = new Map(sweepInputs.map((s) => [s.outpoint, s]));
 
-		for (const [tokenId, tokens] of tokenGroups) {
-			onProgress(
-				`Sweeping ${tokens.length} tokens (${tokenId.slice(0, 8)}...)...`,
-			);
-			try {
-				const tokenInputs: SweepBsv21Input[] = tokens.map((u) => ({
-					outpoint: u.outpoint,
-					satoshis: u.satoshis,
-					lockingScript: u.script,
-					tokenId,
-					amount: u.data?.bsv21?.amt ?? u.origin?.data?.bsv21?.amt ?? "0",
-				}));
-
-				const payKey = PrivateKey.fromWif(legacyPayWif);
-				const ordKey = PrivateKey.fromWif(legacyOrdWif);
-				const tokenKeys = tokens.map((u) =>
-					u.owner === legacyPayAddress ? payKey : ordKey,
-				);
-
-				const tokenResult = await sweepBsv21.execute(ctx, {
-					inputs: tokenInputs,
-					keys: tokenKeys,
-				});
-
-				if (tokenResult.error) {
-					result.errors.push(
-						`BSV-21 sweep (${tokenId.slice(0, 8)}): ${tokenResult.error}`,
-					);
-				} else if (tokenResult.txid) {
-					result.bsv21Txids.push(tokenResult.txid);
+			const inputs = token.outputs.map((out) => {
+				const base = sweepInputMap.get(out.outpoint);
+				if (!base) {
+					throw new Error(`Missing sweep input for ${out.outpoint}`);
 				}
-			} catch (error) {
-				result.errors.push(
-					`BSV-21 sweep (${tokenId.slice(0, 8)}): ${error instanceof Error ? error.message : String(error)}`,
-				);
+				return {
+					...base,
+					tokenId: token.tokenId,
+					amount: token.amounts.get(out.outpoint) ?? "0",
+				};
+			});
+
+			const tokenResult = await sweepBsv21.execute(ctx, {
+				inputs,
+				keys: buildKeys(token.outputs, keyMap),
+			});
+			if (tokenResult.error) {
+				result.errors.push(`Token ${label}: ${tokenResult.error}`);
+			} else if (tokenResult.txid) {
+				result.bsv21Txids.push(tokenResult.txid);
 			}
+		} catch (error) {
+			result.errors.push(
+				`Token ${label}: ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
 	}
 
-	onProgress("Migration sweep complete");
+	onProgress("Sweep complete");
 	return result;
 }

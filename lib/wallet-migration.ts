@@ -10,6 +10,8 @@ export type MigrationStatus =
 			legacyOrdWif?: string;
 			legacyPayAddress?: string;
 			legacyOrdAddress?: string;
+			legacyIdentityWif?: string;
+			legacyIdentityAddress?: string;
 	  }
 	| {
 			status: "legacy";
@@ -36,6 +38,10 @@ export function detectMigrationStatus(keys: Keys): MigrationStatus {
 						.toAddress()
 						.toString(),
 					legacyOrdAddress: PrivateKey.fromWif(keys.ordPk)
+						.toAddress()
+						.toString(),
+					legacyIdentityWif: keys.identityPk,
+					legacyIdentityAddress: PrivateKey.fromWif(keys.identityPk)
 						.toAddress()
 						.toString(),
 				};

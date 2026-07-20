@@ -1,11 +1,9 @@
 "use client";
 
-import { createContext, sweepBsv } from "@1sat/actions";
-import { PrivateKey } from "@bsv/sdk";
 import { useQuery } from "@tanstack/react-query";
 import { Wallet as WalletIcon } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
 	Page,
 	PageContent,
@@ -32,7 +30,6 @@ export default function WalletPage() {
 		balance,
 		syncWallet,
 		wallet,
-		services,
 		isInitialized,
 		initError,
 		ordinals,
@@ -40,8 +37,6 @@ export default function WalletPage() {
 		bsv21Tokens,
 		legacyBalance,
 		legacyFundingUtxos,
-		chain,
-		refreshBalance,
 	} = useWalletToolbox();
 
 	// Sync wallet on mount
@@ -54,45 +49,6 @@ export default function WalletPage() {
 	const formatBSV = (satoshis: number) => {
 		return (satoshis / 100000000).toFixed(8);
 	};
-
-	const [isSweeping, setIsSweeping] = useState(false);
-	const [sweepError, setSweepError] = useState<string | null>(null);
-
-	const handleSweepBsv = useCallback(async () => {
-		if (
-			!wallet ||
-			!services ||
-			!walletKeys?.payPk ||
-			legacyFundingUtxos.length === 0
-		)
-			return;
-		setIsSweeping(true);
-		setSweepError(null);
-		try {
-			const ctx = createContext(wallet, { services, chain });
-			const payKey = PrivateKey.fromWif(walletKeys.payPk);
-			const result = await sweepBsv.execute(ctx, {
-				inputs: legacyFundingUtxos,
-				keys: legacyFundingUtxos.map(() => payKey),
-			});
-			if (result.error) {
-				setSweepError(result.error);
-			} else {
-				refreshBalance();
-			}
-		} catch (error) {
-			setSweepError(error instanceof Error ? error.message : String(error));
-		} finally {
-			setIsSweeping(false);
-		}
-	}, [
-		wallet,
-		services,
-		walletKeys?.payPk,
-		legacyFundingUtxos,
-		chain,
-		refreshBalance,
-	]);
 
 	const walletScope = walletKeys?.identityPk ?? walletKeys?.payPk ?? "unknown";
 
@@ -223,18 +179,9 @@ export default function WalletPage() {
 										{legacyFundingUtxos.length !== 1 ? "s" : ""} on old
 										addresses
 									</p>
-									<Button
-										size="sm"
-										onClick={handleSweepBsv}
-										disabled={isSweeping || !walletKeys?.payPk}
-									>
-										{isSweeping ? "Sweeping..." : "Sweep to Wallet"}
+									<Button size="sm" asChild>
+										<Link href="/wallet/migrate">Sweep to Wallet</Link>
 									</Button>
-									{sweepError && (
-										<p className="text-xs text-destructive mt-1">
-											{sweepError}
-										</p>
-									)}
 								</CardContent>
 							</Card>
 						)}

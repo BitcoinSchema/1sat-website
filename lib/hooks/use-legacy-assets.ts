@@ -1,188 +1,155 @@
 "use client";
 
+import {
+	type ScanProgress,
+	type ScanResult,
+	scanAddresses,
+	type TokenBalance,
+} from "@1sat/actions";
+import { OneSatServices } from "@1sat/client";
+import type { IndexedOutput } from "@1sat/types";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ORDFS } from "@/lib/constants";
-import type { WalletOrdinal } from "@/lib/types/ordinals";
-import { GorillaPoolService } from "@/lib/wallet/gorillapool-service";
+import { STACK_URL, stackContentUrl } from "@/lib/stack";
 
-export interface OrdinalWithMeta extends WalletOrdinal {
+export type { TokenBalance };
+
+// IndexedOutput enriched with display metadata resolved from its events
+export interface EnrichedOrdinal extends IndexedOutput {
+	origin?: string;
 	contentType?: string;
 	name?: string;
 	contentUrl: string;
 }
 
-export interface TokenBalance {
-	tokenId: string;
-	symbol?: string;
-	icon?: string;
-	decimals: number;
-	totalAmount: string;
-	outputs: WalletOrdinal[];
-}
-
 export interface LegacyAssets {
 	loading: boolean;
 	error: string | null;
-	funding: WalletOrdinal[];
-	ordinals: OrdinalWithMeta[];
+	funding: IndexedOutput[];
+	ordinals: EnrichedOrdinal[];
+	opnsNames: EnrichedOrdinal[];
 	bsv21Tokens: TokenBalance[];
-	bsv20Tokens: WalletOrdinal[];
+	bsv20Tokens: IndexedOutput[];
+	locked: IndexedOutput[];
+	run: IndexedOutput[];
 	totalBsv: number;
 	rescan: () => void;
 }
 
-function enrichOrdinal(utxo: WalletOrdinal): OrdinalWithMeta {
-	const contentType = utxo.origin?.data?.insc?.file?.type;
-	const name =
-		(utxo.origin?.map?.name as string | undefined) ??
-		(utxo.origin?.data?.map?.name as string | undefined);
-	const contentUrl = `${ORDFS}/content/${utxo.origin?.outpoint || utxo.outpoint}`;
+const getEvent = (events: string[], prefix: string): string | undefined => {
+	const e = events.find((ev) => ev.startsWith(prefix));
+	return e ? e.slice(prefix.length) : undefined;
+};
 
-	return { ...utxo, contentType, name, contentUrl };
-}
+const enrichOrdinal = (out: IndexedOutput): EnrichedOrdinal => {
+	const events = out.events ?? [];
+	const origin = getEvent(events, "origin:");
+	const types = events
+		.filter((e) => e.startsWith("type:"))
+		.map((e) => e.slice(5));
+	const contentType = types.find((t) => t.includes("/")) ?? types[0];
+	const name = getEvent(events, "name:");
+	const contentUrl = stackContentUrl(origin ?? out.outpoint);
+	return { ...out, origin, contentType, name, contentUrl };
+};
 
-function groupBsv21Tokens(utxos: WalletOrdinal[]): TokenBalance[] {
-	const groups = new Map<
-		string,
-		{ outputs: WalletOrdinal[]; symbol?: string; decimals: number }
-	>();
-
-	for (const utxo of utxos) {
-		const bsv21 = utxo.origin?.data?.bsv21 ?? utxo.data?.bsv21;
-		const tokenId = bsv21?.id;
-		if (!tokenId) continue;
-
-		let group = groups.get(tokenId);
-		if (!group) {
-			group = {
-				outputs: [],
-				symbol: bsv21.sym,
-				decimals: bsv21.dec ?? 0,
-			};
-			groups.set(tokenId, group);
-		}
-		group.outputs.push(utxo);
+const resolveIconUrl = (tokenId: string, icon?: string): string => {
+	if (!icon) return "";
+	let outpoint = icon;
+	if (icon.startsWith("_")) {
+		outpoint = `${tokenId.split("_")[0]}${icon}`;
 	}
+	return stackContentUrl(outpoint);
+};
 
-	const balances: TokenBalance[] = [];
-	for (const [tokenId, group] of groups) {
-		let totalAmount = BigInt(0);
-		for (const utxo of group.outputs) {
-			const bsv21 = utxo.origin?.data?.bsv21 ?? utxo.data?.bsv21;
-			const amt = bsv21?.amt;
-			if (amt) {
-				totalAmount += BigInt(amt);
-			}
-		}
-
-		balances.push({
-			tokenId,
-			symbol: group.symbol,
-			icon: `${ORDFS}/content/${tokenId}`,
-			decimals: group.decimals,
-			totalAmount: totalAmount.toString(),
-			outputs: group.outputs,
-		});
-	}
-
-	return balances;
-}
-
+/**
+ * Scan legacy addresses via the 1sat stack (@1sat/actions scanAddresses):
+ * forced indexer re-sync, event-tag categorization (funding vs ordinals vs
+ * OPNS vs BSV-21 vs locked vs RUN), and overlay-validated BSV-21 amounts —
+ * the same scan the yours-wallet sweep tool uses.
+ */
 export function useLegacyAssets(
 	legacyPayAddress: string | null,
 	legacyOrdAddress: string | null,
+	legacyIdentityAddress?: string | null,
+	onScanProgress?: (p: ScanProgress) => void,
 ): LegacyAssets {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [funding, setFunding] = useState<WalletOrdinal[]>([]);
-	const [ordinals, setOrdinals] = useState<OrdinalWithMeta[]>([]);
-	const [bsv21Tokens, setBsv21Tokens] = useState<TokenBalance[]>([]);
-	const [bsv20Tokens, setBsv20Tokens] = useState<WalletOrdinal[]>([]);
-	const [totalBsv, setTotalBsv] = useState(0);
+	const [result, setResult] = useState<ScanResult | null>(null);
 
-	const serviceRef = useRef(new GorillaPoolService());
+	// Scanning needs services only (no wallet) — a standalone instance so the
+	// banner works even when the BRC-100 wallet failed to initialize
+	const servicesRef = useRef<OneSatServices | null>(null);
+	if (!servicesRef.current) {
+		servicesRef.current = new OneSatServices("main", STACK_URL);
+	}
 
 	const [scanTrigger, setScanTrigger] = useState(0);
-
 	const rescan = useCallback(() => {
 		setScanTrigger((prev) => prev + 1);
 	}, []);
 
+	const progressRef = useRef(onScanProgress);
+	progressRef.current = onScanProgress;
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scanTrigger is an intentional rescan signal
 	useEffect(() => {
-		if (!legacyPayAddress && !legacyOrdAddress) return;
+		if (!legacyPayAddress && !legacyOrdAddress && !legacyIdentityAddress) {
+			return;
+		}
 
 		let cancelled = false;
-		const service = serviceRef.current;
 
 		async function scan() {
 			setLoading(true);
 			setError(null);
-
 			try {
-				const addresses = new Set<string>();
-				if (legacyPayAddress) addresses.add(legacyPayAddress);
-				if (legacyOrdAddress) addresses.add(legacyOrdAddress);
-
-				const results = await Promise.all(
-					[...addresses].map((addr) => service.getCategorizedUtxos(addr)),
+				const addresses = [
+					...new Set(
+						[legacyPayAddress, legacyOrdAddress, legacyIdentityAddress].filter(
+							(a): a is string => !!a,
+						),
+					),
+				];
+				const services = servicesRef.current;
+				if (!services) return;
+				const scanResult = await scanAddresses(services, addresses, (p) =>
+					progressRef.current?.(p),
 				);
-
 				if (cancelled) return;
-
-				const mergedFunding: WalletOrdinal[] = [];
-				const mergedOrdinals: WalletOrdinal[] = [];
-				const mergedBsv21: WalletOrdinal[] = [];
-				const mergedBsv20: WalletOrdinal[] = [];
-
-				for (const result of results) {
-					mergedFunding.push(...result.funding);
-					mergedOrdinals.push(...result.ordinals);
-					mergedBsv21.push(...result.bsv21Tokens);
-					mergedBsv20.push(...result.bsv20Tokens);
-				}
-
-				const enrichedOrdinals = mergedOrdinals.map(enrichOrdinal);
-				const groupedBsv21 = groupBsv21Tokens(mergedBsv21);
-				const bsvTotal = mergedFunding.reduce(
-					(sum, utxo) => sum + utxo.satoshis,
-					0,
-				);
-
-				setFunding(mergedFunding);
-				setOrdinals(enrichedOrdinals);
-				setBsv21Tokens(groupedBsv21);
-				setBsv20Tokens(mergedBsv20);
-				setTotalBsv(bsvTotal);
+				setResult(scanResult);
 			} catch (err) {
 				if (cancelled) return;
-				const message =
+				setError(
 					err instanceof Error
 						? err.message
-						: "Failed to scan legacy addresses";
-				setError(message);
+						: "Failed to scan legacy addresses",
+				);
 			} finally {
-				if (!cancelled) {
-					setLoading(false);
-				}
+				if (!cancelled) setLoading(false);
 			}
 		}
 
 		scan();
-
 		return () => {
 			cancelled = true;
 		};
-	}, [legacyPayAddress, legacyOrdAddress, scanTrigger]);
+	}, [legacyPayAddress, legacyOrdAddress, legacyIdentityAddress, scanTrigger]);
 
 	return {
 		loading,
 		error,
-		funding,
-		ordinals,
-		bsv21Tokens,
-		bsv20Tokens,
-		totalBsv,
+		funding: result?.funding ?? [],
+		ordinals: (result?.ordinals ?? []).map(enrichOrdinal),
+		opnsNames: (result?.opnsNames ?? []).map(enrichOrdinal),
+		bsv21Tokens: (result?.bsv21Tokens ?? []).map((t) => ({
+			...t,
+			icon: resolveIconUrl(t.tokenId, t.icon),
+		})),
+		bsv20Tokens: result?.bsv20Tokens ?? [],
+		locked: result?.locked ?? [],
+		run: result?.run ?? [],
+		totalBsv: result?.totalFundingSats ?? 0,
 		rescan,
 	};
 }

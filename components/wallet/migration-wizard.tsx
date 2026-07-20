@@ -18,14 +18,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Bsv20Section,
 	FundingSection,
+	LockedSection,
+	OpnsSection,
 	OrdinalsSection,
+	RunSection,
 	TokensSection,
 } from "@/components/wallet/migration-sections";
 import { WALLET_STORAGE_KEY } from "@/lib/constants";
 import { useLegacyAssets } from "@/lib/hooks/use-legacy-assets";
 import { deriveIdentityKey } from "@/lib/keys";
 import { executeMigrationSweep, type SweepResult } from "@/lib/sweep-migration";
-import type { WalletOrdinal } from "@/lib/types/ordinals";
 import {
 	detectMigrationStatus,
 	type MigrationStatus,
@@ -145,15 +147,16 @@ export function MigrationWizard() {
 		setSelectedOrdinals(new Set());
 	}, []);
 
-	// Build pre-scanned asset arrays for sweep
-	const selectedOrdinalUtxos = useMemo(() => {
-		return assets.ordinals.filter((o) =>
-			selectedOrdinals.has(o.outpoint),
-		) as WalletOrdinal[];
-	}, [assets.ordinals, selectedOrdinals]);
+	// Ordinals to sweep: user selection plus all OpNS names
+	const sweepOrdinals = useMemo(() => {
+		return [
+			...assets.ordinals.filter((o) => selectedOrdinals.has(o.outpoint)),
+			...assets.opnsNames,
+		];
+	}, [assets.ordinals, assets.opnsNames, selectedOrdinals]);
 
-	const bsv21Utxos = useMemo(() => {
-		return assets.bsv21Tokens.flatMap((tb) => tb.outputs);
+	const bsv21OutputCount = useMemo(() => {
+		return assets.bsv21Tokens.reduce((sum, tb) => sum + tb.outputs.length, 0);
 	}, [assets.bsv21Tokens]);
 
 	// Run migration
@@ -207,9 +210,7 @@ export function MigrationWizard() {
 
 			if (toolbox.wallet && toolbox.services) {
 				const totalSweepable =
-					assets.funding.length +
-					selectedOrdinalUtxos.length +
-					bsv21Utxos.length;
+					assets.funding.length + sweepOrdinals.length + bsv21OutputCount;
 
 				if (totalSweepable > 0) {
 					setProgress(
@@ -223,15 +224,14 @@ export function MigrationWizard() {
 						chain: toolbox.chain,
 						legacyPayWif: migrationStatus.legacyPayWif,
 						legacyOrdWif: migrationStatus.legacyOrdWif,
-						legacyPayAddress: migrationStatus.legacyPayAddress,
-						legacyOrdAddress: migrationStatus.legacyOrdAddress,
+						legacyIdentityWif: identityWif,
 						onProgress: (stage) => {
 							setProgress(stage);
 							setProgressPercent((prev) => Math.min(prev + 10, 95));
 						},
-						fundingUtxos: assets.funding,
-						ordinalUtxos: selectedOrdinalUtxos,
-						bsv21Utxos,
+						funding: assets.funding,
+						ordinals: sweepOrdinals,
+						bsv21Tokens: assets.bsv21Tokens,
 					});
 
 					setSweepResult(result);
@@ -256,13 +256,15 @@ export function MigrationWizard() {
 		migrationStatus,
 		toolbox,
 		assets.funding,
-		selectedOrdinalUtxos,
-		bsv21Utxos,
+		assets.bsv21Tokens,
+		sweepOrdinals,
+		bsv21OutputCount,
 	]);
 
 	const totalAssets =
 		assets.funding.length +
 		assets.ordinals.length +
+		assets.opnsNames.length +
 		assets.bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
 
 	// Don't render if not applicable
@@ -524,8 +526,11 @@ function PreviewStep({
 					ordinalPage={ordinalPage}
 					onPageChange={onPageChange}
 				/>
+				<OpnsSection opnsNames={assets.opnsNames} />
 				<TokensSection tokens={assets.bsv21Tokens} />
 				<Bsv20Section tokens={assets.bsv20Tokens} />
+				<LockedSection locked={assets.locked} />
+				<RunSection run={assets.run} />
 			</div>
 
 			{/* CTA */}

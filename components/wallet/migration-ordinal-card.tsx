@@ -1,11 +1,11 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import type { OrdinalWithMeta } from "@/lib/hooks/use-legacy-assets";
+import type { EnrichedOrdinal } from "@/lib/hooks/use-legacy-assets";
 import { cn } from "@/lib/utils";
 
 export interface MigrationOrdinalCardProps {
-	ordinal: OrdinalWithMeta;
+	ordinal: EnrichedOrdinal;
 	isSelected: boolean;
 	onToggle: () => void;
 }
@@ -58,7 +58,7 @@ export function MigrationOrdinalCard({
 						src={ordinal.contentUrl}
 						title={ordinal.name || ordinal.outpoint}
 						className="h-full w-full pointer-events-none"
-						sandbox="allow-scripts"
+						sandbox=""
 						loading="lazy"
 					/>
 				) : isImageType(contentType) ? (
