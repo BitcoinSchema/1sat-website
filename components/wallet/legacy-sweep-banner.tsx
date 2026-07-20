@@ -53,7 +53,7 @@ export function LegacySweepBanner() {
 			? (migrationStatus.legacyIdentityAddress ?? null)
 			: null;
 
-	const { funding, ordinals, opnsNames, bsv21Tokens, loading } =
+	const { funding, ordinals, opnsNames, bsv21Tokens, mneeBalance, loading } =
 		useLegacyAssets(legacyPayAddress, legacyOrdAddress, legacyIdentityAddress);
 
 	const sweepableAssetCount = useMemo(() => {
@@ -61,9 +61,16 @@ export function LegacySweepBanner() {
 			funding.length +
 			ordinals.length +
 			opnsNames.length +
-			bsv21Tokens.reduce((sum, token) => sum + token.outputs.length, 0)
+			bsv21Tokens.reduce((sum, token) => sum + token.outputs.length, 0) +
+			(mneeBalance > 0 ? 1 : 0)
 		);
-	}, [funding.length, ordinals.length, opnsNames.length, bsv21Tokens]);
+	}, [
+		funding.length,
+		ordinals.length,
+		opnsNames.length,
+		bsv21Tokens,
+		mneeBalance,
+	]);
 
 	const shouldShow =
 		!dismissed &&

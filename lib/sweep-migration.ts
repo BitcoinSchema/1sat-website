@@ -2,6 +2,7 @@
 
 import {
 	createContext,
+	deriveDepositAddresses,
 	prepareSweepInputs,
 	sweepBsv,
 	sweepBsv21,
@@ -11,11 +12,13 @@ import {
 import type { IndexedOutput } from "@1sat/types";
 import type { OneSatServices } from "@1sat/wallet-browser";
 import { PrivateKey, type WalletInterface } from "@bsv/sdk";
+import { sweepLegacyMnee } from "@/lib/sweep-legacy-mnee";
 
 export interface SweepResult {
 	bsvTxid?: string;
 	ordinalTxids: string[];
 	bsv21Txids: string[];
+	mneeTxid?: string;
 	errors: string[];
 }
 
@@ -30,6 +33,8 @@ export interface MigrationSweepParams {
 	funding: IndexedOutput[];
 	ordinals: IndexedOutput[];
 	bsv21Tokens: TokenBalance[];
+	/** MNEE balance (decimal) at the legacy addresses; > 0 triggers an MNEE sweep */
+	mneeBalance?: number;
 }
 
 const getOwner = (output: IndexedOutput): string | undefined =>
@@ -73,6 +78,7 @@ export async function executeMigrationSweep(
 		funding,
 		ordinals,
 		bsv21Tokens,
+		mneeBalance = 0,
 	} = params;
 
 	const ctx = createContext(wallet, { services, chain });
@@ -98,7 +104,7 @@ export async function executeMigrationSweep(
 		funding.length +
 		ordinals.length +
 		bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
-	if (totalAssets === 0) {
+	if (totalAssets === 0 && mneeBalance <= 0) {
 		onProgress("No assets found at legacy addresses");
 		return result;
 	}
@@ -184,6 +190,35 @@ export async function executeMigrationSweep(
 		} catch (error) {
 			result.errors.push(
 				`Token ${label}: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	// 4. MNEE — cosigner-locked, swept via the MNEE API with raw legacy keys
+	// to a P1SAT deposit address of the BRC-100 wallet
+	if (mneeBalance > 0) {
+		try {
+			const { derivations } = await deriveDepositAddresses.execute(ctx, {
+				count: 1,
+			});
+			const destinationAddress = derivations[0]?.address;
+			if (!destinationAddress) {
+				throw new Error("Failed to derive a deposit address");
+			}
+			const mneeResult = await sweepLegacyMnee({
+				mneeClient: services.mnee,
+				legacyKeys: [...keyMap.values()],
+				destinationAddress,
+				onProgress,
+			});
+			if (mneeResult.error) {
+				result.errors.push(`MNEE sweep: ${mneeResult.error}`);
+			} else if (mneeResult.txid) {
+				result.mneeTxid = mneeResult.txid;
+			}
+		} catch (error) {
+			result.errors.push(
+				`MNEE sweep: ${error instanceof Error ? error.message : String(error)}`,
 			);
 		}
 	}

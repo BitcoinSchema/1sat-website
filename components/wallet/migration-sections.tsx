@@ -275,6 +275,33 @@ export function Bsv20Section({ tokens }: { tokens: IndexedOutput[] }) {
 	);
 }
 
+export function MneeSection({ mneeBalance }: { mneeBalance: number }) {
+	if (mneeBalance <= 0) return null;
+
+	return (
+		<div className="bg-gradient-to-br from-chart-5/5 to-transparent border border-chart-5/20 p-5">
+			<div className="flex items-center gap-2 mb-3">
+				<span className="h-2 w-2 bg-chart-5" />
+				<span className="text-sm font-semibold text-chart-5">MNEE</span>
+			</div>
+			<div className="flex items-baseline justify-between">
+				<div className="text-2xl font-bold text-chart-5">
+					{mneeBalance.toLocaleString(undefined, {
+						maximumFractionDigits: 5,
+					})}{" "}
+					MNEE
+				</div>
+				<Badge variant="secondary" className="text-xs">
+					via cosigner
+				</Badge>
+			</div>
+			<p className="text-xs text-muted-foreground mt-2">
+				Swept through the MNEE cosigner API (a small MNEE fee applies).
+			</p>
+		</div>
+	);
+}
+
 export function LockedSection({ locked }: { locked: IndexedOutput[] }) {
 	if (locked.length === 0) return null;
 
