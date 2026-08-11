@@ -89,7 +89,7 @@ export function middleware(request: NextRequest) {
 
 	response.headers.set(
 		"Content-Security-Policy",
-		"frame-src 'self' https://ordfs.network; frame-ancestors 'self';",
+		"frame-src 'self' https://api.1sat.app; frame-ancestors 'self';",
 	);
 
 	if (!isProduction) {

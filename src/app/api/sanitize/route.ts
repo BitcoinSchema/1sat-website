@@ -1,8 +1,10 @@
+import { ORDFS } from "@/constants";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
 	const url = new URL(req.url).searchParams.get("url");
-	if (!url || typeof url !== "string") {
+	// Only proxy ORDFS content — an open proxy would allow SSRF
+	if (!url || !url.startsWith(`${ORDFS}/`)) {
 		return new NextResponse(null, {
 			status: 400,
 			statusText: "Bad Request",

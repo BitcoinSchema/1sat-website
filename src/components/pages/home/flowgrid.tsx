@@ -8,7 +8,9 @@ import { flushSync } from "react-dom";
 import { toBitcoin } from "satoshi-token";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ArtifactModal from "@/components/modal/artifactModal";
+import { ORDFS } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
+import { ordfsImageUrl } from "@/utils/ordfsImage";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
 	<>
@@ -252,12 +254,10 @@ const FlowGrid = ({
 
 		if (!originOutpoint) return null;
 
-		const src = `https://ordfs.network/${originOutpoint}`;
+		const src = `${ORDFS}/${originOutpoint}`;
 		const contentType = getContentType(artifact);
 		const imgSrc =
-			contentType === "image"
-				? `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`
-				: src;
+			contentType === "image" ? ordfsImageUrl(originOutpoint, { w: 375 }) : src;
 		const isVisible = visible.has(outpointStr);
 
 		return (
@@ -281,7 +281,7 @@ const FlowGrid = ({
 								e.preventDefault();
 								e.stopPropagation();
 								window.open(
-									`https://ordfs.network/${artifact.origin?.outpoint}`,
+									`${ORDFS}/${artifact.origin?.outpoint}`,
 									"_blank",
 									"noopener,noreferrer",
 								);

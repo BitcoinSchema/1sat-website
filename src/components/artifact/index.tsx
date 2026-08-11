@@ -11,6 +11,7 @@ import { IoMdPricetag } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
 import { toBitcoin } from "satoshi-token";
 import { FetchStatus, ORDFS } from "@/constants";
+import { ordfsImageUrl } from "@/utils/ordfsImage";
 import type { OrdUtxo, SIGMA } from "@/types/ordinals";
 import { getArtifactType } from "@/utils/artifact";
 import { toBase64 } from "@/utils/string";
@@ -338,14 +339,16 @@ const Artifact: React.FC<ArtifactProps> = ({
                   : "cursor-zoom-out"
                 : ""
               }`}
-            // TODO: Use a opl account for this
             src={
-              src.startsWith("data:") || src.startsWith("blob:")
+              src.startsWith("data:") || src.startsWith("blob:") || !origin
                 ? src
                 : showZoom
-                  ? `https://res.cloudinary.com/tonicpow/image/fetch/f_auto/${src}`
-                  : `https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,h_${size || 300
-                  },w_${size || 300}/f_auto/${src}`
+                  ? ordfsImageUrl(origin, { w: 1920 })
+                  : ordfsImageUrl(origin, {
+                    w: size || 300,
+                    h: size || 300,
+                    fit: "pad",
+                  })
             }
             id={`artifact_${outPoint || origin}_image`}
             alt={`Inscription${num !== "" ? ` #${num}` : ""}`}

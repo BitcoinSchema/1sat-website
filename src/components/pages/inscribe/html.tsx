@@ -39,9 +39,9 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
 	// useEffect(() => {
 	//   const fire = async (t: string) => {
 	//     // send base64 encoded preview html to server
-	//     // https://ordfs.network/preview/<base64 encoded html>
+	//     // https://api.1sat.app/1sat/ordfs/preview/<base64 encoded html>
 	//     const encoded = toBase64(t);
-	//     const previewUrl = `https://ordfs.network/preview/${encoded}`;
+	//     const previewUrl = `https://api.1sat.app/1sat/ordfs/preview/${encoded}`;
 	//     const result = await fetch(previewUrl);
 	//     const h = await result.text();
 	//     console.log("preview", { h });
@@ -151,7 +151,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
 				sandbox="allow-scripts"
 				className="w-full rounded h-full overflow-hidden border-0"
 				// src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}
-				src={`https://ordfs.network/preview/${encoded}`}
+				src={`https://api.1sat.app/1sat/ordfs/preview/${encoded}`}
 			/>
 		);
 	}, [encoded, text]);

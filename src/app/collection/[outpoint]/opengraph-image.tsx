@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
 import { Container } from "@/components/og/Container";
 import { Logo } from "@/components/og/Logo";
-import { API_HOST, ORDFS } from "@/constants";
+import { API_HOST } from "@/constants";
+import { ordfsImageUrl } from "@/utils/ordfsImage";
 import type { OrdUtxo } from "@/types/ordinals";
 import { getNotoSerifItalicFont } from "@/utils/font";
 import { isValidOutpoint } from "@/utils/validation";
@@ -69,9 +70,14 @@ export default async function Image({
 
 	const isImageInscription =
 		details.origin?.data?.insc?.file?.type?.startsWith("image");
-	// f_png forces cloudinary to convert the source to a format satori can
-	// always render (source inscriptions may be webp/svg/unknown)
-	const url = `https://res.cloudinary.com/tonicpow/image/fetch/c_crop,b_rgb:111111,g_center,h_${size.height},w_${size.width},f_png/${ORDFS}/${params.outpoint}`;
+	// f=png forces a format satori can always render (source inscriptions may
+	// be webp/unknown); SVG sources pass through unconverted
+	const url = ordfsImageUrl(params.outpoint, {
+		w: size.width,
+		h: size.height,
+		fit: "fill",
+		f: "png",
+	});
 	return new ImageResponse(
 		<Container>
 			{isImageInscription ? (

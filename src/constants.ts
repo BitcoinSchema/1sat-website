@@ -1,6 +1,9 @@
 // API Endpoints - use environment variables with fallback to production
 export const ORDFS =
-	process.env.NEXT_PUBLIC_ORDFS_URL || "https://ordfs.network";
+	process.env.NEXT_PUBLIC_ORDFS_URL || "https://api.1sat.app/content";
+export const ORDFS_IMAGE =
+	process.env.NEXT_PUBLIC_ORDFS_IMAGE_URL ||
+	"https://api.1sat.app/1sat/ordfs/image";
 export const API_HOST =
 	process.env.NEXT_PUBLIC_API_HOST || "https://ordinals.gorillapool.io";
 export const MARKET_API_HOST =

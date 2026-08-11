@@ -9,7 +9,9 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 import BuyArtifactModal from "@/components/modal/buyArtifact";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ORDFS } from "@/constants";
 import type { OrdUtxo } from "@/types/ordinals";
+import { ordfsImageUrl } from "@/utils/ordfsImage";
 
 const needsFlipButton = (artifact: OrdUtxo): boolean => {
   const contentType = artifact.origin?.data?.insc?.file?.type || "";
@@ -121,7 +123,7 @@ const ArtifactModal = ({
                 size="icon"
                 onClick={() =>
                   window.open(
-                    `https://ordfs.network/${artifact.origin?.outpoint}`,
+                    `${ORDFS}/${artifact.origin?.outpoint}`,
                     "_blank",
                     "noopener,noreferrer",
                   )
@@ -179,7 +181,11 @@ const ArtifactModal = ({
                 }
               >
                 <ImageWithFallback
-                  src={`https://ordfs.network/${artifact.origin?.outpoint}`}
+                  src={
+                    artifact.origin?.outpoint
+                      ? ordfsImageUrl(artifact.origin.outpoint, { w: 1920 })
+                      : undefined
+                  }
                   alt="Full size artifact"
                   className={
                     allowScroll
@@ -220,7 +226,11 @@ const ArtifactModal = ({
               />
             ) : (
               <ImageWithFallback
-                src={`https://ordfs.network/${artifact.origin?.outpoint}`}
+                src={
+                  artifact.origin?.outpoint
+                    ? ordfsImageUrl(artifact.origin.outpoint, { w: 400 })
+                    : undefined
+                }
                 alt="Artifact preview"
                 className="w-full h-auto object-contain"
               />
