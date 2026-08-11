@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { OrdUtxo } from "@/types/ordinals";
+import { ordfsImageUrl } from "@/utils/ordfsImage";
 import Link from "next/link";
 import { toBitcoin } from "satoshi-token";
 
@@ -37,14 +38,16 @@ const FlowGrid = ({ artifacts, className }: { artifacts: OrdUtxo[], className: s
         <div className={`relative text-center ${className}`}>
             <div className='columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4'>
                 {artifacts.map((artifact) => {
-                    const src = `https://ordfs.network/${artifact.origin?.outpoint}`;
+                    const outpoint = artifact.origin?.outpoint;
+                    if (!outpoint) return null;
+                    const src = ordfsImageUrl(outpoint, { w: 375 });
 
                     return (
                         <Link href={`/outpoint/${artifact?.outpoint}/listing`} key={artifact.txid}>
                             <div className={`relative mb-4 break-inside-avoid ${visible.get(artifact.txid) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
                                 <div className={"relative shadow-md bg-[#111] rounded-lg"}>
                                     <img
-                                        src={`https://res.cloudinary.com/tonicpow/image/fetch/c_pad,b_rgb:111111,g_center,w_${375}/f_auto/${src}`}
+                                        src={src}
                                         alt={`Image ${artifact.txid}`}
                                         className='w-full h-auto rounded-lg'
                                         width={375}

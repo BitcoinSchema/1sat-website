@@ -151,7 +151,7 @@ const InscribeHtml: React.FC<InscribeHtmlProps> = ({ inscribedCallback }) => {
         sandbox="allow-scripts"
         className="w-full rounded h-full overflow-hidden border-0"
         // src={`data:text/html;charset=utf-8,${encodeURIComponent(text)}`}
-        src={`https://ordfs.network/preview/${encoded}`}
+        src={`https://api.1sat.app/1sat/ordfs/preview/${encoded}`}
       />
     );
   }, [encoded, text]);

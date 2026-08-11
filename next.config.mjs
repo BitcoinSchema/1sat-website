@@ -12,13 +12,7 @@ const nextConfig = {
 		remotePatterns: [
 			{
 				protocol: "https",
-				hostname: "res.cloudinary.com",
-				port: "",
-				pathname: "/tonicpow/image/fetch/**",
-			},
-			{
-				protocol: "https",
-				hostname: "ordfs.network",
+				hostname: "api.1sat.app",
 				port: "",
 				pathname: "/**",
 			},

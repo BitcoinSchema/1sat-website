@@ -2,7 +2,7 @@
 
 import oneSatLogo from "@/assets/images/oneSatLogoDark.svg";
 import WithdrawalModal from "@/components/modal/withdrawal";
-import { API_HOST, AssetType, MARKET_API_HOST } from "@/constants";
+import { API_HOST, AssetType, MARKET_API_HOST, ORDFS } from "@/constants";
 import {
 	CurrencyDisplay,
 	bsv20Utxos,
@@ -39,7 +39,7 @@ export const IconWithFallback: React.FC<IconProps> = (props) => {
 	const { icon, alt, ...rest } = props;
 
 	const imgSrc = useSignal(
-		icon ? `/api/sanitize?url=https://ordfs.network/${icon}` : oneSatLogo,
+		icon ? `/api/sanitize?url=${ORDFS}/${icon}` : oneSatLogo,
 	);
 	// console.log({ icon, imgSrc: imgSrc.value });
 	return (

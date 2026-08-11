@@ -1,4 +1,5 @@
-export const ORDFS = "https://ordfs.network";
+export const ORDFS = "https://api.1sat.app/content";
+export const ORDFS_IMAGE = "https://api.1sat.app/1sat/ordfs/image";
 export const API_HOST = "https://ordinals.gorillapool.io";
 export const MARKET_API_HOST = "https://1sat-api-production.up.railway.app"; // "https://api.1sat.market";
 
