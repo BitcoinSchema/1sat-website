@@ -82,8 +82,8 @@ export default async function Image({
     }
   }
 
-  // f=png forces a format satori can always render (source inscriptions may
-  // be webp/unknown); SVG sources pass through unconverted
+  // f=png forces a format satori can always render; the endpoint
+  // rasterizes even SVG sources when a raster format is requested
   const url = ordfsImageUrl(sigilImageTxid || params.outpoint, {
     w: size.width,
     h: size.height,
