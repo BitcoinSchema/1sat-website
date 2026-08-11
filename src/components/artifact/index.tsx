@@ -343,7 +343,7 @@ const Artifact: React.FC<ArtifactProps> = ({
               src.startsWith("data:") || src.startsWith("blob:") || !origin
                 ? src
                 : showZoom
-                  ? ordfsImageUrl(origin, { w: 1920 })
+                  ? ordfsImageUrl(origin, { w: 3840 })
                   : ordfsImageUrl(origin, {
                     w: size || 300,
                     h: size || 300,

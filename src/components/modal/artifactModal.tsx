@@ -183,7 +183,7 @@ const ArtifactModal = ({
                 <ImageWithFallback
                   src={
                     artifact.origin?.outpoint
-                      ? ordfsImageUrl(artifact.origin.outpoint, { w: 1920 })
+                      ? ordfsImageUrl(artifact.origin.outpoint, { w: 3840 })
                       : undefined
                   }
                   alt="Full size artifact"

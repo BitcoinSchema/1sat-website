@@ -70,8 +70,8 @@ export default async function Image({
 
 	const isImageInscription =
 		details.origin?.data?.insc?.file?.type?.startsWith("image");
-	// f=png forces a format satori can always render (source inscriptions may
-	// be webp/unknown); SVG sources pass through unconverted
+	// f=png forces a format satori can always render; the endpoint
+	// rasterizes even SVG sources when a raster format is requested
 	const url = ordfsImageUrl(params.outpoint, {
 		w: size.width,
 		h: size.height,
