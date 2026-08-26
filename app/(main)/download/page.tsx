@@ -1,54 +1,36 @@
 import type { Metadata } from "next";
 import type { SoftwareApplication, WithContext } from "schema-dts";
 import { JsonLd } from "@/components/json-ld";
-import { DownloadPageClient } from "./download-page-client";
-
-const DOWNLOAD_JSON_URL =
-	"https://dbopkrmhgavaffea.public.blob.vercel-storage.com/releases/download.json";
-
-export interface DownloadInfo {
-	version: string;
-	filename: string;
-	url: string;
-	size: number;
-	updatedAt: string;
-}
-
-interface DownloadData {
-	macos: DownloadInfo | null;
-	windows: DownloadInfo | null;
-}
+import { AppleAppPage } from "./download-page-client";
 
 export const metadata: Metadata = {
-	title: "Download 1Sat Wallet | Native BSV Desktop Wallet",
+	title: "1Sat for Apple | TestFlight Beta",
 	description:
-		"Download 1Sat Wallet — a native BSV desktop wallet with Touch ID, Secure Enclave key protection, a built-in browser, and a local indexer. BRC-100 compatible. Available now for macOS Apple Silicon.",
+		"Native 1Sat wallet for iPhone, iPad, and Mac. Open the TestFlight beta. Keys stay in iCloud Keychain.",
 	keywords: [
-		"1sat wallet download",
+		"1sat wallet",
+		"1sat apple app",
 		"BSV wallet",
-		"BSV desktop wallet",
 		"Bitcoin SV wallet",
 		"ordinals wallet",
-		"BRC-100 wallet",
-		"native bitcoin wallet",
-		"Touch ID wallet",
-		"Secure Enclave wallet",
-		"1sat ordinals wallet",
+		"TestFlight",
+		"iPhone bitcoin wallet",
+		"iPad bitcoin wallet",
 		"macOS BSV wallet",
 	],
 	openGraph: {
-		title: "Download 1Sat Wallet | Native BSV Desktop Wallet",
+		title: "1Sat for Apple | TestFlight Beta",
 		description:
-			"Native BSV desktop wallet with Touch ID, Secure Enclave key protection, built-in browser, and local indexer. BRC-100 compatible. Download for macOS Apple Silicon.",
+			"Native 1Sat wallet for iPhone, iPad, and Mac. Open the TestFlight beta. Keys stay in iCloud Keychain.",
 		url: "https://1satwallet.com/download",
-		siteName: "1Sat Ordinals",
+		siteName: "1Sat Wallet",
 		type: "website",
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Download 1Sat Wallet | Native BSV Desktop Wallet",
+		title: "1Sat for Apple | TestFlight Beta",
 		description:
-			"Native BSV desktop wallet with Touch ID, Secure Enclave key protection, built-in browser, and local indexer. BRC-100 compatible.",
+			"Native 1Sat wallet for iPhone, iPad, and Mac. Open the TestFlight beta.",
 	},
 };
 
@@ -59,9 +41,9 @@ const jsonLd: WithContext<SoftwareApplication> = {
 	url: "https://1satwallet.com",
 	downloadUrl: "https://1satwallet.com/download",
 	description:
-		"Native BSV desktop wallet with Touch ID, Secure Enclave key protection, a built-in browser, and a local indexer. BRC-100 compatible.",
+		"Native 1Sat wallet for iPhone, iPad, and Mac. TestFlight beta. Keys stay in iCloud Keychain.",
 	applicationCategory: "FinanceApplication",
-	operatingSystem: "macOS 12+",
+	operatingSystem: "iOS, iPadOS, macOS",
 	offers: {
 		"@type": "Offer",
 		price: "0",
@@ -69,48 +51,16 @@ const jsonLd: WithContext<SoftwareApplication> = {
 	},
 	provider: {
 		"@type": "Organization",
-		name: "1Sat Ordinals",
+		name: "1Sat",
 		url: "https://1satwallet.com",
 	},
 };
 
-async function getDownloadData(): Promise<DownloadData> {
-	try {
-		const response = await fetch(DOWNLOAD_JSON_URL, {
-			next: { revalidate: 60 },
-		});
-
-		if (!response.ok) return { macos: null, windows: null };
-
-		const data = await response.json();
-
-		if (data?.macos) {
-			return {
-				macos: data.macos,
-				windows: data.windows ?? null,
-			};
-		}
-
-		// Flat shape fallback — treat as macOS only
-		if (data?.url) {
-			return {
-				macos: data as DownloadInfo,
-				windows: null,
-			};
-		}
-
-		return { macos: null, windows: null };
-	} catch {
-		return { macos: null, windows: null };
-	}
-}
-
-export default async function DownloadPage() {
-	const { macos, windows } = await getDownloadData();
+export default function DownloadPage() {
 	return (
 		<>
 			<JsonLd data={jsonLd} />
-			<DownloadPageClient macos={macos} windows={windows} />
+			<AppleAppPage />
 		</>
 	);
 }

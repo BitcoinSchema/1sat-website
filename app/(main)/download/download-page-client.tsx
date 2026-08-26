@@ -1,19 +1,8 @@
-"use client";
-
-import { Check, Download, ExternalLink } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, Smartphone, Wallet } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import type { DownloadInfo } from "./page";
 
-type Platform = "macos" | "windows" | "other";
-
-function detectPlatform(): Platform {
-	if (typeof navigator === "undefined") return "macos";
-	const ua = navigator.userAgent.toLowerCase();
-	if (ua.includes("win")) return "windows";
-	if (ua.includes("mac")) return "macos";
-	return "other";
-}
+const TESTFLIGHT_APP_URL = "https://apps.apple.com/app/testflight/id899247664";
 
 function AppleLogo({ className }: { className?: string }) {
 	return (
@@ -28,52 +17,27 @@ function AppleLogo({ className }: { className?: string }) {
 	);
 }
 
-function formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-interface DownloadPageClientProps {
-	macos: DownloadInfo | null;
-	windows: DownloadInfo | null;
-}
-
-export function DownloadPageClient({
-	macos,
-	windows: _windows,
-}: DownloadPageClientProps) {
-	const [_platform, setPlatform] = useState<Platform>("macos");
-
-	useEffect(() => {
-		setPlatform(detectPlatform());
-	}, []);
-
-	const version = macos?.version ?? "0.0.1";
-	const macUrl = macos?.url ?? "/download/macos";
-
+export function AppleAppPage() {
 	return (
 		<div className="relative">
-			{/* Hero */}
 			<section className="pt-16 md:pt-24 pb-16">
 				<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
 					<div className="text-center">
 						<h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-							Download <span className="text-primary">1Sat</span> Wallet
+							1Sat for <span className="text-primary">Apple</span>
 						</h1>
 						<p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-							A native BSV wallet with Touch ID, on-chain browsing, and a
-							built-in indexer. Your keys never leave the Secure Enclave.
+							Native wallet for iPhone, iPad, and Mac. Face ID unlocks the app.
+							iCloud Keychain holds the seed.
 						</p>
 
-						{/* Download buttons */}
 						<div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
 							<Button size="lg" className="gap-3 h-14 px-8 text-base" asChild>
-								<a href={macUrl}>
+								<a href={TESTFLIGHT_APP_URL}>
 									<AppleLogo className="h-5 w-5" />
 									<div className="text-left">
-										<div className="text-xs opacity-80">Download for</div>
-										<div className="font-semibold">macOS</div>
+										<div className="text-xs opacity-80">Get</div>
+										<div className="font-semibold">TestFlight</div>
 									</div>
 								</a>
 							</Button>
@@ -81,29 +45,30 @@ export function DownloadPageClient({
 								size="lg"
 								variant="outline"
 								className="gap-3 h-14 px-8 text-base"
-								disabled
+								asChild
 							>
-								<div className="text-left">
-									<div className="text-xs opacity-80">Coming soon for</div>
-									<div className="font-semibold">Windows & Linux</div>
-								</div>
+								<Link href="/wallet/create">
+									<Wallet className="h-5 w-5" />
+									<div className="text-left">
+										<div className="text-xs opacity-80">Use the</div>
+										<div className="font-semibold">Browser Wallet</div>
+									</div>
+								</Link>
 							</Button>
 						</div>
 
 						<p className="text-sm text-muted-foreground">
-							Version {version}
-							{macos?.size ? ` (${formatBytes(macos.size)})` : null} &middot;
-							Requires macOS 12+ &middot; Apple Silicon
+							The Apple app is a TestFlight beta. Install TestFlight, then open
+							1Sat Wallet.
 						</p>
 					</div>
 				</div>
 			</section>
 
-			{/* Quick Start Guide */}
 			<section className="py-16 bg-muted/30">
 				<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
 					<h2 className="text-2xl font-bold text-center mb-12">
-						Get started in 3 steps
+						Get the Apple app in 3 steps
 					</h2>
 
 					<div className="grid md:grid-cols-3 gap-8">
@@ -111,9 +76,9 @@ export function DownloadPageClient({
 							<div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-xl font-bold">
 								1
 							</div>
-							<h3 className="font-semibold mb-2">Install</h3>
+							<h3 className="font-semibold mb-2">Install TestFlight</h3>
 							<p className="text-sm text-muted-foreground">
-								Download the DMG, drag to Applications, and open 1Sat Wallet
+								Get TestFlight from the App Store on iPhone, iPad, or Mac.
 							</p>
 						</div>
 
@@ -121,10 +86,9 @@ export function DownloadPageClient({
 							<div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-xl font-bold">
 								2
 							</div>
-							<h3 className="font-semibold mb-2">Create or Import</h3>
+							<h3 className="font-semibold mb-2">Open 1Sat Wallet</h3>
 							<p className="text-sm text-muted-foreground">
-								Generate a new wallet or import an existing mnemonic. Your keys
-								are protected by Touch ID.
+								Find 1Sat Wallet in TestFlight and install it.
 							</p>
 						</div>
 
@@ -132,88 +96,114 @@ export function DownloadPageClient({
 							<div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-xl font-bold">
 								3
 							</div>
-							<h3 className="font-semibold mb-2">Connect to BSV</h3>
+							<h3 className="font-semibold mb-2">Create or restore</h3>
 							<p className="text-sm text-muted-foreground">
-								The built-in indexer syncs the blockchain locally. Browse
-								on-chain content and manage ordinals.
+								Make a new wallet, or restore a phrase. Face ID locks the app.
 							</p>
 						</div>
 					</div>
 				</div>
 			</section>
 
-			{/* Features */}
 			<section className="py-16">
 				<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
 					<h2 className="text-2xl font-bold text-center mb-12">
-						What&apos;s Included
+						Two wallets. Pick one.
 					</h2>
 
 					<div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
 						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">Touch ID Key Protection</h3>
+							<div className="flex items-center gap-3 mb-3">
+								<Wallet className="h-5 w-5 text-primary" />
+								<h3 className="font-semibold">Browser Wallet</h3>
+							</div>
 							<p className="text-sm text-muted-foreground">
-								Private keys are encrypted in the macOS Secure Enclave. Unlock
-								with Touch ID — keys never leave the hardware.
+								Runs in this site. Keys stay in this browser. Create a wallet
+								now. No install.
 							</p>
 						</div>
 
 						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">Built-in Browser</h3>
+							<div className="flex items-center gap-3 mb-3">
+								<Smartphone className="h-5 w-5 text-primary" />
+								<h3 className="font-semibold">Apple App</h3>
+							</div>
 							<p className="text-sm text-muted-foreground">
-								Browse on-chain inscriptions, dApps, and ORDFS content natively
-								with per-origin permission scoping.
-							</p>
-						</div>
-
-						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">Local Indexer</h3>
-							<p className="text-sm text-muted-foreground">
-								1sat-stack runs as a sidecar, syncing the blockchain locally. No
-								third-party APIs needed for core wallet operations.
-							</p>
-						</div>
-
-						<div className="rounded-xl border bg-card p-6">
-							<h3 className="font-semibold mb-2">BRC-100 Compatible</h3>
-							<p className="text-sm text-muted-foreground">
-								Full wallet interface spec support. Connect dApps via HTTP on
-								standard ports with manifest-based trust.
+								Native Swift app. Face ID unlocks it. iCloud Keychain holds the
+								seed, so a new iPhone with the same Apple ID can open the same
+								wallet.
 							</p>
 						</div>
 					</div>
 				</div>
 			</section>
 
-			{/* System Requirements */}
 			<section className="py-16 bg-muted/30">
 				<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
 					<h2 className="text-2xl font-bold text-center mb-12">
-						System Requirements
+						What the Apple app does
+					</h2>
+
+					<div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+						<div className="rounded-xl border bg-card p-6">
+							<h3 className="font-semibold mb-2">Face ID lock</h3>
+							<p className="text-sm text-muted-foreground">
+								The app asks Face ID before it reads the seed. Your phrase is
+								not sitting in a file.
+							</p>
+						</div>
+
+						<div className="rounded-xl border bg-card p-6">
+							<h3 className="font-semibold mb-2">iCloud Keychain</h3>
+							<p className="text-sm text-muted-foreground">
+								Apple stores ciphertext it cannot read. A new device with the
+								same Apple ID can restore the wallet.
+							</p>
+						</div>
+
+						<div className="rounded-xl border bg-card p-6">
+							<h3 className="font-semibold mb-2">Accounts as cards</h3>
+							<p className="text-sm text-muted-foreground">
+								Each account is a whole wallet with its own identity key.
+								Ordinals, tokens, and names sit beside your money.
+							</p>
+						</div>
+
+						<div className="rounded-xl border bg-card p-6">
+							<h3 className="font-semibold mb-2">iPhone, iPad, and Mac</h3>
+							<p className="text-sm text-muted-foreground">
+								One Apple app. Install it from TestFlight. There is no separate
+								desktop installer.
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section className="py-16">
+				<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+					<h2 className="text-2xl font-bold text-center mb-12">
+						What you need
 					</h2>
 
 					<div className="max-w-sm mx-auto">
 						<div className="rounded-xl border bg-card p-6">
 							<div className="flex items-center gap-3 mb-4">
 								<AppleLogo className="h-5 w-5" />
-								<h3 className="font-semibold">macOS</h3>
+								<h3 className="font-semibold">Apple</h3>
 							</div>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-center gap-2">
 									<Check className="h-4 w-4 text-primary" />
-									macOS 12 (Monterey) or later
+									iPhone, iPad, or Mac
 								</li>
 								<li className="flex items-center gap-2">
 									<Check className="h-4 w-4 text-primary" />
-									Apple Silicon (M1+)
+									TestFlight
 								</li>
 								<li className="flex items-center gap-2">
 									<Check className="h-4 w-4 text-primary" />
-									Touch ID for key protection
-								</li>
-								<li className="flex items-center gap-2">
-									<Check className="h-4 w-4 text-primary" />
-									200 MB disk space
+									Face ID or Touch ID
 								</li>
 							</ul>
 						</div>
@@ -221,83 +211,74 @@ export function DownloadPageClient({
 				</div>
 			</section>
 
-			{/* FAQ */}
-			<section className="py-16">
+			<section className="py-16 bg-muted/30">
 				<div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
 					<h2 className="text-2xl font-bold text-center mb-12">FAQ</h2>
 
 					<div className="space-y-6">
 						<div className="border-b pb-6">
-							<h3 className="font-medium mb-2">How are my keys protected?</h3>
+							<h3 className="font-medium mb-2">
+								Is the browser wallet the same as the Apple app?
+							</h3>
 							<p className="text-sm text-muted-foreground">
-								Your root key is encrypted using the macOS Secure Enclave (P-256
-								ECIES) and stored in the system keychain. It can only be
-								decrypted with Touch ID biometric authentication. The key never
-								exists unencrypted on disk.
+								No. They are two wallets. Keys do not move between them unless
+								you restore the same phrase.
+							</p>
+						</div>
+
+						<div className="border-b pb-6">
+							<h3 className="font-medium mb-2">How do I get the Apple app?</h3>
+							<p className="text-sm text-muted-foreground">
+								Install TestFlight, then open 1Sat Wallet from TestFlight. There
+								is no Mac disk image and no Windows build.
 							</p>
 						</div>
 
 						<div className="border-b pb-6">
 							<h3 className="font-medium mb-2">
-								What is the built-in indexer?
+								Where does the Apple app keep keys?
 							</h3>
 							<p className="text-sm text-muted-foreground">
-								1sat-stack is a local BSV indexing server that syncs blockchain
-								data to your machine. It serves ORDFS content, tracks your
-								UTXOs, and provides the data layer for wallet operations — all
-								without relying on external services.
+								iCloud Keychain holds the seed. Face ID unlocks the app before
+								it reads that seed.
 							</p>
 						</div>
 
 						<div className="border-b pb-6">
 							<h3 className="font-medium mb-2">
-								Can I browse on-chain content?
+								Can I use the Apple app on a Mac?
 							</h3>
 							<p className="text-sm text-muted-foreground">
-								Yes. The built-in browser loads inscriptions and dApps via the
-								1sat:// protocol. Each inscription gets its own permission scope
-								so on-chain apps request wallet access independently.
-							</p>
-						</div>
-
-						<div className="border-b pb-6">
-							<h3 className="font-medium mb-2">
-								Will Windows and Linux be supported?
-							</h3>
-							<p className="text-sm text-muted-foreground">
-								Yes. The wallet is built on Electrobun which supports all
-								platforms. macOS with Apple Silicon is the first release target,
-								with Windows and Linux coming next.
+								Yes. Install the same TestFlight app on a Mac. It is the Apple
+								app, not a separate desktop product.
 							</p>
 						</div>
 					</div>
 				</div>
 			</section>
 
-			{/* CTA */}
 			<section className="py-20 bg-gradient-to-b from-background via-primary/5 to-background">
 				<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 					<div className="text-center">
-						<h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
+						<h2 className="text-3xl font-bold mb-4">
+							Start with the wallet you have
+						</h2>
 						<p className="text-muted-foreground mb-8">
-							Download 1Sat Wallet and take control of your BSV.
+							Open the Apple app from TestFlight, or create a wallet in this
+							browser.
 						</p>
-						<div className="flex items-center justify-center gap-4">
+						<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 							<Button size="lg" className="gap-2" asChild>
-								<a href={macUrl}>
-									<Download className="h-5 w-5" />
-									Download for macOS
+								<a href={TESTFLIGHT_APP_URL}>
+									<AppleLogo className="h-5 w-5" />
+									Open TestFlight
 								</a>
 							</Button>
 							<Button variant="outline" size="lg" className="gap-2" asChild>
-								<a
-									href="https://github.com/b-open-io/1sat-sdk"
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									View on GitHub
-									<ExternalLink className="h-4 w-4" />
-								</a>
+								<Link href="/wallet/create">
+									<Wallet className="h-4 w-4" />
+									Browser Wallet
+								</Link>
 							</Button>
 						</div>
 					</div>

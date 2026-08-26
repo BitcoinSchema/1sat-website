@@ -140,13 +140,11 @@ const navData = [
 
 		items: [
 			{
-				title: "Download",
+				title: "Apple App",
 
 				url: "/download",
 
 				icon: Download,
-
-				shortcut: "g w",
 			},
 
 			{

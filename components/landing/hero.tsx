@@ -51,11 +51,11 @@ export function LandingHero() {
 						>
 							{hasWallet ? (
 								<Link href="/wallet">
-									<Wallet className="mr-2 w-6 h-6" /> My Wallet
+									<Wallet className="mr-2 w-6 h-6" /> Browser Wallet
 								</Link>
 							) : (
 								<Link href="/wallet/create">
-									<Wallet className="mr-2 w-6 h-6" /> Create Wallet
+									<Wallet className="mr-2 w-6 h-6" /> Browser Wallet
 								</Link>
 							)}
 						</Button>
@@ -65,8 +65,8 @@ export function LandingHero() {
 							asChild
 							onClick={() => play("click")}
 						>
-							<Link href="/activity">
-								Live Activity <ArrowRight className="ml-2 w-6 h-6" />
+							<Link href="/download">
+								Apple App <ArrowRight className="ml-2 w-6 h-6" />
 							</Link>
 						</Button>
 					</div>
@@ -76,26 +76,26 @@ export function LandingHero() {
 						<Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-colors group">
 							<CardHeader>
 								<div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
-									<Smartphone className="w-6 h-6 text-primary" />
+									<Globe className="w-6 h-6 text-primary" />
 								</div>
-								<CardTitle className="text-xl">Mobile First PWA</CardTitle>
+								<CardTitle className="text-xl">Browser Wallet</CardTitle>
 							</CardHeader>
 							<CardContent className="text-muted-foreground">
-								Install directly to your home screen. Works offline with local
-								key storage. No App Store gatekeepers.
+								Create a wallet in this browser. Keys stay on this device. You
+								can start now.
 							</CardContent>
 						</Card>
 
 						<Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-colors group">
 							<CardHeader>
 								<div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
-									<Globe className="w-6 h-6 text-primary" />
+									<Smartphone className="w-6 h-6 text-primary" />
 								</div>
-								<CardTitle className="text-xl">Shared Presence</CardTitle>
+								<CardTitle className="text-xl">Apple App</CardTitle>
 							</CardHeader>
 							<CardContent className="text-muted-foreground">
-								See other users in real-time. Right-click any cursor to initiate
-								a direct, encrypted P2P trade instantly.
+								Native app for iPhone, iPad, and Mac. Open it from TestFlight.
+								iCloud Keychain holds the seed.
 							</CardContent>
 						</Card>
 
@@ -104,11 +104,11 @@ export function LandingHero() {
 								<div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
 									<Shield className="w-6 h-6 text-primary" />
 								</div>
-								<CardTitle className="text-xl">Non-Custodial</CardTitle>
+								<CardTitle className="text-xl">Your keys</CardTitle>
 							</CardHeader>
 							<CardContent className="text-muted-foreground">
-								Your keys stay in your browser. You have complete control. We
-								never touch your assets.
+								Two wallets. We never hold your keys. Restore a phrase only if
+								you want the same wallet on both.
 							</CardContent>
 						</Card>
 					</div>
