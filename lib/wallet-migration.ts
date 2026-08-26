@@ -3,6 +3,9 @@
 import { PrivateKey } from "@bsv/sdk";
 import type { Keys } from "@/lib/types";
 
+/** Set when the user chooses Migrate Later. Cleared after a successful migration. */
+export const MIGRATION_DEFERRED_KEY = "legacy_migration_deferred_v1";
+
 export type MigrationStatus =
 	| {
 			status: "migrated";

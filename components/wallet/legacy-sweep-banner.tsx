@@ -40,6 +40,8 @@ export function LegacySweepBanner() {
 		return detectMigrationStatus(walletKeys);
 	}, [walletKeys, isWalletLocked]);
 
+	const isLegacy = migrationStatus?.status === "legacy";
+
 	const legacyPayAddress =
 		migrationStatus?.status === "migrated"
 			? (migrationStatus.legacyPayAddress ?? null)
@@ -72,15 +74,19 @@ export function LegacySweepBanner() {
 		mneeBalance,
 	]);
 
-	const shouldShow =
-		!dismissed &&
+	const leftoverAfterMigrate =
 		!loading &&
 		migrationStatus?.status === "migrated" &&
 		sweepableAssetCount > 0;
 
-	if (!shouldShow) {
+	if (dismissed || (!isLegacy && !leftoverAfterMigrate)) {
 		return null;
 	}
+
+	const title = isLegacy ? "Migrate assets" : "Legacy assets";
+	const detail = isLegacy
+		? "Optional. Run this when you are ready."
+		: `${sweepableAssetCount} item${sweepableAssetCount === 1 ? "" : "s"} need sweeping`;
 
 	return (
 		<SidebarMenu>
@@ -97,10 +103,9 @@ export function LegacySweepBanner() {
 					>
 						<AlertTriangle className="h-4 w-4 shrink-0" />
 						<div className="flex flex-col min-w-0">
-							<span className="truncate">Legacy assets</span>
+							<span className="truncate">{title}</span>
 							<span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-								{sweepableAssetCount} item{sweepableAssetCount === 1 ? "" : "s"}{" "}
-								need sweeping
+								{detail}
 							</span>
 						</div>
 					</Link>
@@ -110,7 +115,7 @@ export function LegacySweepBanner() {
 				<button
 					type="button"
 					onClick={dismiss}
-					aria-label="Dismiss legacy sweep notice"
+					aria-label="Dismiss migration notice"
 					className="absolute right-1 top-1/2 -translate-y-1/2 shrink-0 rounded p-1 opacity-60 hover:opacity-100 hover:bg-chart-1/20 transition-opacity"
 				>
 					<X className="h-3 w-3" />

@@ -36,6 +36,7 @@ import {
 } from "@/lib/sweep-migration";
 import {
 	detectMigrationStatus,
+	MIGRATION_DEFERRED_KEY,
 	type MigrationStatus,
 } from "@/lib/wallet-migration";
 import { reencryptWallet } from "@/lib/wallet-storage";
@@ -95,6 +96,18 @@ export function MigrationWizard() {
 		new Set(),
 	);
 	const [ordinalPage, setOrdinalPage] = useState(0);
+	const [deferredReady, setDeferredReady] = useState(false);
+	const [deferred, setDeferred] = useState(false);
+
+	useEffect(() => {
+		setDeferred(window.localStorage.getItem(MIGRATION_DEFERRED_KEY) === "1");
+		setDeferredReady(true);
+	}, []);
+
+	const deferMigration = useCallback(() => {
+		window.localStorage.setItem(MIGRATION_DEFERRED_KEY, "1");
+		setDeferred(true);
+	}, []);
 
 	// Detect migration status
 	const migrationStatus: MigrationStatus | null = useMemo(() => {
@@ -262,6 +275,7 @@ export function MigrationWizard() {
 				}
 			}
 
+			window.localStorage.removeItem(MIGRATION_DEFERRED_KEY);
 			setProgressPercent(100);
 			setStep("complete");
 		} catch (err) {
@@ -292,6 +306,7 @@ export function MigrationWizard() {
 	if (!hasWallet) return null;
 	if (isWalletLocked) return null;
 	if (!needsMigration) return null;
+	if (!deferredReady || deferred) return null;
 	// Once complete or dismissed, don't show
 	if (step === "complete" && !sweepResult) return null;
 
@@ -310,7 +325,8 @@ export function MigrationWizard() {
 			<div className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 animate-in fade-in zoom-in-95 duration-300">
 				{step === "intro" && (
 					<IntroStep
-						onContinue={() => setStep("scan")}
+						onMigrateNow={() => setStep("scan")}
+						onMigrateLater={deferMigration}
 						onStartFresh={() => {
 							downloadBackup();
 							router.push("/wallet/create");
@@ -338,6 +354,7 @@ export function MigrationWizard() {
 						onDeselectAll={handleDeselectAll}
 						onPageChange={setOrdinalPage}
 						onBeginMigration={runMigration}
+						onMigrateLater={deferMigration}
 					/>
 				)}
 
@@ -381,10 +398,12 @@ export function MigrationWizard() {
 // ---------------------------------------------------------------------------
 
 function IntroStep({
-	onContinue,
+	onMigrateNow,
+	onMigrateLater,
 	onStartFresh,
 }: {
-	onContinue: () => void;
+	onMigrateNow: () => void;
+	onMigrateLater: () => void;
 	onStartFresh: () => void;
 }) {
 	return (
@@ -394,22 +413,30 @@ function IntroStep({
 					<Shield className="h-8 w-8 text-primary" />
 				</div>
 				<h1 className="text-3xl font-bold tracking-tight">
-					Wallet Upgrade Required
+					Migrate your assets
 				</h1>
 				<p className="mx-auto max-w-md text-muted-foreground leading-relaxed">
-					Your wallet uses a legacy key structure. We need to derive an identity
-					key and migrate your assets to the new system.
+					This is not a key from a modern wallet. You may need to migrate your
+					assets to see them. You can do this now, or later from the wallet.
 				</p>
 			</div>
 
 			<div className="mx-auto max-w-sm space-y-3">
 				<Button
-					onClick={onContinue}
+					onClick={onMigrateNow}
 					className="w-full h-12 text-base gap-2"
 					size="lg"
 				>
-					Continue
+					Migrate Now
 					<ArrowRight className="h-4 w-4" />
+				</Button>
+				<Button
+					variant="outline"
+					onClick={onMigrateLater}
+					className="w-full h-12 text-base"
+					size="lg"
+				>
+					Migrate Later
 				</Button>
 
 				<div className="relative">
@@ -509,6 +536,7 @@ function PreviewStep({
 	onDeselectAll,
 	onPageChange,
 	onBeginMigration,
+	onMigrateLater,
 }: {
 	migrationStatus: Extract<MigrationStatus, { status: "legacy" }>;
 	assets: ReturnType<typeof useLegacyAssets>;
@@ -520,6 +548,7 @@ function PreviewStep({
 	onDeselectAll: () => void;
 	onPageChange: (page: number) => void;
 	onBeginMigration: () => void;
+	onMigrateLater: () => void;
 }) {
 	return (
 		<div className="space-y-6">
@@ -531,7 +560,8 @@ function PreviewStep({
 				<p className="text-sm text-muted-foreground">
 					{totalAssets > 0
 						? `Found ${totalAssets} asset${totalAssets !== 1 ? "s" : ""} to migrate from your legacy addresses.`
-						: "No sweepable assets found. Migration will still derive your identity key."}
+						: "No sweepable assets found. Migration will still derive your identity key."}{" "}
+					Nothing is signed or broadcast until you choose Begin Migration.
 				</p>
 			</div>
 
@@ -587,6 +617,14 @@ function PreviewStep({
 					Begin Migration
 					{totalAssets > 0 &&
 						` (${totalAssets} asset${totalAssets !== 1 ? "s" : ""})`}
+				</Button>
+				<Button
+					variant="outline"
+					onClick={onMigrateLater}
+					className="w-full h-12 text-base"
+					size="lg"
+				>
+					Migrate Later
 				</Button>
 			</div>
 		</div>

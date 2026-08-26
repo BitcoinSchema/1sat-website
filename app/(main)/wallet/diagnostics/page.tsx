@@ -556,7 +556,7 @@ export default function WalletDiagnosticPage() {
 										{isScanning ? "Scanning..." : "Quick Scan UTXOs"}
 									</Button>
 									<Button size="sm" asChild>
-										<Link href="/wallet/migrate">Open Migration Tool</Link>
+										<Link href="/wallet/migrate">Migrate Now</Link>
 									</Button>
 								</div>
 							</>
