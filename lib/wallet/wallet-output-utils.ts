@@ -42,10 +42,11 @@ export function parseWalletOutpoint(output: WalletOutput): {
 /** Classify content type for display purposes */
 export function classifyContent(
 	output: WalletOutput,
-): "video" | "audio" | "3d" | "image" {
+): "video" | "audio" | "3d" | "image" | "other" {
 	const ct = getContentType(output);
 	if (ct.startsWith("video/")) return "video";
 	if (ct.startsWith("audio/")) return "audio";
 	if (ct.includes("model/") || ct.includes("gltf")) return "3d";
-	return "image";
+	if (ct.startsWith("image/")) return "image";
+	return "other";
 }

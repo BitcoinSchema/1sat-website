@@ -1,7 +1,14 @@
 "use client";
 
 import type { WalletOutput } from "@1sat/actions";
-import { Box, Loader2, Music, Play, SquareArrowOutUpRight } from "lucide-react";
+import {
+	Box,
+	FileQuestion,
+	Loader2,
+	Music,
+	Play,
+	SquareArrowOutUpRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -255,7 +262,7 @@ export default function WalletFlowGrid({
 						<div className="w-full aspect-square bg-gradient-to-br from-pink-900/30 to-orange-900/30 flex items-center justify-center">
 							<Music className="w-16 h-16 text-pink-300/50" />
 						</div>
-					) : (
+					) : contentType === "image" ? (
 						<ImageWithFallback
 							src={imgSrc}
 							alt={`Ordinal ${txid.slice(0, 8)}`}
@@ -263,6 +270,13 @@ export default function WalletFlowGrid({
 							width={300}
 							height={300}
 						/>
+					) : (
+						<div className="flex aspect-square w-full flex-col items-center justify-center gap-2 bg-muted/50 p-4 text-center text-muted-foreground">
+							<FileQuestion className="size-12 opacity-60" />
+							<span className="max-w-full truncate text-xs">
+								{getContentType(artifact) || "Unknown content type"}
+							</span>
+						</div>
 					)}
 				</div>
 			</div>

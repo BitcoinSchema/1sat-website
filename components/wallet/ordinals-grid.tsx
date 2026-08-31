@@ -2,7 +2,15 @@
 
 import type { WalletOutput } from "@1sat/actions";
 import { useQueryClient } from "@tanstack/react-query";
-import { Flame, Loader2, RefreshCw, Send, Tag, X } from "lucide-react";
+import {
+	FileQuestion,
+	Flame,
+	Loader2,
+	RefreshCw,
+	Send,
+	Tag,
+	X,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -14,6 +22,8 @@ import {
 import { stackContentUrl } from "@/lib/stack";
 import { isOrdinalListed, ordinalAssetId } from "@/lib/wallet/ordinal-actions";
 import {
+	classifyContent,
+	getContentType,
 	getDisplayOutpoint,
 	getName,
 	getOriginOutpoint,
@@ -187,6 +197,8 @@ export function OrdinalsGrid() {
 					{ordinals.map((ordinal: WalletOutput) => {
 						const outpoint = getDisplayOutpoint(ordinal);
 						const originOutpoint = getOriginOutpoint(ordinal);
+						const contentType = getContentType(ordinal);
+						const contentClass = classifyContent(ordinal);
 						const selected = selectedOutpoints.has(ordinal.outpoint);
 						const actionable = !!ordinalAssetId(ordinal);
 						return (
@@ -200,14 +212,25 @@ export function OrdinalsGrid() {
 									rel="noopener noreferrer"
 									className="block size-full"
 								>
-									<Image
-										src={stackContentUrl(originOutpoint)}
-										alt={getName(ordinal) ?? `Ordinal ${outpoint.slice(0, 8)}`}
-										fill
-										className="object-cover transition-transform group-hover:scale-105"
-										sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-										unoptimized
-									/>
+									{contentClass === "image" ? (
+										<Image
+											src={stackContentUrl(originOutpoint)}
+											alt={
+												getName(ordinal) ?? `Ordinal ${outpoint.slice(0, 8)}`
+											}
+											fill
+											className="object-cover transition-transform group-hover:scale-105"
+											sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+											unoptimized
+										/>
+									) : (
+										<div className="flex size-full flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
+											<FileQuestion className="size-10" />
+											<span className="max-w-full truncate text-xs">
+												{contentType || "Unknown content type"}
+											</span>
+										</div>
+									)}
 									<div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
 									<div className="absolute inset-x-0 bottom-0 p-2 text-xs text-white">
 										<div className="truncate font-medium">

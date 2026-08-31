@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { fetchStackCapabilities, parseStackCapabilities } from "../lib/stack";
+import {
+	fetchStackCapabilities,
+	parseStackCapabilities,
+	stackContentUrl,
+} from "../lib/stack";
 import { createStackFeatureRegistry } from "../lib/stack-features";
 
 describe("1Sat stack capabilities", () => {
@@ -30,5 +34,12 @@ describe("1Sat stack capabilities", () => {
 		assert.equal(registry.features.ordinalMarket, true);
 		assert.equal(registry.features.bsv21, false);
 		assert.equal(registry.features.social, false);
+	});
+
+	test("emits canonical underscore OrdFS URLs from either outpoint form", () => {
+		const txid = "ab".repeat(32);
+		const expectedPath = `/content/${txid}_12`;
+		assert.equal(new URL(stackContentUrl(`${txid}.12`)).pathname, expectedPath);
+		assert.equal(new URL(stackContentUrl(`${txid}_12`)).pathname, expectedPath);
 	});
 });

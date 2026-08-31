@@ -1,7 +1,13 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Box, Music, Play, SquareArrowOutUpRight } from "lucide-react";
+import {
+	Box,
+	FileQuestion,
+	Music,
+	Play,
+	SquareArrowOutUpRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -30,13 +36,14 @@ const LoadingSkeleton = ({ count }: { count: number }) => (
 
 const getContentType = (
 	artifact: ListingData,
-): "video" | "audio" | "3d" | "image" => {
+): "video" | "audio" | "3d" | "image" | "other" => {
 	const contentType = artifact.content_type || "";
 	if (contentType.startsWith("video/")) return "video";
 	if (contentType.startsWith("audio/")) return "audio";
 	if (contentType.includes("model/") || contentType.includes("gltf"))
 		return "3d";
-	return "image";
+	if (contentType.startsWith("image/")) return "image";
+	return "other";
 };
 
 // Hook to determine number of columns based on window width
@@ -285,7 +292,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 						<div className="w-full aspect-square bg-muted flex items-center justify-center">
 							<Music className="w-24 h-24 text-muted-foreground" />
 						</div>
-					) : (
+					) : contentType === "image" ? (
 						<ImageWithFallback
 							src={imgSrc}
 							alt={artifact.name || `Image ${artifact.outpoint}`}
@@ -293,6 +300,13 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 							width={375}
 							height={375}
 						/>
+					) : (
+						<div className="flex aspect-square w-full flex-col items-center justify-center gap-2 bg-muted p-4 text-center text-muted-foreground">
+							<FileQuestion className="size-16 opacity-60" />
+							<span className="max-w-full truncate text-xs">
+								{artifact.content_type || "Unknown content type"}
+							</span>
+						</div>
 					)}
 
 					<div className="absolute inset-0 flex flex-col justify-end p-4 text-foreground bg-gradient-to-t from-background via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none">

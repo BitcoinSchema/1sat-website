@@ -87,14 +87,14 @@ export const ownerClient = stackServices.owner;
 export const txoClient = stackServices.txo;
 export const ordfsClient = stackServices.ordfs;
 
-// The stack canonicalizes outpoints as txid.vout; legacy inbound links use
-// txid_vout. Accept both at the website boundary.
+// Stack APIs use txid.vout internally; public OrdFS URLs use txid_vout.
+// Accept both at the website boundary and emit the format expected by each.
 export const toStackOutpoint = (outpoint: string) => outpoint.replace("_", ".");
 
 export const toUrlOutpoint = (outpoint: string) => outpoint.replace(".", "_");
 
 export const stackContentUrl = (outpoint: string) =>
-	ordfsClient.getContentUrl(toStackOutpoint(outpoint));
+	ordfsClient.getContentUrl(toUrlOutpoint(outpoint));
 
 export interface ListingData {
 	outpoint: string;

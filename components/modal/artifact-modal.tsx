@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, SquareArrowOutUpRight, X } from "lucide-react";
+import { FileQuestion, Info, SquareArrowOutUpRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import ImageWithFallback from "@/components/image-with-fallback";
@@ -34,13 +34,14 @@ interface ArtifactModalProps {
 
 function classifyContentType(
 	ct: string,
-): "video" | "audio" | "3d" | "text" | "html" | "image" {
+): "video" | "audio" | "3d" | "text" | "html" | "image" | "other" {
 	if (ct.startsWith("video/")) return "video";
 	if (ct.startsWith("audio/")) return "audio";
 	if (ct.includes("model/") || ct.includes("gltf")) return "3d";
 	if (ct.includes("html")) return "html";
 	if (ct.startsWith("text/")) return "text";
-	return "image";
+	if (ct.startsWith("image/")) return "image";
+	return "other";
 }
 
 const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
@@ -170,7 +171,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							className="w-full h-full border-0"
 							sandbox=""
 						/>
-					) : (
+					) : contentClass === "image" ? (
 						<div
 							className={
 								allowScroll
@@ -193,6 +194,16 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 									viewTransitionName: `artifact-${outpoint}`,
 								}}
 							/>
+						</div>
+					) : (
+						<div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
+							<FileQuestion className="size-16 opacity-60" />
+							<p className="text-sm">
+								Preview unavailable for this content type.
+							</p>
+							<code className="max-w-full break-all text-xs">
+								{contentType || "unknown"}
+							</code>
 						</div>
 					)}
 				</section>
