@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 1Sat Website
 
-## Getting Started
+The web wallet, asset explorer, and marketplace served at
+[1satwallet.com](https://1satwallet.com). The production site tracks the
+`omega` branch.
 
-First, run the development server:
+The app can use a BRC-100 wallet supplied by 1Sat Wallet Desktop, an injected
+wallet such as Yours, or an embedded mobile host. It also includes its own web
+wallet and exposes that wallet to other websites through the CWI bridge.
+
+## Getting started
+
+Install dependencies, configure the environment, and start the development
+server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+cp .env.example .env.local
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:8255](http://localhost:8255).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Before submitting changes, run:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun run lint
+bunx tsc --noEmit
+bun run build
+```
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+- `@1sat/connect` discovers and monitors external BRC-100 wallets.
+- `@1sat/wallet-browser` supplies the built-in browser wallet.
+- `@1sat/actions` implements 1Sat asset and payment operations over a standard
+  BRC-100 `WalletInterface`.
+- `@1sat/client` connects the UI to the public services at `api.1sat.app`.
+- `wallet.1sat.app` stores and synchronizes the built-in BRC-100 wallet.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+See [docs/BRC100_GAP_ANALYSIS.md](docs/BRC100_GAP_ANALYSIS.md) for the standards
+comparison, supported connection modes, and remaining product work.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The deployment target, environment ownership, and security headers are defined
+in [docs/deployment.md](docs/deployment.md). The review path, release gate,
+rollback runbook, and release-notes template live in
+[docs/release.md](docs/release.md). Do not promote a build until that gate is
+green.

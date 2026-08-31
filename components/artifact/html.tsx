@@ -1,7 +1,7 @@
 import { FileCode } from "lucide-react";
 import Image from "next/image";
 import { type ReactEventHandler, useEffect, useState } from "react";
-import { ORDFS } from "@/lib/constants";
+import { STACK_URL, stackContentUrl } from "@/lib/stack";
 
 interface ArtifactProps {
 	origin: string;
@@ -31,7 +31,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 				return;
 			}
 
-			const initialSrc = `${ORDFS}/content/${origin}`;
+			const initialSrc = stackContentUrl(origin);
 
 			try {
 				const res = await fetch(initialSrc);
@@ -55,7 +55,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 					const isOrdFsSrc = url.origin === window.location.origin;
 
 					if (isOrdFsSrc) {
-						setSrc(`${ORDFS}${pathname}`);
+						setSrc(`${STACK_URL}${pathname}`);
 					} else {
 						setSrc(image.src);
 					}
@@ -88,6 +88,7 @@ const HTMLArtifact: React.FC<ArtifactProps> = ({
 						src={src}
 						alt="html artifact"
 						fill
+						sizes="(max-width: 768px) 100vw, 50vw"
 						className={`pointer-events-none object-contain object-center ${
 							className?.iframe || ""
 						}`}

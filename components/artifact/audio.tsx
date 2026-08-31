@@ -1,5 +1,5 @@
 import type React from "react";
-import { ORDFS } from "@/lib/constants";
+import { stackContentUrl } from "@/lib/stack";
 
 type AudioArtifactProps = {
 	outPoint?: string;
@@ -17,7 +17,7 @@ const AudioArtifact: React.FC<AudioArtifactProps> = ({
 			<div className="text-white mb-4">Audio Artifact</div>
 			<audio
 				className={`w-full transition ${className ? className : ""}`}
-				src={src ? src : `${ORDFS}/content/${outPoint}`}
+				src={src ? src : outPoint ? stackContentUrl(outPoint) : undefined}
 				id={`${src ? src : outPoint}_audio`}
 				controls
 			>

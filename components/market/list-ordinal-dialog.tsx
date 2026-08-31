@@ -1,11 +1,12 @@
 "use client";
 
 import {
-	cancelListing,
+	cancelOrdinalListing,
 	createContext,
-	listOrdinal,
+	sellOrdinal,
 	type WalletOutput,
 } from "@1sat/actions";
+import { readAssetIdTag } from "@1sat/types";
 import { Loader2, Tag, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -47,12 +48,14 @@ export const ListOrdinalDialog = ({
 		setStatus("busy");
 		setError("");
 		try {
+			const id = readAssetIdTag(ordinal.tags);
+			if (!id) throw new Error("Ordinal is missing its wallet asset ID");
 			const ctx = createContext(wallet, {
 				services: services ?? undefined,
 				chain,
 			});
 			const result = listed
-				? await cancelListing.execute(ctx, { listing: ordinal })
+				? await cancelOrdinalListing.execute(ctx, { id })
 				: await (() => {
 						const satoshis = Math.round(
 							Number.parseFloat(priceBsv) * 100_000_000,
@@ -60,8 +63,8 @@ export const ListOrdinalDialog = ({
 						if (!Number.isFinite(satoshis) || satoshis <= 0) {
 							throw new Error("Enter a valid price");
 						}
-						return listOrdinal.execute(ctx, {
-							ordinal,
+						return sellOrdinal.execute(ctx, {
+							id,
 							price: satoshis,
 							payAddress: depositAddress,
 						});
@@ -108,6 +111,7 @@ export const ListOrdinalDialog = ({
 					</p>
 					{!listed && (
 						<Input
+							aria-label="Listing price in BSV"
 							type="number"
 							min="0"
 							step="0.00000001"
@@ -117,7 +121,9 @@ export const ListOrdinalDialog = ({
 						/>
 					)}
 					{error && (
-						<p className="text-xs text-destructive break-all">{error}</p>
+						<p className="text-xs text-destructive break-all" role="alert">
+							{error}
+						</p>
 					)}
 					<Button
 						onClick={run}

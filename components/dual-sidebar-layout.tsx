@@ -1,15 +1,15 @@
 "use client";
 
-import { PanelLeft, Wallet } from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import type * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { LeftSidebar } from "@/components/left-sidebar";
-import { SearchForm } from "@/components/search-form";
 import { SidebarSoundEffects } from "@/components/sidebar-sound-effects";
 import { Button } from "@/components/ui/button";
 import {
 	SidebarInset,
 	SidebarProvider,
+	SidebarTrigger,
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { FullScreenUnlock } from "@/components/wallet/full-screen-unlock";
@@ -61,8 +61,6 @@ function InnerContent({
 	children: React.ReactNode;
 	toggleLeft: () => void;
 }) {
-	const { toggleSidebar: toggleRight } = useSidebar();
-
 	return (
 		<SidebarInset>
 			<header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -78,16 +76,11 @@ function InnerContent({
 					</Button>
 				</div>
 				<div className="flex items-center gap-2">
-					<SearchForm />
-					<Button
-						variant="ghost"
-						size="icon"
+					<SidebarTrigger
+						aria-label="Toggle wallet navigation"
 						className="-mr-1"
-						onClick={toggleRight}
-					>
-						<Wallet />
-						<span className="sr-only">Toggle Wallet</span>
-					</Button>
+						title="Toggle wallet navigation"
+					/>
 				</div>
 			</header>
 			<div className="flex flex-1 flex-col gap-4 p-0">{children}</div>

@@ -6,7 +6,6 @@ import {
 	Coins,
 	Download,
 	Hammer,
-	Pickaxe,
 	Settings,
 	Volume2,
 	VolumeOff,
@@ -36,6 +35,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useSound } from "@/hooks/use-sound";
 import { useSoundSettings } from "@/hooks/use-sound-settings";
+import { useStackFeatures } from "@/lib/hooks/use-stack-features";
+import type { StackFeature } from "@/lib/stack-features";
 
 // Custom 1Sat Icon in Lucide style
 const OneSatIcon = ({ className }: { className?: string }) => (
@@ -56,7 +57,15 @@ const OneSatIcon = ({ className }: { className?: string }) => (
 	</svg>
 );
 
-const navData = [
+interface NavItem {
+	title: string;
+	url: string;
+	icon: React.ComponentType<{ className?: string }>;
+	shortcut?: string;
+	feature?: StackFeature;
+}
+
+const navData: Array<{ title: string; items: NavItem[] }> = [
 	{
 		title: "Application",
 
@@ -69,6 +78,8 @@ const navData = [
 				icon: Activity,
 
 				shortcut: "g a",
+
+				feature: "activity",
 			},
 		],
 	},
@@ -85,16 +96,8 @@ const navData = [
 				icon: OneSatIcon,
 
 				shortcut: "g m",
-			},
 
-			{
-				title: "BSV20",
-
-				url: "/market/bsv20",
-
-				icon: Coins,
-
-				shortcut: "g b",
+				feature: "ordinalMarket",
 			},
 
 			{
@@ -105,6 +108,8 @@ const navData = [
 				icon: Coins,
 
 				shortcut: "g v",
+
+				feature: "bsv21",
 			},
 		],
 	},
@@ -121,16 +126,8 @@ const navData = [
 				icon: Hammer,
 
 				shortcut: "g i",
-			},
 
-			{
-				title: "Mine",
-
-				url: "/mine",
-
-				icon: Pickaxe,
-
-				shortcut: "g e",
+				feature: "inscribe",
 			},
 		],
 	},
@@ -175,6 +172,7 @@ export function LeftSidebar({
 }: React.ComponentProps<typeof Sidebar>) {
 	const { play } = useSound();
 	const { muted, toggleMuted } = useSoundSettings();
+	const featuresQuery = useStackFeatures();
 
 	return (
 		<Sidebar {...props}>
@@ -189,6 +187,8 @@ export function LeftSidebar({
 										alt="1Sat"
 										width={24}
 										height={24}
+										loading="eager"
+										fetchPriority="high"
 									/>
 								</div>
 
@@ -198,7 +198,7 @@ export function LeftSidebar({
 										<span className="text-secondary">Wallet</span>
 									</span>
 
-									<span className="truncate text-xs">Marketplace</span>
+									<span className="truncate text-xs">BRC-100 Wallet</span>
 								</div>
 							</Link>
 						</SidebarMenuButton>
@@ -213,23 +213,45 @@ export function LeftSidebar({
 
 						<SidebarGroupContent>
 							<SidebarMenu>
-								{group.items.map((item) => (
-									<SidebarMenuItem key={item.title}>
-										<SidebarMenuButton asChild tooltip={item.title}>
-											<Link href={item.url} onClick={() => play("click")}>
-												<item.icon className="h-4 w-4" />
-
-												<span>{item.title}</span>
-
-												{item.shortcut && (
-													<span className="ml-auto text-xs tracking-widest text-muted-foreground group-data-[collapsible=icon]:hidden hidden md:block">
-														{item.shortcut}
+								{group.items.map((item) => {
+									const available =
+										!item.feature ||
+										featuresQuery.data?.features[item.feature] === true;
+									return (
+										<SidebarMenuItem key={item.title}>
+											{available ? (
+												<SidebarMenuButton asChild tooltip={item.title}>
+													<Link href={item.url} onClick={() => play("click")}>
+														<item.icon className="h-4 w-4" />
+														<span>{item.title}</span>
+														{item.shortcut && (
+															<span className="ml-auto hidden text-xs tracking-widest text-muted-foreground group-data-[collapsible=icon]:hidden md:block">
+																{item.shortcut}
+															</span>
+														)}
+													</Link>
+												</SidebarMenuButton>
+											) : (
+												<SidebarMenuButton
+													disabled
+													tooltip={`${item.title} ${featuresQuery.isLoading ? "checking" : "unavailable"}`}
+												>
+													<item.icon className="h-4 w-4" />
+													<span>{item.title}</span>
+													<span
+														aria-live="polite"
+														className="ml-auto text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden"
+														role="status"
+													>
+														{featuresQuery.isLoading
+															? "Checking"
+															: "Unavailable"}
 													</span>
-												)}
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								))}
+												</SidebarMenuButton>
+											)}
+										</SidebarMenuItem>
+									);
+								})}
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>

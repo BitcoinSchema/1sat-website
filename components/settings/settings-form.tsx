@@ -1,18 +1,9 @@
 "use client";
 
-import {
-	ChevronRight,
-	Keyboard,
-	Loader2,
-	Palette,
-	User,
-	Wallet,
-} from "lucide-react";
+import { ChevronRight, Keyboard, Palette, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -20,117 +11,23 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useSound } from "@/hooks/use-sound";
 
 export function SettingsForm() {
 	const { play } = useSound();
 	const { theme, setTheme } = useTheme();
-	const [themeOrigin, setThemeOrigin] = useState("");
-	const [isLoadingTheme, setIsLoadingTheme] = useState(false);
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
 		setMounted(true);
 	}, []);
 
-	const handleSaveTheme = async () => {
-		if (!themeOrigin) return;
-		setIsLoadingTheme(true);
-		try {
-			const res = await fetch(
-				`https://ordinals.gorillapool.io/content/${themeOrigin}`,
-			);
-			if (!res.ok) throw new Error("Failed to fetch theme");
-
-			const data = await res.json();
-
-			if (!data.styles) {
-				throw new Error("Invalid theme data: missing styles");
-			}
-
-			let css = "";
-
-			// Process Light Theme
-			if (data.styles.light) {
-				css += ":root {\n";
-				Object.entries(data.styles.light).forEach(([key, value]) => {
-					if (typeof value === "string") {
-						css += `  --${key}: ${value} !important;\n`;
-					}
-				});
-				css += "}\n";
-			}
-
-			// Process Dark Theme
-			if (data.styles.dark) {
-				css += ".dark {\n";
-				Object.entries(data.styles.dark).forEach(([key, value]) => {
-					if (typeof value === "string") {
-						css += `  --${key}: ${value} !important;\n`;
-					}
-				});
-				css += "}\n";
-			}
-
-			console.log("Injecting CSS:", css);
-
-			// Inject Style Tag
-			let styleTag = document.getElementById("theme-token-styles");
-			if (!styleTag) {
-				styleTag = document.createElement("style");
-				styleTag.id = "theme-token-styles";
-				document.head.appendChild(styleTag);
-			}
-			styleTag.textContent = css;
-		} catch (e) {
-			console.error("Error applying theme:", e);
-		} finally {
-			setIsLoadingTheme(false);
-		}
-	};
-
 	if (!mounted) return null;
 
 	return (
-		<div className="grid gap-6 md:grid-cols-2">
-			{/* Profile Card */}
-			<Card>
-				<CardHeader>
-					<div className="flex items-center gap-2">
-						<User className="h-5 w-5 text-primary" />
-						<CardTitle>Profile</CardTitle>
-					</div>
-					<CardDescription>Manage your public profile.</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-6">
-					<div className="flex items-center gap-4">
-						<Avatar className="h-16 w-16 border">
-							<AvatarImage
-								src="https://avatars.githubusercontent.com/u/1234567?v=4"
-								alt="@username"
-							/>
-							<AvatarFallback>UN</AvatarFallback>
-						</Avatar>
-						<Button variant="outline" size="sm" onClick={() => play("click")}>
-							Change Avatar
-						</Button>
-					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="username">Username</Label>
-						<Input id="username" placeholder="@username" />
-					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="bio">Bio</Label>
-						<Input id="bio" placeholder="Tell us about yourself" />
-					</div>
-				</CardContent>
-			</Card>
-
-			{/* Appearance Card */}
+		<div className="grid gap-6">
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-2">
@@ -139,7 +36,7 @@ export function SettingsForm() {
 					</div>
 					<CardDescription>Customize the UI.</CardDescription>
 				</CardHeader>
-				<CardContent className="space-y-6">
+				<CardContent>
 					<div className="flex items-center justify-between space-x-2">
 						<div className="flex flex-col space-y-1">
 							<Label htmlFor="dark-mode">Dark Mode</Label>
@@ -155,40 +52,6 @@ export function SettingsForm() {
 								setTheme(checked ? "dark" : "light");
 							}}
 						/>
-					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="theme-origin">Theme Origin</Label>
-						<div className="flex gap-2">
-							<Input
-								id="theme-origin"
-								placeholder="Enter theme token origin..."
-								value={themeOrigin}
-								onChange={(e) => setThemeOrigin(e.target.value)}
-							/>
-							<Button
-								onClick={() => {
-									play("click");
-									handleSaveTheme();
-								}}
-								disabled={isLoadingTheme || !themeOrigin}
-							>
-								{isLoadingTheme ? (
-									<Loader2 className="h-4 w-4 animate-spin" />
-								) : (
-									"Apply"
-								)}
-							</Button>
-						</div>
-					</div>
-					<Separator />
-					<div className="flex items-center justify-between space-x-2">
-						<div className="flex flex-col space-y-1">
-							<Label htmlFor="compact-mode">Compact Mode</Label>
-							<span className="text-xs text-muted-foreground">
-								Increase density.
-							</span>
-						</div>
-						<Switch id="compact-mode" onCheckedChange={() => play("click")} />
 					</div>
 				</CardContent>
 			</Card>
@@ -227,7 +90,7 @@ export function SettingsForm() {
 					<CardDescription>Navigate efficiently.</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+					<div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
 						{/* Re-organize for density */}
 						<div>
 							<span className="font-semibold block mb-1">Global</span>
@@ -238,10 +101,6 @@ export function SettingsForm() {
 							<div className="flex justify-between text-xs">
 								<span className="text-muted-foreground">Right Sidebar</span>{" "}
 								<span className="font-mono">⌘ ]</span>
-							</div>
-							<div className="flex justify-between text-xs">
-								<span className="text-muted-foreground">Search</span>{" "}
-								<span className="font-mono">⌘ K</span>
 							</div>
 						</div>
 
@@ -268,10 +127,6 @@ export function SettingsForm() {
 								<span className="font-mono">m</span>
 							</div>
 							<div className="flex justify-between text-xs">
-								<span className="text-muted-foreground">BSV20</span>{" "}
-								<span className="font-mono">b</span>
-							</div>
-							<div className="flex justify-between text-xs">
 								<span className="text-muted-foreground">BSV21</span>{" "}
 								<span className="font-mono">v</span>
 							</div>
@@ -286,10 +141,6 @@ export function SettingsForm() {
 							<div className="flex justify-between text-xs">
 								<span className="text-muted-foreground">History</span>{" "}
 								<span className="font-mono">y</span>
-							</div>
-							<div className="flex justify-between text-xs">
-								<span className="text-muted-foreground">Listings</span>{" "}
-								<span className="font-mono">l</span>
 							</div>
 						</div>
 					</div>

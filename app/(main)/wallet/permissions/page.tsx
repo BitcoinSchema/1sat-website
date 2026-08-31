@@ -1,10 +1,10 @@
 "use client";
 
-// TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
-import type { PermissionToken } from "@bsv/wallet-toolbox/out/src/index.client";
+import type { PermissionToken } from "@bsv/wallet-toolbox-client";
 import { ArrowLeft, Key, Loader2, Shield, Trash2, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
 	Page,
 	PageContent,
@@ -20,13 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { buildPermissionCacheKey } from "@/lib/cwi/permission-keys";
-import {
-	type LocalPermission,
-	loadLocalPermissions,
-	type PermissionScope,
-	removeLocalPermission,
-} from "@/lib/cwi/permission-store";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 type TokenCategory = "protocol" | "basket" | "certificate" | "spending";
@@ -34,9 +28,6 @@ type TokenCategory = "protocol" | "basket" | "certificate" | "spending";
 interface CategorizedToken {
 	category: TokenCategory;
 	token: PermissionToken;
-	source: "onchain" | "local";
-	cacheKey?: string;
-	localKey?: string;
 }
 
 function tokenLabel(token: CategorizedToken): string {
@@ -80,66 +71,16 @@ function categoryBadgeVariant(
 	}
 }
 
-function buildOnchainCacheKey(
-	category: TokenCategory,
-	token: PermissionToken,
-): string | undefined {
-	switch (category) {
-		case "protocol":
-			if (token.securityLevel === undefined || !token.protocol)
-				return undefined;
-			return buildPermissionCacheKey({
-				type: "protocol",
-				originator: token.originator,
-				privileged: !!token.privileged,
-				protocolID: [token.securityLevel, token.protocol],
-				counterparty: token.counterparty,
-			});
-		case "basket":
-			if (!token.basketName) return undefined;
-			return buildPermissionCacheKey({
-				type: "basket",
-				originator: token.originator,
-				basket: token.basketName,
-			});
-		case "certificate":
-			if (!token.verifier || !token.certType) return undefined;
-			return buildPermissionCacheKey({
-				type: "certificate",
-				originator: token.originator,
-				privileged: !!token.privileged,
-				certificate: {
-					verifier: token.verifier,
-					certType: token.certType,
-					fields: token.certFields ?? [],
-				},
-			});
-		case "spending":
-			if (token.authorizedAmount === undefined) return undefined;
-			return buildPermissionCacheKey({
-				type: "spending",
-				originator: token.originator,
-				spending: {
-					satoshis: token.authorizedAmount,
-				},
-			});
-	}
-}
-
 export default function PermissionsPage() {
-	const { permissionsManager, isInitialized, identityKey, chain } =
-		useWalletToolbox();
+	const { permissionsManager, isInitialized } = useWalletToolbox();
 	const [tokens, setTokens] = useState<CategorizedToken[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [hasLoadedPermissions, setHasLoadedPermissions] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [revoking, setRevoking] = useState<string | null>(null);
 
-	const scope: PermissionScope | null =
-		identityKey === null ? null : { identityKey, chain };
-
 	const loadTokens = useCallback(async () => {
-		if (!permissionsManager || !scope) {
+		if (!permissionsManager) {
 			setTokens([]);
 			setLoadError(null);
 			setIsLoading(false);
@@ -151,87 +92,56 @@ export default function PermissionsPage() {
 		setLoadError(null);
 
 		try {
-			const [protocols, baskets, certs, spending, localPerms] =
-				await Promise.all([
-					permissionsManager.listProtocolPermissions({}),
-					permissionsManager.listBasketAccess({}),
-					permissionsManager.listCertificateAccess({}),
-					permissionsManager.listSpendingAuthorizations({}),
-					loadLocalPermissions(scope).catch(() => [] as LocalPermission[]),
-				]);
+			const [protocols, baskets, certs, spending] = await Promise.all([
+				permissionsManager.listProtocolPermissions({}),
+				permissionsManager.listBasketAccess({}),
+				permissionsManager.listCertificateAccess({}),
+				permissionsManager.listSpendingAuthorizations({}),
+			]);
 
 			const all: CategorizedToken[] = [
 				...protocols.map((token) => ({
 					category: "protocol" as const,
 					token,
-					source: "onchain" as const,
-					cacheKey: buildOnchainCacheKey("protocol", token),
 				})),
 				...baskets.map((token) => ({
 					category: "basket" as const,
 					token,
-					source: "onchain" as const,
-					cacheKey: buildOnchainCacheKey("basket", token),
 				})),
 				...certs.map((token) => ({
 					category: "certificate" as const,
 					token,
-					source: "onchain" as const,
-					cacheKey: buildOnchainCacheKey("certificate", token),
 				})),
 				...spending.map((token) => ({
 					category: "spending" as const,
 					token,
-					source: "onchain" as const,
-					cacheKey: buildOnchainCacheKey("spending", token),
 				})),
 			];
 
-			const onchainKeys = new Set(
-				all
-					.filter((token) => token.source === "onchain" && token.cacheKey)
-					.map((token) => token.cacheKey),
-			);
-
-			for (const local of localPerms) {
-				if (onchainKeys.has(local.key)) continue;
-
-				all.push({
-					category: local.type,
-					token: {
-						txid: "",
-						tx: [],
-						outputIndex: 0,
-						outputScript: "",
-						satoshis: 0,
-						originator: local.originator,
-						expiry: local.expiry,
-					} as PermissionToken,
-					source: "local",
-					cacheKey: local.key,
-					localKey: local.key,
-				});
-			}
-
 			all.sort((a, b) => a.token.originator.localeCompare(b.token.originator));
 			setTokens(all);
-		} catch (error) {
-			const message =
-				error instanceof Error ? error.message : "Failed to load permissions";
+		} catch {
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation: "wallet.permission.list",
+				recoverable: true,
+				context: { retryable: true },
+			});
 			setTokens([]);
-			setLoadError(message);
+			setLoadError("Could not load permissions. Try again.");
 		} finally {
 			setIsLoading(false);
 			setHasLoadedPermissions(true);
 		}
-	}, [permissionsManager, scope]);
+	}, [permissionsManager]);
 
 	useEffect(() => {
 		if (!isInitialized) {
 			setHasLoadedPermissions(false);
 			return;
 		}
-		if (!permissionsManager || !scope) {
+		if (!permissionsManager) {
 			setTokens([]);
 			setLoadError(null);
 			setIsLoading(false);
@@ -240,30 +150,26 @@ export default function PermissionsPage() {
 		}
 		setHasLoadedPermissions(false);
 		void loadTokens();
-	}, [isInitialized, permissionsManager, scope, loadTokens]);
+	}, [isInitialized, permissionsManager, loadTokens]);
 
 	const handleRevoke = async (token: CategorizedToken) => {
-		if (!permissionsManager || !scope) return;
-		const key =
-			token.source === "local" && token.localKey
-				? token.localKey
-				: `${token.token.txid}:${token.token.outputIndex}`;
+		if (!permissionsManager) return;
+		const key = `${token.token.txid}:${token.token.outputIndex}`;
 		setRevoking(key);
 		try {
-			if (token.source === "local" && token.localKey) {
-				await removeLocalPermission(scope, token.localKey);
-				const internals = permissionsManager as unknown as {
-					permissionCache?: Map<string, { expiry: number; cachedAt: number }>;
-					recentGrants?: Map<string, number>;
-				};
-				internals.permissionCache?.delete(token.localKey);
-				internals.recentGrants?.delete(token.localKey);
-			} else {
-				await permissionsManager.revokePermission(token.token);
-			}
-			await loadTokens();
-		} catch (err) {
-			console.error("Failed to revoke permission:", err);
+			await permissionsManager.revokePermission(token.token);
+			// WPM 2.10.4 has no public cache invalidation API after revocation.
+			// Reconstruct it so the spent token cannot remain cached as authority.
+			window.location.reload();
+		} catch {
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation: "wallet.permission.revoke",
+				recoverable: true,
+				context: { retryable: true },
+			});
+			toast.error("Could not revoke this permission. Try again.");
 		} finally {
 			setRevoking(null);
 		}
@@ -284,6 +190,7 @@ export default function PermissionsPage() {
 			<PageHeader className="gap-2 justify-start">
 				<Button variant="ghost" size="icon" asChild className="-ml-2">
 					<Link href="/wallet/settings">
+						<span className="sr-only">Back to wallet settings</span>
 						<ArrowLeft className="h-4 w-4" />
 					</Link>
 				</Button>
@@ -320,6 +227,11 @@ export default function PermissionsPage() {
 							</CardTitle>
 							<CardDescription>{loadError}</CardDescription>
 						</CardHeader>
+						<CardContent className="flex justify-center">
+							<Button onClick={() => void loadTokens()} variant="outline">
+								Try again
+							</Button>
+						</CardContent>
 					</Card>
 				) : tokens.length === 0 ? (
 					<Card>
@@ -347,10 +259,7 @@ export default function PermissionsPage() {
 								</CardHeader>
 								<CardContent className="space-y-2">
 									{originTokens.map((ct) => {
-										const key =
-											ct.source === "local" && ct.localKey
-												? ct.localKey
-												: `${ct.token.txid}:${ct.token.outputIndex}`;
+										const key = `${ct.token.txid}:${ct.token.outputIndex}`;
 										const isExpired =
 											ct.token.expiry > 0 &&
 											ct.token.expiry < Date.now() / 1000;
@@ -370,14 +279,6 @@ export default function PermissionsPage() {
 													<span className="text-sm truncate">
 														{tokenLabel(ct)}
 													</span>
-													{ct.source === "local" && (
-														<Badge
-															variant="outline"
-															className="text-xs text-muted-foreground"
-														>
-															local
-														</Badge>
-													)}
 													{isExpired && (
 														<Badge
 															variant="outline"

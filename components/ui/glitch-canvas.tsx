@@ -119,7 +119,7 @@ export default function GlitchCanvas() {
           // --- 5. Scanlines & Vignette ---
           float scanline = sin(uv.y * 800.0 + t * 5.0) * 0.05;
           float dist = distance(vUv, vec2(0.5));
-          float vignette = smoothstep(0.8, 0.2, dist * (1.0 + glitchState * 0.2));
+		  float vignette = 1.0 - smoothstep(0.2, 0.8, dist * (1.0 + glitchState * 0.2));
 
           // --- 6. Color Grading / Noise Overlay ---
           vec3 color = vec3(r, g, b);

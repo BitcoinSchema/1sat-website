@@ -14,6 +14,7 @@ export function EncryptionGrid() {
 		if (!ctx) return;
 
 		let animationFrameId: number;
+		let renderQueued = false;
 		let width = window.innerWidth;
 		let height = window.innerHeight;
 
@@ -21,9 +22,6 @@ export function EncryptionGrid() {
 		const gridSize = 14; // Smaller text
 		const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#%&@!?<>";
 		const spotlightRadius = 300;
-
-		// Mouse movement tracking for animation state
-		let lastMouseMoveTime = 0;
 
 		// Pre-calculate grid dimensions
 		let cols = Math.ceil(width / gridSize);
@@ -47,18 +45,6 @@ export function EncryptionGrid() {
 			}
 		};
 
-		// Track mouse
-		const handleMouseMove = (e: MouseEvent) => {
-			const rect = canvas.getBoundingClientRect();
-			mouseRef.current = {
-				x: e.clientX - rect.left,
-				y: e.clientY - rect.top,
-			};
-			lastMouseMoveTime = Date.now();
-		};
-
-		window.addEventListener("mousemove", handleMouseMove);
-
 		// Re-init grid on resize by wrapping the original resize
 		const resizeHandler = () => {
 			width = window.innerWidth;
@@ -74,9 +60,11 @@ export function EncryptionGrid() {
 			}
 
 			initGrid();
+			queueRender();
 		};
 
 		const render = (time: number) => {
+			renderQueued = false;
 			// Clear canvas
 			ctx.clearRect(0, 0, width, height);
 
@@ -84,8 +72,6 @@ export function EncryptionGrid() {
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.fillStyle = gridColor;
-
-			const isAnimating = Date.now() - lastMouseMoveTime < 16; // Stop immediately when mouse stops (1 frame)
 
 			for (let y = 0; y < rows; y++) {
 				for (let x = 0; x < cols; x++) {
@@ -102,8 +88,7 @@ export function EncryptionGrid() {
 						// Calculate opacity based on distance
 						const opacity = (1 - (dist / spotlightRadius) ** 2) * 0.5; // Reduce max opacity for subtlety
 
-						// Update character randomly (entropy effect) only if animating
-						if (isAnimating && time - gridData[idx].updateTime > 50) {
+						if (time - gridData[idx].updateTime > 50) {
 							// Faster updates (50ms)
 							gridData[idx].char =
 								chars[Math.floor(Math.random() * chars.length)];
@@ -117,19 +102,35 @@ export function EncryptionGrid() {
 					}
 				}
 			}
+		};
 
+		const queueRender = () => {
+			if (renderQueued) return;
+			renderQueued = true;
 			animationFrameId = requestAnimationFrame(render);
 		};
 
-		animationFrameId = requestAnimationFrame(render);
+		const handleMouseMove = (event: MouseEvent) => {
+			const rect = canvas.getBoundingClientRect();
+			mouseRef.current = {
+				x: event.clientX - rect.left,
+				y: event.clientY - rect.top,
+			};
+			queueRender();
+		};
 
 		// Initial setup
 		resizeHandler();
+		const reducedMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+		if (!reducedMotion) window.addEventListener("mousemove", handleMouseMove);
 		window.addEventListener("resize", resizeHandler);
 
 		return () => {
 			window.removeEventListener("resize", resizeHandler);
-			window.removeEventListener("mousemove", handleMouseMove);
+			if (!reducedMotion)
+				window.removeEventListener("mousemove", handleMouseMove);
 			cancelAnimationFrame(animationFrameId);
 		};
 	}, []);

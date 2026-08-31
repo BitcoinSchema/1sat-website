@@ -8,33 +8,40 @@
  */
 
 import {
+	type Bsv21Balance,
 	createContext as createOneSatContext,
+	deriveDepositAddresses,
 	type OneSatContext,
 	type WalletOutput,
 } from "@1sat/actions";
+import type { OneSatServices } from "@1sat/client";
+import {
+	connectWallet,
+	createWalletSession,
+	type WalletSession,
+} from "@1sat/connect";
 import {
 	type AddressManager,
 	createWebWallet,
-	type OneSatServices,
 	type WebWalletResult,
 } from "@1sat/wallet-browser";
-import { Beef, PrivateKey } from "@bsv/sdk";
+import { Beef, PrivateKey, type WalletInterface } from "@bsv/sdk";
 import {
 	type PermissionsManagerConfig,
 	WalletPermissionsManager,
-} from "@bsv/wallet-toolbox/out/src/index.client";
+} from "@bsv/wallet-toolbox-client";
 import { useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
 	type ReactNode,
 	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
-import { loadLocalPermissions } from "@/lib/cwi/permission-store";
 import {
 	advanceReceiveAddress,
 	buildReceiveAddressManager,
@@ -48,14 +55,21 @@ import {
 	type ReceiveAddressState,
 	saveReceiveAddressState,
 } from "@/lib/receive-address-state";
-import type { TxoData } from "@/lib/types/ordinals";
-import { useSyncEngine } from "./hooks/use-sync-engine";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
+import { createStackServices } from "@/lib/stack";
+import {
+	statusAfterDisconnect,
+	type WalletConnectionStatus,
+} from "@/lib/wallet-connection-status";
+import { loadOrCreateWalletStorageIdentity } from "@/lib/wallet-storage-identity";
+import { type SyncTasksState, useSyncEngine } from "./hooks/use-sync-engine";
 import { useWalletBalance } from "./hooks/use-wallet-balance";
 import { useWalletDiagnostics } from "./hooks/use-wallet-diagnostics";
 
-type Wallet = WebWalletResult["wallet"];
-
 type Chain = "main" | "test";
+export type WalletConnectionMode = "none" | "built-in" | "external";
+
+export const WALLET_CONNECTION_MODE_KEY = "1sat-wallet-connection-mode";
 
 const ADMIN_ORIGINATOR =
 	typeof window !== "undefined"
@@ -91,14 +105,6 @@ interface WalletBalance {
 	total: number;
 }
 
-interface TokenBalance {
-	outpoint: string;
-	txid: string;
-	vout: number;
-	data?: TxoData;
-	height?: number;
-}
-
 interface SyncStatus {
 	isSyncing: boolean;
 	progress: null;
@@ -114,6 +120,12 @@ export interface SyncEvent {
 	level: SyncEventLevel;
 	source: string;
 	message: string;
+	correlationId: string;
+	category: "route" | "action" | "provider";
+	code: string;
+	operation: string;
+	recoverable: boolean;
+	context: Record<string, string | number | boolean | null>;
 }
 
 export type WalletEvent =
@@ -164,9 +176,12 @@ export type WalletEvent =
 	  };
 
 interface WalletToolboxContextValue {
-	wallet: Wallet | null;
+	wallet: WalletInterface | null;
 	permissionsManager: WalletPermissionsManager | null;
 	services: OneSatServices | null;
+	connectionMode: WalletConnectionMode;
+	connectionStatus: WalletConnectionStatus;
+	providerType: string | null;
 	isInitialized: boolean;
 	isInitializing: boolean;
 	initError: string | null;
@@ -180,6 +195,7 @@ interface WalletToolboxContextValue {
 	lastRotationOutpoint: string | null;
 
 	syncStatus: SyncStatus;
+	syncTasks: SyncTasksState;
 	syncWallet: () => void;
 	syncEvents: SyncEvent[];
 	clearSyncEvents: () => void;
@@ -191,8 +207,8 @@ interface WalletToolboxContextValue {
 
 	balance: WalletBalance | null;
 	ordinals: WalletOutput[];
-	bsv20Tokens: TokenBalance[];
-	bsv21Tokens: TokenBalance[];
+	bsv20Tokens: Bsv21Balance[];
+	bsv21Tokens: Bsv21Balance[];
 	legacyBalance: number;
 	legacyFundingUtxos: {
 		outpoint: string;
@@ -204,6 +220,8 @@ interface WalletToolboxContextValue {
 	exchangeRate: number | null;
 
 	initializeWallet: (rootKeyHex: string) => Promise<boolean>;
+	connectExternalWallet: () => Promise<boolean>;
+	disconnectExternalWallet: () => Promise<void>;
 	destroyWallet: () => Promise<void>;
 	refreshBalance: () => void;
 }
@@ -241,12 +259,22 @@ export function WalletToolboxProvider({
 	const { rate: exchangeRate } = useExchangeRate();
 
 	// -- Core wallet state --
-	const [wallet, setWallet] = useState<Wallet | null>(null);
+	const [wallet, setWallet] = useState<WalletInterface | null>(null);
 	const [permissionsManager, setPermissionsManager] =
 		useState<WalletPermissionsManager | null>(null);
 	const [services, setServices] = useState<OneSatServices | null>(null);
 	const [identityKey, setIdentityKey] = useState<string | null>(null);
+	const [connectionMode, setConnectionMode] =
+		useState<WalletConnectionMode>("none");
+	const [connectionStatus, setConnectionStatus] =
+		useState<WalletConnectionStatus>("no-wallet");
+	const [providerType, setProviderType] = useState<string | null>(null);
 	const walletResultRef = useRef<WebWalletResult | null>(null);
+	const walletSessionRef = useRef<WalletSession | null>(null);
+	const walletSessionCleanupRef = useRef<() => void>(() => {});
+	const externalServicesRef = useRef<OneSatServices | null>(null);
+	const connectionGenerationRef = useRef(0);
+	const teardownPromiseRef = useRef<Promise<void> | null>(null);
 
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [isInitializing, setIsInitializing] = useState(false);
@@ -264,16 +292,25 @@ export function WalletToolboxProvider({
 	>(null);
 
 	const addressManagerRef = useRef<AddressManager | null>(null);
-	const receiveStateRef = useRef<ReceiveAddressState>(
+	const [initialReceiveState] = useState<ReceiveAddressState>(() =>
 		createDefaultReceiveAddressState(RECEIVE_ADDRESS_WINDOW),
 	);
-	const seenOutpointsRef = useRef(new Set<string>());
-	const rotatingOutpointsRef = useRef(new Set<string>());
+	const [initialSeenOutpoints] = useState(() => new Set<string>());
+	const [initialRotatingOutpoints] = useState(() => new Set<string>());
+	const receiveStateRef = useRef(initialReceiveState);
+	const seenOutpointsRef = useRef(initialSeenOutpoints);
+	const rotatingOutpointsRef = useRef(initialRotatingOutpoints);
 	const [syncRevision, setSyncRevision] = useState(0);
 
 	// -- Diagnostics hook --
 	const { syncEvents, clearSyncEvents, walletEvents, clearWalletEvents } =
-		useWalletDiagnostics();
+		useWalletDiagnostics({
+			connectionStatus,
+			connectionMode,
+			providerType,
+			isInitialized,
+			initFailed: initError !== null,
+		});
 
 	// -- OneSat action context --
 	const oneSatContext = useMemo<OneSatContext | null>(() => {
@@ -290,11 +327,13 @@ export function WalletToolboxProvider({
 		isInitialized,
 		identityKey,
 		trackedAddresses,
+		includeLegacyFunding: connectionMode === "built-in",
 	});
 	const {
 		refreshBalance,
 		balance,
 		ordinals,
+		bsv21Balances,
 		legacyBalance,
 		legacyFundingUtxos,
 		isBalanceLoading,
@@ -324,7 +363,7 @@ export function WalletToolboxProvider({
 
 	// -- Queued outpoint handler (receive address rotation) --
 	const _handleQueuedOutpoint = useCallback(
-		async (outpoint: string, score: number) => {
+		async (outpoint: string, _score: number) => {
 			const addressManager = addressManagerRef.current;
 			const receiveState = receiveStateRef.current;
 			if (!wallet || !identityKey || !addressManager || !addressManagerReady) {
@@ -342,44 +381,25 @@ export function WalletToolboxProvider({
 				}
 			}
 
-			console.log(
-				`[WalletToolbox][Receive] queued outpoint ${outpoint} score ${score}`,
-			);
-
 			const outputScript = await resolveOutpointScript(outpoint);
 			if (!outputScript) {
-				console.log(
-					`[WalletToolbox][Receive] unable to resolve locking script for ${outpoint}`,
-				);
 				return;
 			}
 			const normalizedOutputScript = outputScript.toLowerCase();
-			console.log(
-				`[WalletToolbox][Receive] resolved script for ${outpoint}: ${outputScript.slice(0, 24)}...`,
-			);
 
 			const currentScript = addressManager.getLockingScriptAtIndex(
 				receiveState.currentIndex,
 			);
 			if (!currentScript) {
-				console.log(
-					`[WalletToolbox][Receive] missing current script at index ${receiveState.currentIndex}`,
-				);
 				return;
 			}
 			const normalizedCurrentScript = currentScript.toLowerCase();
 
 			if (normalizedOutputScript !== normalizedCurrentScript) {
-				console.log(
-					`[WalletToolbox][Receive] ${outpoint} does not match current address index ${receiveState.currentIndex}; no rotation`,
-				);
 				return;
 			}
 
 			if (receiveState.lastRotationOutpoint === outpoint) {
-				console.log(
-					`[WalletToolbox][Receive] ${outpoint} already triggered a rotation`,
-				);
 				return;
 			}
 
@@ -412,17 +432,16 @@ export function WalletToolboxProvider({
 				setTrackedAddresses(advanced.addressManager.getAddresses());
 				setLastRotationOutpoint(advanced.state.lastRotationOutpoint ?? null);
 
-				console.log(
-					`[WalletToolbox][Receive] rotated to index ${advanced.state.currentIndex} after ${outpoint}`,
-				);
-
 				setSyncRevision((prev) => prev + 1);
 				refreshBalance();
-			} catch (error) {
-				console.error(
-					"[WalletToolbox][Receive] failed to rotate address:",
-					error,
-				);
+			} catch {
+				reportDiagnostic({
+					category: "provider",
+					code: "provider.failed",
+					operation: "wallet.receive.rotate",
+					recoverable: true,
+					context: { retryable: true },
+				});
 			} finally {
 				rotatingOutpointsRef.current.delete(outpoint);
 			}
@@ -440,6 +459,7 @@ export function WalletToolboxProvider({
 	// -- Sync engine hook --
 	const syncEngine = useSyncEngine({
 		isInitialized,
+		ownedByWebsite: connectionMode === "built-in",
 		wallet,
 		services,
 		identityKey,
@@ -449,23 +469,288 @@ export function WalletToolboxProvider({
 		syncRevision,
 		refreshBalance,
 	});
-	const { stopSyncWorkers, syncWallet, syncEngineActive } = syncEngine;
+	const { stopSyncWorkers, syncWallet, syncEngineActive, syncTasks } =
+		syncEngine;
+
+	const clearIdentityQueries = useCallback(() => {
+		queryClient.removeQueries({ queryKey: ["wallet-balance"] });
+		queryClient.removeQueries({ queryKey: ["wallet-actions"] });
+		queryClient.removeQueries({ queryKey: ["bap-profile"] });
+		queryClient.removeQueries({ queryKey: ["opns-names"] });
+	}, [queryClient]);
+
+	const resetWalletState = useCallback(
+		(status: WalletConnectionStatus) => {
+			clearIdentityQueries();
+
+			setWallet(null);
+			setPermissionsManager(null);
+			setServices(null);
+			setIdentityKey(null);
+			setConnectionMode("none");
+			setConnectionStatus(status);
+			setProviderType(null);
+			setDepositAddress(null);
+			setReceiveAddressIndex(0);
+			setReceiveAddresses([]);
+			setTrackedAddresses([]);
+			setAddressManagerReady(false);
+			setLastRotationOutpoint(null);
+			setIsInitialized(false);
+			setSyncRevision(0);
+			addressManagerRef.current = null;
+			receiveStateRef.current = createDefaultReceiveAddressState(
+				RECEIVE_ADDRESS_WINDOW,
+			);
+			seenOutpointsRef.current = new Set();
+			rotatingOutpointsRef.current = new Set();
+		},
+		[clearIdentityQueries],
+	);
+
+	const deriveExternalAddresses = useCallback(
+		async (
+			externalWallet: WalletInterface,
+			externalServices: OneSatServices,
+		) => {
+			const context = createOneSatContext(externalWallet, {
+				services: externalServices,
+				chain,
+			});
+			const { derivations } = await deriveDepositAddresses.execute(context, {
+				count: 1,
+			});
+			return derivations.map(({ address }) => address);
+		},
+		[chain],
+	);
+
+	const teardownWallet = useCallback(
+		(status: WalletConnectionStatus): Promise<void> => {
+			if (teardownPromiseRef.current) return teardownPromiseRef.current;
+
+			connectionGenerationRef.current += 1;
+			initGuardRef.current = false;
+			setIsInitializing(false);
+
+			const session = walletSessionRef.current;
+			walletSessionRef.current = null;
+			walletSessionCleanupRef.current();
+			walletSessionCleanupRef.current = () => {};
+			if (session?.status === "connected") {
+				// This closes only the local transport/session. BRC-100 does not define
+				// provider-side grant revocation for a dapp disconnect.
+				session.disconnect("manual");
+			} else {
+				session?.stop();
+			}
+
+			const webWallet = walletResultRef.current;
+			walletResultRef.current = null;
+			externalServicesRef.current?.close();
+			externalServicesRef.current = null;
+			localStorage.removeItem(WALLET_CONNECTION_MODE_KEY);
+			resetWalletState(status);
+
+			const teardown = (async () => {
+				await stopSyncWorkers();
+				try {
+					await webWallet?.destroy();
+				} catch {
+					reportDiagnostic({
+						category: "provider",
+						code: "provider.failed",
+						operation: "wallet.teardown",
+						recoverable: true,
+					});
+				}
+			})().finally(() => {
+				if (teardownPromiseRef.current === teardown) {
+					teardownPromiseRef.current = null;
+				}
+			});
+			teardownPromiseRef.current = teardown;
+			return teardown;
+		},
+		[resetWalletState, stopSyncWorkers],
+	);
+
+	const connectExternalWallet = useCallback(async (): Promise<boolean> => {
+		const pendingTeardown = teardownPromiseRef.current;
+		if (pendingTeardown) await pendingTeardown;
+		if (initGuardRef.current) {
+			return false;
+		}
+
+		const generation = ++connectionGenerationRef.current;
+		initGuardRef.current = true;
+		setIsInitializing(true);
+		setConnectionStatus("authenticating");
+		setInitError(null);
+
+		let pendingResult: Awaited<ReturnType<typeof connectWallet>> = null;
+		try {
+			const result = await connectWallet({ autoDetect: true });
+			pendingResult = result;
+			if (generation !== connectionGenerationRef.current) {
+				result?.disconnect();
+				return false;
+			}
+			if (!result) {
+				localStorage.removeItem(WALLET_CONNECTION_MODE_KEY);
+				setConnectionStatus("no-wallet");
+				setInitError(
+					"No BRC-100 wallet responded. Open 1Sat Wallet Desktop, enable a compatible extension, or use an embedded wallet browser and try again.",
+				);
+				initGuardRef.current = false;
+				return false;
+			}
+
+			const externalServices = createStackServices(chain);
+			let addresses: string[];
+			try {
+				addresses = await deriveExternalAddresses(
+					result.wallet,
+					externalServices,
+				);
+			} catch (error) {
+				externalServices.close();
+				result.disconnect();
+				throw error;
+			}
+			if (generation !== connectionGenerationRef.current) {
+				externalServices.close();
+				result.disconnect();
+				return false;
+			}
+			externalServicesRef.current = externalServices;
+
+			setWallet(result.wallet);
+			setServices(externalServices);
+			setPermissionsManager(null);
+			setIdentityKey(result.identityKey);
+			setDepositAddress(addresses[0] ?? null);
+			setReceiveAddresses(addresses);
+			setTrackedAddresses(addresses);
+			setAddressManagerReady(false);
+			setConnectionMode("external");
+			setConnectionStatus("ready");
+			setProviderType(result.provider);
+			setIsInitialized(true);
+
+			localStorage.setItem(WALLET_CONNECTION_MODE_KEY, "external");
+
+			const session = createWalletSession(result);
+			walletSessionRef.current = session;
+			const unsubscribeIdentity = session.on("identityChange", ({ next }) => {
+				if (walletSessionRef.current !== session) return;
+				const identityGeneration = ++connectionGenerationRef.current;
+				clearIdentityQueries();
+				setIsInitialized(false);
+				setIdentityKey(null);
+				setDepositAddress(null);
+				setReceiveAddresses([]);
+				setTrackedAddresses([]);
+				setConnectionStatus("authenticating");
+				void deriveExternalAddresses(result.wallet, externalServices)
+					.then((nextAddresses) => {
+						if (
+							identityGeneration !== connectionGenerationRef.current ||
+							walletSessionRef.current !== session
+						) {
+							return;
+						}
+						setIdentityKey(next);
+						setDepositAddress(nextAddresses[0] ?? null);
+						setReceiveAddresses(nextAddresses);
+						setTrackedAddresses(nextAddresses);
+						setConnectionStatus("ready");
+						setIsInitialized(true);
+						setInitError(null);
+					})
+					.catch(() => {
+						if (identityGeneration !== connectionGenerationRef.current) return;
+						setInitError(
+							"Wallet identity refresh failed. Reconnect and try again.",
+						);
+						void teardownWallet("disconnected");
+					});
+			});
+			const unsubscribeDisconnected = session.on(
+				"disconnected",
+				({ reason }) => {
+					if (walletSessionRef.current !== session) return;
+					void teardownWallet(statusAfterDisconnect(reason));
+				},
+			);
+			walletSessionCleanupRef.current = () => {
+				unsubscribeIdentity();
+				unsubscribeDisconnected();
+			};
+			session.start();
+
+			return true;
+		} catch {
+			if (generation !== connectionGenerationRef.current) return false;
+			connectionGenerationRef.current += 1;
+			walletSessionCleanupRef.current();
+			walletSessionCleanupRef.current = () => {};
+			walletSessionRef.current?.stop();
+			walletSessionRef.current = null;
+			pendingResult?.disconnect();
+			externalServicesRef.current?.close();
+			externalServicesRef.current = null;
+			localStorage.removeItem(WALLET_CONNECTION_MODE_KEY);
+			resetWalletState("disconnected");
+			setInitError(
+				"Wallet connection failed. Check the provider and try again.",
+			);
+			setIsInitializing(false);
+			initGuardRef.current = false;
+			return false;
+		} finally {
+			if (generation === connectionGenerationRef.current) {
+				setIsInitializing(false);
+			}
+		}
+	}, [
+		chain,
+		clearIdentityQueries,
+		deriveExternalAddresses,
+		resetWalletState,
+		teardownWallet,
+	]);
+
+	useEffect(() => {
+		if (
+			isInitialized ||
+			isInitializing ||
+			localStorage.getItem(WALLET_CONNECTION_MODE_KEY) !== "external"
+		) {
+			return;
+		}
+		void connectExternalWallet();
+	}, [connectExternalWallet, isInitialized, isInitializing]);
 
 	// -- Wallet init --
 	const initializeWallet = useCallback(
 		async (rootKeyHex: string): Promise<boolean> => {
+			const pendingTeardown = teardownPromiseRef.current;
+			if (pendingTeardown) await pendingTeardown;
 			if (initGuardRef.current) {
-				console.warn("[WalletToolbox] Already initializing or initialized");
 				return false;
 			}
+			const generation = ++connectionGenerationRef.current;
 			initGuardRef.current = true;
 
 			setIsInitializing(true);
-			console.log("[WalletToolbox] Starting wallet initialization...");
-
+			setConnectionStatus("authenticating");
+			let pendingResult: WebWalletResult | null = null;
 			try {
 				const rootKey = PrivateKey.fromHex(rootKeyHex);
 				const newIdentityKey = rootKey.toPublicKey().toString();
+				const storageIdentityKey =
+					await loadOrCreateWalletStorageIdentity(chain);
 
 				// wallet.1sat.app is the hosted BRC-100 storage server (the old
 				// api.1sat.app/1sat/wallet URL 404s, and wallet-browser >=0.0.7x
@@ -477,41 +762,19 @@ export function WalletToolboxProvider({
 					privateKey: rootKey,
 					chain,
 					activeRemote,
-					storageIdentityKey: rootKey.toPublicKey().toString(),
+					storageIdentityKey,
 				});
-
-				walletResultRef.current = result;
-				setWallet(result.wallet);
-				setServices(result.services);
+				pendingResult = result;
+				if (generation !== connectionGenerationRef.current) {
+					await result.destroy();
+					return false;
+				}
 
 				const wpm = new WalletPermissionsManager(
 					result.wallet,
 					ADMIN_ORIGINATOR,
 					PERMISSIONS_CONFIG,
 				);
-				try {
-					const localPerms = await loadLocalPermissions({
-						identityKey: newIdentityKey,
-						chain,
-					});
-					const cache = (
-						wpm as unknown as {
-							permissionCache: Map<
-								string,
-								{ expiry: number; cachedAt: number }
-							>;
-						}
-					).permissionCache;
-					for (const perm of localPerms) {
-						cache.set(perm.key, {
-							expiry: perm.expiry,
-							cachedAt: Date.now(),
-						});
-					}
-				} catch {
-					// IndexedDB unavailable — permissions will re-prompt.
-				}
-
 				const loadedState = loadReceiveAddressState(
 					{ chain, identityKey: newIdentityKey },
 					RECEIVE_ADDRESS_WINDOW,
@@ -532,9 +795,21 @@ export function WalletToolboxProvider({
 					prefix: RECEIVE_ADDRESS_PREFIX,
 					originator: ADMIN_ORIGINATOR,
 				});
+				if (generation !== connectionGenerationRef.current) {
+					await result.destroy();
+					return false;
+				}
+
+				pendingResult = null;
+				walletResultRef.current = result;
+				setWallet(result.wallet);
+				setServices(result.services);
 
 				setPermissionsManager(wpm);
 				setIdentityKey(newIdentityKey);
+				setConnectionMode("built-in");
+				setConnectionStatus("ready");
+				setProviderType("1sat-web");
 				setAddressManagerReady(true);
 				setReceiveAddressIndex(receiveResult.state.currentIndex);
 				setDepositAddress(receiveResult.depositAddress || null);
@@ -557,20 +832,31 @@ export function WalletToolboxProvider({
 
 				setIsInitialized(true);
 				setInitError(null);
+				localStorage.setItem(WALLET_CONNECTION_MODE_KEY, "built-in");
 
-				console.log("[WalletToolbox] Wallet initialized successfully");
 				return true;
-			} catch (error) {
-				const errorMessage =
-					error instanceof Error ? error.message : String(error);
-				console.error("[WalletToolbox] Failed to initialize wallet:", error);
-				setInitError(errorMessage);
+			} catch {
+				await pendingResult?.destroy();
+				if (generation !== connectionGenerationRef.current) return false;
+				reportDiagnostic({
+					category: "provider",
+					code: "provider.failed",
+					operation: "wallet.initialize",
+					recoverable: true,
+					context: { mode: "built-in", retryable: true },
+				});
+				setInitError(
+					"Built-in wallet initialization failed. Lock and unlock the wallet, then try again.",
+				);
+				setConnectionStatus("disconnected");
 				setIsInitialized(false);
 				setAddressManagerReady(false);
 				initGuardRef.current = false;
 				return false;
 			} finally {
-				setIsInitializing(false);
+				if (generation === connectionGenerationRef.current) {
+					setIsInitializing(false);
+				}
 			}
 		},
 		// guard state lives in initGuardRef so this callback keeps a stable
@@ -580,49 +866,41 @@ export function WalletToolboxProvider({
 
 	// -- Wallet destroy --
 	const destroyWallet = useCallback(async () => {
-		console.log("[WalletToolbox] Destroying wallet...");
+		await teardownWallet("disconnected");
+	}, [teardownWallet]);
 
-		await stopSyncWorkers();
-		initGuardRef.current = false;
-		if (walletResultRef.current) {
-			await walletResultRef.current.destroy();
-			walletResultRef.current = null;
-		}
+	const disconnectExternalWallet = useCallback(async () => {
+		if (connectionMode !== "external") return;
+		await destroyWallet();
+	}, [connectionMode, destroyWallet]);
 
-		queryClient.removeQueries({ queryKey: ["wallet-balance"] });
-
-		setWallet(null);
-		setPermissionsManager(null);
-		setServices(null);
-		setIdentityKey(null);
-		setDepositAddress(null);
-		setReceiveAddressIndex(0);
-		setReceiveAddresses([]);
-		setTrackedAddresses([]);
-		setAddressManagerReady(false);
-		setLastRotationOutpoint(null);
-		setIsInitialized(false);
-		setSyncRevision(0);
-		addressManagerRef.current = null;
-		receiveStateRef.current = createDefaultReceiveAddressState(
-			RECEIVE_ADDRESS_WINDOW,
-		);
-		seenOutpointsRef.current = new Set();
-		rotatingOutpointsRef.current = new Set();
-
-		console.log("[WalletToolbox] Wallet destroyed");
-	}, [queryClient, stopSyncWorkers]);
+	useEffect(() => () => void teardownWallet("disconnected"), [teardownWallet]);
 
 	// -- Compose sync status with init state --
-	const syncStatus = useMemo<SyncStatus>(
-		() => ({
-			isSyncing: isInitializing || balanceSyncStatus.isSyncing,
+	const syncStatus = useMemo<SyncStatus>(() => {
+		const completed = Object.values(syncTasks)
+			.map(({ lastRunAt }) => lastRunAt)
+			.filter((timestamp): timestamp is number => timestamp !== null);
+		const taskError = Object.values(syncTasks).find(
+			({ error }) => error !== null,
+		)?.error;
+		return {
+			isSyncing:
+				isInitializing || balanceSyncStatus.isSyncing || syncEngineActive,
 			progress: null,
-			lastSync: balanceSyncStatus.lastSync,
-			error: initError ?? balanceSyncStatus.error,
-		}),
-		[isInitializing, balanceSyncStatus, initError],
-	);
+			lastSync:
+				completed.length > 0
+					? new Date(Math.max(...completed))
+					: balanceSyncStatus.lastSync,
+			error: initError ?? taskError ?? balanceSyncStatus.error,
+		};
+	}, [
+		isInitializing,
+		balanceSyncStatus,
+		initError,
+		syncEngineActive,
+		syncTasks,
+	]);
 
 	const hasActiveSync =
 		isInitializing || balanceSyncStatus.isSyncing || syncEngineActive;
@@ -633,6 +911,9 @@ export function WalletToolboxProvider({
 			wallet,
 			permissionsManager,
 			services,
+			connectionMode,
+			connectionStatus,
+			providerType,
 			isInitialized,
 			isInitializing,
 			initError,
@@ -644,6 +925,7 @@ export function WalletToolboxProvider({
 			addressManagerReady,
 			lastRotationOutpoint,
 			syncStatus,
+			syncTasks,
 			syncWallet: syncWallet,
 			syncEvents: syncEvents,
 			clearSyncEvents: clearSyncEvents,
@@ -654,13 +936,15 @@ export function WalletToolboxProvider({
 			balance: balance,
 			ordinals: ordinals,
 			bsv20Tokens: [],
-			bsv21Tokens: [],
+			bsv21Tokens: bsv21Balances,
 			legacyBalance,
 			legacyFundingUtxos,
 			isBalanceLoading: isBalanceLoading,
 			balanceError: balanceError,
 			exchangeRate,
 			initializeWallet,
+			connectExternalWallet,
+			disconnectExternalWallet,
 			destroyWallet,
 			refreshBalance: refreshBalance,
 		}),
@@ -668,6 +952,9 @@ export function WalletToolboxProvider({
 			wallet,
 			permissionsManager,
 			services,
+			connectionMode,
+			connectionStatus,
+			providerType,
 			isInitialized,
 			isInitializing,
 			initError,
@@ -679,6 +966,7 @@ export function WalletToolboxProvider({
 			addressManagerReady,
 			lastRotationOutpoint,
 			syncStatus,
+			syncTasks,
 			syncWallet,
 			syncEvents,
 			clearSyncEvents,
@@ -688,12 +976,15 @@ export function WalletToolboxProvider({
 			oneSatContext,
 			balance,
 			ordinals,
+			bsv21Balances,
 			legacyBalance,
 			legacyFundingUtxos,
 			isBalanceLoading,
 			balanceError,
 			exchangeRate,
 			initializeWallet,
+			connectExternalWallet,
+			disconnectExternalWallet,
 			destroyWallet,
 			refreshBalance,
 		],
@@ -709,7 +1000,7 @@ export function WalletToolboxProvider({
 export type {
 	PermissionEventHandler,
 	PermissionRequest,
-} from "@bsv/wallet-toolbox/out/src/index.client";
+} from "@bsv/wallet-toolbox-client";
 
 export function useWalletToolbox() {
 	const context = useContext(WalletToolboxContext);

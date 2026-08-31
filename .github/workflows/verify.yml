@@ -1,0 +1,42 @@
+name: Verify
+
+on:
+  pull_request:
+    branches: [omega]
+  push:
+    branches: [omega]
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: Report dependency drift
+        run: bun outdated
+      - run: bun audit
+      - run: bunx biome check .
+      - run: bunx tsc --noEmit
+      - run: bun test
+      - run: bun scripts/check-routes.mjs
+      - name: Build production app
+        run: bun run build
+        env:
+          NEXT_PUBLIC_API_HOST: https://api.1sat.app
+          NEXT_PUBLIC_APP_URL: https://1satwallet.com
+          NEXT_PUBLIC_CONVEX_URL: https://ci-placeholder.convex.cloud
+          NEXT_PUBLIC_ONESAT_STACK_URL: https://api.1sat.app
+          NEXT_PUBLIC_ORDFS_URL: https://api.1sat.app
+          NEXT_PUBLIC_WALLET_STORAGE_URL: https://wallet.1sat.app

@@ -38,8 +38,9 @@ Date: 2026-02-06
 #### `lib/cwi/relay.ts`
 
 - Add relay lifecycle guard (`isStopped` / `isRunning`).
-- Add tracked timer registry for `waitForAuthentication` polling.
-- Cancel all pending timers in `stop()`.
+- Keep `waitForAuthentication` pending without a wall-clock cutoff while its
+  session is alive.
+- Cancel polling and settle pending work on session or relay lifecycle loss.
 - Prevent `postMessage` when relay is stopped/channel closed.
 - Add session scoping:
   - Track active session.
@@ -140,7 +141,7 @@ Date: 2026-02-06
 
 ### Unit
 
-- Relay timer cleanup + no post-after-stop.
+- Relay lifecycle cleanup + no post-after-stop.
 - Bridge session filtering + handshake transition reasons.
 - PKCE/state/nonce validation helpers.
 
@@ -161,7 +162,8 @@ Date: 2026-02-06
 
 ## Definition of done
 
-- No stuck wait states beyond configured timeout.
+- Interactive waits have no fixed timeout and remain visibly actionable.
+- Transport/session loss settles pending calls with a structured numeric error.
 - No post-stop relay console errors.
 - One-time auth codes are single-use (replay blocked).
 - Permission semantics are consistent across embed + redirect paths.

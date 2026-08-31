@@ -1,16 +1,8 @@
 "use client";
 
-/**
- * Wallet Diagnostic Page
- *
- * This page provides detailed diagnostics for wallet-toolbox integration testing.
- * It shows wallet state, connection status, balance, and allows testing operations.
- */
-
-import { OneSatServices } from "@1sat/client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Page,
 	PageContent,
@@ -26,669 +18,259 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { useSound } from "@/hooks/use-sound";
-import { wifToAddress, wifToRootKeyHex } from "@/lib/keys";
-import { STACK_URL } from "@/lib/stack";
-import { detectMigrationStatus } from "@/lib/wallet-migration";
+import {
+	createCorrelationId,
+	reportDiagnostic,
+	sanitizeDiagnosticContext,
+} from "@/lib/runtime-diagnostics";
+import { useWalletDiagnostics } from "@/providers/hooks/use-wallet-diagnostics";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
-interface DiagnosticItem {
-	label: string;
-	value: string | number | boolean | null | undefined;
-	status?: "success" | "warning" | "error" | "info";
-}
-
-function DiagnosticRow({ item }: { item: DiagnosticItem }) {
-	const statusColors = {
-		success: "bg-green-500",
-		warning: "bg-yellow-500",
-		error: "bg-red-500",
-		info: "bg-blue-500",
-	};
-
+function StatusRow({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
-			<span className="text-sm text-muted-foreground">{item.label}</span>
-			<div className="flex items-center gap-2">
-				<code className="text-sm font-mono bg-muted px-2 py-1 rounded max-w-[300px] truncate">
-					{item.value === null
-						? "null"
-						: item.value === undefined
-							? "undefined"
-							: String(item.value)}
-				</code>
-				{item.status && (
-					<span
-						className={`w-2 h-2 rounded-full ${statusColors[item.status]}`}
-					/>
-				)}
-			</div>
+		<div className="flex items-center justify-between gap-4 border-b border-border/50 py-2 last:border-0">
+			<span className="text-sm text-muted-foreground">{label}</span>
+			<code className="max-w-[60%] truncate rounded bg-muted px-2 py-1 text-xs">
+				{value}
+			</code>
 		</div>
 	);
 }
 
-export default function WalletDiagnosticPage() {
-	const { play } = useSound();
+export default function WalletDiagnosticsPage() {
 	const wallet = useWallet();
 	const toolbox = useWalletToolbox();
+	const { syncEvents, clearSyncEvents } = useWalletDiagnostics();
+	const [pendingAction, setPendingAction] = useState<string | null>(null);
+	const reportedSyncFailures = useRef(new Set<string>());
 
-	const [testResults, setTestResults] = useState<string[]>([]);
-	const [isTestingToolbox, setIsTestingToolbox] = useState(false);
+	const providerName = String(
+		sanitizeDiagnosticContext({ provider: toolbox.providerType }).provider ??
+			"none",
+	);
+	const failedSyncTasks = useMemo(
+		() =>
+			Object.entries(toolbox.syncTasks).filter(
+				([, task]) => task.status === "failed",
+			),
+		[toolbox.syncTasks],
+	);
 
-	// Derived values
-	const payAddress = wallet.walletKeys?.payPk
-		? wifToAddress(wallet.walletKeys.payPk)
-		: null;
-	const ordAddress = wallet.walletKeys?.ordPk
-		? wifToAddress(wallet.walletKeys.ordPk)
-		: null;
-	const rootKeyHex = wallet.walletKeys?.payPk
-		? wifToRootKeyHex(wallet.walletKeys.payPk)
-		: null;
-	const identityAddress = wallet.walletKeys?.identityPk
-		? wifToAddress(wallet.walletKeys.identityPk)
-		: null;
-	const identityRootKeyHex = wallet.walletKeys?.identityPk
-		? wifToRootKeyHex(wallet.walletKeys.identityPk)
-		: null;
-
-	// Migration status
-	const migrationStatus = useMemo(() => {
-		if (!wallet.walletKeys || wallet.isWalletLocked) return null;
-		return detectMigrationStatus(wallet.walletKeys);
-	}, [wallet.walletKeys, wallet.isWalletLocked]);
-
-	// Quick scan state
-	const [legacyUtxoCounts, setLegacyUtxoCounts] = useState<{
-		pay: number | null;
-		ord: number | null;
-	}>({ pay: null, ord: null });
-	const [isScanning, setIsScanning] = useState(false);
-
-	const quickScan = async () => {
-		if (migrationStatus?.status !== "legacy") return;
-		setIsScanning(true);
-		try {
-			const services = new OneSatServices("main", STACK_URL);
-			const searchUnspent = (address: string) =>
-				services.txo
-					.search(`own:${address}`, { unspent: true, limit: 0 })
-					.then((outputs) => outputs ?? []);
-			const [payUtxos, ordUtxos] = await Promise.all([
-				searchUnspent(migrationStatus.legacyPayAddress),
-				migrationStatus.legacyPayAddress !== migrationStatus.legacyOrdAddress
-					? searchUnspent(migrationStatus.legacyOrdAddress)
-					: Promise.resolve([]),
-			]);
-			setLegacyUtxoCounts({
-				pay: payUtxos.length,
-				ord:
-					migrationStatus.legacyPayAddress !== migrationStatus.legacyOrdAddress
-						? ordUtxos.length
-						: null,
+	useEffect(() => {
+		for (const [name, task] of failedSyncTasks) {
+			const failureKey = `${name}:${task.lastRunAt ?? "current"}`;
+			if (reportedSyncFailures.current.has(failureKey)) continue;
+			reportedSyncFailures.current.add(failureKey);
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation: `wallet.sync.${name}`,
+				recoverable: true,
+				context: { status: task.status, retryable: true },
 			});
-		} catch {
-			setLegacyUtxoCounts({ pay: null, ord: null });
-		} finally {
-			setIsScanning(false);
 		}
-	};
+	}, [failedSyncTasks]);
 
-	// Test wallet-toolbox initialization
-	const testToolboxInit = async () => {
-		setIsTestingToolbox(true);
-		setTestResults([]);
-
-		const results: string[] = [];
-
+	const runAction = async (
+		operation: string,
+		action: () => boolean | Promise<boolean> | undefined,
+	) => {
+		const correlationId = createCorrelationId();
+		reportDiagnostic({
+			category: "action",
+			code: "action.requested",
+			operation,
+			correlationId,
+			recoverable: true,
+		});
+		setPendingAction(operation);
 		try {
-			results.push("Starting wallet-toolbox initialization test...");
-
-			if (!wallet.walletKeys?.payPk) {
-				results.push("No wallet keys available - unlock wallet first");
-				setTestResults(results);
-				setIsTestingToolbox(false);
-				return;
+			const result = await action();
+			if (result === false) {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation,
+					correlationId,
+					recoverable: true,
+					context: { retryable: true },
+				});
 			}
-
-			results.push(`Pay key available: ${payAddress?.slice(0, 8)}...`);
-			results.push(`Ord key available: ${ordAddress?.slice(0, 8)}...`);
-			results.push(`Root key hex length: ${rootKeyHex?.length} chars`);
-			// TODO(wallet-v2): Use identity-derived root key for diagnostics init tests.
-			// This test currently uses pay-key root for backward compatibility checks.
-
-			// Try to initialize wallet-toolbox
-			if (!toolbox.isInitialized) {
-				results.push("Initializing wallet-toolbox...");
-				if (!rootKeyHex) {
-					results.push("Missing derived wallet keys");
-					setTestResults(results);
-					setIsTestingToolbox(false);
-					return;
-				}
-				const success = await toolbox.initializeWallet(rootKeyHex);
-
-				if (success) {
-					results.push("Wallet-toolbox initialized successfully!");
-					results.push(`Identity key: ${toolbox.identityKey?.slice(0, 16)}...`);
-				} else {
-					results.push("Wallet-toolbox initialization failed");
-				}
-			} else {
-				results.push("Wallet-toolbox already initialized");
-				results.push(`Identity key: ${toolbox.identityKey?.slice(0, 16)}...`);
-			}
-
-			// Test balance refresh
-			results.push("Refreshing balance...");
-			await toolbox.refreshBalance();
-			results.push(`Balance: ${toolbox.balance?.total ?? 0} sats`);
-			results.push(`Ordinals: ${toolbox.ordinals.length} items`);
-		} catch (error) {
-			results.push(
-				`Error: ${error instanceof Error ? error.message : String(error)}`,
-			);
+		} catch {
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation,
+				correlationId,
+				recoverable: true,
+				context: { retryable: true },
+			});
+		} finally {
+			setPendingAction(null);
 		}
-
-		setTestResults(results);
-		setIsTestingToolbox(false);
 	};
-
-	// Key Manager diagnostics (stripped legacy provider)
-	const keyManagerDiagnostics: DiagnosticItem[] = [
-		{
-			label: "Has Wallet",
-			value: wallet.hasWallet,
-			status: wallet.hasWallet ? "success" : "warning",
-		},
-		{
-			label: "Is Locked",
-			value: wallet.isWalletLocked,
-			status: wallet.isWalletLocked ? "warning" : "success",
-		},
-		{
-			label: "Is Initialized",
-			value: wallet.isWalletInitialized,
-			status: wallet.isWalletInitialized ? "success" : "info",
-		},
-		{
-			label: "Pay Address",
-			value: payAddress,
-			status: payAddress ? "success" : "warning",
-		},
-		{
-			label: "Ord Address",
-			value: ordAddress,
-			status: ordAddress ? "success" : "warning",
-		},
-		{
-			label: "Root Key Hex (from Pay)",
-			value: rootKeyHex ? `${rootKeyHex.slice(0, 16)}...` : null,
-			status: rootKeyHex ? "success" : "warning",
-		},
-		{
-			label: "Identity Key (WIF)",
-			value: wallet.walletKeys?.identityPk
-				? `${wallet.walletKeys.identityPk.slice(0, 12)}...`
-				: null,
-			status: wallet.walletKeys?.identityPk ? "success" : "warning",
-		},
-		{
-			label: "Identity Address",
-			value: identityAddress,
-			status: identityAddress ? "success" : "warning",
-		},
-		{
-			label: "Root Key Hex (from Identity)",
-			value: identityRootKeyHex
-				? `${identityRootKeyHex.slice(0, 16)}...`
-				: null,
-			status: identityRootKeyHex ? "success" : "info",
-		},
-		{
-			label: "Mnemonic Present",
-			value: !!wallet.walletKeys?.mnemonic,
-			status: wallet.walletKeys?.mnemonic ? "success" : "info",
-		},
-		{
-			label: "Change Address Path",
-			value: wallet.walletKeys?.changeAddressPath ?? null,
-			status: "info",
-		},
-		{
-			label: "Ord Address Path",
-			value: wallet.walletKeys?.ordAddressPath ?? null,
-			status: "info",
-		},
-		{
-			label: "Identity Address Path",
-			value: wallet.walletKeys?.identityAddressPath ?? null,
-			status: "info",
-		},
-		{
-			label: "Migration Status",
-			value: migrationStatus?.status ?? "unknown",
-			status:
-				migrationStatus?.status === "migrated"
-					? "success"
-					: migrationStatus?.status === "legacy"
-						? "warning"
-						: "error",
-		},
-	];
-
-	const toolboxDiagnostics: DiagnosticItem[] = [
-		{
-			label: "Is Initialized",
-			value: toolbox.isInitialized,
-			status: toolbox.isInitialized ? "success" : "warning",
-		},
-		{
-			label: "Is Initializing",
-			value: toolbox.isInitializing,
-			status: toolbox.isInitializing ? "info" : "success",
-		},
-		{
-			label: "Init Error",
-			value: toolbox.initError,
-			status: toolbox.initError ? "error" : "success",
-		},
-		{ label: "Chain", value: toolbox.chain, status: "info" },
-		{
-			label: "Identity Key",
-			value: toolbox.identityKey
-				? `${toolbox.identityKey.slice(0, 16)}...`
-				: null,
-			status: toolbox.identityKey ? "success" : "warning",
-		},
-		{
-			label: "Address Manager Ready",
-			value: toolbox.addressManagerReady,
-			status: toolbox.addressManagerReady ? "success" : "warning",
-		},
-		{
-			label: "Deposit Address",
-			value: toolbox.depositAddress,
-			status: toolbox.depositAddress ? "success" : "warning",
-		},
-		{
-			label: "Receive Index",
-			value: toolbox.receiveAddressIndex,
-			status: toolbox.addressManagerReady ? "info" : "warning",
-		},
-		{
-			label: "Receive Window",
-			value: `${toolbox.receiveAddresses.length} addresses`,
-			status: toolbox.receiveAddresses.length > 0 ? "info" : "warning",
-		},
-		{
-			label: "Last Rotated Outpoint",
-			value: toolbox.lastRotationOutpoint,
-			status: toolbox.lastRotationOutpoint ? "info" : "warning",
-		},
-		{
-			label: "Wallet Instance",
-			value: toolbox.wallet ? "Created" : "Not Created",
-			status: toolbox.wallet ? "success" : "warning",
-		},
-		{
-			label: "Is Syncing",
-			value: toolbox.syncStatus.isSyncing,
-			status: toolbox.syncStatus.isSyncing ? "info" : "success",
-		},
-		{
-			label: "Sync Progress",
-			value: toolbox.syncStatus.isSyncing ? "Refreshing..." : null,
-			status: "info",
-		},
-		{
-			label: "Last Sync",
-			value: toolbox.syncStatus.lastSync?.toLocaleTimeString() ?? null,
-			status: toolbox.syncStatus.lastSync ? "success" : "warning",
-		},
-		{
-			label: "Sync Error",
-			value: toolbox.syncStatus.error,
-			status: toolbox.syncStatus.error ? "error" : "success",
-		},
-	];
-
-	const balanceDiagnostics: DiagnosticItem[] = [
-		{
-			label: "Toolbox Balance (total)",
-			value: toolbox.balance?.total ?? 0,
-			status: "info",
-		},
-		{ label: "Ordinals Count", value: toolbox.ordinals.length, status: "info" },
-		{
-			label: "Exchange Rate",
-			value: toolbox.exchangeRate,
-			status: toolbox.exchangeRate ? "success" : "warning",
-		},
-	];
 
 	return (
 		<Page>
-			<PageHeader className="gap-2 justify-start">
-				<Button
-					variant="ghost"
-					size="icon"
-					asChild
-					className="-ml-2"
-					onClick={() => play("click")}
-				>
+			<PageHeader className="justify-start gap-2">
+				<Button variant="ghost" size="icon" asChild className="-ml-2">
 					<Link href="/wallet/settings">
-						<ArrowLeft className="h-4 w-4" />
+						<span className="sr-only">Back to wallet settings</span>
+						<ArrowLeft className="size-4" />
 					</Link>
 				</Button>
 				<div className="flex-1">
 					<PageTitle>Wallet Diagnostics</PageTitle>
 					<p className="text-muted-foreground">
-						Debug and test wallet-toolbox integration
+						Redacted provider, action, and route health
 					</p>
 				</div>
-				<Badge variant={wallet.isWalletLocked ? "destructive" : "default"}>
-					{wallet.isWalletLocked ? "Locked" : "Unlocked"}
+				<Badge variant={toolbox.isInitialized ? "default" : "secondary"}>
+					{toolbox.connectionStatus}
 				</Badge>
 			</PageHeader>
+
 			<PageContent className="space-y-6">
+				{(toolbox.initError || failedSyncTasks.length > 0) && (
+					<div
+						role="alert"
+						className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm"
+					>
+						A wallet operation failed. Retry below or return to the wallet. No
+						secret error details are displayed or retained.
+					</div>
+				)}
+
 				<div className="grid gap-6 md:grid-cols-2">
-					{/* Key Manager (stripped legacy provider) */}
 					<Card>
 						<CardHeader>
-							<CardTitle className="text-lg">Key Manager</CardTitle>
-							<CardDescription>
-								wallet-provider.tsx state (key storage only)
-							</CardDescription>
+							<CardTitle>Wallet state</CardTitle>
+							<CardDescription>Non-secret runtime state only</CardDescription>
 						</CardHeader>
 						<CardContent>
-							{keyManagerDiagnostics.map((item) => (
-								<DiagnosticRow key={item.label} item={item} />
-							))}
+							<StatusRow
+								label="Installed"
+								value={wallet.hasWallet ? "yes" : "no"}
+							/>
+							<StatusRow
+								label="Locked"
+								value={wallet.isWalletLocked ? "yes" : "no"}
+							/>
+							<StatusRow label="Connection" value={toolbox.connectionStatus} />
+							<StatusRow label="Mode" value={toolbox.connectionMode} />
+							<StatusRow label="Provider" value={providerName} />
+							<StatusRow label="Chain" value={toolbox.chain} />
 						</CardContent>
 					</Card>
 
-					{/* Wallet Toolbox Provider */}
 					<Card>
 						<CardHeader>
-							<CardTitle className="text-lg">Wallet Toolbox Provider</CardTitle>
+							<CardTitle>Sync state</CardTitle>
 							<CardDescription>
-								wallet-toolbox-provider.tsx state
+								Counts and status, without payloads
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							{toolboxDiagnostics.map((item) => (
-								<DiagnosticRow key={item.label} item={item} />
+							{Object.entries(toolbox.syncTasks).map(([name, task]) => (
+								<StatusRow
+									key={name}
+									label={name}
+									value={`${task.status} · ${task.processed ?? 0} processed · ${task.failed ?? 0} failed`}
+								/>
 							))}
 						</CardContent>
 					</Card>
 				</div>
 
-				{/* Balance */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="text-lg">Balance</CardTitle>
-						<CardDescription>Toolbox balance and exchange rate</CardDescription>
+						<CardTitle>Recovery</CardTitle>
+						<CardDescription>Retry safe, idempotent checks</CardDescription>
 					</CardHeader>
-					<CardContent>
-						{balanceDiagnostics.map((item) => (
-							<DiagnosticRow key={item.label} item={item} />
-						))}
+					<CardContent className="flex flex-wrap gap-3">
+						<Button
+							onClick={() =>
+								runAction("wallet.sync", () => {
+									toolbox.syncWallet();
+									return undefined;
+								})
+							}
+							disabled={!toolbox.isInitialized || pendingAction !== null}
+						>
+							<RefreshCw className="mr-2 size-4" data-icon="inline-start" />
+							Retry sync
+						</Button>
+						<Button
+							variant="outline"
+							onClick={() =>
+								runAction("wallet.refresh-balance", () => {
+									toolbox.refreshBalance();
+									return undefined;
+								})
+							}
+							disabled={!toolbox.isInitialized || pendingAction !== null}
+						>
+							Refresh balance
+						</Button>
+						{toolbox.connectionMode !== "built-in" && (
+							<Button
+								variant="outline"
+								onClick={() =>
+									runAction("wallet.connect", toolbox.connectExternalWallet)
+								}
+								disabled={toolbox.isInitializing || pendingAction !== null}
+							>
+								Retry connection
+							</Button>
+						)}
 					</CardContent>
 				</Card>
 
 				<Card>
-					<CardHeader>
-						<CardTitle className="text-lg">Receive Address Window</CardTitle>
-						<CardDescription>
-							Current deposit index and active tracked receive addresses
-						</CardDescription>
+					<CardHeader className="flex-row items-center justify-between">
+						<div>
+							<CardTitle>Runtime events</CardTitle>
+							<CardDescription>
+								In-memory, fixed-message events with correlation IDs
+							</CardDescription>
+						</div>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={clearSyncEvents}
+							disabled={syncEvents.length === 0}
+						>
+							<Trash2 className="mr-2 size-4" data-icon="inline-start" />
+							Clear
+						</Button>
 					</CardHeader>
-					<CardContent className="space-y-2">
-						{toolbox.receiveAddresses.length === 0 ? (
+					<CardContent>
+						{syncEvents.length === 0 ? (
 							<p className="text-sm text-muted-foreground">
-								No receive addresses derived yet.
+								No runtime events yet.
 							</p>
 						) : (
-							<div className="space-y-1">
-								{toolbox.receiveAddresses.map((address, offset) => {
-									const index = toolbox.receiveAddressIndex + offset;
-									const isCurrent = offset === 0;
-									return (
-										<div
-											key={`${index}:${address}`}
-											className="flex items-center justify-between rounded border border-border/50 px-2 py-1"
-										>
-											<div className="flex items-center gap-2">
-												<Badge variant={isCurrent ? "default" : "secondary"}>
-													#{index}
-												</Badge>
-												{isCurrent && (
-													<span className="text-xs text-muted-foreground">
-														current
-													</span>
-												)}
-											</div>
-											<code className="text-xs font-mono truncate max-w-[320px]">
-												{address}
-											</code>
-										</div>
-									);
-								})}
-							</div>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* Migration Status */}
-				<Card>
-					<CardHeader>
-						<div className="flex items-center justify-between">
-							<div>
-								<CardTitle className="text-lg">Migration Status</CardTitle>
-								<CardDescription>
-									Identity key derivation and legacy sweep status
-								</CardDescription>
-							</div>
-							<Badge
-								variant={
-									migrationStatus?.status === "migrated"
-										? "default"
-										: migrationStatus?.status === "legacy"
-											? "secondary"
-											: "destructive"
-								}
-							>
-								{migrationStatus?.status ?? "unknown"}
-							</Badge>
-						</div>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						{migrationStatus?.status === "legacy" && (
-							<>
-								<div className="space-y-2 text-sm">
-									<div className="flex justify-between">
-										<span className="text-muted-foreground">
-											Legacy Pay Address
-										</span>
-										<code className="text-xs font-mono bg-muted px-2 py-1 max-w-[300px] truncate">
-											{migrationStatus.legacyPayAddress}
-										</code>
-									</div>
-									<div className="flex justify-between">
-										<span className="text-muted-foreground">
-											Legacy Ord Address
-										</span>
-										<code className="text-xs font-mono bg-muted px-2 py-1 max-w-[300px] truncate">
-											{migrationStatus.legacyOrdAddress}
-										</code>
-									</div>
-									{legacyUtxoCounts.pay !== null && (
-										<div className="flex justify-between">
-											<span className="text-muted-foreground">
-												Legacy Pay UTXOs
-											</span>
-											<code className="text-xs font-mono bg-muted px-2 py-1">
-												{legacyUtxoCounts.pay}
-											</code>
-										</div>
-									)}
-									{legacyUtxoCounts.ord !== null && (
-										<div className="flex justify-between">
-											<span className="text-muted-foreground">
-												Legacy Ord UTXOs
-											</span>
-											<code className="text-xs font-mono bg-muted px-2 py-1">
-												{legacyUtxoCounts.ord}
-											</code>
-										</div>
-									)}
-								</div>
-								<div className="flex gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={quickScan}
-										disabled={isScanning}
-									>
-										{isScanning ? "Scanning..." : "Quick Scan UTXOs"}
-									</Button>
-									<Button size="sm" asChild>
-										<Link href="/wallet/migrate">Migrate Now</Link>
-									</Button>
-								</div>
-							</>
-						)}
-
-						{migrationStatus?.status === "migrated" && (
-							<div className="text-sm text-muted-foreground">
-								Wallet is using the identity key system. No migration needed.
-							</div>
-						)}
-
-						{migrationStatus?.status === "unmigrateable" && (
-							<div className="text-sm text-destructive">
-								Wallet is missing required keys for migration.
-							</div>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* Address Comparison */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-lg">Address Comparison</CardTitle>
-						<CardDescription>
-							Side-by-side view of wallet addresses and root key sources
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="overflow-x-auto">
-							<table className="w-full text-sm">
-								<thead>
-									<tr className="border-b border-border/50">
-										<th className="text-left py-2 pr-4 text-muted-foreground font-normal">
-											Role
-										</th>
-										<th className="text-left py-2 text-muted-foreground font-normal">
-											Address / Value
-										</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr className="border-b border-border/50">
-										<td className="py-2 pr-4 text-muted-foreground">
-											Legacy Pay
-										</td>
-										<td className="py-2">
-											<code className="text-xs font-mono break-all">
-												{payAddress || "n/a"}
-											</code>
-										</td>
-									</tr>
-									<tr className="border-b border-border/50">
-										<td className="py-2 pr-4 text-muted-foreground">
-											Legacy Ord
-										</td>
-										<td className="py-2">
-											<code className="text-xs font-mono break-all">
-												{ordAddress || "n/a"}
-											</code>
-										</td>
-									</tr>
-									<tr className="border-b border-border/50">
-										<td className="py-2 pr-4 text-muted-foreground">
-											Identity
-										</td>
-										<td className="py-2">
-											<code className="text-xs font-mono break-all">
-												{identityAddress || "not derived"}
-											</code>
-										</td>
-									</tr>
-									<tr>
-										<td className="py-2 pr-4 text-muted-foreground">
-											BRC-100 Root Source
-										</td>
-										<td className="py-2">
+							<div className="space-y-2">
+								{syncEvents.toReversed().map((event) => (
+									<div key={event.id} className="rounded border p-3 text-xs">
+										<div className="flex flex-wrap items-center gap-2">
 											<Badge
-												variant={identityRootKeyHex ? "default" : "secondary"}
+												variant={
+													event.level === "error" ? "destructive" : "secondary"
+												}
 											>
-												{identityRootKeyHex
-													? "Identity Key"
-													: "Pay Key (legacy)"}
+												{event.category}
 											</Badge>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-
-				{/* Test Actions */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-lg">Test Actions</CardTitle>
-						<CardDescription>Run diagnostic tests</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="flex flex-wrap gap-4">
-							<Button
-								onClick={testToolboxInit}
-								disabled={isTestingToolbox || wallet.isWalletLocked}
-							>
-								{isTestingToolbox ? "Testing..." : "Test Toolbox Init"}
-							</Button>
-							<Button
-								variant="outline"
-								onClick={() => toolbox.syncWallet()}
-								disabled={
-									!toolbox.isInitialized || toolbox.syncStatus.isSyncing
-								}
-							>
-								{toolbox.syncStatus.isSyncing ? "Syncing..." : "Sync Toolbox"}
-							</Button>
-							<Button
-								variant="outline"
-								onClick={() => toolbox.refreshBalance()}
-								disabled={!toolbox.isInitialized}
-							>
-								Refresh Balance
-							</Button>
-						</div>
-
-						{testResults.length > 0 && (
-							<>
-								<Separator />
-								<div className="bg-muted p-4 rounded-lg font-mono text-sm space-y-1">
-									{testResults.map((result) => (
-										<div key={result}>{result}</div>
-									))}
-								</div>
-							</>
+											<code>{event.code}</code>
+											<span>{event.message}</span>
+										</div>
+										<code className="mt-2 block break-all text-muted-foreground">
+											{event.operation} · {event.correlationId}
+										</code>
+									</div>
+								))}
+							</div>
 						)}
 					</CardContent>
 				</Card>

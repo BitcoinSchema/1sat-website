@@ -4,46 +4,16 @@ import {
 	createHash,
 	randomBytes,
 } from "node:crypto";
+import { normalizeBRC100WalletByteFields, stringifyBRC100 } from "@bsv/sdk";
 import { type NextRequest, NextResponse } from "next/server";
+import { CWI_STANDARD_METHODS, isCWIStandardMethod } from "./types";
 
 export const REDIRECT_AUTH_REQUEST_TTL_MS = 5 * 60 * 1000;
 export const REDIRECT_AUTH_CODE_TTL_MS = 5 * 60 * 1000;
 export const MAX_CWI_ARGS_BYTES = 64 * 1024;
 export const MAX_CWI_RESULT_BYTES = 256 * 1024;
 
-export const CWI_REDIRECT_METHODS = [
-	"createAction",
-	"signAction",
-	"abortAction",
-	"listActions",
-	"internalizeAction",
-	"listOutputs",
-	"relinquishOutput",
-	"getPublicKey",
-	"revealCounterpartyKeyLinkage",
-	"revealSpecificKeyLinkage",
-	"encrypt",
-	"decrypt",
-	"createHmac",
-	"verifyHmac",
-	"createSignature",
-	"verifySignature",
-	"acquireCertificate",
-	"listCertificates",
-	"proveCertificate",
-	"relinquishCertificate",
-	"discoverByIdentityKey",
-	"discoverByAttributes",
-	"isAuthenticated",
-	"waitForAuthentication",
-	"getHeight",
-	"getHeaderForHeight",
-	"getNetwork",
-	"getVersion",
-	"getBalance",
-] as const;
-
-const CWI_REDIRECT_METHOD_SET = new Set<string>(CWI_REDIRECT_METHODS);
+export const CWI_REDIRECT_METHODS = CWI_STANDARD_METHODS;
 
 export type PKCEChallengeMethod = "S256";
 
@@ -65,6 +35,14 @@ const base64UrlToBytes = (value: string): Uint8Array => {
 };
 
 const stableSortValue = (value: unknown): unknown => {
+	if (
+		value != null &&
+		typeof value === "object" &&
+		ArrayBuffer.isView(value) &&
+		Object.prototype.toString.call(value) === "[object Uint8Array]"
+	) {
+		return Array.from(value as Uint8Array);
+	}
 	if (Array.isArray(value)) {
 		return value.map((entry) => stableSortValue(entry));
 	}
@@ -82,7 +60,7 @@ const stableSortValue = (value: unknown): unknown => {
 };
 
 export const isValidRedirectMethod = (call: string): boolean =>
-	CWI_REDIRECT_METHOD_SET.has(call);
+	isCWIStandardMethod(call);
 
 export const isDevelopmentEnvironment = (): boolean =>
 	process.env.NODE_ENV !== "production";
@@ -121,7 +99,7 @@ export const hasMatchingOrigin = (
 
 export const normalizeArgsAndHash = (args: unknown) => {
 	const stable = stableSortValue(args ?? {});
-	const serialized = JSON.stringify(stable);
+	const serialized = stringifyBRC100(stable);
 	const argsHash = createHash("sha256").update(serialized).digest("hex");
 	const argsSize = new TextEncoder().encode(serialized).byteLength;
 	return {
@@ -174,7 +152,7 @@ export const encryptResultPayload = (result: unknown): string => {
 	const key = getEncryptionKey();
 	const iv = randomBytes(12);
 	const cipher = createCipheriv("aes-256-gcm", key, iv);
-	const serialized = JSON.stringify(result);
+	const serialized = stringifyBRC100(result);
 	const plaintext = new TextEncoder().encode(serialized);
 	const encrypted = cipher.update(plaintext);
 	const final = cipher.final();
@@ -215,7 +193,36 @@ export const decryptResultPayload = (ciphertext: string): unknown => {
 		...decipher.final(),
 	]);
 	const decoded = new TextDecoder().decode(decrypted);
-	return JSON.parse(decoded);
+	return normalizeBRC100WalletByteFields(JSON.parse(decoded));
+};
+
+export const buildCWIRedirectUrl = (params: {
+	redirectUri: string;
+	state: string;
+	codeId?: string;
+	error?: string;
+	errorDescription?: string;
+	errorCode?: number;
+	errorStack?: string;
+}): string => {
+	if (!URL.canParse(params.redirectUri)) return "";
+	const callbackUrl = new URL(params.redirectUri);
+	if (params.codeId) {
+		callbackUrl.searchParams.set("code", params.codeId);
+		callbackUrl.searchParams.set("state", params.state);
+		return callbackUrl.toString();
+	}
+	callbackUrl.searchParams.set("error", params.error ?? "access_denied");
+	callbackUrl.searchParams.set(
+		"error_description",
+		params.errorDescription ?? "Request denied.",
+	);
+	callbackUrl.searchParams.set("error_code", String(params.errorCode ?? 1));
+	if (params.errorStack && isDevelopmentEnvironment()) {
+		callbackUrl.searchParams.set("error_stack", params.errorStack);
+	}
+	callbackUrl.searchParams.set("state", params.state);
+	return callbackUrl.toString();
 };
 
 // ---------------------------------------------------------------------------

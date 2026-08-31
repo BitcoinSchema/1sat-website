@@ -1,10 +1,15 @@
 "use client";
 
 import { PrivateKey } from "@bsv/sdk";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import type { Keys } from "@/lib/types";
 
-/** Set when the user chooses Migrate Later. Cleared after a successful migration. */
-export const MIGRATION_DEFERRED_KEY = "legacy_migration_deferred_v1";
+/** Identity-scoped so deferring one imported wallet cannot hide another. */
+export function migrationDeferredKey(keys: Keys): string {
+	if (!keys.payPk)
+		throw new Error("Cannot scope migration without a payment key");
+	return `legacy_migration_deferred_v1:${PrivateKey.fromWif(keys.payPk).toAddress().toString()}`;
+}
 
 export type MigrationStatus =
 	| {
@@ -48,11 +53,13 @@ export function detectMigrationStatus(keys: Keys): MigrationStatus {
 						.toAddress()
 						.toString(),
 				};
-			} catch (error) {
-				console.warn(
-					"[MigrationStatus] Failed to derive legacy addresses for migrated wallet:",
-					error,
-				);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.migration.inspect",
+					recoverable: true,
+				});
 			}
 		}
 		return { status: "migrated" };

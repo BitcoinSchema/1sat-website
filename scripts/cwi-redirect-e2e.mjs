@@ -7,7 +7,7 @@ const BASE_URL = process.env.CWI_BASE_URL ?? "http://localhost:8255";
 const DAPP_ORIGIN = process.env.CWI_DAPP_ORIGIN ?? "http://localhost:3333";
 const REDIRECT_URI =
 	process.env.CWI_REDIRECT_URI ?? "http://localhost:3333/cwi/callback";
-const APPROVE_CALL = process.env.CWI_APPROVE_CALL ?? "getBalance";
+const APPROVE_CALL = process.env.CWI_APPROVE_CALL ?? "getNetwork";
 const APPROVE_ARGS = process.env.CWI_APPROVE_ARGS
 	? JSON.parse(process.env.CWI_APPROVE_ARGS)
 	: {};

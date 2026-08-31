@@ -2,13 +2,14 @@
 
 import type React from "react";
 import { createContext, useContext, useState } from "react";
-import type { AnyEncryptedBackup, Keys } from "@/lib/types";
+import type { Keys } from "@/lib/types";
+import type { DetectedWalletBackup } from "@/lib/wallet-backup";
 
 interface ImportWalletContextType {
 	walletKeys: Keys | null;
 	setWalletKeys: (keys: Keys | null) => void;
-	encryptedBackup: AnyEncryptedBackup | null;
-	setEncryptedBackup: (backup: AnyEncryptedBackup | null) => void;
+	encryptedBackup: DetectedWalletBackup | null;
+	setEncryptedBackup: (backup: DetectedWalletBackup | null) => void;
 }
 
 const ImportWalletContext = createContext<ImportWalletContextType | undefined>(
@@ -22,7 +23,7 @@ export function ImportWalletProvider({
 }) {
 	const [walletKeys, setWalletKeys] = useState<Keys | null>(null);
 	const [encryptedBackup, setEncryptedBackup] =
-		useState<AnyEncryptedBackup | null>(null);
+		useState<DetectedWalletBackup | null>(null);
 
 	return (
 		<ImportWalletContext.Provider

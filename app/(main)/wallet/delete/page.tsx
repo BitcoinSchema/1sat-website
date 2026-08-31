@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteWalletModal } from "@/components/wallet/delete-wallet-modal";
+import { LocalWalletOnly } from "@/components/wallet/local-wallet-only";
 
 export default function DeleteWalletPage() {
 	const router = useRouter();
@@ -15,5 +16,9 @@ export default function DeleteWalletPage() {
 		}
 	};
 
-	return <DeleteWalletModal open={open} onOpenChange={handleOpenChange} />;
+	return (
+		<LocalWalletOnly>
+			<DeleteWalletModal open={open} onOpenChange={handleOpenChange} />
+		</LocalWalletOnly>
+	);
 }

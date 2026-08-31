@@ -9,8 +9,12 @@
 
 import { useEffect, useRef } from "react";
 import { wifToRootKeyHex } from "@/lib/keys";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import { useWallet } from "@/providers/wallet-provider";
-import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
+import {
+	useWalletToolbox,
+	WALLET_CONNECTION_MODE_KEY,
+} from "@/providers/wallet-toolbox-provider";
 
 export function WalletBridge({ children }: { children: React.ReactNode }) {
 	const wallet = useWallet();
@@ -22,12 +26,20 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 	// wallet locks.
 	const initAttemptKeyRef = useRef<string | null>(null);
 	const { hasWallet, isWalletLocked, walletKeys } = wallet;
-	const { isInitialized, isInitializing, initializeWallet, destroyWallet } =
-		toolbox;
+	const {
+		isInitialized,
+		isInitializing,
+		connectionMode,
+		initializeWallet,
+		destroyWallet,
+	} = toolbox;
 
 	useEffect(() => {
 		// Skip if already initialized or no keys available
-		if (isInitialized || isInitializing) {
+		if (isInitialized || isInitializing || connectionMode === "external") {
+			return;
+		}
+		if (localStorage.getItem(WALLET_CONNECTION_MODE_KEY) === "external") {
 			return;
 		}
 
@@ -49,7 +61,6 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 			try {
 				const payPk = walletKeys?.payPk;
 				if (!payPk) {
-					console.warn("[WalletBridge] Missing payPk, skipping init");
 					initAttemptKeyRef.current = null;
 					return;
 				}
@@ -59,24 +70,15 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 				const rootWif = identityPk || payPk;
 				const rootKeyHex = wifToRootKeyHex(rootWif);
 
-				console.log("[WalletBridge] Auto-initializing wallet-toolbox...");
-				console.log("[WalletBridge] Using identity key:", !!identityPk);
-				console.log("[WalletBridge] rootKeyHex length:", rootKeyHex.length);
-
-				const success = await initializeWallet(rootKeyHex);
-
-				if (success) {
-					console.log("[WalletBridge] Wallet-toolbox initialized successfully");
-				} else {
-					// Do NOT reset the attempt key — the provider surfaces
-					// initError; retry happens on lock/unlock or key change.
-					console.error("[WalletBridge] Wallet-toolbox initialization failed");
-				}
-			} catch (error) {
-				console.error(
-					"[WalletBridge] Error initializing wallet-toolbox:",
-					error,
-				);
+				await initializeWallet(rootKeyHex);
+			} catch {
+				reportDiagnostic({
+					category: "provider",
+					code: "provider.failed",
+					operation: "wallet.bridge.initialize",
+					recoverable: true,
+					context: { mode: "built-in", retryable: true },
+				});
 			}
 		};
 
@@ -88,17 +90,24 @@ export function WalletBridge({ children }: { children: React.ReactNode }) {
 		isInitialized,
 		isInitializing,
 		initializeWallet,
+		connectionMode,
 	]);
 
 	// Clean up toolbox when the source wallet is unavailable.
 	useEffect(() => {
 		const shouldDestroy = !hasWallet || isWalletLocked || !walletKeys?.payPk;
-		if (shouldDestroy && isInitialized) {
-			console.log("[WalletBridge] Wallet unavailable, destroying toolbox...");
+		if (shouldDestroy && isInitialized && connectionMode === "built-in") {
 			void destroyWallet();
 			initAttemptKeyRef.current = null;
 		}
-	}, [hasWallet, isWalletLocked, walletKeys, isInitialized, destroyWallet]);
+	}, [
+		hasWallet,
+		isWalletLocked,
+		walletKeys,
+		isInitialized,
+		connectionMode,
+		destroyWallet,
+	]);
 
 	return <>{children}</>;
 }

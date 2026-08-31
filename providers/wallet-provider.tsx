@@ -8,10 +8,12 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { WALLET_STORAGE_KEY } from "@/lib/constants";
 import { deriveIdentityKey, findKeysFromMnemonic } from "@/lib/keys";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import type { Keys } from "@/lib/types";
 import {
 	clearCachedEncryptionKey,
@@ -39,16 +41,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const [isWalletLocked, setIsWalletLocked] = useState(true);
 	const [isWalletInitialized, setIsWalletInitialized] = useState(false);
 	const [walletKeys, setWalletKeys] = useState<Keys | null>(null);
+	const lifecycleGenerationRef = useRef(0);
 
 	useEffect(() => {
 		const handleStorageChange = (event: StorageEvent) => {
 			if (event.key === WALLET_STORAGE_KEY) {
-				setHasWallet(!!event.newValue);
-				if (!event.newValue) {
-					setIsWalletLocked(false);
-					setWalletKeys(null);
-					clearCachedEncryptionKey();
-				}
+				lifecycleGenerationRef.current += 1;
+				const exists = !!event.newValue;
+				setHasWallet(exists);
+				setIsWalletLocked(exists);
+				setWalletKeys(null);
+				clearCachedEncryptionKey();
 			}
 		};
 		window.addEventListener("storage", handleStorageChange);
@@ -74,15 +77,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
 	const unlockWallet = useCallback(
 		async (passphrase: string): Promise<boolean> => {
+			const generation = ++lifecycleGenerationRef.current;
 			try {
 				const keys = await loadEncryptedWallet(passphrase);
-				if (keys) {
+				if (keys && generation === lifecycleGenerationRef.current) {
 					setWalletKeys(keys);
 					setIsWalletLocked(false);
 					return true;
 				}
-			} catch (error) {
-				console.error("Unlock failed:", error);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.unlock",
+					recoverable: true,
+					context: { retryable: true },
+				});
 			}
 			return false;
 		},
@@ -90,6 +100,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	);
 
 	const lockWallet = useCallback(() => {
+		lifecycleGenerationRef.current += 1;
 		setWalletKeys(null);
 		setIsWalletLocked(true);
 		clearCachedEncryptionKey();
@@ -112,8 +123,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					router.push("/wallet");
 					return true;
 				}
-			} catch (error) {
-				console.error("Create wallet failed:", error);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.create",
+					recoverable: true,
+					context: { retryable: true },
+				});
 			}
 			return false;
 		},
@@ -123,22 +140,36 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const importWallet = useCallback(
 		async (keys: Keys, passphrase: string): Promise<boolean> => {
 			try {
-				if (!keys.identityPk && keys.payPk && keys.ordPk) {
-					const identityKey = deriveIdentityKey(keys.payPk, keys.ordPk);
-					keys.identityPk = identityKey.toWif();
-					keys.identityAddressPath = "derived";
+				const importedKeys = { ...keys };
+				if (
+					!importedKeys.identityPk &&
+					importedKeys.payPk &&
+					importedKeys.ordPk
+				) {
+					const identityKey = deriveIdentityKey(
+						importedKeys.payPk,
+						importedKeys.ordPk,
+					);
+					importedKeys.identityPk = identityKey.toWif();
+					importedKeys.identityAddressPath = "derived";
 				}
-				const success = await saveEncryptedWallet(keys, passphrase);
+				const success = await saveEncryptedWallet(importedKeys, passphrase);
 				if (success) {
-					setWalletKeys(keys);
+					setWalletKeys(importedKeys);
 					setHasWallet(true);
 					setIsWalletLocked(false);
 
 					router.push("/wallet");
 					return true;
 				}
-			} catch (error) {
-				console.error("Import wallet failed:", error);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.import",
+					recoverable: true,
+					context: { retryable: true },
+				});
 			}
 			return false;
 		},
@@ -146,6 +177,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	);
 
 	const deleteWallet = useCallback(() => {
+		lifecycleGenerationRef.current += 1;
 		if (typeof window !== "undefined") {
 			localStorage.removeItem(WALLET_STORAGE_KEY);
 			window.dispatchEvent(

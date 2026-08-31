@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import type { WebApplication, WithContext } from "schema-dts";
 import { JsonLd } from "@/components/json-ld";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { WalletBridge } from "@/components/wallet-bridge";
-import { AuthProvider } from "@/providers/auth-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { WalletProvider } from "@/providers/wallet-provider";
 import { WalletToolboxProvider } from "@/providers/wallet-toolbox-provider";
-import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
 import "./animations.css";
 
@@ -24,43 +23,41 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "1Sat Ordinals | BSV NFT Marketplace & Explorer",
+	title: "1Sat Wallet | BRC-100 Wallet for BSV",
 	description:
-		"Discover, create, and trade Bitcoin SV ordinals and NFTs. Explore inscriptions, list collectibles, and manage your digital assets on the 1Sat Ordinals marketplace. The premier BSV ordinals platform.",
+		"Use 1Sat Wallet on the web, connect a compatible BRC-100 wallet, and manage BSV, ordinals, BSV21 tokens, and portable identities.",
 	metadataBase: new URL("https://1satwallet.com"),
 	keywords: [
-		"1sat ordinals",
-		"BSV NFT",
-		"Bitcoin SV ordinals",
-		"ordinals marketplace",
-		"BSV inscriptions",
-		"bitcoin NFT",
-		"ordinals explorer",
-		"BSV collectibles",
+		"1Sat Wallet",
+		"BRC-100 wallet",
+		"BSV wallet",
+		"Bitcoin SV",
+		"BSV ordinals",
+		"BSV21",
 	],
 	openGraph: {
-		title: "1Sat Ordinals | BSV NFT Marketplace & Explorer",
+		title: "1Sat Wallet | BRC-100 Wallet for BSV",
 		description:
-			"Discover, create, and trade Bitcoin SV ordinals and NFTs on the premier BSV ordinals platform.",
+			"A web wallet and BRC-100 connection hub for BSV, ordinals, BSV21 tokens, and portable identities.",
 		url: "https://1satwallet.com",
-		siteName: "1Sat Ordinals",
+		siteName: "1Sat Wallet",
 		type: "website",
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "1Sat Ordinals | BSV NFT Marketplace",
-		description: "Discover, create, and trade Bitcoin SV ordinals and NFTs.",
+		title: "1Sat Wallet | BRC-100 Wallet for BSV",
+		description: "Connect or use a BRC-100 wallet for BSV on the web.",
 	},
 };
 
 const jsonLd: WithContext<WebApplication> = {
 	"@context": "https://schema.org",
 	"@type": "WebApplication",
-	name: "1Sat Ordinals",
+	name: "1Sat Wallet",
 	url: "https://1satwallet.com",
 	description:
-		"Discover, create, and trade Bitcoin SV ordinals and NFTs on the premier BSV ordinals marketplace.",
-	applicationCategory: "Cryptocurrency",
+		"A web wallet and BRC-100 connection hub for BSV, ordinals, BSV21 tokens, and portable identities.",
+	applicationCategory: "FinanceApplication",
 	operatingSystem: "Web",
 	offers: {
 		"@type": "Offer",
@@ -69,7 +66,7 @@ const jsonLd: WithContext<WebApplication> = {
 	},
 	provider: {
 		"@type": "Organization",
-		name: "1Sat Ordinals",
+		name: "1Sat",
 		url: "https://1satwallet.com",
 	},
 };
@@ -93,18 +90,15 @@ export default function RootLayout({
 					enableSystem
 					disableTransitionOnChange
 				>
-					<ConvexClientProvider>
-						<QueryProvider>
-							<AuthProvider>
-								<WalletProvider>
-									<WalletToolboxProvider>
-										<WalletBridge>{children}</WalletBridge>
-										<Toaster position="bottom-right" />
-									</WalletToolboxProvider>
-								</WalletProvider>
-							</AuthProvider>
-						</QueryProvider>
-					</ConvexClientProvider>
+					<QueryProvider>
+						<WalletProvider>
+							<WalletToolboxProvider>
+								<KeyboardShortcuts />
+								<WalletBridge>{children}</WalletBridge>
+								<Toaster position="bottom-right" />
+							</WalletToolboxProvider>
+						</WalletProvider>
+					</QueryProvider>
 				</ThemeProvider>
 			</body>
 		</html>

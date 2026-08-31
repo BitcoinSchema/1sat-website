@@ -9,15 +9,20 @@ import { useCallback, useEffect, useState } from "react";
 import { ENCRYPTION_PREFIX, WALLET_STORAGE_KEY } from "@/lib/constants";
 import {
 	decryptData,
-	encryptData,
 	generateEncryptionKeyFromPassphrase,
 } from "@/lib/encryption";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import type { Keys } from "@/lib/types";
 
-interface EncryptedBackupJson {
+export interface EncryptedBackupJson {
+	format?: "1sat-web-wallet";
+	version?: 1;
+	cipher?: "AES-256-GCM";
 	encryptedBackup: string;
 	pubKey: string; // The public key used as salt
 }
+
+type WalletStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 const getLocalStorage = (): Storage | undefined => {
 	if (typeof window !== "undefined") {
@@ -35,6 +40,201 @@ export function clearCachedEncryptionKey(): void {
 	cachedPubKeySalt = null;
 }
 
+export function parseEncryptedBackupJson(value: unknown): EncryptedBackupJson {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		throw new Error("Invalid 1Sat wallet backup");
+	}
+	const backup = value as Record<string, unknown>;
+	if (
+		typeof backup.encryptedBackup !== "string" ||
+		!backup.encryptedBackup.startsWith(ENCRYPTION_PREFIX) ||
+		typeof backup.pubKey !== "string"
+	) {
+		throw new Error("Invalid 1Sat wallet backup");
+	}
+	if (
+		backup.format !== undefined &&
+		(backup.format !== "1sat-web-wallet" ||
+			backup.version !== 1 ||
+			backup.cipher !== "AES-256-GCM")
+	) {
+		throw new Error("Unsupported 1Sat wallet backup version");
+	}
+	return backup as unknown as EncryptedBackupJson;
+}
+
+/** Replace one storage value and restore the previous value if verification fails. */
+export function commitWalletBackup(
+	storage: WalletStorage,
+	value: string,
+): void {
+	const previous = storage.getItem(WALLET_STORAGE_KEY);
+	try {
+		storage.setItem(WALLET_STORAGE_KEY, value);
+		if (storage.getItem(WALLET_STORAGE_KEY) !== value) {
+			throw new Error("Wallet backup was not persisted");
+		}
+	} catch (error) {
+		if (previous === null) storage.removeItem(WALLET_STORAGE_KEY);
+		else storage.setItem(WALLET_STORAGE_KEY, previous);
+		throw error;
+	}
+}
+
+function walletPayload(keys: Keys) {
+	return {
+		mnemonic: keys.mnemonic,
+		payPk: keys.payPk,
+		ordPk: keys.ordPk,
+		payDerivationPath: keys.changeAddressPath,
+		ordDerivationPath: keys.ordAddressPath,
+		identityPk: keys.identityPk,
+		identityDerivationPath: keys.identityAddressPath,
+	};
+}
+
+function notifyWalletStorage(value: string): void {
+	try {
+		window.dispatchEvent(
+			new StorageEvent("storage", {
+				key: WALLET_STORAGE_KEY,
+				newValue: value,
+			}),
+		);
+	} catch {
+		reportDiagnostic({
+			category: "action",
+			code: "action.failed",
+			operation: "wallet.storage.notify",
+			recoverable: true,
+		});
+	}
+}
+
+async function encryptAuthenticated(
+	data: Uint8Array,
+	key: Uint8Array,
+): Promise<Uint8Array> {
+	const iv = crypto.getRandomValues(new Uint8Array(12));
+	const cryptoKey = await crypto.subtle.importKey(
+		"raw",
+		key as BufferSource,
+		"AES-GCM",
+		false,
+		["encrypt"],
+	);
+	const encrypted = new Uint8Array(
+		await crypto.subtle.encrypt(
+			{ name: "AES-GCM", iv: iv as BufferSource },
+			cryptoKey,
+			data as BufferSource,
+		),
+	);
+	const combined = new Uint8Array(iv.length + encrypted.length);
+	combined.set(iv);
+	combined.set(encrypted, iv.length);
+	return combined;
+}
+
+async function decryptAuthenticated(
+	data: Uint8Array,
+	key: Uint8Array,
+): Promise<Uint8Array> {
+	if (data.length <= 28) throw new Error("Invalid encrypted wallet data");
+	const cryptoKey = await crypto.subtle.importKey(
+		"raw",
+		key as BufferSource,
+		"AES-GCM",
+		false,
+		["decrypt"],
+	);
+	return new Uint8Array(
+		await crypto.subtle.decrypt(
+			{ name: "AES-GCM", iv: data.slice(0, 12) as BufferSource },
+			cryptoKey,
+			data.slice(12) as BufferSource,
+		),
+	);
+}
+
+export async function createEncryptedWalletBackup(
+	walletData: Keys,
+	passphrase: string,
+): Promise<EncryptedBackupJson> {
+	if (!walletData.payPk) throw new Error("No payment key found");
+	const pubKey = PrivateKey.fromWif(walletData.payPk).toPublicKey().toString();
+	const encryptionKey = await generateEncryptionKeyFromPassphrase(
+		passphrase,
+		pubKey,
+	);
+	if (!encryptionKey) throw new Error("Could not derive encryption key");
+
+	const combined = await encryptAuthenticated(
+		new TextEncoder().encode(JSON.stringify(walletPayload(walletData))),
+		encryptionKey,
+	);
+
+	return {
+		format: "1sat-web-wallet",
+		version: 1,
+		cipher: "AES-256-GCM",
+		encryptedBackup: ENCRYPTION_PREFIX + Utils.toBase64(Array.from(combined)),
+		pubKey,
+	};
+}
+
+export async function decryptEncryptedWalletBackup(
+	backup: EncryptedBackupJson,
+	passphrase: string,
+): Promise<Keys> {
+	const parsed = parseEncryptedBackupJson(backup);
+	const encryptionKey = await generateEncryptionKeyFromPassphrase(
+		passphrase,
+		parsed.pubKey,
+	);
+	if (!encryptionKey) throw new Error("Could not derive decryption key");
+	const rawData = parsed.encryptedBackup.slice(ENCRYPTION_PREFIX.length);
+	const encryptedBytes = new Uint8Array(Utils.toArray(rawData, "base64"));
+	const decryptedBytes =
+		parsed.format === "1sat-web-wallet"
+			? await decryptAuthenticated(encryptedBytes, encryptionKey)
+			: await decryptData(encryptedBytes, encryptionKey);
+	const json = JSON.parse(new TextDecoder().decode(decryptedBytes)) as Record<
+		string,
+		unknown
+	>;
+	if (typeof json.payPk !== "string" || typeof json.ordPk !== "string") {
+		throw new Error("Backup is missing wallet keys");
+	}
+	PrivateKey.fromWif(json.payPk);
+	PrivateKey.fromWif(json.ordPk);
+	if (json.identityPk !== undefined) {
+		if (typeof json.identityPk !== "string") {
+			throw new Error("Backup has an invalid identity key");
+		}
+		PrivateKey.fromWif(json.identityPk);
+	}
+	return {
+		payPk: json.payPk,
+		ordPk: json.ordPk,
+		mnemonic: typeof json.mnemonic === "string" ? json.mnemonic : undefined,
+		changeAddressPath:
+			typeof json.payDerivationPath === "string"
+				? json.payDerivationPath
+				: undefined,
+		ordAddressPath:
+			typeof json.ordDerivationPath === "string"
+				? json.ordDerivationPath
+				: undefined,
+		identityPk:
+			typeof json.identityPk === "string" ? json.identityPk : undefined,
+		identityAddressPath:
+			typeof json.identityDerivationPath === "string"
+				? json.identityDerivationPath
+				: undefined,
+	};
+}
+
 /**
  * Re-encrypt wallet data using the cached encryption key.
  * Used during migration to update stored keys without requiring the passphrase again.
@@ -44,46 +244,33 @@ export const reencryptWallet = async (keys: Keys): Promise<boolean> => {
 	if (!storage || !cachedEncryptionKey || !cachedPubKeySalt) return false;
 
 	try {
-		const dataStr = JSON.stringify({
-			mnemonic: keys.mnemonic,
-			payPk: keys.payPk,
-			ordPk: keys.ordPk,
-			payDerivationPath: keys.changeAddressPath,
-			ordDerivationPath: keys.ordAddressPath,
-			identityPk: keys.identityPk,
-			identityDerivationPath: keys.identityAddressPath,
-		});
+		const dataStr = JSON.stringify(walletPayload(keys));
 		const dataBytes = new TextEncoder().encode(dataStr);
 
-		const iv = crypto.getRandomValues(new Uint8Array(16));
-		const encryptedBytes = await encryptData(
-			dataBytes,
-			cachedEncryptionKey,
-			iv,
-		);
-
-		const combined = new Uint8Array(iv.length + encryptedBytes.length);
-		combined.set(iv, 0);
-		combined.set(new Uint8Array(encryptedBytes), iv.length);
+		const combined = await encryptAuthenticated(dataBytes, cachedEncryptionKey);
 
 		const encryptedBackup =
 			ENCRYPTION_PREFIX + Utils.toBase64(Array.from(combined));
 
 		const backupJson: EncryptedBackupJson = {
+			format: "1sat-web-wallet",
+			version: 1,
+			cipher: "AES-256-GCM",
 			encryptedBackup,
 			pubKey: cachedPubKeySalt,
 		};
 
-		storage.setItem(WALLET_STORAGE_KEY, JSON.stringify(backupJson));
-		window.dispatchEvent(
-			new StorageEvent("storage", {
-				key: WALLET_STORAGE_KEY,
-				newValue: JSON.stringify(backupJson),
-			}),
-		);
+		const serialized = JSON.stringify(backupJson);
+		commitWalletBackup(storage, serialized);
+		notifyWalletStorage(serialized);
 		return true;
-	} catch (error) {
-		console.error("Failed to re-encrypt wallet:", error);
+	} catch {
+		reportDiagnostic({
+			category: "action",
+			code: "action.failed",
+			operation: "wallet.storage.migrate",
+			recoverable: true,
+		});
 		return false;
 	}
 };
@@ -97,65 +284,29 @@ export const saveEncryptedWallet = async (
 	if (!storage) return false;
 
 	try {
-		const payPk = walletData.payPk;
-		if (!payPk) throw new Error("No payPk found in wallet data");
-
-		// 1. Derive Public Key from Pay PK to use as Salt
-		const pubKey = PrivateKey.fromWif(payPk).toPublicKey().toString();
-
-		// 2. Derive Encryption Key (PBKDF2) using passphrase + pubKey (salt)
-		const encryptionKey = await generateEncryptionKeyFromPassphrase(
+		const backupJson = await createEncryptedWalletBackup(
+			walletData,
 			passphrase,
-			pubKey,
 		);
+		const serialized = JSON.stringify(backupJson);
+		commitWalletBackup(storage, serialized);
 
-		if (!encryptionKey) throw new Error("Could not derive encryption key.");
-
-		// Cache for migration re-encryption
-		cachedEncryptionKey = encryptionKey;
-		cachedPubKeySalt = pubKey;
-
-		// 3. Serialize Data
-		const dataStr = JSON.stringify({
-			mnemonic: walletData.mnemonic,
-			payPk: walletData.payPk,
-			ordPk: walletData.ordPk,
-			payDerivationPath: walletData.changeAddressPath,
-			ordDerivationPath: walletData.ordAddressPath,
-			identityPk: walletData.identityPk,
-			identityDerivationPath: walletData.identityAddressPath,
-		});
-		const dataBytes = new TextEncoder().encode(dataStr);
-
-		// 4. Encrypt
-		const iv = crypto.getRandomValues(new Uint8Array(16));
-		const encryptedBytes = await encryptData(dataBytes, encryptionKey, iv);
-
-		// 5. Combine IV + Ciphertext
-		const combined = new Uint8Array(iv.length + encryptedBytes.length);
-		combined.set(iv, 0);
-		combined.set(new Uint8Array(encryptedBytes), iv.length);
-
-		// 6. Format Output
-		const encryptedBackup =
-			ENCRYPTION_PREFIX + Utils.toBase64(Array.from(combined));
-
-		const backupJson: EncryptedBackupJson = {
-			encryptedBackup,
-			pubKey,
-		};
-
-		storage.setItem(WALLET_STORAGE_KEY, JSON.stringify(backupJson));
-		// Dispatch storage event for cross-component updates
-		window.dispatchEvent(
-			new StorageEvent("storage", {
-				key: WALLET_STORAGE_KEY,
-				newValue: JSON.stringify(backupJson),
-			}),
-		);
+		// Cache only after durable storage succeeds.
+		cachedEncryptionKey =
+			(await generateEncryptionKeyFromPassphrase(
+				passphrase,
+				backupJson.pubKey,
+			)) ?? null;
+		cachedPubKeySalt = backupJson.pubKey;
+		notifyWalletStorage(serialized);
 		return true;
-	} catch (error) {
-		console.error("Failed to encrypt and save wallet:", error);
+	} catch {
+		reportDiagnostic({
+			category: "action",
+			code: "action.failed",
+			operation: "wallet.storage.save",
+			recoverable: true,
+		});
 		return false;
 	}
 };
@@ -170,47 +321,23 @@ export const loadEncryptedWallet = async (
 		const storedItem = storage.getItem(WALLET_STORAGE_KEY);
 		if (!storedItem) return null;
 
-		const encryptedKeys = JSON.parse(storedItem) as EncryptedBackupJson;
-		if (!encryptedKeys.pubKey || !encryptedKeys.encryptedBackup) {
-			throw new Error("Invalid backup format");
-		}
+		const encryptedKeys = parseEncryptedBackupJson(JSON.parse(storedItem));
+		const keys = await decryptEncryptedWalletBackup(encryptedKeys, passphrase);
 
-		// 1. Derive Encryption Key
-		const encryptionKey = await generateEncryptionKeyFromPassphrase(
-			passphrase,
-			encryptedKeys.pubKey,
-		);
-		if (!encryptionKey) throw new Error("Could not derive decryption key.");
-
-		// Cache for migration re-encryption
-		cachedEncryptionKey = encryptionKey;
+		cachedEncryptionKey =
+			(await generateEncryptionKeyFromPassphrase(
+				passphrase,
+				encryptedKeys.pubKey,
+			)) ?? null;
 		cachedPubKeySalt = encryptedKeys.pubKey;
-
-		// 2. Decode Data
-		const rawData = encryptedKeys.encryptedBackup.replace(
-			ENCRYPTION_PREFIX,
-			"",
-		);
-		const combinedBytes = new Uint8Array(Utils.toArray(rawData, "base64"));
-
-		// 3. Decrypt (combinedBytes contains IV + Ciphertext, decryptData handles slicing)
-		const decryptedBytes = await decryptData(combinedBytes, encryptionKey);
-
-		const jsonStr = new TextDecoder().decode(decryptedBytes);
-		const json = JSON.parse(jsonStr);
-
-		// 5. Map back to Keys
-		return {
-			payPk: json.payPk,
-			ordPk: json.ordPk,
-			mnemonic: json.mnemonic,
-			changeAddressPath: json.payDerivationPath,
-			ordAddressPath: json.ordDerivationPath,
-			identityPk: json.identityPk,
-			identityAddressPath: json.identityDerivationPath,
-		};
-	} catch (error) {
-		console.error("Failed to load and decrypt wallet:", error);
+		return keys;
+	} catch {
+		reportDiagnostic({
+			category: "action",
+			code: "action.failed",
+			operation: "wallet.storage.unlock",
+			recoverable: true,
+		});
 		return null;
 	}
 };
@@ -225,8 +352,13 @@ export const useSettingsStorage = <T>(
 		try {
 			const item = window.localStorage.getItem(storageKey);
 			return item ? JSON.parse(item) : initialValue;
-		} catch (error) {
-			console.error("Error reading from localStorage", error);
+		} catch {
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation: "wallet.settings.read",
+				recoverable: true,
+			});
 			return initialValue;
 		}
 	});
@@ -242,8 +374,13 @@ export const useSettingsStorage = <T>(
 						new StorageEvent("storage", { key: storageKey, newValue }),
 					);
 				}
-			} catch (error) {
-				console.error("Error writing to localStorage", error);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.settings.write",
+					recoverable: true,
+				});
 			}
 		},
 		[storageKey],

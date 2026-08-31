@@ -24,6 +24,8 @@ interface AuthRequestRecord {
 	status: RequestStatus;
 	error?: string;
 	errorDescription?: string;
+	errorCode?: number;
+	errorStack?: string;
 	expiresAt: number;
 	createdAt: number;
 	updatedAt: number;
@@ -174,6 +176,8 @@ export const completeAuthRequest = mutation({
 		resultCiphertext: v.optional(v.string()),
 		error: v.optional(v.string()),
 		errorDescription: v.optional(v.string()),
+		errorCode: v.optional(v.number()),
+		errorStack: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		const db = asDb(ctx.db);
@@ -238,6 +242,8 @@ export const completeAuthRequest = mutation({
 				status: "approved",
 				error: undefined,
 				errorDescription: undefined,
+				errorCode: undefined,
+				errorStack: undefined,
 				updatedAt: args.now,
 			});
 
@@ -255,6 +261,7 @@ export const completeAuthRequest = mutation({
 			(args.decision === "denied"
 				? "The user denied the request."
 				: "The wallet could not complete the request.");
+		const errorCode = args.errorCode ?? 1;
 		const status: Extract<RequestStatus, "denied" | "error"> =
 			args.decision === "denied" ? "denied" : "error";
 
@@ -262,6 +269,8 @@ export const completeAuthRequest = mutation({
 			status,
 			error,
 			errorDescription,
+			errorCode,
+			errorStack: args.errorStack,
 			updatedAt: args.now,
 		});
 
@@ -271,6 +280,8 @@ export const completeAuthRequest = mutation({
 			state: request.state,
 			error,
 			errorDescription,
+			errorCode,
+			errorStack: args.errorStack,
 		};
 	},
 });

@@ -1,70 +1,73 @@
-import ImageWithFallback from "@/components/image-with-fallback";
-import { getBsv21Tokens } from "@/lib/market-data";
-import { stackContentUrl } from "@/lib/stack";
-import { isValidOutpoint } from "@/lib/validation";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	isBsv21TokenId,
+	normalizeBsv21TokenId,
+} from "@/lib/wallet/bsv21-actions";
 
-// ISR: shared feed, revalidated in the background
-export const revalidate = 60;
+interface MarketBsv21PageProps {
+	searchParams: Promise<{ tokenId?: string }>;
+}
 
-export default async function MarketBSV21Page() {
-	const tokens = (await getBsv21Tokens()).filter((t) => t.symbol);
+export default async function MarketBSV21Page({
+	searchParams,
+}: MarketBsv21PageProps) {
+	const { tokenId } = await searchParams;
+	if (tokenId && isBsv21TokenId(tokenId)) {
+		redirect(`/market/bsv21/${normalizeBsv21TokenId(tokenId)}`);
+	}
 
 	return (
-		<div className="p-4 mx-auto w-full max-w-5xl">
-			<h1 className="text-2xl font-bold mb-6">Market: BSV21</h1>
-			{tokens.length === 0 ? (
-				<p className="text-muted-foreground">No tokens found.</p>
-			) : (
-				<div className="overflow-x-auto rounded-md border border-border">
-					<table className="w-full text-sm font-mono">
-						<thead>
-							<tr className="border-b border-border text-left text-muted-foreground">
-								<th className="p-3">Token</th>
-								<th className="p-3">Id</th>
-								<th className="p-3 text-right">Status</th>
-							</tr>
-						</thead>
-						<tbody>
-							{tokens.map((t) => (
-								<tr
-									key={t.token_id}
-									className="border-b border-border/50 hover:bg-muted/40"
-								>
-									<td className="p-3">
-										<div className="flex items-center gap-2">
-											{t.icon && isValidOutpoint(t.icon) && (
-												<ImageWithFallback
-													src={stackContentUrl(t.icon)}
-													alt={t.symbol || ""}
-													width={24}
-													height={24}
-													className="w-6 h-6 rounded"
-												/>
-											)}
-											<span className="font-bold">{t.symbol}</span>
-										</div>
-									</td>
-									<td className="p-3 text-xs text-muted-foreground break-all">
-										{t.token_id}
-									</td>
-									<td className="p-3 text-right">
-										{t.is_active ? (
-											<span className="text-primary">active</span>
-										) : (
-											<span className="text-muted-foreground">inactive</span>
-										)}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+		<div className="mx-auto w-full max-w-3xl space-y-6 p-4">
+			<div>
+				<h1 className="text-2xl font-bold">Market: BSV21</h1>
+				<p className="mt-2 text-muted-foreground">
+					Open a known token to review its typed stack details and
+					overlay-validated OrdLock listings.
+				</p>
+			</div>
+			<form className="space-y-3 rounded-md border p-4" method="get">
+				<Label htmlFor="tokenId">Token ID</Label>
+				<div className="flex flex-col gap-2 sm:flex-row">
+					<Input
+						id="tokenId"
+						name="tokenId"
+						pattern="[0-9a-fA-F]{64}_[0-9]+"
+						placeholder="64-character txid_0"
+						required
+						title="Enter a 64-character transaction ID, an underscore, and an output index"
+					/>
+					<Button type="submit">Open token</Button>
 				</div>
-			)}
+				{tokenId ? (
+					<p className="text-sm text-destructive" role="alert">
+						Enter a token deploy outpoint in txid_vout format.
+					</p>
+				) : null}
+			</form>
+			<div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-4 text-sm">
+				<p className="font-medium">
+					Registry browsing is temporarily unavailable
+				</p>
+				<p className="mt-1 text-muted-foreground">
+					The installed typed BSV21 client has detail and validation queries but
+					no token-registry method. This site does not fall back to a
+					handwritten endpoint. Tokens already held by the active wallet remain
+					available in{" "}
+					<Link className="underline" href="/wallet/bsv21">
+						Wallet → BSV21
+					</Link>
+					.
+				</p>
+			</div>
 		</div>
 	);
 }
 
 export const metadata = {
 	title: "BSV21 Market - 1Sat",
-	description: "Browse BSV21 tokens on 1Sat.",
+	description: "Review BSV21 token details and validated listings on 1Sat.",
 };

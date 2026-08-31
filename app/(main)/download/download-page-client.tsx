@@ -7,6 +7,7 @@ const TESTFLIGHT_APP_URL = "https://apps.apple.com/app/testflight/id899247664";
 function AppleLogo({ className }: { className?: string }) {
 	return (
 		<svg
+			data-icon="inline-start"
 			viewBox="0 0 384 512"
 			fill="currentColor"
 			className={className}
@@ -48,7 +49,7 @@ export function AppleAppPage() {
 								asChild
 							>
 								<Link href="/wallet/create">
-									<Wallet className="h-5 w-5" />
+									<Wallet className="h-5 w-5" data-icon="inline-start" />
 									<div className="text-left">
 										<div className="text-xs opacity-80">Use the</div>
 										<div className="font-semibold">Browser Wallet</div>
@@ -276,7 +277,7 @@ export function AppleAppPage() {
 							</Button>
 							<Button variant="outline" size="lg" className="gap-2" asChild>
 								<Link href="/wallet/create">
-									<Wallet className="h-4 w-4" />
+									<Wallet className="h-4 w-4" data-icon="inline-start" />
 									Browser Wallet
 								</Link>
 							</Button>

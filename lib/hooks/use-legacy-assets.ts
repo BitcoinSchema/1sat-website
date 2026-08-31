@@ -6,10 +6,9 @@ import {
 	scanAddresses,
 	type TokenBalance,
 } from "@1sat/actions";
-import { OneSatServices } from "@1sat/client";
 import type { IndexedOutput } from "@1sat/types";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { STACK_URL, stackContentUrl } from "@/lib/stack";
+import { createStackServices, stackContentUrl } from "@/lib/stack";
 
 export type { TokenBalance };
 
@@ -85,10 +84,7 @@ export function useLegacyAssets(
 
 	// Scanning needs services only (no wallet) — a standalone instance so the
 	// banner works even when the BRC-100 wallet failed to initialize
-	const servicesRef = useRef<OneSatServices | null>(null);
-	if (!servicesRef.current) {
-		servicesRef.current = new OneSatServices("main", STACK_URL);
-	}
+	const [services] = useState(() => createStackServices());
 
 	const [scanTrigger, setScanTrigger] = useState(0);
 	const rescan = useCallback(() => {
@@ -96,7 +92,9 @@ export function useLegacyAssets(
 	}, []);
 
 	const progressRef = useRef(onScanProgress);
-	progressRef.current = onScanProgress;
+	useEffect(() => {
+		progressRef.current = onScanProgress;
+	}, [onScanProgress]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scanTrigger is an intentional rescan signal
 	useEffect(() => {
@@ -117,8 +115,6 @@ export function useLegacyAssets(
 						),
 					),
 				];
-				const services = servicesRef.current;
-				if (!services) return;
 				// MNEE lives behind its own cosigner API — query alongside the
 				// stack scan; failures degrade to a zero balance
 				const mneePromise = Promise.all([

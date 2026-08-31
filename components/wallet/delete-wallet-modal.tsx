@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, LogOut } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	AlertDialogContent,
@@ -12,6 +13,8 @@ import {
 	SoundAlertDialogAction,
 	SoundAlertDialogCancel,
 } from "@/components/ui/sound-alert-dialog";
+import { WALLET_STORAGE_KEY } from "@/lib/constants";
+import { parseEncryptedBackupJson } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
 
 interface DeleteWalletModalProps {
@@ -23,23 +26,40 @@ export function DeleteWalletModal({
 	open,
 	onOpenChange,
 }: DeleteWalletModalProps) {
-	const { deleteWallet, walletKeys } = useWallet();
+	const { deleteWallet } = useWallet();
+	const [backupDownloaded, setBackupDownloaded] = useState(false);
+	const [error, setError] = useState("");
 
 	const handleExport = (e: React.MouseEvent) => {
 		e.preventDefault();
-		if (!walletKeys?.mnemonic) return;
-
-		const element = document.createElement("a");
-		const file = new Blob([walletKeys.mnemonic], { type: "text/plain" });
-		element.href = URL.createObjectURL(file);
-		element.download = "1sat-wallet-backup.txt";
-		document.body.appendChild(element);
-		element.click();
-		document.body.removeChild(element);
+		setError("");
+		try {
+			const raw = localStorage.getItem(WALLET_STORAGE_KEY);
+			if (!raw) throw new Error("No built-in wallet backup was found");
+			parseEncryptedBackupJson(JSON.parse(raw));
+			const url = URL.createObjectURL(
+				new Blob([raw], { type: "application/json" }),
+			);
+			const element = document.createElement("a");
+			element.href = url;
+			element.download = `1sat-web-wallet-${new Date().toISOString().slice(0, 10)}.json`;
+			document.body.appendChild(element);
+			element.click();
+			element.remove();
+			URL.revokeObjectURL(url);
+			setBackupDownloaded(true);
+		} catch (reason) {
+			setError(
+				reason instanceof Error
+					? reason.message
+					: "Could not export the wallet",
+			);
+		}
 	};
 
 	const handleDelete = async (e: React.MouseEvent) => {
 		e.preventDefault();
+		if (!backupDownloaded) return;
 		deleteWallet();
 		onOpenChange(false);
 	};
@@ -54,16 +74,18 @@ export function DeleteWalletModal({
 					</AlertDialogTitle>
 
 					<AlertDialogDescription>
-						This action cannot be undone. This will permanently delete your
-						wallet keys from your browser's storage.
+						Download the encrypted backup before removing this wallet from the
+						browser.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
 				<div className="py-4 text-sm text-muted-foreground">
-					<p>
-						Please ensure you have backed up your recovery phrase. Without it,
-						you will lose access to your funds forever.
-					</p>
+					<p>The same wallet password opens the downloaded backup.</p>
+					{error && (
+						<p className="mt-2 text-destructive" role="alert">
+							{error}
+						</p>
+					)}
 				</div>
 
 				<AlertDialogFooter>
@@ -71,12 +93,13 @@ export function DeleteWalletModal({
 
 					<Button variant="secondary" onClick={handleExport}>
 						<Download className="mr-2 h-4 w-4" />
-						Export Keys
+						{backupDownloaded ? "Backup Downloaded" : "Download Backup"}
 					</Button>
 
 					<SoundAlertDialogAction
 						onClick={handleDelete}
 						sound="decline"
+						disabled={!backupDownloaded}
 						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 					>
 						Sign Out

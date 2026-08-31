@@ -1,3 +1,4 @@
+import { LocalWalletOnly } from "@/components/wallet/local-wallet-only";
 import { CreateWalletProvider } from "./provider";
 
 export default function CreateWalletLayout({
@@ -5,5 +6,9 @@ export default function CreateWalletLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return <CreateWalletProvider>{children}</CreateWalletProvider>;
+	return (
+		<LocalWalletOnly requireEmpty>
+			<CreateWalletProvider>{children}</CreateWalletProvider>
+		</LocalWalletOnly>
+	);
 }

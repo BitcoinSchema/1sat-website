@@ -1,21 +1,23 @@
 "use client";
 
-import { Float, Text3D } from "@react-three/drei";
+import { Float, Html, Text3D } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
 	Bloom,
 	ChromaticAberration,
 	EffectComposer,
-	Glitch,
 	Noise,
 } from "@react-three/postprocessing";
 import { folder, Leva, useControls } from "leva";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { Font } from "three/examples/jsm/loaders/FontLoader.js";
-import { TTFLoader } from "three/examples/jsm/loaders/TTFLoader.js";
+import {
+	type Font,
+	FontLoader,
+} from "three/examples/jsm/loaders/FontLoader.js";
 import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import { Rings, type RingsControls } from "./ordinal-logo-3d";
 
 // Font data types matching Three.js FontLoader output
@@ -52,8 +54,7 @@ interface MaterialControls {
 	offIntensity?: number;
 }
 
-// Use Kanit ExtraBold (Regular) TTF directly
-const FONT_TTF_URL = "/fonts/Kanit-ExtraBold.ttf";
+const FONT_JSON_URL = "/fonts/kanit-extrabold-italic.typeface.json";
 
 export function Logo3D() {
 	const [colors, setColors] = useState<{
@@ -99,9 +100,7 @@ export function Logo3D() {
 							const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
 							return new THREE.Color(`rgb(${r}, ${g}, ${b})`);
 						}
-					} catch (e) {
-						console.warn("Color conversion failed:", e);
-					}
+					} catch {}
 				}
 				return new THREE.Color(computedColor);
 			}
@@ -120,19 +119,22 @@ export function Logo3D() {
 			border: getThemeColor("border", "#3f3f46"),
 		});
 
-		// Load TTF font - TTFLoader.load returns parsed font data
-		const ttfLoader = new TTFLoader();
-		ttfLoader.load(
-			FONT_TTF_URL,
-			(parsedFont) => {
-				// Create Font instance to access metrics
-				const fontInstance = new Font(parsedFont);
-				setFont(fontInstance);
-				console.log("[Logo3D] Font loaded successfully");
+		// Use the bundled Three.js typeface data. New Three releases load the
+		// TTF parser from a CDN, which cannot be bundled by Next/Turbopack.
+		const fontLoader = new FontLoader();
+		fontLoader.load(
+			FONT_JSON_URL,
+			(loadedFont) => {
+				setFont(loadedFont as FontWithData);
 			},
 			undefined,
-			(error) => {
-				console.error("[Logo3D] Failed to load font:", error);
+			() => {
+				reportDiagnostic({
+					category: "route",
+					code: "route.unexpected",
+					operation: "landing.logo.font",
+					recoverable: true,
+				});
 			},
 		);
 	}, []);
@@ -161,7 +163,13 @@ export function Logo3D() {
 					height: "100%",
 				}}
 			>
-				<Suspense fallback={null}>
+				<Suspense
+					fallback={
+						<Html center>
+							<Spinner />
+						</Html>
+					}
+				>
 					<Scene colors={colors} font={font} />
 				</Suspense>
 			</Canvas>
@@ -205,14 +213,6 @@ function Scene({
 			offIntensity: { value: 0.2, min: 0, max: 1, step: 0.1 },
 		}),
 		Effects: folder({
-			enableGlitch: { value: true },
-			glitchDelayMin: { value: 1.5, min: 0.1, max: 10, step: 0.1 },
-			glitchDelayMax: { value: 3.5, min: 0.1, max: 10, step: 0.1 },
-			glitchDurationMin: { value: 0.6, min: 0.1, max: 5, step: 0.1 },
-			glitchDurationMax: { value: 1.0, min: 0.1, max: 5, step: 0.1 },
-			glitchStrengthMin: { value: 0.1, min: 0, max: 1, step: 0.05 },
-			glitchStrengthMax: { value: 0.2, min: 0, max: 1, step: 0.05 },
-			glitchRatio: { value: 0.85, min: 0, max: 1, step: 0.05 }, // 0-1, threshold for strong glitch
 			enableChromatic: { value: true },
 			chromaticOffset: { value: 0.002, min: 0, max: 0.05, step: 0.001 },
 			enableNoise: { value: false },
@@ -285,7 +285,7 @@ function Scene({
 			/>
 			<pointLight position={[0, 0, 5]} intensity={0.3} color="#ffffff" />
 
-			{/* Post Processing for Glow & Glitch */}
+			{/* Post processing */}
 			<EffectComposer>
 				<Bloom
 					luminanceThreshold={1.2}
@@ -300,25 +300,6 @@ function Scene({
 							controls.enableChromatic ? controls.chromaticOffset : 0,
 						)
 					}
-				/>
-				<Glitch
-					delay={
-						new THREE.Vector2(controls.glitchDelayMin, controls.glitchDelayMax)
-					}
-					duration={
-						new THREE.Vector2(
-							controls.glitchDurationMin,
-							controls.glitchDurationMax,
-						)
-					}
-					strength={
-						new THREE.Vector2(
-							controls.glitchStrengthMin,
-							controls.glitchStrengthMax,
-						)
-					}
-					active={controls.enableGlitch}
-					ratio={controls.glitchRatio}
 				/>
 				<Noise opacity={controls.enableNoise ? controls.noiseOpacity : 0} />
 			</EffectComposer>
@@ -508,7 +489,7 @@ function Word({
 	const letters = text.split("");
 
 	// NATIVE FONT METRICS CALCULATION
-	if (!font || !font.data || !font.data.glyphs) return null;
+	if (!font?.data?.glyphs) return null;
 
 	const letterPositions: number[] = [];
 	let currentX = 0;

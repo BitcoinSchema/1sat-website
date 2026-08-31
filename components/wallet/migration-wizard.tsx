@@ -29,6 +29,7 @@ import {
 import { WALLET_STORAGE_KEY } from "@/lib/constants";
 import { useLegacyAssets } from "@/lib/hooks/use-legacy-assets";
 import { deriveIdentityKey } from "@/lib/keys";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import {
 	executeMigrationSweep,
 	type SweepProgress,
@@ -36,8 +37,8 @@ import {
 } from "@/lib/sweep-migration";
 import {
 	detectMigrationStatus,
-	MIGRATION_DEFERRED_KEY,
 	type MigrationStatus,
+	migrationDeferredKey,
 } from "@/lib/wallet-migration";
 import { reencryptWallet } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
@@ -100,14 +101,19 @@ export function MigrationWizard() {
 	const [deferred, setDeferred] = useState(false);
 
 	useEffect(() => {
-		setDeferred(window.localStorage.getItem(MIGRATION_DEFERRED_KEY) === "1");
+		setDeferred(
+			walletKeys
+				? window.localStorage.getItem(migrationDeferredKey(walletKeys)) === "1"
+				: false,
+		);
 		setDeferredReady(true);
-	}, []);
+	}, [walletKeys]);
 
 	const deferMigration = useCallback(() => {
-		window.localStorage.setItem(MIGRATION_DEFERRED_KEY, "1");
+		if (!walletKeys) return;
+		window.localStorage.setItem(migrationDeferredKey(walletKeys), "1");
 		setDeferred(true);
-	}, []);
+	}, [walletKeys]);
 
 	// Detect migration status
 	const migrationStatus: MigrationStatus | null = useMemo(() => {
@@ -128,7 +134,8 @@ export function MigrationWizard() {
 			: null;
 
 	// Only scan when we've moved past intro
-	const shouldScan = step !== "intro" && needsMigration;
+	const shouldScan =
+		toolbox.connectionMode !== "external" && step !== "intro" && needsMigration;
 	const assets = useLegacyAssets(
 		shouldScan ? legacyPayAddress : null,
 		shouldScan ? legacyOrdAddress : null,
@@ -275,11 +282,16 @@ export function MigrationWizard() {
 				}
 			}
 
-			window.localStorage.removeItem(MIGRATION_DEFERRED_KEY);
+			window.localStorage.removeItem(migrationDeferredKey(walletKeys));
 			setProgressPercent(100);
 			setStep("complete");
 		} catch (err) {
-			console.error("[Migration] Failed:", err);
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation: "wallet.migration.run",
+				recoverable: true,
+			});
 			setError(err instanceof Error ? err.message : String(err));
 			setStep("error");
 		}
@@ -302,6 +314,7 @@ export function MigrationWizard() {
 		assets.bsv21Tokens.reduce((sum, t) => sum + t.outputs.length, 0);
 
 	// Don't render if not applicable
+	if (toolbox.connectionMode === "external") return null;
 	if (!isWalletInitialized) return null;
 	if (!hasWallet) return null;
 	if (isWalletLocked) return null;

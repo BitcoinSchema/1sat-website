@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, SquareArrowOutUpRight, X } from "lucide-react";
+import { FileQuestion, Info, SquareArrowOutUpRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import ImageWithFallback from "@/components/image-with-fallback";
@@ -10,8 +10,7 @@ import {
 	DialogTitle,
 	SoundDialog,
 } from "@/components/ui/sound-dialog";
-
-const ORDFS = "https://ordfs.network";
+import { stackContentUrl } from "@/lib/stack";
 
 /**
  * Minimal artifact shape for the modal.
@@ -35,13 +34,14 @@ interface ArtifactModalProps {
 
 function classifyContentType(
 	ct: string,
-): "video" | "audio" | "3d" | "text" | "html" | "image" {
+): "video" | "audio" | "3d" | "text" | "html" | "image" | "other" {
 	if (ct.startsWith("video/")) return "video";
 	if (ct.startsWith("audio/")) return "audio";
 	if (ct.includes("model/") || ct.includes("gltf")) return "3d";
 	if (ct.includes("html")) return "html";
 	if (ct.startsWith("text/")) return "text";
-	return "image";
+	if (ct.startsWith("image/")) return "image";
+	return "other";
 }
 
 const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
@@ -78,7 +78,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 
 	const { outpoint, originOutpoint, contentType, name } = artifact;
 	const contentClass = classifyContentType(contentType);
-	const src = `${ORDFS}/content/${originOutpoint}`;
+	const src = stackContentUrl(originOutpoint);
 	const allowScroll =
 		contentClass === "image" ||
 		contentClass === "text" ||
@@ -97,6 +97,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 					</p>
 					<div className="flex gap-1 items-center">
 						<Button
+							aria-label="View artifact details"
 							variant="ghost"
 							size="icon"
 							onClick={() => router.push(`/outpoint/${outpoint}`)}
@@ -105,6 +106,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							<Info className="w-4 h-4" />
 						</Button>
 						<Button
+							aria-label="Open artifact in new tab"
 							variant="ghost"
 							size="icon"
 							onClick={() => window.open(src, "_blank", "noopener,noreferrer")}
@@ -113,6 +115,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							<SquareArrowOutUpRight className="w-4 h-4" />
 						</Button>
 						<Button
+							aria-label="Close artifact preview"
 							variant="ghost"
 							size="icon"
 							onClick={onClose}
@@ -166,8 +169,9 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							src={src}
 							title="Artifact"
 							className="w-full h-full border-0"
+							sandbox=""
 						/>
-					) : (
+					) : contentClass === "image" ? (
 						<div
 							className={
 								allowScroll
@@ -190,6 +194,16 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 									viewTransitionName: `artifact-${outpoint}`,
 								}}
 							/>
+						</div>
+					) : (
+						<div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
+							<FileQuestion className="size-16 opacity-60" />
+							<p className="text-sm">
+								Preview unavailable for this content type.
+							</p>
+							<code className="max-w-full break-all text-xs">
+								{contentType || "unknown"}
+							</code>
 						</div>
 					)}
 				</section>

@@ -33,6 +33,7 @@ import {
 } from "@/components/wallet/migration-sections";
 import { useLegacyAssets } from "@/lib/hooks/use-legacy-assets";
 import { deriveIdentityKey } from "@/lib/keys";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import {
 	executeMigrationSweep,
 	type SweepProgress,
@@ -318,9 +319,11 @@ export default function MigratePage() {
 	}, [migrationStatus]);
 
 	const assets = useLegacyAssets(
-		legacy?.payAddress ?? null,
-		legacy?.ordAddress ?? null,
-		legacy?.identityAddress ?? null,
+		toolbox.connectionMode === "external" ? null : (legacy?.payAddress ?? null),
+		toolbox.connectionMode === "external" ? null : (legacy?.ordAddress ?? null),
+		toolbox.connectionMode === "external"
+			? null
+			: (legacy?.identityAddress ?? null),
 		(p) => setScanDetail(p.detail ?? p.phase),
 	);
 
@@ -512,11 +515,34 @@ export default function MigratePage() {
 			setProgressPercent(100);
 			setPhase("complete");
 		} catch (err) {
-			console.error("[Migration] Failed:", err);
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation: "wallet.migration.run",
+				recoverable: true,
+			});
 			setError(err instanceof Error ? err.message : String(err));
 			setPhase("error");
 		}
 	}, [walletKeys, legacy, toolbox, assets, sweepOrdinals]);
+
+	if (toolbox.connectionMode === "external") {
+		return (
+			<Page>
+				<PageHeader>
+					<PageTitle>Wallet Migration</PageTitle>
+				</PageHeader>
+				<PageContent>
+					<Card>
+						<CardContent className="py-8 text-center text-muted-foreground">
+							Migration is available only for the wallet built into this
+							browser.
+						</CardContent>
+					</Card>
+				</PageContent>
+			</Page>
+		);
+	}
 
 	// Locked state
 	if (isWalletLocked || !walletKeys) {

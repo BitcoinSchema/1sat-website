@@ -1,4 +1,4 @@
-# CWI Permissions -- Current State (Feb 6, 2026)
+# CWI Permissions -- Current State (Aug 30, 2026)
 
 Reference doc for researchers. Covers the CWI iframe bridge permission model, E2E test results, and known behaviors.
 
@@ -18,7 +18,13 @@ Wallet tab (localhost:8255) -- CWIRelay -> WalletPermissionsManager
 
 - **CWIBridge** (`lib/cwi/bridge.ts`): runs in iframe, translates postMessage <-> BroadcastChannel
 - **CWIRelay** (`lib/cwi/relay.ts`): runs in wallet tab, dispatches to WPM, handles grant/deny
-- **WalletPermissionsManager** (WPM, from `@bsv/wallet-toolbox`): wraps the wallet with permission enforcement
+- **WalletPermissionsManager** (WPM, from `@bsv/wallet-toolbox-client`): wraps the wallet with permission enforcement
+
+The relay and redirect fallback accept exactly the 28 BRC-100 methods from the
+public `@bsv/sdk/wallet/substrates/WalletWireCalls` registry. Vendor extensions
+such as `getBalance` are rejected with unsupported-method code 2. Balance UI
+uses the provider-neutral `listOutputs` wallet method and its standard wallet
+balance basket instead.
 
 ## Permission Config (wallet-toolbox-provider.tsx)
 
@@ -26,7 +32,7 @@ These flags control which operations trigger permission prompts for external ori
 
 Other config flags:
 - `encryptWalletMetadata: true` -- metadata encryption (internal)
-- `seekGroupedPermission: false` -- grouped permission flow disabled (when true, WPM can batch multiple permission types into a single prompt)
+- `seekGroupedPermission: true` -- manifest-declared permissions can be approved in one canonical grouped flow
 - `differentiatePrivilegedOperations: true` -- privileged vs standard operations get separate permission tokens
 
 ### Enabled (will prompt on first use)
@@ -66,69 +72,36 @@ Other config flags:
 | `getHeaderForHeight` | Read-only chain info |
 | `getNetwork` | Read-only chain info |
 | `getVersion` | Read-only chain info |
-| `getBalance` | Handled directly by relay, not WPM |
 | `abortAction` | Cleanup, no permission needed |
 | `listActions` (no label filter) | Read-only when no label filter |
 
-## Permission Types
+## Permission Authority
 
-Four categories, each with its own cache key format:
+BRC-116 defines four permission categories: protocol (DPACP), spending (DSAP),
+basket (DBAP), and certificate (DCAP). Scope always includes the normalized
+originator and the category-specific fields defined by the standard.
 
-| Type | Cache key format | Scope |
-|------|-----------------|-------|
-| `protocol` | `proto:{origin}:{privileged}:{level},{name}:{counterparty}` | Per protocol+counterparty+originator |
-| `basket` | `basket:{origin}:{basket_name}` | Per basket+originator |
-| `certificate` | `cert:{origin}:{privileged}:{verifier}:{certType}:{fields}` | Per cert type+fields+originator |
-| `spending` | `spend:{origin}:{satoshis}` | Per amount+originator |
+Authorization comes only from:
 
-Originator is normalized: lowercased, default ports stripped (80/443).
+1. valid, unspent, unexpired permission tokens returned by WPM's canonical
+   token paths; or
+2. an explicit ephemeral grant for the request currently in flight.
 
-## Permission Caching -- Why Some Calls Don't Re-prompt
+WPM may cache canonical lookups as an optimization, but cache state is not a
+second authority. The website does not read or mutate WPM private caches and
+does not persist browser-local permission grants. A failed mint, including an
+insufficient-funds failure, never creates a durable fallback grant.
 
-The WPM uses a multi-tier cache. Once granted, the same operation won't prompt again within the cache window:
-
-1. **recentGrants** (15 second TTL, non-spending only) -- Immediate post-grant window
-2. **permissionCache** (5 minute TTL, in-memory) -- Avoids repeated on-chain lookups
-3. **On-chain PushDrop tokens** -- Permanent until revoked
-4. **IndexedDB local permissions** -- Fallback when on-chain creation fails (no funds)
-
-### Cache key determines deduplication
-
-Two calls share a grant if they produce the same cache key. For protocol permissions, the key includes `protocolID` + `counterparty` + `originator`. So:
-
-- `encrypt({protocolID: [0, 'tests'], counterparty: 'self'})` and `createSignature({protocolID: [0, 'tests'], counterparty: 'self'})` share the SAME protocol permission grant (same protocol + counterparty).
-- `getPublicKey({identityKey: true})` triggers its own permission (identity key revelation is a separate permission type internally, though it's also a protocol permission with a specific protocolID).
-
-### Observed behavior in E2E testing
-
-1. `getPublicKey({identityKey: true})` -- **Prompted**. First protocol permission for this originator. Permission dialog showed "Protocol: identity key retrieval (Level 1), Counterparty: self".
-2. `encrypt({protocolID: [0, 'tests'], counterparty: 'self'})` -- **No prompt**. Returned immediately (~30s after the identity grant).
-3. `createSignature({...same args})` -- **No prompt**. Returned immediately.
-4. `createHmac({...same args})` -- **No prompt**. Returned immediately.
-
-### Open question: why didn't encrypt/sign/hmac prompt?
-
-The identity key grant uses `protocolID: [1, 'identity key retrieval']` while encrypt uses `protocolID: [0, 'tests']`. These produce DIFFERENT cache keys:
-- Identity: `proto:localhost:3333:false:1,identity key retrieval:self`
-- Encrypt: `proto:localhost:3333:false:0,tests:self`
-
-The `recentGrants` window (15s) would have expired by the time encrypt was called (~30s later). Possible explanations:
-
-1. **On-chain token covers broader scope** -- The PushDrop token created during the identity key grant may have been found during the encrypt `findProtocolToken()` lookup. Needs investigation of token matching logic.
-2. **Local fallback grant cached more broadly** -- The relay's `handleGrant` local fallback might have cached at a broader key than expected.
-3. **Permission module delegation** -- The `delegateToPModuleIfNeeded` path may have short-circuited the normal flow.
-4. **The prompt DID happen** -- It's possible the iframe briefly expanded and auto-collapsed too fast to observe. The test timestamps suggest instant response though.
-
-**Research needed**: Run each permission-triggering method in isolation (clear permissions between tests) to confirm which ones actually prompt independently. Use different protocolIDs to avoid any possibility of cache sharing.
-
-**To definitively trigger separate prompts for each**, use different `protocolID` and/or `counterparty` values, and clear cached permissions between tests.
+Reactive individual spending approval is sent as `ephemeral: true`, so it
+authorizes only that spend. A standing monthly DSAP limit is created only from
+an explicitly approved grouped permission declaration.
 
 ## Permission Grant Flow
 
 ```
 1. dApp calls method (e.g. encrypt)
 2. CWIRelay dispatches to WPM
-3. WPM checks cache hierarchy (recent -> memory -> on-chain -> local)
+3. WPM evaluates canonical permission-token state
 4. If no valid grant found:
    a. WPM fires onProtocolPermissionRequested callback
    b. Relay sends cwi-permission-request over BroadcastChannel
@@ -137,18 +110,54 @@ The `recentGrants` window (15s) would have expired by the time encrypt was calle
    e. User clicks Allow or Deny
    f. Bridge sends cwi-permission-grant / cwi-permission-deny
    g. Relay calls wallet.grantPermission() or wallet.denyPermission()
-   h. If grant fails (no funds), fallback: hydrate cache + persist to IndexedDB
-   i. Iframe collapses (cwiState.hasPermission = false)
+   h. A persistent grant creates or renews its canonical token; failure rejects
+      without a website fallback
+   i. An individual spending grant is explicitly ephemeral for this request
+   j. Iframe collapses (cwiState.hasPermission = false)
 5. WPM resolves the pending method call with result or error
 ```
 
-## Race Condition Fix (relay.ts)
+## Revocation and upstream dependency
+
+The Connected Apps page lists only WPM permission tokens and revokes them via
+`WalletPermissionsManager.revokePermission`. It reloads the wallet page after a
+successful revoke so a new manager instance cannot retain the spent token in a
+private cache.
+
+Two upstream fixes are required before this flow is fully BRC-116 conformant:
+
+- [OPL-3993](https://linear.app/openprotocollabs/issue/OPL-3993) tracks making
+  individual persistent grants settle only after their canonical token has
+  been created or renewed successfully.
+- [OPL-3994](https://linear.app/openprotocollabs/issue/OPL-3994) tracks immediate
+  invalidation of affected WPM caches after revocation.
+
+The reload is a temporary workaround for OPL-3994. Remove it only after the
+installed WPM invalidates revoked grants internally.
+
+## BRC-219 prompt liveness (relay.ts)
 
 `waitForAuthentication` and `isAuthenticated` are exempt from the locked-wallet check in `handleCWIRequest`. These two methods need to work regardless of wallet state since they exist to query/wait for authentication.
 
 When WPM is null (not yet initialized):
 - `isAuthenticated` -> returns `{authenticated: false}` immediately
-- `waitForAuthentication` -> polls `getWallet()` every 500ms (30s timeout)
+- `waitForAuthentication` -> waits for `getWallet()` without a wall-clock cutoff
+
+Authentication and permission-dependent calls remain pending while their CWI
+session and elected wallet-tab leader are alive. Grant or deny settles the
+original call. Session close, relay stop, bridge destruction, or leader loss
+settles pending bridge work with numeric lifecycle error code `1`; handshake
+and leader-reachability deadlines remain separate transport checks.
+
+Installed upstream packages still impose interactive request deadlines and
+must be fixed at their sources (the website does not patch `node_modules`):
+
+- `@1sat/wallet@0.0.104` `createWebCWI` applies a fixed 120-second timer to
+  every request, including `waitForAuthentication` and permission prompts.
+- `@1sat/wallet@0.0.104` `createSigmaCWI` applies the same 120-second timer and
+  merely restarts it while interactive UI is visible.
+- `@1sat/connect@0.0.89` bundles both transports unchanged, so its URL-based
+  provider path inherits those fixed interactive cutoffs.
 
 ## Iframe Overlay Behavior (cwi/page.tsx)
 
@@ -173,7 +182,6 @@ The test page (or any host dApp) uses this to toggle iframe visibility:
 | `getNetwork` | `{}` | `{"network":"mainnet"}` | No |
 | `getVersion` | `{}` | `{"version":"wallet-brc100-1.0.0"}` | No |
 | `getHeight` | `{}` | `{"height":935157}` | No |
-| `getBalance` | `{}` | `{"satoshis":0,"usd":0}` | No |
 | `getPublicKey` (non-identity) | `{identityKey:false, forSelf:true, protocolID:[0,'tests'], keyID:'1', counterparty:'self'}` | ERROR: "Protocol names must be 5 characters or more" with `'test'`; fixed to `'tests'` (not re-tested after fix) | No (config disabled) |
 | `listOutputs` | `{basket:'todo tokens', include:'locking scripts'}` | `{"totalOutputs":0,"outputs":[]}` | No (config disabled) |
 | `getPublicKey` (identity) | `{identityKey:true, forSelf:true}` | `{"publicKey":"03908c..."}` | Yes -- prompted, allowed |
@@ -213,8 +221,6 @@ The test page (or any host dApp) uses this to toggle iframe visibility:
 |------|---------|
 | `lib/cwi/relay.ts` | CWIRelay -- wallet tab side, dispatches to WPM |
 | `lib/cwi/bridge.ts` | CWIBridge -- iframe side, postMessage <-> BroadcastChannel |
-| `lib/cwi/permission-keys.ts` | Cache key building + originator normalization |
-| `lib/cwi/permission-store.ts` | IndexedDB local permission persistence |
 | `lib/hooks/use-cwi-bridge.ts` | React hook for iframe page |
 | `lib/hooks/use-cwi-relay.ts` | React hook for wallet tab |
 | `app/(embed)/wallet/cwi/page.tsx` | CWI iframe page component |

@@ -18,6 +18,7 @@ import {
 	YOURS_ORD_PATH,
 	YOURS_WALLET_PATH,
 } from "@/lib/keys";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import type { Keys } from "@/lib/types";
 
 interface MnemonicGridProps {
@@ -179,8 +180,13 @@ export function MnemonicGrid({
 						ordAddressPath: keys.ordAddressPath as string,
 					});
 				}
-			} catch (e) {
-				console.error(e);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "mnemonic.detect-paths",
+					recoverable: true,
+				});
 			} finally {
 				setProcessing(false);
 			}
@@ -217,6 +223,7 @@ export function MnemonicGrid({
 									Word #{idx + 1}
 								</span>
 								<Input
+									aria-label={`Mnemonic word ${idx + 1}`}
 									value={spotCheckInput[idx] ?? ""}
 									onChange={(e) =>
 										setSpotCheckInput((prev) => ({
@@ -309,6 +316,7 @@ export function MnemonicGrid({
 									{slot + 1}.
 								</span>
 								<Input
+									aria-label={`Mnemonic word ${slot + 1}`}
 									value={word}
 									onChange={(e) => handleWordChange(slot, e.target.value)}
 									onPaste={(e) => handlePaste(e, slot)}
@@ -440,6 +448,7 @@ export function MnemonicGrid({
 					</div>
 					<div className="grid gap-2">
 						<Input
+							aria-label="Payment derivation path"
 							placeholder={`Payment Path ${pendingPaths?.changeAddressPath || "m/0"}`}
 							value={pendingPaths?.changeAddressPath || ""}
 							onChange={(e) =>
@@ -456,6 +465,7 @@ export function MnemonicGrid({
 							}
 						/>
 						<Input
+							aria-label="Ordinals derivation path"
 							placeholder={`Ordinals Path ${pendingPaths?.ordAddressPath || "m/0/0"}`}
 							value={pendingPaths?.ordAddressPath || ""}
 							onChange={(e) =>
