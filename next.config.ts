@@ -66,6 +66,12 @@ const nextConfig: NextConfig = {
 				port: "",
 				pathname: "/content/**",
 			},
+			{
+				protocol: "https",
+				hostname: "themetoken.dev",
+				port: "",
+				pathname: "/og/**",
+			},
 		],
 	},
 };
