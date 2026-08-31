@@ -783,7 +783,10 @@ export function InscriptionStudio() {
 												variant="outline"
 												onClick={() => checkIndexing(result.outpoint)}
 											>
-												<RefreshCcw className="size-3.5" />
+												<RefreshCcw
+													className="size-3.5"
+													data-icon="inline-start"
+												/>
 												Check again
 											</Button>
 										)}
@@ -791,18 +794,30 @@ export function InscriptionStudio() {
 								<div className="flex flex-wrap gap-2">
 									<Button asChild size="sm" variant="outline">
 										<Link href={`/tx/${result.txid}`}>
-											Transaction <ExternalLink className="size-3.5" />
+											Transaction
+											<ExternalLink
+												className="size-3.5"
+												data-icon="inline-end"
+											/>
 										</Link>
 									</Button>
 									<Button asChild size="sm" variant="outline">
 										<Link href={`/outpoint/${result.outpoint}`}>
-											Output <ExternalLink className="size-3.5" />
+											Output
+											<ExternalLink
+												className="size-3.5"
+												data-icon="inline-end"
+											/>
 										</Link>
 									</Button>
 									{contentUrl && indexing === "confirmed" && (
 										<Button asChild size="sm" variant="outline">
 											<a href={contentUrl} target="_blank" rel="noreferrer">
-												Content <ExternalLink className="size-3.5" />
+												Content
+												<ExternalLink
+													className="size-3.5"
+													data-icon="inline-end"
+												/>
 											</a>
 										</Button>
 									)}

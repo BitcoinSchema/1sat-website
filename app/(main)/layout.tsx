@@ -1,5 +1,4 @@
 import { DualSidebarLayout } from "@/components/dual-sidebar-layout";
-import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { CWIRelayProvider } from "./cwi-relay-provider";
 
 export default function MainLayout({
@@ -9,7 +8,6 @@ export default function MainLayout({
 }>) {
 	return (
 		<>
-			<KeyboardShortcuts />
 			<CWIRelayProvider />
 			<DualSidebarLayout>{children}</DualSidebarLayout>
 		</>

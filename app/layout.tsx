@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import type { WebApplication, WithContext } from "schema-dts";
 import { JsonLd } from "@/components/json-ld";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { WalletBridge } from "@/components/wallet-bridge";
@@ -92,6 +93,7 @@ export default function RootLayout({
 					<QueryProvider>
 						<WalletProvider>
 							<WalletToolboxProvider>
+								<KeyboardShortcuts />
 								<WalletBridge>{children}</WalletBridge>
 								<Toaster position="bottom-right" />
 							</WalletToolboxProvider>

@@ -60,7 +60,10 @@ export default function NotFound() {
 					onClick={() => play("click")}
 				>
 					<Link href="/">
-						<ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+						<ArrowLeft
+							className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform"
+							data-icon="inline-start"
+						/>
 						Return to Base
 					</Link>
 				</Button>

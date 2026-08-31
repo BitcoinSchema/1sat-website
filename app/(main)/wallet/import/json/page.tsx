@@ -122,7 +122,7 @@ export default function ImportJsonPage() {
 										onClick={() => setPreviewData(null)}
 										className="text-muted-foreground hover:text-destructive"
 									>
-										<X className="w-4 h-4" />
+										<X className="w-4 h-4" data-icon="icon-only" />
 									</Button>
 								</div>
 
@@ -134,7 +134,7 @@ export default function ImportJsonPage() {
 
 								<div className="flex justify-end pt-2">
 									<Button onClick={handleContinue} className="w-full sm:w-auto">
-										<Check className="w-4 h-4 mr-2" />
+										<Check className="w-4 h-4 mr-2" data-icon="inline-start" />
 										Continue
 									</Button>
 								</div>

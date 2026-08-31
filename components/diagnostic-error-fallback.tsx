@@ -70,7 +70,7 @@ export function DiagnosticErrorFallback({
 				</div>
 				<div className="flex items-center justify-center gap-3">
 					<Button onClick={retry} variant="outline" size="sm">
-						<RotateCcw className="mr-2 size-4" />
+						<RotateCcw className="mr-2 size-4" data-icon="inline-start" />
 						Try again
 					</Button>
 					{backHref && backLabel && (
