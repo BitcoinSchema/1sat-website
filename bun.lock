@@ -5,7 +5,7 @@
     "": {
       "name": "1sat.market",
       "dependencies": {
-        "@1sat/actions": "0.0.200",
+        "@1sat/actions": "0.0.201",
         "@1sat/client": "0.0.50",
         "@1sat/connect": "0.0.89",
         "@1sat/types": "0.0.40",
@@ -73,7 +73,7 @@
     "defu": "6.1.7",
   },
   "packages": {
-    "@1sat/actions": ["@1sat/actions@0.0.200", "", { "dependencies": { "@1sat/client": "0.0.50", "@1sat/templates": "0.0.32", "@1sat/types": "0.0.40", "@1sat/utils": "0.0.33", "@1sat/wallet": "0.0.104", "@bsv/message-box-client": "^2.2.1" }, "peerDependencies": { "@bsv/sdk": "^2.1.9" } }, "sha512-Ifch9r20R68r9OCBO7rmy5ZSE6n0idTx5UMxc4SQl9oxKC+RWIBQ+xs4boDlCkv0xPQ02U1+9/NcsMytYWfwCA=="],
+    "@1sat/actions": ["@1sat/actions@0.0.201", "", { "dependencies": { "@1sat/client": "0.0.50", "@1sat/templates": "0.0.32", "@1sat/types": "0.0.40", "@1sat/utils": "0.0.33", "@1sat/wallet": "0.0.104", "@bsv/message-box-client": "^2.2.1" }, "peerDependencies": { "@bsv/sdk": "^2.1.9" } }, "sha512-hIbf33+8gw8GKwUZIoJNZ0TYw/Q5huNCr9bmiX6XK0yX6ObA40bXU7E4xgJiXe8Ui0kRcjhg5RKE60tOon7dDA=="],
 
     "@1sat/client": ["@1sat/client@0.0.50", "", { "dependencies": { "@1sat/types": "0.0.40", "@bsv/wallet-toolbox-client": "npm:@bopen-io/wallet-toolbox-client@2.6.2-brc153.5" }, "peerDependencies": { "@bsv/sdk": "^2.1.9" } }, "sha512-tRMWJGr1RiWsDF2YlVRvHaRcvNjEGBgSSOkELP3QwMRo3EMBHhfpbhp2xF7ZaKbfE2bVFt15ahYF2DRtkQmZUA=="],
 
