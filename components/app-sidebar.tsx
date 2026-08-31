@@ -97,6 +97,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		depositAddress,
 		isInitialized,
 		isInitializing,
+		initError,
 		connectExternalWallet,
 		connectionMode,
 	} = useWalletToolbox();
@@ -121,6 +122,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const bsvBalance = balance ? balance.total / 100_000_000 : 0;
 	const usdBalance = exchangeRate ? bsvBalance * exchangeRate : 0;
+	const hasWalletBalance = balance !== null;
 
 	const payAddress = React.useMemo(() => {
 		if (!walletKeys?.payPk) return "";
@@ -153,9 +155,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	}, [walletKeys]);
 
 	const isExternal = connectionMode === "external";
-	const resolvedDepositAddress = isExternal
-		? ""
-		: depositAddress || identityAddress || payAddress;
+	const resolvedDepositAddress =
+		depositAddress || (isExternal ? "" : identityAddress || payAddress);
 
 	const handleCopyAddress = () => {
 		copy(resolvedDepositAddress);
@@ -204,6 +205,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								)}
 								Connect BRC-100
 							</Button>
+							{initError && (
+								<p className="text-destructive text-xs" role="alert">
+									{initError}
+								</p>
+							)}
 							<Button asChild className="w-full" variant="outline">
 								<Link href="/wallet/create" onClick={handleNav}>
 									<Plus className="h-4 w-4 mr-2" data-icon="inline-start" />{" "}
@@ -229,9 +235,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		);
 	}
 
-	const activeAddress = isExternal
-		? ""
-		: resolvedDepositAddress || identityAddress || payAddress;
+	const activeAddress = resolvedDepositAddress;
 
 	// State 3: Unlocked (or Locked but covered by overlay)
 	return (
@@ -250,7 +254,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</span>
 						<div className="flex items-baseline gap-2">
 							<span className="text-2xl font-bold tracking-tight">
-								{isExternal
+								{isExternal && !hasWalletBalance
 									? "Provider-managed"
 									: isPrivacyModeEnabled
 										? "*****"
@@ -258,12 +262,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 											? `$${usdBalance.toFixed(2)}`
 											: "$ ---"}
 							</span>
-							{!isExternal && (
+							{(!isExternal || hasWalletBalance) && (
 								<span className="text-sm text-muted-foreground">USD</span>
 							)}
 						</div>
 						<span className="text-sm text-muted-foreground">
-							{isExternal
+							{isExternal && !hasWalletBalance
 								? "Balance stays in the connected wallet"
 								: isPrivacyModeEnabled
 									? "*****"
@@ -278,9 +282,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									{isExternal ? "Receive" : "Deposit Address"}
 								</span>
 								<span className="truncate font-mono text-xs text-foreground/80">
-									{isExternal
-										? "Managed by connected wallet"
-										: resolvedDepositAddress || "Locked"}
+									{resolvedDepositAddress ||
+										(isExternal ? "Unavailable" : "Locked")}
 								</span>
 							</div>
 							<TooltipProvider>

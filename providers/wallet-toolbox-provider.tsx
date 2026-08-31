@@ -327,6 +327,7 @@ export function WalletToolboxProvider({
 		isInitialized,
 		identityKey,
 		trackedAddresses,
+		includeLegacyFunding: connectionMode === "built-in",
 	});
 	const {
 		refreshBalance,

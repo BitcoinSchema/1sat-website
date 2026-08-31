@@ -229,7 +229,8 @@ function ConnectedWalletHome() {
 		refreshBalance,
 	} = useWalletToolbox();
 	const [privacyMode] = useSettingsStorage<boolean>(PRIVACY_MODE_KEY, false);
-	const balanceSupported = connectionMode === "built-in";
+	const balanceSupported =
+		connectionMode === "built-in" || isBalanceLoading || balance !== null;
 	const totalBsv =
 		balanceSupported && balance ? balance.total / 100_000_000 : null;
 	const totalUsd =
@@ -330,7 +331,7 @@ function ConnectedWalletHome() {
 					</Card>
 				</section>
 
-				{legacyBalance > 0 && (
+				{connectionMode === "built-in" && legacyBalance > 0 && (
 					<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
 						<div>
 							<p className="font-medium">Legacy balance found</p>

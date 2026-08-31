@@ -40,6 +40,7 @@ interface UseWalletBalanceOptions {
 	isInitialized: boolean;
 	identityKey: string | null;
 	trackedAddresses: string[];
+	includeLegacyFunding: boolean;
 }
 
 interface SyncStatus {
@@ -59,7 +60,7 @@ export interface WalletBalanceResult {
 	balanceError: Error | null;
 	refreshBalance: () => void;
 	syncStatus: SyncStatus;
-	balanceQueryKey: readonly [string, string, string | null, string];
+	balanceQueryKey: readonly [string, string, string | null, string, boolean];
 }
 
 export function useWalletBalance({
@@ -67,6 +68,7 @@ export function useWalletBalance({
 	isInitialized,
 	identityKey,
 	trackedAddresses,
+	includeLegacyFunding,
 }: UseWalletBalanceOptions): WalletBalanceResult {
 	const queryClient = useQueryClient();
 
@@ -77,8 +79,15 @@ export function useWalletBalance({
 		[trackedAddresses],
 	);
 	const balanceQueryKey = useMemo(
-		() => ["wallet-balance", chain, identityKey, addressesKey] as const,
-		[chain, identityKey, addressesKey],
+		() =>
+			[
+				"wallet-balance",
+				chain,
+				identityKey,
+				addressesKey,
+				includeLegacyFunding,
+			] as const,
+		[chain, identityKey, addressesKey, includeLegacyFunding],
 	);
 
 	const balanceQuery = useQuery({
@@ -91,39 +100,41 @@ export function useWalletBalance({
 			// Legacy balance hint from the stack index (display-only — the
 			// migrate flow does its own forced re-sync before sweeping).
 			// Funding = plain sats>1 outputs without token/lock event tags.
-			const legacyResultsPromise = Promise.all(
-				trackedAddresses.map(async (address) => {
-					try {
-						const outputs =
-							(await ctx.services?.txo.search(`own:${address}`, {
-								unspent: true,
-								events: true,
-								sats: true,
-								limit: 0,
-							})) ?? [];
-						return outputs.filter((out) => {
-							const events = out.events ?? [];
-							if ((out.satoshis ?? 0) <= 1) return false;
-							return !events.some(
-								(e) =>
-									e.startsWith("bsv21:") ||
-									e.startsWith("lock:") ||
-									e === "type:application/bsv-20" ||
-									e === "type:Token",
-							);
-						});
-					} catch {
-						reportDiagnostic({
-							category: "provider",
-							code: "provider.failed",
-							operation: "wallet.balance.legacy-scan",
-							recoverable: true,
-							context: { retryable: true },
-						});
-						return [];
-					}
-				}),
-			);
+			const legacyResultsPromise = includeLegacyFunding
+				? Promise.all(
+						trackedAddresses.map(async (address) => {
+							try {
+								const outputs =
+									(await ctx.services?.txo.search(`own:${address}`, {
+										unspent: true,
+										events: true,
+										sats: true,
+										limit: 0,
+									})) ?? [];
+								return outputs.filter((out) => {
+									const events = out.events ?? [];
+									if ((out.satoshis ?? 0) <= 1) return false;
+									return !events.some(
+										(e) =>
+											e.startsWith("bsv21:") ||
+											e.startsWith("lock:") ||
+											e === "type:application/bsv-20" ||
+											e === "type:Token",
+									);
+								});
+							} catch {
+								reportDiagnostic({
+									category: "provider",
+									code: "provider.failed",
+									operation: "wallet.balance.legacy-scan",
+									recoverable: true,
+									context: { retryable: true },
+								});
+								return [];
+							}
+						}),
+					)
+				: Promise.resolve([]);
 
 			const [legacyResults, balanceResult, ordinalsResult, bsv21Balances] =
 				await Promise.all([
