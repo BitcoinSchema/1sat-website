@@ -91,7 +91,7 @@ export function useWalletBalance({
 			// Legacy balance hint from the stack index (display-only — the
 			// migrate flow does its own forced re-sync before sweeping).
 			// Funding = plain sats>1 outputs without token/lock event tags.
-			const legacyResults = await Promise.all(
+			const legacyResultsPromise = Promise.all(
 				trackedAddresses.map(async (address) => {
 					try {
 						const outputs =
@@ -125,11 +125,13 @@ export function useWalletBalance({
 				}),
 			);
 
-			const [balanceResult, ordinalsResult, bsv21Balances] = await Promise.all([
-				ctx.wallet.listOutputs({ basket: WALLET_BALANCE_BASKET }),
-				listOrdinals.execute(ctx, {}),
-				getBsv21Balances.execute(ctx, {}),
-			]);
+			const [legacyResults, balanceResult, ordinalsResult, bsv21Balances] =
+				await Promise.all([
+					legacyResultsPromise,
+					ctx.wallet.listOutputs({ basket: WALLET_BALANCE_BASKET }),
+					listOrdinals.execute(ctx, {}),
+					getBsv21Balances.execute(ctx, {}),
+				]);
 			const total = balanceResult.totalOutputs;
 
 			const legacyFundingUtxos = legacyResults.flat().map((u) => ({

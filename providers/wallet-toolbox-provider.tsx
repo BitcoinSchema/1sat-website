@@ -292,11 +292,14 @@ export function WalletToolboxProvider({
 	>(null);
 
 	const addressManagerRef = useRef<AddressManager | null>(null);
-	const receiveStateRef = useRef<ReceiveAddressState>(
+	const [initialReceiveState] = useState<ReceiveAddressState>(() =>
 		createDefaultReceiveAddressState(RECEIVE_ADDRESS_WINDOW),
 	);
-	const seenOutpointsRef = useRef(new Set<string>());
-	const rotatingOutpointsRef = useRef(new Set<string>());
+	const [initialSeenOutpoints] = useState(() => new Set<string>());
+	const [initialRotatingOutpoints] = useState(() => new Set<string>());
+	const receiveStateRef = useRef(initialReceiveState);
+	const seenOutpointsRef = useRef(initialSeenOutpoints);
+	const rotatingOutpointsRef = useRef(initialRotatingOutpoints);
 	const [syncRevision, setSyncRevision] = useState(0);
 
 	// -- Diagnostics hook --
@@ -584,8 +587,10 @@ export function WalletToolboxProvider({
 		setConnectionStatus("authenticating");
 		setInitError(null);
 
+		let pendingResult: Awaited<ReturnType<typeof connectWallet>> = null;
 		try {
 			const result = await connectWallet({ autoDetect: true });
+			pendingResult = result;
 			if (generation !== connectionGenerationRef.current) {
 				result?.disconnect();
 				return false;
@@ -686,14 +691,20 @@ export function WalletToolboxProvider({
 			return true;
 		} catch {
 			if (generation !== connectionGenerationRef.current) return false;
+			connectionGenerationRef.current += 1;
+			walletSessionCleanupRef.current();
+			walletSessionCleanupRef.current = () => {};
+			walletSessionRef.current?.stop();
+			walletSessionRef.current = null;
+			pendingResult?.disconnect();
 			externalServicesRef.current?.close();
 			externalServicesRef.current = null;
 			localStorage.removeItem(WALLET_CONNECTION_MODE_KEY);
+			resetWalletState("disconnected");
 			setInitError(
 				"Wallet connection failed. Check the provider and try again.",
 			);
-			setConnectionStatus("disconnected");
-			setIsInitialized(false);
+			setIsInitializing(false);
 			initGuardRef.current = false;
 			return false;
 		} finally {
@@ -701,7 +712,13 @@ export function WalletToolboxProvider({
 				setIsInitializing(false);
 			}
 		}
-	}, [chain, clearIdentityQueries, deriveExternalAddresses, teardownWallet]);
+	}, [
+		chain,
+		clearIdentityQueries,
+		deriveExternalAddresses,
+		resetWalletState,
+		teardownWallet,
+	]);
 
 	useEffect(() => {
 		if (
