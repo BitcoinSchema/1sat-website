@@ -20,6 +20,7 @@ export interface OrdinalPresentation {
 	kind: OrdinalPresentationKind;
 	name: string;
 	contentLabel: string;
+	contentType: string;
 	originOutpoint: string;
 	href: string;
 	artworkUrl?: string;
@@ -55,6 +56,7 @@ export function getOrdinalPresentation(
 			kind: "theme-token",
 			name: taggedName ?? indexedName ?? "Theme Token",
 			contentLabel: "Theme Token",
+			contentType,
 			originOutpoint,
 			href: `https://themetoken.dev/preview/${originOutpoint}`,
 			artworkUrl: `https://themetoken.dev/og/${originOutpoint}.png?v=2`,
@@ -66,8 +68,9 @@ export function getOrdinalPresentation(
 			kind: "bitplan",
 			name: taggedName ?? indexedName ?? "BitPlan Document",
 			contentLabel: "BitPlan Document",
+			contentType,
 			originOutpoint,
-			href: stackContentUrl(originOutpoint),
+			href: `https://bitplan.dev/d/${originOutpoint}`,
 		};
 	}
 
@@ -76,6 +79,7 @@ export function getOrdinalPresentation(
 			kind: "image",
 			name: taggedName ?? indexedName ?? "Ordinal",
 			contentLabel: contentType,
+			contentType,
 			originOutpoint,
 			href: stackContentUrl(originOutpoint),
 			artworkUrl: stackContentUrl(originOutpoint),
@@ -86,6 +90,7 @@ export function getOrdinalPresentation(
 		kind: "other",
 		name: taggedName ?? indexedName ?? "Ordinal",
 		contentLabel: contentType || "Unknown content type",
+		contentType,
 		originOutpoint,
 		href: stackContentUrl(originOutpoint),
 	};
