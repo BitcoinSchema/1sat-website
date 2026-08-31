@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import type { WalletOutput } from "@1sat/actions";
+import { getOrdinalPresentation } from "../lib/wallet/ordinal-presentation";
 import {
 	classifyContent,
 	getDisplayOutpoint,
@@ -33,5 +34,33 @@ describe("wallet ordinal display metadata", () => {
 			"image",
 		);
 		assert.equal(classifyContent(output(`${txid}.0`, [])), "other");
+	});
+
+	test("labels BitPlan payloads as documents", () => {
+		const presentation = getOrdinalPresentation(
+			output(`${txid}.0`, ["type:application/x-bitplan"]),
+		);
+		assert.equal(presentation.kind, "bitplan");
+		assert.equal(presentation.name, "BitPlan Document");
+		assert.equal(presentation.contentLabel, "BitPlan Document");
+		assert.equal(presentation.artworkUrl, undefined);
+	});
+
+	test("uses indexed package metadata for Theme Tokens", () => {
+		const presentation = getOrdinalPresentation(output(`${txid}.1`, []), {
+			outpoint: `${txid}.1`,
+			origin: `${txid}.1`,
+			sequence: 0,
+			contentType: "ord-fs/json",
+			contentLength: 19,
+			map: { app: "theme-token", name: "Nightrider" },
+		});
+		assert.equal(presentation.kind, "theme-token");
+		assert.equal(presentation.name, "Nightrider");
+		assert.equal(
+			presentation.artworkUrl,
+			`https://themetoken.dev/og/${txid}_1.png?v=2`,
+		);
+		assert.equal(presentation.href, `https://themetoken.dev/preview/${txid}_1`);
 	});
 });
