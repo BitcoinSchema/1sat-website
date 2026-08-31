@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import type { WalletOutput } from "@1sat/actions";
 import { getOrdinalPresentation } from "../lib/wallet/ordinal-presentation";
+import { getOwnedThemeTokens } from "../lib/wallet/theme-tokens";
 import {
 	classifyContent,
 	getDisplayOutpoint,
@@ -65,5 +66,45 @@ describe("wallet ordinal display metadata", () => {
 			`https://themetoken.dev/og/${txid}_1.png?v=2`,
 		);
 		assert.equal(presentation.href, `https://themetoken.dev/preview/${txid}_1`);
+	});
+
+	test("lists owned Theme Tokens once by canonical origin", () => {
+		const themes = getOwnedThemeTokens(
+			[output(`${txid}.1`, []), output(`${txid}.2`, [])],
+			{
+				[`${txid}_1:-2`]: {
+					outpoint: `${txid}.1`,
+					origin: `${txid}.0`,
+					sequence: 0,
+					contentType: "ord-fs/json",
+					contentLength: 19,
+					map: {
+						app: "theme-token",
+						type: "registry:theme",
+						name: "Nightrider",
+					},
+				},
+				[`${txid}_2:-2`]: {
+					outpoint: `${txid}.2`,
+					origin: `${txid}.0`,
+					sequence: 1,
+					contentType: "ord-fs/json",
+					contentLength: 20,
+					map: {
+						app: "theme-token",
+						type: "registry:theme",
+						name: "Nightrider",
+					},
+				},
+			},
+		);
+
+		assert.deepEqual(themes, [
+			{
+				origin: `${txid}_0`,
+				name: "Nightrider",
+				artworkUrl: `https://themetoken.dev/og/${txid}_0.png?v=2`,
+			},
+		]);
 	});
 });

@@ -3,7 +3,8 @@
 import { ChevronRight, Keyboard, Palette, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+import { ThemeTokenPicker } from "@/components/settings/theme-token-picker";
 import {
 	Card,
 	CardContent,
@@ -18,11 +19,11 @@ import { useSound } from "@/hooks/use-sound";
 export function SettingsForm() {
 	const { play } = useSound();
 	const { theme, setTheme } = useTheme();
-	const [mounted, setMounted] = useState(false);
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
+	const mounted = useSyncExternalStore(
+		() => () => {},
+		() => true,
+		() => false,
+	);
 
 	if (!mounted) return null;
 
@@ -55,6 +56,8 @@ export function SettingsForm() {
 					</div>
 				</CardContent>
 			</Card>
+
+			<ThemeTokenPicker />
 
 			{/* Wallet Settings Link */}
 			<Link
