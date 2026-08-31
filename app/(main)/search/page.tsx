@@ -8,7 +8,6 @@ import {
 	PageTitle,
 } from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	parseSearchCursor,
 	type SearchState,
@@ -19,6 +18,7 @@ import {
 	stackContentUrl,
 	toUrlOutpoint,
 } from "@/lib/stack";
+import { SearchForm } from "./search-form";
 
 export const metadata = {
 	title: "Search - 1Sat",
@@ -104,17 +104,7 @@ export default async function SearchPage({
 				</div>
 			</PageHeader>
 			<PageContent className="space-y-8">
-				<form action="/search" className="flex max-w-2xl gap-2" method="get">
-					<Input
-						aria-label="Search query"
-						defaultValue={query}
-						maxLength={200}
-						name="q"
-						placeholder="Outpoint, txid, OpNS name, or listing name"
-						required
-					/>
-					<Button type="submit">Search</Button>
-				</form>
+				<SearchForm query={query} />
 
 				{tooLong && (
 					<p className="text-destructive" role="alert">

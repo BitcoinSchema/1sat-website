@@ -198,7 +198,7 @@ export default function WalletDiagnosticsPage() {
 							}
 							disabled={!toolbox.isInitialized || pendingAction !== null}
 						>
-							<RefreshCw className="mr-2 size-4" />
+							<RefreshCw className="mr-2 size-4" data-icon="inline-start" />
 							Retry sync
 						</Button>
 						<Button
@@ -241,7 +241,7 @@ export default function WalletDiagnosticsPage() {
 							onClick={clearSyncEvents}
 							disabled={syncEvents.length === 0}
 						>
-							<Trash2 className="mr-2 size-4" />
+							<Trash2 className="mr-2 size-4" data-icon="inline-start" />
 							Clear
 						</Button>
 					</CardHeader>

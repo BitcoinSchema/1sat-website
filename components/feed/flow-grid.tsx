@@ -344,6 +344,22 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 			</p>
 		);
 	}
+	if (allArtifacts.length === 0) {
+		return (
+			<div className="space-y-4 py-20 text-center" role="status">
+				<p className="text-muted-foreground">No market activity yet.</p>
+				{hasNextPage && (
+					<Button
+						disabled={isFetchingNextPage}
+						onClick={() => void fetchNextPage()}
+						variant="outline"
+					>
+						{isFetchingNextPage ? "Loading…" : "Check for more activity"}
+					</Button>
+				)}
+			</div>
+		);
+	}
 	return (
 		<>
 			<div className={`relative ${className}`}>
@@ -356,25 +372,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 							{isFetchingNextPage && <LoadingSkeleton count={2} />}
 						</div>
 					))}
-
-					{allArtifacts.length === 0 && !isFetchingNextPage && (
-						<div className="w-full text-center py-20 text-muted-foreground col-span-full">
-							No artifacts found.
-						</div>
-					)}
 				</div>
-
-				{/* Initial loading state */}
-				{allArtifacts.length === 0 && isFetchingNextPage && (
-					<div className="flex gap-4">
-						{Array.from({ length: columnCount }).map((_, i) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton columns are static
-							<div key={i} className="flex-1">
-								<LoadingSkeleton count={5} />
-							</div>
-						))}
-					</div>
-				)}
 				{hasNextPage && (
 					<div className="mt-6 text-center">
 						<Button
