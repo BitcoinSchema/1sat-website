@@ -1,20 +1,44 @@
 "use client";
 
 import { ArrowRight, Globe, Shield, Smartphone, Wallet } from "lucide-react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
+import { useMediaQuery } from "usehooks-ts";
 import { EncryptionGrid } from "@/components/landing/encryption-grid";
-import { Logo3D } from "@/components/landing/logo-3d";
 import { ThreeBoundary } from "@/components/landing/three-boundary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSound } from "@/hooks/use-sound";
 import { useWallet } from "@/providers/wallet-provider";
-import { SharedPresence } from "./shared-presence";
-import { TradeRequestListener } from "./trade-request-listener";
+
+function StaticLogo() {
+	return (
+		<div className="flex h-[280px] items-center justify-center md:h-[360px]">
+			<Image
+				alt="1Sat Wallet"
+				fetchPriority="high"
+				height={160}
+				priority
+				src="/oneSatLogoDark.svg"
+				width={160}
+			/>
+		</div>
+	);
+}
+
+const Logo3D = dynamic(
+	() => import("@/components/landing/logo-3d").then(({ Logo3D }) => Logo3D),
+	{ ssr: false, loading: StaticLogo },
+);
 
 export function LandingHero() {
-	const { hasWallet, isWalletLocked } = useWallet();
+	const { hasWallet } = useWallet();
 	const { play } = useSound();
+	const useStaticLogo = useMediaQuery(
+		"(max-width: 767px), (prefers-reduced-motion: reduce)",
+		{ initializeWithValue: false },
+	);
 
 	return (
 		<div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background selection:bg-primary/20">
@@ -22,22 +46,18 @@ export function LandingHero() {
 			<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background z-0" />
 			<EncryptionGrid />
 
-			{/* Main Content - Lower Z-Index so SharedPresence can float on top if needed, 
-                but SharedPresence is pointer-events-none wrapper. 
-                Actually, SharedPresence needs to be on top to capture clicks on cursors.
-            */}
 			<div className="relative z-10 text-center w-full animate-in fade-in duration-1000">
 				{/* Hero Content */}
 				<div>
 					<ThreeBoundary>
-						<Logo3D />
+						{useStaticLogo ? <StaticLogo /> : <Logo3D />}
 					</ThreeBoundary>
 
 					<p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
-						Satoshi's favorite asset wallet (soon™).
+						Satoshi's favorite asset wallet.
 						<br />
-						Trade with peers.{" "}
-						<span className="text-primary">No servers. No middleman.</span>
+						Use it here or connect a compatible wallet.{" "}
+						<span className="text-primary">One BRC-100 interface.</span>
 					</p>
 				</div>
 
@@ -54,8 +74,8 @@ export function LandingHero() {
 									<Wallet className="mr-2 w-6 h-6" /> Browser Wallet
 								</Link>
 							) : (
-								<Link href="/wallet/create">
-									<Wallet className="mr-2 w-6 h-6" /> Browser Wallet
+								<Link href="/wallet">
+									<Wallet className="mr-2 w-6 h-6" /> Choose Wallet
 								</Link>
 							)}
 						</Button>
@@ -104,28 +124,16 @@ export function LandingHero() {
 								<div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
 									<Shield className="w-6 h-6 text-primary" />
 								</div>
-								<CardTitle className="text-xl">Your keys</CardTitle>
+								<CardTitle className="text-xl">BRC-100 Connections</CardTitle>
 							</CardHeader>
 							<CardContent className="text-muted-foreground">
-								Two wallets. We never hold your keys. Restore a phrase only if
-								you want the same wallet on both.
+								Connect 1Sat Desktop, Yours, or another compatible wallet
+								without importing its keys into this site.
 							</CardContent>
 						</Card>
 					</div>
 				</div>
 			</div>
-
-			{/* Shared Presence Overlay - Z-Index 50 to sit on top of content and 3D elements */}
-			{/* Key forces remount when wallet state changes so presence reconnects with new userId */}
-			<div
-				className="absolute inset-0 z-50 pointer-events-none"
-				key={`presence-${isWalletLocked}`}
-			>
-				<SharedPresence />
-			</div>
-
-			{/* Trade request listener for incoming notifications */}
-			<TradeRequestListener />
 		</div>
 	);
 }

@@ -38,8 +38,10 @@ Validation rules:
 - `Origin` must be `https` in production.
 - `http://localhost` and `http://127.0.0.1` are allowed in non-production.
 - `redirect_uri` must be absolute URL with matching origin to `Origin`.
-- `call` must be an allowed CWI method.
-- PKCE challenge and method validated (`S256` or `plain`).
+- `call` must be one of the 28 methods in the public
+  `@bsv/sdk/wallet/substrates/WalletWireCalls` registry. Non-standard methods
+  such as `getBalance` are rejected; balance consumers use `listOutputs`.
+- PKCE challenge and method are validated (`S256` only).
 - Args payload limited to `MAX_CWI_ARGS_BYTES`.
 
 ## 2) Wallet Authorize UI
@@ -50,7 +52,7 @@ Behavior:
 - Loads request details via `GET /api/cwi/authorize/request`.
 - Requires unlocked wallet.
 - On approve:
-  - executes CWI method through `WalletPermissionsManager` (or direct wallet balance call)
+  - executes the standard CWI method through `WalletPermissionsManager`
   - stores one-time code artifact
   - redirects to callback with `code` + `state`
 - On deny/error:
@@ -63,7 +65,9 @@ Success:
 - `?code=<one-time-code>&state=<state>`
 
 Failure:
-- `?error=<error>&error_description=<description>&state=<state>`
+- `?error=<error>&error_description=<description>&error_code=<numeric-code>&state=<state>`
+- `error_stack` is included only in non-production environments when the
+  originating wallet error provides one.
 
 No operation result is returned in URL params.
 
@@ -126,7 +130,7 @@ Optional environment overrides:
 - `CWI_BASE_URL` (default: `http://localhost:8255`)
 - `CWI_DAPP_ORIGIN` (default: `http://localhost:3333`)
 - `CWI_REDIRECT_URI` (default: `http://localhost:3333/cwi/callback`)
-- `CWI_APPROVE_CALL` (default: `getBalance`)
+- `CWI_APPROVE_CALL` (default: `getNetwork`)
 - `CWI_APPROVE_ARGS` (JSON string; default: `{}`)
 
 The harness verifies:
@@ -134,4 +138,4 @@ The harness verifies:
 - approval callback (`code` + `state`)
 - token exchange success
 - replay rejection for consumed code
-- denial callback (`error` + `error_description` + `state`)
+- denial callback (`error` + `error_description` + `error_code` + `state`)

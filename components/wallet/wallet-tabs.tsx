@@ -3,9 +3,10 @@
 import {
 	AtSign,
 	CircleDollarSign,
-	Coins,
+	Fingerprint,
 	Gem,
 	History,
+	ShieldCheck,
 	Wallet,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -17,7 +18,18 @@ const tabs = [
 	{ value: "overview", label: "Wallet", href: "/wallet", icon: Wallet },
 	{ value: "ordinals", label: "Ordinals", href: "/wallet/ordinals", icon: Gem },
 	{ value: "opns", label: "OpNS", href: "/wallet/opns", icon: AtSign },
-	{ value: "bsv20", label: "BSV20", href: "/wallet/bsv20", icon: Coins },
+	{
+		value: "identity",
+		label: "Identity",
+		href: "/wallet/identity",
+		icon: Fingerprint,
+	},
+	{
+		value: "certificates",
+		label: "Certificates",
+		href: "/wallet/certificates",
+		icon: ShieldCheck,
+	},
 	{
 		value: "bsv21",
 		label: "BSV21",

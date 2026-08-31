@@ -1,27 +1,12 @@
 "use client";
 
-import { createContext, sendBsv } from "@1sat/actions";
 import { PrivateKey } from "@bsv/sdk";
-import {
-	ArrowDown,
-	Check,
-	Copy,
-	Import,
-	Loader2,
-	Plus,
-	QrCode,
-	Send,
-	Wallet,
-	X,
-} from "lucide-react";
+import { Cable, Copy, Import, Loader2, Plus, Wallet } from "lucide-react";
 import Link from "next/link";
-import { QRCodeSVG } from "qrcode.react";
 import * as React from "react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { NavUser } from "@/components/nav-user";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Sidebar,
 	SidebarContent,
@@ -38,14 +23,6 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import {
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-	SoundDialog,
-} from "@/components/ui/sound-dialog";
-import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
@@ -56,34 +33,46 @@ import { UnlockWalletDialog } from "@/components/wallet/unlock-wallet-dialog";
 import { useCopyWithSound } from "@/hooks/use-copy-with-sound";
 import { useSound } from "@/hooks/use-sound";
 import { PRIVACY_MODE_KEY } from "@/lib/constants";
+import { useStackFeatures } from "@/lib/hooks/use-stack-features";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
+import type { StackFeature } from "@/lib/stack-features";
 import { useSettingsStorage } from "@/lib/wallet-storage";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
-const navData = [
+interface WalletNavItem {
+	title: string;
+	url: string;
+	shortcut?: string;
+	feature?: StackFeature;
+}
+
+const navData: Array<{
+	title: string;
+	icon: typeof Wallet;
+	items: WalletNavItem[];
+}> = [
 	{
 		title: "Wallet",
 		icon: Wallet,
 		items: [
 			{
-				title: "My Listings",
-				url: "/listings",
-				shortcut: "g l",
+				title: "Identity",
+				url: "/wallet/identity",
+				shortcut: "g i",
+				feature: "identity",
 			},
 			{
 				title: "Ordinals",
 				url: "/wallet/ordinals",
 				shortcut: "g o",
-			},
-			{
-				title: "BSV20",
-				url: "/wallet/bsv20",
-				shortcut: "g 2",
+				feature: "ordinals",
 			},
 			{
 				title: "BSV21",
 				url: "/wallet/bsv21",
 				shortcut: "g 1",
+				feature: "bsv21",
 			},
 			{
 				title: "History",
@@ -106,10 +95,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		hasActiveSync: isSyncing,
 		exchangeRate,
 		depositAddress,
-		wallet,
-		services,
-		chain,
-		refreshBalance,
+		isInitialized,
+		isInitializing,
+		connectExternalWallet,
+		connectionMode,
 	} = useWalletToolbox();
 
 	const [isPrivacyModeEnabled] = useSettingsStorage<boolean>(
@@ -120,6 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const [, copy] = useCopyWithSound();
 	const { play } = useSound();
 	const { isMobile, setOpenMobile } = useSidebar();
+	const featuresQuery = useStackFeatures();
 
 	// Navigation from the sidebar must close the mobile sheet — otherwise the
 	// overlay stays on top of the new page and taps appear to do nothing
@@ -129,55 +119,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	};
 	const [copiedAddress, setCopiedAddress] = useState(false);
 
-	const [sendRecipient, setSendRecipient] = useState("");
-	const [sendAmount, setSendAmount] = useState("");
-	const [sendStatus, setSendStatus] = useState<
-		"idle" | "sending" | "success" | "error"
-	>("idle");
-	const [sendResult, setSendResult] = useState<string>("");
-	const [sendDialogOpen, setSendDialogOpen] = useState(false);
-
-	const handleSend = useCallback(async () => {
-		if (!wallet || !sendRecipient || !sendAmount) return;
-		const satoshis = Math.round(Number.parseFloat(sendAmount) * 100_000_000);
-		if (satoshis <= 0 || Number.isNaN(satoshis)) return;
-
-		setSendStatus("sending");
-		setSendResult("");
-
-		const ctx = createContext(wallet, {
-			services: services ?? undefined,
-			chain,
-		});
-		const isPaymail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sendRecipient);
-		const result = await sendBsv.execute(ctx, {
-			requests: [
-				isPaymail
-					? { paymail: sendRecipient, satoshis }
-					: { address: sendRecipient, satoshis },
-			],
-		});
-
-		if (result.error) {
-			setSendStatus("error");
-			setSendResult(result.error);
-			play("error");
-		} else {
-			setSendStatus("success");
-			setSendResult(result.txid || "");
-			play("success");
-			refreshBalance?.();
-		}
-	}, [
-		wallet,
-		services,
-		chain,
-		sendRecipient,
-		sendAmount,
-		play,
-		refreshBalance,
-	]);
-
 	const bsvBalance = balance ? balance.total / 100_000_000 : 0;
 	const usdBalance = exchangeRate ? bsvBalance * exchangeRate : 0;
 
@@ -185,8 +126,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		if (!walletKeys?.payPk) return "";
 		try {
 			return PrivateKey.fromWif(walletKeys.payPk).toAddress().toString();
-		} catch (e) {
-			console.error("Error deriving pay address:", e);
+		} catch {
+			reportDiagnostic({
+				category: "provider",
+				code: "provider.failed",
+				operation: "wallet.address.pay",
+				recoverable: true,
+			});
 			return "";
 		}
 	}, [walletKeys]);
@@ -195,14 +141,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		if (!walletKeys?.identityPk) return "";
 		try {
 			return PrivateKey.fromWif(walletKeys.identityPk).toAddress().toString();
-		} catch (e) {
-			console.error("Error deriving identity address:", e);
+		} catch {
+			reportDiagnostic({
+				category: "provider",
+				code: "provider.failed",
+				operation: "wallet.address.identity",
+				recoverable: true,
+			});
 			return "";
 		}
 	}, [walletKeys]);
 
-	const resolvedDepositAddress =
-		depositAddress || identityAddress || payAddress;
+	const isExternal = connectionMode === "external";
+	const resolvedDepositAddress = isExternal
+		? ""
+		: depositAddress || identityAddress || payAddress;
 
 	const handleCopyAddress = () => {
 		copy(resolvedDepositAddress);
@@ -228,7 +181,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	}
 
 	// State 1: No Wallet (Create/Import)
-	if (!hasWallet) {
+	if (!hasWallet && !isInitialized) {
 		return (
 			<Sidebar {...props}>
 				<SidebarHeader className="p-4 pb-0">
@@ -236,30 +189,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<Wallet className="h-8 w-8 text-muted-foreground" />
 						<p className="text-sm text-muted-foreground">No Wallet</p>
 						<div className="grid grid-cols-1 gap-2 w-full">
-							<Link href="/wallet/create" className="w-full">
-								<Button
-									variant="outline"
-									className="w-full"
-									onClick={handleNav}
-								>
+							<Button
+								className="w-full"
+								disabled={isInitializing}
+								onClick={() => void connectExternalWallet()}
+							>
+								{isInitializing ? (
+									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+								) : (
+									<Cable className="h-4 w-4 mr-2" />
+								)}
+								Connect BRC-100
+							</Button>
+							<Button asChild className="w-full" variant="outline">
+								<Link href="/wallet/create" onClick={handleNav}>
 									<Plus className="h-4 w-4 mr-2" /> Create New
-								</Button>
-							</Link>
-							<Link href="/wallet/import" className="w-full">
-								<Button
-									variant="ghost"
-									className="w-full"
-									onClick={handleNav}
-								>
+								</Link>
+							</Button>
+							<Button asChild className="w-full" variant="ghost">
+								<Link href="/wallet/import" onClick={handleNav}>
 									<Import className="h-4 w-4 mr-2" /> Import Existing
-								</Button>
-							</Link>
+								</Link>
+							</Button>
 						</div>
 					</div>
 				</SidebarHeader>
 				<SidebarContent>
 					<div className="p-4 text-sm text-muted-foreground text-center">
-						Create or import a wallet to get started.
+						Connect a wallet, or create one in this browser.
 					</div>
 				</SidebarContent>
 				<SidebarRail />
@@ -267,7 +224,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		);
 	}
 
-	const activeAddress = resolvedDepositAddress || identityAddress || payAddress;
+	const activeAddress = isExternal
+		? ""
+		: resolvedDepositAddress || identityAddress || payAddress;
 
 	// State 3: Unlocked (or Locked but covered by overlay)
 	return (
@@ -286,16 +245,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</span>
 						<div className="flex items-baseline gap-2">
 							<span className="text-2xl font-bold tracking-tight">
-								{isPrivacyModeEnabled
-									? "*****"
-									: usdBalance
-										? `$${usdBalance.toFixed(2)}`
-										: "$ ---"}
+								{isExternal
+									? "Provider-managed"
+									: isPrivacyModeEnabled
+										? "*****"
+										: usdBalance
+											? `$${usdBalance.toFixed(2)}`
+											: "$ ---"}
 							</span>
-							<span className="text-sm text-muted-foreground">USD</span>
+							{!isExternal && (
+								<span className="text-sm text-muted-foreground">USD</span>
+							)}
 						</div>
 						<span className="text-sm text-muted-foreground">
-							{isPrivacyModeEnabled ? "*****" : `${bsvBalance.toFixed(8)} BSV`}
+							{isExternal
+								? "Balance stays in the connected wallet"
+								: isPrivacyModeEnabled
+									? "*****"
+									: `${bsvBalance.toFixed(8)} BSV`}
 						</span>
 					</Link>
 
@@ -303,10 +270,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<div className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-muted/50 p-2">
 							<div className="flex flex-col overflow-hidden">
 								<span className="text-[10px] font-medium text-muted-foreground uppercase">
-									Deposit Address
+									{isExternal ? "Receive" : "Deposit Address"}
 								</span>
 								<span className="truncate font-mono text-xs text-foreground/80">
-									{resolvedDepositAddress || "Locked"}
+									{isExternal
+										? "Managed by connected wallet"
+										: resolvedDepositAddress || "Locked"}
 								</span>
 							</div>
 							<TooltipProvider>
@@ -333,166 +302,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</TooltipProvider>
 						</div>
 					</div>
-
-					<div className="grid grid-cols-2 gap-2">
-						<SoundDialog>
-							<DialogTrigger asChild>
-								<Button
-									size="sm"
-									className="w-full gap-2"
-									onClick={() => play("click")}
-								>
-									<ArrowDown className="h-4 w-4" /> Deposit
-								</Button>
-							</DialogTrigger>
-							<DialogContent>
-								<DialogHeader>
-									<DialogTitle>Deposit Funds</DialogTitle>
-									<DialogDescription>
-										Send BSV to this address to deposit funds into your wallet.
-									</DialogDescription>
-								</DialogHeader>
-								<div className="flex flex-col items-center gap-4 py-4">
-									{/* bg-white is intentional: QR codes require white background for scanner contrast */}
-									<div className="p-4 bg-white rounded-lg flex items-center justify-center shadow-sm">
-										{resolvedDepositAddress ? (
-											<QRCodeSVG
-												value={resolvedDepositAddress}
-												size={180}
-												className="h-48 w-48"
-											/>
-										) : (
-											<div className="h-48 w-48 bg-muted rounded-lg flex items-center justify-center">
-												<QrCode className="h-24 w-24 text-muted-foreground" />
-											</div>
-										)}
-									</div>
-									<div className="w-full space-y-2">
-										<Label htmlFor="address" className="sr-only">
-											Address
-										</Label>
-										<div className="flex gap-2">
-											<Input
-												id="address"
-												value={resolvedDepositAddress || "Loading..."}
-												readOnly
-												className="font-mono text-xs"
-											/>
-											<Button
-												size="icon"
-												variant="outline"
-												onClick={handleCopyAddress}
-											>
-												<Copy className="h-4 w-4" />
-											</Button>
-										</div>
-									</div>
-								</div>
-							</DialogContent>
-						</SoundDialog>
-
-						<SoundDialog
-							open={sendDialogOpen}
-							onOpenChange={(open) => {
-								setSendDialogOpen(open);
-								if (!open) {
-									setSendRecipient("");
-									setSendAmount("");
-									setSendStatus("idle");
-									setSendResult("");
-								}
-							}}
-						>
-							<DialogTrigger asChild>
-								<Button
-									size="sm"
-									variant="outline"
-									className="w-full gap-2"
-									onClick={() => play("click")}
-								>
-									<Send className="h-4 w-4" /> Send
-								</Button>
-							</DialogTrigger>
-							<DialogContent>
-								<DialogHeader>
-									<DialogTitle>Send Funds</DialogTitle>
-									<DialogDescription>
-										Enter a recipient address or paymail and amount to send.
-									</DialogDescription>
-								</DialogHeader>
-								{sendStatus === "success" ? (
-									<div className="flex flex-col items-center gap-3 py-4">
-										<Check className="h-8 w-8 text-green-500" />
-										<p className="text-sm font-medium">Transaction sent!</p>
-										<p className="text-xs text-muted-foreground font-mono break-all">
-											{sendResult}
-										</p>
-									</div>
-								) : sendStatus === "error" ? (
-									<div className="flex flex-col items-center gap-3 py-4">
-										<X className="h-8 w-8 text-destructive" />
-										<p className="text-sm font-medium">Send failed</p>
-										<p className="text-xs text-muted-foreground">
-											{sendResult}
-										</p>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => setSendStatus("idle")}
-										>
-											Try Again
-										</Button>
-									</div>
-								) : (
-									<>
-										<div className="grid gap-4 py-4">
-											<div className="grid gap-2">
-												<Label htmlFor="recipient">Recipient</Label>
-												<Input
-													id="recipient"
-													placeholder="1A1z... or user@example.com"
-													value={sendRecipient}
-													onChange={(e) => setSendRecipient(e.target.value)}
-													disabled={sendStatus === "sending"}
-												/>
-											</div>
-											<div className="grid gap-2">
-												<Label htmlFor="amount">Amount (BSV)</Label>
-												<Input
-													id="amount"
-													placeholder="0.00"
-													type="number"
-													step="0.00000001"
-													min="0"
-													value={sendAmount}
-													onChange={(e) => setSendAmount(e.target.value)}
-													disabled={sendStatus === "sending"}
-												/>
-											</div>
-										</div>
-										<Button
-											className="w-full"
-											onClick={handleSend}
-											disabled={
-												sendStatus === "sending" ||
-												!sendRecipient ||
-												!sendAmount
-											}
-										>
-											{sendStatus === "sending" ? (
-												<>
-													<Loader2 className="h-4 w-4 animate-spin mr-2" />{" "}
-													Sending...
-												</>
-											) : (
-												"Confirm Send"
-											)}
-										</Button>
-									</>
-								)}
-							</DialogContent>
-						</SoundDialog>
-					</div>
 				</div>
 			</SidebarHeader>
 			<SidebarSeparator className="my-4" />
@@ -503,20 +312,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<SidebarGroupLabel>{group.title}</SidebarGroupLabel>
 						<SidebarGroupContent>
 							<SidebarMenu>
-								{group.items.map((item) => (
-									<SidebarMenuItem key={item.title}>
-										<SidebarMenuButton asChild>
-											<Link href={item.url} onClick={handleNav}>
-												{item.title}
-												{item.shortcut && (
-													<span className="ml-auto text-xs tracking-widest text-muted-foreground hidden md:block">
-														{item.shortcut}
+								{group.items.map((item) => {
+									const available =
+										!item.feature ||
+										featuresQuery.data?.features[item.feature] === true;
+									return (
+										<SidebarMenuItem key={item.title}>
+											{available ? (
+												<SidebarMenuButton asChild>
+													<Link href={item.url} onClick={handleNav}>
+														{item.title}
+														{item.shortcut && (
+															<span className="ml-auto hidden text-xs tracking-widest text-muted-foreground md:block">
+																{item.shortcut}
+															</span>
+														)}
+													</Link>
+												</SidebarMenuButton>
+											) : (
+												<SidebarMenuButton disabled>
+													<span>{item.title}</span>
+													<span
+														aria-live="polite"
+														className="ml-auto text-[10px] text-muted-foreground"
+														role="status"
+													>
+														{featuresQuery.isLoading
+															? "Checking"
+															: "Unavailable"}
 													</span>
-												)}
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								))}
+												</SidebarMenuButton>
+											)}
+										</SidebarMenuItem>
+									);
+								})}
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>

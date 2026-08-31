@@ -1,35 +1,9 @@
-function requirePublicEnv(name: string, value: string | undefined): string {
-	if (!value || value.trim().length === 0) {
-		throw new Error(`${name} environment variable is required`);
-	}
-	return value;
-}
-
-const NEXT_PUBLIC_ORDFS_URL = process.env.NEXT_PUBLIC_ORDFS_URL;
-const NEXT_PUBLIC_API_HOST = process.env.NEXT_PUBLIC_API_HOST;
-const NEXT_PUBLIC_MARKET_API_HOST = process.env.NEXT_PUBLIC_MARKET_API_HOST;
-
-export const ORDFS = requirePublicEnv(
-	"NEXT_PUBLIC_ORDFS_URL",
-	NEXT_PUBLIC_ORDFS_URL,
-);
-export const API_HOST = requirePublicEnv(
-	"NEXT_PUBLIC_API_HOST",
-	NEXT_PUBLIC_API_HOST,
-);
-export const MARKET_API_HOST = requirePublicEnv(
-	"NEXT_PUBLIC_MARKET_API_HOST",
-	NEXT_PUBLIC_MARKET_API_HOST,
-);
-
 export enum FetchStatus {
 	Idle = "idle",
 	Loading = "loading",
 	Success = "success",
 	Error = "error",
 }
-
-export const RESULTS_PER_PAGE = 30;
 
 // Legacy constants for backward compatibility
 export const ENCRYPTION_PREFIX = "ENC:";
@@ -40,9 +14,3 @@ export const OLD_IDENTITY_PK_KEY = "1satik";
 
 export const PRIVACY_MODE_KEY = "privacy_mode";
 export const CURRENCY_KEY = "currency";
-
-export enum Bsv20Status {
-	Invalid = -1,
-	Pending = 0,
-	Valid = 1,
-}

@@ -1,7 +1,8 @@
 import { Loader2, Paperclip } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { FetchStatus, ORDFS } from "@/lib/constants";
+import { FetchStatus } from "@/lib/constants";
+import { stackContentUrl } from "@/lib/stack";
 import { ArtifactType } from "@/lib/util/artifact";
 import JsonArtifact from "./json";
 
@@ -30,7 +31,7 @@ const TextArtifact: React.FC<TextArtifactProps> = ({
 			}
 			try {
 				setFetchTextStatus(FetchStatus.Loading);
-				const result = await fetch(`${ORDFS}/content/${origin}`);
+				const result = await fetch(stackContentUrl(origin));
 				const resultText = await result.text();
 				setFetchTextStatus(FetchStatus.Success);
 				try {

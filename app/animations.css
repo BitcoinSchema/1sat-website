@@ -99,3 +99,21 @@
 		clip-path: inset(50% 0 55% 0);
 	}
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.animate-float,
+	.glitch-text::before,
+	.glitch-text::after,
+	[class*="animate-"] {
+		animation-duration: 0.01ms;
+		animation-iteration-count: 1;
+	}
+
+	[class*="transition"] {
+		transition-duration: 0.01ms;
+	}
+
+	html {
+		scroll-behavior: auto;
+	}
+}

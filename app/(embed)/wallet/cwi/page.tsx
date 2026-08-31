@@ -1,7 +1,12 @@
 "use client";
 
+import type {
+	CounterpartyPermissions,
+	GroupedPermissions,
+	PermissionRequest,
+} from "@bsv/wallet-toolbox-client";
 import { CheckCircle, ShieldAlert, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,27 +21,27 @@ import type {
 	BridgeGroupedPermissionRequest,
 	BridgePermissionRequest,
 } from "@/lib/cwi/bridge";
+import {
+	counterpartyConsentEntries,
+	descriptionConflictsWithAmount,
+	groupedConsentEntries,
+	isCompressedPublicKey,
+	isPermissionRequest,
+	parseCounterpartyPermissions,
+	parseGroupedPermissions,
+	permissionExpiry,
+	selectCounterpartyPermissions,
+	selectGroupedPermissions,
+	spendingRequestAmount,
+} from "@/lib/cwi/consent";
+import type { CWIIndividualGrant } from "@/lib/cwi/types";
 import { useCWIBridge } from "@/lib/hooks/use-cwi-bridge";
 
-function PermissionDetails({ details }: { details: unknown }) {
-	const request = details as {
-		type?: string;
-		protocolID?: [number, string];
-		counterparty?: string;
-		basket?: string;
-		spending?: {
-			satoshis: number;
-			lineItems?: Array<{
-				type: string;
-				description: string;
-				satoshis: number;
-			}>;
-		};
-		certificate?: { certType: string; fields: string[] };
-		reason?: string;
-		privileged?: boolean;
-	};
-
+function PermissionDetails({
+	details: request,
+}: {
+	details: PermissionRequest;
+}) {
 	switch (request.type) {
 		case "protocol":
 			return (
@@ -69,13 +74,14 @@ function PermissionDetails({ details }: { details: unknown }) {
 					)}
 				</div>
 			);
-		case "spending":
+		case "spending": {
 			return (
 				<div className="space-y-1 text-sm">
 					<p className="font-medium">Spending Authorization</p>
 					{request.spending && (
 						<p className="text-muted-foreground">
-							Amount: {request.spending.satoshis.toLocaleString()} satoshis
+							Requested total: {request.spending.satoshis.toLocaleString()}{" "}
+							satoshis
 						</p>
 					)}
 					{request.spending?.lineItems?.map((item) => (
@@ -91,6 +97,7 @@ function PermissionDetails({ details }: { details: unknown }) {
 					)}
 				</div>
 			);
+		}
 		case "certificate":
 			return (
 				<div className="space-y-1 text-sm">
@@ -99,6 +106,9 @@ function PermissionDetails({ details }: { details: unknown }) {
 						<>
 							<p className="text-muted-foreground truncate">
 								Type: {request.certificate.certType}
+							</p>
+							<p className="text-muted-foreground break-all">
+								Verifier: {request.certificate.verifier}
 							</p>
 							<p className="text-muted-foreground">
 								Fields: {request.certificate.fields.join(", ")}
@@ -123,10 +133,24 @@ function PermissionCard({
 }: {
 	permission: BridgePermissionRequest;
 	queueLength: number;
-	onGrant: (id: string) => void;
+	onGrant: (id: string, grant?: CWIIndividualGrant) => void;
 	onDeny: (id: string) => void;
 }) {
-	const details = permission.details as { privileged?: boolean };
+	const details =
+		isPermissionRequest(permission.details) &&
+		permission.details.requestID === permission.requestID &&
+		permission.details.type === permission.permissionType
+			? permission.details
+			: null;
+	const [duration, setDuration] = useState<"thirty-days" | "until-revoked">(
+		"thirty-days",
+	);
+	const spendingAmount = spendingRequestAmount(details);
+	const malformedSpending = details?.type === "spending" && !spendingAmount;
+	const suspiciousSpendingDescription =
+		details?.type === "spending" &&
+		spendingAmount !== null &&
+		descriptionConflictsWithAmount(details.reason, spendingAmount);
 
 	return (
 		<Card className="w-full max-w-sm">
@@ -139,7 +163,13 @@ function PermissionCard({
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="bg-muted/50 rounded-lg p-3">
-					<PermissionDetails details={permission.details} />
+					{details ? (
+						<PermissionDetails details={details} />
+					) : (
+						<p className="text-sm text-destructive">
+							This permission request is malformed and cannot be approved.
+						</p>
+					)}
 				</div>
 				{details?.privileged && (
 					<Badge variant="destructive" className="w-full justify-center">
@@ -152,35 +182,85 @@ function PermissionCard({
 						{queueLength - 1 !== 1 ? "s" : ""}
 					</Badge>
 				)}
-				<div className="flex gap-2">
+				{details && details.type !== "spending" && (
+					<label className="block text-sm space-y-1">
+						<span className="font-medium">Duration</span>
+						<select
+							className="w-full rounded-md border bg-background px-3 py-2"
+							value={duration}
+							onChange={(event) =>
+								setDuration(
+									event.target.value as "thirty-days" | "until-revoked",
+								)
+							}
+						>
+							<option value="thirty-days">30 days</option>
+							<option value="until-revoked">Until revoked</option>
+						</select>
+					</label>
+				)}
+				{malformedSpending && (
+					<p className="text-sm text-destructive">
+						This spending request has an invalid amount and cannot be approved.
+					</p>
+				)}
+				{suspiciousSpendingDescription && (
+					<p className="text-sm text-amber-600">
+						Warning: the description contains a satoshi amount that conflicts
+						with the structured total above.
+					</p>
+				)}
+				<div className="flex flex-wrap gap-2">
 					<Button
 						variant="outline"
 						className="flex-1"
 						onClick={() => onDeny(permission.requestID)}
 					>
-						<X className="h-4 w-4 mr-1" />
+						<X className="h-4 w-4 mr-1" data-icon="inline-start" />
 						Deny
 					</Button>
-					<Button
-						className="flex-1"
-						onClick={() => onGrant(permission.requestID)}
-					>
-						<CheckCircle className="h-4 w-4 mr-1" />
-						Allow
-					</Button>
+					{details?.type === "spending" ? (
+						<>
+							<Button
+								className="flex-1"
+								disabled={malformedSpending}
+								onClick={() =>
+									onGrant(permission.requestID, { ephemeral: true })
+								}
+							>
+								One time
+							</Button>
+							<Button
+								className="flex-1"
+								disabled={malformedSpending}
+								onClick={() =>
+									onGrant(permission.requestID, {
+										ephemeral: false,
+										amount: spendingAmount ?? undefined,
+									})
+								}
+							>
+								Standing monthly
+							</Button>
+						</>
+					) : details ? (
+						<Button
+							className="flex-1"
+							onClick={() =>
+								onGrant(permission.requestID, {
+									ephemeral: false,
+									expiry: permissionExpiry(duration),
+								})
+							}
+						>
+							<CheckCircle className="h-4 w-4 mr-1" data-icon="inline-start" />
+							Allow
+						</Button>
+					) : null}
 				</div>
 			</CardContent>
 		</Card>
 	);
-}
-
-interface GroupedPermissionEntry {
-	protocolID?: [number, string];
-	counterparty?: string;
-	basket?: string;
-	certType?: string;
-	fields?: string[];
-	satoshis?: number;
 }
 
 function GroupedPermissionCard({
@@ -191,48 +271,43 @@ function GroupedPermissionCard({
 }: {
 	permission: BridgeGroupedPermissionRequest;
 	queueLength: number;
-	onGrant: (id: string, granted: unknown) => void;
+	onGrant: (
+		id: string,
+		granted: Partial<GroupedPermissions>,
+		expiry?: number,
+	) => void;
 	onDeny: (id: string) => void;
 }) {
-	const perms = permission.permissions as {
-		description?: string;
-		protocolPermissions?: GroupedPermissionEntry[];
-		basketAccess?: GroupedPermissionEntry[];
-		certificateAccess?: GroupedPermissionEntry[];
-		spendingAuthorization?: GroupedPermissionEntry[];
+	const permissions = useMemo(
+		() => parseGroupedPermissions(permission.permissions),
+		[permission.permissions],
+	);
+	const entries = useMemo(
+		() => (permissions ? groupedConsentEntries(permissions) : []),
+		[permissions],
+	);
+	const [selected, setSelected] = useState<Set<string>>(
+		() => new Set(entries.map((entry) => entry.id)),
+	);
+	const [duration, setDuration] = useState<"thirty-days" | "until-revoked">(
+		"thirty-days",
+	);
+	const selectedNonSpending = [...selected].some((id) => id !== "spending");
+	const suspiciousSpendingDescription = permissions?.spendingAuthorization
+		? descriptionConflictsWithAmount(
+				permissions.spendingAuthorization.description,
+				permissions.spendingAuthorization.amount,
+			)
+		: false;
+
+	const toggle = (id: string) => {
+		setSelected((current) => {
+			const next = new Set(current);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
 	};
-
-	const entries: Array<{ label: string; detail: string }> = [];
-
-	for (const p of perms.protocolPermissions ?? []) {
-		if (p.protocolID) {
-			entries.push({
-				label: "Protocol",
-				detail: `${p.protocolID[1]} (Level ${p.protocolID[0]})${p.counterparty ? ` — ${p.counterparty}` : ""}`,
-			});
-		}
-	}
-	for (const b of perms.basketAccess ?? []) {
-		if (b.basket) {
-			entries.push({ label: "Basket", detail: b.basket });
-		}
-	}
-	for (const c of perms.certificateAccess ?? []) {
-		if (c.certType) {
-			entries.push({
-				label: "Certificate",
-				detail: `${c.certType}${c.fields?.length ? ` (${c.fields.join(", ")})` : ""}`,
-			});
-		}
-	}
-	for (const s of perms.spendingAuthorization ?? []) {
-		if (s.satoshis != null) {
-			entries.push({
-				label: "Spending",
-				detail: `${s.satoshis.toLocaleString()} satoshis`,
-			});
-		}
-	}
 
 	return (
 		<Card className="w-full max-w-sm">
@@ -242,22 +317,67 @@ function GroupedPermissionCard({
 				<CardDescription className="truncate">
 					{permission.originator}
 				</CardDescription>
-				{perms.description && (
-					<p className="text-sm text-muted-foreground">{perms.description}</p>
+				{permissions?.description && (
+					<p className="text-sm text-muted-foreground">
+						{permissions.description}
+					</p>
 				)}
 			</CardHeader>
 			<CardContent className="space-y-4">
-				{entries.length > 0 && (
+				{permissions ? (
 					<div className="bg-muted/50 rounded-lg p-3 space-y-2">
 						{entries.map((entry) => (
-							<div key={`${entry.label}-${entry.detail}`} className="text-sm">
-								<span className="font-medium">{entry.label}: </span>
-								<span className="text-muted-foreground break-all">
-									{entry.detail}
+							<label key={entry.id} className="flex items-start gap-2 text-sm">
+								<input
+									type="checkbox"
+									className="mt-1"
+									checked={selected.has(entry.id)}
+									onChange={() => toggle(entry.id)}
+								/>
+								<span>
+									<span className="font-medium">{entry.label}: </span>
+									<span className="text-muted-foreground break-all">
+										{entry.detail}
+									</span>
+									{entry.description && (
+										<span className="block text-muted-foreground text-xs">
+											{entry.description}
+										</span>
+									)}
 								</span>
-							</div>
+							</label>
 						))}
 					</div>
+				) : (
+					<p className="text-sm text-destructive">
+						This manifest contains malformed or privileged entries and cannot be
+						approved.
+					</p>
+				)}
+				{suspiciousSpendingDescription && (
+					<p className="text-sm text-amber-600">
+						Warning: the spending description conflicts with its structured
+						monthly limit.
+					</p>
+				)}
+				{permissions && selectedNonSpending && (
+					<label className="block text-sm space-y-1">
+						<span className="font-medium">
+							Protocol, basket, and certificate duration
+						</span>
+						<select
+							className="w-full rounded-md border bg-background px-3 py-2"
+							value={duration}
+							onChange={(event) =>
+								setDuration(
+									event.target.value as "thirty-days" | "until-revoked",
+								)
+							}
+						>
+							<option value="thirty-days">30 days</option>
+							<option value="until-revoked">Until revoked</option>
+						</select>
+					</label>
 				)}
 				{queueLength > 1 && (
 					<Badge variant="secondary" className="w-full justify-center">
@@ -271,17 +391,23 @@ function GroupedPermissionCard({
 						className="flex-1"
 						onClick={() => onDeny(permission.requestID)}
 					>
-						<X className="h-4 w-4 mr-1" />
+						<X className="h-4 w-4 mr-1" data-icon="inline-start" />
 						Deny
 					</Button>
 					<Button
 						className="flex-1"
+						disabled={!permissions || selected.size === 0}
 						onClick={() =>
-							onGrant(permission.requestID, permission.permissions)
+							permissions &&
+							onGrant(
+								permission.requestID,
+								selectGroupedPermissions(permissions, selected),
+								selectedNonSpending ? permissionExpiry(duration) : undefined,
+							)
 						}
 					>
-						<CheckCircle className="h-4 w-4 mr-1" />
-						Allow All
+						<CheckCircle className="h-4 w-4 mr-1" data-icon="inline-start" />
+						Allow Selected
 					</Button>
 				</div>
 			</CardContent>
@@ -297,34 +423,37 @@ function CounterpartyPermissionCard({
 }: {
 	permission: BridgeCounterpartyPermissionRequest;
 	queueLength: number;
-	onGrant: (id: string, granted: unknown) => void;
+	onGrant: (
+		id: string,
+		granted: Partial<CounterpartyPermissions>,
+		expiry?: number,
+	) => void;
 	onDeny: (id: string) => void;
 }) {
-	const perms = permission.permissions as {
-		protocols?: Array<{ protocolID?: [number, string] }>;
-		certificates?: Array<{ certType?: string; fields?: string[] }>;
+	const permissions = useMemo(
+		() => parseCounterpartyPermissions(permission.permissions),
+		[permission.permissions],
+	);
+	const entries = useMemo(
+		() => (permissions ? counterpartyConsentEntries(permissions) : []),
+		[permissions],
+	);
+	const [selected, setSelected] = useState<Set<string>>(
+		() => new Set(entries.map((entry) => entry.id)),
+	);
+	const [duration, setDuration] = useState<"thirty-days" | "until-revoked">(
+		"thirty-days",
+	);
+	const validCounterparty = isCompressedPublicKey(permission.counterparty);
+
+	const toggle = (id: string) => {
+		setSelected((current) => {
+			const next = new Set(current);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
 	};
-
-	const entries: Array<{ label: string; detail: string }> = [];
-
-	for (const p of perms.protocols ?? []) {
-		if (p.protocolID) {
-			entries.push({
-				label: "Protocol",
-				detail: `${p.protocolID[1]} (Level ${p.protocolID[0]})`,
-			});
-		}
-	}
-	for (const c of perms.certificates ?? []) {
-		if (c.certType) {
-			entries.push({
-				label: "Certificate",
-				detail: `${c.certType}${c.fields?.length ? ` (${c.fields.join(", ")})` : ""}`,
-			});
-		}
-	}
-
-	const shortKey = `${permission.counterparty.slice(0, 8)}…${permission.counterparty.slice(-8)}`;
 
 	return (
 		<Card className="w-full max-w-sm">
@@ -339,22 +468,55 @@ function CounterpartyPermissionCard({
 				<div className="bg-muted/50 rounded-lg p-3 space-y-2">
 					<div className="text-sm">
 						<span className="font-medium">Counterparty: </span>
-						<span
-							className="text-muted-foreground break-all"
-							title={permission.counterparty}
-						>
-							{shortKey}
+						<span className="text-muted-foreground break-all">
+							{permission.counterparty}
 						</span>
 					</div>
 					{entries.map((entry) => (
-						<div key={`${entry.label}-${entry.detail}`} className="text-sm">
-							<span className="font-medium">{entry.label}: </span>
-							<span className="text-muted-foreground break-all">
-								{entry.detail}
+						<label key={entry.id} className="flex items-start gap-2 text-sm">
+							<input
+								type="checkbox"
+								className="mt-1"
+								checked={selected.has(entry.id)}
+								onChange={() => toggle(entry.id)}
+							/>
+							<span>
+								<span className="font-medium">{entry.label}: </span>
+								<span className="text-muted-foreground break-all">
+									{entry.detail}
+								</span>
+								{entry.description && (
+									<span className="block text-muted-foreground text-xs">
+										{entry.description}
+									</span>
+								)}
 							</span>
-						</div>
+						</label>
 					))}
 				</div>
+				{(!permissions || !validCounterparty) && (
+					<p className="text-sm text-destructive">
+						This PACT request is malformed or is not exclusively Level 2, so it
+						cannot be approved.
+					</p>
+				)}
+				{permissions && validCounterparty && (
+					<label className="block text-sm space-y-1">
+						<span className="font-medium">Trust duration</span>
+						<select
+							className="w-full rounded-md border bg-background px-3 py-2"
+							value={duration}
+							onChange={(event) =>
+								setDuration(
+									event.target.value as "thirty-days" | "until-revoked",
+								)
+							}
+						>
+							<option value="thirty-days">30 days</option>
+							<option value="until-revoked">Until revoked</option>
+						</select>
+					</label>
+				)}
 				{queueLength > 1 && (
 					<Badge variant="secondary" className="w-full justify-center">
 						{queueLength - 1} more pending request
@@ -367,17 +529,23 @@ function CounterpartyPermissionCard({
 						className="flex-1"
 						onClick={() => onDeny(permission.requestID)}
 					>
-						<X className="h-4 w-4 mr-1" />
+						<X className="h-4 w-4 mr-1" data-icon="inline-start" />
 						Deny
 					</Button>
 					<Button
 						className="flex-1"
+						disabled={!permissions || !validCounterparty || selected.size === 0}
 						onClick={() =>
-							onGrant(permission.requestID, permission.permissions)
+							permissions &&
+							onGrant(
+								permission.requestID,
+								selectCounterpartyPermissions(permissions, selected),
+								permissionExpiry(duration),
+							)
 						}
 					>
-						<CheckCircle className="h-4 w-4 mr-1" />
-						Allow
+						<CheckCircle className="h-4 w-4 mr-1" data-icon="inline-start" />
+						Trust Selected
 					</Button>
 				</div>
 			</CardContent>
@@ -441,7 +609,7 @@ export default function CWIPage() {
 					</CardHeader>
 					<CardContent>
 						<Button className="w-full" onClick={grantStorageAccess}>
-							<CheckCircle className="h-4 w-4 mr-1" />
+							<CheckCircle className="h-4 w-4 mr-1" data-icon="inline-start" />
 							Allow Connection
 						</Button>
 					</CardContent>
@@ -455,6 +623,7 @@ export default function CWIPage() {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<GroupedPermissionCard
+					key={activeGroupedPermission.requestID}
 					permission={activeGroupedPermission}
 					queueLength={queueLength}
 					onGrant={grantGroupedPermission}
@@ -469,6 +638,7 @@ export default function CWIPage() {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<CounterpartyPermissionCard
+					key={activeCounterpartyPermission.requestID}
 					permission={activeCounterpartyPermission}
 					queueLength={queueLength}
 					onGrant={grantCounterpartyPermission}
@@ -483,6 +653,7 @@ export default function CWIPage() {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PermissionCard
+					key={activePermission.requestID}
 					permission={activePermission}
 					queueLength={queueLength}
 					onGrant={grantPermission}

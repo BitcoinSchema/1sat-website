@@ -12,6 +12,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isValidRedirectMethod } from "@/lib/cwi/redirect-utils";
+import { toCWIErrorFields } from "@/lib/cwi/types";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
@@ -46,13 +47,8 @@ function AuthorizeContent() {
 	const searchParams = useSearchParams();
 	const requestId = searchParams.get("requestId");
 	const { hasWallet, isWalletLocked, unlockWallet } = useWallet();
-	const {
-		permissionsManager,
-		wallet,
-		isInitialized,
-		isInitializing,
-		exchangeRate,
-	} = useWalletToolbox();
+	const { permissionsManager, isInitialized, isInitializing } =
+		useWalletToolbox();
 
 	const [requestData, setRequestData] = useState<PendingAuthRequest | null>(
 		null,
@@ -125,6 +121,8 @@ function AuthorizeContent() {
 			result?: unknown;
 			error?: string;
 			error_description?: string;
+			error_code?: number;
+			error_stack?: string;
 		}) => {
 			const response = await fetch("/api/cwi/authorize/complete", {
 				method: "POST",
@@ -153,15 +151,6 @@ function AuthorizeContent() {
 		if (!isValidRedirectMethod(requestData.call)) {
 			throw new Error("unknown_method");
 		}
-		if (requestData.call === "getBalance") {
-			if (!wallet) throw new Error("wallet_not_available");
-			const satoshis = await wallet.balance();
-			const usd =
-				exchangeRate != null
-					? Number(((satoshis / 100_000_000) * exchangeRate).toFixed(8))
-					: undefined;
-			return { satoshis, ...(usd !== undefined ? { usd } : {}) };
-		}
 		if (!permissionsManager) {
 			throw new Error("wallet_permissions_manager_not_ready");
 		}
@@ -178,7 +167,7 @@ function AuthorizeContent() {
 		return await (
 			method as (args: unknown, originator: string) => Promise<unknown>
 		).call(permissionsManager, requestData.args ?? {}, requestData.origin);
-	}, [requestData, wallet, exchangeRate, permissionsManager]);
+	}, [requestData, permissionsManager]);
 
 	const redirectToCallback = useCallback((redirectUrl: string) => {
 		window.location.assign(redirectUrl);
@@ -197,18 +186,22 @@ function AuthorizeContent() {
 			});
 			redirectToCallback(completion.redirectUrl);
 		} catch (error) {
-			const description =
-				error instanceof Error ? error.message : "Request execution failed.";
+			const wireError = toCWIErrorFields(
+				error,
+				process.env.NODE_ENV !== "production",
+			);
 			try {
 				const completion = await completeAuthorization({
 					requestId: requestData.requestId,
 					decision: "error",
 					error: "wallet_execution_failed",
-					error_description: description,
+					error_description: wireError.description,
+					error_code: wireError.code,
+					error_stack: wireError.stack,
 				});
 				redirectToCallback(completion.redirectUrl);
 			} catch {
-				setRequestError(description);
+				setRequestError(wireError.description);
 				setIsSubmitting(false);
 			}
 		}
@@ -324,14 +317,23 @@ function AuthorizeContent() {
 					<CardContent>
 						<form onSubmit={handleUnlock} className="space-y-4">
 							<input
+								aria-label="Passphrase"
+								autoComplete="current-password"
 								type="password"
 								value={passphrase}
 								onChange={(event) => setPassphrase(event.target.value)}
 								placeholder="Passphrase"
+								required
 								className="w-full px-3 py-2 rounded-md border bg-background"
 							/>
 							{unlockError && (
-								<p className="text-sm text-destructive">{unlockError}</p>
+								<p
+									aria-live="polite"
+									className="text-sm text-destructive"
+									role="alert"
+								>
+									{unlockError}
+								</p>
 							)}
 							<Button type="submit" className="w-full">
 								Unlock

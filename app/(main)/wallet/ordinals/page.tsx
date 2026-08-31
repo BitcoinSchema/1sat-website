@@ -4,19 +4,19 @@ import {
 	PageHeader,
 	PageTitle,
 } from "@/components/page-layout";
-import WalletFlowGrid from "@/components/wallet/wallet-flow-grid";
+import { OrdinalsGrid } from "@/components/wallet/ordinals-grid";
 import { WalletTabs } from "@/components/wallet/wallet-tabs";
 
 export default function WalletOrdinalsPage() {
 	return (
 		<Page>
 			<PageHeader>
-				<PageTitle>Wallet</PageTitle>
+				<PageTitle>Ordinals</PageTitle>
 			</PageHeader>
 			<PageContent>
 				<WalletTabs>
 					<div className="mt-4">
-						<WalletFlowGrid />
+						<OrdinalsGrid />
 					</div>
 				</WalletTabs>
 			</PageContent>

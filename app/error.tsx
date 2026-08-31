@@ -1,7 +1,6 @@
 "use client";
 
-import { AlertTriangle, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { DiagnosticErrorFallback } from "@/components/diagnostic-error-fallback";
 
 export default function RootError({
 	error,
@@ -11,27 +10,14 @@ export default function RootError({
 	reset: () => void;
 }) {
 	return (
-		<div className="flex min-h-screen items-center justify-center p-6">
-			<div className="mx-auto max-w-md space-y-6 text-center">
-				<div className="flex justify-center">
-					<AlertTriangle className="size-12 text-destructive" />
-				</div>
-				<div className="space-y-2">
-					<h2 className="text-xl font-semibold">Something went wrong</h2>
-					<p className="text-sm text-muted-foreground">
-						An unexpected error occurred. Please try again.
-					</p>
-					{error.digest && (
-						<p className="font-mono text-xs text-muted-foreground">
-							Error ID: {error.digest}
-						</p>
-					)}
-				</div>
-				<Button onClick={reset} variant="outline">
-					<RotateCcw className="mr-2 size-4" />
-					Try again
-				</Button>
-			</div>
-		</div>
+		<DiagnosticErrorFallback
+			error={error}
+			reset={reset}
+			category="route"
+			operation="app.render"
+			title="Something went wrong"
+			description="An unexpected error occurred. Please try again."
+			fullScreen
+		/>
 	);
 }

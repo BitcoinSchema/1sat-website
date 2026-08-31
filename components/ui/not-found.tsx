@@ -87,6 +87,7 @@ export default function NotFound({
           src={imageLight}
           alt="404 Light"
           fill
+		  sizes="100vw"
           className="object-contain dark:hidden"
           priority
         />
@@ -94,16 +95,19 @@ export default function NotFound({
           src={imageDark}
           alt="404 Dark"
           fill
+		  sizes="100vw"
           className="object-contain hidden dark:block"
           priority
         />
       </div>
 
-      <div className="relative z-30 mt-16 md:mt-0">
-        <Link href={buttonHref} onClick={onButtonClick}>
-          <Button variant="default">{buttonText}</Button>
-        </Link>
-      </div>
+			<div className="relative z-30 mt-16 md:mt-0">
+				<Button asChild variant="default">
+					<Link href={buttonHref} onClick={onButtonClick}>
+						{buttonText}
+					</Link>
+				</Button>
+			</div>
     </div>
   );
 }

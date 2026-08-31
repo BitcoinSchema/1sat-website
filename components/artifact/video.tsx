@@ -1,7 +1,7 @@
 import { Play } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { ORDFS } from "@/lib/constants";
+import { stackContentUrl } from "@/lib/stack";
 
 type VideoArtifactProps = {
 	origin?: string;
@@ -17,13 +17,14 @@ const VideoArtifact: React.FC<VideoArtifactProps> = ({
 	thumbnail = false,
 }) => {
 	const [playing, setPlaying] = useState(false);
-	const videoSrc = src ? src : `${ORDFS}/content/${origin}`;
+	const videoSrc = src || (origin ? stackContentUrl(origin) : undefined);
 	const needsHeightConstraint = className?.includes("h-full");
 
 	// Thumbnail mode - show poster image with play button overlay
 	if (thumbnail && !playing) {
 		return (
 			<button
+				aria-label="Play video"
 				type="button"
 				className={`relative cursor-pointer w-full h-full p-0 border-0 bg-transparent ${className || ""}`}
 				onClick={(e) => {

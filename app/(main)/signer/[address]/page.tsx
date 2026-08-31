@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { toBitcoin } from "satoshi-token";
-import { STACK_URL, toUrlOutpoint } from "@/lib/stack";
+import { ownerClient, toUrlOutpoint, txoClient } from "@/lib/stack";
 import { isValidBase58Address } from "@/lib/validation";
 
 // ISR: cache rendered pages at the CDN, revalidate in the background
@@ -11,41 +11,22 @@ export async function generateStaticParams() {
 	return [];
 }
 
-interface OwnedTxo {
-	outpoint: string;
-	score: number;
-	spend?: string;
-	satoshis?: number;
-}
-
 const getOwnerData = async (address: string) => {
-	const [balanceRes, txosRes] = await Promise.all([
-		fetch(`${STACK_URL}/1sat/owner/${address}/balance`, {
-			next: { revalidate: 60 },
-		}).catch(() => null),
-		fetch(
-			`${STACK_URL}/1sat/txo/search?key=${encodeURIComponent(`ev:own:${address}`)}&limit=60&rev=true`,
-			{ next: { revalidate: 60 } },
-		).catch(() => null),
+	const [balance, txos] = await Promise.all([
+		ownerClient.getBalance(address).catch(() => null),
+		txoClient
+			.search(`own:${address}`, {
+				limit: 60,
+				rev: true,
+				sats: true,
+				spend: true,
+			})
+			.catch(() => []),
 	]);
-
-	const balance =
-		balanceRes?.ok === true
-			? ((await balanceRes.json()) as { balance: number; count: number })
-			: null;
-	const txos =
-		txosRes?.ok === true
-			? (((await txosRes.json()) as OwnedTxo[] | null) ?? [])
-			: [];
-
-	return { balance, txos };
+	return { balance, txos: txos ?? [] };
 };
 
-const Signer = async ({
-	params,
-}: {
-	params: Promise<{ address: string }>;
-}) => {
+const Signer = async ({ params }: { params: Promise<{ address: string }> }) => {
 	const { address } = await params;
 	// Reject junk like /signer/null before hitting the upstream API
 	if (!isValidBase58Address(address)) {

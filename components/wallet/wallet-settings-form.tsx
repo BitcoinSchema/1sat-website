@@ -2,6 +2,7 @@
 
 import {
 	Bug,
+	Cable,
 	Eye,
 	EyeOff,
 	Loader2,
@@ -41,6 +42,9 @@ export function WalletSettingsForm() {
 		syncWallet,
 		hasActiveSync: isSyncing,
 		isInitialized,
+		connectionMode,
+		providerType,
+		disconnectExternalWallet,
 	} = useWalletToolbox();
 	const [isPrivacyModeEnabled, setIsPrivacyModeEnabled] =
 		useSettingsStorage<boolean>(PRIVACY_MODE_KEY, false);
@@ -58,6 +62,35 @@ export function WalletSettingsForm() {
 
 	return (
 		<div className="grid gap-6">
+			<Card>
+				<CardHeader>
+					<div className="flex items-center gap-2">
+						<div className="p-2 bg-primary/10 rounded-full">
+							<Cable className="h-6 w-6 text-primary" />
+						</div>
+						<div>
+							<CardTitle>Wallet Connection</CardTitle>
+							<CardDescription>
+								{connectionMode === "external"
+									? `Connected through ${providerType ?? "a BRC-100 provider"}.`
+									: "Using the wallet built into this browser."}
+							</CardDescription>
+						</div>
+					</div>
+				</CardHeader>
+				{connectionMode === "external" && (
+					<CardContent>
+						<Button
+							onClick={() => void disconnectExternalWallet()}
+							variant="outline"
+						>
+							<LogOut className="h-4 w-4 mr-2" />
+							Disconnect External Wallet
+						</Button>
+					</CardContent>
+				)}
+			</Card>
+
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-2">
@@ -91,7 +124,7 @@ export function WalletSettingsForm() {
 									setCurrency(v);
 								}}
 							>
-								<SelectTrigger className="w-[100px]">
+								<SelectTrigger className="w-[100px]" id="currency">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -162,25 +195,27 @@ export function WalletSettingsForm() {
 
 					<Separator />
 
-					<div className="flex items-center justify-between space-x-2">
-						<div className="flex flex-col space-y-1">
-							<Label className="text-base">Connected Apps</Label>
-							<span className="text-sm text-muted-foreground">
-								Review and revoke permissions granted to external apps.
-							</span>
+					{connectionMode === "built-in" && (
+						<div className="flex items-center justify-between space-x-2">
+							<div className="flex flex-col space-y-1">
+								<Label className="text-base">Connected Apps</Label>
+								<span className="text-sm text-muted-foreground">
+									Review and revoke permissions granted to external apps.
+								</span>
+							</div>
+							<Button
+								variant="outline"
+								size="sm"
+								asChild
+								onClick={() => play("click")}
+							>
+								<Link href="/wallet/permissions">
+									<Shield className="h-4 w-4 mr-2" />
+									Manage
+								</Link>
+							</Button>
 						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							asChild
-							onClick={() => play("click")}
-						>
-							<Link href="/wallet/permissions">
-								<Shield className="h-4 w-4 mr-2" />
-								Manage
-							</Link>
-						</Button>
-					</div>
+					)}
 				</CardContent>
 			</Card>
 
@@ -223,36 +258,38 @@ export function WalletSettingsForm() {
 			</Card>
 
 			{/* Danger Zone */}
-			<Card className="border-destructive/50">
-				<CardHeader>
-					<CardTitle className="text-destructive">Danger Zone</CardTitle>
-					<CardDescription>
-						Irreversible actions that affect your wallet access.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center justify-between space-x-2">
-						<div className="flex flex-col space-y-1">
-							<Label className="text-base">Sign Out</Label>
-							<span className="text-sm text-muted-foreground">
-								Remove this wallet from the browser. Ensure you have your
-								recovery phrase backed up.
-							</span>
+			{connectionMode === "built-in" && (
+				<Card className="border-destructive/50">
+					<CardHeader>
+						<CardTitle className="text-destructive">Danger Zone</CardTitle>
+						<CardDescription>
+							Irreversible actions that affect your wallet access.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="flex items-center justify-between space-x-2">
+							<div className="flex flex-col space-y-1">
+								<Label className="text-base">Sign Out</Label>
+								<span className="text-sm text-muted-foreground">
+									Remove this wallet from the browser. Ensure you have your
+									recovery phrase backed up.
+								</span>
+							</div>
+							<Button
+								variant="destructive"
+								size="sm"
+								asChild
+								onClick={() => play("click")}
+							>
+								<Link href="/wallet/delete">
+									<LogOut className="h-4 w-4 mr-2" />
+									Sign Out
+								</Link>
+							</Button>
 						</div>
-						<Button
-							variant="destructive"
-							size="sm"
-							asChild
-							onClick={() => play("click")}
-						>
-							<Link href="/wallet/delete">
-								<LogOut className="h-4 w-4 mr-2" />
-								Sign Out
-							</Link>
-						</Button>
-					</div>
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
+			)}
 		</div>
 	);
 }

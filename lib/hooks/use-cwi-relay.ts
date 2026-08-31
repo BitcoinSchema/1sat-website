@@ -1,13 +1,11 @@
 "use client";
 
-// TODO(cwi): Migrate off internal wallet-toolbox import when stable public exports are available.
 import type {
 	CounterpartyPermissionEventHandler,
 	GroupedPermissionEventHandler,
 	PermissionEventHandler,
-} from "@bsv/wallet-toolbox/out/src/index.client";
+} from "@bsv/wallet-toolbox-client";
 import { useEffect, useRef } from "react";
-import type { PermissionScope } from "@/lib/cwi/permission-store";
 import { CWIRelay } from "@/lib/cwi/relay";
 import { useWallet } from "@/providers/wallet-provider";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
@@ -20,64 +18,31 @@ import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
  * Permission callbacks are bound/unbound as permissionsManager changes.
  */
 export function useCWIRelay(): void {
-	const {
-		wallet: toolboxWallet,
-		permissionsManager,
-		identityKey,
-		chain,
-		balance,
-		exchangeRate,
-	} = useWalletToolbox();
+	const { permissionsManager } = useWalletToolbox();
 	const { hasWallet } = useWallet();
 	const relayRef = useRef<CWIRelay | null>(null);
 
 	// Refs so the relay always reads current state without re-creation
 	const walletRef = useRef(permissionsManager);
-	walletRef.current = permissionsManager;
-
-	const scopeRef = useRef<PermissionScope | null>(
-		identityKey ? { identityKey, chain } : null,
-	);
-	scopeRef.current = identityKey ? { identityKey, chain } : null;
-	const balanceRef = useRef(balance);
-	balanceRef.current = balance;
-	const exchangeRateRef = useRef(exchangeRate);
-	exchangeRateRef.current = exchangeRate;
-	const toolboxWalletRef = useRef(toolboxWallet);
-	toolboxWalletRef.current = toolboxWallet;
 
 	// Derive status from WPM availability; toolbox unlock state can lag
 	// behind the base wallet provider lock flag during import/init.
-	const status: "locked" | "unlocked" | "no-wallet" = walletRef.current
+	const status: "locked" | "unlocked" | "no-wallet" = permissionsManager
 		? "unlocked"
 		: hasWallet
 			? "locked"
 			: "no-wallet";
 	const statusRef = useRef<"locked" | "unlocked" | "no-wallet">(status);
 
+	useEffect(() => {
+		walletRef.current = permissionsManager;
+	}, [permissionsManager]);
+
 	// Single relay instance — lives for the lifetime of the component
 	useEffect(() => {
 		const relay = new CWIRelay({
 			getWallet: () => walletRef.current,
 			getStatus: () => statusRef.current,
-			getPersistenceScope: () => scopeRef.current,
-			getBalance: async () => {
-				let satoshis = balanceRef.current?.total ?? 0;
-				const walletForBalance = toolboxWalletRef.current;
-				if (walletForBalance) {
-					try {
-						satoshis = await walletForBalance.balance();
-					} catch {
-						// Fall back to the latest cached provider balance.
-					}
-				}
-				const rate = exchangeRateRef.current;
-				const usd =
-					rate != null
-						? Number(((satoshis / 100_000_000) * rate).toFixed(8))
-						: undefined;
-				return { satoshis, ...(usd !== undefined ? { usd } : {}) };
-			},
 		});
 		relay.start();
 		relay.sendStatus();

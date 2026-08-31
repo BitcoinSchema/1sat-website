@@ -26,6 +26,7 @@ export default function WalletSettingsPage() {
 					onClick={() => play("click")}
 				>
 					<Link href="/settings">
+						<span className="sr-only">Back to settings</span>
 						<ArrowLeft className="h-4 w-4" />
 					</Link>
 				</Button>

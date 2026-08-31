@@ -23,6 +23,7 @@ import {
 	UnlockingScript,
 	Utils,
 } from "@bsv/sdk";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 
 const MNEE_ATOMIC_MULTIPLIER = 100_000;
 
@@ -176,8 +177,13 @@ export async function getLegacyMneeBalance(
 	try {
 		const balances = await mneeClient.getBalances(addresses);
 		return (balances ?? []).reduce((sum, b) => sum + b.precised, 0);
-	} catch (err) {
-		console.error("[getLegacyMneeBalance]", err);
+	} catch {
+		reportDiagnostic({
+			category: "action",
+			code: "action.failed",
+			operation: "mnee.balance",
+			recoverable: true,
+		});
 		return 0;
 	}
 }
@@ -290,8 +296,13 @@ export async function sweepLegacyMnee(
 		}
 
 		return { ticketId, error: "Timed out waiting for MNEE confirmation" };
-	} catch (err) {
-		console.error("[sweepLegacyMnee]", err);
-		return { error: err instanceof Error ? err.message : "Unknown error" };
+	} catch {
+		reportDiagnostic({
+			category: "action",
+			code: "action.failed",
+			operation: "mnee.sweep",
+			recoverable: true,
+		});
+		return { error: "MNEE sweep failed" };
 	}
 }

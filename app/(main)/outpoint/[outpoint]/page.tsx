@@ -5,6 +5,7 @@ import { toBitcoin } from "satoshi-token";
 import Artifact from "@/components/artifact";
 import BuyButton from "@/components/market/buy-button";
 import {
+	fetchStackCapabilities,
 	listingFromOutput,
 	marketClient,
 	ordfsClient,
@@ -14,9 +15,9 @@ import {
 import type { OrdUtxo } from "@/lib/types/ordinals";
 import { isValidOutpoint } from "@/lib/validation";
 
-// ISR: cache rendered pages at the CDN, revalidate in the background so
-// crawler/repeat traffic doesn't invoke a serverless render every time
-export const revalidate = 60;
+// Detail metadata may be cached briefly. The client buy review independently
+// revalidates the active origin listing immediately before wallet authorization.
+export const revalidate = 30;
 
 export async function generateStaticParams() {
 	return [];
@@ -29,11 +30,19 @@ interface HistoryEntry {
 	events?: string[];
 }
 
-const getDetails = async (outpoint: string) => {
+const getDetails = async (
+	outpoint: string,
+	capabilities: Awaited<ReturnType<typeof fetchStackCapabilities>>,
+) => {
+	const available = new Set(capabilities);
 	const [metadata, txo, directListing] = await Promise.all([
-		ordfsClient.getMetadata(outpoint).catch(() => null),
-		txoClient.get(outpoint).catch(() => null),
-		marketClient.getListing(outpoint).catch(() => null),
+		available.has("ordfs")
+			? ordfsClient.getMetadata(outpoint).catch(() => null)
+			: null,
+		available.has("txo") ? txoClient.get(outpoint).catch(() => null) : null,
+		available.has("market")
+			? marketClient.getListing(outpoint).catch(() => null)
+			: null,
 	]);
 	if (!metadata && !txo && !directListing) return null;
 
@@ -45,19 +54,23 @@ const getDetails = async (outpoint: string) => {
 		outpoint;
 
 	const [originListing, historyRaw] = await Promise.all([
-		directListing
-			? Promise.resolve(null)
-			: marketClient.getListingByOrigin(origin).catch(() => null),
-		txoClient
-			.search(`ev:origin:${origin}`, { limit: 50, rev: true })
-			.catch(() => null),
+		available.has("market")
+			? marketClient.getListingByOrigin(origin).catch(() => null)
+			: null,
+		available.has("txo")
+			? txoClient
+					.search(`ev:origin:${origin}`, { limit: 50, rev: true })
+					.catch(() => null)
+			: null,
 	]);
-	const listing = directListing ?? originListing;
+	// A direct lookup proves what a historical outpoint contained. Only the
+	// active-by-origin lookup proves which listing, if any, may still be bought.
+	const listing = originListing;
 
 	// the stack returns null (Go nil slice) for empty result sets
 	const history: HistoryEntry[] = historyRaw ?? [];
 
-	return { metadata, txo, origin, listing, history };
+	return { metadata, txo, origin, listing, history, available };
 };
 
 const Outpoint = async ({
@@ -70,13 +83,41 @@ const Outpoint = async ({
 		notFound();
 	}
 	const outpoint = toStackOutpoint(rawOutpoint);
+	let capabilities: Awaited<ReturnType<typeof fetchStackCapabilities>>;
+	try {
+		capabilities = await fetchStackCapabilities();
+	} catch {
+		return (
+			<div className="mx-auto w-full max-w-5xl p-4">
+				<h1 className="text-2xl font-bold">Outpoint explorer</h1>
+				<p className="mt-4 text-destructive" role="alert">
+					The stack capability manifest could not be loaded.
+				</p>
+			</div>
+		);
+	}
+	if (
+		!capabilities.includes("txo") &&
+		!capabilities.includes("ordfs") &&
+		!capabilities.includes("market")
+	) {
+		return (
+			<div className="mx-auto w-full max-w-5xl p-4">
+				<h1 className="text-2xl font-bold">Outpoint explorer</h1>
+				<p className="mt-4 text-muted-foreground" role="status">
+					Outpoint exploration is disabled because TXO, ORDFS, and Market
+					capabilities are unavailable.
+				</p>
+			</div>
+		);
+	}
 
-	const details = await getDetails(outpoint);
+	const details = await getDetails(outpoint, capabilities);
 	if (!details) {
 		notFound();
 	}
 
-	const { metadata, origin, listing, history } = details;
+	const { available, metadata, origin, listing, history } = details;
 	const contentType = metadata?.contentType;
 	const mapName =
 		(metadata?.map?.name as string | undefined) ||
@@ -108,20 +149,26 @@ const Outpoint = async ({
 		<div className="mx-auto w-full max-w-5xl p-4">
 			<div className="grid gap-8 md:grid-cols-2">
 				<div className="rounded-md border border-border bg-muted/30 overflow-hidden">
-					<Suspense
-						fallback={
-							<div className="flex items-center justify-center h-64">
-								<Loader2 className="w-6 h-6 animate-spin" />
-							</div>
-						}
-					>
-						<Artifact
-							artifact={artifact}
-							showFooter={false}
-							disableLink
-							clickToZoom
-						/>
-					</Suspense>
+					{available.has("ordfs") ? (
+						<Suspense
+							fallback={
+								<div className="flex items-center justify-center h-64">
+									<Loader2 className="w-6 h-6 animate-spin" />
+								</div>
+							}
+						>
+							<Artifact
+								artifact={artifact}
+								showFooter={false}
+								disableLink
+								clickToZoom
+							/>
+						</Suspense>
+					) : (
+						<p className="p-6 text-muted-foreground" role="status">
+							Content preview is disabled because ORDFS is unavailable.
+						</p>
+					)}
 				</div>
 
 				<div className="flex flex-col gap-4">
@@ -151,7 +198,12 @@ const Outpoint = async ({
 						)}
 					</dl>
 
-					{activeListing?.price ? (
+					{!available.has("market") ? (
+						<div className="text-sm text-muted-foreground" role="status">
+							Listing status is disabled because Market capability is
+							unavailable.
+						</div>
+					) : activeListing?.price ? (
 						<div className="rounded-md border border-primary/40 p-4 flex flex-col gap-3">
 							<div className="text-lg">
 								Listed for{" "}
@@ -175,23 +227,29 @@ const Outpoint = async ({
 				</div>
 			</div>
 
-			{history.length > 0 && (
-				<div className="mt-10">
-					<h2 className="text-lg font-bold mb-3">Timeline</h2>
-					<ul className="flex flex-col gap-1 text-sm font-mono">
-						{history.map((h) => (
-							<li
-								key={h.outpoint}
-								className="flex items-center gap-3 border-b border-border/50 py-1.5"
-							>
-								<span className="break-all">{h.outpoint}</span>
-								<span className="text-muted-foreground text-xs ml-auto shrink-0">
-									{h.spend ? "spent" : "unspent"}
-								</span>
-							</li>
-						))}
-					</ul>
-				</div>
+			{!available.has("txo") ? (
+				<p className="mt-10 text-muted-foreground text-sm" role="status">
+					Timeline is disabled because TXO capability is unavailable.
+				</p>
+			) : (
+				history.length > 0 && (
+					<div className="mt-10">
+						<h2 className="text-lg font-bold mb-3">Timeline</h2>
+						<ul className="flex flex-col gap-1 text-sm font-mono">
+							{history.map((h) => (
+								<li
+									key={h.outpoint}
+									className="flex items-center gap-3 border-b border-border/50 py-1.5"
+								>
+									<span className="break-all">{h.outpoint}</span>
+									<span className="text-muted-foreground text-xs ml-auto shrink-0">
+										{h.spend ? "spent" : "unspent"}
+									</span>
+								</li>
+							))}
+						</ul>
+					</div>
+				)
 			)}
 		</div>
 	);

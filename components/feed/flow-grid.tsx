@@ -13,8 +13,9 @@ import ArtifactModal, {
 import { Button } from "@/components/ui/button";
 import { useSound } from "@/hooks/use-sound";
 import { fetchMarketActivity } from "@/lib/api";
+import { useStackFeatures } from "@/lib/hooks/use-stack-features";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
-import type { OrdUtxo } from "@/lib/types/ordinals";
+import { type ListingData, stackContentUrl, toUrlOutpoint } from "@/lib/stack";
 
 const LoadingSkeleton = ({ count }: { count: number }) => (
 	<>
@@ -28,9 +29,9 @@ const LoadingSkeleton = ({ count }: { count: number }) => (
 );
 
 const getContentType = (
-	artifact: OrdUtxo,
+	artifact: ListingData,
 ): "video" | "audio" | "3d" | "image" => {
-	const contentType = artifact.origin?.data?.insc?.file.type || "";
+	const contentType = artifact.content_type || "";
 	if (contentType.startsWith("video/")) return "video";
 	if (contentType.startsWith("audio/")) return "audio";
 	if (contentType.includes("model/") || contentType.includes("gltf"))
@@ -64,6 +65,7 @@ const useColumnCount = () => {
 
 export default function FlowGrid({ className = "" }: { className?: string }) {
 	const { play } = useSound();
+	const featuresQuery = useStackFeatures();
 	const [visible, setVisible] = useState<Set<string>>(new Set());
 	const [selectedArtifact, setSelectedArtifact] =
 		useState<ArtifactModalItem | null>(null);
@@ -133,16 +135,14 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 		return () => window.removeEventListener("keydown", handleEscape);
 	}, [selectedArtifact, closeModal]);
 
-	const handleCardClick = (e: React.MouseEvent, artifact: OrdUtxo) => {
+	const handleCardClick = (e: React.MouseEvent, artifact: ListingData) => {
 		e.preventDefault();
 		play("click");
 		const modalItem: ArtifactModalItem = {
 			outpoint: artifact.outpoint,
-			originOutpoint: artifact.origin?.outpoint ?? artifact.outpoint,
-			contentType: artifact.origin?.data?.insc?.file.type ?? "",
-			name:
-				(artifact.data?.map?.name as string | undefined) ??
-				(artifact.origin?.data?.map?.name as string | undefined),
+			originOutpoint: artifact.origin ?? artifact.outpoint,
+			contentType: artifact.content_type ?? "",
+			name: artifact.name,
 		};
 		if (
 			typeof document !== "undefined" &&
@@ -164,12 +164,14 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 		}
 	};
 
-	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+	const activityAvailable = featuresQuery.data?.features.activity === true;
+	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
 		useInfiniteQuery({
 			queryKey: ["market-flow"],
 			queryFn: fetchMarketActivity,
 			getNextPageParam: (lastPage) => lastPage.nextCursor,
-			initialPageParam: 0,
+			initialPageParam: undefined as number | undefined,
+			enabled: activityAvailable,
 		});
 
 	const allArtifacts = useMemo(() => {
@@ -177,9 +179,8 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 		const seen = new Set<string>();
 		return flat.filter((artifact) => {
 			if (!artifact?.outpoint) return false;
-			if (!artifact.origin?.outpoint) return false;
-			const outpointStr =
-				artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
+			if (!artifact.origin) return false;
+			const outpointStr = artifact.outpoint;
 			if (seen.has(outpointStr)) return false;
 			seen.add(outpointStr);
 			return true;
@@ -188,7 +189,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 
 	// Distribute artifacts into columns
 	const columns = useMemo(() => {
-		const cols: OrdUtxo[][] = Array.from({ length: columnCount }, () => []);
+		const cols: ListingData[][] = Array.from({ length: columnCount }, () => []);
 		allArtifacts.forEach((artifact, i) => {
 			cols[i % columnCount].push(artifact);
 		});
@@ -213,14 +214,13 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-	const renderArtifact = (artifact: OrdUtxo) => {
-		const outpointStr =
-			artifact.outpoint || `${artifact.txid}_${artifact.vout}`;
-		const originOutpoint = artifact.origin?.outpoint;
+	const renderArtifact = (artifact: ListingData) => {
+		const outpointStr = artifact.outpoint;
+		const originOutpoint = artifact.origin;
 
 		if (!originOutpoint) return null;
 
-		const src = `https://ordfs.network/${originOutpoint}`;
+		const src = stackContentUrl(originOutpoint);
 		const contentType = getContentType(artifact);
 		const imgSrc =
 			contentType === "image" ? getOrdinalThumbnail(originOutpoint, 375) : src;
@@ -234,7 +234,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 			>
 				{/* Main Click Target - Link */}
 				<Link
-					href={`/outpoint/${outpointStr}/timeline`}
+					href={`/outpoint/${toUrlOutpoint(outpointStr)}`}
 					className="absolute inset-0 z-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
 					onClick={(e) => handleCardClick(e, artifact)}
 				>
@@ -244,6 +244,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 				{/* Card Content */}
 				<div className="relative shadow-md bg-card rounded-lg overflow-hidden pointer-events-none">
 					<Button
+						aria-label="Open artifact in new tab"
 						variant="ghost"
 						size="icon"
 						className="absolute top-2 right-2 z-10 h-8 w-8 bg-background/50 hover:bg-background/70 text-foreground pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity"
@@ -251,7 +252,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 							e.preventDefault();
 							e.stopPropagation();
 							window.open(
-								`https://ordfs.network/${artifact.origin?.outpoint}`,
+								stackContentUrl(originOutpoint),
 								"_blank",
 								"noopener,noreferrer",
 							);
@@ -287,7 +288,7 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 					) : (
 						<ImageWithFallback
 							src={imgSrc}
-							alt={`Image ${artifact.txid}`}
+							alt={artifact.name || `Image ${artifact.outpoint}`}
 							className="w-full h-auto"
 							width={375}
 							height={375}
@@ -296,16 +297,53 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 
 					<div className="absolute inset-0 flex flex-col justify-end p-4 text-foreground bg-gradient-to-t from-background via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100 pointer-events-none">
 						<p className="text-base font-bold">
-							{toBitcoin(artifact.data?.list?.price || 0)} BSV
+							{toBitcoin(artifact.price || 0)} BSV
 						</p>
-						<p className="text-sm truncate">
-							{String(artifact.data?.map?.name || "")}
-						</p>
+						<p className="text-sm truncate">{artifact.name || ""}</p>
 					</div>
 				</div>
 			</div>
 		);
 	};
+
+	if (featuresQuery.isLoading) {
+		return (
+			<div className="grid grid-cols-2 gap-4 md:grid-cols-4" role="status">
+				<span className="sr-only">Checking activity capabilities</span>
+				<LoadingSkeleton count={4} />
+			</div>
+		);
+	}
+	if (featuresQuery.isError) {
+		return (
+			<p className="text-destructive" role="alert">
+				Activity capabilities could not be loaded. Try again.
+			</p>
+		);
+	}
+	if (!activityAvailable) {
+		return (
+			<p className="text-muted-foreground" role="status">
+				Activity is disabled because the stack does not advertise Market and
+				ORDFS capabilities.
+			</p>
+		);
+	}
+	if (status === "pending") {
+		return (
+			<div className="grid grid-cols-2 gap-4 md:grid-cols-4" role="status">
+				<span className="sr-only">Loading market activity</span>
+				<LoadingSkeleton count={8} />
+			</div>
+		);
+	}
+	if (status === "error") {
+		return (
+			<p className="text-destructive" role="alert">
+				Market activity could not be loaded. Try again.
+			</p>
+		);
+	}
 	return (
 		<>
 			<div className={`relative ${className}`}>
@@ -335,6 +373,17 @@ export default function FlowGrid({ className = "" }: { className?: string }) {
 								<LoadingSkeleton count={5} />
 							</div>
 						))}
+					</div>
+				)}
+				{hasNextPage && (
+					<div className="mt-6 text-center">
+						<Button
+							disabled={isFetchingNextPage}
+							onClick={() => void fetchNextPage()}
+							variant="outline"
+						>
+							{isFetchingNextPage ? "Loading…" : "Load more"}
+						</Button>
 					</div>
 				)}
 			</div>

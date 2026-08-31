@@ -1,18 +1,43 @@
 import type { NextConfig } from "next";
 
+export const baseSecurityHeaders = [
+	{
+		key: "X-Content-Type-Options",
+		value: "nosniff",
+	},
+	{
+		key: "Referrer-Policy",
+		value: "strict-origin-when-cross-origin",
+	},
+	{
+		key: "Permissions-Policy",
+		value: "camera=(), geolocation=(), microphone=()",
+	},
+];
+
+export const sensitiveRouteHeaders = [
+	{
+		key: "Cache-Control",
+		value: "private, no-store, max-age=0, must-revalidate",
+	},
+	{
+		key: "Pragma",
+		value: "no-cache",
+	},
+];
+
 const nextConfig: NextConfig = {
 	/* config options here */
 	reactCompiler: true,
 	async headers() {
 		return [
 			{
-				source: "/wallet/cwi",
-				headers: [
-					{
-						key: "Content-Security-Policy",
-						value: "frame-ancestors *",
-					},
-				],
+				source: "/:path*",
+				headers: baseSecurityHeaders,
+			},
+			{
+				source: "/api/cwi/:path*",
+				headers: [...sensitiveRouteHeaders, { key: "Vary", value: "Origin" }],
 			},
 		];
 	},

@@ -12,6 +12,7 @@ import {
 } from "react";
 import { WALLET_STORAGE_KEY } from "@/lib/constants";
 import { deriveIdentityKey, findKeysFromMnemonic } from "@/lib/keys";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import type { Keys } from "@/lib/types";
 import {
 	clearCachedEncryptionKey,
@@ -81,8 +82,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					setIsWalletLocked(false);
 					return true;
 				}
-			} catch (error) {
-				console.error("Unlock failed:", error);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.unlock",
+					recoverable: true,
+					context: { retryable: true },
+				});
 			}
 			return false;
 		},
@@ -112,8 +119,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					router.push("/wallet");
 					return true;
 				}
-			} catch (error) {
-				console.error("Create wallet failed:", error);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.create",
+					recoverable: true,
+					context: { retryable: true },
+				});
 			}
 			return false;
 		},
@@ -137,8 +150,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					router.push("/wallet");
 					return true;
 				}
-			} catch (error) {
-				console.error("Import wallet failed:", error);
+			} catch {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.import",
+					recoverable: true,
+					context: { retryable: true },
+				});
 			}
 			return false;
 		},

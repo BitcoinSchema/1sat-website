@@ -5,7 +5,10 @@
 	"display": "standalone",
 	"background_color": "#000000",
 	"theme_color": "#000000",
-	"description": "The decentralized exchange for Ordinals and BSV20.",
+	"description": "A web wallet and BRC-100 connection hub for Bitcoin SV.",
+	"metanet": {
+		"schemaVersion": 1
+	},
 	"icons": [
 		{
 			"src": "/oneSatLogoDark.svg",

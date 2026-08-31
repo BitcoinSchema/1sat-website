@@ -17,6 +17,7 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Spinner } from "@/components/ui/spinner";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import { useWalletToolbox } from "@/providers/wallet-toolbox-provider";
 
 interface TimelineDataPoint {
@@ -139,11 +140,15 @@ export function TransactionTimeline({
 			);
 
 			setData(chartData);
-		} catch (err) {
-			console.error("[TransactionTimeline] Failed to load:", err);
-			setError(
-				err instanceof Error ? err.message : "Failed to load transactions",
-			);
+		} catch {
+			reportDiagnostic({
+				category: "action",
+				code: "action.failed",
+				operation: "wallet.history.timeline",
+				recoverable: true,
+				context: { retryable: true },
+			});
+			setError("Failed to load transaction history. Try again.");
 		} finally {
 			setIsLoading(false);
 		}
@@ -310,7 +315,7 @@ export function TransactionTimeline({
 							content={
 								<ChartTooltipContent
 									labelFormatter={(value) => {
-										return new Date(value).toLocaleDateString("en-US", {
+										return new Date(String(value)).toLocaleDateString("en-US", {
 											month: "short",
 											day: "numeric",
 											year: "numeric",

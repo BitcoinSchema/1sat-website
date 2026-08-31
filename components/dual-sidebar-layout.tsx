@@ -4,7 +4,6 @@ import { PanelLeft, Wallet } from "lucide-react";
 import type * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { LeftSidebar } from "@/components/left-sidebar";
-import { SearchForm } from "@/components/search-form";
 import { SidebarSoundEffects } from "@/components/sidebar-sound-effects";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,7 +77,6 @@ function InnerContent({
 					</Button>
 				</div>
 				<div className="flex items-center gap-2">
-					<SearchForm />
 					<Button
 						variant="ghost"
 						size="icon"

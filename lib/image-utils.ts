@@ -5,7 +5,7 @@
  * image processing API instead of external services.
  */
 
-import { ORDFS } from "./constants";
+import { stackContentUrl } from "./stack";
 
 interface ImageOptions {
 	width?: number;
@@ -52,7 +52,7 @@ export function getOrdinalThumbnail(
 	outpoint: string,
 	size: number = 300,
 ): string {
-	const source = `${ORDFS}/content/${outpoint}`;
+	const source = stackContentUrl(outpoint);
 	return getImageUrl(source, {
 		width: size,
 		height: size,

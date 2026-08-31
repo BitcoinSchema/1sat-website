@@ -6,15 +6,15 @@ import React, { useMemo, useState } from "react";
 import { toBitcoin } from "satoshi-token";
 import { Button } from "@/components/ui/button";
 import { useSound } from "@/hooks/use-sound";
-import { ORDFS } from "@/lib/constants";
 import { getImageUrl, getPaddedImageUrl } from "@/lib/image-utils";
+import { stackContentUrl } from "@/lib/stack";
 import type { OrdUtxo } from "@/lib/types/ordinals";
 import { ArtifactType, getArtifactType } from "@/lib/util/artifact";
 import ImageWithFallback from "../image-with-fallback";
 import AudioArtifact from "./audio";
-import ModelArtifact from "./model";
 import HTMLArtifact from "./html";
 import JsonArtifact from "./json";
+import ModelArtifact from "./model";
 import TextArtifact from "./text";
 import VideoArtifact from "./video";
 
@@ -90,7 +90,7 @@ const Artifact: React.FC<ArtifactProps> = ({
 		const outpoint = artifact?.origin?.outpoint;
 		// Ensure outpoint is a valid string before using in URL
 		if (!outpoint || typeof outpoint !== "string") return "";
-		return `${ORDFS}/content/${outpoint}`;
+		return stackContentUrl(outpoint);
 	}, [artifact, inputSrc]);
 
 	const type = useMemo(() => {

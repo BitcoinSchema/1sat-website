@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-
-export const runtime = "edge";
+import { ordfsClient, stackContentUrl, toStackOutpoint } from "@/lib/stack";
 
 export const alt = "1Sat Ordinals Inscription";
 export const size = {
@@ -9,8 +8,6 @@ export const size = {
 };
 export const contentType = "image/png";
 
-const STACK_URL =
-	process.env.NEXT_PUBLIC_ONESAT_STACK_URL || "https://api.1sat.app";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://1satwallet.com";
 
 const outpointFormat = /^[0-9a-fA-F]{64}(?:[_.]\d{1,6})?$/;
@@ -21,17 +18,12 @@ const cacheHeaders = {
 		"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
 };
 
-interface OrdfsMetadata {
-	origin?: string;
-	contentType?: string;
-	map?: Record<string, unknown>;
-}
-
 export default async function Image({
 	params,
 }: {
-	params: { outpoint: string };
+	params: Promise<{ outpoint: string }>;
 }) {
+	const { outpoint: rawOutpoint } = await params;
 	const imageOptions = { ...size, headers: cacheHeaders };
 
 	const fallback = (label: string) =>
@@ -54,17 +46,14 @@ export default async function Image({
 			imageOptions,
 		);
 
-	if (!outpointFormat.test(params.outpoint)) {
+	if (!outpointFormat.test(rawOutpoint)) {
 		return fallback("1Sat");
 	}
-	const outpoint = params.outpoint.replace("_", ".");
+	const outpoint = toStackOutpoint(rawOutpoint);
 
-	let metadata: OrdfsMetadata | null = null;
+	let metadata = null;
 	try {
-		const res = await fetch(`${STACK_URL}/1sat/ordfs/metadata/${outpoint}`);
-		if (res.ok) {
-			metadata = (await res.json()) as OrdfsMetadata;
-		}
+		metadata = await ordfsClient.getMetadata(outpoint);
 	} catch (_e) {
 		// fall through to text fallback
 	}
@@ -77,7 +66,7 @@ export default async function Image({
 	if (metadata?.contentType?.startsWith("image")) {
 		// route through the sharp proxy so satori always gets a PNG
 		const src = `${APP_URL}/api/image?url=${encodeURIComponent(
-			`${STACK_URL}/content/${metadata.origin || outpoint}`,
+			stackContentUrl(metadata.origin || outpoint),
 		)}&w=${size.width}&h=${size.height}&fit=contain&bg=%230a0a0a&f=png`;
 		return new ImageResponse(
 			<div
@@ -89,7 +78,6 @@ export default async function Image({
 					position: "relative",
 				}}
 			>
-				{/* biome-ignore lint/performance/noImgElement: satori element */}
 				<img src={src} alt={alt} width={size.width} height={size.height} />
 				<div
 					style={{

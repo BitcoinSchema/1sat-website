@@ -82,15 +82,9 @@ export const generateEncryptionKeyFromPassphrase = async (
 	passphrase: string,
 	pubKey: string,
 ): Promise<Uint8Array | undefined> => {
-	if (!pubKey) {
-		console.error("No public key found. Unable to decrypt.");
-		return;
-	}
+	if (!pubKey) return;
 
-	if (!passphrase || passphrase.length < 6) {
-		console.error("Invalid phrase. Too short.");
-		return;
-	}
+	if (!passphrase || passphrase.length < 6) return;
 
 	// Decode base64 to bytes using BSV SDK Utils (Legacy behavior)
 	const pubKeyArray = Utils.toArray(pubKey, "base64");

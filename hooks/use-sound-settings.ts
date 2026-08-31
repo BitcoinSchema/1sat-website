@@ -38,11 +38,14 @@ function setGlobalMuted(value: boolean) {
  * Persists to localStorage. Respects prefers-reduced-motion.
  */
 export function useSoundSettings() {
-	const [muted, setMuted] = useState(getGlobalMuted);
+	// Keep the server and first client render identical; read browser preferences
+	// after hydration.
+	const [muted, setMuted] = useState(false);
 
 	useEffect(() => {
 		const listener = () => setMuted(getGlobalMuted());
 		listeners.add(listener);
+		listener();
 		return () => {
 			listeners.delete(listener);
 		};

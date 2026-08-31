@@ -1,12 +1,15 @@
 import { ConvexHttpClient } from "convex/browser";
 import { type NextRequest, NextResponse } from "next/server";
 import {
+	buildCWIRedirectUrl,
 	encryptResultPayload,
 	generateOpaqueToken,
+	isDevelopmentEnvironment,
 	MAX_CWI_RESULT_BYTES,
 	parseOriginHeader,
 	REDIRECT_AUTH_CODE_TTL_MS,
 } from "@/lib/cwi/redirect-utils";
+import { toCWIErrorFields } from "@/lib/cwi/types";
 
 export const runtime = "nodejs";
 
@@ -16,6 +19,8 @@ interface AuthorizeCompleteBody {
 	result?: unknown;
 	error?: unknown;
 	error_description?: unknown;
+	error_code?: unknown;
+	error_stack?: unknown;
 }
 
 interface ConvexMutationRunner {
@@ -29,6 +34,8 @@ interface CompleteAuthRequestResponse {
 	codeId?: string;
 	error?: string;
 	errorDescription?: string;
+	errorCode?: number;
+	errorStack?: string;
 }
 
 const getConvexClient = (): ConvexHttpClient => {
@@ -41,28 +48,6 @@ const getConvexClient = (): ConvexHttpClient => {
 
 const badRequest = (error: string, status = 400) =>
 	NextResponse.json({ error }, { status });
-
-const buildRedirectUrl = (params: {
-	redirectUri: string;
-	state: string;
-	codeId?: string;
-	error?: string;
-	errorDescription?: string;
-}): string => {
-	const callbackUrl = new URL(params.redirectUri);
-	if (params.codeId) {
-		callbackUrl.searchParams.set("code", params.codeId);
-		callbackUrl.searchParams.set("state", params.state);
-		return callbackUrl.toString();
-	}
-	callbackUrl.searchParams.set("error", params.error ?? "access_denied");
-	callbackUrl.searchParams.set(
-		"error_description",
-		params.errorDescription ?? "Request denied.",
-	);
-	callbackUrl.searchParams.set("state", params.state);
-	return callbackUrl.toString();
-};
 
 export async function POST(request: NextRequest) {
 	const requestOrigin = parseOriginHeader(request.headers);
@@ -98,6 +83,8 @@ export async function POST(request: NextRequest) {
 	let resultCiphertext: string | undefined;
 	let normalizedError: string | undefined;
 	let normalizedErrorDescription: string | undefined;
+	let normalizedErrorCode: number | undefined;
+	let normalizedErrorStack: string | undefined;
 
 	if (decision === "approved") {
 		resultCiphertext = encryptResultPayload(body.result ?? null);
@@ -117,16 +104,27 @@ export async function POST(request: NextRequest) {
 			body.error_description.length > 0
 				? body.error_description
 				: "The user denied the request.";
+		normalizedErrorCode = 1;
 	} else {
 		normalizedError =
 			typeof body.error === "string" && body.error.length > 0
 				? body.error
 				: "server_error";
-		normalizedErrorDescription =
-			typeof body.error_description === "string" &&
-			body.error_description.length > 0
-				? body.error_description
-				: "The wallet could not complete the request.";
+		const wireError = toCWIErrorFields(
+			{
+				description:
+					typeof body.error_description === "string" &&
+					body.error_description.length > 0
+						? body.error_description
+						: "The wallet could not complete the request.",
+				code: body.error_code,
+				stack: body.error_stack,
+			},
+			isDevelopmentEnvironment(),
+		);
+		normalizedErrorDescription = wireError.description;
+		normalizedErrorCode = wireError.code;
+		normalizedErrorStack = wireError.stack;
 	}
 
 	const convex = client as unknown as ConvexMutationRunner;
@@ -139,6 +137,8 @@ export async function POST(request: NextRequest) {
 		resultCiphertext,
 		error: normalizedError,
 		errorDescription: normalizedErrorDescription,
+		errorCode: normalizedErrorCode,
+		errorStack: normalizedErrorStack,
 	})) as CompleteAuthRequestResponse;
 
 	if (!completeResult?.ok) {
@@ -147,13 +147,16 @@ export async function POST(request: NextRequest) {
 		);
 	}
 
-	const redirectUrl = buildRedirectUrl({
+	const redirectUrl = buildCWIRedirectUrl({
 		redirectUri: completeResult.redirectUri,
 		state: completeResult.state,
 		codeId: completeResult.codeId ?? undefined,
 		error: completeResult.error ?? undefined,
 		errorDescription: completeResult.errorDescription ?? undefined,
+		errorCode: completeResult.errorCode ?? undefined,
+		errorStack: completeResult.errorStack ?? undefined,
 	});
+	if (!redirectUrl) return badRequest("invalid_redirect_uri");
 
 	return NextResponse.json({
 		redirectUrl,

@@ -33,12 +33,14 @@ export function FullScreenUnlock() {
 		setIsLoading(true);
 		setError("");
 
-		const success = await unlockWallet(passphrase);
-		if (!success) {
-			setError("Invalid passphrase");
+		try {
+			if (!(await unlockWallet(passphrase))) {
+				setError("Invalid passphrase");
+			}
+		} catch {
+			setError("Wallet could not be unlocked. Try again.");
+		} finally {
 			setIsLoading(false);
-		} else {
-			// Success, the component will likely unmount or hide
 		}
 	};
 
@@ -71,6 +73,7 @@ export function FullScreenUnlock() {
 									Passphrase
 								</Label>
 								<Input
+									autoComplete="current-password"
 									id="passphrase"
 									type="password"
 									placeholder="Enter passphrase"

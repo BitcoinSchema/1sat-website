@@ -11,8 +11,8 @@ import ArtifactModal, {
 } from "@/components/modal/artifact-modal";
 import { Button } from "@/components/ui/button";
 import { useSound } from "@/hooks/use-sound";
-import { ORDFS } from "@/lib/constants";
 import { getOrdinalThumbnail } from "@/lib/image-utils";
+import { stackContentUrl } from "@/lib/stack";
 import {
 	classifyContent,
 	getContentType,
@@ -191,7 +191,7 @@ export default function WalletFlowGrid({
 	const renderArtifact = (artifact: WalletOutput) => {
 		const outpointStr = getDisplayOutpoint(artifact);
 		const originOutpoint = getOriginOutpoint(artifact);
-		const src = `${ORDFS}/content/${originOutpoint}`;
+		const src = stackContentUrl(originOutpoint);
 		const contentType = classifyContent(artifact);
 		const imgSrc =
 			contentType === "image" ? getOrdinalThumbnail(originOutpoint, 300) : src;
@@ -205,7 +205,7 @@ export default function WalletFlowGrid({
 				ref={(el) => observeImage(el, outpointStr)}
 			>
 				<Link
-					href={`/outpoint/${outpointStr}/timeline`}
+					href={`/outpoint/${outpointStr}`}
 					className="absolute inset-0 z-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
 					onClick={(e) => handleCardClick(e, artifact)}
 				>
@@ -214,6 +214,7 @@ export default function WalletFlowGrid({
 
 				<div className="relative shadow-md bg-card rounded-lg overflow-hidden pointer-events-none">
 					<Button
+						aria-label="Open artifact in new tab"
 						variant="ghost"
 						size="icon"
 						className="absolute top-2 right-2 z-10 h-7 w-7 bg-black/50 hover:bg-black/70 text-white pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity"
@@ -221,7 +222,7 @@ export default function WalletFlowGrid({
 							e.preventDefault();
 							e.stopPropagation();
 							window.open(
-								`${ORDFS}/content/${originOutpoint}`,
+								stackContentUrl(originOutpoint),
 								"_blank",
 								"noopener,noreferrer",
 							);

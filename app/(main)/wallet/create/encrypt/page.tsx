@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 import { useWallet } from "@/providers/wallet-provider";
 import { useCreateWallet } from "../provider";
 
@@ -41,14 +42,21 @@ export default function EncryptWalletPage() {
 		if (!mnemonic || !passphrase || passphrase !== confirmPassphrase) return;
 
 		setIsLoading(true);
-		const success = await createWallet(mnemonic, passphrase);
-		setIsLoading(false);
-
-		if (success) {
-			setMnemonic(null); // Clear local state
-			// Note: createWallet already navigates to /wallet on success
-		} else {
-			console.error("Failed to create and save wallet");
+		try {
+			const success = await createWallet(mnemonic, passphrase);
+			if (success) {
+				setMnemonic(null); // Clear local state
+				// Note: createWallet already navigates to /wallet on success
+			} else {
+				reportDiagnostic({
+					category: "action",
+					code: "action.failed",
+					operation: "wallet.create",
+					recoverable: true,
+				});
+			}
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -70,6 +78,7 @@ export default function EncryptWalletPage() {
 							<div className="grid gap-2">
 								<Label htmlFor="passphrase">Password</Label>
 								<Input
+									autoComplete="new-password"
 									id="passphrase"
 									type="password"
 									value={passphrase}
@@ -81,6 +90,7 @@ export default function EncryptWalletPage() {
 							<div className="grid gap-2">
 								<Label htmlFor="confirm-passphrase">Confirm Password</Label>
 								<Input
+									autoComplete="new-password"
 									id="confirm-passphrase"
 									type="password"
 									value={confirmPassphrase}
@@ -98,6 +108,7 @@ export default function EncryptWalletPage() {
 							</div>
 							<div className="flex gap-2">
 								<Button
+									aria-live="polite"
 									variant="outline"
 									onClick={() => router.back()}
 									type="button"

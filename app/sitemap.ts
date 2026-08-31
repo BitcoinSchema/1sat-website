@@ -11,21 +11,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 1,
 		},
 		{
-			url: `${baseUrl}/market`,
-			lastModified: new Date(),
-			changeFrequency: "hourly",
-			priority: 0.9,
-		},
-		{
 			url: `${baseUrl}/inscribe`,
 			lastModified: new Date(),
 			changeFrequency: "weekly",
-			priority: 0.8,
-		},
-		{
-			url: `${baseUrl}/listings`,
-			lastModified: new Date(),
-			changeFrequency: "hourly",
 			priority: 0.8,
 		},
 		{
@@ -39,6 +27,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			lastModified: new Date(),
 			changeFrequency: "always",
 			priority: 0.7,
+		},
+		{
+			url: `${baseUrl}/market/ordinals`,
+			lastModified: new Date(),
+			changeFrequency: "hourly",
+			priority: 0.7,
+		},
+		{
+			url: `${baseUrl}/market/bsv21`,
+			lastModified: new Date(),
+			changeFrequency: "hourly",
+			priority: 0.7,
+		},
+		{
+			url: `${baseUrl}/docs`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.6,
+		},
+		{
+			url: `${baseUrl}/download`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.6,
 		},
 	];
 }

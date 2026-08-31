@@ -32,15 +32,20 @@ export function UnlockWalletDialog({
 		e.preventDefault();
 		setError(null);
 		setIsLoading(true);
-		const success = await unlockWallet(passphrase);
-		setIsLoading(false);
-		if (success) {
-			play("success");
-			onOpenChange(false);
-			setPassphrase("");
-		} else {
+		try {
+			if (await unlockWallet(passphrase)) {
+				play("success");
+				onOpenChange(false);
+				setPassphrase("");
+				return;
+			}
 			play("error");
 			setError("Incorrect passphrase. Please try again.");
+		} catch {
+			play("error");
+			setError("Wallet could not be unlocked. Please try again.");
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -57,6 +62,7 @@ export function UnlockWalletDialog({
 					<div className="grid gap-2">
 						<Label htmlFor="passphrase">Passphrase</Label>
 						<Input
+							autoComplete="current-password"
 							id="passphrase"
 							type="password"
 							value={passphrase}

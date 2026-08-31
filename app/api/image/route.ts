@@ -15,13 +15,14 @@
  * - q: Quality 1-100 (default: 80)
  *
  * Example:
- * /api/image?url=https://ordfs.network/abc123_0&w=300&h=300&fit=contain&bg=111111&f=auto
+ * /api/image?url=https://api.1sat.app/content/abc123_0&w=300&h=300&fit=contain&bg=111111&f=auto
  */
 
 import { lookup } from "node:dns/promises";
 import { ImageProtocols } from "bitcoin-image";
 import { type NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
+import { reportDiagnostic } from "@/lib/runtime-diagnostics";
 
 /**
  * SSRF protection: block requests to private/reserved IP ranges.
@@ -168,8 +169,6 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		console.log(`[ImageAPI] Fetching ${resolvedUrl} (orig: ${rawUrl})`);
-
 		const response = await fetch(resolvedUrl, {
 			headers: {
 				"User-Agent": "1sat-web/1.0",
@@ -195,15 +194,15 @@ export async function GET(request: NextRequest) {
 
 		// Resize
 		if (width || height) {
-			const resizeOptions: sharp.ResizeOptions = {
+			const resizeOptions = {
 				width,
 				height,
 				fit,
 				withoutEnlargement: true,
+				...(bgColor && (fit === "contain" || fit === "fill")
+					? { background: `#${bgColor}` }
+					: {}),
 			};
-			if (bgColor && (fit === "contain" || fit === "fill")) {
-				resizeOptions.background = `#${bgColor}`;
-			}
 			sharpInstance = sharpInstance.resize(resizeOptions);
 		}
 
@@ -247,12 +246,24 @@ export async function GET(request: NextRequest) {
 				"X-Cache": "MISS",
 			},
 		});
-	} catch (error) {
-		console.error("[ImageAPI] Error:", error);
+	} catch {
+		const diagnostic = reportDiagnostic({
+			category: "route",
+			code: "route.unexpected",
+			operation: "api.image",
+			recoverable: true,
+			context: { route: "/api/image", retryable: true },
+		});
 		// Fallback error image
 		return new NextResponse(
 			`<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" fill="#999" text-anchor="middle" dy=".3em">Image Error</text></svg>`,
-			{ status: 200, headers: { "Content-Type": "image/svg+xml" } },
+			{
+				status: 200,
+				headers: {
+					"Content-Type": "image/svg+xml",
+					"X-Correlation-ID": diagnostic.correlationId,
+				},
+			},
 		);
 	}
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { Html, OrbitControls, useGLTF } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Loader2 } from "lucide-react";
 import { Suspense, useState } from "react";
@@ -22,9 +22,7 @@ const ModelArtifact = ({ src, className }: ModelArtifactProps) => {
 	if (failed) {
 		return (
 			<div className="w-full h-full flex items-center justify-center bg-muted">
-				<p className="text-xs text-muted-foreground">
-					Could not load 3D model
-				</p>
+				<p className="text-xs text-muted-foreground">Could not load 3D model</p>
 			</div>
 		);
 	}
@@ -37,7 +35,13 @@ const ModelArtifact = ({ src, className }: ModelArtifactProps) => {
 			>
 				<ambientLight intensity={0.6} />
 				<directionalLight position={[5, 5, 5]} intensity={1} />
-				<Suspense fallback={null}>
+				<Suspense
+					fallback={
+						<Html center>
+							<Loader2 className="h-6 w-6 animate-spin" />
+						</Html>
+					}
+				>
 					<Model src={src} />
 				</Suspense>
 				{/* no Environment preset — it fetches an HDR from a third-party

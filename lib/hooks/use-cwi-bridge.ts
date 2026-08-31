@@ -1,5 +1,9 @@
 "use client";
 
+import type {
+	CounterpartyPermissions,
+	GroupedPermissions,
+} from "@bsv/wallet-toolbox-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	type BridgeCounterpartyPermissionRequest,
@@ -9,6 +13,7 @@ import {
 	CWIBridge,
 	type WalletStatus,
 } from "@/lib/cwi/bridge";
+import type { CWIIndividualGrant } from "@/lib/cwi/types";
 
 interface CWIBridgeState {
 	status: WalletStatus;
@@ -20,11 +25,19 @@ interface CWIBridgeState {
 	fallbackRecommended: boolean;
 	reason?: BridgeTransportState["reason"];
 	storageAccessRequired: boolean;
-	grantPermission: (requestID: string) => void;
+	grantPermission: (requestID: string, grant?: CWIIndividualGrant) => void;
 	denyPermission: (requestID: string) => void;
-	grantGroupedPermission: (requestID: string, granted: unknown) => void;
+	grantGroupedPermission: (
+		requestID: string,
+		granted: Partial<GroupedPermissions>,
+		expiry?: number,
+	) => void;
 	denyGroupedPermission: (requestID: string) => void;
-	grantCounterpartyPermission: (requestID: string, granted: unknown) => void;
+	grantCounterpartyPermission: (
+		requestID: string,
+		granted: Partial<CounterpartyPermissions>,
+		expiry?: number,
+	) => void;
 	denyCounterpartyPermission: (requestID: string) => void;
 	grantStorageAccess: () => void;
 	retryStatus: () => void;
@@ -59,6 +72,11 @@ export function useCWIBridge(): CWIBridgeState {
 	const activeCounterpartyPermission = counterpartyQueue[0] ?? null;
 
 	useEffect(() => {
+		const resetPermissionQueues = () => {
+			setPermissionQueue([]);
+			setGroupedQueue([]);
+			setCounterpartyQueue([]);
+		};
 		const bridge = new CWIBridge({
 			onStatusChange: setStatus,
 			onTransportStateChange: setTransportState,
@@ -93,6 +111,7 @@ export function useCWIBridge(): CWIBridgeState {
 				});
 			},
 			onStorageAccessRequired: () => setStorageAccessRequired(true),
+			onSessionReset: resetPermissionQueues,
 		});
 		bridge.start();
 		bridgeRef.current = bridge;
@@ -100,58 +119,81 @@ export function useCWIBridge(): CWIBridgeState {
 		return () => {
 			bridge.stop();
 			bridgeRef.current = null;
-			setPermissionQueue([]);
-			setGroupedQueue([]);
-			setCounterpartyQueue([]);
+			resetPermissionQueues();
 		};
 	}, []);
 
-	const grantPermission = useCallback((requestID: string) => {
-		setPermissionQueue((prev) =>
-			prev.filter((request) => request.requestID !== requestID),
-		);
-		bridgeRef.current?.grantPermission(requestID);
-	}, []);
+	const grantPermission = useCallback(
+		(requestID: string, grant?: CWIIndividualGrant) => {
+			if (bridgeRef.current?.grantPermission(requestID, grant)) {
+				setPermissionQueue((prev) =>
+					prev.filter((request) => request.requestID !== requestID),
+				);
+			}
+		},
+		[],
+	);
 
 	const denyPermission = useCallback((requestID: string) => {
-		setPermissionQueue((prev) =>
-			prev.filter((request) => request.requestID !== requestID),
-		);
-		bridgeRef.current?.denyPermission(requestID);
+		if (bridgeRef.current?.denyPermission(requestID)) {
+			setPermissionQueue((prev) =>
+				prev.filter((request) => request.requestID !== requestID),
+			);
+		}
 	}, []);
 
 	const grantGroupedPermission = useCallback(
-		(requestID: string, granted: unknown) => {
-			setGroupedQueue((prev) =>
-				prev.filter((request) => request.requestID !== requestID),
-			);
-			bridgeRef.current?.grantGroupedPermission(requestID, granted);
+		(
+			requestID: string,
+			granted: Partial<GroupedPermissions>,
+			expiry?: number,
+		) => {
+			if (
+				bridgeRef.current?.grantGroupedPermission(requestID, granted, expiry)
+			) {
+				setGroupedQueue((prev) =>
+					prev.filter((request) => request.requestID !== requestID),
+				);
+			}
 		},
 		[],
 	);
 
 	const denyGroupedPermission = useCallback((requestID: string) => {
-		setGroupedQueue((prev) =>
-			prev.filter((request) => request.requestID !== requestID),
-		);
-		bridgeRef.current?.denyGroupedPermission(requestID);
+		if (bridgeRef.current?.denyGroupedPermission(requestID)) {
+			setGroupedQueue((prev) =>
+				prev.filter((request) => request.requestID !== requestID),
+			);
+		}
 	}, []);
 
 	const grantCounterpartyPermission = useCallback(
-		(requestID: string, granted: unknown) => {
-			setCounterpartyQueue((prev) =>
-				prev.filter((request) => request.requestID !== requestID),
-			);
-			bridgeRef.current?.grantCounterpartyPermission(requestID, granted);
+		(
+			requestID: string,
+			granted: Partial<CounterpartyPermissions>,
+			expiry?: number,
+		) => {
+			if (
+				bridgeRef.current?.grantCounterpartyPermission(
+					requestID,
+					granted,
+					expiry,
+				)
+			) {
+				setCounterpartyQueue((prev) =>
+					prev.filter((request) => request.requestID !== requestID),
+				);
+			}
 		},
 		[],
 	);
 
 	const denyCounterpartyPermission = useCallback((requestID: string) => {
-		setCounterpartyQueue((prev) =>
-			prev.filter((request) => request.requestID !== requestID),
-		);
-		bridgeRef.current?.denyCounterpartyPermission(requestID);
+		if (bridgeRef.current?.denyCounterpartyPermission(requestID)) {
+			setCounterpartyQueue((prev) =>
+				prev.filter((request) => request.requestID !== requestID),
+			);
+		}
 	}, []);
 
 	const retryStatus = useCallback(() => {

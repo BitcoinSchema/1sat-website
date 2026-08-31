@@ -10,8 +10,7 @@ import {
 	DialogTitle,
 	SoundDialog,
 } from "@/components/ui/sound-dialog";
-
-const ORDFS = "https://ordfs.network";
+import { stackContentUrl } from "@/lib/stack";
 
 /**
  * Minimal artifact shape for the modal.
@@ -78,7 +77,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 
 	const { outpoint, originOutpoint, contentType, name } = artifact;
 	const contentClass = classifyContentType(contentType);
-	const src = `${ORDFS}/content/${originOutpoint}`;
+	const src = stackContentUrl(originOutpoint);
 	const allowScroll =
 		contentClass === "image" ||
 		contentClass === "text" ||
@@ -97,6 +96,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 					</p>
 					<div className="flex gap-1 items-center">
 						<Button
+							aria-label="View artifact details"
 							variant="ghost"
 							size="icon"
 							onClick={() => router.push(`/outpoint/${outpoint}`)}
@@ -105,6 +105,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							<Info className="w-4 h-4" />
 						</Button>
 						<Button
+							aria-label="Open artifact in new tab"
 							variant="ghost"
 							size="icon"
 							onClick={() => window.open(src, "_blank", "noopener,noreferrer")}
@@ -113,6 +114,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							<SquareArrowOutUpRight className="w-4 h-4" />
 						</Button>
 						<Button
+							aria-label="Close artifact preview"
 							variant="ghost"
 							size="icon"
 							onClick={onClose}
@@ -166,6 +168,7 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							src={src}
 							title="Artifact"
 							className="w-full h-full border-0"
+							sandbox=""
 						/>
 					) : (
 						<div
