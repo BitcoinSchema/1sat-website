@@ -3,12 +3,79 @@
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import * as React from "react";
+import {
+	CommandDialog,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	CommandShortcut,
+} from "@/components/ui/command";
 import { useStackFeatures } from "@/lib/hooks/use-stack-features";
+import type { StackFeature } from "@/lib/stack-features";
+
+const commands: Array<{
+	label: string;
+	href: string;
+	shortcut?: string;
+	feature?: StackFeature;
+}> = [
+	{ label: "Home", href: "/", shortcut: "G H" },
+	{
+		label: "Activity",
+		href: "/activity",
+		shortcut: "G A",
+		feature: "activity",
+	},
+	{
+		label: "Ordinal market",
+		href: "/market/ordinals",
+		shortcut: "G M",
+		feature: "ordinalMarket",
+	},
+	{
+		label: "BSV21 market",
+		href: "/market/bsv21",
+		shortcut: "G V",
+		feature: "bsv21",
+	},
+	{
+		label: "Inscribe",
+		href: "/inscribe",
+		shortcut: "G I",
+		feature: "inscribe",
+	},
+	{ label: "Wallet", href: "/wallet", shortcut: "G W" },
+	{
+		label: "Wallet identity",
+		href: "/wallet/identity",
+		feature: "identity",
+	},
+	{
+		label: "Wallet ordinals",
+		href: "/wallet/ordinals",
+		shortcut: "G O",
+		feature: "ordinals",
+	},
+	{
+		label: "Wallet BSV21",
+		href: "/wallet/bsv21",
+		shortcut: "G 1",
+		feature: "bsv21",
+	},
+	{ label: "Wallet history", href: "/wallet/history", shortcut: "G Y" },
+	{ label: "Wallet settings", href: "/wallet/settings", shortcut: "G ," },
+	{ label: "Download", href: "/download" },
+	{ label: "Documentation", href: "/docs", shortcut: "G D" },
+	{ label: "Settings", href: "/settings", shortcut: "G S" },
+];
 
 export function KeyboardShortcuts() {
 	const router = useRouter();
 	const { resolvedTheme, setTheme } = useTheme();
 	const features = useStackFeatures().data?.features;
+	const [commandMenuOpen, setCommandMenuOpen] = React.useState(false);
 	// We can't easily access both sidebar contexts here because they are nested.
 	// This component needs to be inside the context to toggle.
 	// But we have TWO contexts.
@@ -20,6 +87,12 @@ export function KeyboardShortcuts() {
 
 	React.useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+				e.preventDefault();
+				setCommandMenuOpen((open) => !open);
+				return;
+			}
+
 			// Ignore if typing in an input
 			if (
 				e.target instanceof HTMLElement &&
@@ -87,5 +160,31 @@ export function KeyboardShortcuts() {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [features, resolvedTheme, router, setTheme]);
 
-	return null;
+	return (
+		<CommandDialog open={commandMenuOpen} onOpenChange={setCommandMenuOpen}>
+			<CommandInput placeholder="Search pages…" />
+			<CommandList>
+				<CommandEmpty>No matching page.</CommandEmpty>
+				<CommandGroup heading="Navigate">
+					{commands.map((command) => {
+						if (command.feature && !features?.[command.feature]) return null;
+						return (
+							<CommandItem
+								key={command.href}
+								onSelect={() => {
+									setCommandMenuOpen(false);
+									router.push(command.href);
+								}}
+							>
+								{command.label}
+								{command.shortcut && (
+									<CommandShortcut>{command.shortcut}</CommandShortcut>
+								)}
+							</CommandItem>
+						);
+					})}
+				</CommandGroup>
+			</CommandList>
+		</CommandDialog>
+	);
 }
