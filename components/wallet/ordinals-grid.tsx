@@ -14,6 +14,9 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ArtifactModal, {
+	type ArtifactModalItem,
+} from "@/components/modal/artifact-modal";
 import { Button } from "@/components/ui/button";
 import {
 	OrdinalActionDialog,
@@ -40,6 +43,8 @@ export function OrdinalsGrid() {
 		new Set(),
 	);
 	const [dialogKind, setDialogKind] = useState<OrdinalActionKind | null>(null);
+	const [selectedArtifact, setSelectedArtifact] =
+		useState<ArtifactModalItem | null>(null);
 	const identityScopeRef = useRef(identityKey);
 	const metadataRequests = ordinals.map(
 		(ordinal) => `${getDisplayOutpoint(ordinal)}:-2`,
@@ -56,6 +61,7 @@ export function OrdinalsGrid() {
 		identityScopeRef.current = identityKey;
 		setSelectedOutpoints(new Set());
 		setDialogKind(null);
+		setSelectedArtifact(null);
 	}, [identityKey]);
 
 	const selectedOrdinals = useMemo(
@@ -208,11 +214,20 @@ export function OrdinalsGrid() {
 								key={ordinal.outpoint}
 								className={`group relative aspect-square overflow-hidden rounded-lg border bg-muted/50 transition-all ${selected ? "border-primary ring-2 ring-primary/40" : "border-border/50 hover:border-primary/50"}`}
 							>
-								<a
-									href={presentation.href}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="block size-full"
+								<button
+									type="button"
+									aria-label={`Open ${presentation.name}`}
+									className="block size-full text-left"
+									onClick={() =>
+										setSelectedArtifact({
+											outpoint,
+											originOutpoint: presentation.originOutpoint,
+											contentType: presentation.contentType,
+											name: presentation.name,
+											previewUrl: presentation.artworkUrl,
+											externalUrl: presentation.href,
+										})
+									}
 								>
 									{presentation.artworkUrl ? (
 										<Image
@@ -244,7 +259,7 @@ export function OrdinalsGrid() {
 											{outpoint}
 										</div>
 									</div>
-								</a>
+								</button>
 								<label className="absolute left-2 top-2 flex size-8 cursor-pointer items-center justify-center rounded-md bg-background/90 shadow-sm">
 									<input
 										type="checkbox"
@@ -282,6 +297,11 @@ export function OrdinalsGrid() {
 					onSuccess={actionSucceeded}
 				/>
 			)}
+
+			<ArtifactModal
+				artifact={selectedArtifact}
+				onClose={() => setSelectedArtifact(null)}
+			/>
 		</div>
 	);
 }

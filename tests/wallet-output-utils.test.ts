@@ -43,6 +43,8 @@ describe("wallet ordinal display metadata", () => {
 		assert.equal(presentation.kind, "bitplan");
 		assert.equal(presentation.name, "BitPlan Document");
 		assert.equal(presentation.contentLabel, "BitPlan Document");
+		assert.equal(presentation.contentType, "application/x-bitplan");
+		assert.equal(presentation.href, `https://bitplan.dev/d/${txid}_0`);
 		assert.equal(presentation.artworkUrl, undefined);
 	});
 
@@ -57,6 +59,7 @@ describe("wallet ordinal display metadata", () => {
 		});
 		assert.equal(presentation.kind, "theme-token");
 		assert.equal(presentation.name, "Nightrider");
+		assert.equal(presentation.contentType, "ord-fs/json");
 		assert.equal(
 			presentation.artworkUrl,
 			`https://themetoken.dev/og/${txid}_1.png?v=2`,

@@ -2,7 +2,7 @@
 
 import { FileQuestion, Info, SquareArrowOutUpRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { BitPlanArtifact } from "@/components/artifact/bitplan";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,10 @@ export interface ArtifactModalItem {
 	contentType: string;
 	/** Display name */
 	name?: string;
+	/** Optional safe preview image instead of raw OrdFS content */
+	previewUrl?: string;
+	/** Optional canonical application viewer */
+	externalUrl?: string;
 }
 
 interface ArtifactModalProps {
@@ -46,39 +50,23 @@ function classifyContentType(
 
 const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 	const router = useRouter();
-	const [isDragging, setIsDragging] = useState(false);
-	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-	const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 });
-	const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-	const handleMouseDown = (e: React.MouseEvent) => {
-		if (!scrollContainerRef.current) return;
-		setIsDragging(true);
-		setDragStart({ x: e.clientX, y: e.clientY });
-		setScrollStart({
-			x: scrollContainerRef.current.scrollLeft,
-			y: scrollContainerRef.current.scrollTop,
-		});
-		e.preventDefault();
-	};
-
-	const handleMouseMove = (e: React.MouseEvent) => {
-		if (!isDragging || !scrollContainerRef.current) return;
-		const dx = e.clientX - dragStart.x;
-		const dy = e.clientY - dragStart.y;
-		scrollContainerRef.current.scrollLeft = scrollStart.x - dx;
-		scrollContainerRef.current.scrollTop = scrollStart.y - dy;
-	};
-
-	const handleMouseUp = () => {
-		setIsDragging(false);
-	};
 
 	if (!artifact) return null;
 
-	const { outpoint, originOutpoint, contentType, name } = artifact;
-	const contentClass = classifyContentType(contentType);
-	const src = stackContentUrl(originOutpoint);
+	const {
+		outpoint,
+		originOutpoint,
+		contentType,
+		name,
+		previewUrl,
+		externalUrl,
+	} = artifact;
+	const isBitPlan = contentType === "application/x-bitplan";
+	const contentClass = previewUrl ? "image" : classifyContentType(contentType);
+	const src = previewUrl ?? stackContentUrl(originOutpoint);
+	const openUrl =
+		externalUrl ??
+		(isBitPlan ? `https://bitplan.dev/d/${originOutpoint}` : src);
 	const allowScroll =
 		contentClass === "image" ||
 		contentClass === "text" ||
@@ -109,7 +97,9 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 							aria-label="Open artifact in new tab"
 							variant="ghost"
 							size="icon"
-							onClick={() => window.open(src, "_blank", "noopener,noreferrer")}
+							onClick={() =>
+								window.open(openUrl, "_blank", "noopener,noreferrer")
+							}
 							className="h-8 w-8"
 						>
 							<SquareArrowOutUpRight className="w-4 h-4" />
@@ -127,22 +117,12 @@ const ArtifactModal = ({ artifact, onClose }: ArtifactModalProps) => {
 				</div>
 
 				<section
-					ref={scrollContainerRef}
 					className={`bg-card flex-1 flex ${allowScroll ? "items-start overflow-auto" : "items-center overflow-hidden"} justify-center`}
 					aria-label="Artifact viewer"
-					onMouseDown={allowScroll ? handleMouseDown : undefined}
-					onMouseMove={allowScroll ? handleMouseMove : undefined}
-					onMouseUp={allowScroll ? handleMouseUp : undefined}
-					onMouseLeave={allowScroll ? handleMouseUp : undefined}
-					style={{
-						cursor: allowScroll
-							? isDragging
-								? "grabbing"
-								: "grab"
-							: "default",
-					}}
 				>
-					{contentClass === "video" ? (
+					{isBitPlan ? (
+						<BitPlanArtifact key={originOutpoint} origin={originOutpoint} />
+					) : contentClass === "video" ? (
 						<video
 							src={src}
 							controls
