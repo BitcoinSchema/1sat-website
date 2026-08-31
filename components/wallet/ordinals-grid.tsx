@@ -1,7 +1,7 @@
 "use client";
 
 import type { WalletOutput } from "@1sat/actions";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	FileQuestion,
 	FileText,
@@ -23,7 +23,7 @@ import {
 	type OrdinalActionKind,
 } from "@/components/wallet/ordinal-action-dialog";
 import { OrdinalsGridSkeleton } from "@/components/wallet/ordinals-grid-skeleton";
-import { ordfsClient } from "@/lib/stack";
+import { useOrdinalMetadata } from "@/hooks/use-ordinal-metadata";
 import { isOrdinalListed, ordinalAssetId } from "@/lib/wallet/ordinal-actions";
 import { getOrdinalPresentation } from "@/lib/wallet/ordinal-presentation";
 import { getDisplayOutpoint } from "@/lib/wallet/wallet-output-utils";
@@ -46,15 +46,11 @@ export function OrdinalsGrid() {
 	const [selectedArtifact, setSelectedArtifact] =
 		useState<ArtifactModalItem | null>(null);
 	const identityScopeRef = useRef(identityKey);
-	const metadataRequests = ordinals.map(
-		(ordinal) => `${getDisplayOutpoint(ordinal)}:-2`,
+	const { metadataRequests, metadataQuery } = useOrdinalMetadata(
+		ordinals,
+		identityKey,
+		isInitialized,
 	);
-	const metadataQuery = useQuery({
-		queryKey: ["ordinal-metadata", identityKey, metadataRequests],
-		queryFn: () => ordfsClient.bulkMetadata(metadataRequests),
-		enabled: isInitialized && metadataRequests.length > 0,
-		staleTime: 5 * 60_000,
-	});
 
 	useEffect(() => {
 		if (identityScopeRef.current === identityKey) return;

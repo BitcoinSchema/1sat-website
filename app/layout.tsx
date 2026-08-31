@@ -1,3 +1,4 @@
+import { ThemeTokenProvider } from "@theme-token/sdk/react";
 import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import type { WebApplication, WithContext } from "schema-dts";
@@ -90,15 +91,17 @@ export default function RootLayout({
 					enableSystem
 					disableTransitionOnChange
 				>
-					<QueryProvider>
-						<WalletProvider>
-							<WalletToolboxProvider>
-								<KeyboardShortcuts />
-								<WalletBridge>{children}</WalletBridge>
-								<Toaster position="bottom-right" />
-							</WalletToolboxProvider>
-						</WalletProvider>
-					</QueryProvider>
+					<ThemeTokenProvider>
+						<QueryProvider>
+							<WalletProvider>
+								<WalletToolboxProvider>
+									<KeyboardShortcuts />
+									<WalletBridge>{children}</WalletBridge>
+									<Toaster position="bottom-right" />
+								</WalletToolboxProvider>
+							</WalletProvider>
+						</QueryProvider>
+					</ThemeTokenProvider>
 				</ThemeProvider>
 			</body>
 		</html>
