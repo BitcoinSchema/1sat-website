@@ -7,6 +7,7 @@ import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { WalletBridge } from "@/components/wallet-bridge";
+import { AuthProvider } from "@/providers/auth-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { WalletProvider } from "@/providers/wallet-provider";
 import { WalletToolboxProvider } from "@/providers/wallet-toolbox-provider";
@@ -93,13 +94,15 @@ export default function RootLayout({
 				>
 					<ThemeTokenProvider>
 						<QueryProvider>
-							<WalletProvider>
-								<WalletToolboxProvider>
-									<KeyboardShortcuts />
-									<WalletBridge>{children}</WalletBridge>
-									<Toaster position="bottom-right" />
-								</WalletToolboxProvider>
-							</WalletProvider>
+							<AuthProvider>
+								<WalletProvider>
+									<WalletToolboxProvider>
+										<KeyboardShortcuts />
+										<WalletBridge>{children}</WalletBridge>
+										<Toaster position="bottom-right" />
+									</WalletToolboxProvider>
+								</WalletProvider>
+							</AuthProvider>
 						</QueryProvider>
 					</ThemeTokenProvider>
 				</ThemeProvider>

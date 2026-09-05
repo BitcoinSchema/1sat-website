@@ -36,10 +36,12 @@
 		"@react-three/drei": "^10.7.8",
 		"@react-three/fiber": "^9.7.0",
 		"@react-three/postprocessing": "^3.1.1",
+		"@sigma-auth/better-auth-plugin": "0.0.101",
 		"@tanstack/react-query": "^5.102.8",
 		"@tanstack/react-query-devtools": "^5.102.8",
 		"@theme-token/sdk": "0.0.19",
 		"@types/three": "^0.185.4",
+		"better-auth": "^1.7.0",
 		"bitcoin-backup": "^0.0.13",
 		"bitcoin-image": "^0.0.3",
 		"class-variance-authority": "^0.7.1",
@@ -61,7 +63,8 @@
 		"sugar-high": "^2.1.0",
 		"tailwind-merge": "^3.6.0",
 		"three": "^0.185.1",
-		"usehooks-ts": "^3.1.1"
+		"usehooks-ts": "^3.1.1",
+		"zod": "^4.1.12"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.11",
@@ -76,6 +79,8 @@
 		"typescript": "^7.0.2"
 	},
 	"overrides": {
+		"@sigma-auth/better-auth-plugin": "0.0.101",
+		"better-auth": "^1.7.0",
 		"defu": "6.1.7"
 	}
 }

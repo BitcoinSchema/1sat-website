@@ -41,6 +41,11 @@ Values without that prefix remain server-only.
 | `NEXT_PUBLIC_APP_URL` | Public | Web app; `https://1satwallet.com` for the canonical release and `http://localhost:8255` locally |
 | `NEXT_PUBLIC_CONVEX_URL` | Public endpoint | CWI redirect store; separate Preview and Production/`omega` deployments |
 | `CWI_REDIRECT_SECRET` | **Server secret** | CWI redirect encryption; unique long random values for Preview and Production/`omega` |
+| `NEXT_PUBLIC_SIGMA_AUTH_URL` | Public | Sigma Identity issuer; `https://auth.sigmaidentity.com` |
+| `NEXT_PUBLIC_SIGMA_CLIENT_ID` | Public | Registered Sigma OAuth client id for this site |
+| `SIGMA_ACCOUNT_PRIVATE_KEY` | **Server secret** | Account WIF used to sign token exchange. **Rename** any existing Vercel `SIGMA_MEMBER_PRIVATE_KEY` to this name (same WIF). No MEMBER fallback or alias. Scope Preview and Production/`omega` separately. |
+
+Redirect URI to register on the Sigma client: `{NEXT_PUBLIC_APP_URL}/auth/sigma/callback`.
 
 `messagebox.1sat.app` is part of the wider 1Sat infrastructure, but this
 checkout does not currently read a message-box environment variable. Add one
@@ -50,9 +55,16 @@ The read-only Vercel inventory currently shows separate Preview and
 Production/`omega` Convex configuration. It also shows one
 `CWI_REDIRECT_SECRET` entry spanning Development, Preview, Production, and
 `omega`; that must be split before release. Several variables from removed
-features remain configured (`OPENAI_API_KEY`, Sigma variables, Blob, and legacy
-API/market endpoints). Confirm ownership and remove unused values separately;
-never copy them into `NEXT_PUBLIC_` variables.
+features remain configured (`OPENAI_API_KEY`, Blob, and legacy API/market
+endpoints). Confirm ownership and remove unused values separately; never copy
+them into `NEXT_PUBLIC_` variables.
+
+Sigma OAuth on Vercel project `1sat-website` (team `opldotdev`): if
+`SIGMA_MEMBER_PRIVATE_KEY` is still present, rename it to
+`SIGMA_ACCOUNT_PRIVATE_KEY` in every target that has it (Development, Preview,
+Production, `omega`). Keep the existing WIF. Do not leave a MEMBER alias. Add
+`NEXT_PUBLIC_SIGMA_AUTH_URL` and `NEXT_PUBLIC_SIGMA_CLIENT_ID` where missing.
+This checkout does not download or reprint secret values.
 
 List names, targets, and age without downloading secret values:
 
