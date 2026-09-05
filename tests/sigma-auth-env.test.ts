@@ -41,7 +41,8 @@ describe("Sigma OAuth env contract", () => {
 	test("runtime source has no SIGMA_MEMBER alias or fallback", () => {
 		const files = walk(ROOT).filter(
 			(path) =>
-				/\.(ts|tsx|mjs)$/.test(path) && !path.endsWith("sigma-auth-env.test.ts"),
+				/\.(ts|tsx|mjs)$/.test(path) &&
+				!path.endsWith("sigma-auth-env.test.ts"),
 		);
 		const hits = files.flatMap((path) => {
 			const source = readFileSync(path, "utf8");
