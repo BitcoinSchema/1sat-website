@@ -81,6 +81,7 @@
 	"overrides": {
 		"@sigma-auth/better-auth-plugin": "0.0.101",
 		"better-auth": "^1.7.0",
-		"defu": "6.1.7"
+		"defu": "6.1.7",
+		"fflate": "0.8.3"
 	}
 }
